@@ -23,9 +23,11 @@ pipeline {
         sshagent (credentials: [SSH_CRED_ID]) {
           sh """
             # ✅ Copy firebase-key.json to notification-service
-            scp -o StrictHostKeyChecking=no /home/spandana/jenkins-secrets/firebase-key.json \\
-              ubuntu@${REMOTE_HOST}:~/${APP_DIR}/notification-service/src/main/resources/
+            scp -o StrictHostKeyChecking=no /var/lib/jenkins/jenkins-secrets/firebase-key.json \
+  ubuntu@${REMOTE_HOST}:~/${APP_DIR}/notification-service/src/main/resources/
 
+scp -o StrictHostKeyChecking=no /var/lib/jenkins/jenkins-secrets/dermacare.json \
+  ubuntu@${REMOTE_HOST}:~/${APP_DIR}/customerservice/src/main/resources/
             # ✅ Copy dermacare.json to customerservice
             scp -o StrictHostKeyChecking=no /home/spandana/jenkins-secrets/dermacare.json \\
               ubuntu@${REMOTE_HOST}:~/${APP_DIR}/customerservice/src/main/resources/
