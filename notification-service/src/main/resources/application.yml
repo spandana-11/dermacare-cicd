@@ -1,0 +1,57 @@
+# Conversion to YAML from Properties formar report
+# Warnings:
+# - The yaml file had comments which are lost in the refactoring!
+spring:
+  application:
+    name: notification-service
+
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      group-id: notificationgroup
+      auto-offset-reset: latest           # <--- Change from 'earliest' to 'latest' to avoid old replays
+      enable-auto-commit: true
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: com.dermacare.notification_service.entity
+            value:
+              default:
+                type: com.dermacare.notification_service.entity.Booking
+    listener:
+      concurrency: 1
+  data:
+    mongodb:
+      uri: mongodb://mongodb:27017/DermaCareNotifications
+
+server:
+  port: 9909
+  servlet:
+    context-path: /api
+
+eureka: 
+  instance:
+    prefer-ip-address: true
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+info:
+  app:
+    name: notification-service
+    description: Service responsible for handling notifications related to bookings
+    version: 1.0.0
+
+app:
+  firebase-configuration-file: firebase-key.json
