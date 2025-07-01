@@ -26,6 +26,8 @@ public class ClinicDTO {
 
     @NotBlank(message = "City is required")
     private String city;
+    
+    private double hospitalOverallRating;
 
     @NotBlank(message = "Contact number is required")
     @Pattern(regexp = "^[0-9]{10}$", message = "Contact number must be 10 digits")
@@ -44,7 +46,7 @@ public class ClinicDTO {
     @Email(message = "Invalid email format")
     private String emailAddress;
 
-    @URL(message = "Invalid website URL")
+   // @URL(message = "Invalid website URL")
     private String website;
 
     @NotBlank(message = "License number is required")

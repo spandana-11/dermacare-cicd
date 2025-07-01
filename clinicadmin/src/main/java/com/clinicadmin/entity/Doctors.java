@@ -47,6 +47,7 @@ public class Doctors {
 	private List<String> languages;
 	private List<String> highlights;
 	private boolean doctorAvailabilityStatus;
+	private double doctorAverageRating;
 	private boolean recommendation;
 	
 }

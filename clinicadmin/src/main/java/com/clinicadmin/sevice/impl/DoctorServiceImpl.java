@@ -26,12 +26,15 @@ import com.clinicadmin.dto.DoctorServicesDTO;
 import com.clinicadmin.dto.DoctorSlotDTO;
 import com.clinicadmin.dto.DoctorSubServiceDTO;
 import com.clinicadmin.dto.DoctorsDTO;
+import com.clinicadmin.dto.NotificationDTO;
+import com.clinicadmin.dto.ResBody;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.entity.DoctorLoginCredentials;
 import com.clinicadmin.entity.DoctorSlot;
 import com.clinicadmin.entity.Doctors;
 import com.clinicadmin.exceptions.ResourceNotFoundException;
 import com.clinicadmin.feignclient.AdminServiceClient;
+import com.clinicadmin.feignclient.NotificationFeign;
 import com.clinicadmin.feignclient.ServiceFeignClient;
 import com.clinicadmin.repository.DoctorLoginCredentialsRepository;
 import com.clinicadmin.repository.DoctorSlotRepository;
@@ -39,9 +42,11 @@ import com.clinicadmin.repository.DoctorsRepository;
 import com.clinicadmin.service.DoctorService;
 import com.clinicadmin.utils.DoctorMapper;
 import com.clinicadmin.utils.DoctorSlotMapper;
+import com.clinicadmin.utils.ExtractFeignMessage;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -53,8 +58,12 @@ public class DoctorServiceImpl implements DoctorService {
 	private final PasswordEncoder passwordEncoder;
 	private final DoctorSlotRepository slotRepository;
 	private final ServiceFeignClient serviceFeignClient;
+	
 	@Autowired
 	AdminServiceClient adminServiceClient;
+	
+	@Autowired
+	private NotificationFeign notificationFeign;
 
 	public DoctorServiceImpl(DoctorsRepository doctorsRepository,
 			DoctorLoginCredentialsRepository credentialsRepository, PasswordEncoder passwordEncoder,
@@ -781,6 +790,7 @@ public class DoctorServiceImpl implements DoctorService {
 		return response;
 	}
 
+	
 	public boolean updateSlot(String doctorId, String date, String time) {
 		try {
 			DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDate(doctorId, date);			
@@ -795,6 +805,24 @@ public class DoctorServiceImpl implements DoctorService {
 		}
 	}
 
+	
+	
+	public boolean makingFalseDoctorSlot(String doctorId, String date, String time) {
+		try {
+			DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDate(doctorId, date);			
+			for (DoctorAvailableSlotDTO slot : doctorSlots.getAvailableSlots()) {
+				if (slot.getSlot().equalsIgnoreCase(time)) {
+					slot.setSlotbooked(false);
+					slotRepository.save(doctorSlots);
+					return true;}}
+			return false;
+		} catch (NullPointerException e) {
+			return false;
+		}
+	}
+	
+	
+
 //-------------------------Get Hopitals and Doctors using SubserviceId------------------------------------------------
 	@Override
 	public Response getHospitalAndDoctorsUsingSubserviceId(String subServiceId) {
@@ -805,7 +833,7 @@ public class DoctorServiceImpl implements DoctorService {
 	        log.info("Total doctors found for subServiceId {}: {}", subServiceId, doctors.size());
 
 	        if (doctors.isEmpty()) {
-	            response.setSuccess(true); // ✅ Valid query, empty result
+	            response.setSuccess(true); 
 	            response.setStatus(HttpStatus.OK.value());
 	            response.setData(Collections.emptyList());
 	            response.setMessage("No doctors found for the given subServiceId");
@@ -867,6 +895,7 @@ public class DoctorServiceImpl implements DoctorService {
 
 
 //-------------------Mapper for clinic admin----------------------------------------------
+
 	private ClinicWithDoctorsDTO mapToClinicWithDoctorsDTO(ClinicDTO clinic, List<Doctors> doctorList) {
 		ClinicWithDoctorsDTO dto = new ClinicWithDoctorsDTO();
 		dto.setHospitalId(clinic.getHospitalId());
@@ -891,6 +920,7 @@ public class DoctorServiceImpl implements DoctorService {
 		dto.setDoctors(maptoDTO);
 		return dto;
 	}
+
 
 //----------------------------------Get Doctors By SubserviceId----------------------------------------------------------------
 	@Override
@@ -919,5 +949,17 @@ public class DoctorServiceImpl implements DoctorService {
 
 		return response;
 	}
+	
+	
+	///NOTIFICATIONOFDOCTOR
+	
+	public ResponseEntity<ResBody<List<NotificationDTO>>> notificationToDoctor(String hospitalId,
+			 String doctorId){
+		try {
+		return notificationFeign.notificationtodoctorandclinic(hospitalId, doctorId);
+		}catch(FeignException e) {
+			ResBody<List<NotificationDTO>> res = new ResBody<List<NotificationDTO>>(e.getMessage(),e.status(),null);
+			return ResponseEntity.status(e.status()).body(res);}
+		}
 
 }

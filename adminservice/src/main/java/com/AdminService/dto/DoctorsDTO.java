@@ -1,9 +1,12 @@
 package com.AdminService.dto;
 
-
 import java.util.List;
 import java.util.stream.Collectors;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,74 +14,93 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@JsonIgnoreProperties({"message"})
 public class DoctorsDTO {
 
     private String id;
     
     private String doctorId;
+    
+    private String deviceId;
+    
+    @NotBlank(message = "DoctorEmail is required" )
+    private String doctorEmail;
 
-   
+    @NotBlank(message = "Clinic id is required" )
     private String hospitalId;
 
-
+//    @Size(max = 255, message = "Doctor picture URL should not exceed 255 characters")
     private String doctorPicture;
 
-  
+    @NotBlank(message = "Doctor licence is required")
+    @Size(max = 100, message = "Doctor licence number should not exceed 100 characters" )
     private String doctorLicence;
 
-  
+    @NotBlank(message = "Mobile number is required")
+    @Pattern(regexp = "^[6-9]\\d{9}$", message = "Invalid Indian mobile number")
     private String doctorMobileNumber;
 
+    @NotBlank(message = "Doctor name is required")
+    @Size(min = 3, max = 50, message = "Doctor name must be between 3 and 50 characters")
     private String doctorName;
 
-   
-    private List<DoctorCategoryDTO> category;
-   
-    private List<DoctorServicesDTO> service;
+    @Valid
+    @NotNull(message = "Category list cannot be null")
+    @Size(min = 1, message = "At least one Category is required")
+    private List<  @Valid DoctorCategoryDTO> category;
+    @Valid
+    @NotNull(message = "Services list cannot be null")
+    @Size(min = 1, message = "At least one service is required")
+    private List<@Valid DoctorServicesDTO> service;
 
-    
-    private List< DoctorSubServiceDTO> subServices; 
+    @Valid
+    @NotNull(message = "Sub-services list cannot be null" )
+    @Size(min = 1, message = "At least one sub-service is required")
+    private List<@Valid DoctorSubServiceDTO> subServices; 
 
-   
+    @NotBlank(message = "Specialization is required" )
     private String specialization;
 
-   
+    @NotBlank(message = "Gender is required" )
+    @Pattern(regexp = "Male|Female|Other", message = "Gender must be Male, Female, or Other")
     private String gender;
 
-   
+    @NotBlank(message = "Experience is required" )
+    @Pattern(regexp = "^\\d{1,2}(\\+)?$", message = "Experience should be a number like '5' or '5+'")
     private String experience;
 
-  
+    @NotBlank(message = "Qualification is required" )
     private String qualification;
 
-    
+    @NotBlank(message = "Available days are required" )
     private String availableDays;
 
-  
+    @NotBlank(message = "Available times are required" )
     private String availableTimes;
 
-    
+    @Size(max = 1000, message = "Profile description should not exceed 1000 characters")
     private String profileDescription;
 
-    
+    @Valid
+    @NotNull(message = "Doctor fees must not be null" )
     private DoctorFeeDTO doctorFees;
 
-    
-    private List< String> focusAreas;
+    @Size(max = 10, message = "Maximum 10 focus areas allowed")
+    private List<@NotBlank(message = "Focus area cannot be blank" ) String> focusAreas;
 
-    
-    private List< String> languages;
+    @Size(max = 5, message = "Maximum 5 languages allowed")
+    private List<@NotBlank(message = "Language cannot be blank" ) String> languages;
 
-  
-    private List<String> careerPath;
+    @Size(max = 10, message = "Maximum 10 career path items allowed")
+    private List<@NotBlank(message = "Career path item cannot be blank" ) String> careerPath;
 
-   
-    private List<String> highlights;
+    @Size(max = 10, message = "Maximum 10 highlights allowed")
+    private List<@NotBlank(message = "Highlight cannot be blank" ) String> highlights;
    
 	private boolean doctorAvailabilityStatus;
 	
 	private boolean recommendation;
+	
+	private double doctorAverageRating;
 	
 	
     public void trimAllDoctorFields() {

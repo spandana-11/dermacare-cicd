@@ -184,7 +184,7 @@ public class ServiceImpl implements ServiceInterface{
 			&&b.getSubServiceId().equalsIgnoreCase(notificationResponse.getSubServiceId())) {	
 				switch(notificationResponse.getStatus()) {
 				case "Accepted": b.setStatus("Confirmed");
-				cllinicFeign.updateDoctorSlotWhileBooking(b.getDoctorId(),b.getServiceDate() ,b.getServicetime() );
+				cllinicFeign.updateDoctorSlotWhileBooking(b.getDoctorId(),b.getServiceDate() ,b.getServicetime());
 				NotificationEntity notificationEntity = repository.findById(notificationResponse.getNotificationId()).orElseThrow(()->
 				new RuntimeException("Notification Not Found With Given Id"));
 				if(notificationEntity!=null) {
@@ -200,6 +200,7 @@ public class ServiceImpl implements ServiceInterface{
 				
 				case "Rejected": b.setStatus("Rejected");
 				 b.setReasonForCancel(notificationResponse.getReasonForCancel());
+				 cllinicFeign.makingFalseDoctorSlot(b.getDoctorId(),b.getServiceDate() ,b.getServicetime());
 				 Optional<NotificationEntity> obj = repository.findById(notificationResponse.getNotificationId());
 				 if(obj.get()!=null) {
 					NotificationEntity c = obj.get();

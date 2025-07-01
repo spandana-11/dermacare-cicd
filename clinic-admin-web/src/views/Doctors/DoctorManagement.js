@@ -6,6 +6,7 @@ import axios from 'axios'
 import { useHospital } from '../Usecontext/HospitalContext'
 import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import sendDermaCareOnboardingEmail from '../../Utils/Emailjs'
 
 import {
   CModal,
@@ -46,11 +47,19 @@ const DoctorManagement = () => {
     serviceId: '',
   })
   const [selectedServices, setSelectedServices] = useState([])
+  const clearFieldError = (field) => {
+    setFormErrors((prev) => {
+      const updated = { ...prev }
+      delete updated[field]
+      return updated
+    })
+  }
 
   const [form, setForm] = useState({
     doctorPicture: null, // file input or image URL
     doctorLicence: '',
     doctorMobileNumber: '',
+    doctorEmail: '',
     doctorName: '',
     service: [],
     subServices: [], // Note: 'subSerives' in Java, but 'subServices' is more consistent in JS
@@ -239,68 +248,88 @@ const DoctorManagement = () => {
 
     fetchAllData()
   }, [])
-
   const validateDoctorForm = () => {
     const errors = {}
     let isValid = true
-
     const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-    // Required Fields
-    if (!newService.categoryId || newService.categoryId.length === 0)
+    if (!newService.categoryId || newService.categoryId.length === 0) {
       errors.categoryId = 'Please select at least one category.'
+      isValid = false
+    }
 
-    if (!selectedServices || selectedServices.length === 0)
+    if (!selectedServices || selectedServices.length === 0) {
       errors.serviceId = 'Please select at least one service.'
+      isValid = false
+    }
 
-    if (!selectedSubService || selectedSubService.length === 0)
+    if (!selectedSubService || selectedSubService.length === 0) {
       errors.subServiceName = 'Please select at least one sub service.'
+      isValid = false
+    }
 
     if (!form.doctorName.trim()) {
       errors.doctorName = 'Doctor name is required'
       isValid = false
     }
+
     if (!form.doctorLicence.trim()) {
       errors.doctorLicence = 'License number is required'
       isValid = false
     }
+
     if (!form.doctorMobileNumber || !/^\d{10}$/.test(form.doctorMobileNumber)) {
       errors.doctorMobileNumber = 'Enter a valid 10-digit mobile number'
       isValid = false
     }
+    if (
+      !form.doctorEmail ||
+      !/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(form.doctorEmail)
+    ) {
+      errors.doctorEmail = 'Please enter a valid Email'
+      isValid = false
+    }
+
     if (!form.experience || isNaN(form.experience) || form.experience < 0) {
       errors.experience = 'Enter valid experience'
       isValid = false
     }
+
     if (!form.qualification.trim()) {
       errors.qualification = 'Qualification is required'
       isValid = false
     }
+
     if (!form.specialization.trim()) {
       errors.specialization = 'Specialization is required'
       isValid = false
     }
+
     if (!form.profileDescription.trim()) {
       errors.profileDescription = 'Profile description is required'
       isValid = false
     }
+
     if (!form.doctorFees.inClinicFee || isNaN(form.doctorFees.inClinicFee)) {
       errors.inClinicFee = 'Enter valid in-clinic fee'
       isValid = false
     }
+
     if (!form.doctorFees.vedioConsultationFee || isNaN(form.doctorFees.vedioConsultationFee)) {
       errors.vedioConsultationFee = 'Enter valid video consultation fee'
       isValid = false
     }
+
     if (!form.doctorPicture) {
       errors.doctorPicture = 'Profile picture is required'
       isValid = false
     }
+
     if (!form.languages || form.languages.length === 0) {
       errors.languages = 'Please add at least one language.'
+      isValid = false
     }
 
-    // Day Validation
     if (!startDay || !endDay) {
       errors.availableDays = 'Start and end days are required'
       isValid = false
@@ -309,7 +338,6 @@ const DoctorManagement = () => {
       isValid = false
     }
 
-    // Time Validation
     const convertTo24Hrs = (time) => {
       const [rawTime, modifier] = time.split(' ')
       let [hours, minutes] = rawTime.split(':').map(Number)
@@ -326,9 +354,7 @@ const DoctorManagement = () => {
       isValid = false
     }
 
-    // Set errors to state for UI display
     setFormErrors(errors)
-    return Object.keys(errors).length === 0
     return isValid
   }
 
@@ -340,23 +366,12 @@ const DoctorManagement = () => {
   //select
 
   const handleSubmit = async () => {
-    if (!form.doctorPicture) {
-      errors.doctorPicture = 'Profile picture is required'
-      isValid = false
-    }
+    const isValid = validateDoctorForm()
+    if (!isValid) return
 
-    const errors = validateDoctorForm()
-    if (Object.keys(errors).length > 0) {
-      toast.error('Please fill all required fields correctly', { position: 'top-right' })
-      console.log('Validation Errors:', errors)
-      return
-    }
     try {
       const hospitalId = localStorage.getItem('HospitalId')
 
-      // const selectedSubServiceObjects = subServiceOptions
-      //   .flatMap((s) => s.subServices || [])
-      //   .filter((sub) => selectedSubService.includes(sub.subServiceId))
       const allValidSubServiceIds = (subServiceOptions || []).map((ss) => ss.subServiceId)
 
       const selectedSubServiceObjects = (subServiceOptions || []).filter(
@@ -365,15 +380,12 @@ const DoctorManagement = () => {
           allValidSubServiceIds.includes(sub.subServiceId),
       )
 
-      // const selectedCategoryObjects = categoryOptions?.filter((sub) =>
-      //   selectedSubService.includes(sub.subServiceId),
-      // )
-
       const payload = {
         hospitalId,
         doctorPicture: form.doctorPicture,
         doctorName: form.doctorName,
         doctorMobileNumber: form.doctorMobileNumber,
+        doctorEmail: form.doctorEmail,
         doctorLicence: form.doctorLicence,
         category: categoryOptions
           .filter((cat) => newService.categoryId.includes(cat.value))
@@ -381,12 +393,10 @@ const DoctorManagement = () => {
             categoryId: cat.value,
             categoryName: cat.label,
           })),
-
         service: selectedServices.map((s) => ({
           serviceId: s.serviceId,
           serviceName: s.serviceName,
         })),
-
         subServices: selectedSubServiceObjects,
         gender: form.gender,
         experience: form.experience,
@@ -404,30 +414,46 @@ const DoctorManagement = () => {
         },
       }
 
-      console.log(payload)
-
       const response = await axios.post(`${BASE_URL}/addDoctor`, payload, {
         headers: {
           'Content-Type': 'application/json',
         },
       })
 
-      // ✅ Success Toast
-      toast.success(response?.data?.message || 'Doctor added successfully')
+      // ✅ Check if success === true before continuing
+      if (!response?.data?.success) {
+        throw new Error(response?.data?.message || 'Failed to add doctor')
+      }
 
-      const newDoctor = response?.data?.doctor ?? payload
+      const newDoctor = response.data.doctor ?? payload
+console.log(response)
+      // ✅ Only send email if doctor was successfully added
+      await sendDermaCareOnboardingEmail({
+        name: form.doctorName,
+        email: form.doctorEmail,
+        password: response.data.data.temporaryPassword,
+        userID: response.data.data.username,
+      })
+        // "temporaryPassword": "Doctor%810",
+        // "username": "9874102366"
 
       await fetchHospitalDetails(hospitalId)
-    
+
       setDoctorData((prev) => ({
         ...prev,
         doctors: [...(prev?.doctors ?? []), newDoctor],
       }))
-      // After successful submission
+
+      toast.success(response.data.message || 'Doctor added successfully', {
+        position: 'top-right',
+      })
+
+      // ✅ Reset form after success
       setForm({
         doctorPicture: null,
         doctorLicence: '',
         doctorMobileNumber: '',
+        doctorEmail: '',
         doctorName: '',
         gender: 'Female',
         experience: '',
@@ -461,12 +487,11 @@ const DoctorManagement = () => {
       setEndTime('')
 
       setModalVisible(false)
-      // 🧹 Clear input fields
     } catch (error) {
-      // ❌ Error Toast
-      toast.error(error?.response?.data?.message || 'Failed to add doctor. Please try again.')
-
-      console.error('Error submitting doctor data:', error)
+      toast.error(error?.message || 'Failed to add doctor', {
+        position: 'top-right',
+      })
+      setModalVisible(false)
     }
   }
 
@@ -587,14 +612,18 @@ const DoctorManagement = () => {
                 isMulti
                 name="categoryId"
                 value={categoryOptions.filter((opt) => newService.categoryId?.includes(opt.value))}
-                onChange={(selected) =>
+                onChange={(selected) => {
                   handleChanges({
                     target: {
                       name: 'categoryId',
                       value: selected.map((opt) => opt.value),
                     },
                   })
-                }
+
+                  if (selected.length > 0) {
+                    setFormErrors((prev) => ({ ...prev, categoryId: '' }))
+                  }
+                }}
                 options={categoryOptions}
                 placeholder="Select Category"
               />
@@ -675,13 +704,13 @@ const DoctorManagement = () => {
             <CCol md={6}>
               <CFormLabel>License Number</CFormLabel>
               <CFormInput
+                type="number"
                 value={form.doctorLicence}
                 onChange={(e) => {
                   const value = e.target.value
                   setForm((prev) => ({ ...prev, doctorLicence: value }))
 
-                  // ❗ clear error if corrected
-                  if (formErrors?.doctorLicence && value.trim()) {
+                  if (value.trim()) {
                     setFormErrors((prev) => {
                       const updated = { ...prev }
                       delete updated.doctorLicence
@@ -702,11 +731,12 @@ const DoctorManagement = () => {
                 <CFormInput
                   value={form.doctorName}
                   onChange={(e) => {
-                    const name = e.target.value
+                    let name = e.target.value
+                    // Remove digits
+                    name = name.replace(/[0-9]/g, '')
                     const withPrefix = name.startsWith('Dr.') ? name : `Dr. ${name}`
                     setForm((prev) => ({ ...prev, doctorName: withPrefix }))
-
-                    // Clear error when valid input provided
+                    //Clear error if valid
                     if (withPrefix.length > 3) {
                       setFormErrors((prev) => ({ ...prev, doctorName: '' }))
                     }
@@ -756,7 +786,7 @@ const DoctorManagement = () => {
               <CFormInput
                 value={form.qualification}
                 onChange={(e) => {
-                  const value = e.target.value
+                  const value = e.target.value.replace(/[0-9]/g, '') // remove numbers
                   setForm((p) => ({ ...p, qualification: value }))
                   setFormErrors((prev) => ({
                     ...prev,
@@ -765,6 +795,7 @@ const DoctorManagement = () => {
                 }}
                 invalid={!!formErrors.qualification}
               />
+
               {formErrors.qualification && (
                 <div className="text-danger mt-1">{formErrors.qualification}</div>
               )}
@@ -775,7 +806,7 @@ const DoctorManagement = () => {
               <CFormInput
                 value={form.specialization}
                 onChange={(e) => {
-                  const value = e.target.value
+                  const value = e.target.value.replace(/[0-9]/g, '') // remove numbers
                   setForm((p) => ({ ...p, specialization: value }))
                   setFormErrors((prev) => ({
                     ...prev,
@@ -784,6 +815,7 @@ const DoctorManagement = () => {
                 }}
                 invalid={!!formErrors.specialization}
               />
+
               {formErrors.specialization && (
                 <div className="text-danger mt-1">{formErrors.specialization}</div>
               )}
@@ -794,7 +826,7 @@ const DoctorManagement = () => {
               <CFormTextarea
                 value={form.profileDescription}
                 onChange={(e) => {
-                  const value = e.target.value
+                  const value = e.target.value.replace(/[0-9]/g, '') // remove numbers
                   setForm((p) => ({ ...p, profileDescription: value }))
                   setFormErrors((prev) => ({
                     ...prev,
@@ -804,6 +836,7 @@ const DoctorManagement = () => {
                 invalid={!!formErrors.profileDescription}
                 rows={4}
               />
+
               {formErrors.profileDescription && (
                 <div className="text-danger mt-1">{formErrors.profileDescription}</div>
               )}
@@ -930,7 +963,7 @@ const DoctorManagement = () => {
           <h5 className="mb-3">Consultation Fees & Contact</h5>
           <CRow className="g-4 mb-4">
             {/* In-Clinic Fee */}
-            <CCol md={4}>
+            <CCol md={6}>
               <CFormLabel>In-Clinic Fee</CFormLabel>
               <CFormInput
                 type="number"
@@ -952,7 +985,7 @@ const DoctorManagement = () => {
             </CCol>
 
             {/* Video Consultation Fee */}
-            <CCol md={4}>
+            <CCol md={6}>
               <CFormLabel>Video Consultation Fee</CFormLabel>
               <CFormInput
                 type="number"
@@ -974,7 +1007,7 @@ const DoctorManagement = () => {
             </CCol>
 
             {/* Mobile Number */}
-            <CCol md={4}>
+            <CCol md={6}>
               <CFormLabel>Contact Number</CFormLabel>
               <CFormInput
                 type="tel"
@@ -993,6 +1026,33 @@ const DoctorManagement = () => {
               />
               {formErrors.doctorMobileNumber && (
                 <div className="text-danger">{formErrors.doctorMobileNumber}</div>
+              )}
+            </CCol>
+            <CCol md={6}>
+              <CFormLabel>Email Address</CFormLabel>
+              <CFormInput
+                type="email"
+                value={form.doctorEmail}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setForm((prev) => ({ ...prev, doctorEmail: value }))
+
+                  // Email validation
+                  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+                  if (emailPattern.test(value)) {
+                    setFormErrors((prev) => ({ ...prev, doctorEmail: '' }))
+                  } else {
+                    setFormErrors((prev) => ({
+                      ...prev,
+                      doctorEmail: 'Enter a valid email address',
+                    }))
+                  }
+                }}
+                placeholder="Enter doctor email"
+                invalid={!!formErrors.doctorEmail}
+              />
+              {formErrors.doctorEmail && (
+                <div className="text-danger">{formErrors.doctorEmail}</div>
               )}
             </CCol>
           </CRow>

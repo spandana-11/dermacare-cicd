@@ -401,8 +401,8 @@ public class AdminServiceImpl implements AdminService {
 		            return response;
 		        } else {
 		            response.setMessage("Clinic not found");
-		            response.setSuccess(false);
-		            response.setStatus(404);
+		            response.setSuccess(true);
+		            response.setStatus(200);
 		            return response;
 		        }
 		    } catch (Exception e) {
@@ -479,8 +479,6 @@ public class AdminServiceImpl implements AdminService {
 		                    clnc.setDrugLicenseCertificate("");
 		                    clnc.setDrugLicenseFormType("");
 		                }
-
-		                // Pharmacist Certificate
 		                clnc.setHasPharmacist(clinic.getHasPharmacist());
 		                if ("Yes".equalsIgnoreCase(clinic.getHasPharmacist()) && clinic.getPharmacistCertificate() != null) {
 		                    clnc.setPharmacistCertificate(Base64.getEncoder().encodeToString(clinic.getPharmacistCertificate()));
@@ -522,8 +520,8 @@ public class AdminServiceImpl implements AdminService {
 		        } else {
 		            response.setData(null);
 		            response.setMessage("Clinics Not Found");
-		            response.setSuccess(false);
-		            response.setStatus(404);
+		            response.setSuccess(true);
+		            response.setStatus(200);
 		        }
 		    } catch (Exception e) {
 		        response.setData(null);
@@ -534,6 +532,7 @@ public class AdminServiceImpl implements AdminService {
 		    return response;
 		}
 
+		
 		@Override
 		public Response updateClinic(String clinicId, ClinicDTO clinic) {
 		    Response response = new Response();
@@ -544,27 +543,18 @@ public class AdminServiceImpl implements AdminService {
 		            if (clinic.getAddress() != null) savedClinic.setAddress(clinic.getAddress());
 		            if (clinic.getCity() != null) savedClinic.setCity(clinic.getCity());
 		            if (clinic.getName() != null)
-		                savedClinic.setName(clinic.getName());
-		            
-
+		                savedClinic.setName(clinic.getName());		            
 		            List<ClinicCredentials> credsList = clinicCredentialsRepository.findAllByUserName(savedClinic.getHospitalId());
 	                for (ClinicCredentials creds : credsList) {
 	                    creds.setHospitalName(clinic.getName());
-	                    clinicCredentialsRepository.save(creds);
-	                }
-	            
-
+	                    clinicCredentialsRepository.save(creds);}	            
 		            if (clinic.getHospitalDocuments() != null) {
 		                List<byte[]> docs = new ArrayList<>();
 		                for (String document : clinic.getHospitalDocuments()) {
-		                    docs.add(Base64.getDecoder().decode(document));
-		                }
-		                savedClinic.setHospitalDocuments(docs);
-		            }
-
+		                    docs.add(Base64.getDecoder().decode(document));}
+		                savedClinic.setHospitalDocuments(docs);}
 		            if (clinic.getHospitalLogo() != null)
 		                savedClinic.setHospitalLogo(Base64.getDecoder().decode(clinic.getHospitalLogo()));
-
 		            if (clinic.getClosingTime() != null) savedClinic.setClosingTime(clinic.getClosingTime());
 		            if (clinic.getOpeningTime() != null) savedClinic.setOpeningTime(clinic.getOpeningTime());
 		            if (clinic.getContactNumber() != null) savedClinic.setContactNumber(clinic.getContactNumber());
@@ -573,17 +563,12 @@ public class AdminServiceImpl implements AdminService {
 		            if (clinic.getLicenseNumber() != null) savedClinic.setLicenseNumber(clinic.getLicenseNumber());
 		            if (clinic.getIssuingAuthority() != null) savedClinic.setIssuingAuthority(clinic.getIssuingAuthority());
 		            if (clinic.getHospitalId() != null && !clinic.getHospitalId().equals(clinicId)) {
-		                savedClinic.setHospitalId(clinic.getHospitalId());
-		            }
-
+		                savedClinic.setHospitalId(clinic.getHospitalId());}
 		            if (clinic.getContractorDocuments() != null) {
 		                List<byte[]> contractors = new ArrayList<>();
 		                for (String document : clinic.getContractorDocuments()) {
-		                    contractors.add(Base64.getDecoder().decode(document));
-		                }
-		                savedClinic.setContracterDocuments(contractors);
-		            }
-
+		                    contractors.add(Base64.getDecoder().decode(document));}
+		                savedClinic.setContracterDocuments(contractors);}
 		            // Medicines sold on-site
 		            savedClinic.setMedicinesSoldOnSite(clinic.getMedicinesSoldOnSite());
 		            if ("Yes".equalsIgnoreCase(clinic.getMedicinesSoldOnSite())) {
@@ -651,6 +636,7 @@ public class AdminServiceImpl implements AdminService {
 		    return response;
 		}
 
+		
 		@Override
 	    public Response deleteClinic(String clinicId) {
 	        Response responseDTO = new Response();

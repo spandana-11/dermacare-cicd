@@ -80,7 +80,7 @@ services:
       - "8080:8080"
     environment:
       SPRING_APPLICATION_NAME: clinicadmin
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/clinicadminservice
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/ClinicAdminService
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     depends_on:
       - mongodb
@@ -95,14 +95,14 @@ services:
       - "8800:8800"
     environment:
       SPRING_APPLICATION_NAME: category-services
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/category-services
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/CategoryService
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     depends_on:
       - mongodb
       - eureka-server
     networks:
       - app-network
-
+  
   doctor-service:
     build: ./doctor-service
     container_name: doctor_service
@@ -110,14 +110,14 @@ services:
       - "8082:8082"
     environment:
       SPRING_APPLICATION_NAME: doctor-service
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/dermacaredoctor-db
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/DermacareDoctorDB
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     depends_on:
       - mongodb
       - eureka-server
     networks:
       - app-network
-
+  
   customerservice:
     build: ./customerservice
     container_name: customer_service
@@ -132,7 +132,7 @@ services:
       - eureka-server
     networks:
       - app-network
-
+  
   bookingservice:
     build: ./bookingservice
     container_name: booking_service
@@ -140,31 +140,29 @@ services:
       - "9900:9900"
     environment:
       SPRING_APPLICATION_NAME: bookingservice
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/customerAppointments
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/customerbooking
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     depends_on:
       - mongodb
       - eureka-server
-      - kafka
     networks:
       - app-network
-
+  
   notification-service:
     build: ./notification-service
     container_name: notification_service
     ports:
-      - "9909:9909"
+      - "8089:8089"
     environment:
       SPRING_APPLICATION_NAME: notification-service
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/DermaCareNotifications
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/NotificationService
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     depends_on:
       - mongodb
       - eureka-server
     networks:
       - app-network
-
+  
   clinic-admin-web:
     build: ./clinic-admin-web
     container_name: clinic-admin-web-container
@@ -178,7 +176,7 @@ services:
     depends_on:
       - apigateway
     restart: always
-
+  
   main-admin-web:
     build: ./main-admin-web
     container_name: main-admin-web-container
@@ -192,6 +190,9 @@ services:
     depends_on:
       - apigateway
     restart: always
+
+
+
 
 networks:
   app-network:

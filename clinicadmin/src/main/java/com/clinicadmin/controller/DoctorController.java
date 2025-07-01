@@ -1,13 +1,12 @@
 package com.clinicadmin.controller;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,19 +15,19 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.clinicadmin.dto.ChangeDoctorPasswordDTO;
 import com.clinicadmin.dto.DoctorAvailabilityStatusDTO;
 import com.clinicadmin.dto.DoctorLoginDTO;
 import com.clinicadmin.dto.DoctorSlotDTO;
 import com.clinicadmin.dto.DoctorsDTO;
+import com.clinicadmin.dto.NotificationDTO;
+import com.clinicadmin.dto.ResBody;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.UpdateSlotRequestDTO;
 import com.clinicadmin.service.DoctorNoteService;
 import com.clinicadmin.service.DoctorService;
 import com.clinicadmin.validations.FormatChecks;
 import com.clinicadmin.validations.RequiredChecks;
-
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
 import jakarta.validation.Validator;
@@ -254,6 +253,13 @@ public class DoctorController {
 			@PathVariable String time) {
 		return doctorService.updateSlot(doctorId, date, time);
 	}
+	
+	
+	@PutMapping("/makingFalseDoctorSlot/{doctorId}/{date}/{time}")
+	public Boolean makingFalseDoctorSlot(@PathVariable String doctorId, @PathVariable String date,
+			@PathVariable String time) {
+		return doctorService.makingFalseDoctorSlot(doctorId, date, time);
+	}
 //		---------------------------------------------------------------------------------------------------------------------------
 //		---------------------------------------------------------------------------------------------------------------------------
 
@@ -281,5 +287,15 @@ public class DoctorController {
 		Response response = doctorNoteService.getAllNotes();
 		return ResponseEntity.status(response.getStatus()).body(response);
 	}
+	
+	
+	//NOTIFICATION OF DOCTOR
+	
+	@GetMapping("/notificationToClinic/{hospitalId}/{doctorId}")
+	public  ResponseEntity<ResBody<List<NotificationDTO>>> notificationTodoctor(@PathVariable String hospitalId,
+			@PathVariable String doctorId){
+		return doctorService.notificationToDoctor(hospitalId, doctorId);
+	}
+	
 	
 }

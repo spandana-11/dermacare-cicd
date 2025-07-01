@@ -16,7 +16,7 @@ import com.dermacare.doctorservice.dto.ResBody;
 import com.dermacare.doctorservice.service.NotificationService;
 
 @RestController
-@RequestMapping("/notification")
+@RequestMapping("/doctors")
 public class NotificationController {
 	
 	@Autowired

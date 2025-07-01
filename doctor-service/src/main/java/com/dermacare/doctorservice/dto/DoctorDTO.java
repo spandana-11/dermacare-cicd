@@ -18,6 +18,8 @@ public class DoctorDTO {
     private String fcmToken;
     
     private String deviceId;
+
+    private String doctorEmail;
     
   
     public void setDoctorMobileNumber(String username) {

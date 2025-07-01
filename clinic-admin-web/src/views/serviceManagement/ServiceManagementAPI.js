@@ -105,18 +105,19 @@ export const postServiceData = async (serviceData, id) => {
   }
 }
 
-export const updateServiceData = async (serviceId, id, serviceData) => {
-  console.log(serviceId, id)
-  console.log(serviceData)
+export const updateServiceData = async (subServiceId, hospitalId, serviceData) => {
+  console.log("API Call Params:", subServiceId, hospitalId) //Check values
+  console.log("Payload:", serviceData)
+
   try {
     const response = await axios.put(
-      `${BASE_URL}/${updateService}/${serviceData.hospitalId}/${serviceData.subServiceId}`,
+      `${BASE_URL}/${updateService}/${hospitalId}/${subServiceId}`, //use 'id' here
       serviceData,
       {
         headers: {
           'Content-Type': 'application/json',
         },
-      },
+      }
     )
 
     console.log('Service updated successfully:', response.data)
@@ -126,6 +127,7 @@ export const updateServiceData = async (serviceId, id, serviceData) => {
     throw error
   }
 }
+
 
 export const deleteServiceData = async (serviceId, id) => {
   try {

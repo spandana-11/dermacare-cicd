@@ -2,23 +2,34 @@ package com.clinicadmin.sevice.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
+import com.clinicadmin.dto.ClinicDTO;
 import com.clinicadmin.dto.CustomerRatingDomain;
 import com.clinicadmin.dto.RatingsDTO;
 import com.clinicadmin.dto.Response;
+import com.clinicadmin.entity.Doctors;
+import com.clinicadmin.feignclient.AdminServiceClient;
 import com.clinicadmin.feignclient.CustomerServiceFeignClient;
+import com.clinicadmin.repository.DoctorsRepository;
+import com.clinicadmin.utils.ExtractFeignMessage;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.FeignException;
 
 @Service
 public class RatingCalculationService {
 
     @Autowired
     private CustomerServiceFeignClient customerServiceFeignClient;
+    
+    @Autowired
+    private AdminServiceClient adminServiceClient;
+    
+    @Autowired
+    private DoctorsRepository doctorsRepository;
 
     public Response calculateAverageRating(String hospitalId, String doctorId) {
         Response response = new Response();
@@ -70,7 +81,6 @@ public class RatingCalculationService {
                 return response;
             }
 
-            // Filter exact matches
             List<CustomerRatingDomain> matchedRatings = allRatings.stream()
                     .filter(r -> r.getHospitalId().equals(hospitalId) && r.getDoctorId().equals(doctorId))
                     .toList();
@@ -89,7 +99,17 @@ public class RatingCalculationService {
 
             double avgDoctorRating = totalDoctorRating / matchedRatings.size();
             double avgHospitalRating = totalHospitalRating / matchedRatings.size();
-
+            
+            ResponseEntity<Response> res = adminServiceClient.getClinicById(hospitalId);
+            if(res.getBody()!=null) {
+            ClinicDTO clinic = new ObjectMapper().convertValue(res.getBody(),ClinicDTO.class );
+            clinic.setHospitalOverallRating(avgHospitalRating);
+            adminServiceClient.updateClinic(hospitalId, clinic);}
+            
+            Optional<Doctors> rs = doctorsRepository.findByDoctorId(doctorId);
+            if(rs.isPresent()) {
+            	rs.get().setDoctorAverageRating(avgDoctorRating);
+            	doctorsRepository.save(rs.get());}           
             RatingsDTO data = new RatingsDTO();
             data.setDoctorId(doctorId);
             data.setHospitalId(hospitalId);
@@ -103,11 +123,10 @@ public class RatingCalculationService {
             response.setStatus(200);
             return response;
 
-        } catch (Exception e) {
+        } catch (FeignException e) {
             response.setSuccess(false);
-            response.setData(null);
-            response.setMessage("Exception occurred during getting ratings: " + e.getMessage());
-            response.setStatus(500);
+            response.setMessage(ExtractFeignMessage.clearMessage(e));
+            response.setStatus(e.status());
             return response;
         }
     }

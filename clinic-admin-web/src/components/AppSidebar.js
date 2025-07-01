@@ -57,7 +57,7 @@ const AppSidebar = () => {
           <div
             className="text-center py-3"
             style={{
-              fontSize: '2rem',
+              fontSize: '1.6rem',
               fontWeight: 'bold',
               color: '#0d6efd', // Bootstrap primary
 

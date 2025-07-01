@@ -140,7 +140,6 @@ export const getAllCategoryAdvertisement = 'admin/categoryAdvertisement/getAll'
 export const AddCategoryAdvertisement = 'admin/categoryAdvertisement/add'
 export const deleteCategoryAdvertisement = 'admin/categoryAdvertisement/deleteByCarouselId'
 
-
 //ads service
 
 //serviceAdvertisement

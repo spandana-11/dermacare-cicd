@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import com.dermaCare.customerService.util.Response;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
-@FeignClient(value = "adminservice")
+@FeignClient(value = "adminservice" )
 @CircuitBreaker(name = "circuitBreaker", fallbackMethod = "adminServiceFallBack")
 public interface AdminFeign {
 	 @GetMapping("/admin/getClinicById/{clinicId}")

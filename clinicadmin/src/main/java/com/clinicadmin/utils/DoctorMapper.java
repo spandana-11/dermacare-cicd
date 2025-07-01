@@ -60,6 +60,7 @@ public class DoctorMapper {
 		dto.setHospitalId(doctor.getHospitalId());;
 		dto.setDoctorPicture(Base64CompressionUtil.decompressBase64(doctor.getDoctorPicture()));
 		dto.setDoctorLicence(doctor.getDoctorLicence());
+		dto.setDeviceId(doctor.getDeviceId());
 		dto.setDoctorMobileNumber(doctor.getDoctorMobileNumber());
 		dto.setDoctorName(doctor.getDoctorName());
 		dto.setDoctorEmail(doctor.getDoctorEmail());

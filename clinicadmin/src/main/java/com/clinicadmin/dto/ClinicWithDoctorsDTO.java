@@ -12,12 +12,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class ClinicWithDoctorsDTO {
+	
 	private String hospitalId; // MongoDB uses String as the default ID type
 	private String name;
 	private String address;
 	private String city;
 	private String contactNumber;
-	private int hospitalOverallRating;
+	private double hospitalOverallRating;
 	private String hospitalRegistrations;
 	private String openingTime;
 	private String closingTime;
@@ -28,7 +29,8 @@ public class ClinicWithDoctorsDTO {
 	private String issuingAuthority;
 	private List<String> hospitalDocuments;
 	private List<String> contractorDocuments;
+	 private boolean recommended;
 	private List<DoctorsDTO> doctors;
-	private boolean recommended;
+	
 
 }

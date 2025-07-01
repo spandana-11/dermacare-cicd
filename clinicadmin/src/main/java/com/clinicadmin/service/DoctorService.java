@@ -1,10 +1,16 @@
 package com.clinicadmin.service;
 
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+
 import com.clinicadmin.dto.ChangeDoctorPasswordDTO;
 import com.clinicadmin.dto.DoctorAvailabilityStatusDTO;
 import com.clinicadmin.dto.DoctorLoginDTO;
 import com.clinicadmin.dto.DoctorSlotDTO;
 import com.clinicadmin.dto.DoctorsDTO;
+import com.clinicadmin.dto.NotificationDTO;
+import com.clinicadmin.dto.ResBody;
 import com.clinicadmin.dto.Response;
 
 public interface DoctorService {
@@ -31,5 +37,9 @@ public boolean updateSlot(String doctorId, String date,
 Response getHospitalAndDoctorsUsingSubserviceId(String subServiceId);
 
 Response getAllDoctorsBySubserviceId(String subServiceId);
+public boolean makingFalseDoctorSlot(String doctorId, String date, String time);
+
+public ResponseEntity<ResBody<List<NotificationDTO>>> notificationToDoctor(String hospitalId,
+		 String doctorId);
 
 }

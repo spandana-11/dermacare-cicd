@@ -104,6 +104,8 @@ public class DoctorsDTO {
 	
 	private boolean recommendation;
 	
+	private double doctorAverageRating;
+	
 	
     public void trimAllDoctorFields() {
         id = trim(id);

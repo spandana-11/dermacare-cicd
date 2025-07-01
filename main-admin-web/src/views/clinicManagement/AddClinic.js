@@ -86,7 +86,7 @@ const AddClinic = () => {
     fetchCategories()
   }, [])
 
-  const websiteRegex = /^(https?:\/\/)?(www\.)?[\w\-]+\.\w{2,}(\/.*)?$/
+  // const websiteRegex = /^(https?:\/\/)?(www\.)?[\w\-]+\.\w{2,}(\/.*)?$/
 
   const preventNumberInput = (e) => {
     const isNumber = /[0-9]/.test(e.key)
@@ -94,6 +94,26 @@ const AddClinic = () => {
       e.preventDefault()
     }
   }
+  const handleWebsiteBlur = () => {
+    const website = formData.website.trim()
+
+    if (!website) {
+      setErrors((prev) => ({ ...prev, website: 'Website is required' }))
+    } else if (!/^https?:\/\//i.test(website)) {
+      setErrors((prev) => ({
+        ...prev,
+        website: 'Website must start with http:// or https://',
+      }))
+    } else if (!websiteRegex.test(website)) {
+      setErrors((prev) => ({
+        ...prev,
+        website: 'Enter a valid website URL',
+      }))
+    } else {
+      setErrors((prev) => ({ ...prev, website: '' }))
+    }
+  }
+  const websiteRegex = /^(https?:\/\/)[\w\-]+(\.[\w\-]+)+[/#?]?.*$/
 
   const validateForm = () => {
     const newErrors = {}
@@ -196,13 +216,13 @@ const AddClinic = () => {
     if (!formData.businessRegistrationCertificate) {
       newErrors.businessRegistrationCertificate = 'Please upload at least one document'
     }
-    if (!formData.drugLicenseCertificate) {
+    if (!formData.drugLicenseCertificate && selectedOption === 'Yes') {
       newErrors.drugLicenseCertificate = 'Please upload at least one document'
     }
-    if (!formData.drugLicenseFormType) {
+    if (!formData.drugLicenseFormType && selectedOption === 'Yes') {
       newErrors.drugLicenseFormType = 'Please upload at least one document'
     }
-    if (!formData.pharmacistCertificate) {
+    if (!formData.pharmacistCertificate && selectedOption === 'Yes') {
       newErrors.pharmacistCertificate = 'Please upload at least one document'
     }
     if (!formData.biomedicalWasteManagementAuth) {
@@ -224,19 +244,12 @@ const AddClinic = () => {
       newErrors.others = 'Please upload at least one document'
     }
 
-    // Website (optional)
-    // Website (optional)
     if (!formData.website.trim()) {
       newErrors.website = 'Website is required.'
-    } else if (
-      !formData.website.trim().startsWith('http') &&
-      !formData.website.trim().startsWith('https') &&
-      !formData.website.trim().startsWith('www')
-    ) {
-      newErrors.website = 'Must start with http://, https://, or www.'
-    } else if (!websiteRegex.test(formData.website.trim())) {
-      newErrors.website = 'Enter a valid website URL.'
+    } else if (!websiteRegex.test(normalizeWebsite(formData.website.trim()))) {
+      newErrors.website = 'Website must start with http:// or https:// and be a valid URL'
     }
+
     // ✅ No `else { newErrors.website = '' }`
 
     console.log('Validation errors:', newErrors)
@@ -338,6 +351,13 @@ const AddClinic = () => {
     // Remove error while typing
     setErrors((prev) => ({ ...prev, [name]: '' }))
   }
+  const normalizeWebsite = (url) => {
+    // If starts with www. or does not have protocol, prepend https://
+    if (!/^https?:\/\//i.test(url)) {
+      return 'https://' + url
+    }
+    return url
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -359,7 +379,7 @@ const AddClinic = () => {
       closingTime: formData.closingTime,
       hospitalLogo: formData.hospitalLogo,
       emailAddress: formData.emailAddress,
-      website: formData.website,
+      website: normalizeWebsite(formData.website.trim()),
       licenseNumber: formData.licenseNumber,
       issuingAuthority: formData.issuingAuthority, // corrected
       hospitalDocuments: formData.hospitalDocuments || [], // corrected key
@@ -391,10 +411,8 @@ const AddClinic = () => {
       console.log('Clinic Data Saved: try', clinicData)
 
       // Fix the URL construction
-
       const response = await axios.post(`${BASE_URL}/admin/CreateClinic`, clinicData)
       console.log(response)
-
       const savedClinicData = response.data
       console.log(savedClinicData)
 
@@ -502,10 +520,12 @@ const AddClinic = () => {
                   name="website"
                   value={formData.website}
                   onChange={handleInputChange}
-                  onKeyDown={preventNumberInput}
+                  onBlur={handleWebsiteBlur}
                   invalid={!!errors.website}
                 />
-                {errors.website && <div className="text-danger">{errors.website}</div>}
+                {errors.website && (
+                  <div style={{ color: 'red', fontSize: '0.9rem' }}>{errors.website}</div>
+                )}
               </CCol>
             </CRow>
             <CRow className="mb-3">

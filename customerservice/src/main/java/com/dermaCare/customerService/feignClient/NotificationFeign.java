@@ -9,7 +9,7 @@ import com.dermaCare.customerService.dto.NotificationToCustomer;
 import com.dermaCare.customerService.util.ResBody;
 
 
-@FeignClient(value = "notification-service")
+@FeignClient(value = "notification-service" )
 public interface NotificationFeign {
 	
 	@GetMapping("/api/notificationservice/customerNotification/{customerName}/{customerMobileNumber}")

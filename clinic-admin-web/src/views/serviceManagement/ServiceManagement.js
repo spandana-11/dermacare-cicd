@@ -61,16 +61,18 @@ const ServiceManagement = () => {
   const [serviceOptions, setServiceOptions] = useState([])
   const [subServiceOptions, setSubServiceOptions] = useState([])
   const [selectedSubService, setSelectedSubService] = useState('')
-
+  const [subServiceId, setSubServiceId] = useState('')
   const [serviceToEdit, setServiceToEdit] = useState({
     serviceImage: '',
     viewImage: '',
     subServiceName: '',
+    serviceName: '',
   })
 
   const [newService, setNewService] = useState({
     categoryName: '',
     categoryId: '',
+    serviceName: '',
     subServiceName: '',
   })
   const [modalMode, setModalMode] = useState('add') // or 'edit'
@@ -83,11 +85,76 @@ const ServiceManagement = () => {
   }
 
   // Open for editing
-  const openEditModal = (service) => {
+
+  const openEditModal = async (service) => {
+    console.log(service.subServiceId)
+    setSubServiceId(service.subServiceId)
     setModalMode('edit')
-    setNewService(service) // Load existing data
-    setSelectedSubService(service.subServiceId)
     setModalVisible(true)
+
+    // 1. Set selected category
+    const selectedCategory = category.find((cat) => cat.categoryName === service.categoryName)
+    const categoryId = selectedCategory?.categoryId || ''
+
+    // 2. Fetch services under this category
+    let fetchedServiceOptions = []
+    try {
+      const res = await axios.get(`${BASE_URL}/${getservice}/${categoryId}`)
+      fetchedServiceOptions = res.data?.data || []
+      setServiceOptions(fetchedServiceOptions)
+    } catch (err) {
+      console.error('Error fetching service list:', err)
+    }
+
+    const selectedService = fetchedServiceOptions.find((s) => s.serviceName === service.serviceName)
+    const serviceId = selectedService?.serviceId || ''
+
+    // 3. Fetch subservices
+    let subServiceList = []
+    if (serviceId) {
+      try {
+        const subRes = await subServiceData(serviceId)
+        const subList = subRes.data
+        if (Array.isArray(subList)) {
+          subServiceList = subList.flatMap((item) => item.subServices || [])
+        } else if (subList?.subServices) {
+          subServiceList = subList.subServices
+        }
+      } catch (err) {
+        console.error('Error fetching subservices:', err)
+      }
+    }
+
+    setSubServiceOptions({ subServices: subServiceList })
+
+    // Get valid subServiceId and name
+    const selectedSubServiceObj = subServiceList.find(
+      (s) => s.subServiceName === service.subServiceName,
+    )
+
+    const resolvedSubServiceId = selectedSubServiceObj?.subServiceId || ''
+    const resolvedSubServiceName = selectedSubServiceObj?.subServiceName || ''
+
+    setSelectedSubService(resolvedSubServiceId)
+
+    // Prefill all fields
+    setNewService({
+      subServiceId: resolvedSubServiceId,
+      subServiceName: resolvedSubServiceName,
+      serviceName: service.serviceName || '',
+      serviceId: serviceId,
+      categoryName: service.categoryName || '',
+      categoryId: categoryId || '',
+      price: service.price || '',
+      discount: service.discountPercentage || 0,
+      taxPercentage: service.taxPercentage || 0,
+      minTime: service.minTime || '',
+      serviceImage: service.serviceImage || '',
+      status: service.status || '',
+      viewDescription: service.viewDescription || '',
+      descriptionQA: service.descriptionQA || [],
+      viewImage: service.viewImage || '',
+    })
   }
 
   const addAnswer = () => {
@@ -107,7 +174,7 @@ const ServiceManagement = () => {
     serviceName: '',
     serviceId: '',
     categoryName: '',
-    // description: '',
+    description: '',
     price: '',
     status: '',
     taxPercentage: '',
@@ -382,24 +449,37 @@ const ServiceManagement = () => {
       const payload = {
         hospitalId: localStorage.getItem('HospitalId'),
         subServiceName: newService.subServiceName,
-        // serviceID: newService.serviceId,
-        // serviceName: newService.serviceName,
-        // categoryName: newService.categoryName,
-        // categoryId: newService.categoryId,
-        // description: newService.description,//
+        subServiceId: newService.subServiceId,
+        serviceID: newService.serviceId,
+        serviceName: newService.serviceName,
+        categoryName: newService.categoryName,
+        categoryId: newService.categoryId,
+        description: newService.description,
         price: newService.price,
-        discountPercentage: newService.discount,
+        discountPercentage: newService.discountPercentage,
         taxPercentage: newService.taxPercentage,
         minTime: newService.minTime,
         status: newService.status,
         subServiceImage: newService.serviceImage,
         descriptionQA: buildDescriptionQA(),
         viewDescription: newService.viewDescription,
-        platformFeePercentage: '10',
+        platformFeePercentage: newService.platformFeePercentage,
+        discountAmount: newService.discountAmount,
+        taxAmount: newService.taxAmount,
+        discountedCost: newService.discountedCost,
+        clinicPay: newService.clinicPay,
+        finalCost: newService.finalCost,
       }
       console.log(payload)
       console.log(newService.subServiceId)
 
+      if (!/^[a-f\d]{24}$/i.test(newService.subServiceId)) {
+        toast.error('SubService ID is invalid. Please re-select sub-service.', {
+          position: 'top-right',
+        })
+        return
+      }
+      console.log(payload)
       const response = await postServiceData(payload, newService.subServiceId)
 
       if (response.status === 201) {
@@ -504,6 +584,10 @@ const ServiceManagement = () => {
 
   const validateEditForm = () => {
     const newErrors = {}
+    if (!serviceToEdit.subServiceId || serviceToEdit.subServiceId.length !== 24) {
+      toast.error('Invalid subServiceId. Please select a valid SubService.')
+      return
+    }
 
     if (!serviceToEdit.serviceName?.trim()) newErrors.serviceName = 'Service name is required.'
     // if (!serviceToEdit.description?.trim()) newErrors.description = 'Description is required.'
@@ -529,26 +613,59 @@ const ServiceManagement = () => {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleUpdateService = async () => {
-    console.log('Updated calling')
-    // if (!validateEditForm()) return
+  // const handleUpdateService = async () => {
+  //   // console.log('Updated calling')
+  //   console.log('subServiceId', serviceToEdit.subServiceId)
+  //   // if (!validateEditForm()) return
 
+  //   try {
+  //     const updatedService = {
+  //       ...serviceToEdit,
+  //       subServiceImage: serviceToEdit.serviceImage, // base64 string already
+  //       viewImage: serviceToEdit.viewImage || '', // optional fallback
+  //     }
+  //     const hospitalId = localStorage.getItem('HospitalId')
+
+  //     console.log('Before update call → subServiceId:', serviceToEdit.subServiceId)
+  //     console.log('Before update call → hospitalId:', hospitalId)
+
+  //     if (!Array.isArray(serviceToEdit.descriptionQA)) {
+  //       toast.error('Invalid QA format')
+  //       return
+  //     }
+
+  //     const response = await updateServiceData(
+  //       serviceToEdit.subServiceId,
+  //       hospitalId,
+  //       updatedService,
+  //     )
+
+  //     console.log('Updated response:', response)
+  //     toast.success('Service updated successfully!', { position: 'top-right' })
+  //     setEditServiceMode(false)
+  //     fetchData() // refresh list
+  //   } catch (error) {
+  //     console.error('Update failed:', error)
+  //     toast.error('Error updating service.', { position: 'top-right' })
+  //   }
+  // }
+  const handleUpdateService = async () => {
     try {
+      const hospitalId = localStorage.getItem('HospitalId')
+
       const updatedService = {
         ...serviceToEdit,
-        serviceImage: serviceToEdit.serviceImage, // base64 string already
-        viewImage: serviceToEdit.viewImage || '', // optional fallback
+        subServiceImage: serviceToEdit.serviceImage || '',
+        descriptionQA: serviceToEdit.descriptionQA || [],
+        viewDescription: serviceToEdit.viewDescription || '',
+        viewImage: serviceToEdit.viewImage || '',
       }
-      const hospitalId = localStorage.getItem('hospitalId')
+      console.log(subServiceId)
+      const response = await updateServiceData(subServiceId, hospitalId, updatedService)
 
-      console.log('Updating service:', hospitalId, serviceToEdit.serviceId)
-
-      const response = await updateServiceData(serviceToEdit.serviceId, hospitalId, updatedService)
-
-      console.log('Updated response:', response)
       toast.success('Service updated successfully!', { position: 'top-right' })
       setEditServiceMode(false)
-      fetchData() // refresh list
+      fetchData()
     } catch (error) {
       console.error('Update failed:', error)
       toast.error('Error updating service.', { position: 'top-right' })
@@ -697,7 +814,7 @@ const ServiceManagement = () => {
         serviceId,
       }))
 
-      // ✅ Fetch subservices now
+      // Fetch subservices now
       if (serviceId) {
         const subRes = await subServiceData(serviceId)
         const subList = subRes.data
@@ -924,14 +1041,14 @@ const ServiceManagement = () => {
             <CRow className="mb-4">
               <CCol md={6}>
                 <h6>
-                  Category Name <span style={{ color: 'red' }}>*</span>
+                  Category Name <span className="text-danger">*</span>
                 </h6>
                 <CFormSelect
                   value={newService.categoryId || ''}
                   onChange={handleChanges}
                   aria-label="Select Category"
                   name="categoryName"
-                  disabled={modalMode === 'edit'} // 🔒 Disable in edit mode
+                  disabled={modalMode === 'edit'}
                 >
                   <option value="">Select a Category</option>
                   {category?.map((cat) => (
@@ -947,13 +1064,13 @@ const ServiceManagement = () => {
               </CCol>
               <CCol md={6}>
                 <h6>
-                  Service Name <span style={{ color: 'red' }}>*</span>
+                  Service Name <span className="text-danger">*</span>
                 </h6>
                 <CFormSelect
                   name="serviceName"
                   value={newService.serviceName || ''}
                   onChange={handleChanges}
-                  disabled={modalMode === 'edit'} // 🔒 Disable in edit mode
+                  disabled={modalMode === 'edit'}
                 >
                   <option value="">Select Service</option>
                   {serviceOptions.map((service) => (
@@ -1001,13 +1118,13 @@ const ServiceManagement = () => {
                     ))}
                 </CFormSelect>
 
-                {errors.description && (
+                {errors.subServiceName && (
                   <CFormText className="text-danger">{errors.subServiceName}</CFormText>
                 )}
               </CCol>
               <CCol md={6}>
                 <h6>
-                  Description <span style={{ color: 'red' }}>*</span>
+                  Description <span className="text-danger">*</span>
                 </h6>
                 <CFormInput
                   type="text"
@@ -1026,18 +1143,18 @@ const ServiceManagement = () => {
             <CRow className="mb-4">
               <CCol md={6}>
                 <h6>
-                  Status <span style={{ color: 'red' }}>*</span>
+                  Status <span className="text-danger">*</span>
                 </h6>
                 <CFormSelect value={newService.status || ''} onChange={handleChange} name="status">
                   <option value="">Select</option>
                   <option value="Active">Active</option>
-                  <option value="Active">Inactive</option>
+                  <option value="InActive">Inactive</option>
                 </CFormSelect>
                 {errors.status && <CFormText className="text-danger">{errors.status}</CFormText>}
               </CCol>
               <CCol md={6}>
                 <h6>
-                  Price <span style={{ color: 'red' }}>*</span>
+                  Price <span className="text-danger">*</span>
                 </h6>
                 <CFormInput
                   type="number"
@@ -1056,7 +1173,7 @@ const ServiceManagement = () => {
             <CRow className="mb-4">
               <CCol md={6}>
                 <h6>
-                  Discount % <span style={{ color: 'red' }}>*</span>
+                  Discount % <span className="text-danger">*</span>
                 </h6>
                 <CFormInput
                   type="number"
@@ -1075,7 +1192,7 @@ const ServiceManagement = () => {
               </CCol>
               <CCol md={6}>
                 <h6>
-                  TaxPercentage % <span style={{ color: 'red' }}>*</span>
+                  TaxPercentage % <span className="text-danger">*</span>
                 </h6>
                 <CFormInput
                   type="number"
@@ -1098,7 +1215,7 @@ const ServiceManagement = () => {
               <CCol>
                 <div className="mb-4">
                   <h6>
-                    Min Time <span style={{ color: 'red' }}>*</span>
+                    Min Time <span className="text-danger">*</span>
                   </h6>{' '}
                   <CFormInput
                     type="number"
@@ -1114,7 +1231,7 @@ const ServiceManagement = () => {
               </CCol>
               <CCol md={6}>
                 <h6>
-                  View Description <span style={{ color: 'red' }}>*</span>
+                  View Description <span className="text-danger">*</span>
                 </h6>
                 <CFormInput
                   type="text"
@@ -1133,7 +1250,7 @@ const ServiceManagement = () => {
             <CRow className="mb-4">
               <CCol md={12}>
                 <h6>
-                  Service Image <span style={{ color: 'red' }}>*</span>
+                  Service Image <span className="text-danger">*</span>
                 </h6>
                 <CFormInput type="file" onChange={handleServiceFileChange} />
                 {errors.serviceImage && (
@@ -1142,7 +1259,7 @@ const ServiceManagement = () => {
               </CCol>
               {/* <CCol md={6}>
                 <h6>
-                  Banner Image <span style={{ color: 'red' }}>*</span>
+                  Banner Image <span className="text-danger">*</span>
                 </h6>
                 <CFormInput type="file" onChange={handleBannerFileChange} />
                 {errors.bannerImage && (

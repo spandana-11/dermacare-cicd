@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@JsonIgnoreProperties({"message","category","service","subServices","doctorFees"})
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DoctorsDTO {
 
     private String id;

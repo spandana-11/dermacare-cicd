@@ -44,7 +44,7 @@ public class ClinicDTO {
     @Email(message = "Invalid email format")
     private String emailAddress;
 
-    @URL(message = "Invalid website URL")
+    //@URL(message = "Invalid website URL")
     private String website;
 
     @NotBlank(message = "License number is required")
@@ -60,6 +60,8 @@ public class ClinicDTO {
     private List<String> hospitalDocuments;
 
     private boolean recommended;
+
+    private String hospitalOverallRating;
 
     // Registration Certificates
     private String clinicalEstablishmentCertificate;

@@ -11,13 +11,16 @@ const DoctorCard = ({ doctor }) => {
   return (
     <div className="doctor-card">
       <div className="doctor-avatar">
-        <img
-          src={doctor.doctorPicture}
-          alt={`Photo of Dr. ${doctor.doctorName || 'Doctor'}`}
-          onError={(e) => {
-            e.target.src = '/default-avatar.png'
-          }}
-        />
+       <img
+  src={doctor.doctorPicture}
+  alt={`Photo of Dr. ${doctor.doctorName || 'Doctor'}`}
+  onError={(e) => {
+    if (e.target.src !== window.location.origin + '/default-avatar.png') {
+      e.target.src = '/default-avatar.png'
+    }
+  }}
+/>
+
       </div>
       <div className="doctor-info">
         <h2>

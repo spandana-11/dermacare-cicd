@@ -1,9 +1,10 @@
 package com.dermacare.category_services.service.Impl;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-
+import java.util.Set;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,27 +34,34 @@ public class SubServiceInfoServiceImpl implements SubServiceInfo {
 	private SubServiceRepository subServiceRepository;
 	
 		
-	public  Response addSubService( SubServicesInfoDto dto){
+	public  Response addSubService( SubServicesInfoDto requestDto){
 		 Response response = new  Response();
 	    	try {
-	    	SubServicesInfoEntity entity = converter.entityConverter(dto);
+	    	SubServicesInfoEntity entity = converter.entityConverter(requestDto);
 	    	if(entity.getCategoryName() == null) {
 	    	response.setStatus(404);
-   			response.setSuccess(false);
-   			response.setMessage("Incorrect CategoryId");
+  			response.setSuccess(false);
+  			response.setMessage("Incorrect CategoryId");
 	    	}
 	    	for(SubServiceInfoEntity e :entity.getSubServices()) {
 	    	if(e.getServiceName() == null) {
 	    		response.setStatus(404);
-   			response.setSuccess(false);
-   			response.setMessage("Incorrect ServiceId");
-	    	}
-	    	SubServicesInfoEntity sub = subServicesInfoRepository.findBySubServicesSubServiceName(e.getSubServiceName());
-	    	if(sub != null) {
-	    	response.setStatus(409);
-   			response.setSuccess(false);
-   			response.setMessage("SubService Already Exist");}
-	    	}
+  			response.setSuccess(false);
+  			response.setMessage("Incorrect ServiceId");
+	    	}}
+	    	Set<String> uniqueNames = new HashSet<>();
+	    	for (SubServiceDTO dto : requestDto.getSubServices()) {
+	    	    String name = dto.getSubServiceName().trim();
+	    	    if (!uniqueNames.add(name)) {
+	    	        response.setStatus(400);
+	    	        response.setSuccess(false);
+	    	        response.setMessage("Only unique SubService names are allowed. Duplicate found: " + dto.getSubServiceName());
+	    	        return response;}
+	    	    if (subServicesInfoRepository.existsBySubServicesSubServiceNameIgnoreCase(name)) {
+	    	        response.setStatus(400);
+	    	        response.setSuccess(false);
+	    	        response.setMessage("SubService '" + dto.getSubServiceName() + "' already exists.");
+	    	        return response;}}    	
 	    	SubServicesInfoEntity savedInfo = subServicesInfoRepository.save(entity);
 	    	if(savedInfo != null) {
 		    			response.setData(converter.dtoConverter(entity));
@@ -61,10 +69,9 @@ public class SubServiceInfoServiceImpl implements SubServiceInfo {
 		    			response.setSuccess(true);
 		    			response.setMessage("saved successfully");
 	    	}else {
-   			response.setStatus(404);
-   			response.setSuccess(false);
-   			response.setMessage(" Failed To AddSubService");
-	    	}
+  			response.setStatus(404);
+  			response.setSuccess(false);
+  			response.setMessage(" Failed To AddSubService");}
 	    	}catch(Exception ex) {
 	    	            response.setStatus(500);
 		    			response.setMessage(ex.getMessage());
@@ -72,6 +79,7 @@ public class SubServiceInfoServiceImpl implements SubServiceInfo {
 	    	        }
 	                    return response;
 	    	    } 	 
+	
 	
 	
 	public Response getSubServiceByIdCategory(String categoryId){

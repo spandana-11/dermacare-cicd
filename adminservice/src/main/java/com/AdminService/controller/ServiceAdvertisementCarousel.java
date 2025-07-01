@@ -37,7 +37,7 @@ public class ServiceAdvertisementCarousel {
 	    public ResponseEntity<?> getAllMedia() {
 	        var media = mediaService.getAllMedia();
 	        return media.iterator().hasNext() ? ResponseEntity.ok(media) :
-	                ResponseEntity.status(HttpStatus.NOT_FOUND).body("No media found");
+	                ResponseEntity.status(HttpStatus.OK).body("No media found");
 	    }
 
 	    @GetMapping("/ServiceAdvertisement/getById/{carouselId}")

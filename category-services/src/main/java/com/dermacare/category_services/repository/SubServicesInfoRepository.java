@@ -20,5 +20,6 @@ public interface SubServicesInfoRepository extends MongoRepository<SubServicesIn
 	 boolean existsBySubServices_SubServiceId(String subServiceId);
 	public List<SubServicesInfoEntity> findByCategoryName(String categoryName);
 	public  SubServicesInfoEntity findBySubServicesSubServiceName(String subServiceName);
+	public boolean existsBySubServicesSubServiceNameIgnoreCase(String name);
 
 }

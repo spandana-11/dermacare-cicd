@@ -13,7 +13,7 @@ const subserviceManagement = React.lazy(
   () => import('./views/SubserviceManagement/SubserviceManagement'),
 )
 
-// subserviceManagement
+subserviceManagement
 const ClinicManagementDetails = React.lazy(() => import('./views/clinicManagement/ClinicDetails'))
 const Registration = React.lazy(() => import('./views/clinicManagement/ClinicAPI'))
 const AddClinic = React.lazy(() => import('./views/clinicManagement/AddClinic'))
