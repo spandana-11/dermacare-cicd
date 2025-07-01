@@ -80,7 +80,7 @@ services:
       - "8080:8080"
     environment:
       SPRING_APPLICATION_NAME: clinicadmin
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/ClinicAdminService
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/clinicadminservice
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     depends_on:
       - mongodb
