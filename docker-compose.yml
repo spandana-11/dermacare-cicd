@@ -95,7 +95,7 @@ services:
       - "8800:8800"
     environment:
       SPRING_APPLICATION_NAME: category-services
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/CategoryService
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/category-services
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     depends_on:
       - mongodb
@@ -110,7 +110,7 @@ services:
       - "8082:8082"
     environment:
       SPRING_APPLICATION_NAME: doctor-service
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/DermacareDoctorDB
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/dermacaredoctor-db
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     depends_on:
       - mongodb
@@ -140,7 +140,7 @@ services:
       - "9900:9900"
     environment:
       SPRING_APPLICATION_NAME: bookingservice
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/customerbooking
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/customerAppointments
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     depends_on:
       - mongodb
@@ -155,7 +155,7 @@ services:
       - "8089:8089"
     environment:
       SPRING_APPLICATION_NAME: notification-service
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/NotificationService
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/DermaCareNotifications
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     depends_on:
       - mongodb
