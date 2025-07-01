@@ -37,7 +37,8 @@ import {
 } from '../../views/serviceManagement/ServiceManagementAPI'
 
 const DoctorManagement = () => {
-  const { doctorData, errorMessage, setDoctorData, fetchHospitalDetails } = useHospital()
+  const { doctorData, errorMessage, setDoctorData, fetchHospitalDetails, fetchDoctorDetails } =
+    useHospital()
 
   // const [doctors, setDoctors] = useState([]);
 
@@ -225,6 +226,7 @@ const DoctorManagement = () => {
     }
   }
   const hospitalId = localStorage.getItem('HospitalId')
+
   useEffect(() => {
     const fetchAllData = async () => {
       try {
@@ -420,35 +422,33 @@ const DoctorManagement = () => {
         },
       })
 
-      // ✅ Check if success === true before continuing
       if (!response?.data?.success) {
         throw new Error(response?.data?.message || 'Failed to add doctor')
       }
 
       const newDoctor = response.data.doctor ?? payload
-console.log(response)
-      // ✅ Only send email if doctor was successfully added
+      const hospitalName = localStorage.getItem('HospitalName')
+
+      // ✅ Send onboarding email
       await sendDermaCareOnboardingEmail({
         name: form.doctorName,
         email: form.doctorEmail,
         password: response.data.data.temporaryPassword,
         userID: response.data.data.username,
+        clinicName: hospitalName,
       })
-        // "temporaryPassword": "Doctor%810",
-        // "username": "9874102366"
 
-      await fetchHospitalDetails(hospitalId)
-
+      // ✅ Properly update doctorData state (ensures it shows without refresh)
       setDoctorData((prev) => ({
         ...prev,
-        doctors: [...(prev?.doctors ?? []), newDoctor],
+        data: [...(prev?.data ?? []), newDoctor],
       }))
 
       toast.success(response.data.message || 'Doctor added successfully', {
         position: 'top-right',
       })
 
-      // ✅ Reset form after success
+      // ✅ Reset form
       setForm({
         doctorPicture: null,
         doctorLicence: '',
@@ -485,7 +485,6 @@ console.log(response)
       setEndDay('')
       setStartTime('')
       setEndTime('')
-
       setModalVisible(false)
     } catch (error) {
       toast.error(error?.message || 'Failed to add doctor', {
@@ -1159,4 +1158,4 @@ console.log(response)
   )
 }
 
-export default DoctorManagement
+export default DoctorManagement;
