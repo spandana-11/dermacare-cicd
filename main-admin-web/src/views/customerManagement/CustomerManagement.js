@@ -18,6 +18,11 @@ import {
   CTableDataCell,
   CPagination,
   CPaginationItem,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilSearch } from '@coreui/icons'
@@ -29,6 +34,7 @@ import {
   updateCustomerData,
 } from './CustomerAPI'
 import { toast } from 'react-toastify'
+import { ConfirmationModal } from '../../Utils/ConfirmationDelete'
 
 const CustomerManagement = () => {
   const navigate = useNavigate()
@@ -44,6 +50,10 @@ const CustomerManagement = () => {
   const [isEditing, setIsEditing] = useState(false)
   const [currentMobile, setCurrentMobile] = useState(null)
   const [formattedDisplayDate, setFormattedDisplayDate] = useState('')
+  const [isModalVisible, setIsModalVisible] = useState(false)
+  const [customerIdToDelete, setCustomerIdToDelete] = useState(null)
+  const [formErrors, setFormErrors] = useState({})
+
   const [formData, setFormData] = useState({
     fullName: '',
     mobileNumber: '',
@@ -111,8 +121,9 @@ const CustomerManagement = () => {
   }
 
   const handleDeleteCustomer = async (mobileNumber) => {
-    const confirmed = window.confirm('Are you sure you want to delete this customer?')
-    if (!confirmed) return
+    // const confirmed = window.confirm('Are you sure you want to delete this customer?')
+    setCustomerIdToDelete(mobileNumber)
+    setIsModalVisible(true)
 
     try {
       await deleteCustomerData(mobileNumber)
@@ -132,21 +143,23 @@ const CustomerManagement = () => {
       const response = await getCustomerByMobile(mobileNumber)
       const customer = response.data || response
 
-      console.log('Customer data:', customer) // Debug: Check what's actually being returned
+      console.log('Customer data:', customer)
 
-      // Safely handle date formatting
       let formattedDate = ''
+
       if (customer.dateOfBirth) {
-        try {
-          const dateObj = new Date(customer.dateOfBirth)
-          if (!isNaN(dateObj)) {
-            const day = String(dateObj.getDate()).padStart(2, '0')
-            const month = String(dateObj.getMonth() + 1).padStart(2, '0')
-            const year = dateObj.getFullYear()
-            formattedDate = `${year}-${month}-${day}` // ✅ YYYY-MM-DD
-          }
-        } catch (e) {
-          console.warn('Failed to format date:', e)
+        // If it's already in YYYY-MM-DD or ISO, this works:
+        const parsedDate = new Date(customer.dateOfBirth)
+
+        if (!isNaN(parsedDate)) {
+          const year = parsedDate.getFullYear()
+          const month = String(parsedDate.getMonth() + 1).padStart(2, '0')
+          const day = String(parsedDate.getDate()).padStart(2, '0')
+          formattedDate = `${year}-${month}-${day}`
+        } else if (/^\d{2}-\d{2}-\d{4}$/.test(customer.dateOfBirth)) {
+          // If it's in DD-MM-YYYY format from backend
+          const [day, month, year] = customer.dateOfBirth.split('-')
+          formattedDate = `${year}-${month}-${day}` // convert to input-friendly format
         }
       }
 
@@ -179,15 +192,26 @@ const CustomerManagement = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData({ ...formData, [name]: value })
+
+    const errors = { ...formErrors }
+    if (errors[name]) {
+      delete errors[name]
+      setFormErrors(errors)
+    }
   }
 
   const handleFormSubmit = async (e) => {
     e.preventDefault()
 
+    if (!validateForm()) {
+      // toast.error('Please fix the form errors')
+      return
+    }
+
     try {
       const updatedFormData = { ...formData }
 
-      // ✅ Format dateOfBirth to DD-MM-YYYY
+      // Format DOB if exists
       if (updatedFormData.dateOfBirth) {
         const dateObj = new Date(updatedFormData.dateOfBirth)
         if (!isNaN(dateObj)) {
@@ -199,19 +223,14 @@ const CustomerManagement = () => {
       }
 
       if (isEditing) {
-        // For update
         await updateCustomerData(updatedFormData.mobileNumber, updatedFormData)
         toast.success('Customer updated successfully')
       } else {
-        // For add
         await addCustomer(updatedFormData)
         toast.success('Customer added successfully')
       }
 
-      // 🔁 REFRESH the data to update the UI table
       await fetchCustomers()
-
-      // Reset form
       handleCancel()
     } catch (error) {
       console.error('Error submitting customer:', error)
@@ -222,13 +241,12 @@ const CustomerManagement = () => {
       }
     }
   }
-const alreadyExists = customerData.some(
-  (cust) => cust.mobileNumber === formData.mobileNumber
-)
-if (!isEditing && alreadyExists) {
-  toast.error('Customer already exists.')
-  return
-}
+
+  const alreadyExists = customerData.some((cust) => cust.mobileNumber === formData.mobileNumber)
+  if (!isEditing && alreadyExists) {
+    toast.error('Customer already exists.')
+    return
+  }
 
   const handleCancel = () => {
     setIsAdding(false)
@@ -273,6 +291,94 @@ if (!isEditing && alreadyExists) {
       setFormattedDisplayDate('')
     }
   }, [formData.dateOfBirth])
+
+  const confirmDeleteCustomer = async () => {
+    try {
+      await deleteCustomerData(customerIdToDelete)
+      toast.success('Customer deleted successfully')
+
+      const updatedData = customerData.filter(
+        (customer) => customer?.mobileNumber !== customerIdToDelete,
+      )
+
+      setCustomerData(updatedData)
+      setFilteredData(updatedData)
+    } catch (error) {
+      console.error('Delete failed:', error)
+      toast.error('Failed to delete customer')
+    } finally {
+      setIsModalVisible(false)
+      setCustomerIdToDelete(null)
+    }
+  }
+  // ConfirmationModal.jsx
+  const ConfirmationModal = ({ isVisible, message, onConfirm, onCancel }) => {
+    return (
+      <CModal visible={isVisible} onClose={onCancel}>
+        <CModalHeader>
+          <CModalTitle>Confirm Deletion</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          <p>{message}</p>
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="danger" onClick={onConfirm}>
+            Confirm
+          </CButton>
+          <CButton color="secondary" onClick={onCancel}>
+            Cancel
+          </CButton>
+        </CModalFooter>
+      </CModal>
+    )
+  }
+  const validateForm = () => {
+    const errors = {}
+
+    // Full Name Validation
+    if (!formData.fullName.trim()) {
+      errors.fullName = 'Full Name is required'
+    } else if (/\d/.test(formData.fullName)) {
+      errors.fullName = 'Name should not contain numbers'
+    }
+
+    // Mobile Number Validation
+    if (!formData.mobileNumber.trim()) {
+      errors.mobileNumber = 'Mobile number is required'
+    } else if (!/^[1-9]\d{9}$/.test(formData.mobileNumber)) {
+      errors.mobileNumber = 'Mobile number must be 10 digits (starting from 1-9)'
+    }
+
+    // ✅ Email ID Validation
+    if (!formData.emailId.trim()) {
+      errors.emailId = 'Email is required'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailId)) {
+      errors.emailId = 'Email must contain @ and be valid'
+    }
+
+    // ✅ Date of Birth Validation
+    if (!formData.dateOfBirth.trim()) {
+      errors.dateOfBirth = 'Date of Birth is required'
+    } else {
+      const date = new Date(formData.dateOfBirth)
+      if (isNaN(date)) {
+        errors.dateOfBirth = 'Invalid Date of Birth'
+      }
+    }
+
+    // ✅ Refer Code Validation (Optional but validate if entered)
+    if (formData.referCode && /[^a-zA-Z0-9]/.test(formData.referCode)) {
+      errors.referCode = 'Refer code must contain only letters and numbers'
+    }
+
+    // Gender
+    if (!formData.gender) {
+      errors.gender = 'Gender is required'
+    }
+
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
 
   return (
     <>
@@ -347,10 +453,23 @@ if (!isEditing && alreadyExists) {
                           className="ms-3 text-white"
                           color="danger"
                           size="sm"
-                          onClick={() => handleDeleteCustomer(customer?.mobileNumber)}
+                          onClick={() => {
+                            setCustomerIdToDelete(customer?.mobileNumber)
+                            setIsModalVisible(true)
+                          }}
                         >
                           Delete
                         </CButton>
+
+                        <ConfirmationModal
+                          isVisible={isModalVisible}
+                          message="Are you sure you want to delete this customer?"
+                          onConfirm={confirmDeleteCustomer}
+                          onCancel={() => {
+                            setIsModalVisible(false)
+                            setCustomerIdToDelete(null)
+                          }}
+                        />
                       </CTableDataCell>
                     </CTableRow>
                   ))}
@@ -398,44 +517,78 @@ if (!isEditing && alreadyExists) {
           <CForm onSubmit={handleFormSubmit}>
             <CRow className="mb-3">
               <CCol md={6}>
-                <CFormLabel>Full Name</CFormLabel>
+                <CFormLabel>
+                  Full Name
+                  <span className="text-danger">*</span>
+                </CFormLabel>
                 <CFormInput
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleInputChange}
-                  required
+                  invalid={!!formErrors.fullName}
                 />
+                {formErrors.fullName && (
+                  <div className="text-danger small">{formErrors.fullName}</div>
+                )}
               </CCol>
               <CCol md={6}>
-                <CFormLabel>Mobile Number</CFormLabel>
+                <CFormLabel>
+                  Mobile Number
+                  <span className="text-danger">*</span>
+                </CFormLabel>
                 <CFormInput
                   name="mobileNumber"
                   value={formData.mobileNumber}
                   onChange={handleInputChange}
-                  required
-                  disabled={isEditing}
+                  onKeyDown={(e) => {
+                    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete') {
+                      e.preventDefault()
+                    }
+                  }}
+                  onPaste={(e) => e.preventDefault()}
+                  maxLength={10}
+                  invalid={!!formErrors.mobileNumber}
                 />
+
+                {formErrors.mobileNumber && (
+                  <div className="text-danger small">{formErrors.mobileNumber}</div>
+                )}
               </CCol>
             </CRow>
 
             <CRow className="mb-3">
               <CCol md={6}>
-                <CFormLabel>Email ID</CFormLabel>
+                <CFormLabel>
+                  Email ID
+                  <span className="text-danger">*</span>
+                </CFormLabel>
                 <CFormInput
                   name="emailId"
                   value={formData.emailId}
                   onChange={handleInputChange}
                   type="email"
+                  invalid={!!formErrors.emailId}
                 />
+                {formErrors.emailId && (
+                  <div className="text-danger small">{formErrors.emailId}</div>
+                )}
               </CCol>
               <CCol md={6}>
-                <CFormLabel>Date of Birth</CFormLabel>
+                <CFormLabel>
+                  Date of Birth
+                  <span className="text-danger">*</span>
+                </CFormLabel>
                 <CFormInput
                   name="dateOfBirth"
                   value={formData.dateOfBirth}
                   onChange={handleInputChange}
                   type="date"
+                  invalid={!!formErrors.dateOfBirth}
                 />
+                {formErrors.dateOfBirth && (
+                  <div className="text-danger small">{formErrors.dateOfBirth}</div>
+                )}
+
                 {formattedDisplayDate && (
                   <div className="text-muted mt-1">Selected Date: {formattedDisplayDate}</div>
                 )}
@@ -444,12 +597,21 @@ if (!isEditing && alreadyExists) {
 
             <CRow className="mb-3">
               <CCol md={6}>
-                <CFormLabel>Gender</CFormLabel>
-                <CFormSelect name="gender" value={formData.gender} onChange={handleInputChange}>
+                <CFormLabel>
+                  Gender
+                  <span className="text-danger">*</span>
+                </CFormLabel>
+                <CFormSelect
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleInputChange}
+                  invalid={!!formErrors.gender}
+                >
                   <option value="">Select</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                 </CFormSelect>
+                {formErrors.gender && <div className="text-danger small">{formErrors.gender}</div>}
               </CCol>
               <CCol md={6}>
                 <CFormLabel>Refer Code</CFormLabel>

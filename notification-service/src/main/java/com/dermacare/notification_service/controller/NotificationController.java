@@ -27,10 +27,10 @@ public class NotificationController {
 	private ServiceInterface notificationService;
 	
 		
-	@GetMapping("/notificationtodoctorandclinic/{hospitalId}/{doctorId}")	
+	@GetMapping("/notificationtodoctor/{hospitalId}/{doctorId}")	
 	public ResponseEntity<ResBody<List<NotificationDTO>>> notificationtodoctorandclinic(@PathVariable String hospitalId,
 			@PathVariable String doctorId){
-		ResBody<List<NotificationDTO>> res = notificationService.notificationtodoctorandclinic(hospitalId, doctorId);
+		ResBody<List<NotificationDTO>> res = notificationService.notificationtodoctor(hospitalId, doctorId);
 		 if(res != null) {
 		    	return ResponseEntity.status(res.getStatus()).body(res);}
 		    return null;	
@@ -46,14 +46,13 @@ public class NotificationController {
 		 
 	}	
 	
-	@GetMapping("/notificationtoadmin")
-	public ResponseEntity<?> notificationToAdmin(){
-		ResBody<List<NotificationDTO>> res = notificationService.sendNotificationToAdmin();
+	@GetMapping("/sendNotificationToClinic/{clinicId}")
+	public ResponseEntity<?> sendNotificationToClinic(@PathVariable String clinicId ){
+		ResBody<List<NotificationDTO>> res = notificationService.sendNotificationToClinic(clinicId);
 		 if(res != null) {
 		    	return ResponseEntity.status(res.getStatus()).body(res);}
 		    return null;
-		 
-	}	
+}	
 		
 
 	@GetMapping("/customerNotification/{customerName}/{customerMobileNumber}")

@@ -12,14 +12,13 @@ public class DoctorMapper {
 	public static Doctors mapDoctorDTOtoDoctorEntity(DoctorsDTO dto) {
 		Doctors doctor = new Doctors();
 
-		// If id is not null, set it as ObjectId
 		if (dto.getId() != null) {
 			doctor.setId(new ObjectId(dto.getId()));
 		}
-
 		doctor.setDoctorPicture(Base64CompressionUtil.compressBase64(dto.getDoctorPicture()));
 		doctor.setDoctorId(dto.getDoctorId());
 		doctor.setHospitalId(dto.getHospitalId());
+		doctor.setDoctorAverageRating(dto.getDoctorAverageRating());
 		doctor.setDoctorEmail(dto.getDoctorEmail());
 		doctor.setDoctorLicence(dto.getDoctorLicence());
 		doctor.setDoctorMobileNumber(dto.getDoctorMobileNumber());
@@ -40,16 +39,13 @@ public class DoctorMapper {
 		doctor.setDoctorAvailabilityStatus(dto.isDoctorAvailabilityStatus());
 		doctor.setRecommendation(dto.isRecommendation());
 		
-		
-
-		// Map DoctorFee
 		if (dto.getDoctorFees() != null) {
 			doctor.setDoctorFees(mapDoctorFeeDTOtoEntity(dto.getDoctorFees()));
 		}
-
 		return doctor;
 	}
 
+	
 	public static DoctorsDTO mapDoctorEntityToDoctorDTO(Doctors doctor) {
 		DoctorsDTO dto = new DoctorsDTO();
 
@@ -60,6 +56,7 @@ public class DoctorMapper {
 		dto.setHospitalId(doctor.getHospitalId());;
 		dto.setDoctorPicture(Base64CompressionUtil.decompressBase64(doctor.getDoctorPicture()));
 		dto.setDoctorLicence(doctor.getDoctorLicence());
+		dto.setDoctorAverageRating(doctor.getDoctorAverageRating());
 		dto.setDeviceId(doctor.getDeviceId());
 		dto.setDoctorMobileNumber(doctor.getDoctorMobileNumber());
 		dto.setDoctorName(doctor.getDoctorName());
@@ -80,23 +77,21 @@ public class DoctorMapper {
 		dto.setDoctorAvailabilityStatus(doctor.isDoctorAvailabilityStatus());
 		dto.setRecommendation(doctor.isRecommendation());
 		
-
 		// Map DoctorFee
 		if (doctor.getDoctorFees() != null) {
 			dto.setDoctorFees(mapDoctorFeeEntityToDTO(doctor.getDoctorFees()));
 		}
-
 		return dto;
 	}
 
-	private static DoctorFee mapDoctorFeeDTOtoEntity(DoctorFeeDTO dto) {
+	public static DoctorFee mapDoctorFeeDTOtoEntity(DoctorFeeDTO dto) {
 		DoctorFee fee = new DoctorFee();
 		fee.setInClinicFee(dto.getInClinicFee());
 		fee.setVedioConsultationFee(dto.getVedioConsultationFee());
 		return fee;
 	}
 
-	private static DoctorFeeDTO mapDoctorFeeEntityToDTO(DoctorFee fee) {
+	public static DoctorFeeDTO mapDoctorFeeEntityToDTO(DoctorFee fee) {
 		DoctorFeeDTO dto = new DoctorFeeDTO();
 		dto.setInClinicFee(fee.getInClinicFee());
 		dto.setVedioConsultationFee(fee.getVedioConsultationFee());

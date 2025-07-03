@@ -54,7 +54,7 @@ public class CustomerServiceImplTest {
 	@BeforeEach
 	public void setUp() {
 		 customer =new Customer(null,
-				    "CR_1",                          // customerId
+				    "CR_1", null,                         // customerId
 				    "John Doe",                         // fullName
 				    "9876543210",                       // mobileNumber
 				    "male",                             // gender

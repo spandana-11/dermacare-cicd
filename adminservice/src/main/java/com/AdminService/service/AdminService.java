@@ -92,9 +92,4 @@ public Response getBookingByDoctorId(String doctorId);
 //DOCTORS
 public Response getDoctorInfoByDoctorId(String doctorId);
 
-//NOTIFICATON
-public ResponseEntity<?> notificationToAdmin();
-
-
-
 }

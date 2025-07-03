@@ -1,14 +1,13 @@
 package com.dermacare.category_services.service.Impl;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
-
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
 import com.dermacare.category_services.dto.ServicesDto;
 import com.dermacare.category_services.entity.Category;
 import com.dermacare.category_services.entity.Services;
@@ -76,43 +75,49 @@ public class ServicesServiceImpl implements ServicesService {
 		return HelperForConversion.toDto(service);
 	}
 
+	
 	public void deleteServiceById(String serviceId) {
 		servicesRepository.deleteById(new ObjectId(serviceId));
 	}
 
+	
 	public ServicesDto updateService(String serviceId, ServicesDto domainService) {
-	    // Step 1: Fetch the existing service
+	   
 	    Optional<Services> optionalService = servicesRepository.findById(new ObjectId(serviceId));
 	    if (optionalService.isEmpty()) {
 	        throw new RuntimeException("Service not found with ID: " + serviceId);
 	    }
-
-	    Services existingService = optionalService.get();
-	    String oldServiceName = existingService.getServiceName(); // For subservices update
-
-	    // ✅ Step 2: Fetch the category name from categoryId
+	    Services existingService = optionalService.get();   
 	    Optional<Category> categoryOpt = categoryRepository.findById(new ObjectId(domainService.getCategoryId()));
 	    if (categoryOpt.isEmpty()) {
 	        throw new RuntimeException("Invalid categoryId: " + domainService.getCategoryId());
 	    }
-	    String categoryName = categoryOpt.get().getCategoryName();
-	    domainService.setCategoryName(categoryName); // Set correct category name
+	   if(domainService.getCategoryId()!=null) {
+		   existingService.setCategoryId(new ObjectId(domainService.getCategoryId()));
+	   }
+      if(domainService.getCategoryName()!=null) {
+    	  existingService.setCategoryName(domainService.getCategoryName());  
+	   }
+      if(domainService.getServiceId()!=null) {
+    	  existingService.setServiceId(new ObjectId(domainService.getServiceId()));
+       }
+      if(domainService.getServiceName()!=null) {
+    	  existingService.setServiceName(domainService.getServiceName());
+      }
+      if(domainService.getServiceImage()!=null) {
+    	  existingService.setServiceImage(Base64.getDecoder().decode(domainService.getServiceImage()));  
+	   }
+      if(domainService.getDescription()!=null) {
+    	  existingService.setDescription(domainService.getDescription());  
+	   }
+	    Services updatedService = servicesRepository.save(existingService);
 
-	    // Step 3: Convert to entity and retain original ID
-	    Services toUpdate = HelperForConversion.toEntity(domainService);
-	    toUpdate.setServiceId(existingService.getServiceId());
-
-	    // Step 4: Save updated service
-	    Services updatedService = servicesRepository.save(toUpdate);
-
-	    // ✅ Step 5: Update related SubServices with new serviceName
-	    List<SubServices> relatedSubServices = subServiceRepository.findByServiceName(oldServiceName);
+	  List<SubServices> relatedSubServices = subServiceRepository.findByServiceName(updatedService.getServiceName());
 	    for (SubServices sub : relatedSubServices) {
 	        sub.setServiceName(domainService.getServiceName());
 	    }
 	    subServiceRepository.saveAll(relatedSubServices);
 
-	    // Step 6: Return updated DTO
 	    return HelperForConversion.toDto(updatedService);
 	}
 

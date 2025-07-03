@@ -394,9 +394,9 @@ const AddSubService = () => {
       console.log(lowerSearch)
       const filtered = subServices.filter(
         (item) =>
-          item.category?.toLowerCase()?.includes(lowerSearch) ||
-          item.name?.toLowerCase()?.includes(lowerSearch) ||
-          item.service?.toLowerCase()?.includes(lowerSearch),
+          item.category?.toLowerCase()?.startsWith(lowerSearch) ||
+          item.service?.toLowerCase()?.startsWith(lowerSearch) ||
+          item.name?.toLowerCase()?.startsWith(lowerSearch),
       )
       console.log(filtered)
       setFilteredSubServices(filtered)
@@ -404,7 +404,8 @@ const AddSubService = () => {
   }, [searchQuery, subServices])
 
   return (
-    <>
+    <div className="container-fluid p-4">
+      <ToastContainer />
       <CRow>
         <CCol md={6}>
           <div className="d-flex justify-content-start mb-3">
@@ -652,7 +653,7 @@ const AddSubService = () => {
         //   </CModalFooter>
         // </CModal>
       )}
-    </>
+    </div>
   )
 }
 

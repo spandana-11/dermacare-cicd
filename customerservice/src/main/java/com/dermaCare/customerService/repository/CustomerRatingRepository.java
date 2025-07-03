@@ -11,5 +11,11 @@ import com.dermaCare.customerService.entity.CustomerRating;
 @Repository
 public interface CustomerRatingRepository extends MongoRepository<CustomerRating, ObjectId> {
 	
-	List<CustomerRating> findByHospitalIdAndDoctorId(String hospitalId, String doctorId); 
+	List<CustomerRating> findByHospitalIdAndDoctorId(String hospitalId, String doctorId);
+
+	List<CustomerRating> findByHospitalId(String clinicId);
+
+	List<CustomerRating> findByDoctorId(String doctorId); 
+	
+	
 }

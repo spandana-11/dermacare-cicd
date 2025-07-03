@@ -5,10 +5,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
-import com.dermaCare.customerService.dto.DoctorLoginDTO;
+import com.dermaCare.customerService.dto.DoctorsDTO;
 import com.dermaCare.customerService.util.Response;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import jakarta.validation.Valid;
 
 
 
@@ -36,8 +37,14 @@ public interface ClinicAdminFeign {
 	
 	@GetMapping("/clinic-admin/averageRatings/{hospitalId}/{doctorId}")
 	public ResponseEntity<Response> getAverageRatings(@PathVariable String hospitalId, @PathVariable String doctorId);
-
 	
+	@PutMapping("/clinic-admin/updateDoctorSlotWhileBooking/{doctorId}/{date}/{time}")
+	public Boolean updateDoctorSlotWhileBooking(@PathVariable String doctorId, @PathVariable String date,
+			@PathVariable String time);
+	
+	@PutMapping("/clinic-admin/updateDoctor/{doctorId}")
+	public ResponseEntity<Response> updateDoctorById(@PathVariable String doctorId,
+			@Valid @RequestBody DoctorsDTO dto);
 	
 //	//FALLBACK METHODS
 //	

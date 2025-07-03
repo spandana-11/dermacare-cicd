@@ -17,6 +17,7 @@ public class Customer {
 	@Id
     private String id; // MongoDB ObjectId 
 	private String customerId;
+	private String deviceId;
     private String mobileNumber;
     private String fullName; // required 
     private String fcm;

@@ -1,10 +1,12 @@
 package com.dermaCare.customerService.controller;
 
 
+
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,61 +21,42 @@ import com.dermaCare.customerService.dto.ConsultationDTO;
 import com.dermaCare.customerService.dto.CustomerDTO;
 import com.dermaCare.customerService.dto.CustomerRatingDomain;
 import com.dermaCare.customerService.dto.FavouriteDoctorsDTO;
+import com.dermaCare.customerService.dto.LoginDTO;
 import com.dermaCare.customerService.dto.NotificationToCustomer;
-import com.dermaCare.customerService.dto.ResponseDTO;
 import com.dermaCare.customerService.service.CustomerService;
 import com.dermaCare.customerService.util.OtpUtil;
 import com.dermaCare.customerService.util.ResBody;
 import com.dermaCare.customerService.util.Response;
 import com.dermaCare.customerService.util.ResponseStructure;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 
 
 @RestController
 @RequestMapping("/customer")
+// @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class CustomerController {
 
 	@Autowired(required = true)
 	private CustomerService customerService;
+		
 	
-	/**
-	 * @param SignIn  or SignUp of Customer By taking UserName and MobileNumber
-	 * @param Expires session up to 1 minute
-	 * @return OTP for Customer
-	 */
-	@PostMapping("/registerOrLogin")
-	public ResponseEntity<ResponseDTO> registerOrLogin(@RequestBody CustomerDTO customerDTO, HttpSession session) {
-		ResponseDTO response = customerService.signInOrSignUp(customerDTO.getFullName().trim(),
-				customerDTO.getMobileNumber().trim(), session);
-		return ResponseEntity.status(response.getStatus()).body(response);
+	@PostMapping("/VerifyUserCredentialsAndGenerateAndSendOtp")
+	public ResponseEntity<Response> verifyUserCredentialsAndGenerateAndSendOtp(@RequestBody LoginDTO loginDTO) {
+		return customerService.verifyUserCredentialsAndGenerateAndSendOtp(loginDTO);
 	}
 
-	/**
-	 * @param Verify the OTp
-	 * @return Success Message after Verify
-	 */
+	
 	@PostMapping("/verifyOtp")
-	public ResponseEntity<ResponseDTO> verifyOtp(@RequestBody Map<String, String> otpData, HttpSession session) {
-		String enteredOtp = otpData.get("enteredOtp").trim();
-		String mobileNumber = otpData.get("mobileNumber").trim();
-
-		ResponseDTO response = customerService.verifyOtp(enteredOtp, mobileNumber, session);
-		return ResponseEntity.status(response.getStatus()).body(response);
+	public ResponseEntity<Response> verifyOtp(@RequestBody LoginDTO loginDTO) {
+		return customerService.verifyOtp(loginDTO);
 	}
 
-	/**
-	 * @param Resends OTP to customer
-	 * @param session
-	 * @return OTP to Customer
-	 */
+	
 	@PostMapping("/resendOtp")
-	public ResponseEntity<ResponseDTO> resendOtp(@RequestBody Map<String, String> requestData, HttpSession session) {
-		String mobileNumber = requestData.get("mobileNumber").trim();
-		ResponseDTO response = customerService.resendOtp(mobileNumber, session);
-		return ResponseEntity.status(response.getStatus()).body(response);
+	public ResponseEntity<Response> resendOtp(@RequestBody LoginDTO loginDTO) {
+		return customerService.resendOtp(loginDTO);
 	}
 
 	

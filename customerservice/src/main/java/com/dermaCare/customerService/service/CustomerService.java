@@ -22,13 +22,11 @@ import com.dermaCare.customerService.dto.ResponseDTO;
 
 public interface CustomerService {
 
-public ResponseDTO signInOrSignUp(String fullName, String mobileNumber, HttpSession session);
+	 public ResponseEntity<Response> verifyUserCredentialsAndGenerateAndSendOtp(LoginDTO loginDTO);
+		
+	 public ResponseEntity<Response> verifyOtp(LoginDTO loginDTO);
 	
-	public ResponseDTO requestOtp(String mobileNumber, String fullName, HttpSession session);
-	
-	 public ResponseDTO verifyOtp(String enteredOtp, String mobileNumber, HttpSession session);
-	 
-	 public ResponseDTO resendOtp(String mobileNumber, HttpSession session);
+	 public  ResponseEntity<Response> resendOtp(LoginDTO loginDTO);
 	 	 
 	  public Response saveCustomerBasicDetails(CustomerDTO customerDTO);
 	 

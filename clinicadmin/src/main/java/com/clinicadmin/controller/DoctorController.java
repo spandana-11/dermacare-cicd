@@ -291,10 +291,9 @@ public class DoctorController {
 	
 	//NOTIFICATION OF DOCTOR
 	
-	@GetMapping("/notificationToClinic/{hospitalId}/{doctorId}")
-	public  ResponseEntity<ResBody<List<NotificationDTO>>> notificationTodoctor(@PathVariable String hospitalId,
-			@PathVariable String doctorId){
-		return doctorService.notificationToDoctor(hospitalId, doctorId);
+	@GetMapping("/notificationToClinic/{hospitalId}")
+	public  ResponseEntity<?> notificationTodoctor(@PathVariable String hospitalId){
+		return doctorService.notificationToClinic(hospitalId);
 	}
 	
 	

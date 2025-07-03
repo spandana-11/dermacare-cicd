@@ -17,4 +17,5 @@ public interface NotificationRepository extends MongoRepository<NotificationEnti
 
 	List<NotificationEntity> findByDataNameAndDataMobileNumber(String customerName, String customerMobileNumber);
 
+	NotificationEntity findByNotificationId(String notificationId);
 }

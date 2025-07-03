@@ -17,6 +17,7 @@ import {
   CCol,
   CCard,
   CCardBody,
+  CBadge,
 } from '@coreui/react'
 import { AppointmentData } from './appointmentAPI'
 import { useNavigate } from 'react-router-dom'
@@ -65,6 +66,24 @@ const appointmentManagement = () => {
       console.error('Failed to fetch appointments:', error)
     }
   }
+  //Status color logics
+  const getStatusColor = (status) => {
+    console.log(status)
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        return 'success'
+      case 'Rejected':
+        return 'danger'
+      case 'pending':
+        return 'warning'
+      case 'confirmed':
+        return 'info'
+      case 'rescheduled':
+        return 'secondary'
+      default:
+        return 'dark'
+    }
+  }
 
   useEffect(() => {
     fetchAppointments()
@@ -79,9 +98,9 @@ const appointmentManagement = () => {
 
     // Map your filter buttons to actual data values:
     const consultationTypeMap = {
-      'Service & Treatment': 'service & treatment',
-      'Video Consultation': 'online',
-      'In-clinic': 'in-clinic',
+      'Service & Treatment': 'services & treatments',
+      'Video Consultation': 'online consultation',
+      'In-clinic': 'in-clinic consultation',
     }
 
     // Filter by status (use 'status', not 'bookedStatus')
@@ -170,7 +189,7 @@ const appointmentManagement = () => {
             onClick={() => toggleFilter('In-clinic')}
             className={`btn ${filterTypes.includes('In-clinic') ? 'btn-dark' : 'btn-outline-dark'}`}
           >
-            In-Clinic
+            In-Clinic Consultation
           </button>
           <button
             onClick={() => toggleFilter('Video Consultation')}
@@ -259,7 +278,12 @@ const appointmentManagement = () => {
                     {item.serviceDate}
                   </CTableDataCell>
                   <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
-                  <CTableDataCell>{item.status}</CTableDataCell>
+                  <CTableDataCell>
+                    {<CTableDataCell>
+  <CBadge color={getStatusColor(item.status)}>{item.status}</CBadge>
+</CTableDataCell>
+                    }
+                  </CTableDataCell>
                   <CTableDataCell>
                     <CButton
                       color="primary"

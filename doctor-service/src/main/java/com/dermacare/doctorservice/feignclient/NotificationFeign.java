@@ -22,15 +22,12 @@ public interface NotificationFeign {
 	@PutMapping("/api/notificationservice/updateNotification")
 	public NotificationDTO updateNotification(@RequestBody NotificationDTO notificationDTO );
 	
-	@GetMapping("/api/notificationservice/notificationtodoctorandclinic/{hospitalId}/{doctorId}")	
-	public ResponseEntity<ResBody<List<NotificationDTO>>> notificationtodoctorandclinic(@PathVariable String hospitalId,
+	@GetMapping("/api/notificationservice/notificationtodoctor/{hospitalId}/{doctorId}")	
+	public ResponseEntity<ResBody<List<NotificationDTO>>> notificationtodoctor(@PathVariable String hospitalId,
 			@PathVariable String doctorId);
 	
 	@PostMapping("/api/notificationservice/response")
 	public ResponseEntity<?> response(@RequestBody NotificationResponse notificationResponse);
-	
-	
-	
-	
+		
 	
 }

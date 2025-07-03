@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Document(collection = "DermaCareNotifications")
 public class NotificationEntity {
 @Id
-    private String id;
+    private String notificationId;
 	private String message;
 	private String date;
 	private String time;

@@ -23,6 +23,8 @@ import Select from 'react-select'
 import sendDermaCareOnboardingEmail from '../../Utils/Emailjs'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import FileInputWithRemove from './FileInputWithRemove'
+
 const AddClinic = () => {
   const navigate = useNavigate()
   const [errors, setErrors] = useState({})
@@ -114,7 +116,7 @@ const AddClinic = () => {
     }
   }
   const websiteRegex = /^(https?:\/\/)[\w\-]+(\.[\w\-]+)+[/#?]?.*$/
-
+  const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
   const validateForm = () => {
     const newErrors = {}
 
@@ -136,36 +138,12 @@ const AddClinic = () => {
     } else if (!/^[a-zA-Z\s]{2,30}$/.test(formData.city)) {
       newErrors.city = 'City name must contain only letters'
     }
-
-    // // Hospital Registration
-    // if (!formData.hospitalRegistrations.trim()) {
-    //   newErrors.hospitalRegistrations = 'Registration number is required'
-    // }
-
     // Email validation
-    ;<CFormInput
-      type="email"
-      name="emailAddress"
-      value={formData.emailAddress}
-      onChange={handleInputChange}
-      onBlur={(e) => {
-        const value = e.target.value
-        // Inside validateForm:
-        const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
-        if (!formData.emailAddress.trim()) {
-          newErrors.emailAddress = 'Email is required'
-        } else if (!emailRegex.test(formData.emailAddress.trim())) {
-          newErrors.emailAddress = 'Please enter a valid email (example@domain.com)'
-        } else {
-          setErrors((prev) => ({
-            ...prev,
-            emailAddress: '',
-          }))
-        }
-      }}
-      invalid={!!errors.emailAddress}
-    />
-
+    if (!formData.emailAddress.trim()) {
+      newErrors.emailAddress = 'Email is required'
+    } else if (!emailRegex.test(formData.emailAddress.trim())) {
+      newErrors.emailAddress = 'Email must contain "@" and "." in a valid format'
+    }
     // Contact Number
     const phoneRegex = /^[5-9]\d{9}$/ // This regex checks if the number starts with 5-9 and is followed by 9 digits
 
@@ -207,8 +185,11 @@ const AddClinic = () => {
     }
 
     // Hospital Documents
-    if (!formData.hospitalDocuments.length === 0) {
+    if (!formData.hospitalDocuments || formData.hospitalDocuments.length === 0) {
       newErrors.hospitalDocuments = 'Please upload at least one document'
+    }
+    if (!formData.hospitalContract || formData.hospitalContract.length === 0) {
+      newErrors.hospitalContract = 'Please upload at least one document'
     }
     if (!formData.clinicalEstablishmentCertificate) {
       newErrors.clinicalEstablishmentCertificate = 'Please upload at least one document'
@@ -243,6 +224,15 @@ const AddClinic = () => {
     if (!formData.others) {
       newErrors.others = 'Please upload at least one document'
     }
+    if (!clinicTypeOption || clinicTypeOption.trim() === '') {
+      newErrors.clinicType = 'Please select a clinic Type.'
+    }
+    if (!selectedOption || selectedOption.trim() === '') {
+      newErrors.medicinesSoldOnSite = 'Please select  atleast one option'
+    }
+    if (!selectedPharmacistOption || selectedPharmacistOption.trim() === '') {
+      newErrors.hasPharmacist = 'Please select  atleast one option'
+    }
 
     if (!formData.website.trim()) {
       newErrors.website = 'Website is required.'
@@ -250,7 +240,7 @@ const AddClinic = () => {
       newErrors.website = 'Website must start with http:// or https:// and be a valid URL'
     }
 
-    // ✅ No `else { newErrors.website = '' }`
+    // No `else { newErrors.website = '' }`
 
     console.log('Validation errors:', newErrors)
     setErrors(newErrors)
@@ -285,50 +275,49 @@ const AddClinic = () => {
     }))
   }
 
-  const handleFileChange = async (e) => {
-    const { name, files } = e.target
+const handleFileChange = async (e) => {
+  const { name, files } = e.target
+  const file = files[0]
 
-    const stripBase64Prefix = (base64) => base64.split(',')[1]
+  if (!file) return
 
-    const convertAndSetFile = async (singleFileField) => {
-      const base64File = await convertToBase64(files[0])
-      setFormData((prev) => ({
-        ...prev,
-        [singleFileField]: stripBase64Prefix(base64File),
-      }))
-    }
+  // Save the file object for displaying name in UI
+  setFormData((prev) => ({
+    ...prev,
+    [name]: file, // keep original file for UI
+  }))
+  setErrors((prev) => ({ ...prev, [name]: '' }))
 
-    const convertAndSetMultipleFiles = async (multiFileField) => {
-      const base64Files = await Promise.all(
-        Array.from(files).map((file) => convertToBase64(file).then(stripBase64Prefix)),
-      )
-      setFormData((prev) => ({
-        ...prev,
-        [multiFileField]: base64Files,
-      }))
-    }
+  const stripBase64Prefix = (base64) => base64.split(',')[1]
 
-    try {
-      const multiFileFields = ['hospitalDocuments', 'hospitalContract', 'hasPharmacist']
-      if (multiFileFields.includes(name)) {
-        await convertAndSetMultipleFiles(name)
-      } else {
-        await convertAndSetFile(name)
-      }
-
-      // Clear file error once uploaded successfully
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        [name]: '',
-      }))
-    } catch (error) {
-      console.error('File conversion error:', error)
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        [name]: 'File conversion failed',
-      }))
-    }
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = (error) => reject(error)
+    })
   }
+
+  try {
+    const base64File = await convertToBase64(file)
+    const cleanBase64 = stripBase64Prefix(base64File)
+
+    // Save base64 under a different key for submission
+    setFormData((prev) => ({
+      ...prev,
+      [`${name}Base64`]: cleanBase64,
+    }))
+  } catch (error) {
+    console.error('File conversion error:', error)
+    setErrors((prev) => ({
+      ...prev,
+      [name]: 'File conversion failed',
+    }))
+  }
+}
+
+
   const handleEmailBlur = () => {
     const email = formData.emailAddress.trim()
     if (!email.includes('@')) {
@@ -464,7 +453,7 @@ const AddClinic = () => {
               <CCol md={6}>
                 <CFormLabel>
                   Clinic Name
-                  <span style={{ color: 'red' }}>*</span>
+                  <span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormInput
                   type="text"
@@ -478,15 +467,15 @@ const AddClinic = () => {
               </CCol>
               <CCol md={6}>
                 <CFormLabel>
-                  Email Address<span style={{ color: 'red' }}>*</span>
+                  Email Address<span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormInput
                   type="email"
                   name="emailAddress"
                   value={formData.emailAddress}
                   onChange={handleInputChange}
-                  onBlur={handleEmailBlur}
                   invalid={!!errors.emailAddress}
+                  // feedbackInvalid={errors.emailAddress}
                 />
 
                 {errors.emailAddress && (
@@ -559,7 +548,7 @@ const AddClinic = () => {
             <CRow>
               <CCol md={6}>
                 <CFormLabel>
-                  License Number<span style={{ color: 'red' }}>*</span>
+                  License Number<span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormInput
                   type="number"
@@ -607,7 +596,7 @@ const AddClinic = () => {
             <CRow className="mb-3">
               <CCol md={6}>
                 <CFormLabel>
-                  Address<span style={{ color: 'red' }}>*</span>
+                  Address<span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormInput
                   type="text"
@@ -619,7 +608,10 @@ const AddClinic = () => {
                 {errors.address && <CFormFeedback invalid>{errors.address}</CFormFeedback>}
               </CCol>
               <CCol md={6}>
-                <CFormLabel>Recommendation Status</CFormLabel>
+                <CFormLabel>
+                  Recommendation Status
+                  {/* <span className="text-danger">*</span> */}
+                </CFormLabel>
                 <CFormSelect
                   name="recommended"
                   value={formData.recommended}
@@ -638,7 +630,7 @@ const AddClinic = () => {
             <CRow className="mb-3">
               <CCol md={6}>
                 <CFormLabel>
-                  City<span style={{ color: 'red' }}>*</span>
+                  City<span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormInput
                   type="text"
@@ -670,22 +662,24 @@ const AddClinic = () => {
             <CRow className="mb-3">
               <CCol md={6}>
                 <CFormLabel>
-                  Hospital Logo<span style={{ color: 'red' }}>*</span>
+                  Hospital Logo<span className="text-danger">*</span>
                 </CFormLabel>
-                <CFormInput
-                  type="file"
+                <FileInputWithRemove
                   name="hospitalLogo"
+                  file={formData.hospitalLogo}
+                  error={errors.hospitalLogo}
                   onChange={handleFileChange}
+                  onRemove={(name) => {
+                    setFormData((prev) => ({ ...prev, [name]: '' })) // OR null
+                    setErrors((prev) => ({ ...prev, [name]: '' }))
+                  }}
                   accept="image/*"
                   invalid={!!errors.hospitalLogo}
                 />
-                {errors.hospitalLogo && (
-                  <CFormFeedback invalid>{errors.hospitalLogo}</CFormFeedback>
-                )}
               </CCol>
               <CCol md={6}>
                 <CFormLabel>
-                  Hospital Documents<span style={{ color: 'red' }}>*</span>
+                  Hospital Documents<span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormInput
                   type="file"
@@ -703,7 +697,10 @@ const AddClinic = () => {
             <CRow className="mb-3">
               <CCol md={6} className="mb-2">
                 <CTooltip content="Issued by Registrar of Companies or local municipal body">
-                  <CFormLabel>Clinical Establishment Registration Certificate</CFormLabel>
+                  <CFormLabel>
+                    Clinical Establishment Registration Certificate
+                    <span className="text-danger">*</span>
+                  </CFormLabel>
                 </CTooltip>
                 <CFormInput
                   type="file"
@@ -720,7 +717,9 @@ const AddClinic = () => {
               </CCol>
               <CCol md={6}>
                 <CTooltip content="Issued by Registrar of Companies or local municipal body">
-                  <CFormLabel>Business Registration Certificate</CFormLabel>
+                  <CFormLabel>
+                    Business Registration Certificate <span className="text-danger">*</span>
+                  </CFormLabel>
                 </CTooltip>
                 <CFormInput
                   type="file"
@@ -738,22 +737,34 @@ const AddClinic = () => {
             </CRow>
             <CRow className="mb-3">
               <CCol md={6}>
-                <CFormLabel>Clinic Type</CFormLabel>
+                <CFormLabel>
+                  Clinic Type <span className="text-danger">*</span>
+                </CFormLabel>
                 <CFormSelect
                   className="form-select"
                   value={clinicTypeOption}
-                  onChange={(e) => setClinicTypeOption(e.target.value)}
+                  onChange={(e) => {
+                    setClinicTypeOption(e.target.value)
+                    setErrors((prev) => ({ ...prev, clinicType: '' })) // clear error on change
+                  }}
+                  invalid={!!errors.clinicType} // this is critical!
                 >
                   <option value="">Select Type</option>
-                  <option>Proprietorship</option>
-                  <option>Partnership</option>
-                  <option>LLP</option>
-                  <option>Private Limited</option>
+                  <option value="Proprietorship">Proprietorship</option>
+                  <option value="Partnership">Partnership</option>
+                  <option value="LLP">LLP</option>
+                  <option value="Private Limited">Private Limited</option>
                 </CFormSelect>
+
+                {errors.clinicType && <CFormFeedback invalid>{errors.clinicType}</CFormFeedback>}
               </CCol>
+
               <CCol>
                 <CTooltip content="Issued by Insurance Companies">
-                  <CFormLabel>Professional Indemnity Insurance</CFormLabel>
+                  <CFormLabel>
+                    Professional Indemnity Insurance
+                    <span className="text-danger">*</span>
+                  </CFormLabel>
                 </CTooltip>
                 <CFormInput
                   type="file"
@@ -771,19 +782,33 @@ const AddClinic = () => {
             </CRow>
             <CRow className="mb-3">
               <CCol md={6}>
-                <CFormLabel>Medicines sold on-site</CFormLabel>
+                <CFormLabel>
+                  Medicines sold on-site
+                  <span className="text-danger">*</span>
+                </CFormLabel>
                 <CFormSelect
+                  className="form-select"
                   value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedOption(e.target.value)
+                    setErrors((prev) => ({ ...prev, medicinesSoldOnSite: '' })) // clear error on change
+                  }}
+                  invalid={!!errors.medicinesSoldOnSite}
                 >
                   <option value="">Select an option</option>
                   <option value="Yes">Yes</option>
                   <option value="No">No</option>
                 </CFormSelect>
+                {errors.medicinesSoldOnSite && (
+                  <CFormFeedback invalid>{errors.medicinesSoldOnSite}</CFormFeedback>
+                )}
               </CCol>
               <CCol md={6}>
                 <CTooltip content="Issued by State Pollution Control Board (SPCB)">
-                  <CFormLabel>Biomedical Waste Management Authorization</CFormLabel>
+                  <CFormLabel>
+                    Biomedical Waste Management Authorization
+                    <span className="text-danger">*</span>
+                  </CFormLabel>
                 </CTooltip>
                 <CFormInput
                   type="file"
@@ -839,7 +864,10 @@ const AddClinic = () => {
             <CRow className="mb-3">
               <CCol md={6}>
                 <CTooltip content="Issued by Local Municipality">
-                  <CFormLabel>Trade License / Shop & Establishment License</CFormLabel>
+                  <CFormLabel>
+                    Trade License / Shop & Establishment License
+                    <span className="text-danger">*</span>
+                  </CFormLabel>
                 </CTooltip>
                 <CFormInput
                   type="file"
@@ -855,7 +883,10 @@ const AddClinic = () => {
               </CCol>
               <CCol md={6}>
                 <CTooltip content="Issued by Local Fire Department">
-                  <CFormLabel>Fire Safety Certificate</CFormLabel>
+                  <CFormLabel>
+                    Fire Safety Certificate
+                    <span className="text-danger">*</span>
+                  </CFormLabel>
                 </CTooltip>
                 <CFormInput
                   type="file"
@@ -874,7 +905,10 @@ const AddClinic = () => {
             <CRow className="mb-3">
               <CCol md={6}>
                 <CTooltip content="Issued by GST Department">
-                  <CFormLabel>GST Registration Certificate</CFormLabel>
+                  <CFormLabel>
+                    GST Registration Certificate
+                    <span className="text-danger">*</span>
+                  </CFormLabel>
                 </CTooltip>
                 <CFormInput
                   type="file"
@@ -892,7 +926,10 @@ const AddClinic = () => {
 
               <CCol md={6}>
                 <CTooltip content="NABH Accreditation / Aesthetic Procedure Training Certificate">
-                  <CFormLabel>Others (NABH / Aesthetic Training)</CFormLabel>
+                  <CFormLabel>
+                    Others (NABH / Aesthetic Training)
+                    <span className="text-danger">*</span>
+                  </CFormLabel>
                 </CTooltip>
                 <CFormInput
                   type="file"
@@ -943,16 +980,27 @@ const AddClinic = () => {
 
             <CRow className="mb-3">
               <CCol md={6}>
-                <CFormLabel>Clinic has a valid pharmacist</CFormLabel>
+                <CFormLabel>
+                  Clinic has a valid pharmacist
+                  <span className="text-danger">*</span>
+                </CFormLabel>
                 <CFormSelect
+                  className="form-select"
                   value={selectedPharmacistOption}
-                  onChange={(e) => setSelectedPharmacistOption(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedPharmacistOption(e.target.value)
+                    setErrors((prev) => ({ ...prev, hasPharmacist: '' })) // clear error on change
+                  }}
+                  invalid={!!errors.hasPharmacist}
                 >
                   <option value="">Select an option</option>
                   <option value="Yes">Yes</option>
                   <option value="No">No</option>
-                  <option value="n/a">N/A</option>
+                  {/* <option value="n/a">N/A</option> */}
                 </CFormSelect>
+                {errors.hasPharmacist && (
+                  <CFormFeedback invalid>{errors.hasPharmacist}</CFormFeedback>
+                )}
               </CCol>
               {selectedPharmacistOption === 'Yes' && (
                 <CCol md={6}>

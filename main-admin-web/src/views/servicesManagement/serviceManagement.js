@@ -252,7 +252,7 @@ const ServiceManagement = () => {
         serviceName: updatedService.ServiceName,
         categoryId: updatedService.categoryId,
         description: updatedService.description,
-        serviceImage: imageBase64, // base64 string
+        serviceImage: imageBase64?.split(',')[1],
       }
 
       console.log('Payload:', payload)

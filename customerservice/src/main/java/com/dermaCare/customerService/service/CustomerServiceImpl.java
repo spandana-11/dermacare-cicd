@@ -1,11 +1,6 @@
 package com.dermaCare.customerService.service;
 
-
-import java.time.Instant;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -14,14 +9,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import com.dermaCare.customerService.dto.BookingRequset;
 import com.dermaCare.customerService.dto.BookingResponse;
 import com.dermaCare.customerService.dto.CategoryDto;
@@ -32,8 +26,8 @@ import com.dermaCare.customerService.dto.CustomerDTO;
 import com.dermaCare.customerService.dto.CustomerRatingDomain;
 import com.dermaCare.customerService.dto.DoctorsDTO;
 import com.dermaCare.customerService.dto.FavouriteDoctorsDTO;
+import com.dermaCare.customerService.dto.LoginDTO;
 import com.dermaCare.customerService.dto.NotificationToCustomer;
-import com.dermaCare.customerService.dto.ResponseDTO;
 import com.dermaCare.customerService.dto.ServicesDto;
 import com.dermaCare.customerService.dto.SubServicesDetailsDto;
 import com.dermaCare.customerService.dto.SubServicesDto;
@@ -52,7 +46,6 @@ import com.dermaCare.customerService.repository.CustomerRatingRepository;
 import com.dermaCare.customerService.repository.CustomerRepository;
 import com.dermaCare.customerService.util.ExtractFeignMessage;
 import com.dermaCare.customerService.util.HelperForConversion;
-import com.dermaCare.customerService.util.OtpUtil;
 import com.dermaCare.customerService.util.ResBody;
 import com.dermaCare.customerService.util.Response;
 import com.dermaCare.customerService.util.ResponseStructure;
@@ -60,8 +53,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.FeignException;
-import org.springframework.http.HttpMethod;
-import jakarta.servlet.http.HttpSession;
 
 
 
@@ -93,278 +84,123 @@ public class CustomerServiceImpl implements CustomerService {
     private AdminFeign adminFeign;
     
     @Autowired
+    private FirebaseMessagingService firebaseMessagingService;
+    
+    @Autowired
     private NotificationFeign notificationFeign;
     
     
-    
-    
-    @org.springframework.beans.factory.annotation.Value("${fast2sms.api.key}")
-    private String fast2smsApiKey;
-
-    private Map<String, Instant> otpLastSentTime = new ConcurrentHashMap<>();
     private Map<String, String> generatedOtps = new HashMap<>();
-    private Map<String, CustomerDTO> temporaryCustomers = new HashMap<>();
-    private static final int OTP_COOLDOWN_SECONDS = 60;
+    private Map<String, Long> session = new HashMap<>();
+    private static final long OTP_EXPIRY_MILLIS = 1 * 60 * 1000;
+   
 
-    @Override
-    public ResponseDTO signInOrSignUp(String fullName, String mobileNumber, HttpSession session) {
-        ResponseDTO response = new ResponseDTO();
-
-
-        // Capitalize the first letter of the full name and make the rest lowercase
-        fullName = capitalizeFullName(fullName);
-
-        // Create and trim the CustomerDTO
-        CustomerDTO customerDTO = new CustomerDTO();
-        customerDTO.setFullName(fullName);
-        customerDTO.setMobileNumber(mobileNumber);
-        customerDTO.trimFields();
-
-        // Validate input fields
-        if (!isValidFullName(customerDTO.getFullName())) {
-            return createErrorResponse(response, "Full name is required and must contain only letters and spaces.");
-        }
-        if (!isValidMobileNumber(customerDTO.getMobileNumber())) {
-            return createErrorResponse(response, "A valid mobile number is required (10 digits only).");
-        }
-
-        // Convert mobileNumber from String to long
-        long mobileNumberLong = Long.parseLong(customerDTO.getMobileNumber());
-
-        Optional<Customer> existingCustomerOpt = customerRepository.findByMobileNumber(mobileNumberLong);
-        if (existingCustomerOpt.isPresent()) {
-            return handleExistingCustomer(existingCustomerOpt.get(), mobileNumberLong, session, response);
-        } else {
-            response.setMessage(requestOtp(customerDTO.getMobileNumber(), customerDTO.getFullName(), session).getMessage() +
-                    " You need to complete your registration. Please verify your OTP.");
-            response.setRegistrationCompleted(false);
-            response.setStatus(HttpStatus.OK.value());
-            response.setSuccess(true);
-        }
-
-        return response;
+   @Override
+    public ResponseEntity<Response> verifyUserCredentialsAndGenerateAndSendOtp(LoginDTO loginDTO) {
+	   Response response = new Response();
+     try {
+    	 if(!isIndianMobileNumber(loginDTO.getMobileNumber())) {
+    		 response.setMessage("Please Enter Valid MobileNumber");
+ 	    	response.setStatus(400);
+ 	    	response.setSuccess(false);}
+   	    Optional<Customer> custmer = customerRepository.findByMobileNumber(loginDTO.getMobileNumber());
+	    if(custmer.isPresent()) {
+	    	custmer.get().setDeviceId(loginDTO.getDeviceId());
+	    	customerRepository.save(custmer.get());}
+	    	String otp = randomNumber();
+	    	if(loginDTO.getDeviceId() != null) {
+	    	firebaseMessagingService.sendPushNotification(loginDTO.getDeviceId(),
+	    	"🔐 Hello " +loginDTO.getUserName()+" , Here’s your OTP!","Use "+otp+" to verify your login. Expires in 1 minute.");
+	    	generatedOtps.put(loginDTO.getMobileNumber(),otp);
+	    	session.put(loginDTO.getMobileNumber(),System.currentTimeMillis());
+	    	response.setMessage("OTP Sent Successfully");
+	    	response.setStatus(200);
+	    	response.setSuccess(true);}
+	    	else {
+	    		response.setMessage("Please Provide DeviceId");
+		    	response.setStatus(400);
+		    	response.setSuccess(false);}
+	    }catch(Exception e) {
+	    	response.setMessage(e.getMessage());
+	    	response.setStatus(500);
+	    	response.setSuccess(false);}
+     return ResponseEntity.status(response.getStatus()).body(response);
+}
+   
+   
+     
+    private boolean isIndianMobileNumber(String mobileNumber) {
+        mobileNumber = mobileNumber.replaceAll("[\\s\\-()]", "");
+        String regex = "^(\\+91|91|0)?[6-9]\\d{9}$";
+        return mobileNumber.matches(regex);
     }
+ 
+     private String randomNumber() {
+         Random random = new Random();    
+         int sixDigitNumber = 100000 + random.nextInt(900000); // Generates number from 100000 to 999999
+         return String.valueOf(sixDigitNumber);
+     }
+     
+     
     
+   public ResponseEntity<Response> verifyOtp(LoginDTO loginDTO){
+	   Response response = new Response();
+	   try {
+		   String otp = generatedOtps.get(loginDTO.getMobileNumber());
+		   long createdTime = session.get(loginDTO.getMobileNumber());
+		   if(!isExpired(createdTime)) {
+			   if(loginDTO.getOtp().equals(otp)) {
+			   response.setMessage("OTP Successfully Verified");
+			   response.setStatus(200);
+				response.setSuccess(true);
+			   return ResponseEntity.status(response.getStatus()).body(response);
+			   }else {
+				   response.setMessage("Invalid OTP Please Enter Correct OTP");
+				   response.setStatus(400);
+				   return ResponseEntity.status(response.getStatus()).body(response);}
+		   }else {
+			   response.setMessage("OTP Expired Please Click On Resend OTP");
+			   response.setStatus(410);
+			   return ResponseEntity.status(response.getStatus()).body(response);
+		   }}catch(Exception e) {
+			   response.setMessage(e.getMessage());
+			   response.setStatus(500);
+			   return ResponseEntity.status(response.getStatus()).body(response);}
+  }
 
- // Helper method to capitalize the full name
-    private String capitalizeFullName(String fullName) {
-        if (fullName == null || fullName.isEmpty()) {
-            return fullName;
-        }
-
-        // Split the full name into words
-        String[] words = fullName.split(" ");
-        
-        // Capitalize the first letter of each word and make the rest lowercase
-        StringBuilder capitalizedFullName = new StringBuilder();
-        for (String word : words) {
-            if (!word.isEmpty()) {
-                capitalizedFullName.append(word.substring(0, 1).toUpperCase())
-                                   .append(word.substring(1).toLowerCase())
-                                   .append(" ");
-            }
-        }
-
-        // Trim the trailing space
-        return capitalizedFullName.toString().trim();
-    }
-
-
-    private ResponseDTO handleExistingCustomer(Customer existingCustomer, long mobileNumber, HttpSession session, ResponseDTO response) {
-        response.setMessage(requestOtp(String.valueOf(mobileNumber), existingCustomer.getFullName(), session).getMessage() +
-                (existingCustomer.isRegistrationCompleted() ?
-                        " You are already registered. Please verify your OTP to log in." :
-                        " You have an incomplete registration. Please verify your OTP to continue."));
-        response.setRegistrationCompleted(existingCustomer.isRegistrationCompleted());
-        response.setStatus(HttpStatus.OK.value());
-        response.setSuccess(existingCustomer.isRegistrationCompleted()); // Reflect registration status
-        
-        return response;
-    }
-    
-    @Override
-    public ResponseDTO requestOtp(String mobileNumber, String fullName, HttpSession session) {
-        ResponseDTO response = new ResponseDTO();
-
-        // Validate mobile number
-        if (!isValidMobileNumber(mobileNumber)) {
-            return createErrorResponse(response, "A valid mobile number is required.");
-        }
-
-        Instant now = Instant.now();
-        Instant lastSentTime = otpLastSentTime.get(mobileNumber);
-
-        // Check OTP cooldown
-        if (lastSentTime != null && now.isBefore(lastSentTime.plusSeconds(OTP_COOLDOWN_SECONDS))) {
-            long secondsLeft = OTP_COOLDOWN_SECONDS - (now.getEpochSecond() - lastSentTime.getEpochSecond());
-            return createErrorResponse(response, "Please wait " + secondsLeft + " seconds before requesting a new OTP.");
-        }
-
-        // Generate and send OTP
-        String otp = OtpUtil.generateOtp();
-        boolean sentSuccessfully = sendOtpToMobile(mobileNumber, otp);
-        if (!sentSuccessfully) {
-            return createErrorResponse(response, "Failed to send OTP due to provider restrictions. Please wait and try again.");
-        }
-
-        generatedOtps.put(mobileNumber, otp);
-        otpLastSentTime.put(mobileNumber, now);
-
-        // Store temporary customer data
-        CustomerDTO tempCustomer = new CustomerDTO();
-        tempCustomer.setFullName(fullName);
-        tempCustomer.setMobileNumber(mobileNumber);
-        temporaryCustomers.put(mobileNumber, tempCustomer);
-
-        session.setAttribute("mobileNumber", mobileNumber);
-        response.setMessage("OTP sent successfully. Please verify your OTP.");
-        response.setRegistrationCompleted(false);
-        response.setStatus(HttpStatus.OK.value());
-        response.setSuccess(true); // Registration not yet complete
-        
-        return response;
-    }
-
-    @Override
-    public ResponseDTO verifyOtp(String enteredOtp, String mobileNumber, HttpSession session) {
-        ResponseDTO response = new ResponseDTO();
-
-        // Validate mobile number
-        if (!isValidMobileNumber(mobileNumber)) {
-            return createErrorResponse(response, "A valid mobile number is required.");
-        }
-
-        String generatedOtp = generatedOtps.get(mobileNumber);
-        Instant otpSentTime = otpLastSentTime.get(mobileNumber);
-
-        if (generatedOtp == null || otpSentTime == null) {
-            return createErrorResponse(response, "No OTP found for this mobile number.");
-        }
-
-        Instant now = Instant.now();
-        if (now.isAfter(otpSentTime.plusSeconds(OTP_COOLDOWN_SECONDS))) {
-            generatedOtps.remove(mobileNumber);
-            otpLastSentTime.remove(mobileNumber);
-            return createErrorResponse(response, "OTP has expired. Please request a new OTP.");
-        }
-
-        if (enteredOtp.equals(generatedOtp)) {
-            generatedOtps.remove(mobileNumber);
-            otpLastSentTime.remove(mobileNumber);
-            handleOtpSuccess(mobileNumber, response);
-        } else {
-            return createErrorResponse(response, "Invalid OTP.");
-        }
-
-        return response;
-    }
-
-    private void handleOtpSuccess(String mobileNumber, ResponseDTO response) {
-        Optional<Customer> existingCustomerOpt = customerRepository.findByMobileNumber(Long.parseLong(mobileNumber));
-        if (existingCustomerOpt.isPresent()) {
-            Customer existingCustomer = existingCustomerOpt.get();
-            response.setMessage("OTP verified successfully. " +
-                    (existingCustomer.isRegistrationCompleted() ?
-                            "You are now logged in." :
-                            "You can now complete the remaining registration details."));
-            response.setRegistrationCompleted(existingCustomer.isRegistrationCompleted());
-            response.setStatus(HttpStatus.OK.value());
-        } else {
-            CustomerDTO tempCustomer = temporaryCustomers.get(mobileNumber);
-            if (tempCustomer != null) {
-                Customer customerEntity = new Customer();
-                customerEntity.setFullName(tempCustomer.getFullName());
-                customerEntity.setMobileNumber(tempCustomer.getMobileNumber());
-                customerEntity.setRegistrationCompleted(false);
-                customerRepository.save(customerEntity);
-                temporaryCustomers.remove(mobileNumber);
-                response.setMessage("OTP verification successful. You can now complete the remaining registration details.");
-                response.setRegistrationCompleted(false);
-                response.setStatus(HttpStatus.OK.value());
-                response.setSuccess(true); 
-            } else {
-                response.setMessage("No registration in progress for this mobile number.");
-                response.setRegistrationCompleted(false);
-                response.setStatus(HttpStatus.BAD_REQUEST.value());
-            }
-        }
-    }
-
-    @Override
-    public ResponseDTO resendOtp(String mobileNumber, HttpSession session) {
-        ResponseDTO response = new ResponseDTO();
-
-        // Validate mobile number
-        if (!isValidMobileNumber(mobileNumber)) {
-            return createErrorResponse(response, "A valid mobile number is required.");
-        }
-
-        CustomerDTO tempCustomer = temporaryCustomers.get(mobileNumber);
-        if (tempCustomer == null) {
-            return createErrorResponse(response, "No registration in progress for this mobile number.");
-        }
-
-        String otpResponseMessage = requestOtp(mobileNumber, tempCustomer.getFullName(), session).getMessage();
-        response.setMessage(otpResponseMessage);
-        response.setRegistrationCompleted(false);
-        response.setStatus(HttpStatus.OK.value());
-        response.setSuccess(true); 
-        return response;
-    }
-
-    
-    private boolean sendOtpToMobile(String mobileNumber, String otp) {
-        String url = "https://www.fast2sms.com/dev/bulkV2";
-        String message = "Your OTP is: " + otp;
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("authorization", fast2smsApiKey);
-        headers.setContentType(MediaType.APPLICATION_JSON);;
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("route", "v3");
-        body.put("sender_id", "TXTIND");
-        body.put("message", message);
-        body.put("language", "english");
-        body.put("flash", 0);
-        body.put("numbers", String.valueOf(mobileNumber));
-
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-        RestTemplate restTemplate = new RestTemplate();
-
-        try {
-           ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-
-            if (response.getStatusCode() == HttpStatus.OK) {
-                System.out.println("OTP sent successfully to mobile number: " + mobileNumber);
-                return true;
-            } else {
-                System.out.println("Failed to send OTP. Response: " + response.getBody());
-                return response.getBody().contains("Spamming detected");
-            }
-        } catch (Exception e) {
-            System.out.println("Error sending OTP: " + e.getMessage());
-            return false;
-        }
-    }
-
-    
-    private boolean isValidMobileNumber(String mobileNumber) {
-        return mobileNumber.matches("^\\d{10}$");
-    }
-
-    private boolean isValidFullName(String fullName) {
-        return fullName != null && !fullName.trim().isEmpty() && fullName.matches("^[A-Za-z\\s]+$");
-    }
-
-
-    private ResponseDTO createErrorResponse(ResponseDTO response, String message) {
-        response.setMessage(message);
-        response.setRegistrationCompleted(false);
-        response.setStatus(HttpStatus.BAD_REQUEST.value());
-        return response;
-    }
-    
+   
+   private boolean isExpired(long createdAt) {
+       return System.currentTimeMillis() - createdAt > OTP_EXPIRY_MILLIS;
+   }
+   
+ 
+   
+   public  ResponseEntity<Response> resendOtp(LoginDTO loginDTO){
+	   Response response = new Response();
+	   try {
+		   if(!isIndianMobileNumber(loginDTO.getMobileNumber())) {
+	    		response.setMessage("Please Enter Valid MobileNumber");
+	 	    	response.setStatus(400);
+	 	    	response.setSuccess(false);
+	 	    	return ResponseEntity.status(response.getStatus()).body(response);}		   
+		    String otp = randomNumber();
+		    if(loginDTO.getDeviceId() != null) {
+	    	firebaseMessagingService.sendPushNotification(loginDTO.getDeviceId(),"🔐 Hello, here’s your Resend OTP!"
+	    	,"Use "+otp+" to verify your login. Expires in 1 minute." );
+	    	generatedOtps.put(loginDTO.getMobileNumber(),otp);
+	    	session.put(loginDTO.getMobileNumber(),System.currentTimeMillis());
+	    	response.setMessage("OTP Sent Successfully");
+			response.setStatus(200);
+			response.setSuccess(true);
+	    	}else{
+		    	response.setMessage("Please Provide DeviceId");
+				response.setStatus(400);}
+	        }catch(Exception e) {
+		    response.setMessage(e.getMessage());
+		    response.setStatus(500);}
+	        return ResponseEntity.status(response.getStatus()).body(response);
+   }
+   
    
 
    public Response saveCustomerBasicDetails(CustomerDTO customerDTO) {
@@ -372,11 +208,19 @@ public class CustomerServiceImpl implements CustomerService {
 	   try {
 	   if(customerDTO != null) {
 		Optional<Customer> cstmr = customerRepository.findByMobileNumber(customerDTO.getMobileNumber());
+		Optional<Customer> cstmrEmail = customerRepository.findByEmailId(customerDTO.getEmailId());
 		   if(cstmr.isPresent()) {
 			   response.setMessage("MobileNumber Already Exist");
 			   response.setStatus(409);
 			   response.setSuccess(false);
 			   return response;}
+		   
+		   if(cstmrEmail.isPresent()) {
+			   response.setMessage("EmailId Already Exist");
+			   response.setStatus(409);
+			   response.setSuccess(false);
+			   return response;}
+		   	   
 		   if(!isValidDate(customerDTO.getDateOfBirth())) {
 			   response.setMessage("DateOfBirth Should Be In DD-MM-YYYY Format");
 			   response.setStatus(400);
@@ -816,6 +660,8 @@ public Response getDoctorsSlots(String hospitalId,String doctorId) {
 	    		  ResponseEntity<ResponseStructure<BookingResponse>> res = bookingFeign.bookService(req);
 	    		  BookingResponse bookingResponse  = res.getBody().getData(); 
 	    		  if(bookingResponse!=null) {
+	    		  clinicAdminFeign.updateDoctorSlotWhileBooking(bookingResponse.getDoctorId(), 
+	    		  bookingResponse.getServiceDate(),bookingResponse.getServicetime());
     			     response.setData(res.getBody());			
 		    		 response.setStatus(res.getBody().getStatusCode());	 
 	    		  }else{
@@ -1007,6 +853,7 @@ public Response getDoctorsSlots(String hospitalId,String doctorId) {
 		        	ratingRequest.getCustomerMobileNumber(),ratingRequest.getAppointmentId(),true,nowFormatted
 		        );
 		        customerRatingRepository.save(customerRating);
+		        updateAvgRatingInClinicAndDoctorObject(ratingRequest.getHospitalId(),ratingRequest.getDoctorId());
 		        response.setStatus(200);
 	            response.setMessage("Rating saved successfully");
 	            response.setSuccess(true);
@@ -1018,7 +865,33 @@ public Response getDoctorsSlots(String hospitalId,String doctorId) {
 		                return response;
 		   }
 		        }
+	   
+	   
+	   public void updateAvgRatingInClinicAndDoctorObject(String clinicId,String doctorId) {
+		   try {
+			   List<CustomerRating> clinicRatings =  customerRatingRepository.findByHospitalId(clinicId);
+			   List<CustomerRating> doctorRatings =  customerRatingRepository.findByDoctorId(doctorId); 
+			   double avgClinicRating = clinicRatings.stream()
+			            .mapToDouble(CustomerRating::getHospitalRating)
+			            .average()
+			            .orElse(0.0);
 
+			    double avgDoctorRating = doctorRatings.stream()
+			            .mapToDouble(CustomerRating::getDoctorRating)
+			            .average()
+			            .orElse(0.0);			    
+			  Response res = adminFeign.getClinicById(clinicId);
+			  ClinicDTO dto = new ObjectMapper().convertValue(res.getData(),ClinicDTO.class );
+			  dto.setHospitalOverallRating(avgClinicRating);
+			  adminFeign.updateClinic(clinicId, dto);
+			 ResponseEntity<Response> doctorsDTO =  clinicAdminFeign.getDoctorById(doctorId);
+			  DoctorsDTO dctDto = new ObjectMapper().convertValue(doctorsDTO.getBody().getData(),DoctorsDTO.class );
+			  dctDto.setDoctorAverageRating(avgDoctorRating);
+			  clinicAdminFeign.updateDoctorById(doctorId, dctDto);
+		   }catch(FeignException e) {}
+	   }
+
+	   
 
 	   public Response getRatingForService(String hospitalId, String doctorId) {
 			Response response = new Response();
@@ -1234,7 +1107,7 @@ public ResponseEntity<ResBody<List<NotificationToCustomer>>> notificationToCusto
 	try {		
 		return notificationFeign.customerNotification(customerName, customerMobileNumber);			
 	}catch(FeignException e) {		
-		 ResBody<List<NotificationToCustomer>>  res = new  ResBody<List<NotificationToCustomer>>(e.getMessage(),e.status(),null);		
+		 ResBody<List<NotificationToCustomer>>  res = new  ResBody<List<NotificationToCustomer>>(ExtractFeignMessage.clearMessage(e),e.status(),null);		
 		return ResponseEntity.status(e.status()).body(res);		
 	}
 }

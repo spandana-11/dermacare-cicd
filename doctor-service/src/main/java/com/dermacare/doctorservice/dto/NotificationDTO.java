@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class NotificationDTO {
-	private String id;
+	private String notificationId;;
 	private String message;
 	private String date;
 	private String time;

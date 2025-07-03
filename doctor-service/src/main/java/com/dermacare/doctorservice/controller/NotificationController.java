@@ -22,7 +22,7 @@ public class NotificationController {
 	@Autowired
 	private NotificationService notificationService;
 	
-	@GetMapping("/notificationDoctor/{hospitalId}/{doctorId}")
+	@GetMapping("/notificationToDoctor/{hospitalId}/{doctorId}")
 	public  ResponseEntity<ResBody<List<NotificationDTO>>> notificationTodoctor(@PathVariable String hospitalId,
 			@PathVariable String doctorId){
 		return notificationService.notificationToDoctor(hospitalId, doctorId);

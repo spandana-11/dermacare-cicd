@@ -28,7 +28,7 @@ public class CustomerRepositoryTest {
 	@BeforeEach
 	void setUp() {
 		 customer = new Customer(
-		            null, null,                        // id
+		            null, null,null,                        // id
 		            "9876543210",                 // mobileNumber
 		            "Alice Johnson", null,             // fullName
 		            "Female",                     // gender

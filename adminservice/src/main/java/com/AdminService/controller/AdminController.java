@@ -490,13 +490,6 @@ public ResponseEntity<Object> getDoctorInfoByDoctorId(@PathVariable String docto
 		 }
 }
 
-//NOTIFICATION
-
-@GetMapping("/adminNotification")
-public ResponseEntity<?> adminNotification(){
-	return  serviceImpl.notificationToAdmin();
-}
-
 }
 
 

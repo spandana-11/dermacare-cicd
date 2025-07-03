@@ -220,73 +220,120 @@ public class DoctorServiceImpl implements DoctorService {
 
 	@Override
 	public Response upDateDoctorById(String doctorId, DoctorsDTO dto) {
-		Response response = new Response();
-		try {
-			Optional<Doctors> doctorOptional = doctorsRepository.findByDoctorId(doctorId);
+	    Response response = new Response();
+	    try {
+	        Optional<Doctors> doctorOptional = doctorsRepository.findByDoctorId(doctorId);
 
-			// Check and validate categories
-			if (dto.getCategory() != null) {
-				for (DoctorCategoryDTO DoctorCatDTO : dto.getCategory()) {
-					if (!serviceFeignClient.isCategoryExists(DoctorCatDTO.getCategoryId())) {
-						response.setSuccess(false);
-						response.setData(null);
-						response.setMessage("Category does not exist: " + DoctorCatDTO.getCategoryId());
-						response.setStatus(HttpStatus.NOT_FOUND.value());
-						return response;
-					}
-				}
-			}
+	        if (doctorOptional.isEmpty()) {
+	            response.setSuccess(false);
+	            response.setData(null);
+	            response.setMessage("Doctor not found with ID: " + doctorId);
+	            response.setStatus(HttpStatus.NOT_FOUND.value());
+	            return response;
+	        }
 
-			// Check and validate services
-			if (dto.getService() != null) {
-				for (DoctorServicesDTO DoctorSerDTO : dto.getService()) {
-					if (!serviceFeignClient.isServiceExists(DoctorSerDTO.getServiceId())) {
-						response.setSuccess(false);
-						response.setData(null);
-						response.setMessage("Service does not exist: " + DoctorSerDTO.getServiceId());
-						response.setStatus(HttpStatus.NOT_FOUND.value());
-						return response;
-					}
-				}
-			}
+	        // Validate categories
+	        if (dto.getCategory() != null) {
+	            for (DoctorCategoryDTO DoctorCatDTO : dto.getCategory()) {
+	                if (!serviceFeignClient.isCategoryExists(DoctorCatDTO.getCategoryId())) {
+	                    response.setSuccess(false);
+	                    response.setMessage("Category does not exist: " + DoctorCatDTO.getCategoryId());
+	                    response.setStatus(HttpStatus.NOT_FOUND.value());
+	                    return response;
+	                }
+	            }
+	        }
 
-			// Check and validate sub-services
-			if (dto.getSubServices() != null) {
-				for (DoctorSubServiceDTO DoctorSubSerDTO : dto.getSubServices()) {
-					if (!serviceFeignClient.isSubServiceExists(DoctorSubSerDTO.getSubServiceId())) {
-						response.setSuccess(false);
-						response.setData(null);
-						response.setMessage("SubService does not exist: " + DoctorSubSerDTO.getSubServiceId());
-						response.setStatus(HttpStatus.NOT_FOUND.value());
-						return response;
-					}
-				}
-			}
+	        // Validate services
+	        if (dto.getService() != null) {
+	            for (DoctorServicesDTO DoctorSerDTO : dto.getService()) {
+	                if (!serviceFeignClient.isServiceExists(DoctorSerDTO.getServiceId())) {
+	                    response.setSuccess(false);
+	                    response.setMessage("Service does not exist: " + DoctorSerDTO.getServiceId());
+	                    response.setStatus(HttpStatus.NOT_FOUND.value());
+	                    return response;
+	                }
+	            }
+	        }
 
-			if (doctorOptional.isPresent()) {
-				Doctors doctorToUpdate = DoctorMapper.mapDoctorDTOtoDoctorEntity(dto);
-				doctorToUpdate.setDoctorId(doctorId);
-				Doctors updatedDoctor = doctorsRepository.save(doctorToUpdate);
-				doctorToUpdate.setId(updatedDoctor.getId());
+	        // Validate sub-services
+	        if (dto.getSubServices() != null) {
+	            for (DoctorSubServiceDTO DoctorSubSerDTO : dto.getSubServices()) {
+	                if (!serviceFeignClient.isSubServiceExists(DoctorSubSerDTO.getSubServiceId())) {
+	                    response.setSuccess(false);
+	                    response.setMessage("SubService does not exist: " + DoctorSubSerDTO.getSubServiceId());
+	                    response.setStatus(HttpStatus.NOT_FOUND.value());
+	                    return response;
+	                }
+	            }
+	        }
 
-				response.setSuccess(true);
-				response.setData(updatedDoctor);
-				response.setMessage("Doctor updated successfully");
-				response.setStatus(HttpStatus.OK.value());
-			} else {
-				response.setSuccess(false);
-				response.setData(null);
-				response.setMessage("Doctor not found with ID: " + doctorId);
-				response.setStatus(HttpStatus.NOT_FOUND.value());
-			}
-		} catch (Exception e) {
-			response.setSuccess(false);
-			response.setData(null);
-			response.setMessage("Error updating doctor: " + e.getMessage());
-			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-		}
-		return response;
+	        Doctors doctor = doctorOptional.get();
+
+	        // Update non-null fields only
+	        if (dto.getDoctorPicture() != null)
+	            doctor.setDoctorPicture(Base64CompressionUtil.compressBase64(dto.getDoctorPicture()));
+	        if (dto.getHospitalId() != null)
+	            doctor.setHospitalId(dto.getHospitalId());
+	        if (dto.getDoctorEmail() != null)
+	            doctor.setDoctorEmail(dto.getDoctorEmail());
+	        if (dto.getDoctorLicence() != null)
+	            doctor.setDoctorLicence(dto.getDoctorLicence());
+	        if (dto.getDoctorMobileNumber() != null)
+	            doctor.setDoctorMobileNumber(dto.getDoctorMobileNumber());
+	        if (dto.getDoctorName() != null)
+	            doctor.setDoctorName(dto.getDoctorName());
+	        if (dto.getCategory() != null)
+	            doctor.setCategory(dto.getCategory());
+	        if (dto.getService() != null)
+	            doctor.setService(dto.getService());
+	        if (dto.getSubServices() != null)
+	            doctor.setSubServices(dto.getSubServices());
+	        if (dto.getSpecialization() != null)
+	            doctor.setSpecialization(dto.getSpecialization());
+	        if (dto.getGender() != null)
+	            doctor.setGender(dto.getGender());
+	        if (dto.getExperience() != null)
+	            doctor.setExperience(dto.getExperience());
+	        if (dto.getQualification() != null)
+	            doctor.setQualification(dto.getQualification());
+	        if (dto.getAvailableDays() != null)
+	            doctor.setAvailableDays(dto.getAvailableDays());
+	        if (dto.getAvailableTimes() != null)
+	            doctor.setAvailableTimes(dto.getAvailableTimes());
+	        if (dto.getProfileDescription() != null)
+	            doctor.setProfileDescription(dto.getProfileDescription());
+	        if (dto.getFocusAreas() != null)
+	            doctor.setFocusAreas(dto.getFocusAreas());
+	        if (dto.getDoctorAverageRating() != 0.0)
+	            doctor.setDoctorAverageRating(dto.getDoctorAverageRating());
+	        if (dto.getLanguages() != null)
+	            doctor.setLanguages(dto.getLanguages());
+	        if (dto.getHighlights() != null)
+	            doctor.setHighlights(dto.getHighlights());
+	        if (dto.getDoctorFees() != null)
+	            doctor.setDoctorFees(DoctorMapper.mapDoctorFeeDTOtoEntity(dto.getDoctorFees()));
+
+	        // Booleans (we assume default false if not set, so be cautious)
+	        doctor.setDoctorAvailabilityStatus(dto.isDoctorAvailabilityStatus());
+	        doctor.setRecommendation(dto.isRecommendation());
+
+	        Doctors updatedDoctor = doctorsRepository.save(doctor);
+
+	        response.setSuccess(true);
+	        response.setData(updatedDoctor);
+	        response.setMessage("Doctor updated successfully");
+	        response.setStatus(HttpStatus.OK.value());
+
+	    } catch (Exception e) {
+	        response.setSuccess(false);
+	        response.setData(null);
+	        response.setMessage("Error updating doctor: " + e.getMessage());
+	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	    }
+	    return response;
 	}
+	
 
 	@Override
 	public Response getDoctorsByClinicIdAndDoctorId(String clinicId, String doctorId) {
@@ -953,12 +1000,11 @@ public class DoctorServiceImpl implements DoctorService {
 	
 	///NOTIFICATIONOFDOCTOR
 	
-	public ResponseEntity<ResBody<List<NotificationDTO>>> notificationToDoctor(String hospitalId,
-			 String doctorId){
+	public ResponseEntity<?> notificationToClinic(String hospitalId){
 		try {
-		return notificationFeign.notificationtodoctorandclinic(hospitalId, doctorId);
+		return notificationFeign.sendNotificationToClinic(hospitalId);
 		}catch(FeignException e) {
-			ResBody<List<NotificationDTO>> res = new ResBody<List<NotificationDTO>>(e.getMessage(),e.status(),null);
+			ResBody<List<NotificationDTO>> res = new ResBody<List<NotificationDTO>>(ExtractFeignMessage.clearMessage(e),e.status(),null);
 			return ResponseEntity.status(e.status()).body(res);}
 		}
 

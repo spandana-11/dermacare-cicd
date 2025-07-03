@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.hibernate.validator.constraints.URL;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,6 +16,7 @@ import lombok.NoArgsConstructor;
 @Data 
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ClinicDTO {
 
     private String hospitalId;
@@ -61,37 +64,6 @@ public class ClinicDTO {
 
     private boolean recommended;
 
-    private String hospitalOverallRating;
+    private double hospitalOverallRating;
 
-    // Registration Certificates
-    private String clinicalEstablishmentCertificate;
-    private String businessRegistrationCertificate;
-
-    // Clinic Type Info
-    @NotBlank(message = "Clinic type is required")
-    private String clinicType; // Proprietorship, Partnership, LLP, Pvt Ltd
-
-    // Medicines Handling
-    private String medicinesSoldOnSite;
-    private String drugLicenseCertificate; // Base64
-    private String drugLicenseFormType; // Form 20 or 21
-
-    // Pharmacist Info
-    private String hasPharmacist; // Yes/No/NA
-    private String pharmacistCertificate; // Base64
-
-    // Other Licenses
-    private String biomedicalWasteManagementAuth; // SPCB
-    private String tradeLicense; // Municipality
-    private String fireSafetyCertificate; // Fire Dept
-    private String professionalIndemnityInsurance; // Insurance
-    private String gstRegistrationCertificate;
-
-    // Optional Certifications
-    private String others; // NABH/Aesthetic procedure training (optional, can be a combined doc)
-
-    // Social Media
-    private String instagramHandle;
-    private String twitterHandle;
-    private String facebookHandle;
 }

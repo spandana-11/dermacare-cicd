@@ -24,8 +24,6 @@ import com.AdminService.dto.ClinicDTO;
 import com.AdminService.dto.CustomerDTO;
 import com.AdminService.dto.DoctorsDTO;
 import com.AdminService.dto.DoctortInfo;
-import com.AdminService.dto.NotificationDTO;
-import com.AdminService.dto.ResBody;
 import com.AdminService.dto.ServicesDto;
 import com.AdminService.dto.SubServicesDto;
 import com.AdminService.dto.SubServicesInfoDto;
@@ -37,7 +35,6 @@ import com.AdminService.feign.BookingFeign;
 import com.AdminService.feign.ClinicAdminFeign;
 import com.AdminService.feign.CssFeign;
 import com.AdminService.feign.CustomerFeign;
-import com.AdminService.feign.NotificationFeign;
 import com.AdminService.repository.AdminRepository;
 import com.AdminService.repository.ClinicCredentialsRepository;
 import com.AdminService.repository.ClinicRep;
@@ -72,8 +69,6 @@ public class AdminServiceImpl implements AdminService {
 	@Autowired
 	private BookingFeign bookingFeign;
 	
-	@Autowired
-	private NotificationFeign notificationFeign;
 	
 	@Override
 	public Response adminRegister(AdminHelper helperAdmin) {
@@ -555,6 +550,7 @@ public class AdminServiceImpl implements AdminService {
 		                savedClinic.setHospitalDocuments(docs);}
 		            if (clinic.getHospitalLogo() != null)
 		                savedClinic.setHospitalLogo(Base64.getDecoder().decode(clinic.getHospitalLogo()));
+		            if (clinic.getHospitalOverallRating() != 0.0) savedClinic.setHospitalOverallRating(clinic.getHospitalOverallRating());
 		            if (clinic.getClosingTime() != null) savedClinic.setClosingTime(clinic.getClosingTime());
 		            if (clinic.getOpeningTime() != null) savedClinic.setOpeningTime(clinic.getOpeningTime());
 		            if (clinic.getContactNumber() != null) savedClinic.setContactNumber(clinic.getContactNumber());
@@ -1428,17 +1424,6 @@ public class AdminServiceImpl implements AdminService {
         return response;
     }
 		
-    
-    //NOTIFICATION
-    
-    public ResponseEntity<?> notificationToAdmin(){
-    	try {
-    		return notificationFeign.notificationToAdmin();
-    	}catch(FeignException e) {
-    		ResBody<List<NotificationDTO>> res = new ResBody<List<NotificationDTO>>(e.getMessage(),e.status(),null);
-			return ResponseEntity.status(e.status()).body(res);
-    	}
-    }
     
 }
 

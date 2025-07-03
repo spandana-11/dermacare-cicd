@@ -80,9 +80,9 @@ const ClinicManagement = ({ service, onBack }) => {
 
   const filteredClinics = clinics.filter(
     (clinic) =>
-      clinic.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      clinic.contactNumber?.includes(searchTerm) ||
-      clinic.emailAddress?.toLowerCase().includes(searchTerm.toLowerCase()),
+      clinic.name?.toLowerCase().startsWith(searchTerm.toLowerCase()) ||
+      clinic.contactNumber?.startsWith(searchTerm) ||
+      clinic.emailAddress?.toLowerCase().startsWith(searchTerm.toLowerCase()),
   )
 
   return (

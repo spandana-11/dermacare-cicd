@@ -93,7 +93,7 @@ public class ServiceImpl implements ServiceInterface{
 	
 	
 	
-	public ResBody<List<NotificationDTO>> notificationtodoctorandclinic( String hospitalId,
+	public ResBody<List<NotificationDTO>> notificationtodoctor( String hospitalId,
 			 String doctorId){
 		ResBody<List<NotificationDTO>> res = new ResBody<List<NotificationDTO>>();
 		List<NotificationDTO> eligibleNotifications = new ArrayList<>();
@@ -118,7 +118,7 @@ public class ServiceImpl implements ServiceInterface{
 				
 
 	
-	public ResBody<List<NotificationDTO>> sendNotificationToAdmin() {
+	public ResBody<List<NotificationDTO>> sendNotificationToClinic(String clinicId) {
 		ResBody<List<NotificationDTO>> r = new ResBody<List<NotificationDTO>>();
 		List<NotificationDTO> list = new ArrayList<>();
 		try {
@@ -128,12 +128,13 @@ public class ServiceImpl implements ServiceInterface{
 				d.getData().setCustomerDeviceId(null);}			
 			if(dto != null) {
 			for(NotificationDTO n : dto) {												
-				if(n.getData().getStatus().equalsIgnoreCase("Pending") && timeDifference(n.getTime())) {					
+				if(n.getData().getStatus().equalsIgnoreCase("Pending") && timeDifference(n.getTime()) && 
+				n.getData().getClinicId().equals(clinicId)){					
 					list.add(n);}}}
 		    if( list != null && ! list.isEmpty()) {
 		    	r = new ResBody<List<NotificationDTO>>("Notifications Are sent to the admin",200,list);
 		    }else {
-		    r = new ResBody<List<NotificationDTO>>("Notifications Are Not Found",404,null); }  
+		    r = new ResBody<List<NotificationDTO>>("Notifications Are Not Found",200,null); }  
 		}catch(Exception e) {
 			r = new ResBody<List<NotificationDTO>>(e.getMessage(),500,null);
 		}
@@ -184,62 +185,63 @@ public class ServiceImpl implements ServiceInterface{
 			&&b.getSubServiceId().equalsIgnoreCase(notificationResponse.getSubServiceId())) {	
 				switch(notificationResponse.getStatus()) {
 				case "Accepted": b.setStatus("Confirmed");
-				cllinicFeign.updateDoctorSlotWhileBooking(b.getDoctorId(),b.getServiceDate() ,b.getServicetime());
-				NotificationEntity notificationEntity = repository.findById(notificationResponse.getNotificationId()).orElseThrow(()->
-				new RuntimeException("Notification Not Found With Given Id"));
+				NotificationEntity notificationEntity = repository.findByNotificationId(notificationResponse.getNotificationId());
 				if(notificationEntity!=null) {
 				notificationEntity.getData().setStatus("Confirmed");
 				repository.save(notificationEntity);
 				if(b.getCustomerDeviceId() != null) {
 				appNotification.sendPushAppNotification(b.getCustomerDeviceId()," Hello "+b.getName(),b.
-				getDoctorName()+" Accepted Your Appointment For "+b.getSubServiceName()+ " on "+b.getServiceDate()+" at "+b.getServicetime());}
+				getDoctorName()+" Accepted Your Appointment For "+b.getSubServiceName()+ " on "+b.getServiceDate()+" at "+b.getServicetime());
 				}else {
-					return new ResBody<NotificationDTO>("Notification Not Found With Given Id",404,null);
+					return new ResBody<NotificationDTO>("please provide deviceId",400,null);}
+				}else {
+					return new ResBody<NotificationDTO>("Notification Not Found With Provided NotificationId",404,null);
 				}
 				break;
 				
 				case "Rejected": b.setStatus("Rejected");
 				 b.setReasonForCancel(notificationResponse.getReasonForCancel());
-				 cllinicFeign.makingFalseDoctorSlot(b.getDoctorId(),b.getServiceDate() ,b.getServicetime());
-				 Optional<NotificationEntity> obj = repository.findById(notificationResponse.getNotificationId());
-				 if(obj.get()!=null) {
-					NotificationEntity c = obj.get();
-					c.getData().setStatus("Rejected");
-					repository.save(c);}
+			   	cllinicFeign.makingFalseDoctorSlot(b.getDoctorId(),b.getServiceDate() ,b.getServicetime());
+				 NotificationEntity obj = repository.findByNotificationId(notificationResponse.getNotificationId());
+				 if(obj!=null) {
+					 obj.getData().setStatus("Rejected");
+					repository.save(obj);
 				 if(b.getCustomerDeviceId() != null) {
 				 appNotification.sendPushAppNotification(b.getCustomerDeviceId()," Hello "+b.getName(),b.
 				 getDoctorName()+" Rejected Your Appointment For "+b.getSubServiceName()+ " on "+b.getServiceDate()+" at "+b.getServicetime());}
 				 else {
-						return new ResBody<NotificationDTO>("Notification Not Found With Given Id",404,null);
+						return new ResBody<NotificationDTO>("please provide deviceId",400,null);}
+				 }else {
+						return new ResBody<NotificationDTO>("Notification Not Found With Provided NotificationId",404,null);
 					}
 				break;
 				
 				default:b.setStatus("Pending");
 				}	
-				removeCompletedNotifications();
+				//////removeCompletedNotifications();
 		    	ResponseEntity<?> book = bookServiceFeign.updateAppointment(b);
 		    	if(book != null) {
-		    		return new ResBody<NotificationDTO>("Appointment Status updated",200,null);
+		    		return new ResBody<NotificationDTO>("Appointment And Notification Status updated",200,null);
 		    	}else {
-		    	return new ResBody<NotificationDTO>("Appointment Status Not updated",404,null);}
+		    	return new ResBody<NotificationDTO>("Appointment Status Not updated",200,null);}
 		    	}else {
-		    	return new ResBody<NotificationDTO>("Appointment Not updated",404,null);
+		    	return new ResBody<NotificationDTO>("Status Not updated please check provided details",200,null);
 		    }						
 		}catch(FeignException e) {
-			return new ResBody<NotificationDTO>(ExtractFeignMessage.clearMessage(e),500,null);
+			return new ResBody<NotificationDTO>(e.getMessage(),500,null);
 		}}
 	
 	
 	
-	private void removeCompletedNotifications() {
-   	List<NotificationEntity> entity = repository.findAll();
-   	if(entity!=null && !entity.isEmpty()) {
-   		for(NotificationEntity e : entity) {
-   			if(e.getData().getStatus().equals("Completed")) {
-   				if(bookings.contains(e.getId())) {
-   					bookings.remove(e.getId());}
-   			repository.delete(e);	    			
-   		}}}}
+//	private void removeCompletedNotifications() {
+//   	List<NotificationEntity> entity = repository.findAll();
+//   	if(entity!=null && !entity.isEmpty()) {
+//   		for(NotificationEntity e : entity) {
+//   			if(e.getData().getStatus().equals("Completed")) {
+//   				if(bookings.contains(e.getId())) {
+//   					bookings.remove(e.getId());}
+//   			repository.delete(e);	    			
+//   		}}}}
 
 	
 	
@@ -285,7 +287,7 @@ public class ServiceImpl implements ServiceInterface{
 		if(eligibleNotifications!=null && !eligibleNotifications.isEmpty() ) {
 		res = new ResBody<List<NotificationToCustomer>>("Notification sent Successfully",200,eligibleNotifications);
 		}else {
-			res = new ResBody<List<NotificationToCustomer>>("NotificationInfo Not Found",404,null);
+			res = new ResBody<List<NotificationToCustomer>>("Notifications Not Found",200,null);
 			}}catch(FeignException e) {
 		res = new ResBody<List<NotificationToCustomer>>(e.getMessage(),500,null);
 	}

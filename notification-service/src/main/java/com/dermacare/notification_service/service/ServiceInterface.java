@@ -15,10 +15,10 @@ public interface ServiceInterface {
 
 	public void createNotification(BookingResponse booking);
 
-	public ResBody<List<NotificationDTO>> notificationtodoctorandclinic( String hospitalId,
+	public ResBody<List<NotificationDTO>> notificationtodoctor( String hospitalId,
 			 String doctorId);
 
-    ResBody<List<NotificationDTO>> sendNotificationToAdmin();
+    ResBody<List<NotificationDTO>> sendNotificationToClinic(String clinicId);
 
     ResBody<NotificationDTO> notificationResponse(NotificationResponse notificationResponse);
 

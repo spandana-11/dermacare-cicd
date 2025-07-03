@@ -32,6 +32,7 @@ public class Clinic {
     private List<byte[]> contracterDocuments;
 	private List<byte[]> hospitalDocuments;
 	private boolean recommended;
+	private double hospitalOverallRating;
 	// Basic Registration Certificates
     private byte[] clinicalEstablishmentCertificate;
     private byte[] businessRegistrationCertificate;

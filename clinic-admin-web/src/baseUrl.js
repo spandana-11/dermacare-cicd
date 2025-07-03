@@ -1,10 +1,10 @@
 // export const BASE_URL = 'http://alb-dev-sc-197990416.ap-south-1.elb.amazonaws.com/api'
-export let wifiUrl = '13.233.9.23:9090'
-// export let wifiUrl = '192.168.1.5'r
+export let wifiUrl = '13.201.115.0:9090'
+// export let wifiUrl = '192.168.1.5'
 
 export const BASE_URL = `http://${wifiUrl}/clinic-admin`
 export const MainAdmin_URL = `http://${wifiUrl}/admin`
-// export const subService_URL = `http://${wifiUrl}:8800/api/v1`
+export const subService_URL = `http://${wifiUrl}/api/v1`
 // END POINTS
 // login
 export const endPoint = 'admin/login'
@@ -12,15 +12,14 @@ export const endPoint = 'admin/login'
 export const AllReports = `getallreports`
 export const SavingReports = `savereports`
 export const Get_ReportsByBookingId = `getReportByBookingId`
-
 //appointments
 // export const allBooking_sevices = getAllBookedServices
 export const DeleteBookings = `customer/deleteService`
 export const GetBookingBy_ClinicId = `customer/getAllBookedServicesByClinicId`
 export const GetBookingBy_DoctorId = `customer/getBookingByDoctorId`
 //appointments
-// export const Booking_sevice = `http://${wifiUrl}:8083/api/v1`
-// export const allBooking_sevices = `getAllBookedServices`
+export const Booking_sevice = `http://${wifiUrl}/api/v1`
+export const allBooking_sevices = `getAllBookedServices`
 
 // Appointment Management
 export const getAllBookingDetails = 'admin/getAllBookingDetails'
@@ -135,3 +134,8 @@ export const postData = 'admin/providerReassign'
 export const ClinicAllData = 'v1/clinic/getAllClinics'
 
 export const clinicPost = 'v1/clinic/addClinic'
+
+//payouts
+export const Customer_Url=`http://${wifiUrl}/api/`
+export const getAllPayouts='payments/getallpayments'
+export const addPayouts='payments/addpayment'

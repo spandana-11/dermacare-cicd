@@ -1,39 +1,32 @@
 package com.dermaCare.customerService.config;
 
 import java.io.InputStream;
-
 import org.springframework.context.annotation.Configuration;
-
+import org.springframework.beans.factory.annotation.Value;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-
+import org.springframework.core.io.Resource;
 import jakarta.annotation.PostConstruct;
 
 @Configuration
 public class CustomerFcm {
 	
-	@PostConstruct
-    public void initialize() {
-		try {
-		    InputStream serviceAccount = getClass()
-		            .getClassLoader()
-		            .getResourceAsStream("dermacare.json");
+	 @Value("${app.firebase-configuration-file}")
+	    private Resource firebaseConfigFile;
 
-		    if (serviceAccount == null) {
-		        throw new IllegalStateException("Firebase service account file not found in classpath!");
-		    }
-
-		    FirebaseOptions options = FirebaseOptions.builder()
-		            .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-		            .build();
-
-		    if (FirebaseApp.getApps().isEmpty()) {
-		        FirebaseApp.initializeApp(options);
-		        System.out.println("Firebase initialized");
-		    }
-		} catch (Exception e) {
-		    e.printStackTrace();
-		}
-}
+	    @PostConstruct
+	    public void initialize() {
+	        try (InputStream serviceAccount = firebaseConfigFile.getInputStream()) {
+	            if (FirebaseApp.getApps().isEmpty()) {
+	                FirebaseOptions options = FirebaseOptions.builder()
+	                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+	                    .build();
+	                FirebaseApp.initializeApp(options);
+	                System.out.println("Firebase initialized successfully.");}
+	        }catch (Exception e) {
+	            System.err.println("Error initializing Firebase: " + e.getMessage());
+	            e.printStackTrace();
+	        }
+	    }
 }

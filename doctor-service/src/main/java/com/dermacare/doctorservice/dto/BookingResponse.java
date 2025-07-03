@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"notes","reports"})
+@JsonIgnoreProperties({"reports"})
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class BookingResponse {
 	private String bookingId;
