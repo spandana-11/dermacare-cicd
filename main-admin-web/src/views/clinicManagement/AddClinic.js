@@ -247,14 +247,6 @@ const AddClinic = () => {
     return Object.keys(newErrors).length == 0
   }
 
-  const convertToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onload = () => resolve(reader.result)
-      reader.onerror = (error) => reject(error)
-    })
-  }
   const downloadFile = (base64, filename, mime = 'application/pdf') => {
     const link = document.createElement('a')
     link.href = `data:${mime};base64,${base64}`
@@ -275,48 +267,47 @@ const AddClinic = () => {
     }))
   }
 
-const handleFileChange = async (e) => {
-  const { name, files } = e.target
-  const file = files[0]
+  const handleFileChange = async (e) => {
+    const { name, files } = e.target
+    const file = files[0]
 
-  if (!file) return
+    if (!file) return
 
-  // Save the file object for displaying name in UI
-  setFormData((prev) => ({
-    ...prev,
-    [name]: file, // keep original file for UI
-  }))
-  setErrors((prev) => ({ ...prev, [name]: '' }))
-
-  const stripBase64Prefix = (base64) => base64.split(',')[1]
-
-  const convertToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onload = () => resolve(reader.result)
-      reader.onerror = (error) => reject(error)
-    })
-  }
-
-  try {
-    const base64File = await convertToBase64(file)
-    const cleanBase64 = stripBase64Prefix(base64File)
-
-    // Save base64 under a different key for submission
+    // Save the file object for displaying name in UI
     setFormData((prev) => ({
       ...prev,
-      [`${name}Base64`]: cleanBase64,
+      [name]: file, // keep original file for UI
     }))
-  } catch (error) {
-    console.error('File conversion error:', error)
-    setErrors((prev) => ({
-      ...prev,
-      [name]: 'File conversion failed',
-    }))
-  }
-}
+    setErrors((prev) => ({ ...prev, [name]: '' }))
 
+    const stripBase64Prefix = (base64) => base64.split(',')[1]
+
+    const convertToBase64 = (file) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.readAsDataURL(file)
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = (error) => reject(error)
+      })
+    }
+
+    try {
+      const base64File = await convertToBase64(file)
+      const cleanBase64 = stripBase64Prefix(base64File)
+
+      // Save base64 under a different key for submission
+      setFormData((prev) => ({
+        ...prev,
+        [`${name}Base64`]: cleanBase64,
+      }))
+    } catch (error) {
+      console.error('File conversion error:', error)
+      setErrors((prev) => ({
+        ...prev,
+        [name]: 'File conversion failed',
+      }))
+    }
+  }
 
   const handleEmailBlur = () => {
     const email = formData.emailAddress.trim()
@@ -347,82 +338,128 @@ const handleFileChange = async (e) => {
     }
     return url
   }
+  console.log('submit button clicked')
+
+  const convertFileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => {
+        const base64String = reader.result.split(',')[1] // remove metadata
+        resolve(base64String)
+      }
+      reader.onerror = (error) => reject(error)
+    })
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    console.log('Validating form...')
     const isValid = validateForm()
-    console.log('Validation result:', isValid)
-    if (!isValid) {
-      console.log('Form validation failed. Aborting submit.')
-      return
-    }
-
-    const clinicData = {
-      name: formData.name,
-      address: formData.address,
-      city: formData.city,
-      contactNumber: formData.contactNumber,
-      openingTime: formData.openingTime,
-      closingTime: formData.closingTime,
-      hospitalLogo: formData.hospitalLogo,
-      emailAddress: formData.emailAddress,
-      website: normalizeWebsite(formData.website.trim()),
-      licenseNumber: formData.licenseNumber,
-      issuingAuthority: formData.issuingAuthority, // corrected
-      hospitalDocuments: formData.hospitalDocuments || [], // corrected key
-      recommended: formData.recommended,
-      contractorDocuments: formData.hospitalContract || [],
-      clinicalEstablishmentCertificate: formData.clinicalEstablishmentCertificate || '',
-      businessRegistrationCertificate: formData.businessRegistrationCertificate || '',
-      clinicType: clinicTypeOption,
-      medicinesSoldOnSite: selectedOption,
-      drugLicenseCertificate: formData.drugLicenseCertificate || '',
-      drugLicenseFormType: formData.drugLicenseFormType || '',
-      hasPharmacist: selectedPharmacistOption || '',
-      pharmacistCertificate: formData.pharmacistCertificate || '',
-      biomedicalWasteManagementAuth: formData.biomedicalWasteManagementAuth || '',
-      tradeLicense: formData.tradeLicense || '',
-      fireSafetyCertificate: formData.fireSafetyCertificate || '',
-      professionalIndemnityInsurance: formData.professionalIndemnityInsurance || '',
-      gstRegistrationCertificate: formData.gstRegistrationCertificate || '',
-      others: formData.others || '',
-      instagramHandle: formData.instagramHandle,
-      twitterHandle: formData.twitterHandle,
-      facebookHandle: formData.facebookHandle,
-    }
-
-    console.log('Clinic Data Saved:', clinicData)
-    console.log(`${BASE_URL}/admin/CreateClinic`)
+    if (!isValid) return
 
     try {
-      console.log('Clinic Data Saved: try', clinicData)
+      const convertIfExists = async (file) => (file ? await convertFileToBase64(file) : '')
 
-      // Fix the URL construction
+      const convertMultipleIfExists = async (files) =>
+        Array.isArray(files)
+          ? await Promise.all(files.map((file) => convertFileToBase64(file)))
+          : []
+
+      // Convert Files
+      const hospitalLogoBase64 = await convertIfExists(formData.hospitalLogo)
+      // ✅ First convert
+      const hospitalDocumentsBase64 = await Promise.all(
+        Array.isArray(formData.hospitalDocuments)
+          ? formData.hospitalDocuments.map((file) => convertFileToBase64(file))
+          : [],
+      )
+
+      // ✅ Then check the result of that conversion
+      if (hospitalDocumentsBase64.some((doc) => typeof doc !== 'string' || !doc.length)) {
+        toast.error('One or more hospital documents failed to convert to base64.', {
+          position: 'top-right',
+        })
+        return
+      }
+
+      const hospitalContractBase64 = await convertMultipleIfExists(formData.hospitalContract)
+      const clinicalEstablishmentCertificateBase64 = await convertIfExists(
+        formData.clinicalEstablishmentCertificate,
+      )
+      const businessRegistrationCertificateBase64 = await convertIfExists(
+        formData.businessRegistrationCertificate,
+      )
+      const drugLicenseCertificateBase64 = await convertIfExists(formData.drugLicenseCertificate)
+      const drugLicenseFormTypeBase64 = await convertIfExists(formData.drugLicenseFormType)
+      const pharmacistCertificateBase64 = await convertIfExists(formData.pharmacistCertificate)
+      const biomedicalWasteManagementAuthBase64 = await convertIfExists(
+        formData.biomedicalWasteManagementAuth,
+      )
+      const tradeLicenseBase64 = await convertIfExists(formData.tradeLicense)
+      const fireSafetyCertificateBase64 = await convertIfExists(formData.fireSafetyCertificate)
+      const professionalIndemnityInsuranceBase64 = await convertIfExists(
+        formData.professionalIndemnityInsurance,
+      )
+      const gstRegistrationCertificateBase64 = await convertIfExists(
+        formData.gstRegistrationCertificate,
+      )
+      const othersBase64 = await convertIfExists(formData.others)
+
+      const formatToAMPM = (time24) => {
+        const [hourStr, minuteStr] = time24.split(':')
+        let hour = parseInt(hourStr, 10)
+        const ampm = hour >= 12 ? 'PM' : 'AM'
+        hour = hour % 12 || 12
+        return `${hour.toString().padStart(2, '0')}:${minuteStr} ${ampm}`
+      }
+
+      const clinicData = {
+        name: formData.name,
+        address: formData.address,
+        city: formData.city,
+        contactNumber: formData.contactNumber,
+        openingTime: formatToAMPM(formData.openingTime),
+        closingTime: formatToAMPM(formData.closingTime),
+        hospitalLogo: hospitalLogoBase64,
+        emailAddress: formData.emailAddress,
+        website: normalizeWebsite(formData.website.trim()),
+        licenseNumber: formData.licenseNumber,
+        issuingAuthority: formData.issuingAuthority,
+        hospitalDocuments: hospitalDocumentsBase64,
+        contractorDocuments: hospitalContractBase64,
+        clinicalEstablishmentCertificate: clinicalEstablishmentCertificateBase64,
+        businessRegistrationCertificate: businessRegistrationCertificateBase64,
+        clinicType: clinicTypeOption,
+        medicinesSoldOnSite: selectedOption,
+        drugLicenseCertificate: drugLicenseCertificateBase64,
+        drugLicenseFormType: drugLicenseFormTypeBase64,
+        hasPharmacist: selectedPharmacistOption,
+        pharmacistCertificate: pharmacistCertificateBase64,
+        biomedicalWasteManagementAuth: biomedicalWasteManagementAuthBase64,
+        tradeLicense: tradeLicenseBase64,
+        fireSafetyCertificate: fireSafetyCertificateBase64,
+        professionalIndemnityInsurance: professionalIndemnityInsuranceBase64,
+        gstRegistrationCertificate: gstRegistrationCertificateBase64,
+        others: othersBase64,
+        instagramHandle: formData.instagramHandle,
+        twitterHandle: formData.twitterHandle,
+        facebookHandle: formData.facebookHandle,
+        recommended: !!formData.recommended,
+      }
+
+      // API Submission
       const response = await axios.post(`${BASE_URL}/admin/CreateClinic`, clinicData)
-      console.log(response)
       const savedClinicData = response.data
-      console.log(savedClinicData)
 
       if (savedClinicData.success) {
         toast.success(response.message, { position: 'top-right' })
-        const hospitalID = localStorage.getItem('HospitalId') // Assuming it's an email or unique ID
-        const password = savedClinicData.password // Or extract from correct path
-        const clinicUsername = savedClinicData.data.clinicUsername
-        const clinicTemporaryPassword = savedClinicData.data.clinicTemporaryPassword
-        console.log(clinicUsername)
-        console.log(clinicTemporaryPassword)
-        // sendDermaCareOnboardingEmail({
-        //   name: 'Dr. Neha’s Clinic',
-        //   email: 'prashanthr@gmail.com',
-        //   password: 'Derma@1234',
-        // })
+
         sendDermaCareOnboardingEmail({
           name: formData.name,
           email: formData.emailAddress,
-          password: clinicTemporaryPassword,
-          userID: clinicUsername,
+          password: savedClinicData.data.clinicTemporaryPassword,
+          userID: savedClinicData.data.clinicUsername,
         })
 
         navigate('/clinic-management', {
@@ -436,7 +473,7 @@ const handleFileChange = async (e) => {
       }
     } catch (error) {
       console.error('Error submitting clinic data:', error)
-      toast.error(`${error.message}`, { position: 'top-right' })
+      toast.error(error.message || 'Something went wrong', { position: 'top-right' })
     }
   }
 
@@ -649,7 +686,9 @@ const handleFileChange = async (e) => {
                 <CFormInput
                   type="file"
                   name="hospitalContract"
-                  onChange={handleFileChange}
+                  onChange={(e) =>
+                    setFormData({ ...formData, hospitalContract: Array.from(e.target.files) })
+                  }
                   multiple
                   accept=".pdf,.doc,.docx"
                   invalid={!!errors.hospitalContract}
@@ -668,7 +707,7 @@ const handleFileChange = async (e) => {
                   name="hospitalLogo"
                   file={formData.hospitalLogo}
                   error={errors.hospitalLogo}
-                  onChange={handleFileChange}
+                  onChange={(e) => setFormData({ ...formData, hospitalLogo: e.target.files[0] })}
                   onRemove={(name) => {
                     setFormData((prev) => ({ ...prev, [name]: '' })) // OR null
                     setErrors((prev) => ({ ...prev, [name]: '' }))
@@ -684,11 +723,17 @@ const handleFileChange = async (e) => {
                 <CFormInput
                   type="file"
                   name="hospitalDocuments"
-                  onChange={handleFileChange}
                   multiple
                   accept=".pdf,.doc,.docx"
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      hospitalDocuments: Array.from(e.target.files), // MUST use Array.from
+                    })
+                  }
                   invalid={!!errors.hospitalDocuments}
                 />
+
                 {errors.hospitalDocuments && (
                   <CFormFeedback invalid>{errors.hospitalDocuments}</CFormFeedback>
                 )}
@@ -706,7 +751,12 @@ const handleFileChange = async (e) => {
                   type="file"
                   name="clinicalEstablishmentCertificate"
                   id="clinicalReg"
-                  onChange={handleFileChange}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      clinicalEstablishmentCertificate: e.target.files[0],
+                    })
+                  }
                   // multiple
                   accept=".pdf,.zip,.doc,.docx"
                   invalid={!!errors.clinicalEstablishmentCertificate}
@@ -725,7 +775,9 @@ const handleFileChange = async (e) => {
                   type="file"
                   id="businessReg"
                   name="businessRegistrationCertificate"
-                  onChange={handleFileChange}
+                  onChange={(e) =>
+                    setFormData({ ...formData, businessRegistrationCertificate: e.target.files[0] })
+                  }
                   // multiple
                   accept=".pdf,.zip,.doc,.docx"
                   invalid={!!errors.businessRegistrationCertificate}
@@ -770,7 +822,9 @@ const handleFileChange = async (e) => {
                   type="file"
                   id="indemnity"
                   name="professionalIndemnityInsurance"
-                  onChange={handleFileChange}
+                  onChange={(e) =>
+                    setFormData({ ...formData, professionalIndemnityInsurance: e.target.files[0] })
+                  }
                   multiple
                   accept=".pdf,.doc,.docx"
                   invalid={!!errors.professionalIndemnityInsurance}
@@ -814,7 +868,9 @@ const handleFileChange = async (e) => {
                   type="file"
                   id="biomedicalWaste"
                   name="biomedicalWasteManagementAuth"
-                  onChange={handleFileChange}
+                  onChange={(e) =>
+                    setFormData({ ...formData, biomedicalWasteManagementAuth: e.target.files[0] })
+                  }
                   // multiple
                   accept=".pdf,.doc,.docx"
                   invalid={!!errors.biomedicalWasteManagementAuth}
@@ -835,7 +891,9 @@ const handleFileChange = async (e) => {
                     type="file"
                     id="drugLicenseCertificate"
                     name="drugLicenseCertificate"
-                    onChange={handleFileChange}
+                    onChange={(e) =>
+                      setFormData({ ...formData, drugLicenseCertificate: e.target.files[0] })
+                    }
                     invalid={!!errors.drugLicenseCertificate}
                   />
                   {errors.drugLicenseCertificate && (
@@ -850,7 +908,9 @@ const handleFileChange = async (e) => {
                     type="file"
                     id="Form20/21"
                     name="drugLicenseFormType"
-                    onChange={handleFileChange}
+                    onChange={(e) =>
+                      setFormData({ ...formData, drugLicenseFormType: e.target.files[0] })
+                    }
                     // multiple
                     accept=".pdf,.doc,.docx"
                     invalid={!!errors.drugLicenseFormType}
@@ -872,7 +932,7 @@ const handleFileChange = async (e) => {
                 <CFormInput
                   type="file"
                   name="tradeLicense"
-                  onChange={handleFileChange}
+                  onChange={(e) => setFormData({ ...formData, tradeLicense: e.target.files[0] })}
                   // multiple
                   accept=".pdf,.doc,.docx"
                   invalid={!!errors.tradeLicense}
@@ -892,7 +952,9 @@ const handleFileChange = async (e) => {
                   type="file"
                   id="fireSafety"
                   name="fireSafetyCertificate"
-                  onChange={handleFileChange}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fireSafetyCertificate: e.target.files[0] })
+                  }
                   // multiple
                   accept=".pdf,.doc,.docx"
                   invalid={!!errors.fireSafetyCertificate}
@@ -914,7 +976,9 @@ const handleFileChange = async (e) => {
                   type="file"
                   id="gstCert"
                   name="gstRegistrationCertificate"
-                  onChange={handleFileChange}
+                  onChange={(e) =>
+                    setFormData({ ...formData, gstRegistrationCertificate: e.target.files[0] })
+                  }
                   // multiple
                   accept=".pdf,.doc,.docx"
                   invalid={!!errors.gstRegistrationCertificate}
@@ -934,7 +998,7 @@ const handleFileChange = async (e) => {
                 <CFormInput
                   type="file"
                   name="others"
-                  onChange={handleFileChange}
+                  onChange={(e) => setFormData({ ...formData, others: e.target.files[0] })}
                   // multiple
                   accept=".pdf,.doc,.docx"
                   invalid={!!errors.others}
@@ -1011,7 +1075,9 @@ const handleFileChange = async (e) => {
                     type="file"
                     id="pharmacistCert"
                     name="pharmacistCertificate"
-                    onChange={handleFileChange}
+                    onChange={(e) =>
+                      setFormData({ ...formData, pharmacistCertificate: e.target.files[0] })
+                    }
                     // multiple
                     accept=".pdf,.doc,.docx"
                     invalid={!!errors.pharmacistCertificate}

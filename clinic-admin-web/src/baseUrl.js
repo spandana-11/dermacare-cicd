@@ -136,6 +136,6 @@ export const ClinicAllData = 'v1/clinic/getAllClinics'
 export const clinicPost = 'v1/clinic/addClinic'
 
 //payouts
-export const Customer_Url=`http://${wifiUrl}/api/`
+export const Customer_Url=`http://${wifiUrl}:8083/api/`
 export const getAllPayouts='payments/getallpayments'
 export const addPayouts='payments/addpayment'

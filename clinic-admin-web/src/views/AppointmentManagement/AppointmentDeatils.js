@@ -59,6 +59,10 @@ const AppointmentDetails = () => {
 
     fetchDoctorDetails()
   }, [appointment])
+  const getDoctorImage = (picture) => {
+    if (!picture) return '/default-doctor.png'
+    return picture.startsWith('data:image') ? picture : `data:image/jpeg;base64,${picture}`
+  }
 
   return (
     <div className="container mt-4">
@@ -74,7 +78,7 @@ const AppointmentDetails = () => {
           <CButton color="secondary" size="sm" onClick={() => navigate(-1)}>
             Back
           </CButton>
-          <CButton
+          {/* <CButton
             color="danger"
             size="sm"
             className="text-white"
@@ -82,7 +86,7 @@ const AppointmentDetails = () => {
             disabled={isDeleting}
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
-          </CButton>
+          </CButton> */}
         </div>
       </div>
 
@@ -128,34 +132,33 @@ const AppointmentDetails = () => {
         doctor && (
           <>
             <h6 className="fw-bold mt-4">Doctor Details</h6>
-            <div className="d-flex align-items-center gap-3 border rounded p-3 shadow-sm">
-              <img
-                src={
-                  doctor.doctorPicture
-                    ? `data:image/jpeg;base64,${doctor.doctorPicture}`
-                    : '/default-doctor.png'
-                }
-                alt={`Dr. ${doctor.doctorName}`}
-                width={80}
-                height={80}
-                className="rounded-circle border"
-              />
-              <div>
-                <h6 className="text-primary fw-bold mb-1">Dr. {doctor.doctorName}</h6>
-                <p className="mb-1">
-                  <strong>Specialization:</strong> {doctor.specialization}
-                </p>
-                <p className="mb-1">
-                  <strong>Experience:</strong> {doctor.experience} years
-                </p>
-                <p className="mb-1">
-                  <strong>Qualification:</strong> {doctor.qualification}
-                </p>
-                <p className="mb-0">
-                  <strong>Languages:</strong> {doctor.languages?.join(', ')}
-                </p>
-              </div>
-            </div>
+           <div className="d-flex align-items-center gap-3 border rounded p-3 shadow-sm">
+  <img
+    src={getDoctorImage(doctor.doctorPicture)}
+    alt={doctor.doctorName}
+    width={80}
+    height={80}
+    className="rounded-circle border"
+  />
+  <div>
+    <h6 className="text-primary fw-bold mb-1">{doctor.doctorName}</h6>
+    <p className="mb-1"><strong>Specialization:</strong> {doctor.specialization}</p>
+    <p className="mb-1"><strong>Experience:</strong> {doctor.experience} years</p>
+    <p className="mb-1"><strong>Qualification:</strong> {doctor.qualification}</p>
+    <p className="mb-0"><strong>Languages:</strong> {doctor.languages?.join(', ')}</p>
+  </div>
+  <div className="ms-auto">
+    <CButton
+      color="primary"
+      size="sm"
+      className="px-3"
+      onClick={() => navigate(`/doctor/${doctor.doctorId}`, { state: { doctor } })}
+    >
+      View Details
+    </CButton>
+  </div>
+</div>
+
           </>
         )}
     </div>

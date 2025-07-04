@@ -78,6 +78,8 @@ const appointmentManagement = () => {
         return 'warning'
       case 'confirmed':
         return 'info'
+      case 'in progress':
+        return 'primary'
       case 'rescheduled':
         return 'secondary'
       default:
@@ -279,9 +281,15 @@ const appointmentManagement = () => {
                   </CTableDataCell>
                   <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
                   <CTableDataCell>
-                    {<CTableDataCell>
-  <CBadge color={getStatusColor(item.status)}>{item.status}</CBadge>
-</CTableDataCell>
+                    {
+                      <CTableDataCell>
+                        <CBadge color={getStatusColor(item.status)}>
+                          {item.status
+                            ?.split(' ')
+                            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                            .join(' ')}
+                        </CBadge>
+                      </CTableDataCell>
                     }
                   </CTableDataCell>
                   <CTableDataCell>
