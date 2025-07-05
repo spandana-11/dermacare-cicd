@@ -25,7 +25,7 @@ pipeline {
             scp -o StrictHostKeyChecking=no /var/lib/jenkins/jenkins-secrets/firebase-key.json \
               ubuntu@${REMOTE_HOST}:~/${APP_DIR}/notification-service/src/main/resources/
 
-            scp -o StrictHostKeyChecking=no /var/lib/jenkins/jenkins-secrets/dermacare.json \
+            scp -o StrictHostKeyChecking=no /var/lib/jenkins/jenkins-secrets/firebase-key.json \
               ubuntu@${REMOTE_HOST}:~/${APP_DIR}/customerservice/src/main/resources/
           """
         }
