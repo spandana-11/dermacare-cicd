@@ -30,6 +30,8 @@ const AppHeaderDropdown = () => {
   const handleLogout = () => {
     localStorage.removeItem('authToken')
     localStorage.removeItem('user')
+     localStorage.removeItem('AdminId')
+    localStorage.removeItem('')
 
     navigate('/login')
   }

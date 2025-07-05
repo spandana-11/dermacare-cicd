@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.dermacare.bookingService.dto.BookingRequset;
 import com.dermacare.bookingService.dto.BookingResponse;
+import com.dermacare.bookingService.dto.ReportsDtoList;
 import com.dermacare.bookingService.entity.Booking;
 import com.dermacare.bookingService.entity.ReportsList;
 import com.dermacare.bookingService.producer.KafkaProducer;
@@ -62,6 +63,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		BeanUtils.copyProperties(entity, response);
 		response.setMobileNumber(String.valueOf(entity.getMobileNumber()));
 		response.setBookingId(String.valueOf(entity.getBookingId()));
+		response.setReports(new ObjectMapper().convertValue(entity.getReports(),ReportsDtoList.class));
 		if(entity.getConsultationType().equalsIgnoreCase("video consultation") || entity.getConsultationType().equalsIgnoreCase("online consultation") ) {
 			response.setChannelId(randomNumber());
 		}else {

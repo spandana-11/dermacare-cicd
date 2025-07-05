@@ -34,6 +34,7 @@ import {
   serviceData,
   CategoryData,
   subServiceData,
+  getSubServiceById,
 } from '../../views/serviceManagement/ServiceManagementAPI'
 
 const DoctorManagement = () => {
@@ -101,6 +102,7 @@ const DoctorManagement = () => {
   const [showErrorMessage, setShowErrorMessage] = useState('')
 
   const [serviceOptionsFormatted, setServiceOptionsFormatted] = useState([]) // ✅ Add this
+  const [isSubServiceComplete, setIsSubServiceComplete] = useState(true)
 
   const availableDays = (value, type) => {
     if (type === 'start') {
@@ -509,6 +511,7 @@ const DoctorManagement = () => {
       const updated = items.filter((_, index) => index !== indexToRemove)
       onAdd(updated)
     }
+
     return (
       <div className="mb-3">
         <label className="form-label fw-semibold">{label}</label>
@@ -546,7 +549,19 @@ const DoctorManagement = () => {
     )
   }
   // console.log(selectedHospital)
+  const checkSubServiceDetails = async (ids) => {
+    let incomplete = false
+    const hospitalId = localStorage.getItem('HospitalId')
+    for (const id of ids) {
+      const data = await getSubServiceById(hospitalId, id) // Use actual hospitalId
+      if (!data || !data.price || !data.finalCost) {
+        incomplete = true
+        break
+      }
+    }
 
+    setIsSubServiceComplete(!incomplete)
+  }
   return (
     <div>
       <div className="d-flex justify-content-end mb-3">
@@ -682,13 +697,31 @@ const DoctorManagement = () => {
                   }))}
                 onChange={(selected) => {
                   setSelectedSubService(selected.map((opt) => opt.value))
+                  const ids = selected.map((opt) => opt.value)
+                  setSelectedSubService(ids)
 
-                  // Clear validation error on selection
                   if (selected.length > 0) {
                     setFormErrors((prev) => ({ ...prev, subServiceName: '' }))
                   }
+
+                  // ✅ Check if selected sub-services have complete data
+                  checkSubServiceDetails(ids)
+
+                  // Clear validation error on selection
+                  // if (selected.length > 0) {
+                  //   setFormErrors((prev) => ({ ...prev, subServiceName: '' }))
+                  // }
                 }}
               />
+              {!isSubServiceComplete && (
+                <div className="text-danger mt-2">
+                  Some selected sub-services are missing details like price or final cost.
+                  <br />
+                  <a href="/service-Management" className="text-primary">
+                    Please add sub-service details
+                  </a>
+                </div>
+              )}
 
               {formErrors.subServiceName && (
                 <div className="text-danger mt-1">{formErrors.subServiceName}</div>

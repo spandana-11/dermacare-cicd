@@ -9,7 +9,6 @@ spring:
     bootstrap-servers: kafka:9092
     consumer:
       group-id: notificationgroup
-      auto-offset-reset: latest           # <--- Change from 'earliest' to 'latest' to avoid old replays
       enable-auto-commit: true
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer

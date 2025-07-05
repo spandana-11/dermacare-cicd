@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import {
   CButton,
@@ -23,58 +22,65 @@ import { BASE_URL, endPoint } from '../../../baseUrl'
 const Login = () => {
   const [userName, setUserName] = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false)
 
   const [errorMessage, setErrorMessage] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
 
+  const location = useLocation()
+
+  const from = location.state?.from?.pathname || '/dashboard'
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
     if (!userName && !password) {
-      setErrorMessage('Username and password are required.');
-      return;
+      setErrorMessage('Username and password are required.')
+      return
     }
 
     if (!userName) {
-      setErrorMessage('Username is required.');
-      return;
+      setErrorMessage('Username is required.')
+      return
     }
 
     if (!password) {
-      setErrorMessage('Password is required.');
-      return;
+      setErrorMessage('Password is required.')
+      return
     }
 
-    setIsLoading(true);
-    setErrorMessage(null);
+    setIsLoading(true)
+    setErrorMessage(null)
 
     try {
-      const data = { userName, password };
+      const data = { userName, password }
       const response = await axios.post(`${BASE_URL}/${endPoint}`, data, {
         headers: {
           'Content-Type': 'application/json',
         },
-      });
+      })
 
       // Log response to verify backend format
-      console.log('API Response:', response.data);
+      console.log('API Response:', response.data)
 
       // Check for success message (correct spelling!)
-      if (response.status === 200 ) {
-        console.log('Login successful');
-        navigate('/dashboard');
+      if (response.status === 200) {
+        console.log('Login successful')
+        navigate('/dashboard')
+        localStorage.setItem('userName', userName)
+        localStorage.setItem('authentication', true) //flag
+        navigate(from, { replace: true })
       } else {
-        setErrorMessage(response.data || 'Invalid login credentials.');
+        setErrorMessage(response.data || 'Invalid login credentials.')
       }
     } catch (error) {
-      setErrorMessage(error.response?.data || 'An unexpected error occurred.');
-      console.error('Error details:', error.response || error.message);
+      setErrorMessage(error.response?.data || 'An unexpected error occurred.')
+      console.error('Error details:', error.response || error.message)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
@@ -135,7 +141,8 @@ const Login = () => {
                   <div>
                     <h2>Welcome</h2>
                     <p>
-                      Discover the secret to glowing skin—sign in to DermaCare and explore expert dermatological care.
+                      Discover the secret to glowing skin—sign in to DermaCare and explore expert
+                      dermatological care.
                     </p>
                     <div className="d-flex justify-content-center">
                       <img
@@ -144,7 +151,6 @@ const Login = () => {
                         style={{ width: '130px', height: 'auto', marginBottom: '10px' }}
                       />
                     </div>
-
                   </div>
                 </CCardBody>
               </CCard>

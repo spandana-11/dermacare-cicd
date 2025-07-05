@@ -75,8 +75,8 @@ public class RatingCalculationService {
                     .toList();
 
             if (matchedRatings.isEmpty()) {
-                response.setSuccess(false);
-                response.setStatus(404);
+                response.setSuccess(true);
+                response.setStatus(200);
                 response.setMessage("No matching ratings found for the given hospitalId and doctorId.");
                 return response;}
 

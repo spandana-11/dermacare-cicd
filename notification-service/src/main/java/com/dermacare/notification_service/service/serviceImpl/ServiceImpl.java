@@ -56,7 +56,8 @@ public class ServiceImpl implements ServiceInterface{
 		if(!bookings.contains(bookingDTO.getBookingId())) {
 		bookings.add(bookingDTO.getBookingId());
 		convertToNotification(bookingDTO);
-	    sendNotification(bookingDTO);}}
+	    sendNotification(bookingDTO);}
+	}
 		
 		
 	public String sendNotification(BookingResponse booking) {
@@ -103,8 +104,8 @@ public class ServiceImpl implements ServiceInterface{
 		for(NotificationDTO d : dto){
 			d.getData().setCustomerDeviceId(null);}
 		if(dto != null) {
-		for(NotificationDTO n : dto) {					
-			if(n.getData().getStatus().equalsIgnoreCase("Pending")) {
+		for(NotificationDTO n : dto) {	
+			if(n.getData().getStatus().equalsIgnoreCase("Pending")){
 				eligibleNotifications.add(n);}}}
 		if(eligibleNotifications!=null && !eligibleNotifications.isEmpty() ) {
 		res = new ResBody<List<NotificationDTO>>("Notification sent Successfully",200,eligibleNotifications);
@@ -176,60 +177,77 @@ public class ServiceImpl implements ServiceInterface{
 	
 	
 
-	public ResBody<NotificationDTO> notificationResponse(NotificationResponse notificationResponse){
-		try {
-			ResponseEntity<ResponseStructure<BookingResponse>> res =  bookServiceFeign.getBookedService(notificationResponse.getAppointmentId());
-			BookingResponse b = res.getBody().getData();
-			if(b.getDoctorId().equalsIgnoreCase(notificationResponse.getDoctorId())&&b.getClinicId().
-			equalsIgnoreCase(notificationResponse.getHospitalId())&&b.getBookingId().equalsIgnoreCase(notificationResponse.getAppointmentId())
-			&&b.getSubServiceId().equalsIgnoreCase(notificationResponse.getSubServiceId())) {	
-				switch(notificationResponse.getStatus()) {
-				case "Accepted": b.setStatus("Confirmed");
-				NotificationEntity notificationEntity = repository.findByNotificationId(notificationResponse.getNotificationId());
-				if(notificationEntity!=null) {
-				notificationEntity.getData().setStatus("Confirmed");
-				repository.save(notificationEntity);
-				if(b.getCustomerDeviceId() != null) {
-				appNotification.sendPushAppNotification(b.getCustomerDeviceId()," Hello "+b.getName(),b.
-				getDoctorName()+" Accepted Your Appointment For "+b.getSubServiceName()+ " on "+b.getServiceDate()+" at "+b.getServicetime());
-				}else {
-					return new ResBody<NotificationDTO>("please provide deviceId",400,null);}
-				}else {
-					return new ResBody<NotificationDTO>("Notification Not Found With Provided NotificationId",404,null);
-				}
-				break;
-				
-				case "Rejected": b.setStatus("Rejected");
-				 b.setReasonForCancel(notificationResponse.getReasonForCancel());
-			   	cllinicFeign.makingFalseDoctorSlot(b.getDoctorId(),b.getServiceDate() ,b.getServicetime());
-				 NotificationEntity obj = repository.findByNotificationId(notificationResponse.getNotificationId());
-				 if(obj!=null) {
-					 obj.getData().setStatus("Rejected");
-					repository.save(obj);
-				 if(b.getCustomerDeviceId() != null) {
-				 appNotification.sendPushAppNotification(b.getCustomerDeviceId()," Hello "+b.getName(),b.
-				 getDoctorName()+" Rejected Your Appointment For "+b.getSubServiceName()+ " on "+b.getServiceDate()+" at "+b.getServicetime());}
-				 else {
-						return new ResBody<NotificationDTO>("please provide deviceId",400,null);}
-				 }else {
-						return new ResBody<NotificationDTO>("Notification Not Found With Provided NotificationId",404,null);
-					}
-				break;
-				
-				default:b.setStatus("Pending");
-				}	
-				//////removeCompletedNotifications();
-		    	ResponseEntity<?> book = bookServiceFeign.updateAppointment(b);
-		    	if(book != null) {
-		    		return new ResBody<NotificationDTO>("Appointment And Notification Status updated",200,null);
-		    	}else {
-		    	return new ResBody<NotificationDTO>("Appointment Status Not updated",200,null);}
-		    	}else {
-		    	return new ResBody<NotificationDTO>("Status Not updated please check provided details",200,null);
-		    }						
-		}catch(FeignException e) {
-			return new ResBody<NotificationDTO>(e.getMessage(),500,null);
-		}}
+	 public ResBody<NotificationDTO> notificationResponse(NotificationResponse notificationResponse) {
+		    try {		        
+		        ResponseEntity<ResponseStructure<BookingResponse>> res = bookServiceFeign.getBookedService(notificationResponse.getAppointmentId());
+		        BookingResponse b = res.getBody().getData();		     
+		        NotificationEntity notificationEntity = repository.findByNotificationId(notificationResponse.getNotificationId());		      
+		        if (b == null) {
+		            return new ResBody<>("Booking not found for given appointment ID", 404, null);
+		        }
+		        if (notificationEntity == null) {
+		            return new ResBody<>("Notification not found for given notification ID", 404, null);
+		        }		       
+		        if (b.getDoctorId().equalsIgnoreCase(notificationResponse.getDoctorId()) &&
+		            b.getClinicId().equalsIgnoreCase(notificationResponse.getHospitalId()) &&
+		            b.getBookingId().equalsIgnoreCase(notificationResponse.getAppointmentId()) &&
+		            b.getSubServiceId().equalsIgnoreCase(notificationResponse.getSubServiceId())) {		          
+		            String status = notificationResponse.getStatus();
+		            switch (status) {
+		                case "Accepted":
+		                    b.setStatus("Confirmed");
+		                    notificationEntity.getData().setStatus("Confirmed");
+		                    repository.save(notificationEntity);
+		                    try {
+		                        if (b.getCustomerDeviceId() != null) {
+		                            appNotification.sendPushAppNotification(
+		                                b.getCustomerDeviceId(),
+		                                " Hello " + b.getName(),
+		                                b.getDoctorName() + " Accepted Your Appointment For " +
+		                                b.getSubServiceName() + " on " + b.getServiceDate() + " at " + b.getServicetime()
+		                            );
+		                        }
+		                    } catch (Exception ex) {}
+		                    break;
+
+		                case "Rejected":
+		                    b.setStatus("Rejected");
+		                    b.setReasonForCancel(notificationResponse.getReasonForCancel());
+		                    cllinicFeign.makingFalseDoctorSlot(b.getDoctorId(), b.getServiceDate(), b.getServicetime());
+		                    notificationEntity.getData().setStatus("Rejected");
+		                    repository.save(notificationEntity);
+		                    try {
+		                        if (b.getCustomerDeviceId() != null) {
+		                            appNotification.sendPushAppNotification(
+		                                b.getCustomerDeviceId(),
+		                                " Hello " + b.getName(),
+		                                b.getDoctorName() + " Rejected Your Appointment For " +
+		                                b.getSubServiceName() + " on " + b.getServiceDate() + " at " + b.getServicetime()
+		                            );
+		                        }
+		                    } catch (Exception ex) {}		                
+		                    break;
+		                default:		                  
+		                    b.setStatus("Pending");
+		                    notificationEntity.getData().setStatus("Pending");
+		                    repository.save(notificationEntity);
+		                    break;}		           
+		            ResponseEntity<?> book = bookServiceFeign.updateAppointment(b);
+		            if (book != null) {
+		                return new ResBody<>("Appointment And Notification Status updated", 200, null);
+		            } else {
+		                return new ResBody<>("Appointment Status Not updated", 200, null);
+		            }
+
+		        } else {
+		            return new ResBody<>("Status Not updated, please check provided details", 200, null);
+		        }
+
+		    } catch (FeignException e) {
+		        return new ResBody<>(e.getMessage(), 500, null);
+		    }
+		}
+
 	
 	
 	

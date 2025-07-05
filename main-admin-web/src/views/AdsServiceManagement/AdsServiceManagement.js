@@ -31,12 +31,28 @@ const ServiceAdvertisement = () => {
   const [carouselIdToDelete, setCarouselIdToDelete] = useState(null)
 
   // Load all advertisement data
+  // const fetchData = async () => {
+  //   try {
+  //     const data = await Get_AllServAdvData()
+  //     setAdvData(data)
+  //   } catch (err) {
+  //     toast.error('Failed to load advertisements.')
+  //   }
+  // }
+  // Load all advertisement data
   const fetchData = async () => {
     try {
       const data = await Get_AllServAdvData()
-      setAdvData(data)
+      // Ensure data is an array before setting it to advData
+      if (Array.isArray(data)) {
+        setAdvData(data)
+      } else {
+        console.warn('API returned non-array data for advertisements:', data)
+        setAdvData([]) // Default to an empty array if data is not an array
+      }
     } catch (err) {
       toast.error('Failed to load advertisements.')
+      setAdvData([]) // Also set to empty array on error to prevent issues
     }
   }
 

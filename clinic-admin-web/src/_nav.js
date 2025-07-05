@@ -3,15 +3,21 @@ import CIcon from '@coreui/icons-react'
 import {
   cilBell,
   cilCalculator,
+  cilCalendar,
   cilChartPie,
   cilCursor,
   cilDescription,
   cilDrop,
+  cilLightbulb,
+  cilMedicalCross,
   cilNotes,
   cilPencil,
   cilPuzzle,
+  cilSettings,
   cilSpeedometer,
   cilStar,
+  cilWallet,
+  // cilHelpCircle ,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 import appointmentIcon from './assets/images/avatars/calendar.png'
@@ -21,29 +27,27 @@ const _nav = [
     component: CNavItem,
     name: 'Dashboard',
     to: '/dashboard',
-    // icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
+    icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
     name: 'Appointments',
     to: '/appointment-management',
-    // icon: <img src={appointmentIcon} alt="Appointment" style={{ width: '24px', height: '24px' }} />,
-
-    //
+    icon: <CIcon icon={cilCalendar} customClassName="nav-icon" />,
   },
 
   {
     component: CNavItem,
     to: '/doctor',
     name: 'Doctors',
-    // icon: <CIcon icon={cilNotes} customClassName="nav-icon" />,
+    icon: <CIcon icon={cilMedicalCross} customClassName="nav-icon" />,
   },
   {
     // {
     component: CNavItem,
     to: '/service-Management',
     name: 'Sub-Service Management',
-    // icon: <CIcon icon={cilBell} customClassName="nav-icon" />,
+    icon: <CIcon icon={cilSettings} customClassName="nav-icon" />,
   },
   // {
   //   component: CNavItem,
@@ -54,20 +58,22 @@ const _nav = [
   // },
   {
     component: CNavItem,
-    to: '/payouts',
-    name: 'Payouts',
-    // icon: <CIcon icon={cilNotes} customClassName="nav-icon" />,
+    to: '/reportManagement',
+    name: 'Reports',
+    icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
-    to: '/reportManagement',
-    name: 'Reports',
+    to: '/payouts',
+    name: 'Payouts',
+    icon: <CIcon icon={cilWallet} customClassName="nav-icon" />,
   },
+
   {
     component: CNavItem,
     to: '/help',
     name: 'Help',
-    // icon: <CIcon icon={cilNotes} customClassName="nav-icon" />,
+    icon: <CIcon icon={cilLightbulb} customClassName="nav-icon" />,
   },
   // {
   //   component: CNavItem,

@@ -13,17 +13,18 @@ export const ReportsData = async () => {
     return null
   }
 }
-export const Get_ReportsByBookingIdData = async () => {
+export const Get_ReportsByBookingIdData = async (bookingId) => {
   try {
-    const response = await axios.get(`${BASE_URL}/${Get_ReportsByBookingId}`)
-    const reports = response.data.data
-    console.log(reports)
-    return reports
+    
+    const response = await axios.get(`${BASE_URL}/getReportByBookingId/${bookingId}`)
+   console.log(response)
+    return response.data.data
   } catch (error) {
     console.error('Error fetching report by ID:', error.message)
     return null
   }
 }
+
 
 export const SaveReportsData = async (reportData) => {
   try {

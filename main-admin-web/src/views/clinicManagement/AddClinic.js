@@ -368,14 +368,14 @@ const AddClinic = () => {
 
       // Convert Files
       const hospitalLogoBase64 = await convertIfExists(formData.hospitalLogo)
-      // ✅ First convert
+      // First convert
       const hospitalDocumentsBase64 = await Promise.all(
         Array.isArray(formData.hospitalDocuments)
           ? formData.hospitalDocuments.map((file) => convertFileToBase64(file))
           : [],
       )
 
-      // ✅ Then check the result of that conversion
+      // Then check the result of that conversion
       if (hospitalDocumentsBase64.some((doc) => typeof doc !== 'string' || !doc.length)) {
         toast.error('One or more hospital documents failed to convert to base64.', {
           position: 'top-right',

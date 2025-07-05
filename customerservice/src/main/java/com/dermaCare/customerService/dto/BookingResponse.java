@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-@JsonIgnoreProperties({"customerDeviceId"})
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class BookingResponse {
 	
 	private String bookingId;

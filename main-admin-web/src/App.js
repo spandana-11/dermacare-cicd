@@ -6,6 +6,7 @@ import './scss/style.scss'
 
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import ProtectedRoute from './components/ProtectedRoute'
 
 // Lazy-loaded components
 const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'))
@@ -50,7 +51,14 @@ const App = () => {
           <Route path="/register" element={<Register />} />
           <Route path="/404" element={<Page404 />} />
           <Route path="/500" element={<Page500 />} />
-          <Route path="*" element={<DefaultLayout />} />
+          <Route
+            path="*"
+            element={
+              <ProtectedRoute>
+                <DefaultLayout />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </Suspense>
     </BrowserRouter>

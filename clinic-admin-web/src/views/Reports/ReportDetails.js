@@ -17,7 +17,7 @@ import {
   CFormInput,
   CModalFooter,
 } from '@coreui/react'
-import { ReportsData } from './reportAPI'
+import { Get_ReportsByBookingIdData, ReportsData } from './reportAPI'
 import { FaEye, FaDownload } from 'react-icons/fa' // Font Awesome Icons
 import { SaveReportsData } from './reportAPI'
 
@@ -68,7 +68,7 @@ const ReportDetails = () => {
   }
   const fetchReportDetails = async () => {
     try {
-      const res = await ReportsData()
+      const res = await Get_ReportsByBookingIdData(appointmentInfo.bookingId)
       const rawData = res
       console.log(rawData)
       // Check if array and flatten
@@ -86,9 +86,12 @@ const ReportDetails = () => {
     }
   }
 
-  useEffect(() => {
+ useEffect(() => {
+  if (appointmentInfo?.bookingId) {
     fetchReportDetails()
-  }, [])
+  }
+}, [])
+
   console.log(report)
 
   const handleFileChange = (e) => {
@@ -286,7 +289,7 @@ const ReportDetails = () => {
       </CModal>
       <CModal visible={uploadModal} onClose={() => setUploadModal(false)}>
         <CModalHeader>
-          <CModalTitle  >Upload Report</CModalTitle>
+          <CModalTitle>Upload Report</CModalTitle>
         </CModalHeader>
         <CModalBody>
           <CForm>

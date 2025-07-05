@@ -51,6 +51,22 @@ export const serviceData = async () => {
   }
 }
 
+
+ 
+export const getSubServiceById = async (hospitalId, subServiceId) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/getSubService/${hospitalId}/${subServiceId}`
+    )
+    return response.data?.data // return only the useful data part
+  } catch (error) {
+    console.error('Error fetching sub-service data:', error)
+    return null
+  }
+}
+
+
+
 export const CategoryData = async () => {
   try {
     const response = await axios.get(`${BASE_URL}/${Category}`)

@@ -220,6 +220,24 @@ const ServiceManagement = () => {
     fetchData()
     // serviceData()
   }, [])
+
+  useEffect(() => {
+    if (
+      editServiceMode &&
+      serviceToEdit?.descriptionQA &&
+      typeof serviceToEdit.descriptionQA === 'string'
+    ) {
+      try {
+        setServiceToEdit((prev) => ({
+          ...prev,
+          descriptionQA: JSON.parse(prev.descriptionQA),
+        }))
+      } catch (e) {
+        console.error('Invalid QA format')
+      }
+    }
+  }, [editServiceMode])
+
   const addTimeSlot = () => {
     // Split input by commas, trim whitespace, convert to uppercase
     const newSlots = timeInput
@@ -261,6 +279,10 @@ const ServiceManagement = () => {
 
     handleSearch()
   }, [searchQuery, service])
+  const handleEditClick = (serviceItem) => {
+    setServiceToEdit(serviceItem)
+    setEditServiceMode(true)
+  }
 
   const columns = [
     {
@@ -653,14 +675,51 @@ const ServiceManagement = () => {
     try {
       const hospitalId = localStorage.getItem('HospitalId')
 
-      const updatedService = {
-        ...serviceToEdit,
-        subServiceImage: serviceToEdit.serviceImage || '',
-        descriptionQA: serviceToEdit.descriptionQA || [],
-        viewDescription: serviceToEdit.viewDescription || '',
-        viewImage: serviceToEdit.viewImage || '',
+      let base64ImageToSend = ''
+
+      if (serviceToEdit.serviceImageFile) {
+        // If a new file is selected, convert it to base64
+        const fullBase64String = await toBase64(serviceToEdit.serviceImageFile)
+        // Strip the "data:image/png;base64," part
+        base64ImageToSend = fullBase64String.split(',')[1]
+      } else if (serviceToEdit.subServiceImage) {
+        // If no new file, but there's an existing image string,
+        // check if it's already a full data URI and strip it if necessary.
+        // This handles cases where serviceToEdit.subServiceImage might be a base64 string WITH or WITHOUT the prefix.
+        if (serviceToEdit.subServiceImage.startsWith('data:')) {
+          base64ImageToSend = serviceToEdit.subServiceImage.split(',')[1]
+        } else {
+          base64ImageToSend = serviceToEdit.subServiceImage // Assume it's already a raw base64 string
+        }
       }
-      console.log(subServiceId)
+
+      // Ensure numeric values are numbers, not empty strings or null
+      const price = serviceToEdit.price > 0 ? Number(serviceToEdit.price) : 0
+      const discountPercentage = serviceToEdit.discountPercentage || 0
+      const taxPercentage = serviceToEdit.taxPercentage || 0
+      const platformFeePercentage = serviceToEdit.platformFeePercentage || 0
+
+      // build only the expected payload (no extra keys)
+      const updatedService = {
+        hospitalId,
+        subServiceName: serviceToEdit.subServiceName || '',
+        viewDescription: serviceToEdit.viewDescription || '',
+        status: serviceToEdit.status || '',
+        minTime: serviceToEdit.minTime || '',
+        descriptionQA: Array.isArray(serviceToEdit.descriptionQA)
+          ? serviceToEdit.descriptionQA
+          : [],
+        price: price,
+        discountPercentage: discountPercentage,
+        taxPercentage: taxPercentage,
+        platformFeePercentage: platformFeePercentage,
+        subServiceImage: base64ImageToSend, // Send the stripped base64 string
+      }
+
+      // Log the payload to verify it before sending
+      console.log('Payload for updateServiceData:', updatedService)
+
+      // send cleaned payload
       const response = await updateServiceData(subServiceId, hospitalId, updatedService)
 
       toast.success('Service updated successfully!', { position: 'top-right' })
@@ -671,6 +730,15 @@ const ServiceManagement = () => {
       toast.error('Error updating service.', { position: 'top-right' })
     }
   }
+
+  // Convert file to base64
+  const toBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = (error) => reject(error)
+    })
 
   const handleEditServiceFileChange = (e) => {
     const file = e.target.files[0]
@@ -1466,15 +1534,27 @@ const ServiceManagement = () => {
                 )}
               </CCol>
 
-              <CCol md={6}>
-                <h6>Q&A Description</h6>
-                <CFormInput
-                  type="text"
-                  value={serviceToEdit?.descriptionQA || ''}
-                  onChange={(e) =>
-                    setServiceToEdit({ ...serviceToEdit, descriptionQA: e.target.value })
-                  }
-                />
+              <CCol md={12}>
+                <label className="mb-2">Edit Q&A</label>
+                {Array.isArray(serviceToEdit?.descriptionQA) &&
+                  serviceToEdit.descriptionQA.map((qa, index) => {
+                    const question = Object.keys(qa)[0]
+                    const answers = qa[question]
+
+                    return (
+                      <div key={index}>
+                        <label>{key}</label>
+                        <input
+                          value={qa[key][0] || ''}
+                          onChange={(e) => {
+                            const updatedQA = [...serviceToEdit.descriptionQA]
+                            updatedQA[index][key][0] = e.target.value
+                            setServiceToEdit((prev) => ({ ...prev, descriptionQA: updatedQA }))
+                          }}
+                        />
+                      </div>
+                    )
+                  })}
               </CCol>
             </CRow>
 
@@ -1490,10 +1570,18 @@ const ServiceManagement = () => {
 
               <CCol md={6}>
                 <h6>Service Image</h6>
-                <CFormInput type="file" onChange={handleEditServiceFileChange} />
-                {serviceToEdit?.serviceImageFile?.name && (
-                  <CFormText>Selected: {serviceToEdit.serviceImageFile.name}</CFormText>
-                )}
+                <CFormInput
+                  type="file"
+                  onChange={(e) => {
+                    const file = e.target.files[0]
+                    if (file) {
+                      setServiceToEdit((prev) => ({
+                        ...prev,
+                        serviceImageFile: file,
+                      }))
+                    }
+                  }}
+                />
               </CCol>
             </CRow>
           </CForm>

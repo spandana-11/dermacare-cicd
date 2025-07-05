@@ -25,9 +25,10 @@ import { cilOptions } from '@coreui/icons'
 import 'slick-carousel/slick/slick.css'
 import 'slick-carousel/slick/slick-theme.css'
 import axios from 'axios'
-import { MainAdmin_URL, AllCustomerAdvertisements } from '../../baseUrl'
+import { MainAdmin_URL, AllCustomerAdvertisements, GetBy_DoctorId } from '../../baseUrl'
 // import { appointments_Ref } from '../../baseUrl'
 import { AppointmentData } from '../AppointmentManagement/appointmentAPI'
+import { DoctorData } from '../Doctors/DoctorAPI'
 
 const WidgetsDropdown = (props) => {
   const [slides, setSlides] = useState([])
@@ -48,6 +49,7 @@ const WidgetsDropdown = (props) => {
   const [appointmentError, setAppointmentError] = useState(null) // New state for appointment fetch error
   const [loadingDoctors, setLoadingDoctors] = useState(true) // New state for loading indicator
   const [doctorError, setDoctorError] = useState(null) // New state for appointment fetch error
+  const [doctors, setDoctors] = useState([])
 
   const navigate = useNavigate()
 
@@ -120,7 +122,8 @@ const WidgetsDropdown = (props) => {
             return itemDate === todayISO
           })
 
-          setTodayBookings(filteredAppointments)
+          // setTodayBookings(filteredAppointments)
+          setDoctors(doctors)
           // You can keep a separate state for total appointments if needed,
           // but for the dashboard display, we focus on today's.
         } else {
@@ -186,7 +189,7 @@ const WidgetsDropdown = (props) => {
     const hospitalId = localStorage.getItem('HospitalId')
     if (hospitalId) {
       fetchAppointments(hospitalId)
-
+      fetchDoctors(GetBy_DoctorId)
       // Set up daily refresh:
       // 1. Calculate time until next midnight
       const now = new Date()
@@ -286,7 +289,7 @@ const WidgetsDropdown = (props) => {
                   <CIcon icon={cilOptions} className="text-high-emphasis-inverse" />
                 </CDropdownToggle>
                 <CDropdownMenu>
-                  <CDropdownItem onClick={() => navigate('/appoinmentData')}>
+                  <CDropdownItem onClick={() => navigate('/appointment-management')}>
                     View All Appointments
                   </CDropdownItem>{' '}
                   {/* Link to your appointments page */}
@@ -384,7 +387,9 @@ const WidgetsDropdown = (props) => {
                   <CIcon icon={cilOptions} className="text-high-emphasis-inverse" />
                 </CDropdownToggle>
                 <CDropdownMenu>
-                  <CDropdownItem>View</CDropdownItem>
+                  <CDropdownItem onClick={() => navigate('/doctor')}>
+                    View All Doctors
+                  </CDropdownItem>{' '}
                   <CDropdownItem>Export</CDropdownItem>
                 </CDropdownMenu>
               </CDropdown>
@@ -446,7 +451,7 @@ const WidgetsDropdown = (props) => {
                       alt={`Slide ${idx + 1}`}
                       style={{
                         width: '100%',
-                        height: '500px',
+                        height: '300px',
                         objectFit: 'fit',
                         borderRadius: '8px',
                       }}

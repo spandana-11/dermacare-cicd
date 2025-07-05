@@ -30,12 +30,9 @@ import { AppHeaderDropdown } from './header/index'
 import { HospitalProvider } from '../views/Usecontext/HospitalContext'
 import { useHospital } from '../views/Usecontext/HospitalContext'
 
-
-
 const AppHeader = () => {
   const headerRef = useRef()
   const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
-
 
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.sidebarShow)
@@ -63,21 +60,16 @@ const AppHeader = () => {
             placeholder="Search..."
             className="form-control"
             style={{
-              borderRadius: '25px',  // Rounded corners
-              padding: '10px 15px',  // Inner spacing
+              borderRadius: '25px', // Rounded corners
+              padding: '10px 15px', // Inner spacing
               border: '1px solid #ccc', // Light gray border
-              outline: 'none',  // Removes focus border
-              width: '250px',  // Adjust width as needed
+              outline: 'none', // Removes focus border
+              width: '250px', // Adjust width as needed
               boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)', // Subtle shadow
-              height: '40px'
-
+              height: '40px',
             }}
-           
           />
-        
-
         </div>
-
 
         {/* Notification Icons */}
         <div className="d-flex align-items-center ms-auto">
@@ -85,23 +77,11 @@ const AppHeader = () => {
             <CIcon icon={cilBell} size="lg" />
           </a>
           <span className="fw-bold text-dark">
-            Welcome, {localStorage.getItem("HospitalId")}
+            Welcome, {localStorage.getItem('HospitalName').split(' ')[0] || 'Hospital Name'}
           </span>
-
         </div>
 
-
-
-
-
-
-
-
-
         <CHeaderNav>
-
-
-
           <li className="nav-item py-1">
             <div className="vr h-100 mx-2 text-body text-opacity-75"></div>
           </li>
