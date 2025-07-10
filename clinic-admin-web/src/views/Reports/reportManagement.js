@@ -31,10 +31,10 @@ const ReportsManagement = () => {
   const [selectedConsultationTypes, setSelectedConsultationTypes] = useState([])
 
   const consultationTypeMap = {
-    'Service & Treatment': 'service & treatment',
-    'Video Consultation': 'online',
-    'In-clinic': 'in-clinic',
-  }
+      'Service & Treatment': 'services & treatments',
+      'Video Consultation': 'online consultation',
+      'In-clinic': 'in-clinic consultation',
+    }
 
   const fetchAppointments = async () => {
     try {

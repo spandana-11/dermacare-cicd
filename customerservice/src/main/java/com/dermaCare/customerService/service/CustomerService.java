@@ -100,7 +100,7 @@ public interface CustomerService {
 	public Response getAllCategory();
 	
 	//NOTIFICATION
-	public ResponseEntity<ResBody<List<NotificationToCustomer>>> notificationToCustomer(String customerName,
+	public ResponseEntity<ResBody<List<NotificationToCustomer>>> notificationToCustomer(
 			 String customerMobileNumber);
 
 }

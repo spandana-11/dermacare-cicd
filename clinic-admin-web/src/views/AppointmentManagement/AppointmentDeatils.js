@@ -27,20 +27,20 @@ const AppointmentDetails = () => {
     )
   }
 
-  const handleConfirmDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this booking?')) return
+  // const handleConfirmDelete = async () => {
+  //   if (!window.confirm('Are you sure you want to delete this booking?')) return
 
-    try {
-      setIsDeleting(true)
-      await deleteBookingData(appointment.bookingId)
-      toast.success('Booking deleted successfully!', { position: 'top-right' })
-      navigate('/appointment-management') // redirect to appointment list
-    } catch (error) {
-      toast.error('Failed to delete booking.', { position: 'top-right' })
-    } finally {
-      setIsDeleting(false)
-    }
-  }
+  //   try {
+  //     setIsDeleting(true)
+  //     await deleteBookingData(appointment.bookingId)
+  //     toast.success('Booking deleted successfully!', { position: 'top-right' })
+  //     navigate('/appointment-management') // redirect to appointment list
+  //   } catch (error) {
+  //     toast.error('Failed to delete booking.', { position: 'top-right' })
+  //   } finally {
+  //     setIsDeleting(false)
+  //   }
+  // }
   useEffect(() => {
     const fetchDoctorDetails = async () => {
       if (
@@ -63,18 +63,39 @@ const AppointmentDetails = () => {
     if (!picture) return '/default-doctor.png'
     return picture.startsWith('data:image') ? picture : `data:image/jpeg;base64,${picture}`
   }
-
+  const getStatusColor = (status) => {
+    console.log(status)
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        return 'success'
+      case 'Rejected':
+        return 'danger'
+      case 'pending':
+        return 'warning'
+      case 'confirmed':
+        return 'info'
+      case 'in progress':
+        return 'primary'
+      case 'rescheduled':
+        return 'secondary'
+      default:
+        return 'dark'
+    }
+  }
   return (
     <div className="container mt-4">
       {/* Header Section with blue background */}
       <div className="bg-info text-white p-3 d-flex justify-content-between align-items-center rounded">
         {/* Left section: Booking ID and Status */}
         <div>
-          <h5 className="mb-1">Booking ID: {appointment.bookingId}</h5>
+          <h5 className="mb-1 text">Booking ID: {appointment.bookingId}</h5>
         </div>
 
         <div className="d-flex gap-2">
-          <h5 className="mb-1 text-warning">{appointment.status}</h5>
+          {/* <h5 className={`mb-1 text-${getStatusColor(appointment.status)}`}>
+            {appointment.status}
+          </h5> */}
+
           <CButton color="secondary" size="sm" onClick={() => navigate(-1)}>
             Back
           </CButton>
@@ -89,76 +110,122 @@ const AppointmentDetails = () => {
           </CButton> */}
         </div>
       </div>
+      <div className="mt-4 p-3 border rounded shadow-sm bg-white">
+        {/* Header */}
+        <div className="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+          <h5 className="fw-bold mb-0 text-primary">Patient Details</h5>
+          <span
+            className={`badge bg-${getStatusColor(appointment.status)} text-uppercase px-3 py-2`}
+          >
+            {appointment.status}
+          </span>
+        </div>
 
-      <div className="mt-4">
-        <h6 className="fw-bold">Patient Details</h6>
-        <p>
-          <strong>Patient Name:</strong> {appointment?.name} &nbsp;&nbsp;
-          <strong>Patient Number:</strong> {appointment?.mobileNumber} &nbsp;&nbsp;
-          <strong>Booking For:</strong> {appointment?.bookingFor}
-        </p>
-        <p>
-          <strong>Patient Age:</strong> {appointment?.age} Yrs &nbsp;&nbsp;
-          <strong>Gender:</strong> {appointment?.gender}
-        </p>
-        <p className="mb-3">
-          <strong>Problem:</strong>
-          <br />
-          {appointment?.problem}
-        </p>
+        {/* Patient Details */}
+        <div className="row mb-3">
+          <div className="col-md-4 mb-2">
+            <strong>Patient Name:</strong> <span className="ms-1">{appointment?.name}</span>
+          </div>
+          <div className="col-md-4 mb-2">
+            <strong>Mobile Number:</strong>{' '}
+            <span className="ms-1">{appointment?.mobileNumber}</span>
+          </div>
+          <div className="col-md-4 mb-2">
+            <strong>Booking For:</strong> <span className="ms-1">{appointment?.bookingFor}</span>
+          </div>
+          <div className="col-md-4 mb-2">
+            <strong>Age:</strong> <span className="ms-1">{appointment?.age} Yrs</span>
+          </div>
+          <div className="col-md-4 mb-2">
+            <strong>Gender:</strong> <span className="ms-1">{appointment?.gender}</span>
+          </div>
+          <div className="col-12">
+            <strong>Problem:</strong>
+            <div className="text-muted ms-1">{appointment?.problem}</div>
+          </div>
+        </div>
 
-        <h6 className="fw-bold">Slot & Payment Details</h6>
-        <p>
-          <strong>Date:</strong> {appointment?.serviceDate} &nbsp;&nbsp;
-          <strong>Time:</strong> {appointment?.servicetime} &nbsp;&nbsp;
-        </p>
-        <p>
-          <strong>Paid Amount:</strong> ₹ {appointment?.totalFee} &nbsp;&nbsp;
-          <strong>Consultation Fee:</strong> ₹ {appointment?.consultationFee} &nbsp;&nbsp;
-        </p>
+        {/* Slot & Payment */}
+        <div className="border-top pt-3 mb-3">
+          <h6 className="fw-bold text-secondary mb-2">Slot & Payment Details</h6>
+          <div className="row">
+            <div className="col-md-4 mb-2">
+              <strong>Date:</strong> <span className="ms-1">{appointment?.serviceDate}</span>
+            </div>
+            <div className="col-md-4 mb-2">
+              <strong>Time:</strong> <span className="ms-1">{appointment?.servicetime}</span>
+            </div>
+            <div className="col-md-4 mb-2">
+              <strong>Paid Amount:</strong> <span className="ms-1">₹{appointment?.totalFee}</span>
+            </div>
+            <div className="col-md-4 mb-2">
+              <strong>Consultation Fee:</strong>{' '}
+              <span className="ms-1">₹{appointment?.consultationFee}</span>
+            </div>
+          </div>
+        </div>
 
-        <h6 className="fw-bold">Doctor Details</h6>
-        <p>
-          <strong>Doctor ID:</strong> {appointment?.doctorId} &nbsp;&nbsp;
-          <strong>Consultation Type:</strong> {appointment?.consultationType}
-        </p>
-        <p>
-          <strong>Service Name:</strong> {appointment?.servicename} &nbsp;&nbsp;
-          <strong>Service ID:</strong> {appointment?.serviceId}
-        </p>
+        {/* Doctor & Service Details */}
+        <div className="border-top pt-3">
+          <h6 className="fw-bold text-secondary mb-2">Doctor & Service Details</h6>
+          <div className="row">
+            <div className="col-md-4 mb-2">
+              <strong>Doctor ID:</strong> <span className="ms-1">{appointment?.doctorId}</span>
+            </div>
+            <div className="col-md-4 mb-2">
+              <strong>Consultation Type:</strong>{' '}
+              <span className="ms-1">{appointment?.consultationType}</span>
+            </div>
+            <div className="col-md-4 mb-2">
+              <strong>Service Name:</strong>{' '}
+              <span className="ms-1">{appointment?.subServiceName}</span>
+            </div>
+            <div className="col-md-4 mb-2">
+              <strong>Service ID:</strong> <span className="ms-1">{appointment?.subServiceId}</span>
+            </div>
+          </div>
+        </div>
       </div>
+
       {(appointment?.status.toLowerCase() === 'confirmed' ||
         appointment?.status.toLowerCase() === 'completed') &&
         doctor && (
           <>
             <h6 className="fw-bold mt-4">Doctor Details</h6>
-           <div className="d-flex align-items-center gap-3 border rounded p-3 shadow-sm">
-  <img
-    src={getDoctorImage(doctor.doctorPicture)}
-    alt={doctor.doctorName}
-    width={80}
-    height={80}
-    className="rounded-circle border"
-  />
-  <div>
-    <h6 className="text-primary fw-bold mb-1">{doctor.doctorName}</h6>
-    <p className="mb-1"><strong>Specialization:</strong> {doctor.specialization}</p>
-    <p className="mb-1"><strong>Experience:</strong> {doctor.experience} years</p>
-    <p className="mb-1"><strong>Qualification:</strong> {doctor.qualification}</p>
-    <p className="mb-0"><strong>Languages:</strong> {doctor.languages?.join(', ')}</p>
-  </div>
-  <div className="ms-auto">
-    <CButton
-      color="primary"
-      size="sm"
-      className="px-3"
-      onClick={() => navigate(`/doctor/${doctor.doctorId}`, { state: { doctor } })}
-    >
-      View Details
-    </CButton>
-  </div>
-</div>
-
+            <div className="d-flex align-items-center gap-3 border rounded p-3 shadow-sm">
+              <img
+                src={getDoctorImage(doctor.doctorPicture)}
+                alt={doctor.doctorName}
+                width={80}
+                height={80}
+                className="rounded-circle border"
+              />
+              <div>
+                <h6 className="text-primary fw-bold mb-1">{doctor.doctorName}</h6>
+                <p className="mb-1">
+                  <strong>Specialization:</strong> {doctor.specialization}
+                </p>
+                <p className="mb-1">
+                  <strong>Experience:</strong> {doctor.experience} years
+                </p>
+                <p className="mb-1">
+                  <strong>Qualification:</strong> {doctor.qualification}
+                </p>
+                <p className="mb-0">
+                  <strong>Languages:</strong> {doctor.languages?.join(', ')}
+                </p>
+              </div>
+              <div className="ms-auto">
+                <CButton
+                  color="primary"
+                  size="sm"
+                  className="px-3"
+                  onClick={() => navigate(`/doctor/${doctor.doctorId}`, { state: { doctor } })}
+                >
+                  View Details
+                </CButton>
+              </div>
+            </div>
           </>
         )}
     </div>

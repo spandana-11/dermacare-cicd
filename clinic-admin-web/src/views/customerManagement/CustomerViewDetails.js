@@ -176,7 +176,7 @@ const CustomerViewDetails = () => {
 
         setServiceList(extractedServices)
       } else {
-        console.warn('Received empty or invalid category data.')
+        // console.warn('Received empty or invalid category data.')
         setCategoryList([])
         setServiceList([])
       }
@@ -623,7 +623,7 @@ const CustomerViewDetails = () => {
     const selectedCategory = categoryList.find((category) => category?.categoryName === value)
 
     if (!selectedCategory || !selectedCategory.categoryId) {
-      console.warn('No matching category found OR categoryId is missing.')
+      // console.warn('No matching category found OR categoryId is missing.')
       setFilteredServiceList([])
       return
     }
@@ -635,7 +635,7 @@ const CustomerViewDetails = () => {
       console.log('Fetched services:', ServicesData.data)
 
       if (!ServicesData.data || ServicesData.data.length === 0) {
-        console.warn('No services available for this category.')
+        // console.warn('No services available for this category.')
         setFilteredServiceList([])
         return
       }

@@ -16,5 +16,6 @@ public class NotificationEntity {
 	private String date;
 	private String time;
 	private Booking data;
+	private boolean isAlerted;
 	private String[] actions;
 }

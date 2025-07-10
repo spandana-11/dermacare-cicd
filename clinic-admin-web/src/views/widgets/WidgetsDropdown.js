@@ -210,7 +210,7 @@ const WidgetsDropdown = (props) => {
       // Cleanup the initial midnight timeout if the component unmounts
       return () => clearTimeout(midnightTimeout)
     } else {
-      console.warn('No HospitalId in localStorage for fetching appointments')
+      // console.warn('No HospitalId in localStorage for fetching appointments')
       setAppointmentError('Hospital ID not found. Cannot fetch appointments.')
       setLoadingAppointments(false)
     }

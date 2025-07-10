@@ -17,8 +17,8 @@ import {
   CCol,
   CCard,
   CCardBody,
-  CBadge,
 } from '@coreui/react'
+import { CBadge } from '@coreui/react'
 import { AppointmentData } from './appointmentAPI'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
@@ -49,7 +49,7 @@ const appointmentManagement = () => {
       console.log('Hospital ID from localStorage:', hospitalId)
 
       if (!hospitalId) {
-        console.warn('Hospital ID not found in localStorage.')
+        // console.warn('Hospital ID not found in localStorage.')
         return
       }
 

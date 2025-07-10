@@ -98,7 +98,7 @@ const appointmentManagement = () => {
     const normalize = (val) => val?.toLowerCase().trim()
 
     // Map your filter buttons to actual data values:
-    const consultationTypeMap = {
+     const consultationTypeMap = {
       'Service & Treatment': 'services & treatments',
       'Video Consultation': 'online consultation',
       'In-clinic': 'in-clinic consultation',

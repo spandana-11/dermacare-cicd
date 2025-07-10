@@ -43,6 +43,8 @@ import { handleDeleteToggle } from '../Doctors/DoctorAPI'
 import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { getCustomerDataByID } from '../customerManagement/CustomerAPI'
+import { ToastContainer } from 'react-toastify'
+
 const DoctorDetailsPage = () => {
   const { state } = useLocation()
   const [doctorData, setDoctorData] = useState(state?.doctor || {})
@@ -309,7 +311,8 @@ const DoctorDetailsPage = () => {
       )
 
       if (res.data.success) {
-        alert('✅ Slots added successfully')
+        // alert('✅ Slots added successfully')
+        toast.success('Slots added successfully')
         setVisibleSlot(false)
         setVisible(false)
         setSelectedSlots([])
@@ -317,7 +320,7 @@ const DoctorDetailsPage = () => {
       }
     } catch (err) {
       console.error(err)
-      alert('❌ Error adding slots')
+      alert('Error adding slots')
     }
   }
 
@@ -581,7 +584,18 @@ const DoctorDetailsPage = () => {
                         ) : (
                           <p>{doctorData.doctorName}</p>
                         )}
-
+                        <p>
+                          <strong>Email:</strong>
+                        </p>
+                        {isEditing ? (
+                          <CFormInput
+                            name="doctorEmail"
+                            value={formData.doctorEmail}
+                            onChange={handleInputChange}
+                          />
+                        ) : (
+                          <p>{doctorData.doctorEmail}</p>
+                        )}
                         <p>
                           <strong>Qualification:</strong>
                         </p>
@@ -639,6 +653,18 @@ const DoctorDetailsPage = () => {
                           />
                         ) : (
                           <p>{doctorData.languages?.join(', ')}</p>
+                        )}
+                        <p>
+                          <strong>Contact:</strong>
+                        </p>
+                        {isEditing ? (
+                          <CFormInput
+                            name="doctorMobileNumber"
+                            value={formData.doctorMobileNumber}
+                            onChange={handleInputChange}
+                          />
+                        ) : (
+                          <p>{doctorData.doctorMobileNumber}</p>
                         )}
 
                         <p>
@@ -1226,6 +1252,7 @@ const DoctorDetailsPage = () => {
               <CButton
                 key={slot}
                 size="sm"
+                className='text-white'
                 color={selectedSlots.includes(slot) ? 'success' : 'secondary'}
                 onClick={() =>
                   setSelectedSlots((prev) =>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import axios from 'axios'
@@ -75,9 +76,19 @@ const Login = () => {
         setErrorMessage(response.data || 'Invalid login credentials.')
       }
     } catch (error) {
-      setErrorMessage(error.response?.data || 'An unexpected error occurred.')
-      console.error('Error details:', error.response || error.message)
-    } finally {
+  const backendMessage = error.response?.data?.message || 'An unexpected error occurred.'
+
+  if (backendMessage.toLowerCase().includes('username')) {
+    setErrorMessage('Incorrect username.')
+  } else if (backendMessage.toLowerCase().includes('password')) {
+    setErrorMessage('Incorrect password.')
+  } else {
+    setErrorMessage(backendMessage)
+  }
+
+  console.error('Error details:', error.response || error.message)
+}
+ finally {
       setIsLoading(false)
     }
   }

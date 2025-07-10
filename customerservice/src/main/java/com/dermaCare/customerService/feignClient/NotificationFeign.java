@@ -12,8 +12,8 @@ import com.dermaCare.customerService.util.ResBody;
 @FeignClient(value = "notification-service" )
 public interface NotificationFeign {
 	
-	@GetMapping("/api/notificationservice/customerNotification/{customerName}/{customerMobileNumber}")
-	public ResponseEntity<ResBody<List<NotificationToCustomer>>> customerNotification(@PathVariable String customerName,
+	@GetMapping("/api/notificationservice/customerNotification/{customerMobileNumber}")
+	public ResponseEntity<ResBody<List<NotificationToCustomer>>> customerNotification(
 			@PathVariable String customerMobileNumber);
 	
 }

@@ -10,7 +10,7 @@ export const Get_AllPayoutsData = async () => {
       },
     })
 
-    return response.data // ✅ only return the data part
+    return response.data // only return the data part
   } catch (error) {
     throw error
   }

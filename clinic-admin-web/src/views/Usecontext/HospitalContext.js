@@ -9,6 +9,7 @@ export const HospitalProvider = ({ children }) => {
   const [doctorData, setDoctorData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [notificationCount, setNotificationCount] = useState('')
 
   useEffect(() => {
     const hospitalId = localStorage.getItem('HospitalId')
@@ -70,6 +71,7 @@ export const HospitalProvider = ({ children }) => {
         fetchDoctorDetails,
         setSelectedHospital,
         setDoctorData,
+        notificationCount, setNotificationCount
       }}
     >
       {children}

@@ -1,6 +1,5 @@
 package com.dermacare.bookingService.dto;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -10,8 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-@JsonIgnoreProperties({"doctorDeviceId"})
-////@JsonInclude(JsonInclude.Include.NON_EMPTY)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class BookingResponse {
 	
 	private String bookingId;
@@ -26,6 +25,7 @@ public class BookingResponse {
 	private String clinicName;
 	private String doctorId;
 	private String doctorName;
+	private String doctorDeviceId;
 	private String subServiceId;
 	private String subServiceName;
 	private String serviceDate;

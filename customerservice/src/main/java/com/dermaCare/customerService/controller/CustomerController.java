@@ -34,7 +34,7 @@ import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/customer")
-// @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class CustomerController {
 
 	@Autowired(required = true)
@@ -432,10 +432,10 @@ public ResponseEntity<Response> getRatingAverageRating(@PathVariable String hosp
    
    //NOTIFICATION
    
-   @GetMapping("/customerNotification/{customerName}/{customerMobileNumber}")
-   public ResponseEntity<ResBody<List<NotificationToCustomer>>> notificationToCustomer(@PathVariable String customerName,
+   @GetMapping("/customerNotification/{customerMobileNumber}")
+   public ResponseEntity<ResBody<List<NotificationToCustomer>>> notificationToCustomer(
 			 @PathVariable String customerMobileNumber){
-	   return customerService.notificationToCustomer(customerName, customerMobileNumber);
+	   return customerService.notificationToCustomer(customerMobileNumber);
    }
    
    

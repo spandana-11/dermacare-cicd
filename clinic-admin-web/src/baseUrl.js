@@ -2,14 +2,12 @@
 export let wifiUrl = '13.233.9.23:9090'
 // export let wifiUrl = '192.168.1.5'
 
-
-
 export const BASE_URL = `http://${wifiUrl}/clinic-admin`
 export const MainAdmin_URL = `http://${wifiUrl}/admin`
 export const subService_URL = `http://${wifiUrl}/api/v1`
 // END POINTS
 // login
-export const endPoint = 'admin/login'
+export const endPoint = '/clinicLogin'
 //reports
 export const AllReports = `getallreports`
 export const SavingReports = `savereports`
@@ -35,6 +33,13 @@ export const deleteBookings = `customer/deleteService`
 export const geteBookingBy_ClinicId = `customer/getAllBookedServicesByClinicId`
 
 export const GetBy_DoctorId = 'clinic-admin/doctor'
+
+//Doctor Notifications
+export const Doctor_Url = `http://${wifiUrl}/api`
+export const getAllDCtrNotifications = 'doctors/notificationToDoctor'
+
+//notifiction Reponse
+export const NoficationResponse='doctors/notificationResponse'
 
 //Advertisement
 export const addCustomerAdvertisement = 'categoryAdvertisement/add'
@@ -138,6 +143,6 @@ export const ClinicAllData = 'v1/clinic/getAllClinics'
 export const clinicPost = 'v1/clinic/addClinic'
 
 //payouts
-export const Customer_Url=`http://${wifiUrl}/api`
-export const getAllPayouts='payments/getallpayments'
-export const addPayouts='payments/addpayment'
+export const Customer_Url = `http://${wifiUrl}/api`
+export const getAllPayouts = 'payments/getallpayments'
+export const addPayouts = 'payments/addpayment'

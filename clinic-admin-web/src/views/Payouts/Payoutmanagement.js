@@ -27,14 +27,17 @@ import 'react-toastify/dist/ReactToastify.css'
 import { Get_AllPayoutsData, postPayoutsData } from './PayoutsAPI'
 
 // 🔧 Replace this with your real backend later
-const DUMMY_API = 'https://jsonplaceholder.typicode.com/posts'
+// const DUMMY_API = 'https://jsonplaceholder.typicode.com/posts'
 
 const PayoutManagement = () => {
   const [payouts, setPayouts] = useState([])
   const [search, setSearch] = useState('')
   const [viewData, setViewData] = useState(null)
-  const [addModal, setAddModal] = useState(false)
+  // const [addModal, setAddModal] = useState(false)
+  const [loading, setLoading] = useState(false)
+
   const [formData, setFormData] = useState({
+    transactionId: '',
     amount: '',
     paymentMethod: '',
     paymentStatus: '',
@@ -44,12 +47,11 @@ const PayoutManagement = () => {
     billingAddress: '',
   })
 
-
   useEffect(() => {
     const fetchPayouts = async () => {
       try {
         const result = await Get_AllPayoutsData()
-        setPayouts(result.data) // ✅ assuming the final array is under result.data
+        setPayouts(result?.data ?? [])
       } catch (error) {
         console.error('Failed to fetch payouts:', error)
       }
@@ -68,8 +70,9 @@ const PayoutManagement = () => {
       const res = await postPayoutsData(formData)
       setPayouts([res.data, ...payouts])
       toast.success('Added successfully')
-      setAddModal(false)
+      // setAddModal(false)
       setFormData({
+        transactionId: '',
         amount: '',
         paymentMethod: '',
         paymentStatus: '',
@@ -79,7 +82,7 @@ const PayoutManagement = () => {
         billingAddress: '',
       })
     } catch (err) {
-      toast.error('Add failed')
+      toast.error(error?.response?.data?.message || 'Add failed')
     }
   }
 
@@ -93,12 +96,7 @@ const PayoutManagement = () => {
   return (
     <CContainer className="p-4">
       <ToastContainer />
-      <div className="d-flex justify-content-between mb-3">
-        <h5 className="text-muted">Home / Payout Management</h5>
-        {/* <CButton color="primary" onClick={() => setAddModal(true)}>
-          Add Payout
-        </CButton> */}
-      </div>
+    
 
       <h3 className="mb-4">Transaction List</h3>
 
@@ -124,7 +122,7 @@ const PayoutManagement = () => {
         <CTableHead>
           <CTableRow>
             <CTableHeaderCell>S.No</CTableHeaderCell>
-            <CTableHeaderCell>transactionId</CTableHeaderCell>
+            {/* <CTableHeaderCell>transactionId</CTableHeaderCell> */}
             <CTableHeaderCell>bookingId</CTableHeaderCell>
             <CTableHeaderCell>Billing Name</CTableHeaderCell>
             <CTableHeaderCell>Amount</CTableHeaderCell>
@@ -134,25 +132,22 @@ const PayoutManagement = () => {
         </CTableHead>
         <CTableBody>
           {filteredData.map((p, index) => (
-            <CTableRow key={p.id}>
+            <CTableRow key={`${p.bookingId}-${index}`}>
               <CTableDataCell>{index + 1}</CTableDataCell>
-              <CTableDataCell>{p.transactionId}</CTableDataCell>
+              {/* <CTableDataCell>{p.transactionId}</CTableDataCell> */}
               <CTableDataCell>{p.bookingId}</CTableDataCell>
               <CTableDataCell>{p.billingName}</CTableDataCell>
               <CTableDataCell>{p.amount}</CTableDataCell>
-              <CTableDataCell>{p.paymentMethod || 'Online'}</CTableDataCell>
+              <CTableDataCell>{p.paymentMethod}</CTableDataCell>
               <CTableDataCell>
-                <CButton size="sm" color="info" onClick={() => setViewData(p)}>
+                <CButton
+                  size="sm"
+                  color="info"
+                  className="text-white"
+                  onClick={() => setViewData(p)}
+                >
                   View
                 </CButton>
-                {/* <CButton
-                  size="sm"
-                  color="danger"
-                  className="ms-2"
-                  onClick={() => handleDelete(p.id)}
-                >
-                  Delete
-                </CButton> */}
               </CTableDataCell>
             </CTableRow>
           ))}
@@ -160,42 +155,47 @@ const PayoutManagement = () => {
       </CTable>
 
       {/* Add Modal */}
-      <CModal visible={addModal} onClose={() => setAddModal(false)}>
+      {/* <CModal visible={addModal} onClose={() => setAddModal(false)}>
         <CModalHeader>
           <CModalTitle>Add New Payout</CModalTitle>
         </CModalHeader>
         <CModalBody>
+           <h6>User Id</h6>
           <CFormInput
             className="mb-2"
             placeholder="User ID"
             value={formData.userId}
             onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
           />
+           <h6>Doctor Id</h6>
           <CFormInput
             className="mb-2"
             placeholder="Doctor ID"
             value={formData.doctorId}
             onChange={(e) => setFormData({ ...formData, doctorId: e.target.value })}
           />
+          <h6>Booking Id</h6>
           <CFormInput
             className="mb-2"
             placeholder="Booking ID"
             value={formData.bookingId}
             onChange={(e) => setFormData({ ...formData, bookingId: e.target.value })}
           />
+          <h6>Currency</h6>
           <CFormInput
             className="mb-2"
             placeholder="Currency (e.g. INR)"
             value={formData.currency}
             onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
           />
+           <h6>Payment Status</h6>
           <CFormInput
             className="mb-2"
             placeholder="Payment Status"
             value={formData.paymentStatus}
             onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value })}
           />
-
+<h6>Amount</h6>
           <CFormInput
             className="mb-2"
             placeholder="Amount"
@@ -240,7 +240,7 @@ const PayoutManagement = () => {
             Submit
           </CButton>
         </CModalFooter>
-      </CModal>
+      </CModal> */}
 
       {/* View Modal */}
       <CModal visible={!!viewData} onClose={() => setViewData(null)}>
@@ -249,7 +249,7 @@ const PayoutManagement = () => {
         </CModalHeader>
         <CModalBody>
           <p>
-            <strong>Transaction ID:</strong> {viewData?.transactionId || 'TRX123456'}
+            <strong>Transaction ID:</strong> {viewData?.transactionId}
           </p>
           <p>
             <strong>User Email:</strong> {viewData?.userEmail}

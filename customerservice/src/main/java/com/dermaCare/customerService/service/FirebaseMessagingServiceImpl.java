@@ -10,24 +10,23 @@ import com.google.firebase.messaging.Notification;
 @Service
 public class FirebaseMessagingServiceImpl implements FirebaseMessagingService  {
 	
-	public String sendPushNotification(String fcmToken, String title, String body) {
-        Notification notification = Notification.builder()
-                .setTitle(title)
-                .setBody(body)
-                .build();
+	public void sendPushNotification(String deviceToken, String title, String body, String type, String screen, String sound) {
+	    Message message = Message.builder()
+	        .setToken(deviceToken)
+	        .setNotification(Notification.builder()
+	            .setTitle(title)
+	            .setBody(body)
+	            .build())
+	        .putData("type", type)
+	        .putData("screen", screen)
+	        .putData("sound", sound) // Custom key, handled by app
+	        .build();
 
-        Message message = Message.builder()
-                .setToken(fcmToken)
-                .setNotification(notification)
-                .build();
-
-        try {
-            return FirebaseMessaging.getInstance().send(message);
-        } catch (FirebaseMessagingException e) {
-            e.printStackTrace();
-            return "Failed to send FCM message";
-        }
-    }
-
-
+	    try {
+	        String response = FirebaseMessaging.getInstance().send(message);
+	        System.out.println("Successfully sent message: " + response);
+	    } catch (FirebaseMessagingException e) {
+	        e.printStackTrace();
+	    }
+	}
 }

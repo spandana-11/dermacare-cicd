@@ -31,7 +31,7 @@ const AppHeaderDropdown = () => {
     localStorage.removeItem('authToken')
     localStorage.removeItem('user')
      localStorage.removeItem('AdminId')
-    localStorage.removeItem('')
+    localStorage.clear('')
 
     navigate('/login')
   }
@@ -44,7 +44,7 @@ const AppHeaderDropdown = () => {
         />
       </CDropdownToggle>
       <CDropdownMenu className="pt-0" placement="bottom-end">
-        <CDropdownItem href="#" onClick={handleLogout}>
+        <CDropdownItem  onClick={handleLogout}>
           <CIcon icon={cilAccountLogout} className="me-2" />
           Logout
           {/* <CBadge color="info" className="ms-2">

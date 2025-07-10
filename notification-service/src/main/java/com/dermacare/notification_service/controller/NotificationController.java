@@ -55,12 +55,11 @@ public class NotificationController {
 }	
 		
 
-	@GetMapping("/customerNotification/{customerName}/{customerMobileNumber}")
-	public ResponseEntity<ResBody<List<NotificationToCustomer>>> customerNotification(@PathVariable String customerName,
+	@GetMapping("/customerNotification/{customerMobileNumber}")
+	public ResponseEntity<ResBody<List<NotificationToCustomer>>> customerNotification(
 			@PathVariable String customerMobileNumber){
-		return notificationService.notificationToCustomer(customerName, customerMobileNumber);
-		
-	}
+		return notificationService.notificationToCustomer(customerMobileNumber);
+		}
 	
 	
 	@GetMapping("/getNotificationByBookingId/{id}")

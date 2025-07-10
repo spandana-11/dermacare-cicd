@@ -1,6 +1,3 @@
-# Conversion to YAML from Properties formar report
-# Warnings:
-# - The yaml file had comments which are lost in the refactoring!
 spring:
   application:
     name: notification-service
@@ -12,6 +9,7 @@ spring:
       enable-auto-commit: true
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: latest  # <-- Added this line
       properties:
         spring:
           json:
@@ -22,6 +20,7 @@ spring:
                 type: com.dermacare.notification_service.entity.Booking
     listener:
       concurrency: 1
+
   data:
     mongodb:
       uri: mongodb://mongodb:27017/DermaCareNotifications

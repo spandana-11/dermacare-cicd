@@ -55,6 +55,11 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a", Locale.ENGLISH);
 		String nowFormatted = LocalDateTime.now().format(formatter);
 		entity.setBookedAt(nowFormatted);
+		if(request.getConsultationType().equalsIgnoreCase("video consultation") || request.getConsultationType().equalsIgnoreCase("online consultation") ) {
+			entity.setChannelId(randomNumber());
+		}else {
+			entity.setChannelId(null) ;
+		}	
 		return entity;
 	}
 
@@ -63,12 +68,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		BeanUtils.copyProperties(entity, response);
 		response.setMobileNumber(String.valueOf(entity.getMobileNumber()));
 		response.setBookingId(String.valueOf(entity.getBookingId()));
-		response.setReports(new ObjectMapper().convertValue(entity.getReports(),ReportsDtoList.class));
-		if(entity.getConsultationType().equalsIgnoreCase("video consultation") || entity.getConsultationType().equalsIgnoreCase("online consultation") ) {
-			response.setChannelId(randomNumber());
-		}else {
-			response.setChannelId(null) ;
-		}	
+		response.setReports(new ObjectMapper().convertValue(entity.getReports(),ReportsDtoList.class));	
 		return response;
 	}
 	

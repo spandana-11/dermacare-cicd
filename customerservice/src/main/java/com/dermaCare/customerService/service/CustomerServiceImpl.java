@@ -109,8 +109,14 @@ public class CustomerServiceImpl implements CustomerService {
 	    	customerRepository.save(custmer.get());}
 	    	String otp = randomNumber();
 	    	if(loginDTO.getDeviceId() != null) {
-	    	firebaseMessagingService.sendPushNotification(loginDTO.getDeviceId(),
-	    	"🔐 Hello " +loginDTO.getUserName()+" , Here’s your OTP!","Use "+otp+" to verify your login. Expires in 1 minute.");
+	    		firebaseMessagingService.sendPushNotification(
+	    			    loginDTO.getDeviceId(),
+	    			    "🔐 Hello,Here’s your OTP!",
+	    			    "Use " + otp + " to verify your login. Expires in 1 minute.",
+	    			    "OTP",
+	    			    "OTPVerificationScreen",
+	    			    "default"
+	    			);
 	    	generatedOtps.put(loginDTO.getMobileNumber(),otp);
 	    	session.put(loginDTO.getMobileNumber(),System.currentTimeMillis());
 	    	response.setMessage("OTP Sent Successfully");
@@ -185,8 +191,14 @@ public class CustomerServiceImpl implements CustomerService {
 	 	    	return ResponseEntity.status(response.getStatus()).body(response);}		   
 		    String otp = randomNumber();
 		    if(loginDTO.getDeviceId() != null) {
-	    	firebaseMessagingService.sendPushNotification(loginDTO.getDeviceId(),"🔐 Hello, here’s your Resend OTP!"
-	    	,"Use "+otp+" to verify your login. Expires in 1 minute." );
+		    	firebaseMessagingService.sendPushNotification(
+	    			    loginDTO.getDeviceId(),
+	    			    "🔐 Hello,Here’s your ResendOTP!",
+	    			    "Use " + otp + " to verify your login. Expires in 1 minute.",
+	    			    "OTP",
+	    			    "OTPVerificationScreen",
+	    			    "default"
+	    			);
 	    	generatedOtps.put(loginDTO.getMobileNumber(),otp);
 	    	session.put(loginDTO.getMobileNumber(),System.currentTimeMillis());
 	    	response.setMessage("OTP Sent Successfully");
@@ -1102,10 +1114,10 @@ public Response getSubServiceInfoBySubServiceId(String subServiceId) throws Json
 
 //CUSTOMERNOTIFICATION
 
-public ResponseEntity<ResBody<List<NotificationToCustomer>>> notificationToCustomer(String customerName,
+public ResponseEntity<ResBody<List<NotificationToCustomer>>> notificationToCustomer(
 			 String customerMobileNumber){
 	try {		
-		return notificationFeign.customerNotification(customerName, customerMobileNumber);			
+		return notificationFeign.customerNotification(customerMobileNumber);			
 	}catch(FeignException e) {		
 		 ResBody<List<NotificationToCustomer>>  res = new  ResBody<List<NotificationToCustomer>>(ExtractFeignMessage.clearMessage(e),e.status(),null);		
 		return ResponseEntity.status(e.status()).body(res);		

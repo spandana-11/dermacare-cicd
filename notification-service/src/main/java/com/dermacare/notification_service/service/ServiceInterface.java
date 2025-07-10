@@ -26,6 +26,8 @@ public interface ServiceInterface {
 
     NotificationDTO updateNotification(NotificationDTO notificationDTO);
 
-    public ResponseEntity<ResBody<List<NotificationToCustomer>>> notificationToCustomer( String customerName,
+    public ResponseEntity<ResBody<List<NotificationToCustomer>>> notificationToCustomer(
 			 String customerMobileNumber);
+    
+    public void sendAlertNotifications();
 }

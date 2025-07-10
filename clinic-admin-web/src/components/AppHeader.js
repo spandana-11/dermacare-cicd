@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import {
   CContainer,
@@ -33,9 +33,10 @@ import { useHospital } from '../views/Usecontext/HospitalContext'
 const AppHeader = () => {
   const headerRef = useRef()
   const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
-
+  const { notificationCount } = useHospital()
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.sidebarShow)
+  const navigate = useNavigate()
 
   useEffect(() => {
     document.addEventListener('scroll', () => {
@@ -73,11 +74,28 @@ const AppHeader = () => {
 
         {/* Notification Icons */}
         <div className="d-flex align-items-center ms-auto">
-          <a href="#" className="me-3">
+          {/* Bell icon with badge */}
+          <div
+            className="position-relative me-3 cursor-pointer"
+            style={{ cursor: 'pointer' }}
+            onClick={() => {
+              navigate('/doctor-notifications')
+            }}
+          >
             <CIcon icon={cilBell} size="lg" />
-          </a>
+            {notificationCount > 0 && (
+              <span
+                className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                style={{ fontSize: '0.7rem' }}
+              >
+                {notificationCount}
+              </span>
+            )}
+          </div>
+
+          {/* Welcome text */}
           <span className="fw-bold text-dark">
-            Welcome, {localStorage.getItem('HospitalName').split(' ')[0] || 'Hospital Name'}
+            Welcome, {localStorage.getItem('HospitalName')?.split(' ')[0] || 'Hospital'}
           </span>
         </div>
 

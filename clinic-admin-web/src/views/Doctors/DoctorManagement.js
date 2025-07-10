@@ -20,6 +20,7 @@ import {
   CRow,
   CCol,
   CFormLabel,
+  CFormCheck,
 } from '@coreui/react'
 import Select from 'react-select'
 import {
@@ -56,7 +57,18 @@ const DoctorManagement = () => {
       return updated
     })
   }
+  const [enabledTypes, setEnabledTypes] = useState({
+    inClinic: false,
+    online: false,
+    serviceTreatment: false,
+  })
 
+  const toggleType = (key) => {
+    setEnabledTypes((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }))
+  }
   const [form, setForm] = useState({
     doctorPicture: null, // file input or image URL
     doctorLicence: '',
@@ -232,26 +244,30 @@ const DoctorManagement = () => {
   useEffect(() => {
     const fetchAllData = async () => {
       try {
+        setLoading(true) // ✅ set loading true before fetch
+
         await fetchData()
         await serviceData()
+
         const data = await fetchHospitalDetails(hospitalId)
+
         if (data) {
           setDoctorData(data)
-          setLoading(false)
           setShowErrorMessage('')
         } else {
           setShowErrorMessage('Hospital data not found')
-          setLoading(false)
         }
       } catch (err) {
         console.error(err)
         setShowErrorMessage('Failed to fetch hospital details')
-        setLoading(false)
+      } finally {
+        setLoading(false) // ✅ always set to false at the end
       }
     }
 
     fetchAllData()
   }, [])
+
   const validateDoctorForm = () => {
     const errors = {}
     let isValid = true
@@ -562,6 +578,12 @@ const DoctorManagement = () => {
 
     setIsSubServiceComplete(!incomplete)
   }
+
+  const [enableFees, setEnableFees] = useState({
+    inClinic: true,
+    videoConsultation: true,
+  })
+
   return (
     <div>
       <div className="d-flex justify-content-end mb-3">
@@ -591,11 +613,9 @@ const DoctorManagement = () => {
         <div className="centered-message">
           <p>{errorMessage}</p>
         </div>
-      ) : !doctorData || !doctorData.data ? (
-        <div className="centered-message">
-          <p>PAGE NOT FOUND</p>
-        </div>
-      ) : doctorData.data.length === 0 ? (
+      ) : !doctorData ||
+        !doctorData.data ? // ✅ DON’T show "Page not found" here — just return null or loading
+      null : doctorData.data.length === 0 ? (
         <div className="centered-message">
           <span>No doctors found for this hospital.</span>{' '}
           <span
@@ -992,50 +1012,95 @@ const DoctorManagement = () => {
 
           <hr />
 
-          <h5 className="mb-3">Consultation Fees & Contact</h5>
           <CRow className="g-4 mb-4">
-            {/* In-Clinic Fee */}
-            <CCol md={6}>
-              <CFormLabel>In-Clinic Fee</CFormLabel>
-              <CFormInput
-                type="number"
-                value={form.doctorFees.inClinicFee}
-                onChange={(e) => {
-                  const value = e.target.value
-                  setForm((prev) => ({
-                    ...prev,
-                    doctorFees: { ...prev.doctorFees, inClinicFee: value },
-                  }))
-                  if (value && !isNaN(value) && Number(value) > 0) {
-                    setFormErrors((prev) => ({ ...prev, inClinicFee: '' }))
-                  }
-                }}
-              />
-              {formErrors.inClinicFee && (
-                <div className="text-danger">{formErrors.inClinicFee}</div>
-              )}
+            <CCol xs={12}>
+              <h5 className="mb-3">Consultations & Contact</h5>
             </CCol>
 
-            {/* Video Consultation Fee */}
-            <CCol md={6}>
-              <CFormLabel>Video Consultation Fee</CFormLabel>
-              <CFormInput
-                type="number"
-                value={form.doctorFees.vedioConsultationFee}
-                onChange={(e) => {
-                  const value = e.target.value
-                  setForm((prev) => ({
-                    ...prev,
-                    doctorFees: { ...prev.doctorFees, vedioConsultationFee: value },
-                  }))
-                  if (value && !isNaN(value) && Number(value) > 0) {
-                    setFormErrors((prev) => ({ ...prev, vedioConsultationFee: '' }))
-                  }
-                }}
-              />
-              {formErrors.vedioConsultationFee && (
-                <div className="text-danger">{formErrors.vedioConsultationFee}</div>
-              )}
+            {/* Row: Consultation Type (Checkboxes) */}
+            <CCol xs={12}>
+              <div className="d-flex align-items-center flex-wrap gap-4">
+                <strong>Consultation Type:</strong>
+
+                <CFormCheck
+                  type="checkbox"
+                  label="Services & Treatments"
+                  checked={enabledTypes.serviceTreatment}
+                  onChange={() => toggleType('serviceTreatment')}
+                />
+                <CFormCheck
+                  type="checkbox"
+                  label="In-Clinic"
+                  checked={enabledTypes.inClinic}
+                  onChange={() => toggleType('inClinic')}
+                />
+                <CFormCheck
+                  type="checkbox"
+                  label="Video/Online"
+                  checked={enabledTypes.online}
+                  onChange={() => toggleType('online')}
+                />
+              </div>
+            </CCol>
+
+            {/* Row: Input fields side-by-side, label below */}
+            <CCol xs={12}>
+              <div className="d-flex gap-4 flex-wrap">
+                {/* In-Clinic Fee Input */}
+                <div style={{ flex: 1 }}>
+                  <CFormLabel>In-Clinic Fee</CFormLabel>
+                  <CFormInput
+                    type="number"
+                    placeholder="In-Clinic Fee"
+                    disabled={!enabledTypes.inClinic}
+                    value={form.doctorFees.inClinicFee}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setForm((prev) => ({
+                        ...prev,
+                        doctorFees: { ...prev.doctorFees, inClinicFee: value },
+                      }))
+                      if (value && !isNaN(value) && Number(value) > 0) {
+                        setFormErrors((prev) => ({ ...prev, inClinicFee: '' }))
+                      }
+                    }}
+                  />
+
+                  {formErrors.inClinicFee && (
+                    <div className="text-danger">{formErrors.inClinicFee}</div>
+                  )}
+                </div>
+
+                {/* Video/Online Fee Input */}
+                <div style={{ flex: 1 }}>
+                  <CFormLabel>Online Fee</CFormLabel>
+                  <CFormInput
+                    type="number"
+                    placeholder="Video/Online Fee"
+                    disabled={!enabledTypes.online}
+                    value={form.doctorFees.vedioConsultationFee}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setForm((prev) => ({
+                        ...prev,
+                        doctorFees: {
+                          ...prev.doctorFees,
+                          vedioConsultationFee: value,
+                        },
+                      }))
+                      if (value && !isNaN(value) && Number(value) > 0) {
+                        setFormErrors((prev) => ({
+                          ...prev,
+                          vedioConsultationFee: '',
+                        }))
+                      }
+                    }}
+                  />
+                  {formErrors.vedioConsultationFee && (
+                    <div className="text-danger">{formErrors.vedioConsultationFee}</div>
+                  )}
+                </div>
+              </div>
             </CCol>
 
             {/* Mobile Number */}

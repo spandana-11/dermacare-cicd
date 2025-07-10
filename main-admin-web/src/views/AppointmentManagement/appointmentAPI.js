@@ -49,9 +49,9 @@ export const deleteBookingData = async (id) => {
 export const getBookingBy_DoctorId = async (doctorId) => {
   console.log(doctorId)
   console.log(GetBy_DoctorId)
-  const res = await axios.get(`${Booking_service_Url}/${GetBy_DoctorId}/${doctorId}`)
+  const res = await axios.get(`${CLINIC_ADMIN_URL}/${GetBy_DoctorId}/${doctorId}`)
 
-  console.log('hi hello there', res.data.data)
+  console.log('hi', res.data.data)
   return res.data.data
 }
 // export const getBookingBy_DoctorId = async (doctorId) => {

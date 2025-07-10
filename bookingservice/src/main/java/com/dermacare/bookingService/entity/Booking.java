@@ -34,6 +34,7 @@ public class Booking  {
 	private String reasonForCancel;
 	private String notes;
 	private ReportsList reports;
+	private String channelId;
 	private String BookedAt;
 	private String status;
 	private double totalFee;

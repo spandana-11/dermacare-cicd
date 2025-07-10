@@ -35,7 +35,7 @@ const App = () => {
     <BrowserRouter>
       <Suspense fallback={<CSpinner color="primary" variant="grow" />}>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" />} />
+          <Route path="/" element={<Navigate to="/Dashboard" />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/404" element={<Page404 />} />

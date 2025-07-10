@@ -2,6 +2,6 @@ package com.dermaCare.customerService.service;
 
 public interface FirebaseMessagingService {
 	
-	public String sendPushNotification(String fcmToken, String title, String body);
+public void sendPushNotification(String deviceToken, String title, String body, String type, String screen, String sound);
 
 }

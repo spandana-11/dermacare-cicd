@@ -109,10 +109,20 @@ const Login = () => {
           navigate('/dashboard')
         }
       }
-    } catch (error) {
-      console.error('Login failed', error)
-      setErrorMessage('Invalid username or password')
-    } finally {
+    }catch (error) {
+  const backendMessage = error.response?.data?.message || 'An unexpected error occurred.'
+
+  if (backendMessage.toLowerCase().includes('username')) {
+    setErrorMessage('Incorrect username.')
+  } else if (backendMessage.toLowerCase().includes('password')) {
+    setErrorMessage('Incorrect password.')
+  } else {
+    setErrorMessage(backendMessage)
+  }
+
+  console.error('Error details:', error.response || error.message)
+}
+ finally {
       setIsLoading(false)
     }
   }
