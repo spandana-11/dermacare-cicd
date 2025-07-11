@@ -37,6 +37,7 @@ export const GetBy_DoctorId = 'clinic-admin/doctor'
 //Doctor Notifications
 export const Doctor_Url = `http://${wifiUrl}/api`
 export const getAllDCtrNotifications = 'doctors/notificationToDoctor'
+export const getDoctorIdAndNotifications='doctors/hospitalById'
 
 //notifiction Reponse
 export const NoficationResponse='doctors/notificationResponse'

@@ -35,6 +35,7 @@ public class ReportsServiceImpl implements ReportsService {
 	@Autowired
 	private BookingFeign bookingFeign;
 //-----------------------------------------Add Reports-----------------------------------------------------
+	String bkngId ;
 	@Override
 	public Response saveReports(ReportsDtoList dto) {
 		try {
@@ -42,6 +43,7 @@ public class ReportsServiceImpl implements ReportsService {
 			List<Reports> reports = new ArrayList<>();
 			for (ReportsDTO d : dto.getReportsList()) {
 				List<byte[]> list = new ArrayList<>();
+				bkngId = d.getBookingId();
 				if(d.getReportFile() != null) {
 				for(String s:d.getReportFile()) {
 				byte[] decodedFile = Base64.getDecoder().decode(s);
@@ -49,22 +51,18 @@ public class ReportsServiceImpl implements ReportsService {
 				Reports report = Reports.builder().bookingId(d.getBookingId()).reportName(d.getReportName())
 						.reportDate(d.getReportDate()).reportStatus(d.getReportStatus()).reportType(d.getReportType())
 						.customerMobileNumber(d.getCustomerMobileNumber()).reportFile(list).build();
-				reports.add(report);
-				ResponseEntity<ResponseStructure<BookingResponse>> r = bookingFeign.getBookedService(d.getBookingId());
+				reports.add(report);}
+				ResponseEntity<ResponseStructure<BookingResponse>> r = bookingFeign.getBookedService(bkngId);
 				BookingResponse res = r.getBody().getData();
-				if(res!=null) {
-					ReportsDtoList resportDto = new ReportsDtoList();
-					List<ReportsDTO> rDto = new ArrayList<>();
-					rDto.add(d);
-					resportDto.setReportsList(rDto);
+				if(res!=null) {			
 					res.setReports(dto);
-					bookingFeign.updateAppointment(res);}}
+					bookingFeign.updateAppointment(res);}
 			reportsList.setReportsList(reports);
 			ReportsList saved = reportsRepository.save(reportsList);
 			return Response.builder().success(true).data(saved).message("Report uploaded successfully")
 					.status(HttpStatus.CREATED.value()).build();			
 		} catch (FeignException e) {
-			return Response.builder().success(false).data(null).message(ExtractFeignMessage.clearMessage(e))
+			return Response.builder().success(false).data(null).message(e.getMessage())
 					.status(HttpStatus.INTERNAL_SERVER_ERROR.value()).build();
 		}
 	}

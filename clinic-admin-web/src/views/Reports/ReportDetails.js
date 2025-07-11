@@ -17,9 +17,19 @@ import {
   CFormInput,
   CModalFooter,
 } from '@coreui/react'
-import { Get_ReportsByBookingIdData, ReportsData } from './reportAPI'
-import { FaEye, FaDownload } from 'react-icons/fa' // Font Awesome Icons
-import { SaveReportsData } from './reportAPI'
+import { Get_ReportsByBookingIdData, SaveReportsData } from './reportAPI' // Assuming reportAPI.js is in the same directory
+import { FaEye, FaDownload } from 'react-icons/fa' 
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import { Document, Page, pdfjs } from 'react-pdf'
+import "react-pdf/dist/Page/AnnotationLayer.css"
+
+// IMPORTANT: Configure react-pdf worker source using a local import via Vite's new URL() syntax.
+// This is the most reliable way to handle the PDF worker in Vite and prevents CORS issues.
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.js',
+  import.meta.url,
+).toString();
 
 const ReportDetails = () => {
   const { id } = useParams()
@@ -27,57 +37,84 @@ const ReportDetails = () => {
   const appointmentInfo = location.state?.appointmentInfo
 
   const navigate = useNavigate()
+
+  // Helper function to format date as YYYY-MM-DD
+  const getISODate = (date) => date.toISOString().split('T')[0]
+
+  // Calculate today's date for minimum date restriction in the form
+  const today = new Date()
+  const todayISO = getISODate(today)
+
   const [report, setReport] = useState([])
   const [showModal, setShowModal] = useState(false)
-  const [previewImage, setPreviewImage] = useState(null)
+  
+  // State for previewing both images and PDFs
+  const [previewFileUrl, setPreviewFileUrl] = useState(null)
+  const [isPreviewPdf, setIsPreviewPdf] = useState(false)
+
+  // State specific for PDF viewing
+  const [numPages, setNumPages] = useState(null)
+  const [pageNumber, setPageNumber] = useState(1)
+
   const [uploadModal, setUploadModal] = useState(false)
+  
+  // Initial state for new report, with reportDate not prefilled
   const [newReport, setNewReport] = useState({
     reportName: '',
-    reportDate: '',
+    reportDate: '', // No prefill for date
     reportStatus: '',
     reportType: '',
     reportFile: null,
-    bookingId: appointmentInfo.bookingId,
+    bookingId: appointmentInfo?.bookingId || '', // Ensure bookingId is safe to access
   })
-  const reports = location.state?.report
-  const isPdf = report.reportFile?.[0]?.startsWith('JVBER')
-  const mimeType = isPdf ? 'application/pdf' : 'image/jpeg'
-  const fileExt = isPdf ? 'pdf' : 'jpg'
-  const fileUrl = `data:${mimeType};base64,${report.reportFile?.[0]}`
 
-  const getMimeType = (base64) => {
-    if (base64.startsWith('JVBER')) return 'application/pdf'
-    if (base64.startsWith('/9j/')) return 'image/jpeg'
-    if (base64.startsWith('iVBOR')) return 'image/png'
-    return 'application/octet-stream'
-  }
-
-  // const mimeType = null
-  const fileName = ` 'report'}.${mimeType === 'application/pdf' ? 'pdf' : 'jpg'}`
-  const dataUrl = `data:${mimeType};base64,`
-
-  if (!report) {
+  // Display error and go back if appointmentInfo is missing
+  if (!appointmentInfo) {
     return (
       <div className="text-center mt-4">
-        <h5 className="text-danger">No report details found!</h5>
+        <h5 className="text-danger">Appointment details not found!</h5>
         <CButton color="primary" onClick={() => navigate(-1)} className="mt-2">
           Go Back
         </CButton>
       </div>
     )
   }
+
+  // Determine MIME type for base64 data for display/download purposes
+  const getMimeType = (base64) => {
+    if (!base64) return 'application/octet-stream'
+    if (base64.startsWith('JVBER')) return 'application/pdf' // PDF magic number
+    if (base64.startsWith('/9j/')) return 'image/jpeg' // JPEG magic number
+    if (base64.startsWith('iVBOR')) return 'image/png' // PNG magic number
+    return 'application/octet-stream'
+  }
+
+  // Callback for react-pdf when a document loads successfully
+  const onDocumentLoadSuccess = ({ numPages }) => {
+    setNumPages(numPages)
+    setPageNumber(1) // Reset to page 1 when a new PDF is loaded
+  }
+
+  // Handle modal close logic, resetting PDF view state
+  const handleCloseModal = () => {
+    setShowModal(false)
+    setPreviewFileUrl(null)
+    setIsPreviewPdf(false)
+    setNumPages(null)
+    setPageNumber(1)
+  }
+
+  // Function to fetch report details from the API
   const fetchReportDetails = async () => {
     try {
       const res = await Get_ReportsByBookingIdData(appointmentInfo.bookingId)
       const rawData = res
-      console.log(rawData)
-      // Check if array and flatten
+      
       if (Array.isArray(rawData)) {
         const allReports = rawData.flatMap((item) => item.reportsList || [])
-        console.log('Flattened Reports:', allReports)
         setReport(allReports)
       } else {
-        console.warn('Unexpected response format:', rawData)
+        console.warn('Unexpected response format for reports:', rawData)
         setReport([])
       }
     } catch (error) {
@@ -86,19 +123,19 @@ const ReportDetails = () => {
     }
   }
 
- useEffect(() => {
-  if (appointmentInfo?.bookingId) {
-    fetchReportDetails()
-  }
-}, [])
+  // Effect hook to fetch reports when appointmentInfo.bookingId changes
+  useEffect(() => {
+    if (appointmentInfo?.bookingId) {
+      fetchReportDetails()
+    }
+  }, [appointmentInfo?.bookingId])
 
-  console.log(report)
-
+  // Handle file input change and convert to Base64
   const handleFileChange = (e) => {
     const file = e.target.files[0]
     const reader = new FileReader()
     reader.onloadend = () => {
-      const base64String = reader.result.split(',')[1] // remove prefix
+      const base64String = reader.result.split(',')[1] // Get base64 part
       setNewReport((prev) => ({
         ...prev,
         reportFile: base64String,
@@ -106,8 +143,10 @@ const ReportDetails = () => {
     }
     if (file) reader.readAsDataURL(file)
   }
+
+  // Handle report upload submission
   const handleUploadSubmit = async () => {
-    // ✅ Validate before submit
+    // Validate all required fields
     if (
       !newReport.reportName ||
       !newReport.reportDate ||
@@ -115,7 +154,7 @@ const ReportDetails = () => {
       !newReport.reportType ||
       !newReport.reportFile
     ) {
-      alert('Please fill all required fields and upload a file.')
+      toast.error('Please fill all required fields and upload a file.')
       return
     }
 
@@ -124,57 +163,77 @@ const ReportDetails = () => {
         reportsList: [
           {
             ...newReport,
-            reportFile: [newReport.reportFile], // Make sure it's an array
+            reportFile: [newReport.reportFile], // API expects an array of base64 strings
           },
         ],
       }
 
       const response = await SaveReportsData(payload)
       console.log('Report uploaded:', response)
-      setUploadModal(false)
-      alert('Report uploaded successfully!')
-      fetchReportDetails()
+      
+      setUploadModal(false) // Close the upload modal
+      toast.success('Report uploaded successfully!')
+      fetchReportDetails() // Refresh the report list
+
+      // Reset the form state after successful upload (clears fields)
+      setNewReport({
+        reportName: '',
+        reportDate: '', 
+        reportStatus: '',
+        reportType: '',
+        reportFile: null,
+        bookingId: appointmentInfo?.bookingId || '',
+      });
+      
     } catch (err) {
       console.error('Error uploading report:', err)
-      alert('Upload failed')
+      toast.error('Upload failed')
     }
   }
 
   return (
     <div className="container mt-4">
-      {appointmentInfo && (
-        <div className="container bg-light p-4 rounded shadow-sm mb-4">
-          <div className="row">
-            {/* Left Side: Patient Info */}
-            <div className="col-md-6 border-end">
-              <p>
-                <strong>Name:</strong> {appointmentInfo.name}
-              </p>
-              <p>
-                <strong>Age:</strong> {appointmentInfo.age}
-              </p>
-              <p>
-                <strong>Gender:</strong> {appointmentInfo.gender}
-              </p>
-              <p>
-                <strong>Problem:</strong> {appointmentInfo.problem}
-              </p>
-            </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
 
-            {/* Right Side: Doctor and Hospital Info */}
-            <div className="col-md-6 ps-md-4">
-              <p>
-                <strong>Doctor ID:</strong> {appointmentInfo.item.doctorId}
-              </p>
-              <p>
-                <strong>Hospital ID:</strong> {appointmentInfo.item.clinicId}
-              </p>
-            </div>
+      {/* Appointment Info Section */}
+      <div className="container bg-light p-4 rounded shadow-sm mb-4">
+        <div className="row">
+          <div className="col-md-6 border-end">
+            <p>
+              <strong>Name:</strong> {appointmentInfo.name}
+            </p>
+            <p>
+              <strong>Age:</strong> {appointmentInfo.age}
+            </p>
+            <p>
+              <strong>Gender:</strong> {appointmentInfo.gender}
+            </p>
+            <p>
+              <strong>Problem:</strong> {appointmentInfo.problem}
+            </p>
+          </div>
+          <div className="col-md-6 ps-md-4">
+            <p>
+              <strong>Doctor ID:</strong> {appointmentInfo.item?.doctorId || 'N/A'}
+            </p>
+            <p>
+              <strong>Hospital ID:</strong> {appointmentInfo.item?.clinicId || 'N/A'}
+            </p>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Header */}
+      {/* Header and Upload Button */}
       <div className="bg-info text-white p-3 d-flex justify-content-between align-items-center rounded">
         <h5 className="mb-0">Report Details</h5>
         <div className="d-flex gap-2">
@@ -192,66 +251,64 @@ const ReportDetails = () => {
         </div>
       </div>
 
-      {/* Table */}
-
+      {/* Reports Table */}
       <div className="mt-4">
         <CTable bordered responsive>
           <CTableHead color="light">
             <CTableRow>
               <CTableHeaderCell>S.No</CTableHeaderCell>
-              {/* <CTableHeaderCell>Report ID</CTableHeaderCell> */}
               <CTableHeaderCell>Booking ID</CTableHeaderCell>
               <CTableHeaderCell>Report Name</CTableHeaderCell>
               <CTableHeaderCell>Date</CTableHeaderCell>
               <CTableHeaderCell>Status</CTableHeaderCell>
               <CTableHeaderCell>Type</CTableHeaderCell>
               <CTableHeaderCell>Action</CTableHeaderCell>
-              {/* <CTableHeaderCell>Download</CTableHeaderCell> */}
             </CTableRow>
           </CTableHead>
           <CTableBody>
             {Array.isArray(report) && report.length > 0 ? (
-              report.map((report, index) => {
-                console.log('Rendering report:', report)
-                const isPdf = report.reportFile?.includes('JVBER')
-                const mimeType = isPdf ? 'application/pdf' : 'image/jpeg'
-                const fileExt = isPdf ? 'pdf' : 'jpg'
-                const fileUrl = `data:${mimeType};base64,${report.reportFile}`
+              report.map((reportItem, index) => {
+                // Ensure we get the Base64 string correctly (assuming it might be wrapped in an array)
+                const base64File = Array.isArray(reportItem.reportFile) 
+                  ? reportItem.reportFile[0] 
+                  : reportItem.reportFile
+
+                const mimeType = getMimeType(base64File)
+                const isPdf = mimeType === 'application/pdf'
+                const fileExt = isPdf ? 'pdf' : (mimeType.includes('image/') ? mimeType.split('/')[1] : 'dat')
+                const fileUrl = `data:${mimeType};base64,${base64File}`
 
                 return (
                   <CTableRow key={index}>
-                    {/* <CTableDataCell>{report.id}</CTableDataCell> */}
                     <CTableDataCell>{index + 1}</CTableDataCell>
-                    <CTableDataCell>{report.bookingId}</CTableDataCell>
-                    <CTableDataCell>{report.reportName}</CTableDataCell>
-                    <CTableDataCell>{report.reportDate}</CTableDataCell>
-                    <CTableDataCell>{report.reportStatus}</CTableDataCell>
-                    <CTableDataCell>{report.reportType}</CTableDataCell>
+                    <CTableDataCell>{reportItem.bookingId}</CTableDataCell>
+                    <CTableDataCell>{reportItem.reportName}</CTableDataCell>
+                    <CTableDataCell>{reportItem.reportDate}</CTableDataCell>
+                    <CTableDataCell>{reportItem.reportStatus}</CTableDataCell>
+                    <CTableDataCell>{reportItem.reportType}</CTableDataCell>
 
                     {/* Actions: Preview + Download */}
                     <CTableDataCell>
-                      {report.reportFile ? (
+                      {base64File ? (
                         <div className="d-flex gap-2">
-                          {/* 👁️ Preview */}
+                          {/* 👁️ Preview Button */}
                           <CButton
                             className="bg-info text-white border-0"
                             size="sm"
                             onClick={() => {
-                              if (isPdf) {
-                                window.open(fileUrl, '_blank')
-                              } else {
-                                setPreviewImage(fileUrl)
-                                setShowModal(true)
-                              }
+                              // Set state for modal preview
+                              setIsPreviewPdf(isPdf)
+                              setPreviewFileUrl(fileUrl)
+                              setShowModal(true)
                             }}
                           >
                             <FaEye />
                           </CButton>
 
-                          {/* ⬇️ Download */}
+                          {/* ⬇️ Download Button */}
                           <a
                             href={fileUrl}
-                            download={`${report.reportName || 'report'}_${index + 1}.${fileExt}`}
+                            download={`${reportItem.reportName || 'report'}_${index + 1}.${fileExt}`}
                             className="btn btn-sm btn-outline-success"
                             title="Download"
                           >
@@ -267,7 +324,7 @@ const ReportDetails = () => {
               })
             ) : (
               <CTableRow>
-                <CTableDataCell colSpan="8" className="text-center">
+                <CTableDataCell colSpan="7" className="text-center">
                   No Reports Found
                 </CTableDataCell>
               </CTableRow>
@@ -275,18 +332,61 @@ const ReportDetails = () => {
           </CTableBody>
         </CTable>
       </div>
-      <CModal visible={showModal} onClose={() => setShowModal(false)} size="lg">
-        <CModalHeader onClose={() => setShowModal(false)}>
-          <strong>Image Preview</strong>
+
+      {/* Image/PDF Preview Modal */}
+      <CModal visible={showModal} onClose={handleCloseModal} size="lg">
+        <CModalHeader onClose={handleCloseModal}>
+          <strong>{isPreviewPdf ? 'PDF Preview' : 'Image Preview'}</strong>
         </CModalHeader>
         <CModalBody className="text-center">
-          <img
-            src={previewImage}
-            alt="Preview"
-            style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '8px' }}
-          />
+          {isPreviewPdf ? (
+            // PDF Preview using react-pdf
+            <div className="pdf-viewer" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+              <Document
+                file={previewFileUrl}
+                onLoadSuccess={onDocumentLoadSuccess}
+                onLoadError={(error) => {
+                  console.error('Error loading PDF:', error)
+                  toast.error('Failed to load PDF.')
+                }}
+              >
+                {/* Render the current page of the PDF */}
+                <Page pageNumber={pageNumber} />
+              </Document>
+              <div className="mt-3 d-flex justify-content-center align-items-center">
+                <CButton
+                  color="secondary"
+                  size="sm"
+                  onClick={() => setPageNumber(pageNumber - 1)}
+                  disabled={pageNumber <= 1}
+                >
+                  Previous
+                </CButton>
+                <p className="mb-0 mx-3">
+                  Page {pageNumber} of {numPages || '...'}
+                </p>
+                <CButton
+                  color="secondary"
+                  size="sm"
+                  onClick={() => setPageNumber(pageNumber + 1)}
+                  disabled={pageNumber >= numPages}
+                >
+                  Next
+                </CButton>
+              </div>
+            </div>
+          ) : (
+            // Image Preview
+            <img
+              src={previewFileUrl}
+              alt="Preview"
+              style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '8px' }}
+            />
+          )}
         </CModalBody>
       </CModal>
+
+      {/* Upload Report Modal */}
       <CModal visible={uploadModal} onClose={() => setUploadModal(false)}>
         <CModalHeader>
           <CModalTitle>Upload Report</CModalTitle>
@@ -314,6 +414,8 @@ const ReportDetails = () => {
                 type="date"
                 value={newReport.reportDate}
                 onChange={(e) => setNewReport({ ...newReport, reportDate: e.target.value })}
+                // Ensures only today or future dates can be selected
+                min={todayISO} 
               />
             </div>
             <div className="mb-2">

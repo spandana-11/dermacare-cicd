@@ -28,6 +28,7 @@ public class BookingRequset {
 	private String consultationType;
 	private double consultationFee;
 	private double totalFee;
+	private String paymentType;
 	private String bookedAt;
 
 }

@@ -38,5 +38,6 @@ public class BookingResponse {
 	private String BookedAt;
 	private String status;
 	private double totalFee;
+	private String paymentType;
 
 }

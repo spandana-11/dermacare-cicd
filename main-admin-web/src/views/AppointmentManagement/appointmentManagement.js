@@ -19,7 +19,7 @@ import {
   CCardBody,
 } from '@coreui/react'
 import { BASE_URL, ClinicAllData } from '../../baseUrl'
-import { AppointmentData } from './appointmentAPI'
+import { AppointmentData, getBookingBy_ClinicId } from './appointmentAPI'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { getBookingBy_DoctorId } from './appointmentAPI'
@@ -47,25 +47,23 @@ const appointmentManagement = () => {
 
   const navigate = useNavigate()
 
-  const fetchAppointments = async (doctorId = '') => {
+  const fetchAppointments = async (clinicId = '') => {
     try {
       let response
-      if (doctorId) {
-        response = await getBookingBy_DoctorId(doctorId)
+
+      if (clinicId) {
+        response = await getBookingBy_ClinicId(clinicId)
+        console.log('📦 Clinic-specific Appointments:', response)
       } else {
-        response = await AppointmentData()
+        response = await AppointmentData() // <-- Get all bookings
+        console.log('📦 All Appointments:', response)
       }
 
-      console.log('Appointments for this Hospital:', response)
+      const appointments = Array.isArray(response.data) ? response.data : response.data?.data || []
 
-      if (response?.data && Array.isArray(response.data) && response.data.length > 0) {
-        setBookings(response.data)
-      } else {
-        setBookings([]) // <-- Clear previous bookings
-        setFilteredData([]) // <-- Also clear filteredData to show "No appointments found"
-      }
+      setBookings(appointments)
     } catch (error) {
-      console.error('Failed to fetch appointments:', error)
+      console.error('❌ Failed to fetch appointments:', error)
       setBookings([])
       setFilteredData([])
     }
@@ -98,7 +96,7 @@ const appointmentManagement = () => {
     const normalize = (val) => val?.toLowerCase().trim()
 
     // Map your filter buttons to actual data values:
-     const consultationTypeMap = {
+    const consultationTypeMap = {
       'Service & Treatment': 'services & treatments',
       'Video Consultation': 'online consultation',
       'In-clinic': 'in-clinic consultation',
@@ -161,6 +159,18 @@ const appointmentManagement = () => {
       // setFilterTypes([...filterTypes, type])// multiple selections.
     }
   }
+
+  useEffect(() => {
+    fetchHospitals()
+  }, [])
+
+  useEffect(() => {
+    if (hospitals.length > 0) {
+      const firstClinicId = hospitals[0].hospitalId
+      setSelectedHospitalId(firstClinicId)
+      fetchAppointments(firstClinicId)
+    }
+  }, [hospitals])
 
   //filtering for pending,completed ,in-progress - one selection at a time
   const handleStatusChange = (e) => {
@@ -273,9 +283,9 @@ const appointmentManagement = () => {
               style={{ minWidth: '180px', flexShrink: 0 }}
               value={selectedHospitalId}
               onChange={(e) => {
-                const selectedClinicId = e.target.value
-                setSelectedHospitalId(selectedClinicId)
-                fetchAppointments(selectedClinicId) // fetches bookings for selected hospital
+                const clinicId = e.target.value
+                setSelectedHospitalId(clinicId)
+                fetchAppointments(clinicId) // ✅ Now works based on API
               }}
             >
               <option value="">Select Hospital</option>

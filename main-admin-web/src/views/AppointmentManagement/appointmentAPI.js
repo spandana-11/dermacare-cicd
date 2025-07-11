@@ -78,3 +78,17 @@ export const getBookingBy_DoctorId = async (doctorId) => {
 //     throw error
 //   }
 // }
+
+//get appoinement by clinic id
+// appointmentAPI.js
+
+export const getBookingBy_ClinicId = async (clinicId) => {
+  try {
+    const response = await axios.get(
+      `${Booking_service_Url}/customer/getAllBookedServicesByClinicId/${clinicId}`,
+    )
+    return response
+  } catch (error) {
+    throw error
+  }
+}

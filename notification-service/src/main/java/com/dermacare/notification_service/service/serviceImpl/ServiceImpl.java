@@ -59,10 +59,11 @@ public class ServiceImpl implements ServiceInterface{
 	}
 		
 		
-	public String sendNotification(BookingResponse booking) {
+	public void sendNotification(BookingResponse booking) {
 		String title=buildTitle(booking);
 		String body =buildBody(booking);
-		return appNotification.sendPushAppNotification(booking.getDoctorDeviceId(),title,body);
+		appNotification.sendPushNotification(booking.getDoctorDeviceId(),title,body, "BOOKING",
+			    "BookingScreen","default");
 	}
 	
 	
@@ -113,14 +114,14 @@ public class ServiceImpl implements ServiceInterface{
 		}
 		if(eligibleNotifications!=null && !eligibleNotifications.isEmpty() ) {
 		res = new ResBody<List<NotificationDTO>>("Notification sent Successfully",200,reversedEligibleNotifications);	
-		 sendAlertNotifications();
+		
 		}else {
 			res = new ResBody<List<NotificationDTO>>("NotificationInfo Not Found",200,null);
 			}}catch(Exception e) {
 		res = new ResBody<List<NotificationDTO>>(e.getMessage(),500,null);
 	}
 		return res;
-		}
+	}
 				
 
 	
@@ -203,12 +204,13 @@ public class ServiceImpl implements ServiceInterface{
 		                    repository.save(notificationEntity);
 		                    try {
 		                        if (b.getCustomerDeviceId() != null) {
-		                            appNotification.sendPushAppNotification(
+		                            appNotification.sendPushNotification(
 		                                b.getCustomerDeviceId(),
 		                                " Hello " + b.getName(),
 		                                b.getDoctorName() + " Accepted Your Appointment For " +
-		                                b.getSubServiceName() + " on " + b.getServiceDate() + " at " + b.getServicetime()
-		                            );
+		                                b.getSubServiceName() + " on " + b.getServiceDate() + " at " + b.getServicetime(),
+		                                "BOOKING SUCCESS",
+		                			    "BookingVerificationScreen","default" );
 		                        }
 		                    } catch (Exception ex) {}
 		                    break;
@@ -221,11 +223,13 @@ public class ServiceImpl implements ServiceInterface{
 		                    repository.save(notificationEntity);
 		                    try {
 		                        if (b.getCustomerDeviceId() != null) {
-		                            appNotification.sendPushAppNotification(
+		                            appNotification.sendPushNotification(
 		                                b.getCustomerDeviceId(),
 		                                " Hello " + b.getName(),
 		                                b.getDoctorName() + " Rejected Your Appointment For " +
-		                                b.getSubServiceName() + " on " + b.getServiceDate() + " at " + b.getServicetime()
+		                                b.getSubServiceName() + " on " + b.getServiceDate() + " at " + b.getServicetime(),
+		                                "BOOKING REJECT",
+		                			    "BookingVerificationScreen","default"
 		                            );
 		                        }
 		                    } catch (Exception ex) {}		                
@@ -268,16 +272,18 @@ public class ServiceImpl implements ServiceInterface{
 	 @Scheduled(fixedRate = 1 * 60 * 1000)
 	 public void sendAlertNotifications() {		 
 		 try {
-			 System.out.println("method invoked");
+			 System.out.println("sendAlertNotifications method invoked");
 			 List<NotificationEntity> notifications = repository.findAll();
 			 DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 				String currentDate = LocalDate.now().format(dateFormatter);
 		        for (NotificationEntity notification : notifications) {
 		            if ("Confirmed".equalsIgnoreCase(notification.getData().getStatus()) && notification.isAlerted() == false 
-		             && notification.getData().getServiceDate().equals(currentDate) && calculateTimeDifferenceForAlertNotification(notification.getData().getServicetime())) {            	
+		             && notification.getData().getServiceDate().equals(currentDate) && calculateTimeDifferenceForAlertNotification(notification.getData().getServicetime())) {
+		            if(notification.getData().getConsultationType().equalsIgnoreCase("online consultation") ||
+		            notification.getData().getConsultationType().equalsIgnoreCase("video consultation")) {
 		            sendAlertPushNotification(notification.getData().getBookingId());
 		            notification.setAlerted(true);
-		            repository.save(notification);}}
+		            repository.save(notification);}}}
 		 }catch(Exception e) {}
  }
 	
@@ -314,19 +320,24 @@ public class ServiceImpl implements ServiceInterface{
 	 private void sendAlertPushNotification(String appointmentId) {
 		 try {
 			 ResponseEntity<ResponseStructure<BookingResponse>> res = bookServiceFeign.getBookedService(appointmentId);
-		        BookingResponse b = res.getBody().getData();		     		             
+		        BookingResponse b = res.getBody().getData();
+		        System.out.println(b.getCustomerDeviceId());
+		        System.out.println(b.getDoctorDeviceId());
 		        if (b != null) {
 		        	 try {
 	                        if(b.getCustomerDeviceId() != null && b.getDoctorDeviceId() != null) {
-	                            appNotification.sendPushAppNotification(
+	                            appNotification.sendPushNotification(
 	                                b.getCustomerDeviceId(),
 	                                " Hello " + b.getName()+ "," ,
-	                                b.getDoctorName() + " Connect With You Through Video Call within 5 Minutes ");
+	                                b.getDoctorName() + " Connect With You Through Video Call within 5 Minutes ", "Alert",
+	                			    "AlertScreen","default");
 	                      
-	                            appNotification.sendPushAppNotification(
+	                            appNotification.sendPushNotification(
 	                                b.getDoctorDeviceId(),
 	                                " Hello " +b.getDoctorName()+ "," , " You Have a Video Consultation within 5 Minutes With " +
-	                                b.getName());
+	                                b.getName(), "Alert",
+	                			    "AlertScreen","default");
+	                            
 	                            System.out.println("Notification sent to doctor and customer");
 	                    }}catch (Exception ex) {}
 		        	 }

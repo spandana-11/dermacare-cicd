@@ -102,85 +102,81 @@ const WidgetsDropdown = (props) => {
   }
 
   // Use useCallback for fetchAppointments to stabilize the function reference
-  const fetchAppointments = useCallback(
+const fetchAppointments = useCallback(
     async (id) => {
       setLoadingAppointments(true)
       setAppointmentError(null)
       try {
-        const response = await AppointmentData() // Assuming AppointmentData fetches data correctly
-        console.log('Raw Appointments Data:', response) // Log raw response to inspect structure
+        const response = await AppointmentData()
+        console.log('Raw Appointments Data:', response)
 
-        // Check if response.data exists and is an array
         if (response && Array.isArray(response.data)) {
           const allAppointments = response.data
           setTotalAppointmentsCount(allAppointments.length)
 
           // Filter appointments for today
           const filteredAppointments = allAppointments.filter((item) => {
-            // Ensure serviceDate exists before trying to convert
             const itemDate = item.serviceDate ? convertToISODate(item.serviceDate) : ''
             return itemDate === todayISO
           })
 
-          // setTodayBookings(filteredAppointments)
-          setDoctors(doctors)
-          // You can keep a separate state for total appointments if needed,
-          // but for the dashboard display, we focus on today's.
+          // CRITICAL FIX: Set todayBookings with the filtered appointments
+          setTodayBookings(filteredAppointments)
+          
         } else {
           console.error('Invalid appointments response format:', response)
-          setTodayBookings([]) // Ensure it's an empty array on invalid data
+          setTodayBookings([]) 
           setAppointmentError('Invalid data received for appointments.')
         }
       } catch (error) {
         console.error('Failed to fetch appointments:', error)
         setAppointmentError('No Appointment Found')
-        setTodayBookings([]) // Clear bookings on error
+        setTodayBookings([]) 
       } finally {
         setLoadingAppointments(false)
       }
     },
     [todayISO, convertToISODate],
-  ) // Depend on todayISO and convertToISODate
-
-  const fetchDoctors = useCallback(
+  )
+  
+const fetchDoctors = useCallback(
     async (id) => {
       setLoadingDoctors(true)
       setDoctorError(null)
       try {
-        const response = await DoctorData() // Assuming AppointmentData fetches data correctly
-        console.log('Raw Doctors Data:', response) // Log raw response to inspect structure
+        const response = await DoctorData()
+        console.log('Raw Doctors Data:', response) 
 
-        // Check if response.data exists and is an array
         if (response && Array.isArray(response.data)) {
           const allDoctors = response.data
           setTotalDoctorsCount(allDoctors.length)
+          
+          // NOTE: If you intended to filter doctors by serviceDate and store them, 
+          // you should set the `doctors` state here.
+          // const filteredDoctors = allDoctors.filter((item) => {
+          //   const itemDate = item.serviceDate ? convertToISODate(item.serviceDate) : ''
+          //   return itemDate === todayISO
+          // })
+          // setDoctors(filteredDoctors)
 
-          // Filter appointments for today
-          const filteredDoctors = allDoctors.filter((item) => {
-            // Ensure serviceDate exists before trying to convert
-            const itemDate = item.serviceDate ? convertToISODate(item.serviceDate) : ''
-            return itemDate === todayISO
-          })
+          // We'll set the doctors state with all doctors for now, as filteredDoctors 
+          // logic based on serviceDate seems unusual for doctor data.
+          setDoctors(allDoctors)
 
-          setTodayBookings(filteredDoctors)
-          // You can keep a separate state for total appointments if needed,
-          // but for the dashboard display, we focus on today's.
+          // IMPORTANT: Removed setTodayBookings(filteredDoctors) from here.
         } else {
           console.error('Invalid doctors response format:', response)
-          setTodayBookings([]) // Ensure it's an empty array on invalid data
-          setAppointmentError('Invalid data received for doctors.')
+          setDoctorError('Invalid data received for doctors.')
         }
       } catch (error) {
         console.error('Failed to fetch doctors:', error)
-        setDoctorError('Failed to fetch appointments.')
-        setTodayBookings([]) // Clear bookings on error
+        setDoctorError('Failed to fetch doctors.')
       } finally {
         setLoadingDoctors(false)
       }
     },
-    [todayISO, convertToISODate],
-  ) // Depend on todayISO and convertToISODate
-
+    [convertToISODate],
+  ) 
   useEffect(() => {
     fetchAdvertisements()
   }, [])
@@ -214,7 +210,7 @@ const WidgetsDropdown = (props) => {
       setAppointmentError('Hospital ID not found. Cannot fetch appointments.')
       setLoadingAppointments(false)
     }
-  }, [fetchAppointments]) // Depend on fetchAppointments
+  }, [fetchAppointments,fetchDoctors]) // Depend on fetchAppointments
 
   // Pending appointments count for today
   const pendingTodayCount = todayBookings.filter(
@@ -467,6 +463,7 @@ const WidgetsDropdown = (props) => {
       </div>
 
       {/*to display appointmnt */}
+      {/* Appointments Table */}
       <div className="container mt-4">
         <h5>Today's Pending Appointments</h5>
         <CTable striped hover responsive>
@@ -509,8 +506,7 @@ const WidgetsDropdown = (props) => {
                     <CTableDataCell>{item.subServiceName}</CTableDataCell>
                     <CTableDataCell>{item.consultationType}</CTableDataCell>
                     <CTableDataCell>
-                      {item.serviceDate}{' '}
-                      {/* This will already be YYYY-MM-DD from API if filtered */}
+                      {item.serviceDate}
                     </CTableDataCell>
                     <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
                     <CTableDataCell>{item.status}</CTableDataCell>

@@ -1,5 +1,7 @@
 package com.AdminService.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,6 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class BookingResponse {
 	
 	private String bookingId;
@@ -31,5 +34,6 @@ public class BookingResponse {
 	private String BookedAt;
 	private String status;
 	private double totalFee;
+	private String paymentType;
 
 }

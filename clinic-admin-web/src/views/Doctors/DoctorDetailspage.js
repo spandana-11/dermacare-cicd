@@ -190,7 +190,7 @@ const DoctorDetailsPage = () => {
       const res = await axios.put(`${BASE_URL}/updateDoctor/${doctorData.doctorId}`, formData)
 
       if (res.data.success) {
-        alert('Doctor updated successfully')
+        toast.success('Doctor updated successfully')
 
         // Update both doctorData and formData state
         setDoctorData(res.data.updatedDoctor)

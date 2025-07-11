@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { Doctor_Url, getAllDCtrNotifications, NoficationResponse } from '../../baseUrl'
+import { BASE_URL, Doctor_Url, getAllDCtrNotifications, getDoctorIdAndNotifications, NoficationResponse } from '../../baseUrl'
 
 export const DoctorNotifyData = async (hospitalId, doctorId) => {
   console.log('DoctorNotifyData calling...')
@@ -44,3 +44,16 @@ export const postNotifyData = async (requestData) => {
     throw error
   }
 }
+
+export const DoctorId_NotificationsData = async (hospitalId) => {
+  try {
+    const res = await axios.get(
+      `${BASE_URL}/doctors/hospitalById/${hospitalId}`
+    )
+    return res
+  } catch (error) {
+    console.error('Error fetching doctor notifications:', error)
+    throw error
+  }
+}
+

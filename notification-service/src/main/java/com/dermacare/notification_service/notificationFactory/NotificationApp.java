@@ -12,22 +12,24 @@ import com.google.firebase.messaging.Notification;
 public class NotificationApp implements SendAppNotification{
 
 	@Override
-	public String sendPushAppNotification(String token , String title, String body) {
-		 Message message = Message.builder()
-		            .setToken(token)
-		            .setNotification(Notification.builder()
-		                .setTitle(title)
-		                .setBody(body)
-		                .build())
-		            .build();
+	public void sendPushNotification(String deviceToken, String title, String body, String type, String screen, String sound) {
+	    Message message = Message.builder()
+	        .setToken(deviceToken)
+	        .setNotification(Notification.builder()
+	            .setTitle(title)
+	            .setBody(body)
+	            .build())
+	        .putData("type", type)
+	        .putData("screen", screen)
+	        .putData("sound", sound) // Custom key, handled by app
+	        .build();
 
-		        try {
-		            String response = FirebaseMessaging.getInstance().send(message);
-		            return response;
-		        } catch (FirebaseMessagingException e) {
-		            throw new RuntimeException("FCM send failed", e);
-		        }
-		    }
-	
+	    try {
+	        String response = FirebaseMessaging.getInstance().send(message);
+	        System.out.println("Successfully sent message: " + response);
+	    } catch (FirebaseMessagingException e) {
+	        e.printStackTrace();
+	    }
+	}
 
 }

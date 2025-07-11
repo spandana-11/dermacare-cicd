@@ -2,6 +2,7 @@ package com.dermacare.bookingService.service.Impl;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
@@ -118,10 +119,14 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	@Override
 	public List<BookingResponse> bookingByDoctorId(String doctorId) {
 		List<Booking> bookings = repository.findByDoctorId(doctorId);
+		List<Booking> reversedBookings = new ArrayList<>();
+		for(int i = bookings.size()-1; i >= 0; i--) {
+			reversedBookings.add(bookings.get(i));
+		}
 		if (bookings == null  || bookings.isEmpty()) {
 			return null;
 		}
-		return toResponses(bookings);
+		return toResponses(reversedBookings);
 	}
 
 	@Override
