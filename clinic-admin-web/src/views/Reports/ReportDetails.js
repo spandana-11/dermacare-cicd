@@ -305,6 +305,7 @@ const ReportDetails = () => {
               <CFormInput
                 value={newReport.bookingId}
                 onChange={(e) => setNewReport({ ...newReport, bookingId: e.target.value })}
+                disabled
               />
             </div>
             <div className="mb-2">
