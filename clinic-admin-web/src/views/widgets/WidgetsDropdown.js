@@ -27,7 +27,7 @@ import 'slick-carousel/slick/slick-theme.css'
 import axios from 'axios'
 import { MainAdmin_URL, AllCustomerAdvertisements, GetBy_DoctorId } from '../../baseUrl'
 // import { appointments_Ref } from '../../baseUrl'
-import { AppointmentData } from '../AppointmentManagement/appointmentAPI'
+import { AppointmentData, GetBookingByClinicIdData } from '../AppointmentManagement/appointmentAPI'
 import { DoctorData } from '../Doctors/DoctorAPI'
 
 const WidgetsDropdown = (props) => {
@@ -102,56 +102,53 @@ const WidgetsDropdown = (props) => {
   }
 
   // Use useCallback for fetchAppointments to stabilize the function reference
-const fetchAppointments = useCallback(
-    async (id) => {
+  const fetchAppointments = useCallback(
+    async (clinicId) => {
       setLoadingAppointments(true)
       setAppointmentError(null)
+
       try {
-        const response = await AppointmentData()
+        const response = await GetBookingByClinicIdData(clinicId)
         console.log('Raw Appointments Data:', response)
 
         if (response && Array.isArray(response.data)) {
           const allAppointments = response.data
           setTotalAppointmentsCount(allAppointments.length)
 
-          // Filter appointments for today
           const filteredAppointments = allAppointments.filter((item) => {
             const itemDate = item.serviceDate ? convertToISODate(item.serviceDate) : ''
-            return itemDate === todayISO
+            return itemDate === todayISO && item.clinicId === clinicId
           })
 
-          // CRITICAL FIX: Set todayBookings with the filtered appointments
           setTodayBookings(filteredAppointments)
-          
         } else {
-          console.error('Invalid appointments response format:', response)
-          setTodayBookings([]) 
+          setTodayBookings([])
           setAppointmentError('Invalid data received for appointments.')
         }
       } catch (error) {
         console.error('Failed to fetch appointments:', error)
         setAppointmentError('No Appointment Found')
-        setTodayBookings([]) 
+        setTodayBookings([])
       } finally {
         setLoadingAppointments(false)
       }
     },
     [todayISO, convertToISODate],
   )
-  
-const fetchDoctors = useCallback(
+
+  const fetchDoctors = useCallback(
     async (id) => {
       setLoadingDoctors(true)
       setDoctorError(null)
       try {
         const response = await DoctorData()
-        console.log('Raw Doctors Data:', response) 
+        console.log('Raw Doctors Data:', response)
 
         if (response && Array.isArray(response.data)) {
           const allDoctors = response.data
           setTotalDoctorsCount(allDoctors.length)
-          
-          // NOTE: If you intended to filter doctors by serviceDate and store them, 
+
+          // NOTE: If you intended to filter doctors by serviceDate and store them,
           // you should set the `doctors` state here.
           // const filteredDoctors = allDoctors.filter((item) => {
           //   const itemDate = item.serviceDate ? convertToISODate(item.serviceDate) : ''
@@ -159,7 +156,7 @@ const fetchDoctors = useCallback(
           // })
           // setDoctors(filteredDoctors)
 
-          // We'll set the doctors state with all doctors for now, as filteredDoctors 
+          // We'll set the doctors state with all doctors for now, as filteredDoctors
           // logic based on serviceDate seems unusual for doctor data.
           setDoctors(allDoctors)
 
@@ -176,13 +173,14 @@ const fetchDoctors = useCallback(
       }
     },
     [convertToISODate],
-  ) 
+  )
   useEffect(() => {
     fetchAdvertisements()
   }, [])
 
   useEffect(() => {
     const hospitalId = localStorage.getItem('HospitalId')
+    console.log(hospitalId)
     if (hospitalId) {
       fetchAppointments(hospitalId)
       fetchDoctors(GetBy_DoctorId)
@@ -210,7 +208,7 @@ const fetchDoctors = useCallback(
       setAppointmentError('Hospital ID not found. Cannot fetch appointments.')
       setLoadingAppointments(false)
     }
-  }, [fetchAppointments,fetchDoctors]) // Depend on fetchAppointments
+  }, [fetchAppointments, fetchDoctors]) // Depend on fetchAppointments
 
   // Pending appointments count for today
   const pendingTodayCount = todayBookings.filter(
@@ -505,9 +503,7 @@ const fetchDoctors = useCallback(
                     <CTableDataCell>{item.name}</CTableDataCell>
                     <CTableDataCell>{item.subServiceName}</CTableDataCell>
                     <CTableDataCell>{item.consultationType}</CTableDataCell>
-                    <CTableDataCell>
-                      {item.serviceDate}
-                    </CTableDataCell>
+                    <CTableDataCell>{item.serviceDate}</CTableDataCell>
                     <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
                     <CTableDataCell>{item.status}</CTableDataCell>
                     <CTableDataCell>

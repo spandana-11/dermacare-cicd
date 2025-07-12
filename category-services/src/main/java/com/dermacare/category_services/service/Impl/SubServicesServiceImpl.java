@@ -2,6 +2,7 @@ package com.dermacare.category_services.service.Impl;
 
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -313,5 +314,57 @@ public class SubServicesServiceImpl implements SubServicesService {
 
 	    return response;
 	}
+	
+	
+	
+//	-------------------------------------- Get Subservice by hospitalId---------------------------
+	@Override
+	public List<SubServicesDto> getSubServiceByHospitalId(String hospitalId) {
+	    List<SubServices> subServices = subServiceRepository.findByHospitalId(hospitalId);
+
+	    if (subServices == null || subServices.isEmpty()) {
+	        return Collections.emptyList();
+	    }
+
+	    List<SubServicesDto> dtoList = new ArrayList<>();
+
+	    for (SubServices service : subServices) {
+	        SubServicesDto dto = new SubServicesDto();
+
+	        // Handle nested object
+	        if (service.getSubServiceId() != null) {
+	            dto.setSubServiceId(service.getSubServiceId().toString());
+	        }
+	        dto.setHospitalId(service.getHospitalId());
+	        dto.setSubServiceName(service.getSubServiceName());
+	        dto.setServiceID(service.getServiceID().toString());
+	        dto.setServiceName(service.getServiceName());
+	        dto.setCategoryName(service.getCategoryName());
+	        dto.setCategoryId(service.getCategoryId().toString());
+	        dto.setViewDescription(service.getViewDescription());
+	        if (dto.getSubServiceImage() != null) {
+	            byte[] imageBytes = Base64.getDecoder().decode(dto.getSubServiceImage());
+	            service.setSubServiceImage(imageBytes);
+	        }
+	        dto.setStatus(service.getStatus());
+	        dto.setMinTime(service.getMinTime());
+	        dto.setDescriptionQA(service.getDescriptionQA());
+	        dto.setPrice(service.getPrice());
+	        dto.setDiscountPercentage(service.getDiscountPercentage());
+	        dto.setTaxPercentage(service.getTaxPercentage());
+	        dto.setPlatformFeePercentage(service.getPlatformFeePercentage());
+	        dto.setDiscountAmount(service.getDiscountAmount());
+	        dto.setTaxAmount(service.getTaxAmount());
+	        dto.setPlatformFee(service.getPlatformFee());
+	        dto.setDiscountedCost(service.getDiscountedCost());
+	        dto.setClinicPay(service.getClinicPay());
+	        dto.setFinalCost(service.getFinalCost());
+
+	        dtoList.add(dto);
+	    }
+
+	    return dtoList;
+	}
+	
 
 }

@@ -268,6 +268,13 @@ const DoctorManagement = () => {
     fetchAllData()
   }, [])
 
+  useEffect(() => {
+    const clnicId = localStorage.getItem('HospitalId')
+    // fetchHospitalDetails(clnicId)
+
+    fetchDoctorDetails(clnicId)
+  }, [])
+
   const validateDoctorForm = () => {
     const errors = {}
     let isValid = true
@@ -446,7 +453,7 @@ const DoctorManagement = () => {
 
       const newDoctor = response.data.doctor ?? payload
       const hospitalName = localStorage.getItem('HospitalName')
-
+      await fetchDoctorDetails(hospitalId)
       // ✅ Send onboarding email
       await sendDermaCareOnboardingEmail({
         name: form.doctorName,
@@ -457,10 +464,10 @@ const DoctorManagement = () => {
       })
 
       // ✅ Properly update doctorData state (ensures it shows without refresh)
-      setDoctorData((prev) => ({
-        ...prev,
-        data: [...(prev?.data ?? []), newDoctor],
-      }))
+      // setDoctorData((prev) => ({
+      //   ...prev,
+      //   data: [...(prev?.data ?? []), newDoctor],
+      // }))
 
       toast.success(response.data.message || 'Doctor added successfully', {
         position: 'top-right',
@@ -613,9 +620,7 @@ const DoctorManagement = () => {
         <div className="centered-message">
           <p>{errorMessage}</p>
         </div>
-      ) : !doctorData ||
-        !doctorData.data ? // ✅ DON’T show "Page not found" here — just return null or loading
-      null : doctorData.data.length === 0 ? (
+      ) : !doctorData || !doctorData.data ? null : doctorData.data.length === 0 ? ( // ✅ DON’T show "Page not found" here — just return null or loading
         <div className="centered-message">
           <span>No doctors found for this hospital.</span>{' '}
           <span

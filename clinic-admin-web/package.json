@@ -55,6 +55,7 @@
     "react-time-picker": "^7.0.0",
     "react-toastify": "^10.0.6",
     "redux": "5.0.1",
+    "rollup": "^4.29.1",
     "simplebar-react": "^3.2.6",
     "slick-carousel": "^1.8.1",
     "toastify": "^2.0.1"

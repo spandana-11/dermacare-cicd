@@ -21,5 +21,5 @@ public interface SubServiceRepository extends MongoRepository<SubServices,Object
 	public SubServices findByHospitalIdAndSubServiceId(String hospitalId, ObjectId subServiceId);
 	public Optional<SubServices> deleteByHospitalIdAndSubServiceId(String hospitalId, ObjectId subServiceId);
 	public List<SubServices> findBySubServiceId( ObjectId subServiceId);
-	
+	public List<SubServices> findByHospitalId(String hospitalId);
 }

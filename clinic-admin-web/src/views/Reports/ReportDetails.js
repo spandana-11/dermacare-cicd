@@ -18,18 +18,18 @@ import {
   CModalFooter,
 } from '@coreui/react'
 import { Get_ReportsByBookingIdData, SaveReportsData } from './reportAPI' // Assuming reportAPI.js is in the same directory
-import { FaEye, FaDownload } from 'react-icons/fa' 
+import { FaEye, FaDownload } from 'react-icons/fa'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { Document, Page, pdfjs } from 'react-pdf'
-import "react-pdf/dist/Page/AnnotationLayer.css"
+import 'react-pdf/dist/Page/AnnotationLayer.css'
+import 'react-pdf/dist/Page/TextLayer.css'
 
-// IMPORTANT: Configure react-pdf worker source using a local import via Vite's new URL() syntax.
-// This is the most reliable way to handle the PDF worker in Vite and prevents CORS issues.
+// Add the Vite-compatible configuration:
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.js',
   import.meta.url,
-).toString();
+).toString()
 
 const ReportDetails = () => {
   const { id } = useParams()
@@ -47,7 +47,7 @@ const ReportDetails = () => {
 
   const [report, setReport] = useState([])
   const [showModal, setShowModal] = useState(false)
-  
+
   // State for previewing both images and PDFs
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
@@ -57,7 +57,7 @@ const ReportDetails = () => {
   const [pageNumber, setPageNumber] = useState(1)
 
   const [uploadModal, setUploadModal] = useState(false)
-  
+
   // Initial state for new report, with reportDate not prefilled
   const [newReport, setNewReport] = useState({
     reportName: '',
@@ -109,7 +109,7 @@ const ReportDetails = () => {
     try {
       const res = await Get_ReportsByBookingIdData(appointmentInfo.bookingId)
       const rawData = res
-      
+
       if (Array.isArray(rawData)) {
         const allReports = rawData.flatMap((item) => item.reportsList || [])
         setReport(allReports)
@@ -121,6 +121,14 @@ const ReportDetails = () => {
       console.error('Error fetching reports:', error)
       setReport([])
     }
+  }
+  const handlePreview = (file) => {
+    if (!file) return
+
+    const isPdf = file.type === 'application/pdf'
+    setIsPreviewPdf(isPdf)
+    setPreviewFileUrl(URL.createObjectURL(file))
+    setShowModal(true)
   }
 
   // Effect hook to fetch reports when appointmentInfo.bookingId changes
@@ -170,7 +178,7 @@ const ReportDetails = () => {
 
       const response = await SaveReportsData(payload)
       console.log('Report uploaded:', response)
-      
+
       setUploadModal(false) // Close the upload modal
       toast.success('Report uploaded successfully!')
       fetchReportDetails() // Refresh the report list
@@ -178,13 +186,12 @@ const ReportDetails = () => {
       // Reset the form state after successful upload (clears fields)
       setNewReport({
         reportName: '',
-        reportDate: '', 
+        reportDate: '',
         reportStatus: '',
         reportType: '',
         reportFile: null,
         bookingId: appointmentInfo?.bookingId || '',
-      });
-      
+      })
     } catch (err) {
       console.error('Error uploading report:', err)
       toast.error('Upload failed')
@@ -269,13 +276,17 @@ const ReportDetails = () => {
             {Array.isArray(report) && report.length > 0 ? (
               report.map((reportItem, index) => {
                 // Ensure we get the Base64 string correctly (assuming it might be wrapped in an array)
-                const base64File = Array.isArray(reportItem.reportFile) 
-                  ? reportItem.reportFile[0] 
+                const base64File = Array.isArray(reportItem.reportFile)
+                  ? reportItem.reportFile[0]
                   : reportItem.reportFile
 
                 const mimeType = getMimeType(base64File)
                 const isPdf = mimeType === 'application/pdf'
-                const fileExt = isPdf ? 'pdf' : (mimeType.includes('image/') ? mimeType.split('/')[1] : 'dat')
+                const fileExt = isPdf
+                  ? 'pdf'
+                  : mimeType.includes('image/')
+                    ? mimeType.split('/')[1]
+                    : 'dat'
                 const fileUrl = `data:${mimeType};base64,${base64File}`
 
                 return (
@@ -340,7 +351,6 @@ const ReportDetails = () => {
         </CModalHeader>
         <CModalBody className="text-center">
           {isPreviewPdf ? (
-            // PDF Preview using react-pdf
             <div className="pdf-viewer" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
               <Document
                 file={previewFileUrl}
@@ -350,9 +360,9 @@ const ReportDetails = () => {
                   toast.error('Failed to load PDF.')
                 }}
               >
-                {/* Render the current page of the PDF */}
                 <Page pageNumber={pageNumber} />
               </Document>
+
               <div className="mt-3 d-flex justify-content-center align-items-center">
                 <CButton
                   color="secondary"
@@ -376,7 +386,6 @@ const ReportDetails = () => {
               </div>
             </div>
           ) : (
-            // Image Preview
             <img
               src={previewFileUrl}
               alt="Preview"
@@ -415,7 +424,7 @@ const ReportDetails = () => {
                 value={newReport.reportDate}
                 onChange={(e) => setNewReport({ ...newReport, reportDate: e.target.value })}
                 // Ensures only today or future dates can be selected
-                min={todayISO} 
+                min={todayISO}
               />
             </div>
             <div className="mb-2">

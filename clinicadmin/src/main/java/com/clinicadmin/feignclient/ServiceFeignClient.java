@@ -1,6 +1,6 @@
 package com.clinicadmin.feignclient;
-import java.util.List;
 
+import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -9,9 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
 import com.clinicadmin.dto.CategoryDto;
-import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.ResponseStructure;
 import com.clinicadmin.dto.ServicesDto;
 import com.clinicadmin.dto.SubServicesDto;
@@ -43,11 +41,14 @@ public interface ServiceFeignClient {
 	public ResponseEntity<ResponseStructure<SubServicesDto>> updateBySubServiceId(@PathVariable String hospitalId,@PathVariable String subServiceId,
 			@RequestBody SubServicesDto domainServices);
 
-    @GetMapping("/api/v1/subServices/getAllSubServices")
+    @GetMapping("/api/v1/subServices/getAllSubServices")  
     ResponseEntity<ResponseStructure<List<SubServicesDto>>> getAllSubServices();
     
 	@GetMapping("/api/v1/subServices/getSubService/{hospitalId}/{subServiceId}")
 	public ResponseEntity<ResponseStructure<SubServicesDto>> getSubServiceByServiceId(@PathVariable String hospitalId, @PathVariable String subServiceId);
+	
+	@GetMapping("/api/v1/subServices/getSubService/{hospitalId}")
+	public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getSubServiceByHospitalId(@PathVariable String hospitalId);
     
 	@GetMapping("/api/v1/SubServicesInfo/exists/{id}")
 	public boolean isSubServiceExists(@PathVariable("id") String id);

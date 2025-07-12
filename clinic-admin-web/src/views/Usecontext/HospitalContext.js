@@ -26,7 +26,8 @@ export const HospitalProvider = ({ children }) => {
     try {
       const url = `${BASE_URL}/getClinic/${id}`
       const response = await axios.get(url)
-
+      console.log(url)
+      console.log(response)
       if (response.status === 200 && response.data) {
         setSelectedHospital(response.data)
       } else {
@@ -41,13 +42,14 @@ export const HospitalProvider = ({ children }) => {
   }
 
   // Fetch Doctor Details
-  const fetchDoctorDetails = async (doctorId) => {
+  const fetchDoctorDetails = async (clinicId) => {
     setLoading(true)
     try {
-      const url = `${BASE_URL}/doctors/hospitalById/${doctorId}`
+      const url = `${BASE_URL}/doctors/hospitalById/${clinicId}`
       const response = await axios.get(url)
-
+      console.log(response.data)
       if (response.status === 200 && response.data) {
+        console.log(response.data)
         setDoctorData(response.data)
       } else {
         setErrorMessage('Failed to fetch doctor details.')
@@ -71,7 +73,8 @@ export const HospitalProvider = ({ children }) => {
         fetchDoctorDetails,
         setSelectedHospital,
         setDoctorData,
-        notificationCount, setNotificationCount
+        notificationCount,
+        setNotificationCount,
       }}
     >
       {children}

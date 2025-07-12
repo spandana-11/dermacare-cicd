@@ -36,6 +36,8 @@ public interface SubServicesService {
 	    List<CategoryServiceandSubserviceDto> getGroupedSubServices();
 
 	    CategoryServiceandSubserviceDto saveGroupedSubServices(CategoryServiceandSubserviceDto requestDto);
+	    
+	    List<SubServicesDto> getSubServiceByHospitalId(String hospitalId);
 
 
 }

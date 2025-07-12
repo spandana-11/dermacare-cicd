@@ -1,7 +1,7 @@
 package com.clinicadmin.controller;
 
-import java.util.List;
 
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.clinicadmin.dto.ResponseStructure;
 import com.clinicadmin.dto.SubServicesDto;
 import com.clinicadmin.service.SubServiceService;
@@ -58,6 +57,10 @@ public class SubServiceController {
 	public ResponseEntity<ResponseStructure<SubServicesDto>> getSubServiceByServiceId(@PathVariable String hospitalId, @PathVariable String subServiceId){
     	 return subServiceService.getSubServiceByServiceId(hospitalId, subServiceId);
     }
+    @GetMapping("/getSubServiceByHospitalId/{hospitalId}")
+   	public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getSubServiceByHospitalId(@PathVariable String hospitalId){
+       	 return subServiceService.getSubServiceByHospitalId(hospitalId);
+       }
 
     @GetMapping("/subService/getAllSubServies")
     public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getAllSubServices() {

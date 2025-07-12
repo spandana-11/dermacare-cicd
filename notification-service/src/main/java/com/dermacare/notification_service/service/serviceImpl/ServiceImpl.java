@@ -4,12 +4,16 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TimeZone;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -73,9 +77,9 @@ public class ServiceImpl implements ServiceInterface{
 			DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 			String currentDate = LocalDate.now().format(dateFormatter);	
 			notificationEntity.setDate(currentDate);
-			LocalTime currentTime = LocalTime.now();
+			ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
 		    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
-		    String formattedTime = currentTime.format(formatter);
+		    String formattedTime = istTime.format(formatter);
 		    notificationEntity.setTime(formattedTime);
 		    notificationEntity.setData(new ObjectMapper().convertValue(booking,Booking.class));
 			notificationEntity.setActions(new String[]{"Accept", "Reject"});
@@ -152,14 +156,22 @@ public class ServiceImpl implements ServiceInterface{
 	
 	 private boolean timeDifference(String notificationTime) {			
 		   try {
-			   Date now = new Date();
-			   SimpleDateFormat inputFormat = new SimpleDateFormat("hh:mm a");   
+			 
+			   SimpleDateFormat inputFormat = new SimpleDateFormat("hh:mm a"); 
+			   
+			   ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
+		        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
+		        String formattedTimeByZone = istTime.format(formatter);			   
+		        Date formattedCurrentTime = inputFormat.parse(formattedTimeByZone);		        
 		       SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm");
-		      String presentTime = simpleDateFormat.format(now);
-		      Date date = inputFormat.parse(notificationTime);
-		      String modifiednotificationTime = simpleDateFormat.format(date);
+		       String modifiedcurrentTime = simpleDateFormat.format(formattedCurrentTime);
+		       		      
+		      Date date = inputFormat.parse(notificationTime);		      
+		      SimpleDateFormat simpleDateFormatForNotificationTime = new SimpleDateFormat("HH:mm");
+		      String modifiednotificationTime = simpleDateFormatForNotificationTime.format(date);
+		      
 		       Date nTime = simpleDateFormat.parse(modifiednotificationTime);
-		       Date cTime = simpleDateFormat.parse(presentTime);
+		       Date cTime = simpleDateFormat.parse(modifiedcurrentTime);
 		       
 		       System.out.println(nTime);
 		       System.out.println(cTime);
@@ -289,17 +301,25 @@ public class ServiceImpl implements ServiceInterface{
 	
 	 
 	 
-	 private boolean calculateTimeDifferenceForAlertNotification(String serviceTime) {			
-		   try {
-			   Date now = new Date();
-			   SimpleDateFormat inputFormat = new SimpleDateFormat("hh:mm a");
-		       SimpleDateFormat simpleDateFormat
-		           = new SimpleDateFormat("HH:mm");
-		      String presentTime = simpleDateFormat.format(now);
-		      Date date = inputFormat.parse(serviceTime);
-		      String modifiedServiceTime = simpleDateFormat.format(date);		      
+	 private boolean calculateTimeDifferenceForAlertNotification(String serviceTime) {	
+		 
+		   try {		   
+             SimpleDateFormat inputFormat = new SimpleDateFormat("hh:mm a"); ////used for convert string to date object
+			   
+			   ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
+		        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
+		        String formattedTimeByZone = istTime.format(formatter);	////current asia time generated.present in form of string		   
+		        Date formattedCurrentTime = inputFormat.parse(formattedTimeByZone);	////converting String to date object	        
+		       SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm");////converting form 12 hrs to 24 hrs
+		       String modifiedcurrentTime = simpleDateFormat.format(formattedCurrentTime);
+		       		      
+		      Date serviceTimeStringToDteObject = inputFormat.parse(serviceTime);		      
+		      SimpleDateFormat simpleDateFormatForNotificationTime = new SimpleDateFormat("HH:mm");
+		      String modifiedServiceTime = simpleDateFormatForNotificationTime.format(serviceTimeStringToDteObject);
+		      
 		       Date sTime = simpleDateFormat.parse(modifiedServiceTime );
-		       Date cTime = simpleDateFormat.parse(presentTime);
+		       Date cTime = simpleDateFormat.parse(modifiedcurrentTime);
+		       
 		       System.out.println(sTime);
 		       System.out.println(cTime);
 		       long differenceInMilliSeconds
@@ -308,6 +328,7 @@ public class ServiceImpl implements ServiceInterface{
 		       long differenceInMinutes
 		           = differenceInMilliSeconds / (60 * 1000);///it wont ignores hours convert then into minutes
 		       System.out.println(differenceInMinutes);
+		       
 		       if(differenceInMinutes != 0 && differenceInMinutes >= 1 &&  differenceInMinutes <= 5  ) {
 		    	   return true;
 		    	 }else{

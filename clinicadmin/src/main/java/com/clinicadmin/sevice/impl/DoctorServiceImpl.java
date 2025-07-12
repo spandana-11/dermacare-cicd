@@ -8,13 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import com.clinicadmin.dto.ChangeDoctorPasswordDTO;
 import com.clinicadmin.dto.ClinicDTO;
 import com.clinicadmin.dto.ClinicWithDoctorsDTO;
@@ -26,13 +24,11 @@ import com.clinicadmin.dto.DoctorServicesDTO;
 import com.clinicadmin.dto.DoctorSlotDTO;
 import com.clinicadmin.dto.DoctorSubServiceDTO;
 import com.clinicadmin.dto.DoctorsDTO;
-import com.clinicadmin.dto.NotificationDTO;
 import com.clinicadmin.dto.ResBody;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.entity.DoctorLoginCredentials;
 import com.clinicadmin.entity.DoctorSlot;
 import com.clinicadmin.entity.Doctors;
-import com.clinicadmin.exceptions.ResourceNotFoundException;
 import com.clinicadmin.feignclient.AdminServiceClient;
 import com.clinicadmin.feignclient.NotificationFeign;
 import com.clinicadmin.feignclient.ServiceFeignClient;
@@ -45,7 +41,6 @@ import com.clinicadmin.utils.DoctorSlotMapper;
 import com.clinicadmin.utils.ExtractFeignMessage;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -1004,7 +999,7 @@ public class DoctorServiceImpl implements DoctorService {
 		try {
 		return notificationFeign.sendNotificationToClinic(hospitalId);
 		}catch(FeignException e) {
-			ResBody<List<NotificationDTO>> res = new ResBody<List<NotificationDTO>>(ExtractFeignMessage.clearMessage(e),e.status(),null);
+			ResBody<List<String>> res = new ResBody<List<String>>(ExtractFeignMessage.clearMessage(e),e.status(),null);
 			return ResponseEntity.status(e.status()).body(res);}
 		}
 

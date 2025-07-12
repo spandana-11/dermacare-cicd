@@ -1,19 +1,16 @@
 package com.clinicadmin.sevice.impl;
 
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
 import com.clinicadmin.dto.ResponseStructure;
 import com.clinicadmin.dto.SubServicesDto;
 import com.clinicadmin.exceptions.FeignClientException;
 import com.clinicadmin.feignclient.ServiceFeignClient;
 import com.clinicadmin.service.SubServiceService;
 import com.clinicadmin.utils.ExtractFeignMessage;
-
 import feign.FeignException;
 
 @Service
@@ -111,6 +108,20 @@ public class SubServiceServiceImpl implements SubServiceService {
 			return buildErrorResponse(ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR.value());
 		}
 	}
+	
+	@Override
+	public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getSubServiceByHospitalId(String hospitalId) {
+	    try {
+	        ResponseEntity<ResponseStructure<List<SubServicesDto>>> response =
+	                feignClient.getSubServiceByHospitalId(hospitalId); // ✅ FIXED here
+
+	        return ResponseEntity.status(HttpStatus.OK).body(response.getBody());
+
+	    } catch (FeignException e) {
+	        return buildErrorResponseList(ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR.value());
+	    }
+	}
+
 
 	@Override
 	public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getAllSubServices() {
