@@ -109,6 +109,28 @@ public class SubServiceController {
 				HttpStatus.OK);
 	}
 
+
+	//	-----------------------------------Get subservice by hospitalId--------------------------------------------------------------
+	
+	@GetMapping("/getSubService/{hospitalId}")
+	public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getSubServiceByHospitalId(@PathVariable String hospitalId) {
+
+	    List<SubServicesDto> subServiceList = subServiceService.getSubServiceByHospitalId(hospitalId);
+
+	    if (subServiceList != null && !subServiceList.isEmpty()) {
+	        return new ResponseEntity<>(
+	            ResponseStructure.buildResponse(subServiceList, "Services found successfully", HttpStatus.OK, HttpStatus.OK.value()),
+	            HttpStatus.OK
+	        );
+	    }
+
+	    return new ResponseEntity<>(
+	        ResponseStructure.buildResponse(null, "No Details Found With Hospital Id: " + hospitalId + ".", HttpStatus.OK, HttpStatus.OK.value()),
+	        HttpStatus.OK
+	    );
+	}
+
+
 	@DeleteMapping("/deleteBySubServiceId/{hospitalId}/{subServiceId}")
 	public ResponseEntity<ResponseStructure<SubServicesDto>> deleteSubService(@PathVariable String hospitalId,@PathVariable String subServiceId) {
 		try {
