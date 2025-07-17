@@ -183,7 +183,7 @@ services:
     ports:
       - "4000:80"
     environment:
-      - HOST= 13.233.9.23
+      - HOST=13.233.9.23
       - PORT=4000
     networks:
       - app-network
