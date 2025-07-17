@@ -28,7 +28,7 @@ import axios from 'axios'
 import { MainAdmin_URL, AllCustomerAdvertisements, GetBy_DoctorId } from '../../baseUrl'
 // import { appointments_Ref } from '../../baseUrl'
 import { AppointmentData, GetBookingByClinicIdData } from '../AppointmentManagement/appointmentAPI'
-import { DoctorData } from '../Doctors/DoctorAPI'
+import { DoctorData, getDoctorByClinicIdData } from '../Doctors/DoctorAPI'
 
 const WidgetsDropdown = (props) => {
   const [slides, setSlides] = useState([])
@@ -136,44 +136,35 @@ const WidgetsDropdown = (props) => {
     [todayISO, convertToISODate],
   )
 
-  const fetchDoctors = useCallback(
-    async (id) => {
-      setLoadingDoctors(true)
-      setDoctorError(null)
-      try {
-        const response = await DoctorData()
-        console.log('Raw Doctors Data:', response)
+const fetchDoctors = useCallback(
+  async (clinicId) => {
+    setLoadingDoctors(true)
+    setDoctorError(null)
+    try {
+      const response = await getDoctorByClinicIdData(clinicId)
+      console.log('Raw Doctors Data:', response)
 
-        if (response && Array.isArray(response.data)) {
-          const allDoctors = response.data
-          setTotalDoctorsCount(allDoctors.length)
+      // ✅ Access the inner data array
+      const doctorArray = response?.data || []
 
-          // NOTE: If you intended to filter doctors by serviceDate and store them,
-          // you should set the `doctors` state here.
-          // const filteredDoctors = allDoctors.filter((item) => {
-          //   const itemDate = item.serviceDate ? convertToISODate(item.serviceDate) : ''
-          //   return itemDate === todayISO
-          // })
-          // setDoctors(filteredDoctors)
-
-          // We'll set the doctors state with all doctors for now, as filteredDoctors
-          // logic based on serviceDate seems unusual for doctor data.
-          setDoctors(allDoctors)
-
-          // IMPORTANT: Removed setTodayBookings(filteredDoctors) from here.
-        } else {
-          console.error('Invalid doctors response format:', response)
-          setDoctorError('Invalid data received for doctors.')
-        }
-      } catch (error) {
-        console.error('Failed to fetch doctors:', error)
-        setDoctorError('Failed to fetch doctors.')
-      } finally {
-        setLoadingDoctors(false)
+      if (Array.isArray(doctorArray)) {
+        setTotalDoctorsCount(doctorArray.length)
+        setDoctors(doctorArray)
+      } else {
+        console.error('Invalid doctors response format:', response)
+        setDoctorError('Invalid data received for doctors.')
       }
-    },
-    [convertToISODate],
-  )
+    } catch (error) {
+      console.error('Failed to fetch doctors:', error)
+      setDoctorError('Failed to fetch doctors.')
+    } finally {
+      setLoadingDoctors(false)
+    }
+  },
+  []
+)
+
+
   useEffect(() => {
     fetchAdvertisements()
   }, [])
@@ -183,7 +174,7 @@ const WidgetsDropdown = (props) => {
     console.log(hospitalId)
     if (hospitalId) {
       fetchAppointments(hospitalId)
-      fetchDoctors(GetBy_DoctorId)
+      fetchDoctors(hospitalId)
       // Set up daily refresh:
       // 1. Calculate time until next midnight
       const now = new Date()
@@ -265,9 +256,75 @@ const WidgetsDropdown = (props) => {
     slidesToScroll: 1,
     arrows: false,
     autoplay: false, // We will handle it manually
+    //  autoplaySpeed: 5000,
     swipe: false, // Optional: prevent user swipe
   }
 
+  // Auto-slide for images
+  useEffect(() => {
+    let imageTimer;
+    if (slides.length > 0) {
+      // Watch current slide index
+      const handleBeforeChange = (oldIndex, newIndex) => {
+        // Clear previous timer
+        clearTimeout(imageTimer);
+
+        const current = slides[newIndex];
+        const isVideo = isVideoFile(current.mediaUrlOrImage);
+
+        if (!isVideo) {
+          // For images: move to next after 3s
+          imageTimer = setTimeout(() => {
+            if (sliderRef.current) {
+              sliderRef.current.slickNext();
+            }
+          }, 1000);
+        }
+      };
+
+      // attach to slider events
+      sliderRef.current?.innerSlider?.list.addEventListener("transitionend", () => {
+        // optionally handle something after transition
+      });
+
+      // If using react-slick, you can get current index in afterChange
+      sliderRef.current?.props?.afterChange &&
+        sliderRef.current.props.afterChange(0);
+
+      return () => {
+        clearTimeout(imageTimer);
+      };
+    }
+  }, [slides]);
+
+  // After component mounts, attach ended listeners for each video
+  useEffect(() => {
+    slides.forEach((item, idx) => {
+      const videoEl = document.getElementById(`video-${idx}`);
+      if (videoEl) {
+        // Clean up previous listener
+        videoEl.onended = null;
+        videoEl.onended = () => {
+          if (sliderRef.current) {
+            sliderRef.current.slickNext();
+          }
+        };
+      }
+    });
+  }, [slides]);
+
+  // Helper to check if it's video
+  const isVideoFile = (src) => {
+    if (!src) return false;
+    const lower = src.toLowerCase();
+    return (
+      lower.startsWith("data:video") ||
+      lower.endsWith(".mp4") ||
+      lower.endsWith(".webm") ||
+      lower.endsWith(".ogg") ||
+      lower.includes("video") // fallback if backend sends mime type
+    );
+  };
   return (
     <>
       {/*to display cards*/}
@@ -418,47 +475,48 @@ const WidgetsDropdown = (props) => {
       </CRow>
 
       {/* Carousel Section */}
-      <div style={{ marginTop: '2rem' }}>
-        {slides.length > 0 ? (
-          <Slider ref={sliderRef} {...sliderSettings}>
-            {slides.map((item, idx) => {
-              const mediaSrc = getMediaSrc(item.mediaUrlOrImage)
-              const isVideo = mediaSrc.toLowerCase().endsWith('.mp4')
-              return (
-                <div key={item.carouselId || idx}>
-                  {isVideo ? (
-                    <video
-                      id={`video-${idx}`}
-                      src={mediaSrc}
-                      controls
-                      autoPlay
-                      style={{
-                        width: '100%',
-                        height: 'auto',
-                        objectFit: 'contain',
-                        borderRadius: '8px',
-                      }}
-                    />
-                  ) : (
-                    <img
-                      src={mediaSrc}
-                      alt={`Slide ${idx + 1}`}
-                      style={{
-                        width: '100%',
-                        height: '300px',
-                        objectFit: 'fit',
-                        borderRadius: '8px',
-                      }}
-                    />
-                  )}
-                </div>
-              )
-            })}
-          </Slider>
-        ) : (
-          <p>No media found</p>
-        )}
-      </div>
+       <div style={{ marginTop: "2rem" }}>
+      {slides.length > 0 ? (
+        <Slider ref={sliderRef} {...sliderSettings}>
+          {slides.map((item, idx) => {
+            const mediaSrc = item.mediaUrlOrImage;
+            const isVideo = isVideoFile(mediaSrc);
+            return (
+              <div key={item.carouselId || idx}>
+                {isVideo ? (
+                  <video
+                    id={`video-${idx}`}
+                    src={mediaSrc}
+                    controls
+                    autoPlay
+                    muted
+                    style={{
+                      width: "100%",
+                      maxHeight: "300px",
+                      objectFit: "contain",
+                      borderRadius: "8px",
+                    }}
+                  />
+                ) : (
+                  <img
+                    src={mediaSrc}
+                    alt={`Slide ${idx + 1}`}
+                    style={{
+                      width: "100%",
+                      maxHeight: "300px",
+                      objectFit: "cover",
+                      borderRadius: "8px",
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </Slider>
+      ) : (
+        <p>No media found</p>
+      )}
+    </div>
 
       {/*to display appointmnt */}
       {/* Appointments Table */}

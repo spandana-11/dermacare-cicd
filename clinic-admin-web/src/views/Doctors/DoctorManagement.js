@@ -4,7 +4,7 @@ import CIcon from '@coreui/icons-react'
 import { cilUser } from '@coreui/icons'
 import axios from 'axios'
 import { useHospital } from '../Usecontext/HospitalContext'
-import { toast } from 'react-toastify'
+import { ToastContainer,toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import sendDermaCareOnboardingEmail from '../../Utils/Emailjs'
 
@@ -78,7 +78,7 @@ const DoctorManagement = () => {
     service: [],
     subServices: [], // Note: 'subSerives' in Java, but 'subServices' is more consistent in JS
     specialization: '',
-    gender: 'Female',
+    gender: '',
     experience: '',
     qualification: '',
     availableDays: '', // array of selected days
@@ -210,6 +210,8 @@ const DoctorManagement = () => {
 
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   const times = [
+    '07:00 AM',
+    '08:00 AM',
     '09:00 AM',
     '10:00 AM',
     '11:00 AM',
@@ -219,6 +221,11 @@ const DoctorManagement = () => {
     '03:00 PM',
     '04:00 PM',
     '05:00 PM',
+    '06:00 PM',
+    '07:00 PM',
+    '08:00 PM',
+    '09:00 PM',
+    '10:00 PM',
   ]
 
   const fetchData = async () => {
@@ -305,8 +312,8 @@ const DoctorManagement = () => {
       isValid = false
     }
 
-    if (!form.doctorMobileNumber || !/^\d{10}$/.test(form.doctorMobileNumber)) {
-      errors.doctorMobileNumber = 'Enter a valid 10-digit mobile number'
+    if (!form.doctorMobileNumber || !/^[789]\d{9}$/.test(form.doctorMobileNumber)) {
+      errors.doctorMobileNumber = 'Enter a valid 10-digit mobile number starting with 7, 8, or 9'
       isValid = false
     }
     if (
@@ -480,7 +487,7 @@ const DoctorManagement = () => {
         doctorMobileNumber: '',
         doctorEmail: '',
         doctorName: '',
-        gender: 'Female',
+        gender: '',
         experience: '',
         qualification: '',
         specialization: '',
@@ -593,6 +600,7 @@ const DoctorManagement = () => {
 
   return (
     <div>
+      <ToastContainer/>
       <div className="d-flex justify-content-end mb-3">
         <button
           className="btn btn-primary d-flex align-items-center gap-2 shadow-sm rounded-pill px-4 py-2"
@@ -812,6 +820,7 @@ const DoctorManagement = () => {
                 value={form.gender}
                 onChange={(e) => setForm((p) => ({ ...p, gender: e.target.value }))}
               >
+                <option value="">Select Gender</option> {/* Add this line */}
                 <option>Female</option>
                 <option>Male</option>
                 <option>Other</option>

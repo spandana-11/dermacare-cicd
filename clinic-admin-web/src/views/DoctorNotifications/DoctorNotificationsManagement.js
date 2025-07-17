@@ -75,46 +75,7 @@ const DoctorNotifications = () => {
 
 
   const navigate = useNavigate()
-  // useEffect(() => {
-  //   const fetchDoctorIdAndNotifications = async () => {
-  //     const hospitalId = localStorage.getItem('HospitalId')
 
-  //     if (!hospitalId) {
-  //       toast.error('❌ Missing Hospital ID in localStorage')
-  //       return
-  //     }
-
-  //     try {
-  //       // ✅ Correctly call the API to get doctor list
-  //       const response = await axios.get(
-  //         `http://192.168.1.4:8080/clinic-admin/doctors/hospitalById/${hospitalId}`,
-  //       )
-
-  //       console.log('✅ Doctor List Response:', response)
-
-  //       if (
-  //         response.status === 200 &&
-  //         Array.isArray(response.data.data) &&
-  //         response.data.data.length > 0
-  //       ) {
-  //         const doctorId = response.data.data[0].doctorId
-  //         localStorage.setItem('DoctorId', doctorId)
-
-  //         console.log('✅ Doctor ID set:', doctorId)
-
-  //         // ✅ Then call notifications
-  //         fetchNotifications(hospitalId, doctorId)
-  //       } else {
-  //         toast.warning('No doctors found for this hospital.')
-  //       }
-  //     } catch (error) {
-  //       console.error('❌ Error fetching doctor list:', error)
-  //       toast.error('Error fetching doctor list. Check network or CORS.')
-  //     }
-  //   }
-
-  //   fetchDoctorIdAndNotifications()
-  // }, [])
 
   const fetchNotifications = async (hospitalId, doctorId) => {
     try {
@@ -142,31 +103,41 @@ const DoctorNotifications = () => {
 
 useEffect(() => {
   const fetchDoctorIdAndNotifications = async () => {
-    const hospitalId = localStorage.getItem('HospitalId')
-
-    if (!hospitalId) {
-      toast.error('Missing Hospital ID in localStorage')
-      return
-    }
-
-    try {
-      const response = await DoctorId_NotificationsData(hospitalId)
-
-      if (response.status === 200 && Array.isArray(response.data.data) && response.data.data.length > 0) {
-        const doctorId = response.data.data[0].doctorId
-        localStorage.setItem('DoctorId', doctorId)
-
-        console.log('✅ Doctor ID set:', doctorId)
-
-        fetchNotifications(hospitalId, doctorId)
-      } else {
-        toast.warning('No doctors found for this hospital.')
-      }
-    } catch (error) {
-      console.error('Error fetching doctors:', error)
-      toast.error('Error fetching doctor list.')
-    }
+  const hospitalId = localStorage.getItem('HospitalId')
+  if (!hospitalId) {
+    toast.error('Missing Hospital ID in localStorage')
+    return
   }
+
+  try {
+    const response = await DoctorId_NotificationsData(hospitalId)
+
+    if (response.status === 200 && Array.isArray(response.data.data) && response.data.data.length > 0) {
+      const doctorList = response.data.data
+
+      let allNotifications = []
+      for (const doc of doctorList) {
+        const doctorId = doc.doctorId
+        try {
+          const notifyRes = await DoctorNotifyData(hospitalId, doctorId)
+          if (notifyRes.status === 200 && Array.isArray(notifyRes.data.data)) {
+            allNotifications = [...allNotifications, ...notifyRes.data.data]
+          }
+        } catch (err) {
+          console.error(`Error fetching notifications for doctor ${doctorId}:`, err)
+        }
+      }
+
+      setNotifications(allNotifications)
+      setNotificationCount(allNotifications.length)
+    } else {
+      toast.warning('No doctors found for this hospital.')
+    }
+  } catch (error) {
+    console.error('Error fetching doctors:', error)
+    toast.error('Error fetching doctor list.')
+  }
+}
 
   fetchDoctorIdAndNotifications()
 }, [])

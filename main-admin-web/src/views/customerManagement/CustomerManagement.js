@@ -62,7 +62,11 @@ const CustomerManagement = () => {
     dateOfBirth: '',
     referCode: '',
   })
+const getISODate = (date) => date.toISOString().split('T')[0]
 
+  // Calculate today's date for minimum date restriction in the form
+  const today = new Date()
+  const todayISO = getISODate(today)
   const centeredMessageStyle = {
     display: 'flex',
     justifyContent: 'center',
@@ -584,6 +588,7 @@ const CustomerManagement = () => {
                   onChange={handleInputChange}
                   type="date"
                   invalid={!!formErrors.dateOfBirth}
+                    min={todayISO}
                 />
                 {formErrors.dateOfBirth && (
                   <div className="text-danger small">{formErrors.dateOfBirth}</div>

@@ -1,6 +1,6 @@
 // reportsAPI.js
 import axios from 'axios'
-import { BASE_URL, AllReports, SavingReports,Get_ReportsByBookingId } from '../../baseUrl'
+import { BASE_URL, AllReports, SavingReports, Get_ReportsByBookingId } from '../../baseUrl'
 
 export const ReportsData = async () => {
   try {
@@ -15,16 +15,14 @@ export const ReportsData = async () => {
 }
 export const Get_ReportsByBookingIdData = async (bookingId) => {
   try {
-    
-    const response = await axios.get(`${BASE_URL}/getReportByBookingId/${bookingId}`)
-   console.log(response)
+    const response = await axios.get(`${BASE_URL}/${Get_ReportsByBookingId}/${bookingId}`)
+    console.log(response)
     return response.data.data
   } catch (error) {
     console.error('Error fetching report by ID:', error.message)
     return null
   }
 }
-
 
 export const SaveReportsData = async (reportData) => {
   try {

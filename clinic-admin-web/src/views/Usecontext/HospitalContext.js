@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import axios from 'axios'
 import { BASE_URL } from '../../baseUrl'
+import { GetSubServices_ByClinicId } from '../serviceManagement/ServiceManagementAPI'
 
 const HospitalContext = createContext()
 
@@ -10,6 +11,7 @@ export const HospitalProvider = ({ children }) => {
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [notificationCount, setNotificationCount] = useState('')
+const [subServices, setSubServices] = useState([]) // optional: store subservices
 
   useEffect(() => {
     const hospitalId = localStorage.getItem('HospitalId')
@@ -17,7 +19,8 @@ export const HospitalProvider = ({ children }) => {
     if (hospitalId) {
       fetchHospitalDetails(hospitalId)
       fetchDoctorDetails(hospitalId)
-    }
+    fetchSubServices(hospitalId)
+      }
   }, [])
 
   // Fetch Clinic Details
@@ -61,12 +64,28 @@ export const HospitalProvider = ({ children }) => {
       setLoading(false)
     }
   }
+ const fetchSubServices = async (clinicId) => {
+  try {
+    const res = await GetSubServices_ByClinicId(clinicId)
+    const list = Array.isArray(res?.data) ? res.data : []
+
+    // ✅ Ensure only this hospital’s data is set
+    const filtered = list.filter((s) => s.hospitalId === clinicId)
+
+    setSubServices(filtered)
+  } catch (err) {
+    console.error('Fetch subservices error:', err)
+    setSubServices([]) // clear previous data on error
+  }
+}
+
 
   return (
     <HospitalContext.Provider
       value={{
         selectedHospital,
         doctorData,
+         subServices, 
         loading,
         errorMessage,
         fetchHospitalDetails,

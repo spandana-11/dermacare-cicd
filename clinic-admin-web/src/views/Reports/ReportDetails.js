@@ -25,12 +25,6 @@ import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
 
-// Add the Vite-compatible configuration:
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.js',
-  import.meta.url,
-).toString()
-
 const ReportDetails = () => {
   const { id } = useParams()
   const location = useLocation()
@@ -67,6 +61,16 @@ const ReportDetails = () => {
     reportFile: null,
     bookingId: appointmentInfo?.bookingId || '', // Ensure bookingId is safe to access
   })
+
+  // ✅ This correctly sets the PDF worker for Vite
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.js',
+    import.meta.url,
+  ).href
+
+  // const base64File = Array.isArray(reportItem.reportFile)
+  //   ? reportItem.reportFile[0]
+  //   : reportItem.reportFile
 
   // Display error and go back if appointmentInfo is missing
   if (!appointmentInfo) {
@@ -122,14 +126,17 @@ const ReportDetails = () => {
       setReport([])
     }
   }
-  const handlePreview = (file) => {
-    if (!file) return
+ const handlePreview = (base64File) => {
+  if (!base64File) return;
+  const mimeType = getMimeType(base64File);
+  const isPdfFile = mimeType === 'application/pdf';
+  const fileUrl = `data:${mimeType};base64,${base64File}`;
 
-    const isPdf = file.type === 'application/pdf'
-    setIsPreviewPdf(isPdf)
-    setPreviewFileUrl(URL.createObjectURL(file))
-    setShowModal(true)
-  }
+  setIsPreviewPdf(isPdfFile);
+  setPreviewFileUrl(fileUrl);
+  setShowModal(true);
+};
+
 
   // Effect hook to fetch reports when appointmentInfo.bookingId changes
   useEffect(() => {
@@ -345,51 +352,30 @@ const ReportDetails = () => {
       </div>
 
       {/* Image/PDF Preview Modal */}
-      <CModal visible={showModal} onClose={handleCloseModal} size="lg">
+      <CModal visible={showModal} onClose={handleCloseModal} size="xl">
         <CModalHeader onClose={handleCloseModal}>
           <strong>{isPreviewPdf ? 'PDF Preview' : 'Image Preview'}</strong>
         </CModalHeader>
         <CModalBody className="text-center">
           {isPreviewPdf ? (
-            <div className="pdf-viewer" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
-              <Document
-                file={previewFileUrl}
-                onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={(error) => {
-                  console.error('Error loading PDF:', error)
-                  toast.error('Failed to load PDF.')
-                }}
-              >
-                <Page pageNumber={pageNumber} />
-              </Document>
-
-              <div className="mt-3 d-flex justify-content-center align-items-center">
-                <CButton
-                  color="secondary"
-                  size="sm"
-                  onClick={() => setPageNumber(pageNumber - 1)}
-                  disabled={pageNumber <= 1}
-                >
-                  Previous
-                </CButton>
-                <p className="mb-0 mx-3">
-                  Page {pageNumber} of {numPages || '...'}
-                </p>
-                <CButton
-                  color="secondary"
-                  size="sm"
-                  onClick={() => setPageNumber(pageNumber + 1)}
-                  disabled={pageNumber >= numPages}
-                >
-                  Next
-                </CButton>
-              </div>
-            </div>
+            <iframe
+              src={previewFileUrl}
+              title="PDF Preview"
+              style={{
+                width: '100%',
+                height: '80vh',
+                border: 'none',
+              }}
+            ></iframe>
           ) : (
             <img
               src={previewFileUrl}
               alt="Preview"
-              style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '8px' }}
+              style={{
+                maxWidth: '100%',
+                maxHeight: '80vh',
+                borderRadius: '8px',
+              }}
             />
           )}
         </CModalBody>

@@ -88,8 +88,6 @@ const AddClinic = () => {
     fetchCategories()
   }, [])
 
-  // const websiteRegex = /^(https?:\/\/)?(www\.)?[\w\-]+\.\w{2,}(\/.*)?$/
-
   const preventNumberInput = (e) => {
     const isNumber = /[0-9]/.test(e.key)
     if (isNumber) {
@@ -690,7 +688,7 @@ const AddClinic = () => {
                     setFormData({ ...formData, hospitalContract: Array.from(e.target.files) })
                   }
                   multiple
-                  accept=".pdf,.doc,.docx"
+                  accept=".pdf,.doc,.docx,.jpeg,.png"
                   invalid={!!errors.hospitalContract}
                 />
                 {errors.hospitalContract && (
@@ -724,7 +722,7 @@ const AddClinic = () => {
                   type="file"
                   name="hospitalDocuments"
                   multiple
-                  accept=".pdf,.doc,.docx"
+                    accept=".pdf,.doc,.docx,.jpeg,.png"
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -758,7 +756,7 @@ const AddClinic = () => {
                     })
                   }
                   // multiple
-                  accept=".pdf,.zip,.doc,.docx"
+                  accept=".pdf,.doc,.docx,.jpeg,.png"
                   invalid={!!errors.clinicalEstablishmentCertificate}
                 />
                 {errors.clinicalEstablishmentCertificate && (
@@ -779,7 +777,7 @@ const AddClinic = () => {
                     setFormData({ ...formData, businessRegistrationCertificate: e.target.files[0] })
                   }
                   // multiple
-                  accept=".pdf,.zip,.doc,.docx"
+                 accept=".pdf,.doc,.docx,.jpeg,.png"
                   invalid={!!errors.businessRegistrationCertificate}
                 />
                 {errors.businessRegistrationCertificate && (
@@ -826,7 +824,7 @@ const AddClinic = () => {
                     setFormData({ ...formData, professionalIndemnityInsurance: e.target.files[0] })
                   }
                   multiple
-                  accept=".pdf,.doc,.docx"
+                     accept=".pdf,.doc,.docx,.jpeg,.png"
                   invalid={!!errors.professionalIndemnityInsurance}
                 />
                 {errors.professionalIndemnityInsurance && (
@@ -872,7 +870,7 @@ const AddClinic = () => {
                     setFormData({ ...formData, biomedicalWasteManagementAuth: e.target.files[0] })
                   }
                   // multiple
-                  accept=".pdf,.doc,.docx"
+                    accept=".pdf,.doc,.docx,.jpeg,.png"
                   invalid={!!errors.biomedicalWasteManagementAuth}
                 />
                 {errors.biomedicalWasteManagementAuth && (
@@ -912,7 +910,7 @@ const AddClinic = () => {
                       setFormData({ ...formData, drugLicenseFormType: e.target.files[0] })
                     }
                     // multiple
-                    accept=".pdf,.doc,.docx"
+                      accept=".pdf,.doc,.docx,.jpeg,.png"
                     invalid={!!errors.drugLicenseFormType}
                   />
                   {errors.drugLicenseFormType && (
@@ -934,7 +932,7 @@ const AddClinic = () => {
                   name="tradeLicense"
                   onChange={(e) => setFormData({ ...formData, tradeLicense: e.target.files[0] })}
                   // multiple
-                  accept=".pdf,.doc,.docx"
+                    accept=".pdf,.doc,.docx,.jpeg,.png"
                   invalid={!!errors.tradeLicense}
                 />
                 {errors.tradeLicense && (
@@ -956,7 +954,7 @@ const AddClinic = () => {
                     setFormData({ ...formData, fireSafetyCertificate: e.target.files[0] })
                   }
                   // multiple
-                  accept=".pdf,.doc,.docx"
+               accept=".pdf,.doc,.docx,.jpeg,.png"
                   invalid={!!errors.fireSafetyCertificate}
                 />
                 {errors.fireSafetyCertificate && (
@@ -980,7 +978,7 @@ const AddClinic = () => {
                     setFormData({ ...formData, gstRegistrationCertificate: e.target.files[0] })
                   }
                   // multiple
-                  accept=".pdf,.doc,.docx"
+                    accept=".pdf,.doc,.docx,.jpeg,.png"
                   invalid={!!errors.gstRegistrationCertificate}
                 />
                 {errors.gstRegistrationCertificate && (
@@ -1000,7 +998,7 @@ const AddClinic = () => {
                   name="others"
                   onChange={(e) => setFormData({ ...formData, others: e.target.files[0] })}
                   // multiple
-                  accept=".pdf,.doc,.docx"
+                   accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
                   invalid={!!errors.others}
                 />
                 {errors.others && <CFormFeedback invalid>{errors.others}</CFormFeedback>}
@@ -1079,7 +1077,7 @@ const AddClinic = () => {
                       setFormData({ ...formData, pharmacistCertificate: e.target.files[0] })
                     }
                     // multiple
-                    accept=".pdf,.doc,.docx"
+                      accept=".pdf,.doc,.docx,.jpeg,.png"
                     invalid={!!errors.pharmacistCertificate}
                   />
                   {errors.pharmacistCertificate && (

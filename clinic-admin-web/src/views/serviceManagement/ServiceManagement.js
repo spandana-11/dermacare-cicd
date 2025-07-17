@@ -33,6 +33,8 @@ import {
   updateServiceData,
   deleteServiceData,
   subServiceData,
+  
+  GetSubServices_ByClinicId,
 } from './ServiceManagementAPI'
 import {
   // subService_URL,
@@ -62,12 +64,25 @@ const ServiceManagement = () => {
   const [subServiceOptions, setSubServiceOptions] = useState([])
   const [selectedSubService, setSelectedSubService] = useState('')
   const [subServiceId, setSubServiceId] = useState('')
+  const [previewImage, setPreviewImage] = useState(null)
   const [serviceToEdit, setServiceToEdit] = useState({
     serviceImage: '',
     viewImage: '',
     subServiceName: '',
     serviceName: '',
+    serviceImageFile: null,
   })
+
+  let descriptionQA = []
+  try {
+    if (typeof service.descriptionQA === 'string') {
+      descriptionQA = JSON.parse(service.descriptionQA)
+    } else {
+      descriptionQA = service.descriptionQA || []
+    }
+  } catch (err) {
+    console.error('Invalid descriptionQA format:', err)
+  }
 
   const [newService, setNewService] = useState({
     categoryName: '',
@@ -80,7 +95,30 @@ const ServiceManagement = () => {
   // Open for adding
   const openAddModal = () => {
     setModalMode('add')
-    setNewService({})
+    setQaList([])
+    setAnswers([])
+    setQuestion('')
+    setSelectedSubService('')
+    setNewService({
+      categoryName: '',
+      categoryId: '',
+      serviceName: '',
+      serviceId: '',
+      subServiceId: '',
+      subServiceName: '',
+      description: '',
+      price: '',
+      discount: 0,
+      minTime: '',
+      taxPercentage: 0,
+      status: '',
+      serviceImage: '',
+      serviceImageFile: null,
+      viewImage: '',
+      viewDescription: '',
+      platformFeePercentage: 0,
+      descriptionQA: [],
+    })
     setModalVisible(true)
   }
 
@@ -136,6 +174,12 @@ const ServiceManagement = () => {
     const resolvedSubServiceName = selectedSubServiceObj?.subServiceName || ''
 
     setSelectedSubService(resolvedSubServiceId)
+    const formattedQA = Array.isArray(service.descriptionQA)
+      ? service.descriptionQA
+      : JSON.parse(service.descriptionQA || '[]')
+
+    const rawImage = service.serviceImage || ''
+    const fullImage = rawImage.startsWith('data:') ? rawImage : `data:image/jpeg;base64,${rawImage}`
 
     // Prefill all fields
     setNewService({
@@ -149,12 +193,17 @@ const ServiceManagement = () => {
       discount: service.discountPercentage || 0,
       taxPercentage: service.taxPercentage || 0,
       minTime: service.minTime || '',
-      serviceImage: service.serviceImage || '',
+      serviceImage: rawImage,
+
+      serviceImageFile: null,
       status: service.status || '',
       viewDescription: service.viewDescription || '',
-      descriptionQA: service.descriptionQA || [],
+      description: service.description || '', // ✅ Added
+      platformFeePercentage: service.platformFeePercentage || 0,
+      descriptionQA: formattedQA,
       viewImage: service.viewImage || '',
     })
+    setQaList(formattedQA)
   }
 
   const addAnswer = () => {
@@ -205,10 +254,23 @@ const ServiceManagement = () => {
         throw new Error('Invalid category data format')
       }
 
-      const serviceResponse = await serviceData()
-      console.log(serviceResponse.data)
-      setService(serviceResponse.data)
-    } catch (error) {
+      const hospitalId = localStorage.getItem('HospitalId'); // ✅ current hospital
+    if (hospitalId) {
+      const subServiceData = await GetSubServices_ByClinicId(hospitalId);
+
+      if (Array.isArray(subServiceData)) {
+        // you might need to flatten if response is nested
+        // but usually GetSubServices_ByClinicId should return a clean array
+        setService(subServiceData);
+      } else {
+        setService([]);
+        console.warn('No subservices found for this hospital.');
+      }
+    } else {
+      console.warn('No hospitalId found in localStorage.');
+      setService([]);
+    }
+  }catch (error) {
       console.error('Error fetching data:', error)
       setError('Failed to fetch data. Please try again later.')
     } finally {
@@ -238,24 +300,6 @@ const ServiceManagement = () => {
     }
   }, [editServiceMode])
 
-  const addTimeSlot = () => {
-    // Split input by commas, trim whitespace, convert to uppercase
-    const newSlots = timeInput
-      .split(',')
-      .map((slot) => slot.trim().toUpperCase())
-      .filter((slot) => slot !== '')
-
-    // Filter out duplicates
-    const uniqueNewSlots = newSlots.filter((slot) => !timeSlots.startsWith(slot))
-
-    // Add the new unique slots
-    if (uniqueNewSlots.length > 0) {
-      setTimeSlots([...timeSlots, ...uniqueNewSlots])
-    }
-
-    setTimeInput('')
-  }
-
   useEffect(() => {
     const handleSearch = () => {
       const trimmedQuery = searchQuery.toLowerCase().trim()
@@ -279,6 +323,7 @@ const ServiceManagement = () => {
 
     handleSearch()
   }, [searchQuery, service])
+
   const handleEditClick = (serviceItem) => {
     setServiceToEdit(serviceItem)
     setEditServiceMode(true)
@@ -439,10 +484,32 @@ const ServiceManagement = () => {
   const saveCurrentQA = () => {
     if (question.trim() && answers.length > 0) {
       const newQA = { [question.trim()]: [...answers] }
-      setQaList((prev) => [...prev, newQA])
+
+      // Add to local qaList
+      const updatedQaList = [...qaList, newQA]
+      setQaList(updatedQaList)
+
+      // Also update the newService object
+      setNewService((prev) => ({
+        ...prev,
+        descriptionQA: updatedQaList,
+      }))
+
+      // Clear input fields
       setQuestion('')
       setAnswers([])
     }
+  }
+
+  const removeQA = (indexToRemove) => {
+    const updatedQAList = qaList.filter((_, index) => index !== indexToRemove)
+
+    // Update both qaList and newService.descriptionQA
+    setQaList(updatedQAList)
+    setNewService((prev) => ({
+      ...prev,
+      descriptionQA: updatedQAList,
+    }))
   }
 
   const buildDescriptionQA = () => {
@@ -459,8 +526,17 @@ const ServiceManagement = () => {
   const handleAddService = async () => {
     console.log('iam from handleAddService calling')
 
+    const fullBase64String = await toBase64(newService.serviceImageFile)
+    const base64ImageToSend = fullBase64String?.split(',')[1] || ''
+
+    // const payload = {
+    //   ...otherFields,
+    //   subServiceImage: base64ImageToSend,
+    // }
+
     console.log('Calling validateForm...')
     if (!validateForm()) {
+      toast.error('Validation failed', { position: 'top-right' })
       console.log('Validation failed')
       setModalVisible(true)
       return
@@ -478,15 +554,15 @@ const ServiceManagement = () => {
         categoryId: newService.categoryId,
         description: newService.description,
         price: newService.price,
-        discountPercentage: newService.discountPercentage,
+        discountPercentage: newService.discount,
         taxPercentage: newService.taxPercentage,
         minTime: newService.minTime,
         status: newService.status,
-        subServiceImage: newService.serviceImage,
+        subServiceImage: base64ImageToSend,
         descriptionQA: buildDescriptionQA(),
         viewDescription: newService.viewDescription,
         platformFeePercentage: newService.platformFeePercentage,
-        discountAmount: newService.discountAmount,
+        discountAmount: newService.discount,
         taxAmount: newService.taxAmount,
         discountedCost: newService.discountedCost,
         clinicPay: newService.clinicPay,
@@ -535,24 +611,19 @@ const ServiceManagement = () => {
     setQaList([]) // reset Q&A
   }
 
-  const generateTimeOptions = () => {
-    const times = []
-    for (let h = 0; h < 24; h++) {
-      for (let m = 0; m < 60; m += 15) {
-        const hour = h.toString().padStart(2, '0')
-        const minute = m.toString().padStart(2, '0')
-        times.push(`${hour}:${minute}`)
-      }
-    }
-    return times
-  }
+  const formatMinutes = (minTime) => {
+    const minutes = parseInt(minTime, 10)
 
-  const handleServiceEdit = (service) => {
-    setServiceToEdit(service)
-    setEditServiceMode(true)
-    setTimeout(() => {
-      document.querySelector('#serviceNameInput')?.focus()
-    }, 100) // or use useRef
+    if (isNaN(minutes)) return 'Invalid time'
+
+    if (minutes < 60) return `${minutes} min`
+
+    const hours = Math.floor(minutes / 60)
+    const remainingMins = minutes % 60
+
+    return remainingMins === 0
+      ? `${hours} hour${hours > 1 ? 's' : ''}`
+      : `${hours} hour${hours > 1 ? 's' : ''} ${remainingMins} min`
   }
 
   const handleServiceFileChange = (e) => {
@@ -560,160 +631,49 @@ const ServiceManagement = () => {
 
     if (file) {
       const reader = new FileReader()
-
       reader.onloadend = () => {
-        console.log('Base64 String:', reader.result)
-        // let base64String = reader.result
-        // if (base64String) {
-        //   base64String = base64String.split(',')[1]
-        // }
-        let base64String = reader.result.split(',')[1]
+        const base64String = reader.result?.split(',')[1] || ''
         setNewService((prev) => ({
           ...prev,
           serviceImage: base64String,
-          serviceImageFile: file, // Keep original file reference
-        }))
-
-        setServiceToEdit((prev) => ({
-          ...prev,
-          serviceImage: base64String,
-          serviceImageFile: file, // optional if you show file name
+          serviceImageFile: file,
         }))
       }
       reader.readAsDataURL(file)
     }
   }
 
-  const handleBannerFileChange = (e) => {
-    const file = e.target.files[0]
-
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        let base64String = reader.result
-        if (base64String) {
-          base64String = base64String.split(',')[1]
-        }
-
-        setNewService((prevService) => ({
-          ...prevService,
-          viewImage: base64String,
-        }))
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const validateEditForm = () => {
-    const newErrors = {}
-    if (!serviceToEdit.subServiceId || serviceToEdit.subServiceId.length !== 24) {
-      toast.error('Invalid subServiceId. Please select a valid SubService.')
-      return
-    }
-
-    if (!serviceToEdit.serviceName?.trim()) newErrors.serviceName = 'Service name is required.'
-    // if (!serviceToEdit.description?.trim()) newErrors.description = 'Description is required.'
-    if (!serviceToEdit.price || isNaN(serviceToEdit.price) || serviceToEdit.price <= 0) {
-      newErrors.price = 'price must be a valid positive number.'
-    }
-    if (!serviceToEdit.discount || isNaN(serviceToEdit.discount) || serviceToEdit.discount < 0) {
-      newErrors.discount = 'Discount must be a valid number (0 or more).'
-    }
-    if (
-      !serviceToEdit.taxPercentage ||
-      isNaN(serviceToEdit.taxPercentage) ||
-      serviceToEdit.taxPercentage < 0
-    ) {
-      newErrors.taxPercentage = 'taxPercentage must be a valid number (0 or more).'
-    }
-    if (!serviceToEdit.minTime?.trim()) newErrors.minTime = 'Minimum time is required.'
-    if (!serviceToEdit.viewDescription?.trim())
-      newErrors.viewDescription = 'View description is required.'
-
-    setEditErrors(newErrors)
-
-    return Object.keys(newErrors).length === 0
-  }
-
-  // const handleUpdateService = async () => {
-  //   // console.log('Updated calling')
-  //   console.log('subServiceId', serviceToEdit.subServiceId)
-  //   // if (!validateEditForm()) return
-
-  //   try {
-  //     const updatedService = {
-  //       ...serviceToEdit,
-  //       subServiceImage: serviceToEdit.serviceImage, // base64 string already
-  //       viewImage: serviceToEdit.viewImage || '', // optional fallback
-  //     }
-  //     const hospitalId = localStorage.getItem('HospitalId')
-
-  //     console.log('Before update call → subServiceId:', serviceToEdit.subServiceId)
-  //     console.log('Before update call → hospitalId:', hospitalId)
-
-  //     if (!Array.isArray(serviceToEdit.descriptionQA)) {
-  //       toast.error('Invalid QA format')
-  //       return
-  //     }
-
-  //     const response = await updateServiceData(
-  //       serviceToEdit.subServiceId,
-  //       hospitalId,
-  //       updatedService,
-  //     )
-
-  //     console.log('Updated response:', response)
-  //     toast.success('Service updated successfully!', { position: 'top-right' })
-  //     setEditServiceMode(false)
-  //     fetchData() // refresh list
-  //   } catch (error) {
-  //     console.error('Update failed:', error)
-  //     toast.error('Error updating service.', { position: 'top-right' })
-  //   }
-  // }
   const handleUpdateService = async () => {
     try {
       const hospitalId = localStorage.getItem('HospitalId')
 
       let base64ImageToSend = ''
 
-      if (serviceToEdit.serviceImageFile) {
-        // If a new file is selected, convert it to base64
-        const fullBase64String = await toBase64(serviceToEdit.serviceImageFile)
-        // Strip the "data:image/png;base64," part
+      if (newService.serviceImageFile) {
+        const fullBase64String = await toBase64(newService.serviceImageFile)
         base64ImageToSend = fullBase64String.split(',')[1]
-      } else if (serviceToEdit.subServiceImage) {
-        // If no new file, but there's an existing image string,
-        // check if it's already a full data URI and strip it if necessary.
-        // This handles cases where serviceToEdit.subServiceImage might be a base64 string WITH or WITHOUT the prefix.
-        if (serviceToEdit.subServiceImage.startsWith('data:')) {
-          base64ImageToSend = serviceToEdit.subServiceImage.split(',')[1]
-        } else {
-          base64ImageToSend = serviceToEdit.subServiceImage // Assume it's already a raw base64 string
-        }
+      } else if (newService.serviceImage?.startsWith('data:')) {
+        base64ImageToSend = newService.serviceImage.split(',')[1]
+      } else {
+        base64ImageToSend = newService.serviceImage || ''
       }
 
       // Ensure numeric values are numbers, not empty strings or null
-      const price = serviceToEdit.price > 0 ? Number(serviceToEdit.price) : 0
-      const discountPercentage = serviceToEdit.discountPercentage || 0
-      const taxPercentage = serviceToEdit.taxPercentage || 0
-      const platformFeePercentage = serviceToEdit.platformFeePercentage || 0
+      const price = newService.price > 0 ? Number(newService.price) : 0
 
       // build only the expected payload (no extra keys)
       const updatedService = {
         hospitalId,
-        subServiceName: serviceToEdit.subServiceName || '',
-        viewDescription: serviceToEdit.viewDescription || '',
-        status: serviceToEdit.status || '',
-        minTime: serviceToEdit.minTime || '',
-        descriptionQA: Array.isArray(serviceToEdit.descriptionQA)
-          ? serviceToEdit.descriptionQA
-          : [],
-        price: price,
-        discountPercentage: discountPercentage,
-        taxPercentage: taxPercentage,
-        platformFeePercentage: platformFeePercentage,
-        subServiceImage: base64ImageToSend, // Send the stripped base64 string
+        subServiceName: newService.subServiceName || '',
+        viewDescription: newService.viewDescription || '',
+        status: newService.status || '',
+        minTime: newService.minTime || '',
+        descriptionQA: Array.isArray(newService.descriptionQA) ? newService.descriptionQA : [],
+        price,
+        discountPercentage: newService.discount || 0,
+        taxPercentage: newService.taxPercentage || 0,
+        platformFeePercentage: newService.platformFeePercentage || 0,
+        subServiceImage: base64ImageToSend,
       }
 
       // Log the payload to verify it before sending
@@ -724,6 +684,7 @@ const ServiceManagement = () => {
 
       toast.success('Service updated successfully!', { position: 'top-right' })
       setEditServiceMode(false)
+      setModalVisible(false)
       fetchData()
     } catch (error) {
       console.error('Update failed:', error)
@@ -739,47 +700,6 @@ const ServiceManagement = () => {
       reader.onload = () => resolve(reader.result)
       reader.onerror = (error) => reject(error)
     })
-
-  const handleEditServiceFileChange = (e) => {
-    const file = e.target.files[0]
-
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        let base64String = reader.result
-        if (base64String) {
-          base64String = base64String.split(',')[1] // remove prefix
-        }
-
-        setServiceToEdit((prev) => ({
-          ...prev,
-          serviceImage: base64String,
-          serviceImageFile: file, // optional if you want to show file name
-        }))
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const handleEditBannerFileChange = (e) => {
-    const file = e.target.files[0]
-
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        let base64String = reader.result
-        if (base64String) {
-          base64String = base64String.split(',')[1]
-        }
-
-        setNewService((prevService) => ({
-          ...prevService,
-          viewImage: base64String,
-        }))
-      }
-      reader.readAsDataURL(file)
-    }
-  }
 
   const handleServiceDelete = async (serviceId) => {
     console.log(serviceId)
@@ -921,13 +841,7 @@ const ServiceManagement = () => {
               <CIcon icon={cilSearch} />
             </CInputGroupText>
           </CInputGroup>
-          {/* <CButton
-            color="success"
-            style={{ height: '40px', marginRight: '10px', color: 'white' }}
-            onClick={() => setModalVisible(true)}
-          >
-            Add SubService
-          </CButton> */}
+
           <CButton color="primary" style={{ height: '40px' }} onClick={() => openAddModal()}>
             Add SubService Details
           </CButton>
@@ -990,52 +904,56 @@ const ServiceManagement = () => {
             <CRow className="mb-3">
               <CCol sm={4}>
                 <strong>Price:</strong>
-                <div>₹{Number(viewService.price).toFixed(0)}</div>
+                <div>₹ {Math.round(viewService.price)}</div>
               </CCol>
               <CCol sm={4}>
                 <strong>Discount %:</strong>
-                <div>{viewService.discountPercentage}%</div>
+                <div>{Math.round(viewService.discountPercentage)}%</div>
               </CCol>
               <CCol sm={4}>
                 <strong>Discount Amount:</strong>
-                <div>₹{viewService.discountAmount}</div>
+                <div>₹ {Math.round(viewService.discountAmount)}</div>
               </CCol>
             </CRow>
 
             <CRow className="mb-3">
               <CCol sm={4}>
                 <strong>Discounted Cost:</strong>
-                <div>₹{viewService.discountedCost}</div>
+                <div>₹ {Math.round(viewService.discountedCost)}</div>
               </CCol>
               <CCol sm={4}>
                 <strong>Tax %:</strong>
-                <div>{viewService.taxPercentage}%</div>
+                <div>{Math.round(viewService.taxPercentage)}%</div>
               </CCol>
               <CCol sm={4}>
                 <strong>Tax Amount:</strong>
-                <div>₹{viewService.taxAmount}</div>
+                <div>₹ {Math.round(viewService.taxAmount)}</div>
               </CCol>
             </CRow>
 
             <CRow className="mb-3">
               <CCol sm={4}>
                 <strong>Platform Fee %:</strong>
-                <div>{viewService.platformFeePercentage}%</div>
+                <div>{Math.round(viewService.platformFeePercentage)}%</div>
               </CCol>
               <CCol sm={4}>
                 <strong>Platform Fee:</strong>
-                <div>₹{viewService.platformFee}</div>
+                <div>₹ {Math.round(viewService.platformFee)}</div>
               </CCol>
               <CCol sm={4}>
                 <strong>Clinic Pay:</strong>
-                <div>₹{viewService.clinicPay}</div>
+                <div>₹ {Math.round(viewService.clinicPay)}</div>
               </CCol>
             </CRow>
 
             <CRow className="mb-3">
               <CCol sm={4}>
                 <strong>Final Cost:</strong>
-                <div>₹{viewService.finalCost}</div>
+                <div>₹ {Math.round(viewService.finalCost)}</div>
+              </CCol>
+              <CCol sm={4}>
+                <strong>Service Time:</strong>
+                <div>{formatMinutes(viewService.minTime)}</div>
               </CCol>
             </CRow>
 
@@ -1078,6 +996,10 @@ const ServiceManagement = () => {
                       alt="Service"
                       style={{ width: '100%', maxWidth: '250px', borderRadius: '8px' }}
                     />
+
+                    {previewImage && (
+                      <img src={previewImage} alt="Preview" height="80" className="mt-2" />
+                    )}
                   </div>
                 ) : (
                   <div>No image available</div>
@@ -1190,20 +1112,40 @@ const ServiceManagement = () => {
                   <CFormText className="text-danger">{errors.subServiceName}</CFormText>
                 )}
               </CCol>
-              <CCol md={6}>
+              {/* <CCol md={6}>
                 <h6>
                   Description <span className="text-danger">*</span>
                 </h6>
                 <CFormInput
                   type="text"
-                  placeholder="Description"
-                  value={newService.description || ''}
                   name="description"
+                  value={newService.description || ''}
+                  onChange={(e) =>
+                    setNewService((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                />
+
+                {errors.description && (
+                  <CFormText className="text-danger">{errors.description}</CFormText>
+                )}
+              </CCol> */}
+              <CCol md={6}>
+                <h6>
+                  View Description <span className="text-danger">*</span>
+                </h6>
+                <CFormInput
+                  type="text"
+                  placeholder="View Description"
+                  value={newService.viewDescription || ''}
+                  name="viewDescription"
                   onChange={handleChange}
                   maxLength={100}
                 />
-                {errors.description && (
-                  <CFormText className="text-danger">{errors.description}</CFormText>
+                {errors.viewDescription && (
+                  <CFormText className="text-danger">{errors.viewDescription}</CFormText>
                 )}
               </CCol>
             </CRow>
@@ -1225,21 +1167,15 @@ const ServiceManagement = () => {
                   Price <span className="text-danger">*</span>
                 </h6>
                 <CFormInput
-                  type="number"
-                  placeholder="Price"
                   value={newService.price || ''}
-                  name="price"
-                  onChange={handleChange}
-                  min={1}
-                  onKeyDown={(e) => {
-                    if (e.key === '-' || e.key === 'e') e.preventDefault()
-                  }}
+                  onChange={(e) => setNewService((prev) => ({ ...prev, price: e.target.value }))}
                 />
+
                 {errors.price && <CFormText className="text-danger">{errors.price}</CFormText>}
               </CCol>
             </CRow>
             <CRow className="mb-4">
-              <CCol md={6}>
+              <CCol md={4}>
                 <h6>
                   Discount % <span className="text-danger">*</span>
                 </h6>
@@ -1258,7 +1194,7 @@ const ServiceManagement = () => {
                   <CFormText className="text-danger">{errors.discount}</CFormText>
                 )}
               </CCol>
-              <CCol md={6}>
+              <CCol md={4}>
                 <h6>
                   TaxPercentage % <span className="text-danger">*</span>
                 </h6>
@@ -1277,9 +1213,6 @@ const ServiceManagement = () => {
                   <CFormText className="text-danger">{errors.taxPercentage}</CFormText>
                 )}
               </CCol>
-            </CRow>
-
-            <CRow className="mb-4">
               <CCol>
                 <div className="mb-4">
                   <h6>
@@ -1297,45 +1230,47 @@ const ServiceManagement = () => {
                   )}
                 </div>
               </CCol>
-              <CCol md={6}>
-                <h6>
-                  View Description <span className="text-danger">*</span>
-                </h6>
-                <CFormInput
-                  type="text"
-                  placeholder="View Description"
-                  value={newService.viewDescription || ''}
-                  name="viewDescription"
-                  onChange={handleChange}
-                  maxLength={100}
-                />
-                {errors.viewDescription && (
-                  <CFormText className="text-danger">{errors.viewDescription}</CFormText>
-                )}
-              </CCol>
             </CRow>
 
-            <CRow className="mb-4">
-              <CCol md={12}>
-                <h6>
-                  Service Image <span className="text-danger">*</span>
-                </h6>
-                <CFormInput type="file" onChange={handleServiceFileChange} />
-                {errors.serviceImage && (
-                  <CFormText className="text-danger">{errors.serviceImage}</CFormText>
-                )}
-              </CCol>
-              {/* <CCol md={6}>
-                <h6>
-                  Banner Image <span className="text-danger">*</span>
-                </h6>
-                <CFormInput type="file" onChange={handleBannerFileChange} />
-                {errors.bannerImage && (
-                  <CFormText className="text-danger">{errors.bannerImage}</CFormText>
-                )}
-              </CCol> */}
-            </CRow>
             <CCol md={12}>
+              <h6>
+                Service Image <span className="text-danger">*</span>
+              </h6>
+              <CFormInput
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0]
+                  if (file) {
+                    const reader = new FileReader()
+                    reader.onloadend = () => {
+                      const base64String = reader.result?.split(',')[1] || ''
+                      setNewService((prev) => ({
+                        ...prev,
+                        serviceImage: base64String,
+                        serviceImageFile: file,
+                      }))
+                    }
+                    reader.readAsDataURL(file)
+                  }
+                }}
+              />
+
+              {newService?.serviceImage && (
+                <img
+                  src={
+                    newService.serviceImage.startsWith('data:')
+                      ? newService.serviceImage
+                      : `data:image/jpeg;base64,${newService.serviceImage}`
+                  }
+                  alt="Preview"
+                  style={{ width: 100, height: 100, marginTop: 10 }}
+                />
+              )}
+             
+            </CCol>
+
+            <CCol md={12} className="mt-3">
               <label className="mb-2">Question</label>
               <CFormInput
                 placeholder="Enter your question"
@@ -1414,187 +1349,8 @@ const ServiceManagement = () => {
           </CButton>
         </CModalFooter>
       </CModal>
-      <CModal visible={editServiceMode} onClose={() => setEditServiceMode(false)} size="xl">
-        <CModalHeader>
-          <CModalTitle style={{ textAlign: 'center', width: '100%' }}>Edit Service</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          <CForm>
-            <CRow className="mb-4">
-              <CCol md={6}>
-                <h6>Sub Service Name</h6>
-                <CFormInput type="text" value={serviceToEdit?.subServiceName || ''} disabled />
-              </CCol>
-              <CCol md={6}>
-                <h6>Service Name</h6>
-                <CFormInput
-                  type="text"
-                  value={serviceToEdit?.serviceName || ''}
-                  onChange={(e) =>
-                    setServiceToEdit({ ...serviceToEdit, serviceName: e.target.value })
-                  }
-                />
-              </CCol>
-            </CRow>
 
-            <CRow className="mb-4">
-              <CCol md={6}>
-                <h6>Description</h6>
-                <CFormInput
-                  type="text"
-                  value={serviceToEdit?.description || ''}
-                  onChange={(e) =>
-                    setServiceToEdit({ ...serviceToEdit, description: e.target.value })
-                  }
-                />
-                {editErrors.description && (
-                  <CFormText className="text-danger">{editErrors.description}</CFormText>
-                )}
-              </CCol>
-
-              <CCol md={6}>
-                <h6>Status</h6>
-                <CFormSelect
-                  value={serviceToEdit?.status || ''}
-                  onChange={(e) => setServiceToEdit({ ...serviceToEdit, status: e.target.value })}
-                >
-                  <option value="">Select</option>
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </CFormSelect>
-              </CCol>
-            </CRow>
-
-            <CRow className="mb-4">
-              <CCol md={6}>
-                <h6>Price</h6>
-                <CFormInput
-                  type="number"
-                  value={serviceToEdit?.price || ''}
-                  onChange={(e) => setServiceToEdit({ ...serviceToEdit, price: e.target.value })}
-                />
-                {editErrors.price && (
-                  <CFormText className="text-danger">{editErrors.price}</CFormText>
-                )}
-              </CCol>
-
-              <CCol md={6}>
-                <h6>Discount %</h6>
-                <CFormInput
-                  type="number"
-                  value={serviceToEdit?.discount || ''}
-                  onChange={(e) => setServiceToEdit({ ...serviceToEdit, discount: e.target.value })}
-                />
-                {editErrors.discount && (
-                  <CFormText className="text-danger">{editErrors.discount}</CFormText>
-                )}
-              </CCol>
-            </CRow>
-
-            <CRow className="mb-4">
-              <CCol md={6}>
-                <h6>Tax Percentage %</h6>
-                <CFormInput
-                  type="number"
-                  value={serviceToEdit?.taxPercentage || ''}
-                  onChange={(e) =>
-                    setServiceToEdit({ ...serviceToEdit, taxPercentage: e.target.value })
-                  }
-                />
-                {editErrors.taxPercentage && (
-                  <CFormText className="text-danger">{editErrors.taxPercentage}</CFormText>
-                )}
-              </CCol>
-
-              <CCol md={6}>
-                <h6>Min Time (in minutes)</h6>
-                <CFormInput
-                  type="number"
-                  value={serviceToEdit?.minTime || ''}
-                  onChange={(e) => setServiceToEdit({ ...serviceToEdit, minTime: e.target.value })}
-                />
-                {editErrors.minTime && (
-                  <CFormText className="text-danger">{editErrors.minTime}</CFormText>
-                )}
-              </CCol>
-            </CRow>
-
-            <CRow className="mb-4">
-              <CCol md={6}>
-                <h6>View Description</h6>
-                <CFormInput
-                  type="text"
-                  value={serviceToEdit?.viewDescription || ''}
-                  onChange={(e) =>
-                    setServiceToEdit({ ...serviceToEdit, viewDescription: e.target.value })
-                  }
-                />
-                {editErrors.viewDescription && (
-                  <CFormText className="text-danger">{editErrors.viewDescription}</CFormText>
-                )}
-              </CCol>
-
-              <CCol md={12}>
-                <label className="mb-2">Edit Q&A</label>
-                {Array.isArray(serviceToEdit?.descriptionQA) &&
-                  serviceToEdit.descriptionQA.map((qa, index) => {
-                    const question = Object.keys(qa)[0]
-                    const answers = qa[question]
-
-                    return (
-                      <div key={index}>
-                        <label>{key}</label>
-                        <input
-                          value={qa[key][0] || ''}
-                          onChange={(e) => {
-                            const updatedQA = [...serviceToEdit.descriptionQA]
-                            updatedQA[index][key][0] = e.target.value
-                            setServiceToEdit((prev) => ({ ...prev, descriptionQA: updatedQA }))
-                          }}
-                        />
-                      </div>
-                    )
-                  })}
-              </CCol>
-            </CRow>
-
-            <CRow className="mb-4">
-              <CCol md={6}>
-                <h6>Answers</h6>
-                <CFormInput
-                  type="text"
-                  value={serviceToEdit?.answers || ''}
-                  onChange={(e) => setServiceToEdit({ ...serviceToEdit, answers: e.target.value })}
-                />
-              </CCol>
-
-              <CCol md={6}>
-                <h6>Service Image</h6>
-                <CFormInput
-                  type="file"
-                  onChange={(e) => {
-                    const file = e.target.files[0]
-                    if (file) {
-                      setServiceToEdit((prev) => ({
-                        ...prev,
-                        serviceImageFile: file,
-                      }))
-                    }
-                  }}
-                />
-              </CCol>
-            </CRow>
-          </CForm>
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="primary" onClick={handleUpdateService}>
-            Update
-          </CButton>
-          <CButton color="secondary" onClick={() => setEditServiceMode(false)}>
-            Cancel
-          </CButton>
-        </CModalFooter>
-      </CModal>
+ 
 
       {loading ? (
         <div

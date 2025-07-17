@@ -17,7 +17,7 @@ import {
   CTableRow,
   CTableDataCell,
 } from '@coreui/react'
-import { toast } from 'react-toastify'
+import { ToastContainer,toast } from 'react-toastify'
 import { Get_AllServAdvData, Add_ServAdvData, delete_ServAdvData } from './AdsServiceManagementAPI'
 import { ConfirmationModal } from '../../Utils/ConfirmationDelete'
 
@@ -113,6 +113,8 @@ const ServiceAdvertisement = () => {
   }
 
   return (
+    <>
+    <ToastContainer/>
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h4>Service Advertisements</h4>
@@ -215,6 +217,7 @@ const ServiceAdvertisement = () => {
         </CModalBody>
       </CModal>
     </div>
+    </>
   )
 }
 

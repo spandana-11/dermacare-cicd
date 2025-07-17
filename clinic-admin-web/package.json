@@ -55,7 +55,6 @@
     "react-time-picker": "^7.0.0",
     "react-toastify": "^10.0.6",
     "redux": "5.0.1",
-    "rollup": "^4.29.1",
     "simplebar-react": "^3.2.6",
     "slick-carousel": "^1.8.1",
     "toastify": "^2.0.1"
@@ -71,6 +70,6 @@
     "postcss": "^8.4.47",
     "prettier": "3.3.3",
     "sass": "^1.80.6",
-    "vite": "^7.0.4"
+    "vite": "^5.4.8"
   }
 }

@@ -29,26 +29,43 @@ const ReportsManagement = () => {
   const [availableConsultationTypes, setAvailableConsultationTypes] = useState([])
   const [selectedServiceTypes, setSelectedServiceTypes] = useState([])
   const [selectedConsultationTypes, setSelectedConsultationTypes] = useState([])
-
+  const [clinicId, setClinicId] = useState(null)
+  
   const consultationTypeMap = {
-      'Service & Treatment': 'services & treatments',
-      'Video Consultation': 'online consultation',
-      'In-clinic': 'in-clinic consultation',
-    }
+    'Service & Treatment': 'services & treatments',
+    'Video Consultation': 'online consultation',
+    'In-clinic': 'in-clinic consultation',
+  }
 
-  const fetchAppointments = async () => {
+const fetchAppointments = async (hospitalId) => { // Added hospitalId parameter
     try {
       const data = await AppointmentData()
-      setBookings(data.data || [])
+      if (data && data.data) {
+        // Filter initial bookings by clinicId here if it exists
+        const relevantBookings = hospitalId
+          ? data.data.filter(
+              (booking) => normalize(booking.clinicId) === normalize(hospitalId),
+            )
+          : data.data
+        setBookings(relevantBookings || [])
+      }
     } catch (error) {
       console.error('Failed to fetch appointments:', error)
+      setBookings([]) // Ensure bookings is an empty array on error
     }
   }
 
-  useEffect(() => {
+
+ useEffect(() => {
     const hospitalId = localStorage.getItem('HospitalId')
     if (hospitalId) {
-      fetchAppointments()
+      setClinicId(hospitalId) // Store clinicId in state
+      fetchAppointments(hospitalId) // Pass hospitalId to fetch function
+    } else {
+      console.warn('No HospitalId found in localStorage. Displaying all relevant appointments.')
+      // If no HospitalId, you might still want to fetch all appointments
+      // or handle this case based on your application's requirements.
+      fetchAppointments(null); // Fetch all if no specific clinicId
     }
   }, [])
 
@@ -62,21 +79,36 @@ const ReportsManagement = () => {
     }
   }
 
-  useEffect(() => {
-    // Always show only completed status
-    let filtered = bookings.filter((booking) => normalize(booking.status) === 'completed')
+ useEffect(() => {
+    // 1. Filter by "Completed" status
+    let currentFiltered = bookings.filter(
+      (booking) => normalize(booking.status) === 'completed',
+    )
 
-    // Apply consultation type filter if selected
+    // 2. Apply consultation type filter if selected
     if (filterTypes.length === 1) {
       const selectedType = filterTypes[0]
       const mappedType = consultationTypeMap[selectedType]
       if (mappedType) {
-        filtered = filtered.filter((item) => normalize(item.consultationType) === mappedType)
+        currentFiltered = currentFiltered.filter(
+          (item) => normalize(item.consultationType) === mappedType,
+        )
       }
     }
 
-    setFilteredData(filtered)
-  }, [bookings, filterTypes])
+    // No need for a separate clinicId filter here if you filtered it during fetchAppointments
+    // If you prefer to filter here, uncomment and adjust:
+    /*
+    if (clinicId) {
+      currentFiltered = currentFiltered.filter(
+        (item) => normalize(item.clinicId) === normalize(clinicId),
+      )
+    }
+    */
+
+    setFilteredData(currentFiltered)
+  }, [bookings, filterTypes, clinicId]) // Added clinicId to dependencies
+
   useEffect(() => {
     const serviceTypes = [...new Set(bookings.map((item) => item.servicename).filter(Boolean))]
     const consultationTypes = [
@@ -169,7 +201,7 @@ const ReportsManagement = () => {
                       color="primary"
                       size="sm"
                       onClick={() =>
-                        navigate(`/reportDetails/${item.reportId}`, {
+                        navigate(`/reportDetails/${item.bookingId}`, {
                           state: {
                             report: item,
                             appointmentInfo: {
@@ -178,7 +210,7 @@ const ReportsManagement = () => {
                               gender: item.gender,
                               problem: item.problem,
                               bookingId: item.bookingId,
-                              item:item
+                              item: item,
                             },
                           },
                         })

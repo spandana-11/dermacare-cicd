@@ -27,20 +27,6 @@ const AppointmentDetails = () => {
     )
   }
 
-  // const handleConfirmDelete = async () => {
-  //   if (!window.confirm('Are you sure you want to delete this booking?')) return
-
-  //   try {
-  //     setIsDeleting(true)
-  //     await deleteBookingData(appointment.bookingId)
-  //     toast.success('Booking deleted successfully!', { position: 'top-right' })
-  //     navigate('/appointment-management') // redirect to appointment list
-  //   } catch (error) {
-  //     toast.error('Failed to delete booking.', { position: 'top-right' })
-  //   } finally {
-  //     setIsDeleting(false)
-  //   }
-  // }
   useEffect(() => {
     const fetchDoctorDetails = async () => {
       if (

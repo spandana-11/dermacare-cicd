@@ -55,12 +55,6 @@ const DoctorDetailsPage = () => {
   const maxDate = format(addDays(startOfToday(), 6), 'yyyy-MM-dd')
   const handleClose = () => setShowModal(false)
   const handleShow = () => setShowModal(true)
-  // const handleShow = () => {
-  //   toast.info('Confirm deletion before proceeding.')
-  //   setShowModal(true)
-  // }
-  // const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  // const dates = ['01 Apr', '02 Apr', '03 Apr', '04 Apr', '05 Apr', '06 Apr', '07 Apr'];
   const [selectedDateIndex, setSelectedDateIndex] = useState(0)
   const [slotsData, setSlotsData] = useState([])
   const [allSlots, setAllSlots] = useState([]) // Initialize allSlots
@@ -85,6 +79,9 @@ const DoctorDetailsPage = () => {
     setSelectedDateIndex(index)
   }
   const [selectedSlots, setSelectedSlots] = useState([])
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false)
+  const [deleteMode, setDeleteMode] = useState(null)
+  // can be 'selected' or 'all' to know which button triggered
 
   const handleEditToggle = () => setIsEditing(!isEditing)
   const handleDeleteToggleE = async (id) => {
@@ -250,7 +247,7 @@ const DoctorDetailsPage = () => {
       return
     }
 
-    // ✅ Convert "hh:mm AM/PM" to 24-hour Date object
+    //  Convert "hh:mm AM/PM" to 24-hour Date object
     const [time, period] = formatted.split(' ')
     let [hours, minutes] = time.split(':').map(Number)
 
@@ -262,7 +259,7 @@ const DoctorDetailsPage = () => {
     )
     const now = new Date()
 
-    // ✅ Block past time if selectedDate is today
+    //  Block past time if selectedDate is today
     const isToday = selectedDate === format(now, 'yyyy-MM-dd')
     if (isToday && slotDate <= now) {
       alert('❌ You cannot add a time slot in the past for today.')
@@ -311,7 +308,7 @@ const DoctorDetailsPage = () => {
       )
 
       if (res.data.success) {
-        // alert('✅ Slots added successfully')
+        // alert(' Slots added successfully')
         toast.success('Slots added successfully')
         setVisibleSlot(false)
         setVisible(false)
@@ -351,40 +348,6 @@ const DoctorDetailsPage = () => {
       setLoading(false)
     }
   }
-  //dummy
-  // const doctorRatings = {
-  //   overall: 4.6,
-  //   rated: true,
-  //   comments: [
-  //     {
-  //       userId: 'user001',
-  //       userName: 'Prashanth',
-  //       rating: 5,
-  //       comment: 'Excellent Doctor, very knowledgeable and caring.',
-  //       rated: false,
-  //       createAt: '2025-03-29T10:00:00Z',
-  //       hospitalRating: 5,
-  //       replies: [],
-  //     },
-  //     {
-  //       userId: 'user002',
-  //       userName: 'Spandana',
-  //       rating: 4,
-  //       comment: 'Very polite and professional.',
-  //       rated: false,
-  //       createAt: '2025-04-01T12:00:00Z',
-  //       hospitalRating: 4,
-  //       replies: [
-  //         {
-  //           userId: 'admin001',
-  //           userName: 'Nadhiya',
-  //           reply: 'Thank you for the feedback!',
-  //           createAt: '2025-04-02T10:00:00Z',
-  //         },
-  //       ],
-  //     },
-  //   ],
-  // }
 
   useEffect(() => {
     const fetchDoctorRatings = async () => {
@@ -463,6 +426,7 @@ const DoctorDetailsPage = () => {
 
   return (
     <div className="doctor-details-page" style={{ padding: '1rem' }}>
+      <ToastContainer />
       <h3 style={{ color: '#1086EEFF' }}>Doctor Details & Slots Management</h3>
 
       <CCard className="mb-3">
@@ -965,33 +929,14 @@ const DoctorDetailsPage = () => {
                 <CButton
                   color="danger"
                   variant="outline"
-                  disabled={selectedSlots.length === 0} // ✅ Disable when nothing selected
-                  onClick={async () => {
+                  disabled={selectedSlots.length === 0}
+                  onClick={() => {
                     if (selectedSlots.length === 0) {
-                      alert('Please select slot(s) to delete.')
+                      toast.info('Please select slot(s) to delete.')
                       return
                     }
-
-                    const confirmDelete = window.confirm(
-                      `Are you sure you want to delete ${selectedSlots.length} selected slot(s) for ${selectedDate}?`,
-                    )
-                    if (!confirmDelete) return
-
-                    try {
-                      for (const slot of selectedSlots) {
-                        await axios.delete(
-                          `${BASE_URL}/doctorId/${doctorData?.doctorId}/${selectedDate}/${slot}/slots`,
-                        )
-                      }
-
-                      alert('✅ Selected slots deleted successfully.')
-                      setSelectedToDelete([]) // ✅ Optional cleanup
-                      setSelectedSlots([]) // ✅ Reset after delete
-                      fetchSlots() // ✅ Refresh updated data
-                    } catch (err) {
-                      console.error('Error deleting slots:', err)
-                      alert('❌ Failed to delete one or more slots.')
-                    }
+                    setDeleteMode('selected') // mark which action we are confirming
+                    setShowDeleteConfirmModal(true) // show modal
                   }}
                 >
                   Delete Selected ({selectedSlots.length})
@@ -1000,23 +945,9 @@ const DoctorDetailsPage = () => {
                 <CButton
                   color="warning"
                   variant="outline"
-                  onClick={async () => {
-                    const confirmDelete = window.confirm(
-                      `Are you sure you want to delete all slots for ${selectedDate}?`,
-                    )
-                    if (!confirmDelete) return
-
-                    try {
-                      await axios.delete(
-                        `${BASE_URL}/delete-by-date/${doctorData?.doctorId}/${selectedDate}`,
-                      )
-                      alert(`✅ All slots for ${selectedDate} deleted.`)
-                      setSelectedSlots([])
-                      await fetchSlots() // ✅ Await the updated data before UI renders
-                    } catch (err) {
-                      console.error(err)
-                      alert('❌ Failed to delete slots for the date.')
-                    }
+                  onClick={() => {
+                    setDeleteMode('all') // mark which action we are confirming
+                    setShowDeleteConfirmModal(true)
                   }}
                 >
                   Delete All for Date
@@ -1094,7 +1025,7 @@ const DoctorDetailsPage = () => {
 
             <CTabPane visible={activeKey === 4} className="pt-3">
               <div className="d-flex flex-wrap gap-3">
-                {/* ✅ All Categories in One Card */}
+                {/*  All Categories in One Card */}
                 {doctorData?.category?.length > 0 && (
                   <div className="card border-primary" style={{ width: '100%' }}>
                     <div className="card-body">
@@ -1108,7 +1039,7 @@ const DoctorDetailsPage = () => {
                   </div>
                 )}
 
-                {/* ✅ All Services in One Card */}
+                {/*  All Services in One Card */}
                 {doctorData?.service?.length > 0 && (
                   <div className="card border-success" style={{ width: '100%' }}>
                     <div className="card-body">
@@ -1122,7 +1053,7 @@ const DoctorDetailsPage = () => {
                   </div>
                 )}
 
-                {/* ✅ All SubServices in One Card */}
+                {/*  All SubServices in One Card */}
                 {doctorData?.subServices?.length > 0 && (
                   <div className="card border-warning" style={{ width: '100%' }}>
                     <div className="card-body">
@@ -1252,7 +1183,7 @@ const DoctorDetailsPage = () => {
               <CButton
                 key={slot}
                 size="sm"
-                className='text-white'
+                className="text-white"
                 color={selectedSlots.includes(slot) ? 'success' : 'secondary'}
                 onClick={() =>
                   setSelectedSlots((prev) =>
@@ -1271,6 +1202,63 @@ const DoctorDetailsPage = () => {
           </CButton>
           <CButton color="primary" onClick={handleAddSlot} disabled={selectedSlots.length === 0}>
             Save Slots ({selectedSlots.length})
+          </CButton>
+        </CModalFooter>
+      </CModal>
+
+      <CModal visible={showDeleteConfirmModal} onClose={() => setShowDeleteConfirmModal(false)}>
+        <CModalHeader closeButton>
+          <CModalTitle>Confirm Delete</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          {deleteMode === 'selected' ? (
+            <p>
+              Are you sure you want to delete <strong>{selectedSlots.length}</strong> selected
+              slot(s) for <strong>{selectedDate}</strong>?
+            </p>
+          ) : (
+            <p>
+              Are you sure you want to delete <strong>ALL</strong> slots for{' '}
+              <strong>{selectedDate}</strong>?
+            </p>
+          )}
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="secondary" onClick={() => setShowDeleteConfirmModal(false)}>
+            Cancel
+          </CButton>
+          <CButton
+            color="danger"
+            onClick={async () => {
+              try {
+                if (deleteMode === 'selected') {
+                  // delete selected
+                  for (const slot of selectedSlots) {
+                    await axios.delete(
+                      `${BASE_URL}/doctorId/${doctorData?.doctorId}/${selectedDate}/${slot}/slots`,
+                    )
+                  }
+                  toast.success(' Selected slots deleted successfully.')
+                  setSelectedSlots([])
+                  fetchSlots()
+                } else if (deleteMode === 'all') {
+                  // delete all for date
+                  await axios.delete(
+                    `${BASE_URL}/delete-by-date/${doctorData?.doctorId}/${selectedDate}`,
+                  )
+                  toast.success(` All slots for ${selectedDate} deleted.`)
+                  setSelectedSlots([])
+                  fetchSlots()
+                }
+              } catch (err) {
+                console.error('Error deleting slots:', err)
+                toast.error('❌ Failed to delete slots.')
+              } finally {
+                setShowDeleteConfirmModal(false)
+              }
+            }}
+          >
+            Confirm Delete
           </CButton>
         </CModalFooter>
       </CModal>

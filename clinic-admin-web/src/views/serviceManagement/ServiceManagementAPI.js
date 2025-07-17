@@ -11,6 +11,7 @@ import {
   // subService_URL,
   subservice,
   getadminSubServicesbyserviceId,
+  getService_ByClinicId,
 } from '../../baseUrl'
 
 export const subServiceData = async (serviceId) => {
@@ -50,8 +51,6 @@ export const serviceData = async () => {
     }
   }
 }
-
-
  
 export const getSubServiceById = async (hospitalId, subServiceId) => {
   try {
@@ -64,7 +63,17 @@ export const getSubServiceById = async (hospitalId, subServiceId) => {
     return null
   }
 }
-
+export const GetSubServices_ByClinicId = async (hospitalId) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/${getService_ByClinicId}/${hospitalId}`
+    )
+    return response.data?.data
+  } catch (error) {
+    console.error('Error fetching sub-service data:', error)
+    return null
+  }
+}
 
 
 export const CategoryData = async () => {
@@ -83,22 +92,6 @@ export const CategoryData = async () => {
     throw error
   }
 }
-// export const subServiceData = async () => {
-//   try {
-//     const response = await axios.get(`${BASE_URL}/${service}`)
-
-//     return response.data
-//   } catch (error) {
-//     console.error('Error fetching service data:', error.message)
-
-//     if (error.response) {
-//       console.error('Error Response Data:', error.response.data)
-//       console.error('Error Response Status:', error.response.status)
-//     }
-
-//     throw error
-//   }
-// }
 
 export const postServiceData = async (serviceData, id) => {
   console.log('Sending data to id:', id)
@@ -143,7 +136,6 @@ export const updateServiceData = async (subServiceId, hospitalId, serviceData) =
     throw error
   }
 }
-
 
 export const deleteServiceData = async (serviceId, id) => {
   try {
