@@ -29,7 +29,7 @@ public class SubServices implements Serializable {
 
 	private String subServiceName;
 	
-	private ObjectId serviceID;
+	private ObjectId serviceId;
 	
 	private String serviceName;
 

@@ -91,7 +91,7 @@ public class SubServicesServiceImpl implements SubServicesService {
 		dto.setCategoryName(sub.getCategoryName());
 		for(SubServiceInfoEntity e :sub.getSubServices()) {
 			if(e.getSubServiceId().equals( subServiceId)) {
-		dto.setServiceID(e.getServiceId());
+		dto.setServiceId(e.getServiceId());
 		dto.setServiceName(e.getServiceName());}}
 		dto.setSubServiceId(subServiceId);
 	    SubServices subService = HelperForConversion.toEntity(dto);
@@ -112,7 +112,7 @@ public class SubServicesServiceImpl implements SubServicesService {
 	
 	public List<SubServicesDto> getSubServicesByServiceId(String serviceId) {
 
-		List<SubServices> listOfSubService = subServiceRepository.findByServiceID(new ObjectId(serviceId));
+		List<SubServices> listOfSubService = subServiceRepository.findByServiceId(new ObjectId(serviceId));
 
 		if (listOfSubService.isEmpty()) {
 			return null;
@@ -187,8 +187,8 @@ public class SubServicesServiceImpl implements SubServicesService {
 		if(domainService.getPrice()!= 0.0) {
 			optionalSubService.setPrice(domainService.getPrice());
 		}
-		if(domainService.getServiceID()!= null) {
-			optionalSubService.setServiceID(new ObjectId(domainService.getServiceID()));
+		if(domainService.getServiceId()!= null) {
+			optionalSubService.setServiceId(new ObjectId(domainService.getServiceId()));
 		}
 		if(domainService.getServiceName()!= null) {
 			optionalSubService.setServiceName(domainService.getServiceName());
@@ -233,7 +233,7 @@ public class SubServicesServiceImpl implements SubServicesService {
 
 	public boolean checkSubServiceExistsAlready(String categoryId, String subServiceName) {
 		Optional<Services> optional = subServiceRepository
-				.findByServiceIDAndSubServiceNameIgnoreCase(new ObjectId(categoryId), subServiceName);
+				.findByServiceIdAndSubServiceNameIgnoreCase(new ObjectId(categoryId), subServiceName);
 		if (optional.isPresent()) {
 			return true;
 		}
@@ -265,14 +265,14 @@ public class SubServicesServiceImpl implements SubServicesService {
 	    Map<String, CategoryServiceandSubserviceDto> groupedMap = new LinkedHashMap<>();
 
 	    for (SubServices sub : allSubServices) {
-	        String key = sub.getCategoryId().toString() + "-" + sub.getServiceID().toString();
+	        String key = sub.getCategoryId().toString() + "-" + sub.getServiceId().toString();
 
 	        CategoryServiceandSubserviceDto dto = groupedMap.get(key);
 	        if (dto == null) {
 	            dto = new CategoryServiceandSubserviceDto();
 	            dto.setCategoryId(sub.getCategoryId().toString());
 	            dto.setCategoryName(sub.getCategoryName());
-	            dto.setServiceId(sub.getServiceID().toString());
+	            dto.setServiceId(sub.getServiceId().toString());
 	            dto.setServiceName(sub.getServiceName());
 	            dto.setSubServices(new ArrayList<>());
 	            groupedMap.put(key, dto);
@@ -295,7 +295,7 @@ public class SubServicesServiceImpl implements SubServicesService {
 	        SubServices sub = new SubServices();
 	        sub.setCategoryId(new ObjectId(requestDto.getCategoryId()));
 	        sub.setCategoryName(requestDto.getCategoryName());
-	        sub.setServiceID(new ObjectId(requestDto.getServiceId()));
+	        sub.setServiceId(new ObjectId(requestDto.getServiceId()));
 	        sub.setServiceName(requestDto.getServiceName());
 	        sub.setSubServiceName(subDto.getSubServiceName());
 	        SubServices saved = subServiceRepository.save(sub);
@@ -337,7 +337,7 @@ public class SubServicesServiceImpl implements SubServicesService {
 	        }
 	        dto.setHospitalId(service.getHospitalId());
 	        dto.setSubServiceName(service.getSubServiceName());
-	        dto.setServiceID(service.getServiceID().toString());
+	        dto.setServiceId(service.getServiceId().toString());
 	        dto.setServiceName(service.getServiceName());
 	        dto.setCategoryName(service.getCategoryName());
 	        dto.setCategoryId(service.getCategoryId().toString());

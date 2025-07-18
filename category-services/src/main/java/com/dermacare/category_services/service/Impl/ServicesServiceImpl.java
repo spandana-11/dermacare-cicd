@@ -3,18 +3,25 @@ package com.dermacare.category_services.service.Impl;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+
 import com.dermacare.category_services.dto.ServicesDto;
 import com.dermacare.category_services.entity.Category;
 import com.dermacare.category_services.entity.Services;
+import com.dermacare.category_services.entity.SubServiceInfoEntity;
 import com.dermacare.category_services.entity.SubServices;
+import com.dermacare.category_services.entity.SubServicesInfoEntity;
 import com.dermacare.category_services.repository.CategoryRepository;
 import com.dermacare.category_services.repository.ServicesRepository;
 import com.dermacare.category_services.repository.SubServiceRepository;
+import com.dermacare.category_services.repository.SubServicesInfoRepository;
 import com.dermacare.category_services.service.ServicesService;
 import com.dermacare.category_services.util.HelperForConversion;
 import com.dermacare.category_services.util.ResponseStructure;
@@ -30,6 +37,9 @@ public class ServicesServiceImpl implements ServicesService {
 	
 	@Autowired
 	public SubServiceRepository subServiceRepository;
+	
+	@Autowired
+	private SubServicesInfoRepository subServicesInfoRepository;
 	
 	public ResponseStructure<ServicesDto> addService(ServicesDto dto) {
 	    try {
@@ -106,101 +116,155 @@ public class ServicesServiceImpl implements ServicesService {
 	
 	public ResponseStructure<ServicesDto> updateService(String serviceId, ServicesDto dto) {
 	    try {
-	        Optional<Services> optionalService = servicesRepository.findById(new ObjectId(serviceId));
+	        ObjectId serviceObjectId = new ObjectId(serviceId);
+
+	        // Step 1: Find existing service
+	        Optional<Services> optionalService = servicesRepository.findById(serviceObjectId);
 	        if (optionalService.isEmpty()) {
-	            return ResponseStructure.buildResponse(null, 
+	            return ResponseStructure.buildResponse(null,
 	                "Service not found with ID: " + serviceId,
 	                HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value());
 	        }
 
+	        // Step 2: Validate new service name
 	        if (dto.getServiceName() == null || dto.getServiceName().trim().isEmpty()) {
-	            return ResponseStructure.buildResponse(null, 
+	            return ResponseStructure.buildResponse(null,
 	                "Service name must not be null or empty.",
 	                HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.value());
 	        }
 
-	        // Check for duplicate service name
+	        // Step 3: Check for duplicate name
 	        Optional<Services> duplicateNameService = servicesRepository.findByServiceName(dto.getServiceName().trim());
-	        if (duplicateNameService.isPresent() && 
+	        if (duplicateNameService.isPresent() &&
 	            !duplicateNameService.get().getServiceId().toString().equals(serviceId)) {
-	            return ResponseStructure.buildResponse(null, 
+	            return ResponseStructure.buildResponse(null,
 	                "Service name already exists: " + dto.getServiceName(),
 	                HttpStatus.CONFLICT, HttpStatus.CONFLICT.value());
 	        }
 
+	        // Step 4: Validate category
 	        Optional<Category> optionalCategory = categoryRepository.findById(new ObjectId(dto.getCategoryId()));
 	        if (optionalCategory.isEmpty()) {
-	            return ResponseStructure.buildResponse(null, 
+	            return ResponseStructure.buildResponse(null,
 	                "Invalid categoryId: " + dto.getCategoryId(),
 	                HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.value());
 	        }
 
+	        // Step 5: Update Service entity
 	        Category category = optionalCategory.get();
-	        dto.setCategoryName(category.getCategoryName());
-
 	        Services existingService = optionalService.get();
 
-	        // Update fields only if they are provided
-	        if (dto.getCategoryId() != null) {
-	            existingService.setCategoryId(new ObjectId(dto.getCategoryId()));
-	        }
-	        if (dto.getCategoryName() != null) {
-	            existingService.setCategoryName(dto.getCategoryName());
-	        }
-	        if (dto.getServiceId() != null) {
-	            existingService.setServiceId(new ObjectId(dto.getServiceId()));
-	        }
+	        existingService.setServiceName(dto.getServiceName().trim());
+	        existingService.setCategoryId(new ObjectId(dto.getCategoryId()));
+	        existingService.setCategoryName(category.getCategoryName());
 
-	        existingService.setServiceName(dto.getServiceName().trim()); // Already validated
-	        if (dto.getServiceImage() != null) {
-	            existingService.setServiceImage(Base64.getDecoder().decode(dto.getServiceImage()));
-	        }
 	        if (dto.getDescription() != null) {
 	            existingService.setDescription(dto.getDescription());
 	        }
 
+	        if (dto.getServiceImage() != null) {
+	            existingService.setServiceImage(Base64.getDecoder().decode(dto.getServiceImage()));
+	        }
+
 	        Services updatedService = servicesRepository.save(existingService);
 
-	        // Update related sub-services
-	        List<SubServices> relatedSubServices = subServiceRepository.findByServiceName(updatedService.getServiceName());
+	        // Step 6: Update related SubServices
+	        List<SubServices> relatedSubServices = subServiceRepository.findByServiceId(serviceObjectId);
 	        for (SubServices sub : relatedSubServices) {
-	            sub.setServiceName(dto.getServiceName());
+	            sub.setServiceName(dto.getServiceName().trim());
 	        }
 	        subServiceRepository.saveAll(relatedSubServices);
 
+	        // Step 7: Update nested serviceName in SubServicesInfoEntity
+	        List<SubServicesInfoEntity> allInfoEntities = subServicesInfoRepository.findAll();
+
+	        List<SubServicesInfoEntity> toUpdateInfoEntities = new ArrayList<>();
+
+	        for (SubServicesInfoEntity infoEntity : allInfoEntities) {
+	            boolean updated = false;
+
+	            List<SubServiceInfoEntity> updatedSubList = new ArrayList<>();
+
+	            for (SubServiceInfoEntity sub : infoEntity.getSubServices()) {
+	                if (serviceId.equals(sub.getServiceId())) {
+	                    sub.setServiceName(dto.getServiceName().trim());
+	                    updated = true;
+	                }
+	                updatedSubList.add(sub);
+	            }
+
+	            if (updated) {
+	                infoEntity.setSubServices(updatedSubList);
+	                toUpdateInfoEntities.add(infoEntity);
+	            }
+	        }
+
+	        if (!toUpdateInfoEntities.isEmpty()) {
+	            subServicesInfoRepository.saveAll(toUpdateInfoEntities);
+	        }
+
 	        return ResponseStructure.buildResponse(
 	            HelperForConversion.toDto(updatedService),
-	            "Service updated successfully", 
-	            HttpStatus.OK, HttpStatus.OK.value()
+	            "Service updated successfully",
+	            HttpStatus.OK,
+	            HttpStatus.OK.value()
 	        );
 
 	    } catch (Exception e) {
-	        return ResponseStructure.buildResponse(null, 
+	        return ResponseStructure.buildResponse(null,
 	            "An unexpected error occurred: " + e.getMessage(),
-	            HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.value());
+	            HttpStatus.INTERNAL_SERVER_ERROR,
+	            HttpStatus.INTERNAL_SERVER_ERROR.value());
 	    }
 	}
+
 
 
 	public void deleteService(String serviceId) {
-	    // Step 1: Fetch the existing service to ensure it exists
-	    Optional<Services> optionalService = servicesRepository.findById(new ObjectId(serviceId));
-	    if (optionalService.isEmpty()) {
-	        throw new RuntimeException("Service not found with ID: " + serviceId);
+	    ObjectId serviceObjectId;
+
+	    // Step 1: Validate ObjectId
+	    try {
+	        serviceObjectId = new ObjectId(serviceId);
+	    } catch (IllegalArgumentException e) {
+	        throw new RuntimeException("Invalid Service ID format: " + serviceId);
 	    }
 
-	    Services existingService = optionalService.get();
-	    String serviceNameToDelete = existingService.getServiceName(); // Needed for related SubServices
+	    // Step 2: Fetch the service
+	    Services existingService = servicesRepository.findById(serviceObjectId)
+	        .orElseThrow(() -> new RuntimeException("Service not found with ID: " + serviceId));
 
-	    // Step 2: Find and delete related subservices based on the serviceName
-	    List<SubServices> relatedSubServices = subServiceRepository.findByServiceName(serviceNameToDelete);
-	    for (SubServices subService : relatedSubServices) {
-	        subServiceRepository.delete(subService);  // Delete each related subservice
+	    String serviceName = existingService.getServiceName();
+
+	    // Step 3: Delete related SubServices
+	    List<SubServices> relatedSubServices = subServiceRepository.findByServiceId(serviceObjectId);
+	    if (!relatedSubServices.isEmpty()) {
+	        subServiceRepository.deleteAll(relatedSubServices);
+	        System.out.println("Deleted SubServices: " + relatedSubServices.size());
+	    } else {
+	        System.out.println("No related SubServices found.");
 	    }
 
-	    // Step 3: Now delete the service itself
-	    servicesRepository.delete(existingService);
+	    // Step 4: Delete related SubServicesInfoEntity entries (manual filter)
+	    List<SubServicesInfoEntity> allInfoEntities = subServicesInfoRepository.findAll();
+	    List<SubServicesInfoEntity> relatedInfoEntities = allInfoEntities.stream()
+	        .filter(info -> info.getSubServices().stream()
+	            .anyMatch(sub -> serviceId.equals(sub.getServiceId())))
+	        .collect(Collectors.toList());
+
+	    if (!relatedInfoEntities.isEmpty()) {
+	        subServicesInfoRepository.deleteAll(relatedInfoEntities);
+	        System.out.println("Deleted SubServicesInfoEntities: " + relatedInfoEntities.size());
+	    } else {
+	        System.out.println("No related SubServicesInfoEntities found.");
+	    }
+
+	    // Step 5: Delete the service itself
+	    servicesRepository.deleteById(serviceObjectId);
+	    System.out.println("Service deleted successfully: " + serviceId);
 	}
+
+
 
 	public void deleteServicesByCategoryId(ObjectId objectId) {
 		List<Services> listOfSubServices = servicesRepository.findByCategoryId(objectId);

@@ -41,7 +41,7 @@ public class HelperForConversion {
 		entity.setSubServiceId(new ObjectId(dto.getSubServiceId()));
 		entity.setCategoryId(new ObjectId(dto.getCategoryId()));
 		entity.setCategoryName(dto.getCategoryName());
-		entity.setServiceID(new ObjectId(dto.getServiceID()));
+		entity.setServiceId(new ObjectId(dto.getServiceId()));
 		entity.setServiceName(dto.getServiceName());
 		entity.setSubServiceImage(base64ToByteArray(dto.getSubServiceImage()));
 		return entity;
@@ -52,7 +52,7 @@ public class HelperForConversion {
 		BeanUtils.copyProperties(entity, dto);
 		dto.setSubServiceId(entity.getSubServiceId().toString());
 		dto.setCategoryId(entity.getCategoryId().toString());
-		dto.setServiceID(entity.getServiceID().toString());
+		dto.setServiceId(entity.getServiceId().toString());
 		dto.setSubServiceId(entity.getSubServiceId().toString());	
 		dto.setSubServiceImage(byteArrayToBase64(entity.getSubServiceImage()));
 		return dto;

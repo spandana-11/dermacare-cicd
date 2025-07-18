@@ -11,10 +11,10 @@ import com.dermacare.category_services.entity.SubServices;
 @Repository
 public interface SubServiceRepository extends MongoRepository<SubServices,ObjectId> {
 	
-	public List<SubServices> findByServiceID(ObjectId serviceId);
+	public List<SubServices> findByServiceId(ObjectId serviceId);
 	public List<SubServices> findByCategoryId(ObjectId categoryId);
 	public void deleteByCategoryId(ObjectId categoryId);
-	public Optional<Services> findByServiceIDAndSubServiceNameIgnoreCase(ObjectId objectId, String subServiceName);
+	public Optional<Services> findByServiceIdAndSubServiceNameIgnoreCase(ObjectId objectId, String subServiceName);
 	List<SubServices> findByCategoryName(String categoryName);
 	List<SubServices> findByServiceName(String serviceName);
 	List<SubServices> findAll();

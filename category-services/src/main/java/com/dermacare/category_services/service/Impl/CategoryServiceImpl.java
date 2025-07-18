@@ -68,30 +68,30 @@ public class CategoryServiceImpl implements CategoryService {
 	}
 
 	public CategoryDto updateCategoryById(ObjectId categoryId, CategoryDto updateDto) {
+	    // Fetch existing category
 	    Category existing = repository.findById(categoryId)
 	        .orElseThrow(() -> new RuntimeException("Category not found with ID: " + categoryId));
 
+	    // Prevent duplicate name
 	    Optional<Category> optional = repository.findByCategoryName(updateDto.getCategoryName());
-	    if (optional.isPresent()) {
-	        Category duplicate = optional.get();
-	        if (!duplicate.getCategoryId().equals(categoryId)) {
-	            throw new RuntimeException("Duplicate category name found: " + updateDto.getCategoryName());
-	        }
+	    if (optional.isPresent() && !optional.get().getCategoryId().equals(categoryId)) {
+	        throw new RuntimeException("Duplicate category name found: " + updateDto.getCategoryName());
 	    }
 
 	    String oldCategoryName = existing.getCategoryName();
 
+	    // Update image (if provided)
 	    if (updateDto.getCategoryImage() != null) {
 	        byte[] categoryImageBytes = Base64.getDecoder().decode(updateDto.getCategoryImage());
 	        existing.setCategoryImage(categoryImageBytes);
 	    }
 
+	    // Update main fields
 	    existing.setCategoryName(updateDto.getCategoryName());
 	    existing.setDescription(updateDto.getDescription());
-
 	    Category savedCategory = repository.save(existing);
 
-	    // Update category name in Services
+	    // Update Services
 	    List<Services> services = serviceManagmentRepository.findByCategoryName(oldCategoryName);
 	    System.out.println("Found Services: " + services.size());
 	    for (Services service : services) {
@@ -99,13 +99,21 @@ public class CategoryServiceImpl implements CategoryService {
 	    }
 	    serviceManagmentRepository.saveAll(services);
 
-	    // ✅ Update category name in SubServices
+	    // Update SubServices
 	    List<SubServices> subServices = subServiceRepository.findByCategoryName(oldCategoryName);
 	    System.out.println("Found SubServices: " + subServices.size());
 	    for (SubServices subService : subServices) {
 	        subService.setCategoryName(updateDto.getCategoryName());
 	    }
 	    subServiceRepository.saveAll(subServices);
+
+	    // ✅ Update SubServicesInfoEntity
+	    List<SubServicesInfoEntity> subServiceInfos = subServicesInfoRepository.findByCategoryName(oldCategoryName);
+	    System.out.println("Found SubServiceInfos: " + subServiceInfos.size());
+	    for (SubServicesInfoEntity info : subServiceInfos) {
+	        info.setCategoryName(updateDto.getCategoryName());
+	    }
+	    subServicesInfoRepository.saveAll(subServiceInfos);
 
 	    return HelperForConversion.toDto(savedCategory);
 	}
