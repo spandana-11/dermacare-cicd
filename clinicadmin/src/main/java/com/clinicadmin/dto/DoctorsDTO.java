@@ -100,7 +100,7 @@ public class DoctorsDTO {
     @Size(max = 10, message = "Maximum 10 highlights allowed", groups = FormatChecks.class)
     private List<@NotBlank(message = "Highlight cannot be blank", groups= RequiredChecks.class) String> highlights;
    
-	private boolean doctorAvailabilityStatus;
+	private boolean doctorAvailabilityStatus = true;
 	
 	private boolean recommendation;
 	

@@ -1,25 +1,22 @@
-// ✅ SUbServiceAPI.js
 import axios from 'axios'
 import { BASE_URL, getSubservices, addSubservices, deleteSubservices } from '../../baseUrl'
-const postSubService = async (payload) => {
+
+// export default postSubService
+export const postSubService = async (payload) => {
+  console.log('📦 Sending payload to backend:', payload)
   try {
-    const response = await axios.post(`${BASE_URL}/${addSubservices}`, payload)
-    if (response.data.success) {
-      console.log('✅ Sub-services added successfully:', response.data)
-      // alert('Sub-services added successfully!')
-      return response // ✅ add this
-    } else {
-      console.warn('⚠️ Failed to add sub-services:', response.data)
-    }
+    const res = await axios.post(`${BASE_URL}/${addSubservices}`, payload, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    console.log('✅ SubService added:', res.data)
+    return res
   } catch (error) {
-    console.error('❌ Error adding sub-services:', error)
-    alert('Error adding sub-services!')
+    console.error('❌ Error adding sub-services:', error.response?.data || error.message)
+    throw error
   }
 }
-
-// ✅ correct default export
-export default postSubService
-
 export const getAllSubServices = async () => {
   try {
     const response = await axios.get(`${BASE_URL}/${getSubservices}`)

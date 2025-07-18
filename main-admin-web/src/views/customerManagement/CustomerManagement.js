@@ -62,11 +62,11 @@ const CustomerManagement = () => {
     dateOfBirth: '',
     referCode: '',
   })
-const getISODate = (date) => date.toISOString().split('T')[0]
+  const getISODate = (date) => date.toISOString().split('T')[0]
 
   // Calculate today's date for minimum date restriction in the form
-  const today = new Date()
-  const todayISO = getISODate(today)
+  // const today = new Date()
+  // const todayISO = getISODate(today)
   const centeredMessageStyle = {
     display: 'flex',
     justifyContent: 'center',
@@ -152,18 +152,21 @@ const getISODate = (date) => date.toISOString().split('T')[0]
       let formattedDate = ''
 
       if (customer.dateOfBirth) {
-        // If it's already in YYYY-MM-DD or ISO, this works:
-        const parsedDate = new Date(customer.dateOfBirth)
+        const dobStr = customer.dateOfBirth.trim()
 
-        if (!isNaN(parsedDate)) {
-          const year = parsedDate.getFullYear()
-          const month = String(parsedDate.getMonth() + 1).padStart(2, '0')
-          const day = String(parsedDate.getDate()).padStart(2, '0')
-          formattedDate = `${year}-${month}-${day}`
-        } else if (/^\d{2}-\d{2}-\d{4}$/.test(customer.dateOfBirth)) {
-          // If it's in DD-MM-YYYY format from backend
-          const [day, month, year] = customer.dateOfBirth.split('-')
+        if (/^\d{2}-\d{2}-\d{4}$/.test(dobStr)) {
+          // Format: DD-MM-YYYY — safely parse manually
+          const [day, month, year] = dobStr.split('-')
           formattedDate = `${year}-${month}-${day}` // convert to input-friendly format
+        } else {
+          // Try parsing YYYY-MM-DD or ISO string
+          const parsedDate = new Date(dobStr)
+          if (!isNaN(parsedDate)) {
+            const year = parsedDate.getFullYear().toString().padStart(4, '0')
+            const month = String(parsedDate.getMonth() + 1).padStart(2, '0')
+            const day = String(parsedDate.getDate()).padStart(2, '0')
+            formattedDate = `${year}-${month}-${day}`
+          }
         }
       }
 
@@ -211,6 +214,17 @@ const getISODate = (date) => date.toISOString().split('T')[0]
       // toast.error('Please fix the form errors')
       return
     }
+    if (!isEditing) {
+      const alreadyExists = customerData.some((cust) => cust.mobileNumber === formData.mobileNumber)
+      const alreadyExistsEmial = customerData.some((cust) => cust.emailId === formData.emailId)
+      if (alreadyExists) {
+        toast.error('Customer already exists.')
+        return
+      } else if (alreadyExistsEmial) {
+        toast.error('Customer email id already exists.')
+        return
+      }
+    }
 
     try {
       const updatedFormData = { ...formData }
@@ -246,11 +260,11 @@ const getISODate = (date) => date.toISOString().split('T')[0]
     }
   }
 
-  const alreadyExists = customerData.some((cust) => cust.mobileNumber === formData.mobileNumber)
-  if (!isEditing && alreadyExists) {
-    toast.error('Customer already exists.')
-    return
-  }
+  // const alreadyExists = customerData.some((cust) => cust.mobileNumber === formData.mobileNumber)
+  // if (!isEditing && alreadyExists) {
+  //   toast.error('Customer already exists.')
+  //   return
+  // }
 
   const handleCancel = () => {
     setIsAdding(false)
@@ -365,8 +379,22 @@ const getISODate = (date) => date.toISOString().split('T')[0]
       errors.dateOfBirth = 'Date of Birth is required'
     } else {
       const date = new Date(formData.dateOfBirth)
+      const year = date.getFullYear()
+      const today = new Date()
+
       if (isNaN(date)) {
         errors.dateOfBirth = 'Invalid Date of Birth'
+      } else if (year.toString().length !== 4) {
+        errors.dateOfBirth = 'Year must be 4 digits'
+      } else if (date > today) {
+        errors.dateOfBirth = 'Date of Birth cannot be in the future'
+      } else {
+        const oldestAllowedDate = new Date()
+        oldestAllowedDate.setFullYear(today.getFullYear() - 100)
+
+        if (date < oldestAllowedDate) {
+          errors.dateOfBirth = 'Date of Birth must not be more than 120 years ago'
+        }
       }
     }
 
@@ -587,9 +615,10 @@ const getISODate = (date) => date.toISOString().split('T')[0]
                   value={formData.dateOfBirth}
                   onChange={handleInputChange}
                   type="date"
+                  max={new Date().toISOString().split('T')[0]} // 🚫 Future dates disabled
                   invalid={!!formErrors.dateOfBirth}
-                    min={todayISO}
                 />
+
                 {formErrors.dateOfBirth && (
                   <div className="text-danger small">{formErrors.dateOfBirth}</div>
                 )}
@@ -629,7 +658,7 @@ const getISODate = (date) => date.toISOString().split('T')[0]
             </CRow>
 
             <div className="d-flex justify-content-end">
-              <CButton type="submit" color="success" className="me-2">
+              <CButton type="submit" color="success" className="me-2" style={{ color: 'white' }}>
                 {isEditing ? 'Update' : 'Submit'}
               </CButton>
               <CButton color="secondary" onClick={handleCancel}>

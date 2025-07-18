@@ -7,12 +7,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import com.clinicadmin.dto.ChangeDoctorPasswordDTO;
 import com.clinicadmin.dto.ClinicDTO;
 import com.clinicadmin.dto.ClinicWithDoctorsDTO;
@@ -41,6 +44,7 @@ import com.clinicadmin.utils.DoctorSlotMapper;
 import com.clinicadmin.utils.ExtractFeignMessage;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -533,8 +537,9 @@ public class DoctorServiceImpl implements DoctorService {
 	// ----------------- Helper Methods ------------------------
 
 	private String generateDoctorId() {
-		long count = doctorsRepository.count(); // Get the current count of doctors
-		return "DC_" + (count + 1); // Increment the count by 1 and prefix with "DC_"
+		String doctorId = "DC_" + UUID.randomUUID().toString().substring(0, 8);
+ // Get the current count of doctors
+		return doctorId; 
 	}
 
 	private String generateStructuredPassword() {

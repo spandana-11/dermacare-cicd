@@ -296,7 +296,7 @@ const ClinicDetails = () => {
                         }
                       />
                     </CCol>
-                   
+
                     <CCol md={6}>
                       <CFormLabel>City</CFormLabel>
                       <CFormInput
@@ -310,7 +310,7 @@ const ClinicDetails = () => {
                           })
                         }
                       />
-                    </CCol> 
+                    </CCol>
                   </CRow>
 
                   <CRow className="mb-3">
@@ -345,7 +345,7 @@ const ClinicDetails = () => {
                     <CCol md={6}>
                       <CFormLabel>Opening Time</CFormLabel>
                       <CFormInput
-                        type="time"
+                        type="text"
                         value={editableClinicData.openingTime || ''}
                         disabled={!isEditingAdditional}
                         onChange={(e) =>
@@ -359,7 +359,7 @@ const ClinicDetails = () => {
                     <CCol md={6}>
                       <CFormLabel>Closing Time</CFormLabel>
                       <CFormInput
-                        type="time"
+                        type="text"
                         value={editableClinicData.closingTime || ''}
                         disabled={!isEditingAdditional}
                         onChange={(e) =>

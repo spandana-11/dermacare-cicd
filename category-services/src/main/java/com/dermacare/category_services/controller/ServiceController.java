@@ -116,28 +116,25 @@ return new ResponseEntity<>(ResponseStructure.buildResponse(servicesList, "Servi
 	}
 
 	@PutMapping("/updateService/{serviceId}")
-	public ResponseEntity<ResponseStructure<ServicesDto>> updateByServiceId(@PathVariable String serviceId,
-			@RequestBody ServicesDto domainServices) {
+	public ResponseEntity<ResponseStructure<ServicesDto>> updateByServiceId(
+	        @PathVariable String serviceId,
+	        @RequestBody ServicesDto domainServices) {
 
-		try {
-			new ObjectId(serviceId);
-		} catch (Exception e) {
-			return new ResponseEntity<>(
-					ResponseStructure.buildResponse(null, "In Valid Service Id  ID must be HexaString",
-							HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.value()),
-					HttpStatus.BAD_REQUEST);
-		}
-		ServicesDto servicedomain = service.getServiceById(serviceId);
+	    // Validate ObjectId format
+	    try {
+	        new ObjectId(serviceId);
+	    } catch (IllegalArgumentException e) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                .body(ResponseStructure.buildResponse(null,
+	                        "Invalid Service ID: must be a valid hexadecimal string.",
+	                        HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.value()));
+	    }
 
-		if (servicedomain == null) {
-			return new ResponseEntity<>(ResponseStructure.buildResponse(null,
-					"Invalid Service ID : " + serviceId + " .", HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value()),
-					HttpStatus.OK);
-		} else {
-			ServicesDto domain = service.updateService(serviceId, domainServices);
-			return new ResponseEntity<>(ResponseStructure.buildResponse(domain, "Service Updated Sucessfully",
-					HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
-		}
+	    // Call service layer to handle update logic and response
+	    ResponseStructure<ServicesDto> response = service.updateService(serviceId, domainServices);
+
+	    // Return appropriate HTTP status from response structure
+	    return ResponseEntity.status(HttpStatus.valueOf(response.getStatusCode())).body(response);
 	}
 
 	@GetMapping("/getAllServices")

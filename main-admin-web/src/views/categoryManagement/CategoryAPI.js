@@ -1,5 +1,5 @@
 import axios from 'axios'
-import {  
+import {
   BASE_URL,
   AddCategory,
   CategoryAllData,
@@ -39,7 +39,7 @@ export const postCategoryData = async (categoryData) => {
         'Content-Type': 'application/json',
       },
     })
-
+    console.log(response)
     return response.data
   } catch (error) {
     console.error('Error response:', error.response)
@@ -49,7 +49,7 @@ export const postCategoryData = async (categoryData) => {
     throw error
   }
 }
-export const updateCategoryData = async (updatedCategory,categoryId) => {
+export const updateCategoryData = async (updatedCategory, categoryId) => {
   try {
     const response = await axios.put(
       `${BASE_URL}/${UpdateCategory}/${categoryId}`,
@@ -58,14 +58,14 @@ export const updateCategoryData = async (updatedCategory,categoryId) => {
         headers: {
           'Content-Type': 'application/json',
         },
-      }
-    );
-    return response.data;
+      },
+    )
+    return response.data
   } catch (error) {
-    console.error('Error updating category:', error);
-    throw error;
+    console.error('Error updating category:', error)
+    throw error
   }
-};
+}
 
 export const deleteCategoryData = async (categoryId) => {
   try {

@@ -67,8 +67,8 @@ public class BookingServiceController {
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getCustomerBookedServices(
 			@PathVariable String mobileNumber) {
 		List<BookingResponse> response = service.getBookedServices(mobileNumber);
-		if (response == null) {
-			return new ResponseEntity<>(ResponseStructure.buildResponse(null, "Customer doesnt have any booking",
+		if (response == null || response.isEmpty()) {
+			return new ResponseEntity<>(ResponseStructure.buildResponse(null, "Customer does not have any booking",
 					HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
 		}
 		return new ResponseEntity<>(ResponseStructure.buildResponse(response, "Booked Service Fetched Sucessfully",
@@ -79,8 +79,8 @@ public class BookingServiceController {
 	@GetMapping("/getAllBookedServices")
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getAllBookedService() {
 		List<BookingResponse> response = service.getAllBookedServices();
-		if (response == null) {
-			return new ResponseEntity<>(ResponseStructure.buildResponse(null, "Customer doesnt have any booking",
+		if (response == null || response.isEmpty() ) {
+			return new ResponseEntity<>(ResponseStructure.buildResponse(null, "Customer does not have any booking",
 					HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
 		}
 		return new ResponseEntity<>(ResponseStructure.buildResponse(response, "Booked Service Fetched Sucessfully",
@@ -91,9 +91,9 @@ public class BookingServiceController {
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingByDoctorId(@PathVariable String doctorId) {
 
 		List<BookingResponse> response = service.bookingByDoctorId(doctorId);
-		if (response.isEmpty()) {
+		if (response == null || response.isEmpty()) {
 			return new ResponseEntity<>(ResponseStructure.buildResponse(null,
-					"Docotor Doesnt involved in any Booking yet ", HttpStatus.OK, HttpStatus.OK.value()),
+					"Docotor Does not involved in any Booking yet ", HttpStatus.OK, HttpStatus.OK.value()),
 					HttpStatus.OK);
 		}
 		return new ResponseEntity<>(ResponseStructure.buildResponse(response,
@@ -106,9 +106,9 @@ public class BookingServiceController {
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingByServiceId(@PathVariable String serviceId) {
 
 		List<BookingResponse> response = service.bookingByServiceId(serviceId);
-		if (response.isEmpty()) {
+		if (response == null || response.isEmpty()) {
 			return new ResponseEntity<>(ResponseStructure.buildResponse(null,
-					"Service Doesnt Booked by AnyOne" + serviceId, HttpStatus.OK, HttpStatus.OK.value()),
+					"Service Does not Booked by AnyOne" + serviceId, HttpStatus.OK, HttpStatus.OK.value()),
 					HttpStatus.OK);
 		}
 		return new ResponseEntity<>(ResponseStructure.buildResponse(response,
@@ -122,9 +122,9 @@ public class BookingServiceController {
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingByClinicId(@PathVariable String clinicId) {
 
 		List<BookingResponse> response = service.bookingByClinicId(clinicId);
-		if (response.isEmpty()) {
+		if (response == null || response.isEmpty()) {
 			return new ResponseEntity<>(ResponseStructure.buildResponse(null,
-					"Clinic  Doesnt have any booking yet" + clinicId, HttpStatus.OK, HttpStatus.OK.value()),
+					"Clinic  Does not have any booking yet" + clinicId, HttpStatus.OK, HttpStatus.OK.value()),
 					HttpStatus.OK);
 		}
 		return new ResponseEntity<>(ResponseStructure.buildResponse(response,

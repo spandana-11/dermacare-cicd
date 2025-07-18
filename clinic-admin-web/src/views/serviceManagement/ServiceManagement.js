@@ -1112,26 +1112,7 @@ const ServiceManagement = () => {
                   <CFormText className="text-danger">{errors.subServiceName}</CFormText>
                 )}
               </CCol>
-              {/* <CCol md={6}>
-                <h6>
-                  Description <span className="text-danger">*</span>
-                </h6>
-                <CFormInput
-                  type="text"
-                  name="description"
-                  value={newService.description || ''}
-                  onChange={(e) =>
-                    setNewService((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                />
-
-                {errors.description && (
-                  <CFormText className="text-danger">{errors.description}</CFormText>
-                )}
-              </CCol> */}
+             
               <CCol md={6}>
                 <h6>
                   View Description <span className="text-danger">*</span>

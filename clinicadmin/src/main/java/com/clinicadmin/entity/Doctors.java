@@ -46,7 +46,7 @@ public class Doctors {
 	private List<String> focusAreas;
 	private List<String> languages;
 	private List<String> highlights;
-	private boolean doctorAvailabilityStatus;
+	private boolean doctorAvailabilityStatus = true;
 	private double doctorAverageRating;
 	private boolean recommendation;
 	

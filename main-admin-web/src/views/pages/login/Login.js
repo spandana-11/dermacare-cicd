@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import axios from 'axios'
@@ -76,19 +75,26 @@ const Login = () => {
         setErrorMessage(response.data || 'Invalid login credentials.')
       }
     } catch (error) {
-  const backendMessage = error.response?.data?.message || 'An unexpected error occurred.'
+      const backendMessage = error.response?.data?.message || 'An unexpected error occurred.'
 
-  if (backendMessage.toLowerCase().includes('username')) {
-    setErrorMessage('Incorrect username.')
-  } else if (backendMessage.toLowerCase().includes('password')) {
-    setErrorMessage('Incorrect password.')
-  } else {
-    setErrorMessage(backendMessage)
-  }
+      const lowerMessage = backendMessage.toLowerCase()
 
-  console.error('Error details:', error.response || error.message)
-}
- finally {
+      if (lowerMessage.includes('both')) {
+        setErrorMessage('Both Username and Password are Invalid.')
+      } else if (lowerMessage.includes('username') && lowerMessage.includes('password')) {
+        // in case backend sends a combined message
+        setErrorMessage('Both Username and Password are Invalid.')
+      } else if (lowerMessage.includes('username')) {
+        setErrorMessage('Invalid username.')
+      } else if (lowerMessage.includes('password')) {
+        setErrorMessage('Invalid password.')
+      } else {
+        // generic or unexpected
+        setErrorMessage(backendMessage)
+      }
+
+      console.error('Error details:', error.response || error.message)
+    } finally {
       setIsLoading(false)
     }
   }

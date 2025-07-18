@@ -36,35 +36,6 @@ const Login = () => {
   const [showResetModal, setShowResetModal] = useState(false)
   const navigate = useNavigate()
 
-  // useEffect(() => {
-  //   fetchCredentials();
-  // }, []);
-
-  // const fetchCredentials = async () => {
-  //   console.log("Calling fetchCredentials");
-  //   try {
-
-  //     const url = `http://${wifiUrl}:3001/doctorLogin`;
-  //     console.log(`Making request to: ${url}`);
-
-  //     const response = await axios.get(url, { timeout: 5000 }); // Set timeout to 5 seconds
-  //     console.log("Response received");
-
-  //     const data = response.data;
-  //     console.log(data);
-
-  //     if (response.data && response.data.length > 0) {
-  //       setBackenduserName(response.data[0].userName || '');
-  //       setBackendPassword(response.data[0].password);
-  //     } else {
-  //       setErrorMessage('No credentials found in backend.');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching login credentials:', error);
-  //     setErrorMessage('Error fetching login credentials.');
-  //   }
-  // };
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
@@ -109,20 +80,19 @@ const Login = () => {
           navigate('/dashboard')
         }
       }
-    }catch (error) {
-  const backendMessage = error.response?.data?.message || 'An unexpected error occurred.'
+    } catch (error) {
+      const backendMessage = error.response?.data?.message || 'An unexpected error occurred.'
 
-  if (backendMessage.toLowerCase().includes('username')) {
-    setErrorMessage('Incorrect username.')
-  } else if (backendMessage.toLowerCase().includes('password')) {
-    setErrorMessage('Incorrect password.')
-  } else {
-    setErrorMessage(backendMessage)
-  }
+      if (backendMessage.toLowerCase().includes('username')) {
+        setErrorMessage('Invalid username.')
+      } else if (backendMessage.toLowerCase().includes('password')) {
+        setErrorMessage('Invalid password.')
+      } else {
+        setErrorMessage(backendMessage)
+      }
 
-  console.error('Error details:', error.response || error.message)
-}
- finally {
+      console.error('Error details:', error.response || error.message)
+    } finally {
       setIsLoading(false)
     }
   }

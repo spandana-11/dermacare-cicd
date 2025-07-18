@@ -7,6 +7,7 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -120,7 +121,7 @@ public class DoctorController {
 	 */
 	@PutMapping("/updateDoctor/{doctorId}")
 	public ResponseEntity<Response> updateDoctorById(@PathVariable String doctorId,
-			@Valid @RequestBody DoctorsDTO dto) {
+			@Validated(RequiredChecks.class) @RequestBody DoctorsDTO dto) {
 		dto.trimAllDoctorFields();
 		Response response = doctorService.upDateDoctorById(doctorId, dto);
 		return ResponseEntity.status(response.getStatus()).body(response);

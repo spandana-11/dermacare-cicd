@@ -342,10 +342,9 @@ public class SubServicesServiceImpl implements SubServicesService {
 	        dto.setCategoryName(service.getCategoryName());
 	        dto.setCategoryId(service.getCategoryId().toString());
 	        dto.setViewDescription(service.getViewDescription());
-	        if (dto.getSubServiceImage() != null) {
-	            byte[] imageBytes = Base64.getDecoder().decode(dto.getSubServiceImage());
-	            service.setSubServiceImage(imageBytes);
-	        }
+	        if (service.getSubServiceImage() != null) {
+	           String image = Base64.getEncoder().encodeToString(service.getSubServiceImage());
+	           dto.setSubServiceImage(image);}
 	        dto.setStatus(service.getStatus());
 	        dto.setMinTime(service.getMinTime());
 	        dto.setDescriptionQA(service.getDescriptionQA());
@@ -365,6 +364,5 @@ public class SubServicesServiceImpl implements SubServicesService {
 
 	    return dtoList;
 	}
-	
 
 }

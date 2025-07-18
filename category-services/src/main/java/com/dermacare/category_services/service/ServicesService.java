@@ -17,7 +17,7 @@ public interface ServicesService {
 
 	    void deleteServiceById(String serviceId);
 
-	    ServicesDto updateService(String serviceId, ServicesDto domainService);
+	    ResponseStructure<ServicesDto> updateService(String serviceId, ServicesDto domainService);
 
 	    void deleteService(String serviceId);
 

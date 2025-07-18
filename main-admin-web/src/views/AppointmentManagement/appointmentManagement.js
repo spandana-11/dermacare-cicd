@@ -166,7 +166,7 @@ const appointmentManagement = () => {
 
   useEffect(() => {
     if (hospitals.length > 0) {
-      const firstClinicId = hospitals[0].hospitalId
+      const firstClinicId = hospitals.hospitalId
       setSelectedHospitalId(firstClinicId)
       fetchAppointments(firstClinicId)
     }
@@ -374,7 +374,7 @@ const appointmentManagement = () => {
               ))
             ) : (
               <CTableRow>
-                <CTableDataCell colSpan="8" className="text-center text-danger fw-bold">
+                <CTableDataCell colSpan="8" className="text-center fw-bold">
                   No appointments found.
                 </CTableDataCell>
               </CTableRow>

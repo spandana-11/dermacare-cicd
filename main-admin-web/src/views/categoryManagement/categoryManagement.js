@@ -461,7 +461,7 @@ const CategoryManagement = () => {
         </CModal>
       )}
 
-      <CModal visible={modalVisible} onClose={handleCancelAdd}>
+      <CModal visible={modalVisible} onClose={handleCancelAdd} backdrop="static">
         <CModalHeader>
           <CModalTitle>Add New Category</CModalTitle>
         </CModalHeader>
@@ -513,7 +513,11 @@ const CategoryManagement = () => {
         </CModalFooter>
       </CModal>
 
-      <CModal visible={editCategoryMode} onClose={() => setEditCategoryMode(false)}>
+      <CModal
+        visible={editCategoryMode}
+        onClose={() => setEditCategoryMode(false)}
+        backdrop="static"
+      >
         <CModalHeader>
           <CModalTitle>Edit Category</CModalTitle>
         </CModalHeader>

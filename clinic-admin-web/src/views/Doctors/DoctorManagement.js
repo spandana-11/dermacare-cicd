@@ -4,7 +4,7 @@ import CIcon from '@coreui/icons-react'
 import { cilUser } from '@coreui/icons'
 import axios from 'axios'
 import { useHospital } from '../Usecontext/HospitalContext'
-import { ToastContainer,toast } from 'react-toastify'
+import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import sendDermaCareOnboardingEmail from '../../Utils/Emailjs'
 
@@ -600,7 +600,7 @@ const DoctorManagement = () => {
 
   return (
     <div>
-      <ToastContainer/>
+      <ToastContainer />
       <div className="d-flex justify-content-end mb-3">
         <button
           className="btn btn-primary d-flex align-items-center gap-2 shadow-sm rounded-pill px-4 py-2"
@@ -789,7 +789,6 @@ const DoctorManagement = () => {
                 <small className="text-danger">{formErrors.doctorLicence}</small>
               )}
             </CCol>
-
             <CCol md={6}>
               <CFormLabel>Doctor Name</CFormLabel>
               <div className="input-group">
@@ -813,7 +812,6 @@ const DoctorManagement = () => {
                 <div className="text-danger mt-1">{formErrors.doctorName}</div>
               )}
             </CCol>
-
             <CCol md={6}>
               <CFormLabel>Gender</CFormLabel>
               <CFormSelect
@@ -846,7 +844,6 @@ const DoctorManagement = () => {
                 <div className="text-danger mt-1">{formErrors.experience}</div>
               )}
             </CCol>
-
             <CCol md={6}>
               <CFormLabel>Qualification</CFormLabel>
               <CFormInput
@@ -866,7 +863,6 @@ const DoctorManagement = () => {
                 <div className="text-danger mt-1">{formErrors.qualification}</div>
               )}
             </CCol>
-
             <CCol md={6}>
               <CFormLabel>Specialization</CFormLabel>
               <CFormInput
@@ -886,7 +882,6 @@ const DoctorManagement = () => {
                 <div className="text-danger mt-1">{formErrors.specialization}</div>
               )}
             </CCol>
-
             <CCol md={6}>
               <CFormLabel>Profile Description</CFormLabel>
               <CFormTextarea
@@ -907,37 +902,46 @@ const DoctorManagement = () => {
                 <div className="text-danger mt-1">{formErrors.profileDescription}</div>
               )}
             </CCol>
+           <CCol md={6}>
+  <CFormLabel>Profile Picture</CFormLabel>
+  <CFormInput
+    type="file"
+    accept="image/jpeg, image/png"
+    onChange={(e) => {
+      const file = e.target.files[0]
+      if (file) {
+        // ✅ Only allow JPEG and PNG
+        const validTypes = ['image/jpeg', 'image/png']
+        if (!validTypes.includes(file.type)) {
+          setFormErrors((prev) => ({
+            ...prev,
+            doctorPicture: 'Only JPG and PNG images are allowed',
+          }))
+          return
+        }
 
-            <CCol md={6}>
-              <CFormLabel>Profile Picture</CFormLabel>
-              <CFormInput
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files[0]
-                  if (file) {
-                    const reader = new FileReader()
-                    reader.onloadend = () => {
-                      setForm((p) => ({ ...p, doctorPicture: reader.result }))
-                      setFormErrors((prev) => ({
-                        ...prev,
-                        doctorPicture: '', // clear error
-                      }))
-                    }
-                    reader.readAsDataURL(file)
-                  } else {
-                    setFormErrors((prev) => ({
-                      ...prev,
-                      doctorPicture: 'Profile picture is required',
-                    }))
-                  }
-                }}
-                invalid={!!formErrors.doctorPicture}
-              />
-              {formErrors.doctorPicture && (
-                <div className="text-danger mt-1">{formErrors.doctorPicture}</div>
-              )}
-            </CCol>
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setForm((p) => ({ ...p, doctorPicture: reader.result }))
+          setFormErrors((prev) => ({
+            ...prev,
+            doctorPicture: '', // clear error
+          }))
+        }
+        reader.readAsDataURL(file)
+      } else {
+        setFormErrors((prev) => ({
+          ...prev,
+          doctorPicture: 'Profile picture is required',
+        }))
+      }
+    }}
+    invalid={!!formErrors.doctorPicture}
+  />
+  {formErrors.doctorPicture && (
+    <div className="text-danger mt-1">{formErrors.doctorPicture}</div>
+  )}
+</CCol>
           </CRow>
 
           <hr />

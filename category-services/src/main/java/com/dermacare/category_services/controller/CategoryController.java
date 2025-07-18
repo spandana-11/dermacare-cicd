@@ -38,8 +38,8 @@ public class CategoryController {
 		
 		if (categoryService.findByCategoryName(dto.getCategoryName())) {
 			return new ResponseEntity<>(ResponseStructure.buildResponse(null,
-					"Category Already Exists With Same Name " + dto.getCategoryName(), HttpStatus.NOT_ACCEPTABLE,
-					HttpStatus.NOT_ACCEPTABLE.value()), HttpStatus.NOT_ACCEPTABLE);
+					"Category Already Exists With Same Name " + dto.getCategoryName(), HttpStatus.CONFLICT,
+					HttpStatus.CONFLICT.value()), HttpStatus.CONFLICT);
 		}
 		CategoryDto savedEntiy = categoryService.addCategory(dto);
 		return new ResponseEntity<>(ResponseStructure.buildResponse(savedEntiy, "Category Saved Sucessfully",

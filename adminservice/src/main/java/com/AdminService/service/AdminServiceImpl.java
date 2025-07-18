@@ -1338,7 +1338,7 @@ public class AdminServiceImpl implements AdminService {
         	return new ResponseStructure<List<BookingResponse>>(null,"Bookings Not Found",res.getHttpStatus(),res.getStatusCode());
         }
     	}catch(FeignException e) {
-    	return new ResponseStructure<List<BookingResponse>>(null,ExtractFeignMessage.clearMessage(e),HttpStatus.INTERNAL_SERVER_ERROR,e.status());
+    	return new ResponseStructure<List<BookingResponse>>(null,ExtractFeignMessage.clearMessage(e),null,e.status());
     }}
 
     

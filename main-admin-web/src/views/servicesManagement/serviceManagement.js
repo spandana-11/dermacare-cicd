@@ -39,6 +39,7 @@ const ServiceManagement = () => {
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [serviceIdToDelete, setServiceIdToDelete] = useState(null)
   const [categoryIdToDelete, setCategoryIdToDelete] = useState(null)
+  const [isCategoryDisabled, setIsCategoryDisabled] = useState(false)
   const [errors, setErrors] = useState({
     serviceName: '',
     categoryId: '',
@@ -195,20 +196,27 @@ const ServiceManagement = () => {
   }
 
   const handleAddService = async () => {
-    console.log('Calling handleAddService with:', newService)
-
     if (!validateForm()) {
-      console.log('Form is invalid. Submission aborted.')
+      return
+    }
+
+    const newName = (newService.serviceName || '').trim().toLowerCase()
+    const duplicate = service.some((s) => (s.serviceName || '').trim().toLowerCase() === newName)
+
+    if (duplicate) {
+      toast.error('Service already exists!')
+      setModalVisible(false) // 👈 closes modal immediately
       return
     }
 
     try {
-      console.log('Submitting service to API:', newService)
-
-      await postServiceData(newService)
+      const payload = {
+        ...newService,
+        serviceName: newService.serviceName.trim(),
+      }
+      await postServiceData(payload)
       toast.success('Service added successfully!')
-
-      setModalVisible(false)
+      setModalVisible(false) // 👈 closes modal immediately
       setNewService({
         serviceName: '',
         categoryId: '',
@@ -216,13 +224,13 @@ const ServiceManagement = () => {
         description: '',
         serviceImage: null,
       })
-
       await fetchData()
     } catch (error) {
       console.error('Failed to add service:', error)
       toast.error('Failed to add service')
     }
   }
+
   const [serviceToEdit, setServiceToEdit] = useState(null)
   const handleServiceEdit = (service) => {
     console.log(service)
@@ -238,34 +246,50 @@ const ServiceManagement = () => {
     setEditServiceMode(true)
   }
 
-  const handleUpdateService = async (id) => {
+  const handleUpdateService = async () => {
     try {
+      // Normalize the name
+      const newName = (updatedService.ServiceName || '').trim().toLowerCase()
+
+      // Check duplicates (exclude current editing service)
+      const duplicate = service.some(
+        (s) =>
+          (s.serviceName || '').trim().toLowerCase() === newName &&
+          s.serviceId !== updatedService.ServiceId,
+      )
+
+      if (duplicate) {
+        toast.error('Service with this name already exists!')
+        return // stop update
+      }
+
       let imageBase64 = updatedService.ServiceImage
 
-      // Convert file to base64 if a new image file is selected
+      // Convert file to base64 if new image file is selected
       if (updatedService.ServiceImage && updatedService.ServiceImage instanceof File) {
         imageBase64 = await toBase64(updatedService.ServiceImage)
       }
 
       const payload = {
         serviceId: updatedService.ServiceId,
-        serviceName: updatedService.ServiceName,
+        serviceName: updatedService.ServiceName.trim(),
         categoryId: updatedService.categoryId,
         description: updatedService.description,
-        serviceImage: imageBase64?.split(',')[1],
+        serviceImage: imageBase64?.includes('base64,') ? imageBase64.split(',')[1] : imageBase64,
       }
 
-      console.log('Payload:', payload)
-      console.log('Payload:', updatedService.ServiceId)
+      console.log('Update Payload:', payload)
 
-      await updateServiceData(payload, updatedService.ServiceId) // Ensure this does axios.post(url, data)
+      await updateServiceData(payload, updatedService.ServiceId)
       toast.success('Service updated successfully!')
       setEditServiceMode(false)
       await fetchData()
     } catch (error) {
+      console.error(error)
       toast.error('Failed to update service')
     }
   }
+
   const toBase64 = (file) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader()
@@ -365,7 +389,24 @@ const ServiceManagement = () => {
       selector: (row) => row.description,
       sortable: true,
       width: '25%',
-      cell: (row) => <div style={{ textAlign: 'start', fontSize: '16px' }}>{row.description}</div>,
+      cell: (row) => (
+        <div
+          style={{
+            textAlign: 'start',
+            fontSize: '16px',
+            display: '-webkit-box',
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            WebkitLineClamp: 2, // 👈 limits to 2 lines
+            lineHeight: '1.4em',
+            maxHeight: '2.8em', // line-height × 2
+          }}
+          title={row.description} // optional: show full text on hover
+        >
+          {row.description}
+        </div>
+      ),
       headerStyle: { textAlign: 'center' },
     },
     {
@@ -468,7 +509,7 @@ const ServiceManagement = () => {
       />
 
       {/* Add Service Modal */}
-      <CModal visible={modalVisible} onClose={() => setModalVisible(false)}>
+      <CModal visible={modalVisible} onClose={() => setModalVisible(false)} backdrop="static">
         <CModalHeader>
           <CModalTitle>Add New Service</CModalTitle>
         </CModalHeader>
@@ -552,7 +593,7 @@ const ServiceManagement = () => {
       </CModal>
 
       {/* View Service Modal */}
-      <CModal visible={!!viewService} onClose={() => setViewService(null)}>
+      <CModal visible={!!viewService} onClose={() => setViewService(null)} backdrop="static">
         <CModalHeader>
           <CModalTitle>Service Details</CModalTitle>
         </CModalHeader>
@@ -598,23 +639,7 @@ const ServiceManagement = () => {
         </CModalBody>
       </CModal>
 
-      {/* Delete Confirmation Modal */}
-      {/* <CModal visible={isModalVisible} onClose={() => setIsModalVisible(false)}>
-        <CModalHeader>
-          <CModalTitle>Confirm Delete</CModalTitle>
-        </CModalHeader>
-        <CModalBody>Are you sure you want to delete this service?</CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" onClick={() => setIsModalVisible(false)}>
-            Cancel
-          </CButton>
-          <CButton color="danger" onClick={handleConfirmDelete}>
-            Delete
-          </CButton>
-        </CModalFooter>
-      </CModal> */}
-
-      <CModal visible={editServiceMode} onClose={() => setEditServiceMode(false)}>
+      <CModal visible={editServiceMode} onClose={() => setEditServiceMode(false)} backdrop="static">
         <CModalHeader>
           <CModalTitle>Edit Service</CModalTitle>
         </CModalHeader>
@@ -634,9 +659,11 @@ const ServiceManagement = () => {
                 setUpdatedService({ ...updatedService, description: e.target.value })
               }
             />
+
             <CFormSelect
               label="Category"
               value={updatedService.categoryId}
+              disabled={true} // or a state variable like isCategoryDisabled
               onChange={(e) =>
                 setUpdatedService({
                   ...updatedService,

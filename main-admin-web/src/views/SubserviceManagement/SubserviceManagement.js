@@ -19,7 +19,7 @@ import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { BASE_URL, subService_URL, updateSubservices, getService } from '../../baseUrl'
 import DataTable from 'react-data-table-component'
-import postSubService from '../SubserviceManagement/SUbServiceAPI'
+import { postSubService } from '../SubserviceManagement/SUbServiceAPI'
 import { getAllSubServices, deleteSubServiceData } from '../SubserviceManagement/SUbServiceAPI'
 import { getServiceByCategoryId } from '../servicesManagement/ServiceAPI'
 import { ConfirmationModal } from '../../Utils/ConfirmationDelete'
@@ -62,7 +62,14 @@ const AddSubService = () => {
     serviceId: '',
   })
   const [subServices, setSubServices] = useState([]) // will be filled by API
-
+  // ✅ Remove duplicates in case they somehow exist
+  const uniqueSubServices = selectedSubServices.filter(
+    (item, index, self) =>
+      index ===
+      self.findIndex(
+        (t) => t.serviceName === item.serviceName && t.subServiceName === item.subServiceName,
+      ),
+  )
   useEffect(() => {
     fetchSubServices()
   }, [])
@@ -319,29 +326,87 @@ const AddSubService = () => {
   const handleSubmit = async () => {
     console.log('Edit Mode:', editMode)
     console.log('Edit SubService ID:', editSubServiceId)
-    console.log('Selected SubServices:', selectedSubServices) // 🔍 Debug selected sub-services
+    console.log('Selected SubServices:', selectedSubServices)
+
     try {
       if (editMode && editSubServiceId) {
-        // Update existing subservice
-        const payload = {
-          subServices: selectedSubServices.map((subService) => ({
-            serviceId: subService.serviceId,
-            serviceName: subService.serviceName,
-            subServiceName: subService.subServiceName,
-          })),
-        }
+        if (editMode && editSubServiceId) {
+          const normalize = (val) => (val ? val.toString().trim().toLowerCase() : '')
 
-        console.log(editSubServiceId)
+          // 👇 Adjust the key below according to your actual data structure!
+          const existingSubNames = Array.isArray(subServices)
+            ? subServices
+                .filter((s) => {
+                  // Exclude the one you're currently editing
+                  return (
+                    s.subServiceId !== editSubServiceId &&
+                    s._id !== editSubServiceId &&
+                    s.id !== editSubServiceId
+                  )
+                })
+                .map((s) => normalize(s.subServiceName))
+            : []
 
-        const res = await axios.put(`${BASE_URL}/${updateSubservices}/${editSubServiceId}`, payload)
+          console.log('✅ Existing normalized names (excluding current):', existingSubNames)
 
-        if (res?.data?.success) {
-          toast.success('SubService updated successfully!')
+          // Check each subService you're trying to save
+          for (const sub of selectedSubServices) {
+            const normalized = normalize(sub.subServiceName)
+            if (existingSubNames.includes(normalized)) {
+              toast.error(`SubService "${sub.subServiceName}" already exists!`)
+              return // 🚫 Stop submission
+            }
+          }
+
+          // ✅ If no duplicates found, proceed with update
+          const payload = {
+            subServices: selectedSubServices.map((subService) => ({
+              serviceId: subService.serviceId,
+              serviceName: subService.serviceName,
+              subServiceName: subService.subServiceName,
+            })),
+          }
+
+          try {
+            const res = await axios.put(
+              `${BASE_URL}/${updateSubservices}/${editSubServiceId}`,
+              payload,
+            )
+
+            if (res?.data?.success) {
+              toast.success('SubService updated successfully!')
+            } else {
+              toast.error(res?.data?.message || 'Failed to update subservice.')
+            }
+          } catch (err) {
+            console.error('❌ Update error:', err)
+            toast.error(err.response?.data?.message || 'Error updating subservice')
+          }
+
+          return // ✅ Exit handleSubmit after edit logic
         } else {
-          toast.error('Failed to update subservice.')
+          toast.error(res?.data?.message || 'Failed to update subservice.')
         }
       } else {
-        // Create new subservices
+        // ✅ Before adding, check duplicates
+        // normalize function
+        const normalize = (val) => (val ? val.toString().trim().toLowerCase() : '')
+
+        // ✅ make sure subServices array exists and is an array
+        const existingSubNames = Array.isArray(subServices)
+          ? subServices.map((s) => normalize(s.subServiceName))
+          : []
+
+        // new subservices to be added
+        for (const sub of selectedSubServices) {
+          const normalized = normalize(sub.subServiceName)
+          if (existingSubNames.includes(normalized)) {
+            toast.error(`SubService "${sub.subServiceName}" already exists!`)
+            return // 🚫 Stop submission
+          }
+        }
+
+        // ✅ if no duplicates found, continue
         const formattedSubServices = selectedSubServices.map((subService) => {
           const selectedService = serviceOptions.find(
             (s) => s.serviceName === subService.serviceName,
@@ -359,14 +424,20 @@ const AddSubService = () => {
           subServices: formattedSubServices,
         }
 
-        const res = await postSubService(payload)
-        if (res?.data?.success) {
-          toast.success('SubServices added successfully')
-        } else {
-          toast.error('Submission failed')
+        try {
+          const res = await postSubService(payload)
+          if (res?.data?.success) {
+            toast.success('SubServices added successfully')
+          } else {
+            toast.error(res?.data?.message || 'Submission failed')
+          }
+        } catch (err) {
+          console.error('Error submitting subservices:', err)
+          toast.error(err.response?.data?.message || 'Error submitting subservices')
         }
       }
 
+      // ✅ Reset fields after success
       await fetchSubServices()
       setSelectedSubServices([])
       setSubServiceInput('')
@@ -384,6 +455,7 @@ const AddSubService = () => {
       toast.error('Error submitting subservices')
     }
   }
+
   console.log(subServices)
 
   useEffect(() => {
@@ -450,7 +522,7 @@ const AddSubService = () => {
         dense
       />
 
-      <CModal visible={showModal} onClose={() => setShowModal(false)} size="lg">
+      <CModal visible={showModal} onClose={() => setShowModal(false)} size="lg" backdrop="static">
         <div className="p-4">
           {/* <h5 className="mb-4">➕ Add New SubService</h5> */}
           <h5 className="mb-4">{editMode ? 'Edit Sub Service' : '➕ Add New SubService'}</h5>

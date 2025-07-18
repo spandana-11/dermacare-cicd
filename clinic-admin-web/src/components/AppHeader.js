@@ -94,7 +94,7 @@ const AppHeader = () => {
           </div>
 
           {/* Welcome text */}
-          <span className="fw-bold text-dark">
+          <span className="fw-bold  ">
             Welcome, {localStorage.getItem('HospitalName')?.split(' ')[0] || 'Hospital'}
           </span>
         </div>
