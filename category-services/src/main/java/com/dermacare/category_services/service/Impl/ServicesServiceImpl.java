@@ -283,22 +283,33 @@ public class ServicesServiceImpl implements ServicesService {
 	}
 
 	public boolean checkServiceExistsAlready(String categoryId, String serviceName) {
-		Optional<Services> optional = servicesRepository
+		try {
+		Services res = servicesRepository
 				.findByCategoryIdAndServiceNameIgnoreCase(new ObjectId(categoryId), serviceName);
-		if (optional.isPresent()) {
-			return true;
+		if(res != null) {
+		return true;}
+		else {
+			return false;
 		}
-	return false;
+		}catch(Exception e) {
+			return false;
+		}
 	}
 	
 	public boolean checkServiceExistsAlreadyWithServiceNameIgnoereCase(String serviceName) {
-		Optional<Services> optional = servicesRepository
+		try {
+		Services optional = servicesRepository
 				.findByServiceNameIgnoreCase(serviceName);
-		if (optional.isPresent()) {
-			System.out.println(optional.isPresent());
-			return true;
+		if(optional != null) {
+			System.out.println(optional);
+			return true;}
+			else {
+				return false;
+			}
+			}catch(Exception e) {
+				return false;
+			}
 		}
-	return false;
-	}
+
 
 }

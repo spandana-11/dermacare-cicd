@@ -248,17 +248,16 @@ const fetchDoctors = useCallback(
     return `data:image/png;base64,${src}` // adjust type if JPG or SVG
   }
 
-  const sliderSettings = {
-    dots: true,
-    infinite: true,
-    speed: 500,
-    slidesToShow: 1,
-    slidesToScroll: 1,
-    arrows: false,
-    autoplay: false, // We will handle it manually
-    //  autoplaySpeed: 5000,
-    swipe: false, // Optional: prevent user swipe
-  }
+ const sliderSettings = {
+  dots: true,
+  infinite: slides.length > 1, // ⬅ Only enable loop when more than 1
+  speed: 500,
+  slidesToShow: 1,
+  slidesToScroll: 1,
+  autoplay: true,
+  autoplaySpeed: 3000,
+  arrows: true,
+};
 
   // Auto-slide for images
   useEffect(() => {

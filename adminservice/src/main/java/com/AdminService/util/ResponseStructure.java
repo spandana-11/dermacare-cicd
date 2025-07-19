@@ -14,7 +14,7 @@ public class ResponseStructure<T> {
 	private T data;
 	private String message;
 	private HttpStatus httpStatus;
-	private int statusCode;
+	private Integer statusCode;
 
 	public static <T> ResponseStructure<T> buildResponse(T data, String message, HttpStatus httpStatus,
 			int statusCode) {

@@ -78,13 +78,23 @@ public class BookingServiceController {
 	
 	@GetMapping("/getAllBookedServices")
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getAllBookedService() {
-		List<BookingResponse> response = service.getAllBookedServices();
-		if (response == null || response.isEmpty() ) {
-			return new ResponseEntity<>(ResponseStructure.buildResponse(null, "Customer does not have any booking",
-					HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
-		}
-		return new ResponseEntity<>(ResponseStructure.buildResponse(response, "Booked Service Fetched Sucessfully",
-				HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
+	    List<BookingResponse> response = service.getAllBookedServices();
+
+	    if (response.isEmpty()) {
+	        return new ResponseEntity<>(
+	                ResponseStructure.buildResponse(null,
+	                        "Customer does not have any booking",
+	                        HttpStatus.OK,
+	                        HttpStatus.OK.value()),
+	                HttpStatus.OK);
+	    }
+
+	    return new ResponseEntity<>(
+	            ResponseStructure.buildResponse(response,
+	                    "Booked Service Fetched Successfully",
+	                    HttpStatus.OK,
+	                    HttpStatus.OK.value()),
+	            HttpStatus.OK);
 	}
 
 	@GetMapping("/getAllBookedServices/{doctorId}")

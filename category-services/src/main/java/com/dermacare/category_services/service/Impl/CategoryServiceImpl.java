@@ -49,8 +49,9 @@ public class CategoryServiceImpl implements CategoryService {
 	}
 
 	public boolean existsByCategoryNameIgnoreCase(String categoryName) {
-		Optional<Category> category = repository.existsByCategoryNameIgnoreCase(categoryName);
-		return category.isPresent();
+		 boolean exists = repository.existsByCategoryNameIgnoreCase(categoryName);;
+		System.out.println(exists);
+		return exists;
 	}
 
 	public List<CategoryDto> findAllCategories() {

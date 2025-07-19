@@ -1327,19 +1327,39 @@ public class AdminServiceImpl implements AdminService {
     ///GETALLBOOKINGS
     
     public ResponseStructure<List<BookingResponse>> getAllBookedServices() {
-    	try {
-        ResponseEntity<ResponseStructure<List<BookingResponse>>> responseEntity =
-        		bookingFeign.getAllBookedService();
-        ResponseStructure<List<BookingResponse>> res = responseEntity.getBody();
-        if(res.getData()!=null || !res.getData().isEmpty() ) {
-        	return new ResponseStructure<List<BookingResponse>>(res.getData(),res.getMessage(),res.getHttpStatus(),res.getStatusCode());
+        try {
+            ResponseEntity<ResponseStructure<List<BookingResponse>>> responseEntity = bookingFeign.getAllBookedService();
+            ResponseStructure<List<BookingResponse>> res = responseEntity.getBody();
+
+            if (res.getData() != null && !res.getData().isEmpty()) {
+                return new ResponseStructure<>(
+                    res.getData(),
+                    res.getMessage(),
+                    res.getHttpStatus(),
+                    res.getStatusCode()
+                );
+            } else {
+                return new ResponseStructure<>(
+                    new ArrayList<>(), // ✅ Return empty list instead of null
+                    "Bookings Not Found",
+                    res.getHttpStatus() != null ? res.getHttpStatus() : HttpStatus.NO_CONTENT,
+                    res.getStatusCode() != null ? res.getStatusCode() : HttpStatus.NO_CONTENT.value()
+                );
+            }
+        } catch (FeignException e) {
+            HttpStatus fallbackStatus = HttpStatus.resolve(e.status());
+            if (fallbackStatus == null) {
+                fallbackStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+
+            return new ResponseStructure<>(
+                new ArrayList<>(), // ✅ Even in error case, return empty list
+                ExtractFeignMessage.clearMessage(e),
+                fallbackStatus,
+                fallbackStatus.value()
+            );
         }
-        else {
-        	return new ResponseStructure<List<BookingResponse>>(null,"Bookings Not Found",res.getHttpStatus(),res.getStatusCode());
-        }
-    	}catch(FeignException e) {
-    	return new ResponseStructure<List<BookingResponse>>(null,ExtractFeignMessage.clearMessage(e),null,e.status());
-    }}
+    }
 
     
     //DELETEBOOKINGBYID

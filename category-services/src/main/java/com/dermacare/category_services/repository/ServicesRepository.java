@@ -18,11 +18,11 @@ public interface ServicesRepository extends MongoRepository<Services, ObjectId> 
 
 	public List<Services> findByCategoryName(String categoryName);
 
-   public Optional<Services> findByCategoryIdAndServiceNameIgnoreCase(ObjectId categoryId, String serviceName);
+   public Services findByCategoryIdAndServiceNameIgnoreCase(ObjectId categoryId, String serviceName);
    public Optional<Services> findByServiceId(String serviceId);
 	
 	Optional<Services> findByServiceName(String serviceName);
 
-	public Optional<Services> findByServiceNameIgnoreCase(String serviceName);
+	public Services findByServiceNameIgnoreCase(String serviceName);
 
 }

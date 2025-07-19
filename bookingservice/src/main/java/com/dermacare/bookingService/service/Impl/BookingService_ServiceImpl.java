@@ -1,20 +1,19 @@
 package com.dermacare.bookingService.service.Impl;
 
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Random;
 
-import org.bson.types.ObjectId;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
 import com.dermacare.bookingService.dto.BookingRequset;
 import com.dermacare.bookingService.dto.BookingResponse;
 import com.dermacare.bookingService.dto.ReportsDtoList;
@@ -116,15 +115,18 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	
 	@Override
 	public List<BookingResponse> getAllBookedServices() {
-		List<Booking> bookings = repository.findAll();
-		List<Booking> reversedBookings = new ArrayList<>();
-		for(int i = bookings.size()-1; i >= 0; i--) {
-			reversedBookings.add(bookings.get(i));
-		}
-		if (bookings == null  || bookings.isEmpty()) {
-			return null;
-		}
-		return toResponses(reversedBookings);
+	    List<Booking> bookings = repository.findAll();
+	    if (bookings == null || bookings.isEmpty()) {
+	        return Collections.emptyList();
+	    }
+
+	    // Reverse the list
+	    List<Booking> reversedBookings = new ArrayList<>();
+	    for (int i = bookings.size() - 1; i >= 0; i--) {
+	        reversedBookings.add(bookings.get(i));
+	    }
+
+	    return toResponses(reversedBookings);
 	}
 
 	@Override
