@@ -15,4 +15,6 @@ public interface CategoryRepository extends MongoRepository<Category,ObjectId> {
 	
 	public Optional<Category> findByCategoryId(String categoryId);
 
+	public Optional<Category> existsByCategoryNameIgnoreCase(String categoryName);
+
 }

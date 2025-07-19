@@ -1,6 +1,8 @@
 package com.dermacare.bookingService.service.Impl;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,9 +55,10 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		Booking entity = new Booking();
 		BeanUtils.copyProperties(request, entity);
 		//entity.setMobileNumber(Long.parseLong(request.getMobileNumber()));
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a", Locale.ENGLISH);
-		String nowFormatted = LocalDateTime.now().format(formatter);
-		entity.setBookedAt(nowFormatted);
+		ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
+	    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
+	    String formattedTime = istTime.format(formatter);
+		entity.setBookedAt(formattedTime);
 		if(request.getConsultationType().equalsIgnoreCase("video consultation") || request.getConsultationType().equalsIgnoreCase("online consultation") ) {
 			entity.setChannelId(randomNumber());
 		}else {

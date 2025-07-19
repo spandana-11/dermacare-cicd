@@ -78,7 +78,7 @@ const DoctorManagement = () => {
     service: [],
     subServices: [], // Note: 'subSerives' in Java, but 'subServices' is more consistent in JS
     specialization: '',
-    gender: '',
+    gender: 'Female',
     experience: '',
     qualification: '',
     availableDays: '', // array of selected days
@@ -93,7 +93,7 @@ const DoctorManagement = () => {
     highlights: [],
   })
 
-  console.log(doctorData)
+  console.log(doctorData.data)
 
   const [startDay, setStartDay] = useState('')
   const [endDay, setEndDay] = useState('')
@@ -405,7 +405,7 @@ const DoctorManagement = () => {
 
     try {
       const hospitalId = localStorage.getItem('HospitalId')
-
+      const hospitalName = localStorage.getItem('HospitalName')
       const allValidSubServiceIds = (subServiceOptions || []).map((ss) => ss.subServiceId)
 
       const selectedSubServiceObjects = (subServiceOptions || []).filter(
@@ -413,6 +413,43 @@ const DoctorManagement = () => {
           selectedSubService.includes(sub.subServiceId) &&
           allValidSubServiceIds.includes(sub.subServiceId),
       )
+
+      //    if (!Array.isArray(doctorData.data)) {
+      //   console.error('Doctor data not loaded properly.')
+      //   return
+      // }
+      // console.log(emailAddress)
+      // console.log(contactNumber)
+
+      // const isEmailDuplicate = doctorData.data.some(
+      //   (doc) => doc.doctorMobileNumber?.toLowerCase() === form.doctorMobileNumber,
+      // )
+      // const isMobileDuplicate = doctorData.data.some((doc) => doc.doctorEmail === form.doctorEmail)
+
+      // if (isEmailDuplicate || isMobileDuplicate) {
+      //   setIsSubmitting(false)
+      //   const newErrors = {}
+      //   if (isEmailDuplicate) newErrors.emailAddress = 'Email already exists'
+      //   if (isMobileDuplicate) newErrors.contactNumber = 'Mobile number already exists'
+      //   setErrors((prev) => ({ ...prev, ...newErrors }))
+      //   return
+      // }
+
+      // 🔍 2. Check if any doctor already has the same mobile or email
+      const mobileExists = doctorData.data?.some(
+        (doc) => doc.doctorMobileNumber === form.doctorMobileNumber,
+      )
+      const emailExists = doctorData.data?.some((doc) => doc.doctorEmail === form.doctorEmail)
+
+      if (mobileExists) {
+        toast.error('A doctor with this mobile number already exists')
+        return
+      }
+
+      if (emailExists) {
+        toast.error('A doctor with this email already exists')
+        return
+      }
 
       const payload = {
         hospitalId,
@@ -453,13 +490,17 @@ const DoctorManagement = () => {
           'Content-Type': 'application/json',
         },
       })
+      console.log(response)
 
       if (!response?.data?.success) {
         throw new Error(response?.data?.message || 'Failed to add doctor')
+      } else if (response.data.status === 400 && errorMessage.includes('mobile number')) {
+        toast.error(errorMessage, {
+          position: 'top-right',
+        })
       }
-
       const newDoctor = response.data.doctor ?? payload
-      const hospitalName = localStorage.getItem('HospitalName')
+
       await fetchDoctorDetails(hospitalId)
       // ✅ Send onboarding email
       await sendDermaCareOnboardingEmail({
@@ -519,10 +560,33 @@ const DoctorManagement = () => {
       setEndTime('')
       setModalVisible(false)
     } catch (error) {
-      toast.error(error?.message || 'Failed to add doctor', {
-        position: 'top-right',
-      })
-      setModalVisible(false)
+      const status = error?.response?.status
+      const errorMessage = error?.response?.data?.message || 'Something went wrong'
+
+      if (status === 400 && errorMessage.includes('mobile number')) {
+        toast.error(errorMessage, {
+          position: 'top-right',
+        })
+        setErrors((prev) => ({
+          ...prev,
+          doctorMobileNumber: errorMessage,
+        }))
+        setModalVisible(true) // ❌ Keep modal open so user can fix input
+      } else if (status === 400 && errorMessage.includes('email')) {
+        toast.error(errorMessage, {
+          position: 'top-right',
+        })
+        setErrors((prev) => ({
+          ...prev,
+          doctorEmail: errorMessage,
+        }))
+        setModalVisible(true)
+      } else {
+        toast.error(errorMessage, {
+          position: 'top-right',
+        })
+        setModalVisible(false) // ✅ Optional: Close modal on other errors
+      }
     }
   }
 
@@ -645,7 +709,12 @@ const DoctorManagement = () => {
         doctorData.data.map((doctor, index) => <DoctorCard key={index} doctor={doctor} />)
       )}
 
-      <CModal visible={modalVisible} onClose={() => setModalVisible(false)} size="lg">
+      <CModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        size="lg"
+        backdrop="static"
+      >
         <CModalHeader>
           <strong>Add Doctor</strong>
         </CModalHeader>
@@ -769,7 +838,6 @@ const DoctorManagement = () => {
             <CCol md={6}>
               <CFormLabel>License Number</CFormLabel>
               <CFormInput
-                type="number"
                 value={form.doctorLicence}
                 onChange={(e) => {
                   const value = e.target.value
@@ -902,46 +970,46 @@ const DoctorManagement = () => {
                 <div className="text-danger mt-1">{formErrors.profileDescription}</div>
               )}
             </CCol>
-           <CCol md={6}>
-  <CFormLabel>Profile Picture</CFormLabel>
-  <CFormInput
-    type="file"
-    accept="image/jpeg, image/png"
-    onChange={(e) => {
-      const file = e.target.files[0]
-      if (file) {
-        // ✅ Only allow JPEG and PNG
-        const validTypes = ['image/jpeg', 'image/png']
-        if (!validTypes.includes(file.type)) {
-          setFormErrors((prev) => ({
-            ...prev,
-            doctorPicture: 'Only JPG and PNG images are allowed',
-          }))
-          return
-        }
+            <CCol md={6}>
+              <CFormLabel>Profile Picture</CFormLabel>
+              <CFormInput
+                type="file"
+                accept="image/jpeg, image/png"
+                onChange={(e) => {
+                  const file = e.target.files[0]
+                  if (file) {
+                    // ✅ Only allow JPEG and PNG
+                    const validTypes = ['image/jpeg', 'image/png']
+                    if (!validTypes.includes(file.type)) {
+                      setFormErrors((prev) => ({
+                        ...prev,
+                        doctorPicture: 'Only JPG and PNG images are allowed',
+                      }))
+                      return
+                    }
 
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          setForm((p) => ({ ...p, doctorPicture: reader.result }))
-          setFormErrors((prev) => ({
-            ...prev,
-            doctorPicture: '', // clear error
-          }))
-        }
-        reader.readAsDataURL(file)
-      } else {
-        setFormErrors((prev) => ({
-          ...prev,
-          doctorPicture: 'Profile picture is required',
-        }))
-      }
-    }}
-    invalid={!!formErrors.doctorPicture}
-  />
-  {formErrors.doctorPicture && (
-    <div className="text-danger mt-1">{formErrors.doctorPicture}</div>
-  )}
-</CCol>
+                    const reader = new FileReader()
+                    reader.onloadend = () => {
+                      setForm((p) => ({ ...p, doctorPicture: reader.result }))
+                      setFormErrors((prev) => ({
+                        ...prev,
+                        doctorPicture: '', // clear error
+                      }))
+                    }
+                    reader.readAsDataURL(file)
+                  } else {
+                    setFormErrors((prev) => ({
+                      ...prev,
+                      doctorPicture: 'Profile picture is required',
+                    }))
+                  }
+                }}
+                invalid={!!formErrors.doctorPicture}
+              />
+              {formErrors.doctorPicture && (
+                <div className="text-danger mt-1">{formErrors.doctorPicture}</div>
+              )}
+            </CCol>
           </CRow>
 
           <hr />

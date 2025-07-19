@@ -26,5 +26,7 @@ public interface ServicesService {
 	    List<ServicesDto> getAllServices();
 
 	    boolean checkServiceExistsAlready(String categoryId, String serviceName);
+	    
+	    public boolean checkServiceExistsAlreadyWithServiceNameIgnoereCase(String serviceName);
 
 }

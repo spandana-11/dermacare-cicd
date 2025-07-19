@@ -87,11 +87,12 @@ const DoctorDetailsPage = () => {
   const handleDeleteToggleE = async (id) => {
     setShowModal(false) // Close modal after confirmation
     const isDeleted = await handleDeleteToggle(id)
+    console.log(isDeleted)
     if (isDeleted) {
       navigate('/doctor')
       toast.success('Doctor deleted successfully')
     } else {
-      toast.error('Failed to delete doctor')
+      // toast.error(`${isDeleted.message}` || 'Failed to delete doctor')
     }
   }
 
@@ -185,9 +186,10 @@ const DoctorDetailsPage = () => {
     try {
       //  const hospitalId = localStorage.getItem('HospitalId');
       const res = await axios.put(`${BASE_URL}/updateDoctor/${doctorData.doctorId}`, formData)
-
+      console.log(res.data.message)
+      console.log(res.data.success)
       if (res.data.success) {
-        toast.success('Doctor updated successfully')
+        toast.success(`${res.data.message}` || 'Doctor updated successfully')
 
         // Update both doctorData and formData state
         setDoctorData(res.data.updatedDoctor)
@@ -198,11 +200,11 @@ const DoctorDetailsPage = () => {
         // await fetchHospitalDetails(doctorData.doctorId)
         navigate(`/doctor`)
       } else {
-        alert('Failed to update doctor')
+        toast.error('Failed to update doctor')
       }
     } catch (err) {
       console.error('Update error:', err)
-      alert('Error while updating doctor')
+      toast.error('Error while updating doctor')
     }
   }
 
@@ -1071,7 +1073,7 @@ const DoctorDetailsPage = () => {
           </CTabContent>
         </CCardBody>
       </CCard>
-      <CModal visible={visible} onClose={() => setVisible(false)}>
+      <CModal visible={visible} onClose={() => setVisible(false)} backdrop="static">
         <CModalHeader>
           <CModalTitle>Add Slots</CModalTitle>
         </CModalHeader>

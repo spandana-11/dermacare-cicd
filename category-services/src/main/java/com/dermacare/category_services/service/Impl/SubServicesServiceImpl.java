@@ -80,11 +80,10 @@ public class SubServicesServiceImpl implements SubServicesService {
 		entity.setFinalCost(entity.getPrice()-discountAmount+taxAmount);
 	}
 
-	
-	
+		
 	public  ResponseEntity<ResponseStructure<SubServicesDto>> addSubService(String subServiceId,SubServicesDto dto) {
 		try {
-		SubServices optionalService = subServiceRepository.findByHospitalIdAndSubServiceId(dto.getHospitalId(),new ObjectId(subServiceId));
+		SubServices optionalService = subServiceRepository.findByHospitalIdAndSubServiceIdAndSubServiceNameIgnoreCase(dto.getHospitalId(),new ObjectId(subServiceId),dto.getSubServiceName());
 		if (optionalService == null) {
 		SubServicesInfoEntity sub = subServicesInfoRepository.findBySubServicesSubServiceId(subServiceId);
 		dto.setCategoryId(sub.getCategoryId());
@@ -100,14 +99,13 @@ public class SubServicesServiceImpl implements SubServicesService {
 	    return new  ResponseEntity<ResponseStructure<SubServicesDto>>(ResponseStructure.buildResponse(HelperForConversion.toDto(savedSubService), "Service Created  successfully.",
 				HttpStatus.CREATED, HttpStatus.CREATED.value()), HttpStatus.CREATED);
 		}else {
-	    	 return new  ResponseEntity<ResponseStructure<SubServicesDto>>(ResponseStructure.buildResponse(null, "Service Already Exist.",
+	    	 return new  ResponseEntity<ResponseStructure<SubServicesDto>>(ResponseStructure.buildResponse(null, "SubService Already Exist.",
 	 				HttpStatus.CONFLICT, HttpStatus.CONFLICT.value()), HttpStatus.CONFLICT);
 	    }
 	}catch(Exception e) {
 		 return new  ResponseEntity<ResponseStructure<SubServicesDto>>(ResponseStructure.buildResponse(null, e.getMessage(),
 					HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.value()), HttpStatus.INTERNAL_SERVER_ERROR);
 	}}
-	
 	
 	
 	public List<SubServicesDto> getSubServicesByServiceId(String serviceId) {
@@ -364,5 +362,19 @@ public class SubServicesServiceImpl implements SubServicesService {
 
 	    return dtoList;
 	}
-
+	
+	
+	public boolean checkSubserviceNameExistOrNot(String hospitalId,String subServiceId,SubServicesDto domainService) {
+		try {
+		SubServices optionalService = subServiceRepository.findByHospitalIdAndSubServiceIdAndSubServiceNameIgnoreCase(hospitalId,
+				new ObjectId(subServiceId),domainService.getSubServiceName());
+		if(optionalService != null) {
+			return true;}
+		else {
+			return false;
+		}}catch(Exception e) {
+			return false;
+		}
+	
+}
 }

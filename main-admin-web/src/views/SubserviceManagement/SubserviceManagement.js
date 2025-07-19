@@ -374,6 +374,7 @@ const AddSubService = () => {
             )
 
             if (res?.data?.success) {
+              fetchSubServices()
               toast.success('SubService updated successfully!')
             } else {
               toast.error(res?.data?.message || 'Failed to update subservice.')

@@ -32,14 +32,12 @@ public class SubServiceController {
 	@Autowired
 	private  SubServicesService subServiceService;
 	   
-
-
+	
 	@PostMapping("/addSubService/{subServiceId}")	
 	public ResponseEntity<ResponseStructure<SubServicesDto>> addService(@PathVariable String subServiceId, @RequestBody SubServicesDto dto) {
 		return subServiceService.addSubService(subServiceId,dto);
-		}
+	}
 	
-
 	@GetMapping("/getSubServicesbycategoryId/{categoryId}")
 	public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getSubServiceByIdCategory(@PathVariable String categoryId) {
 		try {
@@ -166,6 +164,13 @@ public class SubServiceController {
 							HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.value()),
 					HttpStatus.BAD_REQUEST);
 		}
+		
+        boolean check = subServiceService.checkSubserviceNameExistOrNot(hospitalId, subServiceId, domainServices);		
+		if(check) {
+			return new ResponseEntity<>(ResponseStructure.buildResponse(null, "Subservice Name Already Exist Please choose Another",
+					HttpStatus.CONFLICT, HttpStatus.CONFLICT.value()), HttpStatus.CONFLICT);
+		}	
+		
 			SubServicesDto domain = subServiceService.updateSubService(hospitalId,subServiceId, domainServices);
 			if(domain != null) {
 			return new ResponseEntity<>(ResponseStructure.buildResponse(domain, "SubsService Updated Sucessfully",
@@ -175,6 +180,7 @@ public class SubServiceController {
 					HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
 		}
 	}
+	
 	@GetMapping("/getAllSubServices")
 	public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getAllSubServices() {
 	    List<SubServicesDto> dtos = subServiceService.getAllSubService();
@@ -185,7 +191,6 @@ public class SubServiceController {
 	            )
 	        );
 	    }
-
 	    return ResponseEntity.ok(
 	        ResponseStructure.buildResponse( dtos, "SubServices fetched Successfully", HttpStatus.OK, HttpStatus.OK.value()
 	        )

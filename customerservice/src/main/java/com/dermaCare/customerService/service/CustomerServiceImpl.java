@@ -2,6 +2,8 @@ package com.dermaCare.customerService.service;
 
 import org.springframework.http.HttpStatus;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -857,12 +859,13 @@ public Response getDoctorsSlots(String hospitalId,String doctorId) {
 	    
 	   public Response submitCustomerRating(CustomerRatingDomain ratingRequest) {
 			 Response response = new Response();
-			 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a", Locale.ENGLISH); 
-			 String nowFormatted = LocalDateTime.now().format(formatter);
+			 ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
+			    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
+			    String formattedTime = istTime.format(formatter);
 		    	try {
 		        CustomerRating customerRating = new CustomerRating(
 		        	null,ratingRequest.getDoctorRating(),ratingRequest.getHospitalRating(),ratingRequest.getFeedback(),ratingRequest.getHospitalId(),ratingRequest.getDoctorId(),
-		        	ratingRequest.getCustomerMobileNumber(),ratingRequest.getAppointmentId(),true,nowFormatted
+		        	ratingRequest.getCustomerMobileNumber(),ratingRequest.getAppointmentId(),true,formattedTime
 		        );
 		        customerRatingRepository.save(customerRating);
 		        updateAvgRatingInClinicAndDoctorObject(ratingRequest.getHospitalId(),ratingRequest.getDoctorId());

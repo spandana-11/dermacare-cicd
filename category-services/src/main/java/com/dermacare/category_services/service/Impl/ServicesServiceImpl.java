@@ -290,5 +290,15 @@ public class ServicesServiceImpl implements ServicesService {
 		}
 	return false;
 	}
+	
+	public boolean checkServiceExistsAlreadyWithServiceNameIgnoereCase(String serviceName) {
+		Optional<Services> optional = servicesRepository
+				.findByServiceNameIgnoreCase(serviceName);
+		if (optional.isPresent()) {
+			System.out.println(optional.isPresent());
+			return true;
+		}
+	return false;
+	}
 
 }

@@ -10,7 +10,7 @@ public interface CategoryService {
 
 	public CategoryDto addCategory(CategoryDto categoryDomain);
 
-	public boolean findByCategoryName(String categoryName);
+	public boolean existsByCategoryNameIgnoreCase(String categoryName);
 
 	public List<CategoryDto> findAllCategories();
 

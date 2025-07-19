@@ -48,8 +48,8 @@ public class CategoryServiceImpl implements CategoryService {
 		return HelperForConversion.toDto(savedCategory);
 	}
 
-	public boolean findByCategoryName(String categoryName) {
-		Optional<Category> category = repository.findByCategoryName(categoryName);
+	public boolean existsByCategoryNameIgnoreCase(String categoryName) {
+		Optional<Category> category = repository.existsByCategoryNameIgnoreCase(categoryName);
 		return category.isPresent();
 	}
 

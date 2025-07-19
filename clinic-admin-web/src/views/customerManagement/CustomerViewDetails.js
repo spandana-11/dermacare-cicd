@@ -2845,7 +2845,7 @@ const CustomerViewDetails = () => {
             </CAccordion>
           )}
 
-          <CModal visible={showStatusModal} onClose={handleCancelModal}>
+          <CModal visible={showStatusModal} onClose={handleCancelModal} >
             <CModalHeader>Update Customer Status</CModalHeader>
             <CModalBody>
               <CFormSelect

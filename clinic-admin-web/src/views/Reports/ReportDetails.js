@@ -382,7 +382,7 @@ const ReportDetails = () => {
       </CModal>
 
       {/* Upload Report Modal */}
-      <CModal visible={uploadModal} onClose={() => setUploadModal(false)}>
+      <CModal visible={uploadModal} onClose={() => setUploadModal(false)} backdrop="static">
         <CModalHeader>
           <CModalTitle>Upload Report</CModalTitle>
         </CModalHeader>

@@ -17,7 +17,7 @@ import {
   CTooltip,
   CFormCheck,
 } from '@coreui/react'
-import { BASE_URL, subService_URL, getService } from '../../baseUrl'
+import { BASE_URL, subService_URL, getService, ClinicAllData } from '../../baseUrl'
 import { CategoryData } from '../categoryManagement/CategoryAPI'
 import Select from 'react-select'
 import sendDermaCareOnboardingEmail from '../../Utils/Emailjs'
@@ -84,7 +84,7 @@ const AddClinic = () => {
     fireSafetyCertificate: null,
     professionalIndemnityInsurance: null,
     gstRegistrationCertificate: null,
-    others: [],
+    others: null,
     instagramHandle: '',
     twitterHandle: '',
     facebookHandle: '',
@@ -271,9 +271,7 @@ const AddClinic = () => {
     if (!formData.gstRegistrationCertificate) {
       newErrors.gstRegistrationCertificate = 'Please upload at least one document'
     }
-    if (!formData.others) {
-      newErrors.others = 'Please upload at least one document'
-    }
+
     if (!clinicTypeOption || clinicTypeOption.trim() === '') {
       newErrors.clinicType = 'Please select a clinic Type.'
     }
@@ -297,12 +295,15 @@ const AddClinic = () => {
 
     console.log('Validation errors:', newErrors)
 
-    Object.entries(newErrors).forEach(([field, message]) => {
-      toast.error(`${field}: ${message}`, { position: 'top-right' })
-    })
-
+    // validate fields and set errors
     setErrors(newErrors)
-    return Object.keys(newErrors).length == 0
+
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('Please fill all required fields', { position: 'top-right' })
+      return false // stop form submit
+    }
+
+    return true // all good
   }
 
   const downloadFile = (base64, filename, mime = 'application/pdf') => {
@@ -421,13 +422,56 @@ const AddClinic = () => {
       reader.onerror = (error) => reject(error)
     })
   }
+  const [existingDoctors, setExistingDoctors] = useState([])
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const response = await axios.get(`${BASE_URL}/${ClinicAllData}`)
+        const clinicList = Array.isArray(response.data) // your actual API
+        // const data = await response.json()
+        console.log('Fetched doctor data:', response.data) // <-- CHECK THIS STRUCTURE
+        setExistingDoctors(response.data.data)
+      } catch (err) {
+        console.error('Failed to load existing doctor data', err)
+      }
+    }
+
+    fetchDoctors()
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
 
     const isValid = validateForm()
     if (!isValid) return
-    setIsSubmitting(true) // ⬅️ Start loading
+    setIsSubmitting(true) // ⬅ Start loading
+
+    const { emailAddress, contactNumber } = formData
+
+    // Check for duplicate email and mobile
+    const safeExistingDoctors = Array.isArray(existingDoctors) ? existingDoctors : []
+
+    console.log(emailAddress)
+    console.log(contactNumber)
+
+    const isEmailDuplicate = safeExistingDoctors.some(
+      (doc) => doc.emailAddress?.toLowerCase() === emailAddress,
+    )
+    const isMobileDuplicate = safeExistingDoctors.some((doc) => doc.contactNumber === contactNumber)
+
+    if (isEmailDuplicate || isMobileDuplicate) {
+      setIsSubmitting(false)
+      const newErrors = {}
+      if (isEmailDuplicate) {
+        toast.error('Email already exists')
+        newErrors.emailAddress = 'Email already exists'
+      }
+      if (isMobileDuplicate) newErrors.contactNumber = 'Mobile number already exists'
+        toast.error('Mobile number already exists')
+      setErrors((prev) => ({ ...prev, ...newErrors }))
+      return
+    }
+
     try {
       const convertIfExists = async (file) => (file ? await convertFileToBase64(file) : '')
       const convertMultipleIfExists = async (files) =>
@@ -467,8 +511,11 @@ const AddClinic = () => {
       const gstRegistrationCertificateBase64 = await convertIfExists(
         formData.gstRegistrationCertificate,
       )
-      // If `others` is an array
-      const othersBase64 = await convertMultipleIfExists(formData.others)
+      // If others is an array
+      const othersBase64 =
+        formData.others && formData.others.length > 0
+          ? await convertMultipleIfExists(formData.others)
+          : ''
 
       const formatToAMPM = (time24) => {
         const [hourStr, minuteStr] = time24.split(':')
@@ -515,9 +562,14 @@ const AddClinic = () => {
       // API Submission
       const response = await axios.post(`${BASE_URL}/admin/CreateClinic`, clinicData)
       const savedClinicData = response.data
+      console.log(response)
       console.log(response.message)
+      console.log(savedClinicData.message)
       if (savedClinicData.success) {
-        toast.success(response.message, { position: 'top-right' })
+        toast.success(savedClinicData.message || 'Clinic Added Successfully', {
+          position: 'top-right',
+        })
+        setIsSubmitting(false) // ⬅ Start loading
 
         sendDermaCareOnboardingEmail({
           name: formData.name,
@@ -542,7 +594,6 @@ const AddClinic = () => {
       setIsSubmitting(false)
     }
   }
-
   return (
     <div className="container mt-4">
       <ToastContainer />
@@ -825,7 +876,7 @@ const AddClinic = () => {
                   type="file"
                   name="hospitalDocuments"
                   multiple
-                  ref={fileInputRefs.hospitalDocuments}
+                  // ref={fileInputRefs.hospitalDocuments}
                   accept=".pdf,.doc,.docx,.jpeg,.png"
                   onChange={(e) => {
                     const files = Array.from(e.target.files || [])
@@ -1190,29 +1241,30 @@ const AddClinic = () => {
                 <CTooltip content="NABH Accreditation / Aesthetic Procedure Training Certificate">
                   <CFormLabel>
                     Others (NABH / Aesthetic Training)
-                    <span className="text-danger">*</span>
+                    {/* Optional field */}
                   </CFormLabel>
                 </CTooltip>
 
                 <CFormInput
                   type="file"
                   name="others"
-                  multiple
                   ref={fileInputRef}
                   onChange={(e) => {
-                    const selectedFiles = Array.from(e.target.files || [])
+                    const selectedFile = e.target.files?.[0] || null
+
                     setFormData((prev) => ({
                       ...prev,
-                      others: [...(prev.others || []), ...selectedFiles],
+                      others: selectedFile, // ✅ store a single file object
                     }))
-                    if (selectedFiles.length) {
+
+                    if (selectedFile) {
                       setErrors((prev) => ({
                         ...prev,
                         others: '',
                       }))
                     }
 
-                    // Reset the input so same file can be selected again if removed
+                    // Reset input so same file can be selected again if removed
                     if (fileInputRefs.others.current) {
                       fileInputRefs.others.current.value = ''
                     }
@@ -1223,41 +1275,28 @@ const AddClinic = () => {
 
                 {errors.others && <CFormFeedback invalid>{errors.others}</CFormFeedback>}
 
-                {/* Show count and remove buttons */}
-                {formData.others?.length > 0 && (
+                {/* ✅ Show file name only if a single file is stored */}
+                {formData.others && (
                   <div className="mt-2">
-                    <small className="text-primary">
-                      {formData.others.length} file{formData.others.length > 1 ? 's' : ''} selected
-                    </small>
-                    {formData.others.map((file, index) => (
-                      <div
-                        key={index}
-                        className="d-flex align-items-center justify-content-between mb-1"
-                      >
-                        <small>{file.name}</small>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-danger"
-                          onClick={() => {
-                            const updatedFiles = [...formData.others]
-                            updatedFiles.splice(index, 1)
-                            setFormData((prev) => ({ ...prev, others: updatedFiles }))
+                    <small className="text-primary">{formData.others.name}</small>
+                    <div className="d-flex align-items-center justify-content-between mb-1">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-danger"
+                        onClick={() => {
+                          setFormData((prev) => ({ ...prev, others: null }))
 
-                            // Reset file input to allow re-selecting the same file
-                            if (fileInputRef.current) {
-                              fileInputRef.current.value = ''
-                            }
-                          }}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = ''
+                          }
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 )}
               </CCol>
-
-              {errors.others && <CFormFeedback invalid>{errors.others}</CFormFeedback>}
             </CRow>
 
             <CRow className="mb-3">

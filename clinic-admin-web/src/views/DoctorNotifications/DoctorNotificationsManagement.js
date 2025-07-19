@@ -134,7 +134,7 @@ useEffect(() => {
       toast.warning('No doctors found for this hospital.')
     }
   } catch (error) {
-    console.error('Error fetching doctors:', error)
+    // console.error('Error fetching doctors:', error)
     toast.error('Error fetching doctor list.')
   }
 }

@@ -13,6 +13,7 @@ import {
   getadminSubServicesbyserviceId,
   getService_ByClinicId,
 } from '../../baseUrl'
+import { toast } from 'react-toastify'
 
 export const subServiceData = async (serviceId) => {
   console.log('Serviceid response:', serviceId)
@@ -51,12 +52,10 @@ export const serviceData = async () => {
     }
   }
 }
- 
+
 export const getSubServiceById = async (hospitalId, subServiceId) => {
   try {
-    const response = await axios.get(
-      `${BASE_URL}/getSubService/${hospitalId}/${subServiceId}`
-    )
+    const response = await axios.get(`${BASE_URL}/getSubService/${hospitalId}/${subServiceId}`)
     return response.data?.data // return only the useful data part
   } catch (error) {
     console.error('Error fetching sub-service data:', error)
@@ -65,16 +64,13 @@ export const getSubServiceById = async (hospitalId, subServiceId) => {
 }
 export const GetSubServices_ByClinicId = async (hospitalId) => {
   try {
-    const response = await axios.get(
-      `${BASE_URL}/${getService_ByClinicId}/${hospitalId}`
-    )
+    const response = await axios.get(`${BASE_URL}/${getService_ByClinicId}/${hospitalId}`)
     return response.data?.data
   } catch (error) {
     console.error('Error fetching sub-service data:', error)
     return null
   }
 }
-
 
 export const CategoryData = async () => {
   try {
@@ -108,15 +104,13 @@ export const postServiceData = async (serviceData, id) => {
     return response
   } catch (error) {
     console.error('Error response:', error.response)
-    alert(
-      `Error: ${error.response.status} - ${error.response.data.message || error.response.statusText}`,
-    )
+    toast.error(`${error.response.data.message || error.response.statusText}`)
   }
 }
 
 export const updateServiceData = async (subServiceId, hospitalId, serviceData) => {
-  console.log("API Call Params:", subServiceId, hospitalId) //Check values
-  console.log("Payload:", serviceData)
+  console.log('API Call Params:', subServiceId, hospitalId) //Check values
+  console.log('Payload:', serviceData)
 
   try {
     const response = await axios.put(
@@ -126,7 +120,7 @@ export const updateServiceData = async (subServiceId, hospitalId, serviceData) =
         headers: {
           'Content-Type': 'application/json',
         },
-      }
+      },
     )
 
     console.log('Service updated successfully:', response.data)

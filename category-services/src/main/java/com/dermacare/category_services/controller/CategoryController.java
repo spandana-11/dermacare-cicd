@@ -36,7 +36,7 @@ public class CategoryController {
 	@PostMapping("/addCategory")
 	public ResponseEntity<ResponseStructure<CategoryDto>> addNewCategory(@RequestBody CategoryDto dto) {
 		
-		if (categoryService.findByCategoryName(dto.getCategoryName())) {
+		if (categoryService.existsByCategoryNameIgnoreCase(dto.getCategoryName())) {
 			return new ResponseEntity<>(ResponseStructure.buildResponse(null,
 					"Category Already Exists With Same Name " + dto.getCategoryName(), HttpStatus.CONFLICT,
 					HttpStatus.CONFLICT.value()), HttpStatus.CONFLICT);
@@ -45,6 +45,7 @@ public class CategoryController {
 		return new ResponseEntity<>(ResponseStructure.buildResponse(savedEntiy, "Category Saved Sucessfully",
 				HttpStatus.CREATED, HttpStatus.CREATED.value()), HttpStatus.OK);
 	}
+
 
 	@GetMapping("/getCategories")
 	public ResponseEntity<ResponseStructure<List<CategoryDto>>> getAllCategory() {
@@ -81,6 +82,11 @@ public class CategoryController {
 	@PutMapping("updateCategory/{categoryId}")
 	public ResponseEntity<ResponseStructure<CategoryDto>> updateCategory(@PathVariable ObjectId categoryId,
 			@RequestBody CategoryDto updatedCategory) {
+		
+		if (categoryService.existsByCategoryNameIgnoreCase(updatedCategory.getCategoryName())) {
+			return new ResponseEntity<>(ResponseStructure.buildResponse(null,
+					"Category Name Already Exists Please Choose Another. ", HttpStatus.CONFLICT,
+					HttpStatus.CONFLICT.value()), HttpStatus.CONFLICT);}
 
 		CategoryDto savedCategory = categoryService.updateCategoryById(categoryId, updatedCategory);
 		if(savedCategory != null) {

@@ -120,7 +120,6 @@ return new ResponseEntity<>(ResponseStructure.buildResponse(servicesList, "Servi
 	        @PathVariable String serviceId,
 	        @RequestBody ServicesDto domainServices) {
 
-	    // Validate ObjectId format
 	    try {
 	        new ObjectId(serviceId);
 	    } catch (IllegalArgumentException e) {
@@ -129,7 +128,12 @@ return new ResponseEntity<>(ResponseStructure.buildResponse(servicesList, "Servi
 	                        "Invalid Service ID: must be a valid hexadecimal string.",
 	                        HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.value()));
 	    }
-
+	    boolean present = service.checkServiceExistsAlreadyWithServiceNameIgnoereCase(domainServices.getServiceName());
+	    if (present) {
+	        return ResponseEntity.status(HttpStatus.CONFLICT)
+	                .body(ResponseStructure.buildResponse(null, "Service Name Already Exist Please choose Another.",
+	                        HttpStatus.CONFLICT, HttpStatus.CONFLICT.value()));
+	    }
 	    // Call service layer to handle update logic and response
 	    ResponseStructure<ServicesDto> response = service.updateService(serviceId, domainServices);
 

@@ -38,6 +38,8 @@ public interface SubServicesService {
 	    CategoryServiceandSubserviceDto saveGroupedSubServices(CategoryServiceandSubserviceDto requestDto);
 	    
 	    List<SubServicesDto> getSubServiceByHospitalId(String hospitalId);
+	    
+	    public boolean checkSubserviceNameExistOrNot(String hospitalId,String subServiceId,SubServicesDto domainService);
 
 
 }

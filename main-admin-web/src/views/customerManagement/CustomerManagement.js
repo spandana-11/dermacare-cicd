@@ -572,6 +572,7 @@ const CustomerManagement = () => {
                   name="mobileNumber"
                   value={formData.mobileNumber}
                   onChange={handleInputChange}
+                  disabled
                   onKeyDown={(e) => {
                     if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete') {
                       e.preventDefault()

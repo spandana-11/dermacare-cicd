@@ -33,7 +33,6 @@ import {
   updateServiceData,
   deleteServiceData,
   subServiceData,
-  
   GetSubServices_ByClinicId,
 } from './ServiceManagementAPI'
 import {
@@ -254,23 +253,23 @@ const ServiceManagement = () => {
         throw new Error('Invalid category data format')
       }
 
-      const hospitalId = localStorage.getItem('HospitalId'); // ✅ current hospital
-    if (hospitalId) {
-      const subServiceData = await GetSubServices_ByClinicId(hospitalId);
+      const hospitalId = localStorage.getItem('HospitalId') // ✅ current hospital
+      if (hospitalId) {
+        const subServiceData = await GetSubServices_ByClinicId(hospitalId)
 
-      if (Array.isArray(subServiceData)) {
-        // you might need to flatten if response is nested
-        // but usually GetSubServices_ByClinicId should return a clean array
-        setService(subServiceData);
+        if (Array.isArray(subServiceData)) {
+          // you might need to flatten if response is nested
+          // but usually GetSubServices_ByClinicId should return a clean array
+          setService(subServiceData)
+        } else {
+          setService([])
+          console.warn('No subservices found for this hospital.')
+        }
       } else {
-        setService([]);
-        console.warn('No subservices found for this hospital.');
+        console.warn('No hospitalId found in localStorage.')
+        setService([])
       }
-    } else {
-      console.warn('No hospitalId found in localStorage.');
-      setService([]);
-    }
-  }catch (error) {
+    } catch (error) {
       console.error('Error fetching data:', error)
       setError('Failed to fetch data. Please try again later.')
     } finally {
@@ -1020,7 +1019,7 @@ const ServiceManagement = () => {
         </CModal>
       )}
 
-      <CModal visible={modalVisible} onClose={() => setModalVisible(false)} size="xl">
+      <CModal visible={modalVisible} onClose={() => setModalVisible(false)} size="xl" backdrop="static">
         <CModalHeader>
           <CModalTitle style={{ textAlign: 'center', width: '100%' }}>
             {modalMode === 'edit' ? 'Edit SubService Details' : 'Add New SubService Details'}
@@ -1112,7 +1111,7 @@ const ServiceManagement = () => {
                   <CFormText className="text-danger">{errors.subServiceName}</CFormText>
                 )}
               </CCol>
-             
+
               <CCol md={6}>
                 <h6>
                   View Description <span className="text-danger">*</span>
@@ -1148,6 +1147,7 @@ const ServiceManagement = () => {
                   Price <span className="text-danger">*</span>
                 </h6>
                 <CFormInput
+                  type="number"
                   value={newService.price || ''}
                   onChange={(e) => setNewService((prev) => ({ ...prev, price: e.target.value }))}
                 />
@@ -1248,7 +1248,6 @@ const ServiceManagement = () => {
                   style={{ width: 100, height: 100, marginTop: 10 }}
                 />
               )}
-             
             </CCol>
 
             <CCol md={12} className="mt-3">
@@ -1330,8 +1329,6 @@ const ServiceManagement = () => {
           </CButton>
         </CModalFooter>
       </CModal>
-
- 
 
       {loading ? (
         <div

@@ -31,7 +31,7 @@ const AppSidebar = () => {
       <CSidebarHeader className="border-bottom">
         <div
           key={sidebarShow}
-          className="text-center py-3 clinic-header"
+          className="text-center py-3 clinic-header "
           onClick={() => navigate('/dashboard')}
         >
           {hospitalName}

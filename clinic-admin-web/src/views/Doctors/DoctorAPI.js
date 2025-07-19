@@ -2,6 +2,7 @@
 
 import axios from 'axios'
 import { BASE_URL, getAllDoctors, getDoctorByClinicId } from '../../baseUrl'
+import { toast } from 'react-toastify'
 
 export const handleDeleteToggle = async (doctorID) => {
   console.log(doctorID)
@@ -11,6 +12,7 @@ export const handleDeleteToggle = async (doctorID) => {
     // Optional: return true or response if needed
     return response
   } catch (error) {
+    toast.error(`${error.message}` || 'Failed to delete doctor')
     console.error('Error occurred while deleting doctor:', error.response?.data || error.message)
     // Optional: return false or error if needed
     return false

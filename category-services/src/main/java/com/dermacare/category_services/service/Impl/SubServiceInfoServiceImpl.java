@@ -45,7 +45,7 @@ public class SubServiceInfoServiceImpl implements SubServiceInfo {
 	    	}
 	    	for(SubServiceInfoEntity e :entity.getSubServices()) {
 	    	if(e.getServiceName() == null) {
-	    		response.setStatus(404);
+	        response.setStatus(404);
   			response.setSuccess(false);
   			response.setMessage("Incorrect ServiceId");
 	    	}}
@@ -61,8 +61,10 @@ public class SubServiceInfoServiceImpl implements SubServiceInfo {
 	    	        response.setStatus(400);
 	    	        response.setSuccess(false);
 	    	        response.setMessage("SubService '" + dto.getSubServiceName() + "' already exists.");
-	    	        return response;}}    	
+	    	        return response;}} 
+	    	    	
 	    	SubServicesInfoEntity savedInfo = subServicesInfoRepository.save(entity);
+	    	
 	    	if(savedInfo != null) {
 		    			response.setData(converter.dtoConverter(entity));
 		    			response.setStatus(200);
@@ -162,7 +164,7 @@ public class SubServiceInfoServiceImpl implements SubServiceInfo {
 	public Response deleteSubService(String subServiceId) {
 	    Response response = new Response();
 	    try {
-	        // Find the parent entity containing the subServiceId
+	        // Step 1: Find the parent SubServicesInfoEntity containing the subServiceId
 	        SubServicesInfoEntity subServicesEntity = subServicesInfoRepository.findBySubServicesSubServiceId(subServiceId);
 
 	        if (subServicesEntity == null) {
@@ -174,7 +176,7 @@ public class SubServiceInfoServiceImpl implements SubServiceInfo {
 
 	        List<SubServiceInfoEntity> subServicesList = subServicesEntity.getSubServices();
 	        if (subServicesList == null || subServicesList.isEmpty()) {
-	            // If already empty, delete the whole entity
+	            // If no subservices left in the list, delete the whole parent entity
 	            subServicesInfoRepository.delete(subServicesEntity);
 	            response.setStatus(200);
 	            response.setSuccess(true);
@@ -182,7 +184,7 @@ public class SubServiceInfoServiceImpl implements SubServiceInfo {
 	            return response;
 	        }
 
-	        // Remove the target subservice
+	        // Step 2: Remove the target subservice from the list
 	        boolean removed = subServicesList.removeIf(sub -> subServiceId.equals(sub.getSubServiceId()));
 
 	        if (!removed) {
@@ -192,20 +194,35 @@ public class SubServiceInfoServiceImpl implements SubServiceInfo {
 	            return response;
 	        }
 
+	        // Step 3: After removal, if no subservices left in the parent entity, delete the entire entity
 	        if (subServicesList.isEmpty()) {
-	            // If after removal the list is empty, delete the entire parent document
 	            subServicesInfoRepository.delete(subServicesEntity);
 	            response.setStatus(200);
 	            response.setSuccess(true);
 	            response.setMessage("SubService deleted and parent entity removed as no subservices left");
 	        } else {
-	            // Otherwise, just update the subservices list
+	            // Otherwise, update the subservices list in the parent entity
 	            subServicesEntity.setSubServices(subServicesList);
 	            subServicesInfoRepository.save(subServicesEntity);
 	            response.setStatus(200);
 	            response.setSuccess(true);
 	            response.setMessage("SubService deleted successfully");
 	        }
+
+	        // Step 4: Delete all SubServices where this subServiceId exists
+	        List<SubServices> relatedSubServices = subServiceRepository.findBySubServiceId(new ObjectId(subServiceId));
+	        if (!relatedSubServices.isEmpty()) {
+	            subServiceRepository.deleteAll(relatedSubServices);
+	            System.out.println("Deleted related SubServices: " + relatedSubServices.size());
+	        }
+
+	        // Step 5: Optionally, you can clean up any other references to this subServiceId in other entities here
+	        // Example: Delete any references in "SubServicesInfoEntity" or other collections
+	        // (You may need to add custom code for this based on your application's needs)
+
+	        response.setStatus(200);
+	        response.setSuccess(true);
+	        response.setMessage("SubService and related SubServices deleted successfully");
 
 	    } catch (Exception e) {
 	        response.setStatus(500);
@@ -220,8 +237,16 @@ public class SubServiceInfoServiceImpl implements SubServiceInfo {
 	public Response updateBySubServiceId(String subServiceId, SubServicesInfoDto domainServices) {
 	    Response response = new Response();
 	    try {
+	    	for(SubServiceDTO dto:domainServices.getSubServices()) {
+	        if (subServicesInfoRepository.existsBySubServicesSubServiceNameIgnoreCase(dto.getSubServiceName())) {
+    	        response.setStatus(400);
+    	        response.setSuccess(false);
+    	        response.setMessage("SubService Name Already Exists Please Choose Another");
+    	        return response;}}	
+	    	
 	        SubServicesInfoEntity subServicesEntity = 
 	        subServicesInfoRepository.findBySubServicesSubServiceId(subServiceId);
+	        
 	      List<SubServices> subsrvice = subServiceRepository.findBySubServiceId(new ObjectId(subServiceId));
 	        if (subServicesEntity == null) {
 	            response.setStatus(404);
