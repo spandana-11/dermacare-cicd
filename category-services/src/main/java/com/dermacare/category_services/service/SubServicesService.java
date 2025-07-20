@@ -39,7 +39,5 @@ public interface SubServicesService {
 	    
 	    List<SubServicesDto> getSubServiceByHospitalId(String hospitalId);
 	    
-	    public boolean checkSubserviceNameExistOrNot(String hospitalId,String subServiceId,SubServicesDto domainService);
-
-
+	   
 }

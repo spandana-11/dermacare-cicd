@@ -142,10 +142,10 @@ public class SubServicesServiceImpl implements SubServicesService {
 		subServiceRepository.deleteByHospitalIdAndSubServiceId(hospitalId,new ObjectId(subServiceId));
 	}
 	
+	
 	public SubServicesDto updateSubService(String hospitalId,String subServiceId,SubServicesDto domainService) {
 		SubServices optionalSubService = subServiceRepository.findByHospitalIdAndSubServiceId(hospitalId,new ObjectId(subServiceId));
 		
-
 		if (optionalSubService == null) {
 			throw new RuntimeException("SubService not found with ID: " + subServiceId);
 		}
@@ -211,7 +211,9 @@ public class SubServicesServiceImpl implements SubServicesService {
 		}
 	SubServices subServices = subServiceRepository.save(optionalSubService);
 	return HelperForConversion.toDto(subServices);
-	}	
+	}
+	
+	
 	public void deleteSubServicesByCategoryId(ObjectId objectId) {
 		List<SubServices> listOfSubServices = subServiceRepository.findByCategoryId(objectId);
 		if (!listOfSubServices.isEmpty()) {

@@ -236,23 +236,56 @@ public class SubServiceInfoServiceImpl implements SubServiceInfo {
 	
 	public Response updateBySubServiceId(String subServiceId, SubServicesInfoDto domainServices) {
 	    Response response = new Response();
-	    try {
-	    	for(SubServiceDTO dto:domainServices.getSubServices()) {
-	        if (subServicesInfoRepository.existsBySubServicesSubServiceNameIgnoreCase(dto.getSubServiceName())) {
-    	        response.setStatus(400);
-    	        response.setSuccess(false);
-    	        response.setMessage("SubService Name Already Exists Please Choose Another");
-    	        return response;}}	
-	    	
+	    try {	    		    	
 	        SubServicesInfoEntity subServicesEntity = 
 	        subServicesInfoRepository.findBySubServicesSubServiceId(subServiceId);
-	        
+	        		        
 	      List<SubServices> subsrvice = subServiceRepository.findBySubServiceId(new ObjectId(subServiceId));
 	        if (subServicesEntity == null) {
+	            response.setStatus(404);
+	            response.setMessage("SubServiceInfo with given ID not found");
+	            response.setSuccess(false);
+	            return response;}
+	       
+	        if (subsrvice == null || subsrvice.isEmpty()) {
 	            response.setStatus(404);
 	            response.setMessage("SubService with given ID not found");
 	            response.setSuccess(false);
 	            return response;}
+	            
+	        if(subServicesEntity != null) {
+	        for(SubServiceDTO s: domainServices.getSubServices()){
+	     	String subServiceName = s.getSubServiceName();	     
+	        List<SubServiceInfoEntity> listEntity = subServicesEntity.getSubServices();
+	        Optional<SubServiceInfoEntity> optional = listEntity.stream().filter(n->n.getSubServiceName().
+		            equalsIgnoreCase(subServiceName)).findFirst();	     
+		            if(optional.isPresent()) {
+		            response = updateSubServiceByCheckingName(subServicesEntity,
+		            subsrvice,domainServices,subServiceId);}
+		            else {
+		    boolean subServicesInfoEntity = subServicesInfoRepository.
+		    existsBySubServicesSubServiceNameIgnoreCase(subServiceName);
+		    System.out.println(subServicesInfoEntity);
+		    if(subServicesInfoEntity) {
+		    	response.setStatus(409);
+	            response.setMessage("SubService Name Already Exist ");
+	            response.setSuccess(false);
+		    }else{
+		    	 response =	updateSubServiceByCheckingName(subServicesEntity,
+		         subsrvice,domainServices,subServiceId);	
+		    }}}}}catch(Exception e) {
+		    	response.setStatus(500);
+	            response.setMessage(e.getMessage());
+	            response.setSuccess(false);
+		        }
+	        return response;
+	        }
+	        
+	             
+	        private Response updateSubServiceByCheckingName(SubServicesInfoEntity subServicesEntity,
+	        		List<SubServices> subsrvice,SubServicesInfoDto domainServices,String subServiceId) {
+	        Response response = new Response();
+	        try {
 	        List<SubServiceInfoEntity> listEntity = subServicesEntity.getSubServices();
 	        if (domainServices.getSubServices() != null) {
 	        	List<SubServiceDTO> domain = domainServices.getSubServices(); 
@@ -264,12 +297,7 @@ public class SubServiceInfoServiceImpl implements SubServiceInfo {
 	            if(!subsrvice.isEmpty()) {
 		        	for(SubServices sub :  subsrvice ) {
 		        		sub.setSubServiceName(s.getSubServiceName());
-		        		subServiceRepository.save(sub);}}
-	            }else {
-	     	        response.setStatus(404);
-	     	        response.setSuccess(false);
-	     	        response.setMessage("SubService Not Found With Given Id");
-	            }}
+		        		subServiceRepository.save(sub);}}}}
 	        subServicesEntity.setSubServices(listEntity);	 
 	        subServicesInfoRepository.save(subServicesEntity);
 	        response.setStatus(200);
@@ -283,7 +311,7 @@ public class SubServiceInfoServiceImpl implements SubServiceInfo {
 	    return response;
 	}
 	
-	
+		 	    
 	public Response getAllSubServices(){
 		 Response response = new  Response();
 	    	try {

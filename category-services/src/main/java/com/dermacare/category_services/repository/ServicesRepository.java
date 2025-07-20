@@ -23,6 +23,6 @@ public interface ServicesRepository extends MongoRepository<Services, ObjectId> 
 	
 	Optional<Services> findByServiceName(String serviceName);
 
-	public Services findByServiceNameIgnoreCase(String serviceName);
+	public List<Services> findByServiceNameIgnoreCase(String serviceName);
 
 }

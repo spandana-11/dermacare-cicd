@@ -127,20 +127,15 @@ return new ResponseEntity<>(ResponseStructure.buildResponse(servicesList, "Servi
 	                .body(ResponseStructure.buildResponse(null,
 	                        "Invalid Service ID: must be a valid hexadecimal string.",
 	                        HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.value()));
-	    }
-	    boolean present = service.checkServiceExistsAlreadyWithServiceNameIgnoereCase(domainServices.getServiceName());
-	    if (present) {
-	        return ResponseEntity.status(HttpStatus.CONFLICT)
-	                .body(ResponseStructure.buildResponse(null, "Service Name Already Exist Please choose Another.",
-	                        HttpStatus.CONFLICT, HttpStatus.CONFLICT.value()));
-	    }
+	    }	   
 	    // Call service layer to handle update logic and response
-	    ResponseStructure<ServicesDto> response = service.updateService(serviceId, domainServices);
+	    ResponseStructure<ServicesDto> response = service.updateService(serviceId, domainServices).getBody();
 
 	    // Return appropriate HTTP status from response structure
 	    return ResponseEntity.status(HttpStatus.valueOf(response.getStatusCode())).body(response);
 	}
 
+	
 	@GetMapping("/getAllServices")
 	public ResponseEntity<ResponseStructure<List<ServicesDto>>> getAllServices() {
 		List<ServicesDto> dtos = service.getAllServices();

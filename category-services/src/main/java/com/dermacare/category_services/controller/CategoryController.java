@@ -82,21 +82,9 @@ public class CategoryController {
 	@PutMapping("updateCategory/{categoryId}")
 	public ResponseEntity<ResponseStructure<CategoryDto>> updateCategory(@PathVariable ObjectId categoryId,
 			@RequestBody CategoryDto updatedCategory) {
+
+		return categoryService.updateCategoryById(categoryId, updatedCategory);
 		
-		if (categoryService.existsByCategoryNameIgnoreCase(updatedCategory.getCategoryName())) {
-			return new ResponseEntity<>(ResponseStructure.buildResponse(null,
-					"Category Name Already Exists Please Choose Another. ", HttpStatus.CONFLICT,
-					HttpStatus.CONFLICT.value()), HttpStatus.CONFLICT);}
-
-		CategoryDto savedCategory = categoryService.updateCategoryById(categoryId, updatedCategory);
-		if(savedCategory != null) {
-		return new ResponseEntity<>(ResponseStructure.buildResponse(savedCategory, "Category Updated Sucess Fully",
-				HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);}
-		else {
-			return new ResponseEntity<>(ResponseStructure.buildResponse(null, "Category Not Updated",
-					HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
-		}
-
 	}
 
 	@GetMapping("/getCategory/{categoryId}")

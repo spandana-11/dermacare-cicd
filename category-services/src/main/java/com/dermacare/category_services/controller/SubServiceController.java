@@ -162,15 +162,8 @@ public class SubServiceController {
 			return new ResponseEntity<>(
 					ResponseStructure.buildResponse(null, "In Valid SubService Id  ID must be HexaString",
 							HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.value()),
-					HttpStatus.BAD_REQUEST);
-		}
-		
-        boolean check = subServiceService.checkSubserviceNameExistOrNot(hospitalId, subServiceId, domainServices);		
-		if(check) {
-			return new ResponseEntity<>(ResponseStructure.buildResponse(null, "Subservice Name Already Exist Please choose Another",
-					HttpStatus.CONFLICT, HttpStatus.CONFLICT.value()), HttpStatus.CONFLICT);
-		}	
-		
+					HttpStatus.BAD_REQUEST);}
+			
 			SubServicesDto domain = subServiceService.updateSubService(hospitalId,subServiceId, domainServices);
 			if(domain != null) {
 			return new ResponseEntity<>(ResponseStructure.buildResponse(domain, "SubsService Updated Sucessfully",

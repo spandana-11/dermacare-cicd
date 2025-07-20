@@ -3,6 +3,7 @@ package com.dermacare.category_services.service;
 import java.util.List;
 
 import org.bson.types.ObjectId;
+import org.springframework.http.ResponseEntity;
 
 import com.dermacare.category_services.dto.ServicesDto;
 import com.dermacare.category_services.util.ResponseStructure;
@@ -17,7 +18,7 @@ public interface ServicesService {
 
 	    void deleteServiceById(String serviceId);
 
-	    ResponseStructure<ServicesDto> updateService(String serviceId, ServicesDto domainService);
+	    public ResponseEntity<ResponseStructure<ServicesDto>> updateService(String serviceId, ServicesDto dto);
 
 	    void deleteService(String serviceId);
 
@@ -27,6 +28,6 @@ public interface ServicesService {
 
 	    boolean checkServiceExistsAlready(String categoryId, String serviceName);
 	    
-	    public boolean checkServiceExistsAlreadyWithServiceNameIgnoereCase(String serviceName);
+	
 
 }

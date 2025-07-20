@@ -6,6 +6,8 @@ import java.util.Optional;
 
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.dermacare.category_services.dto.CategoryDto;
@@ -20,6 +22,7 @@ import com.dermacare.category_services.repository.SubServicesInfoRepository;
 import com.dermacare.category_services.service.CategoryService;
 import com.dermacare.category_services.service.ServicesService;
 import com.dermacare.category_services.util.HelperForConversion;
+import com.dermacare.category_services.util.ResponseStructure;
 
 @Service
 public class CategoryServiceImpl implements CategoryService {
@@ -67,56 +70,85 @@ public class CategoryServiceImpl implements CategoryService {
 				()->new RuntimeException("Category Not found With : "+categoryId));
 		return HelperForConversion.toDto(category);
 	}
+	
+	
 
-	public CategoryDto updateCategoryById(ObjectId categoryId, CategoryDto updateDto) {
-	    // Fetch existing category
-	    Category existing = repository.findById(categoryId)
-	        .orElseThrow(() -> new RuntimeException("Category not found with ID: " + categoryId));
+	public ResponseEntity<ResponseStructure<CategoryDto>> updateCategoryById(ObjectId categoryId, CategoryDto updateDto) {
+	    ResponseStructure<CategoryDto> response = new ResponseStructure<>();
 
-	    // Prevent duplicate name
-	    Optional<Category> optional = repository.findByCategoryName(updateDto.getCategoryName());
-	    if (optional.isPresent() && !optional.get().getCategoryId().equals(categoryId)) {
-	        throw new RuntimeException("Duplicate category name found: " + updateDto.getCategoryName());
+	    // Step 1: Fetch existing category by ID
+	   Optional< Category> existing = repository.findById(categoryId);
+	    if (existing.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                ResponseStructure.buildResponse(null,
+                	"Category not found with ID: " + categoryId,
+                    HttpStatus.NOT_FOUND,
+                    HttpStatus.NOT_FOUND.value()));}	
+	    
+	    Category c = existing.get();
+	    String oldCategoryName = c.getCategoryName();
+	    String newCategoryName = updateDto.getCategoryName();
+
+	    // Step 2: Compare category names
+	    if (!oldCategoryName.equalsIgnoreCase(newCategoryName)) {
+	        // Step 3: If different, check if new name already exists
+	        Optional<Category> existingWithName = repository. findByCategoryNameIgnoreCase(newCategoryName);
+	        if (existingWithName.isPresent()) {
+	            ResponseStructure<CategoryDto> errorResponse = ResponseStructure.buildResponse(
+	                    null,
+	                    "Category name already exists: " + newCategoryName,
+	                    HttpStatus.BAD_REQUEST,
+	                    HttpStatus.BAD_REQUEST.value()
+	            );
+	            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+	        } else {
+	            c.setCategoryName(newCategoryName);
+	        }
 	    }
 
-	    String oldCategoryName = existing.getCategoryName();
+	    // Step 4: Update remaining fields if they are not null
+	    if (updateDto.getDescription() != null) {
+	        c.setDescription(updateDto.getDescription());
+	    }
 
-	    // Update image (if provided)
 	    if (updateDto.getCategoryImage() != null) {
 	        byte[] categoryImageBytes = Base64.getDecoder().decode(updateDto.getCategoryImage());
-	        existing.setCategoryImage(categoryImageBytes);
+	        c.setCategoryImage(categoryImageBytes);
 	    }
 
-	    // Update main fields
-	    existing.setCategoryName(updateDto.getCategoryName());
-	    existing.setDescription(updateDto.getDescription());
-	    Category savedCategory = repository.save(existing);
+	    // Save updated category
+	    Category savedCategory = repository.save(c);
 
-	    // Update Services
-	    List<Services> services = serviceManagmentRepository.findByCategoryName(oldCategoryName);
-	    System.out.println("Found Services: " + services.size());
-	    for (Services service : services) {
-	        service.setCategoryName(updateDto.getCategoryName());
+	    // Step 5: Update related entities if name changed
+	    if (!oldCategoryName.equalsIgnoreCase(savedCategory.getCategoryName())) {
+	        List<Services> services = serviceManagmentRepository.findByCategoryId(categoryId);
+	        for (Services service : services) {
+	            service.setCategoryName(savedCategory.getCategoryName());
+	        }
+	        serviceManagmentRepository.saveAll(services);
+
+	        List<SubServices> subServices = subServiceRepository.findByCategoryId(categoryId);
+	        for (SubServices subService : subServices) {
+	            subService.setCategoryName(savedCategory.getCategoryName());
+	        }
+	        subServiceRepository.saveAll(subServices);
+
+	        List<SubServicesInfoEntity> subServiceInfos = subServicesInfoRepository.findByCategoryId(categoryId.toString());
+	        for (SubServicesInfoEntity info : subServiceInfos) {
+	            info.setCategoryName(savedCategory.getCategoryName());
+	        }
+	        subServicesInfoRepository.saveAll(subServiceInfos);
 	    }
-	    serviceManagmentRepository.saveAll(services);
 
-	    // Update SubServices
-	    List<SubServices> subServices = subServiceRepository.findByCategoryName(oldCategoryName);
-	    System.out.println("Found SubServices: " + subServices.size());
-	    for (SubServices subService : subServices) {
-	        subService.setCategoryName(updateDto.getCategoryName());
-	    }
-	    subServiceRepository.saveAll(subServices);
-
-	    // ✅ Update SubServicesInfoEntity
-	    List<SubServicesInfoEntity> subServiceInfos = subServicesInfoRepository.findByCategoryName(oldCategoryName);
-	    System.out.println("Found SubServiceInfos: " + subServiceInfos.size());
-	    for (SubServicesInfoEntity info : subServiceInfos) {
-	        info.setCategoryName(updateDto.getCategoryName());
-	    }
-	    subServicesInfoRepository.saveAll(subServiceInfos);
-
-	    return HelperForConversion.toDto(savedCategory);
+	    // Step 6: Return successful response
+	    CategoryDto resultDto = HelperForConversion.toDto(savedCategory);
+	    ResponseStructure<CategoryDto> successResponse = ResponseStructure.buildResponse(
+	            resultDto,
+	            "Category updated successfully",
+	            HttpStatus.OK,
+	            HttpStatus.OK.value()
+	    );
+	    return new ResponseEntity<>(successResponse, HttpStatus.OK);
 	}
 
 
