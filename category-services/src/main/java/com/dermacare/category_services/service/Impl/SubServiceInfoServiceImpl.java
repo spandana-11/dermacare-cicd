@@ -245,13 +245,8 @@ public class SubServiceInfoServiceImpl implements SubServiceInfo {
 	            response.setStatus(404);
 	            response.setMessage("SubServiceInfo with given ID not found");
 	            response.setSuccess(false);
-	            return response;}
-	       
-	        if (subsrvice == null || subsrvice.isEmpty()) {
-	            response.setStatus(404);
-	            response.setMessage("SubService with given ID not found");
-	            response.setSuccess(false);
-	            return response;}
+	            return response;
+	          }
 	            
 	        if(subServicesEntity != null) {
 	        for(SubServiceDTO s: domainServices.getSubServices()){
