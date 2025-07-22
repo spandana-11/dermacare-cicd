@@ -136,8 +136,7 @@ const WidgetsDropdown = (props) => {
     [todayISO, convertToISODate],
   )
 
-const fetchDoctors = useCallback(
-  async (clinicId) => {
+  const fetchDoctors = useCallback(async (clinicId) => {
     setLoadingDoctors(true)
     setDoctorError(null)
     try {
@@ -160,10 +159,7 @@ const fetchDoctors = useCallback(
     } finally {
       setLoadingDoctors(false)
     }
-  },
-  []
-)
-
+  }, [])
 
   useEffect(() => {
     fetchAdvertisements()
@@ -248,82 +244,81 @@ const fetchDoctors = useCallback(
     return `data:image/png;base64,${src}` // adjust type if JPG or SVG
   }
 
- const sliderSettings = {
-  dots: true,
-  infinite: slides.length > 1, // ⬅ Only enable loop when more than 1
-  speed: 500,
-  slidesToShow: 1,
-  slidesToScroll: 1,
-  autoplay: true,
-  autoplaySpeed: 3000,
-  arrows: true,
-};
+  const sliderSettings = {
+    dots: true,
+    infinite: slides.length > 1, // ⬅️ Only enable loop when more than 1
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 3000,
+    arrows: true,
+  }
 
   // Auto-slide for images
   useEffect(() => {
-    let imageTimer;
+    let imageTimer
     if (slides.length > 0) {
       // Watch current slide index
       const handleBeforeChange = (oldIndex, newIndex) => {
         // Clear previous timer
-        clearTimeout(imageTimer);
+        clearTimeout(imageTimer)
 
-        const current = slides[newIndex];
-        const isVideo = isVideoFile(current.mediaUrlOrImage);
+        const current = slides[newIndex]
+        const isVideo = isVideoFile(current.mediaUrlOrImage)
 
         if (!isVideo) {
           // For images: move to next after 3s
           imageTimer = setTimeout(() => {
             if (sliderRef.current) {
-              sliderRef.current.slickNext();
+              sliderRef.current.slickNext()
             }
-          }, 1000);
+          }, 1000)
         }
-      };
+      }
 
       // attach to slider events
-      sliderRef.current?.innerSlider?.list.addEventListener("transitionend", () => {
+      sliderRef.current?.innerSlider?.list.addEventListener('transitionend', () => {
         // optionally handle something after transition
-      });
+      })
 
       // If using react-slick, you can get current index in afterChange
-      sliderRef.current?.props?.afterChange &&
-        sliderRef.current.props.afterChange(0);
+      sliderRef.current?.props?.afterChange && sliderRef.current.props.afterChange(0)
 
       return () => {
-        clearTimeout(imageTimer);
-      };
+        clearTimeout(imageTimer)
+      }
     }
-  }, [slides]);
+  }, [slides])
 
   // After component mounts, attach ended listeners for each video
   useEffect(() => {
     slides.forEach((item, idx) => {
-      const videoEl = document.getElementById(`video-${idx}`);
+      const videoEl = document.getElementById(`video-${idx}`)
       if (videoEl) {
         // Clean up previous listener
-        videoEl.onended = null;
+        videoEl.onended = null
         videoEl.onended = () => {
           if (sliderRef.current) {
-            sliderRef.current.slickNext();
+            sliderRef.current.slickNext()
           }
-        };
+        }
       }
-    });
-  }, [slides]);
+    })
+  }, [slides])
 
   // Helper to check if it's video
   const isVideoFile = (src) => {
-    if (!src) return false;
-    const lower = src.toLowerCase();
+    if (!src) return false
+    const lower = src.toLowerCase()
     return (
-      lower.startsWith("data:video") ||
-      lower.endsWith(".mp4") ||
-      lower.endsWith(".webm") ||
-      lower.endsWith(".ogg") ||
-      lower.includes("video") // fallback if backend sends mime type
-    );
-  };
+      lower.startsWith('data:video') ||
+      lower.endsWith('.mp4') ||
+      lower.endsWith('.webm') ||
+      lower.endsWith('.ogg') ||
+      lower.includes('video') // fallback if backend sends mime type
+    )
+  }
   return (
     <>
       {/*to display cards*/}
@@ -474,48 +469,48 @@ const fetchDoctors = useCallback(
       </CRow>
 
       {/* Carousel Section */}
-       <div style={{ marginTop: "2rem" }}>
-      {slides.length > 0 ? (
-        <Slider ref={sliderRef} {...sliderSettings}>
-          {slides.map((item, idx) => {
-            const mediaSrc = item.mediaUrlOrImage;
-            const isVideo = isVideoFile(mediaSrc);
-            return (
-              <div key={item.carouselId || idx}>
-                {isVideo ? (
-                  <video
-                    id={`video-${idx}`}
-                    src={mediaSrc}
-                    controls
-                    autoPlay
-                    muted
-                    style={{
-                      width: "100%",
-                      maxHeight: "300px",
-                      objectFit: "contain",
-                      borderRadius: "8px",
-                    }}
-                  />
-                ) : (
-                  <img
-                    src={mediaSrc}
-                    alt={`Slide ${idx + 1}`}
-                    style={{
-                      width: "100%",
-                      maxHeight: "300px",
-                      objectFit: "cover",
-                      borderRadius: "8px",
-                    }}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </Slider>
-      ) : (
-        <p>No media found</p>
-      )}
-    </div>
+      <div style={{ marginTop: '2rem' }}>
+        {slides.length > 0 ? (
+          <Slider ref={sliderRef} {...sliderSettings}>
+            {slides.map((item, idx) => {
+              const mediaSrc = item.mediaUrlOrImage
+              const isVideo = isVideoFile(mediaSrc)
+              return (
+                <div key={item.carouselId || idx}>
+                  {isVideo ? (
+                    <video
+                      id={`video-${idx}`}
+                      src={mediaSrc}
+                      controls
+                      autoPlay
+                      muted
+                      style={{
+                        width: '100%',
+                        maxHeight: '300px',
+                        objectFit: 'contain',
+                        borderRadius: '8px',
+                      }}
+                    />
+                  ) : (
+                    <img
+                      src={mediaSrc}
+                      alt={`Slide ${idx + 1}`}
+                      style={{
+                        width: '100%',
+                        maxHeight: '300px',
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                      }}
+                    />
+                  )}
+                </div>
+              )
+            })}
+          </Slider>
+        ) : (
+          <p>No media found</p>
+        )}
+      </div>
 
       {/*to display appointmnt */}
       {/* Appointments Table */}

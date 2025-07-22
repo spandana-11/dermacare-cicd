@@ -103,44 +103,52 @@ const DoctorNotifications = () => {
 
 useEffect(() => {
   const fetchDoctorIdAndNotifications = async () => {
-  const hospitalId = localStorage.getItem('HospitalId')
-  if (!hospitalId) {
-    toast.error('Missing Hospital ID in localStorage')
-    return
-  }
-
-  try {
-    const response = await DoctorId_NotificationsData(hospitalId)
-
-    if (response.status === 200 && Array.isArray(response.data.data) && response.data.data.length > 0) {
-      const doctorList = response.data.data
-
-      let allNotifications = []
-      for (const doc of doctorList) {
-        const doctorId = doc.doctorId
-        try {
-          const notifyRes = await DoctorNotifyData(hospitalId, doctorId)
-          if (notifyRes.status === 200 && Array.isArray(notifyRes.data.data)) {
-            allNotifications = [...allNotifications, ...notifyRes.data.data]
-          }
-        } catch (err) {
-          console.error(`Error fetching notifications for doctor ${doctorId}:`, err)
-        }
-      }
-
-      setNotifications(allNotifications)
-      setNotificationCount(allNotifications.length)
-    } else {
-      toast.warning('No doctors found for this hospital.')
+    setLoading(true); // ✅ start loading
+    const hospitalId = localStorage.getItem('HospitalId');
+    if (!hospitalId) {
+      toast.error('Missing Hospital ID in localStorage');
+      setLoading(false); // ✅ stop loading even on early return
+      return;
     }
-  } catch (error) {
-    // console.error('Error fetching doctors:', error)
-    toast.error('Error fetching doctor list.')
-  }
-}
 
-  fetchDoctorIdAndNotifications()
-}, [])
+    try {
+      const response = await DoctorId_NotificationsData(hospitalId);
+
+      if (
+        response.status === 200 &&
+        Array.isArray(response.data.data) &&
+        response.data.data.length > 0
+      ) {
+        const doctorList = response.data.data;
+
+        let allNotifications = [];
+        for (const doc of doctorList) {
+          const doctorId = doc.doctorId;
+          try {
+            const notifyRes = await DoctorNotifyData(hospitalId, doctorId);
+            if (notifyRes.status === 200 && Array.isArray(notifyRes.data.data)) {
+              allNotifications = [...allNotifications, ...notifyRes.data.data];
+            }
+          } catch (err) {
+            console.error(`Error fetching notifications for doctor ${doctorId}:`, err);
+          }
+        }
+
+        setNotifications(allNotifications);
+        setNotificationCount(allNotifications.length);
+      } else {
+        setNotifications([]);
+      }
+    } catch (error) {
+      toast.error('Error fetching doctor list.');
+    } finally {
+      setLoading(false); // ✅ stop loading after everything
+    }
+  };
+
+  fetchDoctorIdAndNotifications();
+}, []);
+
 
   return (
     <div className="container mt-4">
@@ -162,42 +170,46 @@ useEffect(() => {
           </CTableRow>
         </CTableHead>
 
-        <CTableBody>
-          {notifications.length > 0 ? (
-            notifications.map((item, index) => (
-              <CTableRow key={item.notificationId || index}>
-                {' '}
-                {/* Added index as fallback key */}
-                <CTableDataCell>{index + 1}</CTableDataCell>
-                <CTableDataCell>{item.data?.doctorName || '-'}</CTableDataCell>
-                <CTableDataCell>{item.data?.name || '-'}</CTableDataCell>
-                <CTableDataCell>{item.data?.mobileNumber || '-'}</CTableDataCell>
-                <CTableDataCell>{item.data?.consultationType || '-'}</CTableDataCell>
-                <CTableDataCell>{item.data?.serviceDate || '-'}</CTableDataCell>
-                <CTableDataCell>{item.data?.servicetime || '-'}</CTableDataCell>
-                <CTableDataCell>
-                  <CButton
-                    color="primary"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedNotification(item)
-                      setShowViewModal(true)
-                    }}
-                  >
-                    View
-                  </CButton>
-                </CTableDataCell>
-              </CTableRow>
-            ))
-          ) : (
-            <CTableRow>
-              <CTableDataCell colSpan="9" className="text-center text-secondary fw-bold">
-                {/* Changed text color to secondary as it's an info message, not an error */}
-                No notifications available or data could not be loaded.
-              </CTableDataCell>
-            </CTableRow>
-          )}
-        </CTableBody>
+       <CTableBody>
+  {loading ? (
+    <CTableRow>
+      <CTableDataCell colSpan="8" className="text-center text-primary fw-bold">
+        Loading notifications...
+      </CTableDataCell>
+    </CTableRow>
+  ) : notifications.length > 0 ? (
+    notifications.map((item, index) => (
+      <CTableRow key={item.notificationId || index}>
+        <CTableDataCell>{index + 1}</CTableDataCell>
+        <CTableDataCell>{item.data?.doctorName || '-'}</CTableDataCell>
+        <CTableDataCell>{item.data?.name || '-'}</CTableDataCell>
+        <CTableDataCell>{item.data?.mobileNumber || '-'}</CTableDataCell>
+        <CTableDataCell>{item.data?.consultationType || '-'}</CTableDataCell>
+        <CTableDataCell>{item.data?.serviceDate || '-'}</CTableDataCell>
+        <CTableDataCell>{item.data?.servicetime || '-'}</CTableDataCell>
+        <CTableDataCell>
+          <CButton
+            color="primary"
+            size="sm"
+            onClick={() => {
+              setSelectedNotification(item);
+              setShowViewModal(true);
+            }}
+          >
+            View
+          </CButton>
+        </CTableDataCell>
+      </CTableRow>
+    ))
+  ) : (
+    <CTableRow>
+      <CTableDataCell colSpan="8" className="text-center text-secondary fw-bold">
+        No notifications available.
+      </CTableDataCell>
+    </CTableRow>
+  )}
+</CTableBody>
+
       </CTable>
       <CModal visible={showViewModal} onClose={() => setShowViewModal(false)}>
         <CModalHeader>

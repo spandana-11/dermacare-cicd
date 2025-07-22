@@ -48,10 +48,12 @@ const fetchAppointments = async (hospitalId) => { // Added hospitalId parameter
             )
           : data.data
         setBookings(relevantBookings || [])
+        setLoading(false);
       }
     } catch (error) {
       console.error('Failed to fetch appointments:', error)
       setBookings([]) // Ensure bookings is an empty array on error
+      setLoading(false);
     }
   }
 
@@ -185,50 +187,58 @@ const fetchAppointments = async (hospitalId) => { // Added hospitalId parameter
             </CTableRow>
           </CTableHead>
 
-          <CTableBody>
-            {filteredData.length > 0 ? (
-              filteredData.map((item, index) => (
-                <CTableRow key={`${item.bookingId}-${index}`}>
-                  <CTableDataCell>{index + 1}</CTableDataCell>
-                  <CTableDataCell>{item.name}</CTableDataCell>
-                  {/* <CTableDataCell>{item.servicename || '-'}</CTableDataCell> */}
-                  <CTableDataCell>{item.consultationType}</CTableDataCell>
-                  <CTableDataCell>{item.serviceDate}</CTableDataCell>
-                  <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
-                  <CTableDataCell>{item.status}</CTableDataCell>
-                  <CTableDataCell>
-                    <CButton
-                      color="primary"
-                      size="sm"
-                      onClick={() =>
-                        navigate(`/reportDetails/${item.bookingId}`, {
-                          state: {
-                            report: item,
-                            appointmentInfo: {
-                              name: item.name,
-                              age: item.age,
-                              gender: item.gender,
-                              problem: item.problem,
-                              bookingId: item.bookingId,
-                              item: item,
-                            },
-                          },
-                        })
-                      }
-                    >
-                      View
-                    </CButton>
-                  </CTableDataCell>
-                </CTableRow>
-              ))
-            ) : (
-              <CTableRow>
-                <CTableDataCell colSpan="8" className="text-center text-danger fw-bold">
-                  No completed appointments found.
-                </CTableDataCell>
-              </CTableRow>
-            )}
-          </CTableBody>
+       <CTableBody>
+  {loading ? (
+    // ✅ Show loading while data is being fetched
+    <CTableRow>
+      <CTableDataCell colSpan="8" className="text-center text-primary fw-bold">
+        Loading reports...
+      </CTableDataCell>
+    </CTableRow>
+  ) : filteredData.length > 0 ? (
+    filteredData.map((item, index) => (
+      <CTableRow key={`${item.bookingId}-${index}`}>
+        <CTableDataCell>{index + 1}</CTableDataCell>
+        <CTableDataCell>{item.name}</CTableDataCell>
+        <CTableDataCell>{item.consultationType}</CTableDataCell>
+        <CTableDataCell>{item.serviceDate}</CTableDataCell>
+        <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
+        <CTableDataCell>{item.status}</CTableDataCell>
+        <CTableDataCell>
+          <CButton
+            color="primary"
+            size="sm"
+            onClick={() =>
+              navigate(`/reportDetails/${item.bookingId}`, {
+                state: {
+                  report: item,
+                  appointmentInfo: {
+                    name: item.name,
+                    age: item.age,
+                    gender: item.gender,
+                    problem: item.problem,
+                    bookingId: item.bookingId,
+                    item: item,
+                  },
+                },
+              })
+            }
+          >
+            View
+          </CButton>
+        </CTableDataCell>
+      </CTableRow>
+    ))
+  ) : (
+    // ✅ Show only after loading is done and no data
+    <CTableRow>
+      <CTableDataCell colSpan="8" className="text-center text-danger fw-bold">
+        No completed appointments found.
+      </CTableDataCell>
+    </CTableRow>
+  )}
+</CTableBody>
+
         </CTable>
       </div>
       {/* {viewService && (

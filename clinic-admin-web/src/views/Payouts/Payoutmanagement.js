@@ -1,39 +1,109 @@
 import React, { useEffect, useState } from 'react'
-import axios from 'axios'
 import {
-  CButton,
-  CFormInput,
+  CContainer,
+  CRow,
+  CCol,
   CInputGroup,
+  CFormInput,
   CInputGroupText,
+  CTable,
+  CTableHead,
+  CTableRow,
+  CTableHeaderCell,
+  CTableBody,
+  CTableDataCell,
+  CButton,
   CModal,
   CModalHeader,
   CModalTitle,
   CModalBody,
-  CModalFooter,
-  CTable,
-  CTableHead,
-  CTableBody,
-  CTableRow,
-  CTableHeaderCell,
-  CTableDataCell,
-  CContainer,
-  CRow,
-  CCol,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilSearch } from '@coreui/icons'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import { Get_AllPayoutsData, postPayoutsData } from './PayoutsAPI'
 
-// 🔧 Replace this with your real backend later
-// const DUMMY_API = 'https://jsonplaceholder.typicode.com/posts'
+// ✅ Dummy API methods
+// replace these with your real API methods
+const Get_AllPayoutsData = async () => {
+  // simulate API delay
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        data: [
+          {
+            transactionId: 'TXN-2001',
+            bookingId: 'BKG-101',
+            billingName: 'Server User1',
+            amount: '2500',
+            paymentMethod: 'Card',
+            userEmail: 'server1@example.com',
+            userMobile: '9999000011',
+            billingAddress: 'Chennai, India',
+          },
+          {
+            transactionId: 'TXN-2002',
+            bookingId: 'BKG-102',
+            billingName: 'Server User2',
+            amount: '4500',
+            paymentMethod: 'UPI',
+            userEmail: 'server2@example.com',
+            userMobile: '9999000012',
+            billingAddress: 'Bangalore, India',
+          },
+        ],
+      })
+    }, 2000) // 2s delay to simulate loading
+  })
+}
+
+const postPayoutsData = async (data) => {
+  // simulate post
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({ data: { ...data, bookingId: 'NEW-BKG' } })
+    }, 500)
+  })
+}
 
 const PayoutManagement = () => {
-  const [payouts, setPayouts] = useState([])
+  // ✅ Sample initial data to show immediately in UI
+  const samplePayouts = [
+    {
+      transactionId: 'TXN-1001',
+      bookingId: 'BKG-001',
+      billingName: 'Local User1',
+      amount: '1200',
+      paymentMethod: 'Cash',
+      userEmail: 'local1@example.com',
+      userMobile: '9876543210',
+      billingAddress: 'Hyderabad, India',
+    },
+    {
+      transactionId: 'TXN-1002',
+      bookingId: 'BKG-002',
+      billingName: 'Local User2',
+      amount: '1800',
+      paymentMethod: 'Card',
+      userEmail: 'local2@example.com',
+      userMobile: '9876543211',
+      billingAddress: 'Mumbai, India',
+    },
+    {
+      transactionId: 'TXN-1003',
+      bookingId: 'BKG-003',
+      billingName: 'Local User3',
+      amount: '2000',
+      paymentMethod: 'UPI',
+      userEmail: 'local3@example.com',
+      userMobile: '9876543212',
+      billingAddress: 'Delhi, India',
+    },
+  ]
+
+  const [payouts, setPayouts] = useState(samplePayouts) // ✅ start with sample data
   const [search, setSearch] = useState('')
   const [viewData, setViewData] = useState(null)
-  // const [addModal, setAddModal] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const [formData, setFormData] = useState({
@@ -47,16 +117,23 @@ const PayoutManagement = () => {
     billingAddress: '',
   })
 
+  // ✅ Fetch server payouts
   useEffect(() => {
     const fetchPayouts = async () => {
       try {
+        setLoading(true)
         const result = await Get_AllPayoutsData()
+        // Merge or replace sample data with server data:
+        // If you want to replace: use setPayouts(result.data)
+        // If you want to append: use [...payouts, ...result.data]
+        // setPayouts((prev) => [...prev, ...(result?.data ?? [])])
         setPayouts(result?.data ?? [])
       } catch (error) {
         console.error('Failed to fetch payouts:', error)
+      } finally {
+        setLoading(false)
       }
     }
-
     fetchPayouts()
   }, [])
 
@@ -65,12 +142,10 @@ const PayoutManagement = () => {
       toast.error('Fill all required fields')
       return
     }
-
     try {
       const res = await postPayoutsData(formData)
       setPayouts([res.data, ...payouts])
       toast.success('Added successfully')
-      // setAddModal(false)
       setFormData({
         transactionId: '',
         amount: '',
@@ -82,7 +157,7 @@ const PayoutManagement = () => {
         billingAddress: '',
       })
     } catch (err) {
-      toast.error(error?.response?.data?.message || 'Add failed')
+      toast.error(err?.response?.data?.message || 'Add failed')
     }
   }
 
@@ -96,8 +171,6 @@ const PayoutManagement = () => {
   return (
     <CContainer className="p-4">
       <ToastContainer />
-    
-
       <h3 className="mb-4">Transaction List</h3>
 
       <CRow className="mb-3 align-items-center">
@@ -122,125 +195,49 @@ const PayoutManagement = () => {
         <CTableHead>
           <CTableRow>
             <CTableHeaderCell>S.No</CTableHeaderCell>
-            {/* <CTableHeaderCell>transactionId</CTableHeaderCell> */}
             <CTableHeaderCell>bookingId</CTableHeaderCell>
             <CTableHeaderCell>Billing Name</CTableHeaderCell>
             <CTableHeaderCell>Amount</CTableHeaderCell>
-            <CTableHeaderCell>paymentMethod</CTableHeaderCell>
+            <CTableHeaderCell>Payment Method</CTableHeaderCell>
             <CTableHeaderCell>Actions</CTableHeaderCell>
           </CTableRow>
         </CTableHead>
         <CTableBody>
-          {filteredData.map((p, index) => (
-            <CTableRow key={`${p.bookingId}-${index}`}>
-              <CTableDataCell>{index + 1}</CTableDataCell>
-              {/* <CTableDataCell>{p.transactionId}</CTableDataCell> */}
-              <CTableDataCell>{p.bookingId}</CTableDataCell>
-              <CTableDataCell>{p.billingName}</CTableDataCell>
-              <CTableDataCell>{p.amount}</CTableDataCell>
-              <CTableDataCell>{p.paymentMethod}</CTableDataCell>
-              <CTableDataCell>
-                <CButton
-                  size="sm"
-                  color="info"
-                  className="text-white"
-                  onClick={() => setViewData(p)}
-                >
-                  View
-                </CButton>
+          {loading ? (
+            <CTableRow>
+              <CTableDataCell colSpan={6} className="text-center text-primary">
+                Loading payouts...
               </CTableDataCell>
             </CTableRow>
-          ))}
+          ) : filteredData.length > 0 ? (
+            filteredData.map((p, index) => (
+              <CTableRow key={`${p.bookingId}-${index}`}>
+                <CTableDataCell>{index + 1}</CTableDataCell>
+                <CTableDataCell>{p.bookingId}</CTableDataCell>
+                <CTableDataCell>{p.billingName}</CTableDataCell>
+                <CTableDataCell>{p.amount}</CTableDataCell>
+                <CTableDataCell>{p.paymentMethod}</CTableDataCell>
+                <CTableDataCell>
+                  <CButton
+                    size="sm"
+                    color="info"
+                    className="text-white"
+                    onClick={() => setViewData(p)}
+                  >
+                    View
+                  </CButton>
+                </CTableDataCell>
+              </CTableRow>
+            ))
+          ) : (
+            <CTableRow>
+              <CTableDataCell colSpan={6} className="text-center text-danger">
+                No payouts found.
+              </CTableDataCell>
+            </CTableRow>
+          )}
         </CTableBody>
       </CTable>
-
-      {/* Add Modal */}
-      {/* <CModal visible={addModal} onClose={() => setAddModal(false)}>
-        <CModalHeader>
-          <CModalTitle>Add New Payout</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-           <h6>User Id</h6>
-          <CFormInput
-            className="mb-2"
-            placeholder="User ID"
-            value={formData.userId}
-            onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
-          />
-           <h6>Doctor Id</h6>
-          <CFormInput
-            className="mb-2"
-            placeholder="Doctor ID"
-            value={formData.doctorId}
-            onChange={(e) => setFormData({ ...formData, doctorId: e.target.value })}
-          />
-          <h6>Booking Id</h6>
-          <CFormInput
-            className="mb-2"
-            placeholder="Booking ID"
-            value={formData.bookingId}
-            onChange={(e) => setFormData({ ...formData, bookingId: e.target.value })}
-          />
-          <h6>Currency</h6>
-          <CFormInput
-            className="mb-2"
-            placeholder="Currency (e.g. INR)"
-            value={formData.currency}
-            onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-          />
-           <h6>Payment Status</h6>
-          <CFormInput
-            className="mb-2"
-            placeholder="Payment Status"
-            value={formData.paymentStatus}
-            onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value })}
-          />
-<h6>Amount</h6>
-          <CFormInput
-            className="mb-2"
-            placeholder="Amount"
-            value={formData.amount}
-            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-          />
-          <CFormInput
-            className="mb-2"
-            placeholder="Payment Method"
-            value={formData.paymentMethod}
-            onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-          />
-          <CFormInput
-            className="mb-2"
-            placeholder="User Email"
-            value={formData.userEmail}
-            onChange={(e) => setFormData({ ...formData, userEmail: e.target.value })}
-          />
-          <CFormInput
-            className="mb-2"
-            placeholder="User Mobile"
-            value={formData.userMobile}
-            onChange={(e) => setFormData({ ...formData, userMobile: e.target.value })}
-          />
-          <CFormInput
-            className="mb-2"
-            placeholder="Billing Name"
-            value={formData.billingName}
-            onChange={(e) => setFormData({ ...formData, billingName: e.target.value })}
-          />
-          <CFormInput
-            placeholder="Billing Address"
-            value={formData.billingAddress}
-            onChange={(e) => setFormData({ ...formData, billingAddress: e.target.value })}
-          />
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" onClick={() => setAddModal(false)}>
-            Cancel
-          </CButton>
-          <CButton color="primary" onClick={handleAdd}>
-            Submit
-          </CButton>
-        </CModalFooter>
-      </CModal> */}
 
       {/* View Modal */}
       <CModal visible={!!viewData} onClose={() => setViewData(null)}>
