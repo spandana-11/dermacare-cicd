@@ -438,13 +438,12 @@ const AddClinic = () => {
 
     fetchDoctors()
   }, [])
-
   const handleSubmit = async (e) => {
     e.preventDefault()
 
     const isValid = validateForm()
     if (!isValid) return
-    setIsSubmitting(true) // ⬅ Start loading
+    setIsSubmitting(true) // ⬅️ Start loading
 
     const { emailAddress, contactNumber } = formData
 
@@ -467,7 +466,7 @@ const AddClinic = () => {
         newErrors.emailAddress = 'Email already exists'
       }
       if (isMobileDuplicate) newErrors.contactNumber = 'Mobile number already exists'
-        toast.error('Mobile number already exists')
+      toast.error('Mobile number already exists')
       setErrors((prev) => ({ ...prev, ...newErrors }))
       return
     }
@@ -511,7 +510,7 @@ const AddClinic = () => {
       const gstRegistrationCertificateBase64 = await convertIfExists(
         formData.gstRegistrationCertificate,
       )
-      // If others is an array
+      // If `others` is an array
       const othersBase64 =
         formData.others && formData.others.length > 0
           ? await convertMultipleIfExists(formData.others)
@@ -569,7 +568,7 @@ const AddClinic = () => {
         toast.success(savedClinicData.message || 'Clinic Added Successfully', {
           position: 'top-right',
         })
-        setIsSubmitting(false) // ⬅ Start loading
+        setIsSubmitting(false) // ⬅️ Start loading
 
         sendDermaCareOnboardingEmail({
           name: formData.name,
@@ -594,6 +593,7 @@ const AddClinic = () => {
       setIsSubmitting(false)
     }
   }
+
   return (
     <div className="container mt-4">
       <ToastContainer />

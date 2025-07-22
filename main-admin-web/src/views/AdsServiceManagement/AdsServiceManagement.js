@@ -17,7 +17,7 @@ import {
   CTableRow,
   CTableDataCell,
 } from '@coreui/react'
-import { ToastContainer,toast } from 'react-toastify'
+import { ToastContainer, toast } from 'react-toastify'
 import { Get_AllServAdvData, Add_ServAdvData, delete_ServAdvData } from './AdsServiceManagementAPI'
 import { ConfirmationModal } from '../../Utils/ConfirmationDelete'
 
@@ -29,6 +29,7 @@ const ServiceAdvertisement = () => {
   const [selectedFile, setSelectedFile] = useState(null)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [carouselIdToDelete, setCarouselIdToDelete] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   // Load all advertisement data
   // const fetchData = async () => {
@@ -41,18 +42,20 @@ const ServiceAdvertisement = () => {
   // }
   // Load all advertisement data
   const fetchData = async () => {
+    setLoading(true) // ✅ start loading
     try {
       const data = await Get_AllServAdvData()
-      // Ensure data is an array before setting it to advData
       if (Array.isArray(data)) {
         setAdvData(data)
       } else {
         console.warn('API returned non-array data for advertisements:', data)
-        setAdvData([]) // Default to an empty array if data is not an array
+        setAdvData([])
       }
     } catch (err) {
       toast.error('Failed to load advertisements.')
-      setAdvData([]) // Also set to empty array on error to prevent issues
+      setAdvData([])
+    } finally {
+      setLoading(false) // ✅ stop loading
     }
   }
 
@@ -115,109 +118,119 @@ const ServiceAdvertisement = () => {
 
   return (
     <>
-    <ToastContainer/>
-    <div className="container mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h4>Service Advertisements</h4>
-        <CButton color="primary" onClick={() => setVisible(true)}>
-          Add Advertisement
-        </CButton>
-      </div>
+      <ToastContainer />
+      <div className="container mt-4">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h4>Service Advertisements</h4>
+          <CButton color="primary" onClick={() => setVisible(true)}>
+            Add Advertisement
+          </CButton>
+        </div>
 
-      <CCard>
-        <CCardBody>
-          <CTable bordered hover>
-            <CTableHead color="light">
-              <CTableRow>
-                <CTableHeaderCell>Carousel ID</CTableHeaderCell>
-                <CTableHeaderCell>Image/URL</CTableHeaderCell>
-                <CTableHeaderCell>Actions</CTableHeaderCell>
-              </CTableRow>
-            </CTableHead>
-            <CTableBody>
-              {advData?.length === 0 ? (
+        <CCard>
+          <CCardBody>
+            <CTable bordered hover>
+              <CTableHead color="light">
                 <CTableRow>
-                  <CTableDataCell colSpan="3" className="text-center text-muted">
-                    No advertisements found
-                  </CTableDataCell>
+                  <CTableHeaderCell>Carousel ID</CTableHeaderCell>
+                  <CTableHeaderCell>Image/URL</CTableHeaderCell>
+                  <CTableHeaderCell>Actions</CTableHeaderCell>
                 </CTableRow>
-              ) : (
-                advData.map((item, index) => (
-                  <CTableRow key={index}>
-                    <CTableDataCell>{item.carouselId}</CTableDataCell>
-                    <CTableDataCell>
-                      {item.mediaUrlOrImage ? (
-                        item.mediaUrlOrImage.startsWith('data:video') ? (
-                          <video
-                            src={item.mediaUrlOrImage}
-                            height={50}
-                            controls
-                            style={{ objectFit: 'cover' }}
-                          />
-                        ) : (
-                          <img
-                            src={item.mediaUrlOrImage}
-                            alt="Ad"
-                            height={50}
-                            style={{ objectFit: 'cover' }}
-                          />
-                        )
-                      ) : (
-                        <span className="text-muted">No Media</span>
-                      )}
-                    </CTableDataCell>
+              </CTableHead>
+            <CTableBody>
+  {loading ? (
+    // ✅ Show this while data is loading
+    <CTableRow>
+      <CTableDataCell colSpan="3" className="text-center text-primary fw-bold">
+        Loading advertisements...
+      </CTableDataCell>
+    </CTableRow>
+  ) : advData?.length === 0 ? (
+    // ✅ Only show this after loading finishes
+    <CTableRow>
+      <CTableDataCell colSpan="3" className="text-center text-muted">
+        No advertisements found
+      </CTableDataCell>
+    </CTableRow>
+  ) : (
+    // ✅ Render your actual data rows
+    advData.map((item, index) => (
+      <CTableRow key={index}>
+        <CTableDataCell>{item.carouselId}</CTableDataCell>
+        <CTableDataCell>
+          {item.mediaUrlOrImage ? (
+            item.mediaUrlOrImage.startsWith('data:video') ? (
+              <video
+                src={item.mediaUrlOrImage}
+                height={50}
+                controls
+                style={{ objectFit: 'cover' }}
+              />
+            ) : (
+              <img
+                src={item.mediaUrlOrImage}
+                alt="Ad"
+                height={50}
+                style={{ objectFit: 'cover' }}
+              />
+            )
+          ) : (
+            <span className="text-muted">No Media</span>
+          )}
+        </CTableDataCell>
 
-                    <CTableDataCell>
-                      <CButton
-                        color="danger"
-                        style={{ color: 'white' }}
-                        size="sm"
-                        onClick={() => handleCarouselDelete(item.carouselId)}
-                      >
-                        Delete
-                      </CButton>
-                      <ConfirmationModal
-                        isVisible={isModalVisible}
-                        message="Are you sure you want to delete this service?"
-                        onConfirm={handleDelete}
-                        onCancel={handleCancelDelete}
-                      />
-                    </CTableDataCell>
-                  </CTableRow>
-                ))
-              )}
-            </CTableBody>
-          </CTable>
-        </CCardBody>
-      </CCard>
+        <CTableDataCell>
+          <CButton
+            color="danger"
+            style={{ color: 'white' }}
+            size="sm"
+            onClick={() => handleCarouselDelete(item.carouselId)}
+          >
+            Delete
+          </CButton>
+          <ConfirmationModal
+            isVisible={isModalVisible}
+            message="Are you sure you want to delete this service?"
+            onConfirm={handleDelete}
+            onCancel={handleCancelDelete}
+          />
+        </CTableDataCell>
+      </CTableRow>
+    ))
+  )}
+</CTableBody>
 
-      {/* Modal Form */}
-      <CModal visible={visible} onClose={() => setVisible(false)} backdrop="static">
-        <CModalHeader>
-          <CModalTitle>Add Advertisement</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          <CForm onSubmit={handleAdd}>
-            <CFormInput
-              type="file"
-              accept="image/*,video/*"
-              label="Select Image or Video"
-              onChange={(e) => setSelectedFile(e.target.files[0])}
-              required
-            />
+            </CTable>
+          </CCardBody>
+        </CCard>
 
-            <CModalFooter>
-              <CButton color="secondary" onClick={() => setVisible(false)}>
-                Cancel
-              </CButton>
-              <CButton type="submit" color="primary" disabled={isSubmitting}>
-                {isSubmitting ? 'Adding...' : 'Add'}
-              </CButton>
-            </CModalFooter>
-          </CForm>
-        </CModalBody>
-      </CModal>
-    </div>
+        {/* Modal Form */}
+        <CModal visible={visible} onClose={() => setVisible(false)} backdrop="static">
+          <CModalHeader>
+            <CModalTitle>Add Advertisement</CModalTitle>
+          </CModalHeader>
+          <CModalBody>
+            <CForm onSubmit={handleAdd}>
+              <CFormInput
+                type="file"
+                accept="image/*,video/*"
+                label="Select Image or Video"
+                onChange={(e) => setSelectedFile(e.target.files[0])}
+                required
+              />
+
+              <CModalFooter>
+                <CButton color="secondary" onClick={() => setVisible(false)}>
+                  Cancel
+                </CButton>
+                <CButton type="submit" color="primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Adding...' : 'Add'}
+                </CButton>
+              </CModalFooter>
+            </CForm>
+          </CModalBody>
+        </CModal>
+      </div>
     </>
   )
 }

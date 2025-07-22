@@ -33,14 +33,18 @@ const CategoryAdvertisement = () => {
   const [loading, setLoading] = useState(true)
 
   // Load all advertisement data
-  const fetchData = async () => {
-    try {
-      const data = await Get_AllAdvData()
-      setAdvData(data)
-    } catch (err) {
-      toast.error('Failed to load advertisements.')
-    }
+ const fetchData = async () => {
+  setLoading(true); // ✅ Start loading before fetching
+  try {
+    const data = await Get_AllAdvData();
+    setAdvData(data);
+  } catch (err) {
+    toast.error('Failed to load advertisements.');
+  } finally {
+    setLoading(false); // ✅ Stop loading after fetch
   }
+};
+
 
   useEffect(() => {
     fetchData()
@@ -120,59 +124,69 @@ const CategoryAdvertisement = () => {
                   <CTableHeaderCell>Actions</CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
-              <CTableBody>
-                {advData?.length === 0 ? (
-                  <CTableRow>
-                    <CTableDataCell colSpan="3" className="text-center text-muted">
-                      No advertisements found
-                    </CTableDataCell>
-                  </CTableRow>
-                ) : (
-                  advData.map((item, index) => (
-                    <CTableRow key={index}>
-                      <CTableDataCell>{item.carouselId}</CTableDataCell>
-                      <CTableDataCell>
-                        {item.mediaUrlOrImage ? (
-                          item.mediaUrlOrImage.startsWith('data:video') ? (
-                            <video
-                              src={item.mediaUrlOrImage}
-                              height={50}
-                              controls
-                              style={{ objectFit: 'cover' }}
-                            />
-                          ) : (
-                            <img
-                              src={item.mediaUrlOrImage}
-                              alt="Ad"
-                              height={50}
-                              style={{ objectFit: 'cover' }}
-                            />
-                          )
-                        ) : (
-                          <span className="text-muted">No Media</span>
-                        )}
-                      </CTableDataCell>
+            <CTableBody>
+  {loading ? (
+    // ✅ Show loading state first
+    <CTableRow>
+      <CTableDataCell colSpan="3" className="text-center text-primary fw-bold">
+        Loading advertisements...
+      </CTableDataCell>
+    </CTableRow>
+  ) : advData?.length === 0 ? (
+    // ✅ Show this only after loading finishes
+    <CTableRow>
+      <CTableDataCell colSpan="3" className="text-center text-muted">
+        No advertisements found
+      </CTableDataCell>
+    </CTableRow>
+  ) : (
+    // ✅ Show your actual rows
+    advData.map((item, index) => (
+      <CTableRow key={index}>
+        <CTableDataCell>{item.carouselId}</CTableDataCell>
+        <CTableDataCell>
+          {item.mediaUrlOrImage ? (
+            item.mediaUrlOrImage.startsWith('data:video') ? (
+              <video
+                src={item.mediaUrlOrImage}
+                height={50}
+                controls
+                style={{ objectFit: 'cover' }}
+              />
+            ) : (
+              <img
+                src={item.mediaUrlOrImage}
+                alt="Ad"
+                height={50}
+                style={{ objectFit: 'cover' }}
+              />
+            )
+          ) : (
+            <span className="text-muted">No Media</span>
+          )}
+        </CTableDataCell>
 
-                      <CTableDataCell>
-                        <CButton
-                          color="danger"
-                          style={{ color: 'white' }}
-                          size="sm"
-                          onClick={() => handleCarouselDelete(item.carouselId)}
-                        >
-                          Delete
-                        </CButton>
-                        <ConfirmationModal
-                          isVisible={isModalVisible}
-                          message="Are you sure you want to delete this service?"
-                          onConfirm={handleDelete}
-                          onCancel={handleCancelDelete}
-                        />
-                      </CTableDataCell>
-                    </CTableRow>
-                  ))
-                )}
-              </CTableBody>
+        <CTableDataCell>
+          <CButton
+            color="danger"
+            style={{ color: 'white' }}
+            size="sm"
+            onClick={() => handleCarouselDelete(item.carouselId)}
+          >
+            Delete
+          </CButton>
+          <ConfirmationModal
+            isVisible={isModalVisible}
+            message="Are you sure you want to delete this service?"
+            onConfirm={handleDelete}
+            onCancel={handleCancelDelete}
+          />
+        </CTableDataCell>
+      </CTableRow>
+    ))
+  )}
+</CTableBody>
+
             </CTable>
           </CCardBody>
         </CCard>

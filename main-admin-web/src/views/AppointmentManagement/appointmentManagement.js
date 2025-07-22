@@ -30,6 +30,8 @@ const appointmentManagement = () => {
   const [selectedConsultationTypes, setSelectedConsultationTypes] = useState([])
   const [selectedHospitalId, setSelectedHospitalId] = useState('')
   const [filteredData, setFilteredData] = useState([])
+  const [loading, setLoading] = useState(true)
+
   const [availableServiceTypes, setAvailableServiceTypes] = useState([])
   const [availableConsultationTypes, setAvailableConsultationTypes] = useState([])
   const consultationTypeLabels = {
@@ -48,6 +50,7 @@ const appointmentManagement = () => {
   const navigate = useNavigate()
 
   const fetchAppointments = async (clinicId = '') => {
+    setLoading(true) // start loading
     try {
       let response
 
@@ -62,10 +65,12 @@ const appointmentManagement = () => {
       const appointments = Array.isArray(response.data) ? response.data : response.data?.data || []
 
       setBookings(appointments)
+      setLoading(false) // ✅ stop loading
     } catch (error) {
       console.error('❌ Failed to fetch appointments:', error)
       setBookings([])
       setFilteredData([])
+      setLoading(false) // ✅ stop loading even on error
     }
   }
 
@@ -342,14 +347,18 @@ const appointmentManagement = () => {
           </CTableHead>
 
           <CTableBody>
-            {Array.isArray(filteredData) && filteredData.length > 0 ? (
+            {loading ? (
+              <CTableRow>
+                <CTableDataCell colSpan="8" className="text-center fw-bold text-primary">
+                  Loading appointments...
+                </CTableDataCell>
+              </CTableRow>
+            ) : Array.isArray(filteredData) && filteredData.length > 0 ? (
               paginatedData.map((item, index) => (
-                // <CTableRow key={item.id || `${item.name}-${index}`}>
-                <CTableRow key={`${item.id} -${index}`}>
+                <CTableRow key={`${item.id}-${index}`}>
                   <CTableDataCell>{index + 1}</CTableDataCell>
                   <CTableDataCell>{item.clinicId}</CTableDataCell>
                   <CTableDataCell>{item.name}</CTableDataCell>
-                  {/* <CTableDataCell>{item.servicename}</CTableDataCell> */}
                   <CTableDataCell>{item.consultationType}</CTableDataCell>
                   <CTableDataCell>
                     {item.sele ? `${item.sele} ` : ''}
