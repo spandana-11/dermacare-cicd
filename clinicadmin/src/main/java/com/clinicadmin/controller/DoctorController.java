@@ -295,5 +295,11 @@ public class DoctorController {
 		return doctorService.notificationToClinic(hospitalId);
 	}
 	
-	
+	// -----------------------------GET CLINICS AND DOCTORS BUY RECOMMONDATION ==
+		// TRUE---------------------------------
+		@GetMapping("/recommendedClinicAndDoctors")
+		public ResponseEntity<Response> getClinicAndDoctorUsingRecommondation() {
+			Response response = doctorService.getRecommendedClinicsAndDoctors();
+			return ResponseEntity.status(response.getStatus()).body(response);
+		}
 }

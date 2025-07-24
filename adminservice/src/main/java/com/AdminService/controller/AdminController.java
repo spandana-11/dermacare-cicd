@@ -490,6 +490,14 @@ public ResponseEntity<Object> getDoctorInfoByDoctorId(@PathVariable String docto
 		 }
 }
 
+//-----------------------------GET CLINICS BUY RECOMMONDATION == TRUE---------------------------------
+@GetMapping("/clinics/recommended")
+public ResponseEntity<Response>getHospitalUsingRecommendentaion(){
+	Response response = serviceImpl.getClinicsByRecommondation();
+	 return ResponseEntity.status(response.getStatus()).body(response);
+}
+
+
 }
 
 

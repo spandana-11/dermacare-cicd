@@ -36,5 +36,8 @@ public interface AdminServiceClient {
 	// Delete Clinic
 	@DeleteMapping("/admin/deleteClinic/{clinicId}")
 	public Response deleteClinic(@PathVariable String clinicId);
+	
+	@GetMapping("/admin/clinics/recommended")
+	public ResponseEntity<Response>getHospitalUsingRecommendentaion();
 
 }

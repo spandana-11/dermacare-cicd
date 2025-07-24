@@ -37,5 +37,6 @@ Response getAllDoctorsBySubserviceId(String subServiceId);
 public boolean makingFalseDoctorSlot(String doctorId, String date, String time);
 
 public ResponseEntity<?> notificationToClinic(String hospitalId);
+public Response getRecommendedClinicsAndDoctors();
 
 }

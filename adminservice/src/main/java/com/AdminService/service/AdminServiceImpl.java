@@ -1443,6 +1443,51 @@ public class AdminServiceImpl implements AdminService {
     		response.setSuccess(false);}
         return response;
     }
+
+  //-----------------------------GET CLINICS BUY RECOMMONDATION == TRUE---------------------------------
+  	@Override
+  	public Response getClinicsByRecommondation() {
+
+  		List<Clinic> clinics = clinicRep.findByRecommendedTrue();
+  		List<ClinicDTO> clinicsDTO = new ArrayList<>();
+  		for (Clinic clinic : clinics) {
+  			ClinicDTO toDto = new ClinicDTO();
+  			toDto.setHospitalId(clinic.getHospitalId());
+  			toDto.setName(clinic.getName());
+  			toDto.setAddress(clinic.getAddress());
+  			toDto.setCity(clinic.getCity());
+  			toDto.setContactNumber(clinic.getContactNumber());
+  			toDto.setHospitalOverallRating(clinic.getHospitalOverallRating());
+  			toDto.setOpeningTime(clinic.getOpeningTime());
+  			toDto.setClosingTime(clinic.getClosingTime());
+  			toDto.setEmailAddress(clinic.getEmailAddress());
+  			toDto.setWebsite(clinic.getWebsite());
+  			toDto.setLicenseNumber(clinic.getLicenseNumber());
+  			toDto.setIssuingAuthority(clinic.getIssuingAuthority());
+  			// Hospital Logo
+  			toDto.setHospitalLogo(
+  					clinic.getHospitalLogo() != null ? Base64.getEncoder().encodeToString(clinic.getHospitalLogo())
+  							: "");
+
+  			// Hospital Documents
+  			List<String> hospitalDocs = new ArrayList<>();
+  			if (clinic.getHospitalDocuments() != null) {
+  				for (byte[] doc : clinic.getHospitalDocuments()) {
+  					hospitalDocs.add(doc != null ? Base64.getEncoder().encodeToString(doc) : "");
+  				}
+  			}
+  			toDto.setHospitalDocuments(hospitalDocs);
+
+  			toDto.setRecommended(clinic.isRecommended());
+  			clinicsDTO.add(toDto);
+  		}
+  		Response response = new Response();
+  		response.setSuccess(true);
+  		response.setData(clinicsDTO);
+  		response.setStatus(200);
+  		response.setMessage("Clinics Retrive successfully");
+  		return response;
+  	}
 		
     
 }

@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1007,5 +1008,98 @@ public class DoctorServiceImpl implements DoctorService {
 			ResBody<List<String>> res = new ResBody<List<String>>(ExtractFeignMessage.clearMessage(e),e.status(),null);
 			return ResponseEntity.status(e.status()).body(res);}
 		}
+
+	//-----------------------------GET CLINICS AND DOCTORS BUY RECOMMONDATION == TRUE---------------------------------
+	@Override
+		public Response getRecommendedClinicsAndDoctors() {
+			 ResponseEntity<Response> responseEntity = adminServiceClient.getHospitalUsingRecommendentaion();
+		        Response responseBody = responseEntity.getBody();
+
+		        List<ClinicWithDoctorsDTO> result = new ArrayList<>();
+
+		        if (responseBody != null && responseBody.isSuccess()) {
+		            Object rawData = responseBody.getData();
+		            List<?> clinicRawList = (List<?>) rawData;
+
+		            for (Object obj : clinicRawList) {
+		                LinkedHashMap<?, ?> map = (LinkedHashMap<?, ?>) obj;
+
+		                // Map Clinic fields
+		                ClinicWithDoctorsDTO clinic = new ClinicWithDoctorsDTO();
+		                clinic.setHospitalId((String) map.get("hospitalId"));
+		                clinic.setName((String) map.get("name"));
+		                clinic.setAddress((String) map.get("address"));
+		                clinic.setCity((String) map.get("city"));
+		                clinic.setContactNumber((String) map.get("contactNumber"));
+		                clinic.setHospitalOverallRating(getDouble(map.get("hospitalOverallRating")));
+		                clinic.setHospitalRegistrations((String) map.get("hospitalRegistrations"));
+		                clinic.setOpeningTime((String) map.get("openingTime"));
+		                clinic.setClosingTime((String) map.get("closingTime"));
+		                clinic.setHospitalLogo((String) map.get("hospitalLogo"));
+		                clinic.setEmailAddress((String) map.get("emailAddress"));
+		                clinic.setWebsite((String) map.get("website"));
+		                clinic.setLicenseNumber((String) map.get("licenseNumber"));
+		                clinic.setIssuingAuthority((String) map.get("issuingAuthority"));
+		                clinic.setHospitalDocuments((List<String>) map.get("hospitalDocuments"));
+		                clinic.setContractorDocuments((List<String>) map.get("contractorDocuments"));
+		                clinic.setRecommended(Boolean.TRUE.equals(map.get("recommended")));
+
+		                // Fetch doctors for each clinic
+		                List<Doctors> doctorEntities = doctorsRepository.findByHospitalId(clinic.getHospitalId());
+
+		                List<DoctorsDTO> doctors = doctorEntities.stream()
+		                        .map(doc -> {
+		                            DoctorsDTO dto = new DoctorsDTO();
+		                            dto.setId(doc.getId().toString());
+		                            dto.setDoctorId(doc.getDoctorId());
+		                            dto.setDeviceId(doc.getDeviceId());
+		                            dto.setDoctorEmail(doc.getDoctorEmail());
+		                            dto.setHospitalId(doc.getHospitalId());
+		                            dto.setDoctorPicture(doc.getDoctorPicture());
+		                            dto.setDoctorLicence(doc.getDoctorLicence());
+		                            dto.setDoctorMobileNumber(doc.getDoctorMobileNumber());
+		                            dto.setDoctorName(doc.getDoctorName());
+		                            dto.setCategory(doc.getCategory());
+		                            dto.setService(doc.getService());
+		                            dto.setSubServices(doc.getSubServices());
+		                            dto.setSpecialization(doc.getSpecialization());
+		                            dto.setGender(doc.getGender());
+		                            dto.setExperience(doc.getExperience());
+		                            dto.setQualification(doc.getQualification());
+		                            dto.setAvailableDays(doc.getAvailableDays());
+		                            dto.setAvailableTimes(doc.getAvailableTimes());
+		                            dto.setProfileDescription(doc.getProfileDescription());
+		                            dto.setFocusAreas(doc.getFocusAreas());
+		                            dto.setLanguages(doc.getLanguages());
+		                            dto.setHighlights(doc.getHighlights());
+		                            dto.setDoctorAvailabilityStatus(doc.isDoctorAvailabilityStatus());
+		                            dto.setRecommendation(doc.isRecommendation());
+		                            dto.setDoctorAverageRating(doc.getDoctorAverageRating());
+		                            return dto;
+		                        })
+		                        .collect(Collectors.toList());
+
+		                clinic.setDoctors(doctors);
+		                result.add(clinic);
+		            }
+		        }
+
+		        // Final response
+		        Response finalResponse = new Response();
+		        finalResponse.setSuccess(true);
+		        finalResponse.setStatus(200);
+		        finalResponse.setMessage("Recommended clinics with doctors retrieved successfully.");
+		        finalResponse.setData(result);
+
+		        return finalResponse;
+		    }
+
+		    private double getDouble(Object obj) {
+		        try {
+		            return obj != null ? Double.parseDouble(obj.toString()) : 0.0;
+		        } catch (Exception e) {
+		            return 0.0;
+		        }
+		    }
 
 }
