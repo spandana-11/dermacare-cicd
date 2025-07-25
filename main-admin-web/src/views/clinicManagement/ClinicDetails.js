@@ -74,6 +74,7 @@ const ClinicDetails = () => {
     try {
       const response = await axios.get(`${CLINIC_ADMIN_URL}${DoctorAllData}/${hospitalId}`)
       console.log('Doctors data:', response.data)
+      console.log('✅ Doctors array:', response.data.data)
       setAllDoctors(response.data.data)
     } catch (error) {
       console.error('Error fetching doctors data:', error.response?.data || error.message)
@@ -1116,6 +1117,7 @@ const ClinicDetails = () => {
                       <th>Doctor Name</th>
                       <th>Contact</th>
                       <th>Specialization</th>
+                      <th>Sub Services</th> {/* 👈 Added */}
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
@@ -1127,8 +1129,12 @@ const ClinicDetails = () => {
                           <td>{capitalizeWords(doc.doctorName)}</td>
                           <td>{doc.doctorMobileNumber}</td>
                           <td>{doc.specialization}</td>
-                          <td>{doc.status || 'Active'}</td>{' '}
-                          {/* Defaulting to 'Active' if no status is provided */}
+                          <td>
+                            {doc.subServices && doc.subServices.length > 0
+                              ? doc.subServices.map((sub) => sub.subServiceName).join(', ')
+                              : 'No Sub Services'}
+                          </td>
+                          <td>{doc.status || 'Active'}</td>
                           <td>
                             <CButton
                               className="btn btn-primary"
@@ -1185,7 +1191,12 @@ const ClinicDetails = () => {
                 </CButton>
               </CModalFooter>
             </CModal>
-            <CModal visible={showDoctorModal} onClose={() => setShowDoctorModal(false)} size="lg">
+            <CModal
+              visible={showDoctorModal}
+              onClose={() => setShowDoctorModal(false)}
+              size="lg"
+              backdrop="static"
+            >
               <CModalHeader>
                 <CModalTitle>Doctor Profile</CModalTitle>
               </CModalHeader>
@@ -1269,20 +1280,39 @@ const ClinicDetails = () => {
                     </CRow>
 
                     {/* Services */}
+                    {/* Services */}
                     <h6 className="text-primary border-bottom pb-2 mt-4 mb-3">Services Offered</h6>
                     <CRow className="gy-3">
+                      {/* Services List */}
                       <CCol md={12}>
                         <strong>Services:</strong>
-                        <div className="text-muted">
-                          {selectedDoctor.service?.map((s) => s.serviceName).join(', ') || '-'}
-                        </div>
+                        {selectedDoctor.service && selectedDoctor.service.length > 0 ? (
+                          <ul className="mt-2">
+                            {selectedDoctor.service.map((s) => (
+                              <li key={s.serviceId} className="text-muted">
+                                {s.serviceName}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-muted">-</p>
+                        )}
                       </CCol>
+
+                      {/* Sub Services List */}
                       <CCol md={12}>
                         <strong>Sub Services:</strong>
-                        <div className="text-muted">
-                          {selectedDoctor.subSerives?.map((s) => s.subServiceName).join(', ') ||
-                            '-'}
-                        </div>
+                        {selectedDoctor.subServices && selectedDoctor.subServices.length > 0 ? (
+                          <ul className="mt-2">
+                            {selectedDoctor.subServices.map((s) => (
+                              <li key={s.subServiceId} className="text-muted">
+                                {s.subServiceName}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-muted">-</p>
+                        )}
                       </CCol>
                     </CRow>
 

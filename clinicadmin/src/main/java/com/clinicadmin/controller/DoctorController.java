@@ -1,9 +1,12 @@
 package com.clinicadmin.controller;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 import com.clinicadmin.dto.ChangeDoctorPasswordDTO;
 import com.clinicadmin.dto.DoctorAvailabilityStatusDTO;
 import com.clinicadmin.dto.DoctorLoginDTO;
@@ -27,6 +31,7 @@ import com.clinicadmin.service.DoctorNoteService;
 import com.clinicadmin.service.DoctorService;
 import com.clinicadmin.validations.FormatChecks;
 import com.clinicadmin.validations.RequiredChecks;
+
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
 import jakarta.validation.Validator;
@@ -301,5 +306,22 @@ public class DoctorController {
 		public ResponseEntity<Response> getClinicAndDoctorUsingRecommondation() {
 			Response response = doctorService.getRecommendedClinicsAndDoctors();
 			return ResponseEntity.status(response.getStatus()).body(response);
+		}
+		// -----------------------------Get Best Doctor subserviceId---------------------------------
+		@GetMapping("/bestDoctor/{subServiceId}")
+		public ResponseEntity<Response> getBestDoctors(@PathVariable String subServiceId){
+			Response response=doctorService.getBestDoctorBySubService(subServiceId);
+			return ResponseEntity.status(response.getStatus()).body(response);
+		}
+		// ----------------------------- Using key GET CLINICS AND DOCTORS BUY RECOMMONDATION ----------------------------------------
+		@GetMapping("/clinics/{keyPoints}")
+		public ResponseEntity<Response> getRecommendedClinicsAndDoctors(@PathVariable String keyPoints) {
+		    // Convert comma-separated values to List
+		    List<String> keyPointList = Arrays.stream(keyPoints.split(","))
+		                                      .map(String::trim)
+		                                      .collect(Collectors.toList());
+
+		    Response response = doctorService.getRecommendedClinicsAndDoctors(keyPointList);
+		    return ResponseEntity.status(response.getStatus()).body(response);
 		}
 }

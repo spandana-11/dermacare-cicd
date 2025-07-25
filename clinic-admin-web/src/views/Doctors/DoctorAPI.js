@@ -55,3 +55,21 @@ export const getDoctorByClinicIdData = async (clinicId) => {
     throw error
   }
 }
+export const getDoctorDetailsById = async (doctorId) => {
+  console.log('doctorData calling')
+  try {
+    const response = await axios.get(`${BASE_URL}/${GetBy_DoctorId}/${doctorId}`)
+    console.log(`doctorData calling ${response.data}`)
+
+    console.log(response.data)
+
+    return response.data
+  } catch (error) {
+    console.error('Error fetching service data:', error.message)
+    if (error.response) {
+      console.error('Error Response Data:', error.response.data)
+      console.error('Error Response Status:', error.response.status)
+    }
+    throw error
+  }
+}

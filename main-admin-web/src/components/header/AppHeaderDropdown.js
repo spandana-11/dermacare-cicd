@@ -30,7 +30,7 @@ const AppHeaderDropdown = () => {
   const handleLogout = () => {
     localStorage.removeItem('authToken')
     localStorage.removeItem('user')
-     localStorage.removeItem('AdminId')
+    localStorage.removeItem('AdminId')
     localStorage.clear('')
 
     navigate('/login')
@@ -44,13 +44,6 @@ const AppHeaderDropdown = () => {
         />
       </CDropdownToggle>
       <CDropdownMenu className="pt-0" placement="bottom-end">
-        <CDropdownItem  onClick={handleLogout}>
-          <CIcon icon={cilAccountLogout} className="me-2" />
-          Logout
-          {/* <CBadge color="info" className="ms-2">
-            42
-          </CBadge> */}
-        </CDropdownItem>
         <CDropdownItem href="#">
           <CIcon icon={cilSettings} className="me-2" />
           Settings
@@ -58,6 +51,14 @@ const AppHeaderDropdown = () => {
             42
           </CBadge> */}
         </CDropdownItem>
+        <CDropdownItem onClick={handleLogout}>
+          <CIcon icon={cilAccountLogout} className="me-2" />
+          Logout
+          {/* <CBadge color="info" className="ms-2">
+            42
+          </CBadge> */}
+        </CDropdownItem>
+
         {/* <CDropdownItem href="#">
           <CIcon icon={cilTask} className="me-2" />
           Tasks

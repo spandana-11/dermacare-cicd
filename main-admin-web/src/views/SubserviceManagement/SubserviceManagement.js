@@ -40,6 +40,11 @@ const AddSubService = () => {
   const [deleteServiceId, setDeleteServiceId] = useState(null)
   const [itemToRemove, setItemToRemove] = useState(null)
   const [selectedSub, setSelectedSub] = useState(null)
+  const [errors, setErrors] = useState({
+    category: '',
+    service: '',
+    subService: '',
+  })
 
   const handleRemoveClick = (sub) => {
     setSelectedSub(sub) // Store the item to be removed
@@ -94,6 +99,17 @@ const AddSubService = () => {
     console.log('Formatted SubServices:', formattedSubServices) // 🔍 Debug formatted data
     setSubServices(formattedSubServices) // ✅ Update state correctly
   }
+  const validateFields = () => {
+  const newErrors = {};
+  if (!newService.categoryId) newErrors.category = 'Please select a category';
+  if (!newService.serviceId) newErrors.service = 'Please select a service';
+  if (!editMode && selectedSubServices.length === 0) newErrors.subService = 'Please add at least one subservice';
+  if (editMode && selectedSubServices[0]?.subServiceName?.trim() === '') newErrors.subService = 'Subservice name cannot be empty';
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
+
 
   useEffect(() => {
     console.log('SubServices State:', subServices) // 🔍 Debug table data
@@ -240,15 +256,6 @@ const AddSubService = () => {
             width: '230px',
           }}
         >
-          {/* <CButton
-            //  color="link"
-            className="text-primary p-0"
-            onClick={() => setViewCategory(row)}
-            style={{ marginRight: '10px', width: '80px' }}
-          >
-            View
-          </CButton> */}
-
           <CButton
             color="link"
             className="text-success p-0"
@@ -290,6 +297,7 @@ const AddSubService = () => {
 
   const handleChanges = async (e) => {
     const { name, value } = e.target
+    setErrors((prev) => ({ ...prev, [name === 'categoryName' ? 'category' : 'service']: '' }))
     console.log(name)
     if (name === 'categoryName') {
       console.log('Selected category ID:', value)
@@ -374,7 +382,7 @@ const AddSubService = () => {
             )
 
             if (res?.data?.success) {
-              fetchSubServices();
+              fetchSubServices()
               toast.success('SubService updated successfully!')
             } else {
               toast.error(res?.data?.message || 'Failed to update subservice.')
@@ -546,6 +554,7 @@ const AddSubService = () => {
                   </option>
                 ))}
               </CFormSelect>
+              {errors.category && <div className="text-danger mt-1">{errors.category}</div>}
             </CCol>
 
             {/* Service Select */}
@@ -566,6 +575,7 @@ const AddSubService = () => {
                   </option>
                 ))}
               </CFormSelect>
+             {errors.service && <div className="text-danger mt-1">{errors.service}</div>}
             </CCol>
 
             {/* SubService Entry */}
@@ -578,10 +588,16 @@ const AddSubService = () => {
                   <CFormInput
                     placeholder="Enter Sub Service"
                     value={subServiceInput}
-                    onChange={(e) => setSubServiceInput(e.target.value)}
+                    onChange={(e) => {
+                      setSubServiceInput(e.target.value)
+                      if (e.target.value.trim() !== '') {
+                        setErrors((prev) => ({ ...prev, subService: '' }))
+                      }
+                    }}
                     style={{ flexGrow: 1 }}
                   />
 
+                 {errors.subService && <div className="text-danger mt-1">{errors.subService}</div>}
                   <CButton
                     color="success"
                     className="text-white"
@@ -620,7 +636,13 @@ const AddSubService = () => {
                         return
                       }
 
-                      setSelectedSubServices((prev) => [...prev, newEntry])
+                   setSelectedSubServices((prev) => {
+  const updated = [...prev, newEntry];
+  if (updated.length > 0) {
+    setErrors((prevErrors) => ({ ...prevErrors, subService: '' }));
+  }
+  return updated;
+});
                       setSubServiceInput('')
                     }}
                   >
@@ -694,7 +716,12 @@ const AddSubService = () => {
               color="primary"
               className="text-white"
               onClick={async () => {
-                await handleSubmit() // call first
+                // ✅ validate first
+                const isValid = validateFields()
+                if (!isValid) return // 🚫 stop here if validation fails
+
+                // ✅ if valid, then submit
+                await handleSubmit()
                 setShowModal(false) // close only after success
               }}
             >
@@ -711,20 +738,7 @@ const AddSubService = () => {
           onConfirm={handleConfirmDelete}
           onCancel={() => setShowDeleteModal(false)}
         />
-        // <CModal visible={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
-        //   <CModalHeader>
-        //     <CModalTitle>Confirm Deletion</CModalTitle>
-        //   </CModalHeader>
-        //   <CModalBody>Are you sure you want to delete this subservice?</CModalBody>
-        //   <CModalFooter>
-        //     <CButton color="danger" onClick={handleConfirmDelete}>
-        //       Confirm
-        //     </CButton>
-        //     <CButton color="secondary" onClick={() => setShowDeleteModal(false)}>
-        //       Cancel
-        //     </CButton>
-        //   </CModalFooter>
-        // </CModal>
+       
       )}
     </div>
   )

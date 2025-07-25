@@ -25,7 +25,7 @@ import { cilOptions } from '@coreui/icons'
 import 'slick-carousel/slick/slick.css'
 import 'slick-carousel/slick/slick-theme.css'
 import axios from 'axios'
-import { MainAdmin_URL, AllCustomerAdvertisements, GetBy_DoctorId } from '../../baseUrl'
+import { MainAdmin_URL, AllCustomerAdvertisements, GetBy_DoctorId, servr_Url } from '../../baseUrl'
 // import { appointments_Ref } from '../../baseUrl'
 import { AppointmentData, GetBookingByClinicIdData } from '../AppointmentManagement/appointmentAPI'
 import { DoctorData, getDoctorByClinicIdData } from '../Doctors/DoctorAPI'
@@ -73,7 +73,7 @@ const WidgetsDropdown = (props) => {
 
     if (isNaN(date.getTime())) {
       // Use getTime() for robust NaN check
-      console.warn('Invalid date string for conversion:', dateString)
+      // console.warn('Invalid date string for conversion:', dateString)
       return ''
     }
 
@@ -90,11 +90,12 @@ const WidgetsDropdown = (props) => {
   // Fetch Advertisements (unchanged)
   const fetchAdvertisements = async () => {
     try {
-      const response = await axios.get(`${MainAdmin_URL}/${AllCustomerAdvertisements}`)
+      const response = await axios.get(`${servr_Url}/${AllCustomerAdvertisements}`)
+      console.log('✅ Advertisements Response:', response.data)
       if (Array.isArray(response.data)) {
         setSlides(response.data)
       } else {
-        console.error('Invalid response format for advertisements:', response.data)
+        console.error('No advertisements found:', response.data)
       }
     } catch (error) {
       console.error('Error fetching advertisements:', error)
@@ -123,7 +124,7 @@ const WidgetsDropdown = (props) => {
           setTodayBookings(filteredAppointments)
         } else {
           setTodayBookings([])
-          setAppointmentError('Invalid data received for appointments.')
+          setAppointmentError('No pending appointments for today.')
         }
       } catch (error) {
         console.error('Failed to fetch appointments:', error)
@@ -151,7 +152,7 @@ const WidgetsDropdown = (props) => {
         setDoctors(doctorArray)
       } else {
         console.error('Invalid doctors response format:', response)
-        setDoctorError('Invalid data received for doctors.')
+        setDoctorError('No doctors found.')
       }
     } catch (error) {
       console.error('Failed to fetch doctors:', error)
@@ -192,7 +193,7 @@ const WidgetsDropdown = (props) => {
       return () => clearTimeout(midnightTimeout)
     } else {
       // console.warn('No HospitalId in localStorage for fetching appointments')
-      setAppointmentError('Hospital ID not found. Cannot fetch appointments.')
+      setAppointmentError('No appointments found for this Hospital Id')
       setLoadingAppointments(false)
     }
   }, [fetchAppointments, fetchDoctors]) // Depend on fetchAppointments
@@ -246,7 +247,7 @@ const WidgetsDropdown = (props) => {
 
   const sliderSettings = {
     dots: true,
-    infinite: slides.length > 1, // ⬅️ Only enable loop when more than 1
+    infinite: slides.length > 1, // Only enable loop when more than 1
     speed: 500,
     slidesToShow: 1,
     slidesToScroll: 1,

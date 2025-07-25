@@ -6,7 +6,7 @@ import {
   UpdateCategory,
   deleteCategory,
 } from '../../baseUrl'
-
+import { toast } from 'react-toastify'
 export const CategoryData = async () => {
   console.log('service data:, response.data')
 
@@ -26,29 +26,63 @@ export const CategoryData = async () => {
   }
 }
 
+// --- 1. Modified postCategoryData function ---
 export const postCategoryData = async (categoryData) => {
   try {
     const requestData = {
       categoryName: categoryData.categoryName || '',
       categoryImage: categoryData.categoryImage || '',
       // description: categoryData.description || '',
-    }
+    };
 
     const response = await axios.post(`${BASE_URL}/${AddCategory}`, requestData, {
       headers: {
         'Content-Type': 'application/json',
       },
-    })
-    console.log(response)
-    return response.data
+    });
+    console.log(response);
+    return response.data;
   } catch (error) {
-    console.error('Error response:', error.response)
-    alert(
-      `Error: ${error.response?.status} - ${error.response?.data?.message || error.response?.statusText}`,
-    )
-    throw error
+    // DO NOT show a toast here. Just re-throw the error
+    // so handleAddCategory can catch and handle it.
+    console.error('Error response from API:', error.response);
+    throw error; // Re-throw the error to be caught by the caller
   }
-}
+};
+
+// --- 2. Modified handleAddCategory function ---
+const handleAddCategory = async () => {
+  if (!validateForm()) return;
+
+  try {
+    const payload = {
+      categoryName: newCategory.categoryName,
+      categoryImage: newCategory.categoryImage,
+      // description: newCategory.description,
+    };
+
+    const response = await postCategoryData(payload);
+
+    // Only show success toast if postCategoryData completes without throwing an error
+    toast.success('Category added successfully!', { position: 'top-right' });
+    fetchData(); // Assuming this refreshes your data
+    setModalVisible(false); // Assuming this closes a modal
+
+  } catch (error) {
+    console.error('Error adding category:', error);
+
+    // Check for specific error messages or status codes for duplicates
+    const errorMessage = error.response?.data?.message || error.response?.statusText || 'An unexpected error occurred.';
+    const statusCode = error.response?.status;
+
+    if (statusCode === 409 || errorMessage.toLowerCase().includes('duplicate')) { // Example: 409 Conflict for duplicates
+      toast.error(`Error: Duplicate category name - ${newCategory.categoryName} already exists!`, { position: 'top-right' });
+    } else {
+      // For any other error
+      toast.error(`Error adding category: ${errorMessage}`, { position: 'top-right' });
+    }
+  }
+};
 export const updateCategoryData = async (updatedCategory, categoryId) => {
   try {
     const response = await axios.put(

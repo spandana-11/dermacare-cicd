@@ -115,6 +115,7 @@ const DoctorManagement = () => {
 
   const [serviceOptionsFormatted, setServiceOptionsFormatted] = useState([]) // ✅ Add this
   const [isSubServiceComplete, setIsSubServiceComplete] = useState(true)
+  const [errors, setErrors] = useState({})
 
   const availableDays = (value, type) => {
     if (type === 'start') {
@@ -836,7 +837,10 @@ const DoctorManagement = () => {
           <h5 className="mb-3">Doctor Details</h5>
           <CRow className="g-4 mb-4">
             <CCol md={6}>
-              <CFormLabel>License Number</CFormLabel>
+              <CFormLabel>
+                License Number
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <CFormInput
                 value={form.doctorLicence}
                 onChange={(e) => {
@@ -858,7 +862,10 @@ const DoctorManagement = () => {
               )}
             </CCol>
             <CCol md={6}>
-              <CFormLabel>Doctor Name</CFormLabel>
+              <CFormLabel>
+                Doctor Name
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <div className="input-group">
                 <CFormInput
                   value={form.doctorName}
@@ -893,7 +900,10 @@ const DoctorManagement = () => {
               </CFormSelect>
             </CCol>
             <CCol md={6}>
-              <CFormLabel>Experience (years)</CFormLabel>
+              <CFormLabel>
+                Experience (years)
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <CFormInput
                 type="number"
                 value={form.experience}
@@ -913,7 +923,10 @@ const DoctorManagement = () => {
               )}
             </CCol>
             <CCol md={6}>
-              <CFormLabel>Qualification</CFormLabel>
+              <CFormLabel>
+                Qualification
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <CFormInput
                 value={form.qualification}
                 onChange={(e) => {
@@ -932,7 +945,10 @@ const DoctorManagement = () => {
               )}
             </CCol>
             <CCol md={6}>
-              <CFormLabel>Specialization</CFormLabel>
+              <CFormLabel>
+                Specialization
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <CFormInput
                 value={form.specialization}
                 onChange={(e) => {
@@ -951,7 +967,10 @@ const DoctorManagement = () => {
               )}
             </CCol>
             <CCol md={6}>
-              <CFormLabel>Profile Description</CFormLabel>
+              <CFormLabel>
+                Profile Description
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <CFormTextarea
                 value={form.profileDescription}
                 onChange={(e) => {
@@ -971,7 +990,10 @@ const DoctorManagement = () => {
               )}
             </CCol>
             <CCol md={6}>
-              <CFormLabel>Profile Picture</CFormLabel>
+              <CFormLabel>
+                Profile Picture
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <CFormInput
                 type="file"
                 accept="image/jpeg, image/png"
@@ -1017,7 +1039,10 @@ const DoctorManagement = () => {
           <h5 className="mb-3">Working Schedule</h5>
           <CRow className="g-4 mb-4">
             <CCol md={6}>
-              <CFormLabel>Start Day</CFormLabel>
+              <CFormLabel>
+                Start Day
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <CFormSelect
                 value={startDay}
                 onChange={(e) => {
@@ -1035,7 +1060,10 @@ const DoctorManagement = () => {
               </CFormSelect>
             </CCol>
             <CCol md={6}>
-              <CFormLabel>End Day</CFormLabel>
+              <CFormLabel>
+                End Day
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <CFormSelect
                 value={endDay}
                 onChange={(e) => {
@@ -1056,7 +1084,10 @@ const DoctorManagement = () => {
               )}
             </CCol>
             <CCol md={6}>
-              <CFormLabel>Start Time</CFormLabel>
+              <CFormLabel>
+                Start Time
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <CFormSelect
                 value={startTime}
                 onChange={(e) => {
@@ -1074,7 +1105,10 @@ const DoctorManagement = () => {
               </CFormSelect>
             </CCol>
             <CCol md={6}>
-              <CFormLabel>End Time</CFormLabel>
+              <CFormLabel>
+                End Time
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <CFormSelect
                 value={endTime}
                 onChange={(e) => {
@@ -1134,7 +1168,10 @@ const DoctorManagement = () => {
               <div className="d-flex gap-4 flex-wrap">
                 {/* In-Clinic Fee Input */}
                 <div style={{ flex: 1 }}>
-                  <CFormLabel>In-Clinic Fee</CFormLabel>
+                  <CFormLabel>
+                    In-Clinic Fee
+                    <span className="text-danger">*</span>
+                  </CFormLabel>
                   <CFormInput
                     type="number"
                     placeholder="In-Clinic Fee"
@@ -1159,7 +1196,10 @@ const DoctorManagement = () => {
 
                 {/* Video/Online Fee Input */}
                 <div style={{ flex: 1 }}>
-                  <CFormLabel>Online Fee</CFormLabel>
+                  <CFormLabel>
+                    Online Fee
+                    <span className="text-danger">*</span>
+                  </CFormLabel>
                   <CFormInput
                     type="number"
                     placeholder="Video/Online Fee"
@@ -1191,7 +1231,10 @@ const DoctorManagement = () => {
 
             {/* Mobile Number */}
             <CCol md={6}>
-              <CFormLabel>Contact Number</CFormLabel>
+              <CFormLabel>
+                Contact Number
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <CFormInput
                 type="tel"
                 maxLength={10}
@@ -1212,7 +1255,10 @@ const DoctorManagement = () => {
               )}
             </CCol>
             <CCol md={6}>
-              <CFormLabel>Email Address</CFormLabel>
+              <CFormLabel>
+                Email Address
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <CFormInput
                 type="email"
                 value={form.doctorEmail}
@@ -1249,8 +1295,8 @@ const DoctorManagement = () => {
             onAdd={(items) => setForm((prev) => ({ ...prev, focusAreas: items }))}
           />
           <div className="mb-3">
+            <label className="form-label label-required">Languages Known</label>
             <ChipSection
-              label="Languages Known"
               items={form.languages}
               onAdd={(items) => {
                 setForm((prev) => ({ ...prev, languages: items }))
@@ -1259,6 +1305,7 @@ const DoctorManagement = () => {
                 }
               }}
             />
+
             {formErrors.languages && <div className="text-danger mt-1">{formErrors.languages}</div>}
           </div>
 
@@ -1335,7 +1382,11 @@ const DoctorManagement = () => {
   font-size: 1.2rem;
   color:"blue"
 }
-
+.label-required::after {
+    content:"*";
+    color: red;
+   
+  }
 
       `}</style>
     </div>

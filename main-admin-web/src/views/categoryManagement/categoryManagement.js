@@ -268,25 +268,38 @@ const CategoryManagement = () => {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleAddCategory = async () => {
-    if (!validateForm()) return
+const handleAddCategory = async () => {
+  if (!validateForm()) return;
 
-    try {
-      const payload = {
-        categoryName: newCategory.categoryName,
-        categoryImage: newCategory.categoryImage,
-        // description: newCategory.description,
-      }
+  try {
+    const payload = {
+      categoryName: newCategory.categoryName,
+      categoryImage: newCategory.categoryImage,
+      // description: newCategory.description,
+    };
 
-      const response = await postCategoryData(payload)
-      toast.success('Category added successfully!', { position: 'top-right' })
-      fetchData()
-      setModalVisible(false)
-    } catch (error) {
-      console.error('Error adding category:', error)
-      toast.error(error.message, { position: 'top-right' })
+    const response = await postCategoryData(payload);
+
+    // Only show success toast if postCategoryData completes without throwing an error
+    toast.success('Category added successfully!', { position: 'top-right' });
+    fetchData(); // Assuming this refreshes your data
+    setModalVisible(false); // Assuming this closes a modal
+
+  } catch (error) {
+    console.error('Error adding category:', error);
+
+    // Check for specific error messages or status codes for duplicates
+    const errorMessage = error.response?.data?.message || error.response?.statusText || 'An unexpected error occurred.';
+    const statusCode = error.response?.status;
+
+    if (statusCode === 409 || errorMessage.toLowerCase().includes('duplicate')) { // Example: 409 Conflict for duplicates
+      toast.error(`Error: Duplicate category name - ${newCategory.categoryName} already exists!`, { position: 'top-right' });
+    } else {
+      // For any other error
+      toast.error(`Error adding category: ${errorMessage}`, { position: 'top-right' });
     }
   }
+};
   const handleCategoryEdit = (category) => {
     console.log('Category to edit:', category) // Debug log
     setCategoryToEdit(category)
@@ -487,19 +500,7 @@ const CategoryManagement = () => {
             {errors.categoryImage && (
               <CFormText className="text-danger">{errors.categoryImage}</CFormText>
             )}
-            {/* <h6>
-              Description <span style={{ color: 'red' }}>*</span>
-            </h6>{' '} */}
-            {/* <CFormTextarea
-              placeholder="Enter description"
-              rows={3}
-              value={newCategory.description || ''}
-              name="description"
-              onChange={handleCategoryChange}
-            />
-            {errors.description && (
-              <CFormText className="text-danger">{errors.description}</CFormText>
-            )} */}
+           
           </CForm>
         </CModalBody>
 
@@ -556,20 +557,7 @@ const CategoryManagement = () => {
               <span style={{ display: 'block', marginTop: '10px' }}>No image available</span>
             )}
 
-            {/* <h6>
-              Description <span style={{ color: 'red' }}>*</span>
-            </h6> */}
-            {/* <CFormTextarea
-              placeholder="Enter description"
-              rows={3}
-              value={updatedCategory?.description || ''}
-              onChange={(e) =>
-                setUpdatedCategory({
-                  ...updatedCategory,
-                  description: e.target.value,
-                })
-              }
-            /> */}
+           
           </CForm>
         </CModalBody>
         <CModalFooter>

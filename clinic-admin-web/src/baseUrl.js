@@ -5,6 +5,7 @@ export let wifiUrl = '13.233.9.23:9090'
 export const BASE_URL = `http://${wifiUrl}/clinic-admin`
 export const MainAdmin_URL = `http://${wifiUrl}/admin`
 export const subService_URL = `http://${wifiUrl}/api/v1`
+export const servr_Url=`http://${wifiUrl}`
 // END POINTS
 // login
 export const endPoint = '/clinicLogin'
@@ -32,8 +33,7 @@ export const Booking_service_Url = `http://${wifiUrl}/api`
 export const deleteBookings = `customer/deleteService`
 export const geteBookingBy_ClinicId = `customer/getAllBookedServicesByClinicId`
 
-export const GetBy_DoctorId = 'clinic-admin/doctor'
-
+export const GetBy_DoctorId = 'doctor'
 //Doctor Notifications
 export const Doctor_Url = `http://${wifiUrl}/api`
 export const getAllDCtrNotifications = 'doctors/notificationToDoctor'

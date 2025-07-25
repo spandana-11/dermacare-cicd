@@ -44,6 +44,7 @@ import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { getCustomerDataByID } from '../customerManagement/CustomerAPI'
 import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 const DoctorDetailsPage = () => {
   const { state } = useLocation()
@@ -74,6 +75,7 @@ const DoctorDetailsPage = () => {
   const [ratings, setRatings] = useState(null)
 
   const [error, setError] = useState(null)
+  const [errors, setErrors] = useState({})
   const handleDateClick = (dateObj, index) => {
     setSelectedDate(format(dateObj.date, 'yyyy-MM-dd'))
     setSelectedDateIndex(index)
@@ -121,28 +123,6 @@ const DoctorDetailsPage = () => {
       fetchDoctor()
     }
   }, [doctorData?.doctorId])
-
-  // const handleEdit = () =>{
-
-  // }
-
-  // const handleUpdate = async () => {
-  //   try {
-  //     const res = await axios.put(
-  //       `http://192.168.1.8:8080/clinic-admin/updateDoctor/${doctor.doctorId}`,
-  //       formData,
-  //     )
-  //     if (res.data.success) {
-  //       alert('Doctor updated successfully')
-  //       setIsEditing(false)
-  //     } else {
-  //       alert('Failed to update doctor')
-  //     }
-  //   } catch (err) {
-  //     console.error('Update error:', err)
-  //     alert('Error while updating doctor')
-  //   }
-  // }
 
   const [showModal, setShowModal] = useState(false)
   const isToday = selectedDate === new Date().toISOString().split('T')[0]
@@ -425,6 +405,92 @@ const DoctorDetailsPage = () => {
   if (!doctorData) return <p>No doctor data found.</p>
 
   console.log(customerDetails)
+  const validateForm = () => {
+    let newErrors = {}
+
+    // License: alphanumeric
+    if (!/^[a-zA-Z0-9]+$/.test(formData.doctorLicence.trim())) {
+      newErrors.doctorLicence = 'License must be alphanumeric.'
+    }
+
+    // Name: only letters and spaces
+    if (!/^[A-Za-z\s.]+$/.test(formData.doctorName)) {
+      newErrors.doctorName = 'Name should contain only letters, spaces, and dots.'
+    }
+
+    // Email
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.doctorEmail.trim())) {
+      newErrors.doctorEmail = 'Enter a valid email address.'
+    }
+
+    // Qualification
+    if (!/^[A-Za-z\s]+$/.test(formData.qualification.trim())) {
+      newErrors.qualification = 'Qualification should contain only letters.'
+    }
+
+    // Specialization
+    if (!/^[A-Za-z\s]+$/.test(formData.specialization.trim())) {
+      newErrors.specialization = 'Specialization should contain only letters.'
+    }
+
+    // Experience
+    if (!/^\d+$/.test(formData.experience.trim())) {
+      newErrors.experience = 'Experience should contain only numbers.'
+    }
+
+    // Languages (optional but if provided, allow only letters and commas)
+    if (formData.languages && !formData.languages.every((lang) => /^[A-Za-z\s]+$/.test(lang))) {
+      newErrors.languages = 'Languages should contain only letters.'
+    }
+
+    // Contact Number
+    if (!/^[6-9]\d{9}$/.test(formData.doctorMobileNumber.trim())) {
+      newErrors.doctorMobileNumber = 'Contact must be a 10-digit number starting with 6-9.'
+    }
+
+    // Gender
+    if (!formData.gender) {
+      newErrors.gender = 'Please select gender.'
+    }
+
+    // Available Days
+    if (!/^[A-Za-z,\s\-]+$/.test(formData.availableDays)) {
+      newErrors.availableDays = 'Days should contain only letters, commas, spaces, and hyphens.'
+    }
+
+    // Available Times (optional, you can skip or add a custom rule)
+    if (formData.availableTimes.trim() === '') {
+      newErrors.availableTimes = 'Please enter available timings.'
+    }
+
+    // In-clinic Fee
+    if (!/^\d+$/.test(formData.doctorFees.inClinicFee)) {
+      newErrors.inClinicFee = 'In-Clinic Fee should contain only numbers.'
+    }
+
+    // Video Consultation Fee
+    if (!/^\d+$/.test(formData.doctorFees.vedioConsultationFee)) {
+      newErrors.vedioConsultationFee = 'Video Consultation Fee should contain only numbers.'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  // ✅ Handle update with validation
+  const handleUpdateWithValidation = async () => {
+  if (validateForm()) {
+    // run update logic
+    const success = await handleUpdate() // make sure handleUpdate returns a success status
+    if (success) {
+      // ✅ show toast after update is actually done
+      toast.success("Doctor details updated successfully!", {
+        position: "top-right",
+        autoClose: 3000,
+      })
+    }
+  }
+}
 
   return (
     <div className="doctor-details-page" style={{ padding: '1rem' }}>
@@ -529,11 +595,20 @@ const DoctorDetailsPage = () => {
                           <strong>License No:</strong>
                         </p>
                         {isEditing ? (
-                          <CFormInput
-                            name="doctorLicence"
-                            value={formData.doctorLicence}
-                            onChange={handleInputChange}
-                          />
+                          <>
+                            <CFormInput
+                              name="doctorLicence"
+                              value={formData.doctorLicence}
+                              onChange={(e) => {
+                                const cleaned = e.target.value.replace(/[^a-zA-Z0-9]/g, '')
+                                setFormData((prev) => ({ ...prev, doctorLicence: cleaned }))
+                                setErrors((prev) => ({ ...prev, doctorLicence: '' }))
+                              }}
+                            />
+                            {errors.doctorLicence && (
+                              <small className="text-danger">{errors.doctorLicence}</small>
+                            )}
+                          </>
                         ) : (
                           <p>{doctorData.doctorLicence}</p>
                         )}
@@ -542,35 +617,89 @@ const DoctorDetailsPage = () => {
                           <strong>Name:</strong>
                         </p>
                         {isEditing ? (
-                          <CFormInput
-                            name="doctorName"
-                            value={formData.doctorName}
-                            onChange={handleInputChange}
-                          />
+                          <>
+                            <CFormInput
+                              name="doctorName"
+                              value={formData.doctorName}
+                              onChange={(e) => {
+                                // allow only letters, spaces, and dots
+                                const cleaned = e.target.value.replace(/[^A-Za-z\s.]/g, '')
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  doctorName: cleaned,
+                                }))
+                                setErrors((prev) => ({ ...prev, doctorName: '' })) // clear error dynamically
+                              }}
+                            />
+                            {errors.doctorName && (
+                              <small className="text-danger">{errors.doctorName}</small>
+                            )}
+                          </>
                         ) : (
                           <p>{doctorData.doctorName}</p>
                         )}
+
                         <p>
                           <strong>Email:</strong>
                         </p>
                         {isEditing ? (
-                          <CFormInput
-                            name="doctorEmail"
-                            value={formData.doctorEmail}
-                            onChange={handleInputChange}
-                          />
+                          <>
+                            <CFormInput
+                              name="doctorEmail"
+                              value={formData.doctorEmail}
+                              onChange={(e) => {
+                                const value = e.target.value
+                                setFormData((prev) => ({ ...prev, doctorEmail: value }))
+
+                                // dynamic validation as you type
+                                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                                  setErrors((prev) => ({
+                                    ...prev,
+                                    doctorEmail:
+                                      'Please enter a valid email address (must contain @).',
+                                  }))
+                                } else {
+                                  setErrors((prev) => ({ ...prev, doctorEmail: '' }))
+                                }
+                              }}
+                              onBlur={(e) => {
+                                // validate again when leaving field
+                                const value = e.target.value
+                                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                                  setErrors((prev) => ({
+                                    ...prev,
+                                    doctorEmail:
+                                      'Please enter a valid email address (must contain @).',
+                                  }))
+                                }
+                              }}
+                            />
+                            {errors.doctorEmail && (
+                              <small className="text-danger">{errors.doctorEmail}</small>
+                            )}
+                          </>
                         ) : (
                           <p>{doctorData.doctorEmail}</p>
                         )}
+
                         <p>
                           <strong>Qualification:</strong>
                         </p>
                         {isEditing ? (
-                          <CFormInput
-                            name="qualification"
-                            value={formData.qualification}
-                            onChange={handleInputChange}
-                          />
+                          <>
+                            <CFormInput
+                              name="qualification"
+                              value={formData.qualification}
+                              onChange={(e) => {
+                                const cleaned = e.target.value.replace(/[^A-Za-z\s]/g, '')
+                                setFormData((prev) => ({ ...prev, qualification: cleaned }))
+                                setErrors((prev) => ({ ...prev, qualification: '' }))
+                              }}
+                            />
+                            {errors.qualification && (
+                              <small className="text-danger">{errors.qualification}</small>
+                            )}
+                          </>
                         ) : (
                           <p>{doctorData.qualification}</p>
                         )}
@@ -579,11 +708,20 @@ const DoctorDetailsPage = () => {
                           <strong>Specialization:</strong>
                         </p>
                         {isEditing ? (
-                          <CFormInput
-                            name="specialization"
-                            value={formData.specialization}
-                            onChange={handleInputChange}
-                          />
+                          <>
+                            <CFormInput
+                              name="specialization"
+                              value={formData.specialization}
+                              onChange={(e) => {
+                                const cleaned = e.target.value.replace(/[^A-Za-z\s]/g, '')
+                                setFormData((prev) => ({ ...prev, specialization: cleaned }))
+                                setErrors((prev) => ({ ...prev, specialization: '' }))
+                              }}
+                            />
+                            {errors.specialization && (
+                              <small className="text-danger">{errors.specialization}</small>
+                            )}{' '}
+                          </>
                         ) : (
                           <p>{doctorData.specialization}</p>
                         )}
@@ -592,11 +730,20 @@ const DoctorDetailsPage = () => {
                           <strong>Experience:</strong>
                         </p>
                         {isEditing ? (
-                          <CFormInput
-                            name="experience"
-                            value={formData.experience}
-                            onChange={handleInputChange}
-                          />
+                          <>
+                            <CFormInput
+                              name="experience"
+                              value={formData.experience}
+                              onChange={(e) => {
+                                const cleaned = e.target.value.replace(/[^0-9]/g, '')
+                                setFormData((prev) => ({ ...prev, experience: cleaned }))
+                                setErrors((prev) => ({ ...prev, experience: '' }))
+                              }}
+                            />
+                            {errors.experience && (
+                              <small className="text-danger">{errors.experience}</small>
+                            )}
+                          </>
                         ) : (
                           <p>{doctorData.experience} Years</p>
                         )}
@@ -607,16 +754,24 @@ const DoctorDetailsPage = () => {
                           <strong>Languages Known:</strong>
                         </p>
                         {isEditing ? (
-                          <CFormInput
-                            name="languages"
-                            value={formData.languages?.join(', ') || ''}
-                            onChange={(e) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                languages: e.target.value.split(',').map((lang) => lang.trim()),
-                              }))
-                            }
-                          />
+                          <>
+                            <CFormInput
+                              name="languages"
+                              value={formData.languages?.join(', ') || ''}
+                              onChange={(e) => {
+                                // allow only letters, commas, and spaces
+                                const cleaned = e.target.value.replace(/[^A-Za-z,\s]/g, '')
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  languages: cleaned.split(',').map((lang) => lang.trim()),
+                                }))
+                                setErrors((prev) => ({ ...prev, languages: '' }))
+                              }}
+                            />
+                            {errors.languages && (
+                              <small className="text-danger">{errors.languages}</small>
+                            )}
+                          </>
                         ) : (
                           <p>{doctorData.languages?.join(', ')}</p>
                         )}
@@ -624,11 +779,24 @@ const DoctorDetailsPage = () => {
                           <strong>Contact:</strong>
                         </p>
                         {isEditing ? (
-                          <CFormInput
-                            name="doctorMobileNumber"
-                            value={formData.doctorMobileNumber}
-                            onChange={handleInputChange}
-                          />
+                          <>
+                            <CFormInput
+                              name="doctorMobileNumber"
+                              value={formData.doctorMobileNumber}
+                              onChange={(e) => {
+                                // allow only digits
+                                const cleaned = e.target.value.replace(/[^0-9]/g, '')
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  doctorMobileNumber: cleaned,
+                                }))
+                                setErrors((prev) => ({ ...prev, doctorMobileNumber: '' }))
+                              }}
+                            />
+                            {errors.doctorMobileNumber && (
+                              <small className="text-danger">{errors.doctorMobileNumber}</small>
+                            )}
+                          </>
                         ) : (
                           <p>{doctorData.doctorMobileNumber}</p>
                         )}
@@ -637,11 +805,24 @@ const DoctorDetailsPage = () => {
                           <strong>Gender:</strong>
                         </p>
                         {isEditing ? (
-                          <CFormInput
-                            name="gender"
-                            value={formData.gender}
-                            onChange={handleInputChange}
-                          />
+                          <>
+                            <select
+                              className="form-select"
+                              value={formData.gender}
+                              onChange={(e) => {
+                                setFormData((prev) => ({ ...prev, gender: e.target.value }))
+                                setErrors((prev) => ({ ...prev, gender: '' }))
+                              }}
+                            >
+                              <option value="">Select Gender</option>
+                              <option value="Male">Male</option>
+                              <option value="Female">Female</option>
+                              <option value="Other">Other</option>
+                            </select>
+                            {errors.gender && (
+                              <small className="text-danger">{errors.gender}</small>
+                            )}
+                          </>
                         ) : (
                           <p>{doctorData.gender}</p>
                         )}
@@ -650,11 +831,21 @@ const DoctorDetailsPage = () => {
                           <strong>Available Days:</strong>
                         </p>
                         {isEditing ? (
-                          <CFormInput
-                            name="availableDays"
-                            value={formData.availableDays}
-                            onChange={handleInputChange}
-                          />
+                          <>
+                            <CFormInput
+                              name="availableDays"
+                              value={formData.availableDays}
+                              onChange={(e) => {
+                                // allow letters, spaces, commas, and hyphens
+                                const cleaned = e.target.value.replace(/[^A-Za-z,\s\-]/g, '')
+                                setFormData((prev) => ({ ...prev, availableDays: cleaned }))
+                                setErrors((prev) => ({ ...prev, availableDays: '' }))
+                              }}
+                            />
+                            {errors.availableDays && (
+                              <small className="text-danger">{errors.availableDays}</small>
+                            )}
+                          </>
                         ) : (
                           <p>{doctorData.availableDays}</p>
                         )}
@@ -678,12 +869,24 @@ const DoctorDetailsPage = () => {
                       <strong>📝 Profile Description</strong>
                     </h6>
                     {isEditing ? (
-                      <CFormTextarea
-                        name="profileDescription"
-                        rows={3}
-                        value={formData.profileDescription}
-                        onChange={handleInputChange}
-                      />
+                      <>
+                        <CFormTextarea
+                          name="profileDescription"
+                          rows={3}
+                          value={formData.profileDescription}
+                          onChange={(e) => {
+                            const cleaned = e.target.value.replace(/[^A-Za-z\s]/g, '')
+                            setFormData((prev) => ({
+                              ...prev,
+                              profileDescription: cleaned,
+                            }))
+                            setErrors((prev) => ({ ...prev, profileDescription: '' }))
+                          }}
+                        />
+                        {errors.profileDescription && (
+                          <small className="text-danger">{errors.profileDescription}</small>
+                        )}
+                      </>
                     ) : (
                       <p>{doctorData.profileDescription}</p>
                     )}
@@ -777,19 +980,23 @@ const DoctorDetailsPage = () => {
                           <strong>In-Clinic Fee:</strong>
                         </p>
                         {isEditing ? (
-                          <CFormInput
-                            name="inClinicFee"
-                            value={formData?.doctorFees?.inClinicFee || ''}
-                            onChange={(e) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                doctorFees: {
-                                  ...prev.doctorFees,
-                                  inClinicFee: e.target.value,
-                                },
-                              }))
-                            }
-                          />
+                          <>
+                            <CFormInput
+                              name="inClinicFee"
+                              value={formData?.doctorFees?.inClinicFee || ''}
+                              onChange={(e) => {
+                                const cleaned = e.target.value.replace(/[^0-9]/g, '')
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  doctorFees: { ...prev.doctorFees, inClinicFee: cleaned },
+                                }))
+                                setErrors((prev) => ({ ...prev, inClinicFee: '' }))
+                              }}
+                            />
+                            {errors.inClinicFee && (
+                              <small className="text-danger">{errors.inClinicFee}</small>
+                            )}
+                          </>
                         ) : (
                           <p>₹{formData?.doctorFees?.inClinicFee || 'N/A'}</p>
                         )}
@@ -800,19 +1007,23 @@ const DoctorDetailsPage = () => {
                           <strong>Video Consultation Fee:</strong>
                         </p>
                         {isEditing ? (
-                          <CFormInput
-                            name="vedioConsultationFee"
-                            value={formData?.doctorFees?.vedioConsultationFee || ''}
-                            onChange={(e) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                doctorFees: {
-                                  ...prev.doctorFees,
-                                  vedioConsultationFee: e.target.value,
-                                },
-                              }))
-                            }
-                          />
+                          <>
+                            <CFormInput
+                              name="vedioConsultationFee"
+                              value={formData?.doctorFees?.vedioConsultationFee || ''}
+                              onChange={(e) => {
+                                const cleaned = e.target.value.replace(/[^0-9]/g, '')
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  doctorFees: { ...prev.doctorFees, vedioConsultationFee: cleaned },
+                                }))
+                                setErrors((prev) => ({ ...prev, vedioConsultationFee: '' }))
+                              }}
+                            />
+                            {errors.vedioConsultationFee && (
+                              <small className="text-danger">{errors.vedioConsultationFee}</small>
+                            )}
+                          </>
                         ) : (
                           <p>₹{formData?.doctorFees?.vedioConsultationFee || 'N/A'}</p>
                         )}
@@ -825,7 +1036,12 @@ const DoctorDetailsPage = () => {
                           <CButton className="me-2" color="secondary" onClick={handleEditToggle}>
                             Cancel
                           </CButton>
-                          <CButton color="success" className=" text-white" onClick={handleUpdate}>
+                          <CButton
+                            color="success"
+                            className="text-white"
+                            onClick={handleUpdateWithValidation}
+                            // disabled={Object.values(errors).some((err) => err)}
+                          >
                             Update
                           </CButton>
                         </>

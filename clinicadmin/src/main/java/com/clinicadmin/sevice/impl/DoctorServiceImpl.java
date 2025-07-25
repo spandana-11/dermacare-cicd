@@ -2,6 +2,7 @@ package com.clinicadmin.sevice.impl;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import com.clinicadmin.dto.ChangeDoctorPasswordDTO;
 import com.clinicadmin.dto.ClinicDTO;
 import com.clinicadmin.dto.ClinicWithDoctorsDTO;
+import com.clinicadmin.dto.ClinicWithDoctorsDTO2;
 import com.clinicadmin.dto.DoctorAvailabilityStatusDTO;
 import com.clinicadmin.dto.DoctorAvailableSlotDTO;
 import com.clinicadmin.dto.DoctorCategoryDTO;
@@ -47,6 +49,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import feign.FeignException;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -64,6 +67,9 @@ public class DoctorServiceImpl implements DoctorService {
 	
 	@Autowired
 	private NotificationFeign notificationFeign;
+	
+	@Autowired
+	private ObjectMapper objectMapper;
 
 	public DoctorServiceImpl(DoctorsRepository doctorsRepository,
 			DoctorLoginCredentialsRepository credentialsRepository, PasswordEncoder passwordEncoder,
@@ -1009,97 +1015,309 @@ public class DoctorServiceImpl implements DoctorService {
 			return ResponseEntity.status(e.status()).body(res);}
 		}
 
-	//-----------------------------GET CLINICS AND DOCTORS BUY RECOMMONDATION == TRUE---------------------------------
-	@Override
-		public Response getRecommendedClinicsAndDoctors() {
-			 ResponseEntity<Response> responseEntity = adminServiceClient.getHospitalUsingRecommendentaion();
-		        Response responseBody = responseEntity.getBody();
 
-		        List<ClinicWithDoctorsDTO> result = new ArrayList<>();
 
-		        if (responseBody != null && responseBody.isSuccess()) {
-		            Object rawData = responseBody.getData();
-		            List<?> clinicRawList = (List<?>) rawData;
+		  //-----------------------------GET CLINICS AND DOCTORS BUY RECOMMONDATION == TRUE---------------------------------
+			@Override
+			public Response getRecommendedClinicsAndDoctors() {
+				ResponseEntity<Response> responseEntity = adminServiceClient.getHospitalUsingRecommendentaion();
+				Response responseBody = responseEntity.getBody();
 
-		            for (Object obj : clinicRawList) {
-		                LinkedHashMap<?, ?> map = (LinkedHashMap<?, ?>) obj;
+				List<ClinicWithDoctorsDTO> result = new ArrayList<>();
 
-		                // Map Clinic fields
-		                ClinicWithDoctorsDTO clinic = new ClinicWithDoctorsDTO();
-		                clinic.setHospitalId((String) map.get("hospitalId"));
-		                clinic.setName((String) map.get("name"));
-		                clinic.setAddress((String) map.get("address"));
-		                clinic.setCity((String) map.get("city"));
-		                clinic.setContactNumber((String) map.get("contactNumber"));
-		                clinic.setHospitalOverallRating(getDouble(map.get("hospitalOverallRating")));
-		                clinic.setHospitalRegistrations((String) map.get("hospitalRegistrations"));
-		                clinic.setOpeningTime((String) map.get("openingTime"));
-		                clinic.setClosingTime((String) map.get("closingTime"));
-		                clinic.setHospitalLogo((String) map.get("hospitalLogo"));
-		                clinic.setEmailAddress((String) map.get("emailAddress"));
-		                clinic.setWebsite((String) map.get("website"));
-		                clinic.setLicenseNumber((String) map.get("licenseNumber"));
-		                clinic.setIssuingAuthority((String) map.get("issuingAuthority"));
-		                clinic.setHospitalDocuments((List<String>) map.get("hospitalDocuments"));
-		                clinic.setContractorDocuments((List<String>) map.get("contractorDocuments"));
-		                clinic.setRecommended(Boolean.TRUE.equals(map.get("recommended")));
+				if (responseBody != null && responseBody.isSuccess()) {
+					Object rawData = responseBody.getData();
+					List<?> clinicRawList = (List<?>) rawData;
 
-		                // Fetch doctors for each clinic
-		                List<Doctors> doctorEntities = doctorsRepository.findByHospitalId(clinic.getHospitalId());
+					for (Object obj : clinicRawList) {
+						LinkedHashMap<?, ?> map = (LinkedHashMap<?, ?>) obj;
 
-		                List<DoctorsDTO> doctors = doctorEntities.stream()
-		                        .map(doc -> {
-		                            DoctorsDTO dto = new DoctorsDTO();
-		                            dto.setId(doc.getId().toString());
-		                            dto.setDoctorId(doc.getDoctorId());
-		                            dto.setDeviceId(doc.getDeviceId());
-		                            dto.setDoctorEmail(doc.getDoctorEmail());
-		                            dto.setHospitalId(doc.getHospitalId());
-		                            dto.setDoctorPicture(doc.getDoctorPicture());
-		                            dto.setDoctorLicence(doc.getDoctorLicence());
-		                            dto.setDoctorMobileNumber(doc.getDoctorMobileNumber());
-		                            dto.setDoctorName(doc.getDoctorName());
-		                            dto.setCategory(doc.getCategory());
-		                            dto.setService(doc.getService());
-		                            dto.setSubServices(doc.getSubServices());
-		                            dto.setSpecialization(doc.getSpecialization());
-		                            dto.setGender(doc.getGender());
-		                            dto.setExperience(doc.getExperience());
-		                            dto.setQualification(doc.getQualification());
-		                            dto.setAvailableDays(doc.getAvailableDays());
-		                            dto.setAvailableTimes(doc.getAvailableTimes());
-		                            dto.setProfileDescription(doc.getProfileDescription());
-		                            dto.setFocusAreas(doc.getFocusAreas());
-		                            dto.setLanguages(doc.getLanguages());
-		                            dto.setHighlights(doc.getHighlights());
-		                            dto.setDoctorAvailabilityStatus(doc.isDoctorAvailabilityStatus());
-		                            dto.setRecommendation(doc.isRecommendation());
-		                            dto.setDoctorAverageRating(doc.getDoctorAverageRating());
-		                            return dto;
-		                        })
-		                        .collect(Collectors.toList());
+						// Map Clinic fields
+						ClinicWithDoctorsDTO clinic = new ClinicWithDoctorsDTO();
+						clinic.setHospitalId((String) map.get("hospitalId"));
+						clinic.setName((String) map.get("name"));
+						clinic.setAddress((String) map.get("address"));
+						clinic.setCity((String) map.get("city"));
+						clinic.setContactNumber((String) map.get("contactNumber"));
+						clinic.setHospitalOverallRating(getDouble1(map.get("hospitalOverallRating")));
+						clinic.setHospitalRegistrations((String) map.get("hospitalRegistrations"));
+						clinic.setOpeningTime((String) map.get("openingTime"));
+						clinic.setClosingTime((String) map.get("closingTime"));
+						clinic.setHospitalLogo((String) map.get("hospitalLogo"));
+						clinic.setEmailAddress((String) map.get("emailAddress"));
+						clinic.setWebsite((String) map.get("website"));
+						clinic.setLicenseNumber((String) map.get("licenseNumber"));
+						clinic.setIssuingAuthority((String) map.get("issuingAuthority"));
+						clinic.setHospitalDocuments((List<String>) map.get("hospitalDocuments"));
+						clinic.setContractorDocuments((List<String>) map.get("contractorDocuments"));
+						clinic.setRecommended(Boolean.TRUE.equals(map.get("recommended")));
 
-		                clinic.setDoctors(doctors);
-		                result.add(clinic);
-		            }
-		        }
+						// Fetch doctors for each clinic
+						List<Doctors> doctorEntities = doctorsRepository.findByHospitalId(clinic.getHospitalId());
 
-		        // Final response
-		        Response finalResponse = new Response();
-		        finalResponse.setSuccess(true);
-		        finalResponse.setStatus(200);
-		        finalResponse.setMessage("Recommended clinics with doctors retrieved successfully.");
-		        finalResponse.setData(result);
+						List<DoctorsDTO> doctors = doctorEntities.stream().map(doc -> {
+							DoctorsDTO dto = new DoctorsDTO();
+							dto.setId(doc.getId().toString());
+							dto.setDoctorId(doc.getDoctorId());
+							dto.setDeviceId(doc.getDeviceId());
+							dto.setDoctorEmail(doc.getDoctorEmail());
+							dto.setHospitalId(doc.getHospitalId());
+							dto.setDoctorPicture(doc.getDoctorPicture());
+							dto.setDoctorLicence(doc.getDoctorLicence());
+							dto.setDoctorMobileNumber(doc.getDoctorMobileNumber());
+							dto.setDoctorName(doc.getDoctorName());
+							dto.setCategory(doc.getCategory());
+							dto.setService(doc.getService());
+							dto.setSubServices(doc.getSubServices());
+							dto.setSpecialization(doc.getSpecialization());
+							dto.setGender(doc.getGender());
+							dto.setExperience(doc.getExperience());
+							dto.setQualification(doc.getQualification());
+							dto.setAvailableDays(doc.getAvailableDays());
+							dto.setAvailableTimes(doc.getAvailableTimes());
+							dto.setProfileDescription(doc.getProfileDescription());
+							dto.setFocusAreas(doc.getFocusAreas());
+							dto.setLanguages(doc.getLanguages());
+							dto.setHighlights(doc.getHighlights());
+							dto.setDoctorAvailabilityStatus(doc.isDoctorAvailabilityStatus());
+							dto.setRecommendation(doc.isRecommendation());
+							dto.setDoctorAverageRating(doc.getDoctorAverageRating());
+//			                            if (dto.getDoctorFees() != null)
+							dto.setDoctorFees(DoctorMapper.mapDoctorFeeEntityToDTO(doc.getDoctorFees()));
 
-		        return finalResponse;
-		    }
+							return dto;
+						}).collect(Collectors.toList());
 
-		    private double getDouble(Object obj) {
-		        try {
-		            return obj != null ? Double.parseDouble(obj.toString()) : 0.0;
-		        } catch (Exception e) {
-		            return 0.0;
-		        }
-		    }
+						clinic.setDoctors(doctors);
+						result.add(clinic);
+					}
+				}
 
+				// Final response
+				Response finalResponse = new Response();
+				finalResponse.setSuccess(true);
+				finalResponse.setStatus(200);
+				finalResponse.setMessage("Recommended clinics with doctors retrieved successfully.");
+				finalResponse.setData(result);
+
+				return finalResponse;
+			}
+
+			private double getDouble1(Object obj) {
+				try {
+					return obj != null ? Double.parseDouble(obj.toString()) : 0.0;
+				} catch (Exception e) {
+					return 0.0;
+				}
+			}
+
+			@Override
+			public Response getBestDoctorBySubService(String subServiceId) {
+				List<Doctors> doctors = doctorsRepository.findBySubServiceById(subServiceId);
+
+				Doctors bestDoctor = null;
+				double highestScore = -1.0;
+				ClinicDTO selectedClinic = null;
+
+				for (Doctors doctor : doctors) {
+					if (!doctor.isDoctorAvailabilityStatus())
+						continue;
+
+					// Call main admin service to get clinic by hospitalId
+					ResponseEntity<Response> clinicResponse = adminServiceClient.getClinicById(doctor.getHospitalId());
+
+					if (clinicResponse == null || clinicResponse.getBody() == null
+							|| clinicResponse.getBody().getData() == null)
+						continue;
+
+					// Convert Object to ClinicDTO safely using ObjectMapper
+					ClinicDTO clinic;
+					try {
+						Object data = clinicResponse.getBody().getData();
+						clinic = objectMapper.convertValue(data, ClinicDTO.class);
+					} catch (Exception e) {
+						continue; // skip if conversion fails
+					}
+
+					boolean isGoodClinic = clinic.isRecommended() || clinic.getHospitalOverallRating() >= 4.0;
+					if (!isGoodClinic)
+						continue;
+
+					// Calculate doctor score
+					double score = 0;
+					if (doctor.isRecommendation())
+						score += 3;
+					score += doctor.getDoctorAverageRating();
+
+					try {
+						score += Double.parseDouble(doctor.getExperience()) * 0.2;
+					} catch (Exception ignored) {
+					}
+
+					// Choose the doctor with the highest score
+					if (score > highestScore) {
+						highestScore = score;
+						bestDoctor = doctor;
+						selectedClinic = clinic;
+					}
+				}
+
+				if (bestDoctor == null || selectedClinic == null) {
+					return Response.builder().success(false).status(404)
+							.message("No suitable doctor found for subService ID: " + subServiceId).build();
+				}
+
+				// Convert doctor to DoctorsDTO using your mapper
+				DoctorsDTO doctorDTO = DoctorMapper.mapDoctorEntityToDoctorDTO(bestDoctor);
+
+				// Build combined clinic + doctor response
+				ClinicWithDoctorsDTO2 responseDTO = new ClinicWithDoctorsDTO2(selectedClinic.getHospitalId(),
+						selectedClinic.getName(), selectedClinic.getAddress(), selectedClinic.getCity(),
+						selectedClinic.getContactNumber(), selectedClinic.getHospitalOverallRating(),
+						selectedClinic.getHospitalRegistrations(), selectedClinic.getOpeningTime(),
+						selectedClinic.getClosingTime(), selectedClinic.getHospitalLogo(), selectedClinic.getEmailAddress(),
+						selectedClinic.getWebsite(), selectedClinic.getLicenseNumber(), selectedClinic.getIssuingAuthority(),
+						selectedClinic.getHospitalDocuments(), selectedClinic.getContractorDocuments(),
+						selectedClinic.isRecommended(), doctorDTO);
+
+				return Response.builder().success(true).status(200).message("Best doctor with clinic retrieved successfully")
+						.data(responseDTO).build();
+			}
+		//---------------------------------------------------Using Key Point of subservices----------------------------------------------------
+			    @Override
+			    public Response getRecommendedClinicsAndDoctors(List<String> keyPointsFromUser) {
+			        ResponseEntity<Response> responseEntity = adminServiceClient.getHospitalUsingRecommendentaion();
+			        Response responseBody = responseEntity.getBody();
+
+			        List<ClinicWithDoctorsDTO> result = new ArrayList<>();
+
+			        if (responseBody != null && responseBody.isSuccess()) {
+			            Object rawData = responseBody.getData();
+			            List<?> clinicRawList = (List<?>) rawData;
+
+			            for (Object obj : clinicRawList) {
+			                LinkedHashMap<?, ?> map = (LinkedHashMap<?, ?>) obj;
+
+			                ClinicWithDoctorsDTO clinic = new ClinicWithDoctorsDTO();
+			                clinic.setHospitalId((String) map.get("hospitalId"));
+			                clinic.setName((String) map.get("name"));
+			                clinic.setAddress((String) map.get("address"));
+			                clinic.setCity((String) map.get("city"));
+			                clinic.setContactNumber((String) map.get("contactNumber"));
+			                clinic.setHospitalOverallRating(getDouble1(map.get("hospitalOverallRating")));
+			                clinic.setHospitalRegistrations((String) map.get("hospitalRegistrations"));
+			                clinic.setOpeningTime((String) map.get("openingTime"));
+			                clinic.setClosingTime((String) map.get("closingTime"));
+			                clinic.setHospitalLogo((String) map.get("hospitalLogo"));
+			                clinic.setEmailAddress((String) map.get("emailAddress"));
+			                clinic.setWebsite((String) map.get("website"));
+			                clinic.setLicenseNumber((String) map.get("licenseNumber"));
+			                clinic.setIssuingAuthority((String) map.get("issuingAuthority"));
+			                clinic.setHospitalDocuments((List<String>) map.get("hospitalDocuments"));
+			                clinic.setContractorDocuments((List<String>) map.get("contractorDocuments"));
+			                clinic.setRecommended(Boolean.TRUE.equals(map.get("recommended")));
+
+			                List<Doctors> doctorEntities = doctorsRepository.findByHospitalId(clinic.getHospitalId());
+
+			                List<DoctorsDTO> matchingDoctors = doctorEntities.stream()
+			                    .map(this::mapToDoctorDTO)
+			                    .filter(doctor -> isDoctorRelevant(doctor, keyPointsFromUser))
+			                    .collect(Collectors.toList());
+
+			                if (!matchingDoctors.isEmpty()) {
+			                    clinic.setDoctors(matchingDoctors);
+			                    result.add(clinic);
+			                }
+			            }
+			        }
+
+			        Response finalResponse = new Response();
+			        finalResponse.setSuccess(true);
+			        finalResponse.setStatus(200);
+			        finalResponse.setMessage("Recommended clinics with doctors retrieved successfully.");
+			        finalResponse.setData(result);
+
+			        return finalResponse;
+			    }
+
+			    private boolean isDoctorRelevant(DoctorsDTO doctor, List<String> keyPoints) {
+			        Map<String, List<String>> subServiceKeyPoints = getSubServiceKeywords();
+
+			        for (@Valid DoctorSubServiceDTO subService : doctor.getSubServices()) {
+			            List<String> keywords = subServiceKeyPoints.getOrDefault(subService, Collections.emptyList());
+			            for (String key : keyPoints) {
+			                if (keywords.stream().anyMatch(kw -> kw.toLowerCase().contains(key.toLowerCase()))) {
+			                    return true;
+			                }
+			            }
+			        }
+			        return false;
+			    }
+
+
+
+			    private Map<String, List<String>> getSubServiceKeywords() {
+			        Map<String, List<String>> map = new HashMap<>();
+			        map.put("Chemical Peels", Arrays.asList("dark spots", "acne scars", "dull skin", "uneven tone", "melasma", "hyperpigmentation"));
+			        map.put("Laser Skin Resurfacing", Arrays.asList("fine lines", "wrinkles", "acne scars", "large pores", "skin rejuvenation"));
+			        map.put("Microneedling", Arrays.asList("acne scars", "large pores", "dull skin", "fine lines", "collagen boost"));
+			        map.put("Mesotherapy", Arrays.asList("dull skin", "pigmentation", "dehydration", "fine lines"));
+			        map.put("PRP for Skin", Arrays.asList("rejuvenation", "dark circles", "under-eye wrinkles", "collagen loss"));
+			        map.put("PRP for Hair", Arrays.asList("hair thinning", "receding hairline", "patchy baldness", "weak roots"));
+			        map.put("Hair Mesotherapy", Arrays.asList("hair loss", "nutrient deficiency", "weak scalp", "slow hair growth"));
+			        map.put("Laser Hair Therapy", Arrays.asList("hair shedding", "poor scalp circulation", "thinning hair"));
+			        map.put("FUE Hair Transplant", Arrays.asList("bald spots", "androgenetic alopecia", "hairline correction"));
+			        map.put("Botox", Arrays.asList("forehead lines", "crow’s feet", "frown lines", "fine wrinkles"));
+			        map.put("Dermal Fillers", Arrays.asList("sunken cheeks", "nasolabial folds", "lip volume loss"));
+			        map.put("Thread Lifts", Arrays.asList("sagging skin", "loose jawline", "droopy cheeks"));
+			        map.put("HydraFacial", Arrays.asList("dull skin", "blackheads", "whiteheads", "clogged pores"));
+			        map.put("Fractional CO2 Laser", Arrays.asList("wrinkles", "acne scars", "texture", "sun damage"));
+			        map.put("Ultherapy / HIFU", Arrays.asList("loose skin", "double chin", "neck sagging", "jawline lift"));
+			        map.put("Diode Laser Hair Removal", Arrays.asList("unwanted hair", "ingrown hair", "body hair"));
+			        map.put("Q-Switched Laser", Arrays.asList("tattoos", "pigmented lesions", "birthmarks", "sunspots"));
+			        map.put("IPL", Arrays.asList("uneven tone", "age spots", "redness", "rosacea"));
+			        map.put("Cryotherapy", Arrays.asList("warts", "skin tags", "molluscum"));
+			        map.put("Topical Treatment", Arrays.asList("psoriasis", "eczema", "rashes", "redness", "inflammation"));
+			        map.put("Phototherapy", Arrays.asList("vitiligo", "psoriasis", "eczema"));
+			        return map;
+			    }
+
+			    private DoctorsDTO mapToDoctorDTO(Doctors doc) {
+			        DoctorsDTO dto = new DoctorsDTO();
+			        dto.setId(doc.getId().toString());
+			        dto.setDoctorId(doc.getDoctorId());
+			        dto.setDeviceId(doc.getDeviceId());
+			        dto.setDoctorEmail(doc.getDoctorEmail());
+			        dto.setHospitalId(doc.getHospitalId());
+			        dto.setDoctorPicture(doc.getDoctorPicture());
+			        dto.setDoctorLicence(doc.getDoctorLicence());
+			        dto.setDoctorMobileNumber(doc.getDoctorMobileNumber());
+			        dto.setDoctorName(doc.getDoctorName());
+			        dto.setCategory(doc.getCategory());
+			        dto.setService(doc.getService());
+			        dto.setSubServices(doc.getSubServices());
+			        dto.setSpecialization(doc.getSpecialization());
+			        dto.setGender(doc.getGender());
+			        dto.setExperience(doc.getExperience());
+			        dto.setQualification(doc.getQualification());
+			        dto.setAvailableDays(doc.getAvailableDays());
+			        dto.setAvailableTimes(doc.getAvailableTimes());
+			        dto.setProfileDescription(doc.getProfileDescription());
+			        dto.setFocusAreas(doc.getFocusAreas());
+			        dto.setLanguages(doc.getLanguages());
+			        dto.setHighlights(doc.getHighlights());
+			        dto.setDoctorAvailabilityStatus(doc.isDoctorAvailabilityStatus());
+			        dto.setRecommendation(doc.isRecommendation());
+			        dto.setDoctorAverageRating(doc.getDoctorAverageRating());
+			        dto.setDoctorFees(DoctorMapper.mapDoctorFeeEntityToDTO(doc.getDoctorFees()));
+			        return dto;
+			    }
+
+			    private double getDouble(Object obj) {
+			        try {
+			            return obj != null ? Double.parseDouble(obj.toString()) : 0.0;
+			        } catch (Exception e) {
+			            return 0.0;
+			        }
+			    }
 }
