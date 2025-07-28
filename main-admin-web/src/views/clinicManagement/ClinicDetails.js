@@ -20,6 +20,7 @@ import {
   CModalFooter,
   CModalHeader,
   CModalTitle,
+  CFormSelect,
 } from '@coreui/react'
 import { DoctorAllData } from '../../baseUrl'
 
@@ -33,7 +34,7 @@ import { toast } from 'react-toastify'
 const ClinicDetails = () => {
   const { hospitalId } = useParams()
   const navigate = useNavigate()
-
+  const [formErrors, setFormErrors] = useState({})
   const [clinicData, setClinicData] = useState(null)
   const [editableClinicData, setEditableClinicData] = useState({})
   const [isEditing, setIsEditing] = useState(false)
@@ -56,6 +57,46 @@ const ClinicDetails = () => {
     ['Fire Safety Certificate', 'fireSafetyCertificate'],
     ['Professional Indemnity Insurance', 'professionalIndemnityInsurance'],
     ['Others', 'others'],
+  ]
+  const validateForm = () => {
+    const errors = {}
+
+    if (!editableClinicData.emailAddress || !editableClinicData.emailAddress.includes('@')) {
+      errors.emailAddress = 'Email must contain "@"'
+    }
+
+    if (!editableClinicData.city) {
+      errors.city = 'City is required'
+    }
+    if (!editableClinicData.website) {
+      errors.website = 'Website is required'
+    }
+    if (!editableClinicData.issuingAuthority) {
+      errors.issuingAuthority = 'Issuing Authority is required'
+    }
+    if (!editableClinicData.openingTime) {
+      errors.openingTime = 'Opening time is required'
+    }
+    if (!editableClinicData.closingTime) {
+      errors.closingTime = 'Closing time is required'
+    }
+
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+  const timeSlots = [
+    '08:00 AM',
+    '09:00 AM',
+    '10:00 AM',
+    '11:00 AM',
+    '12:00 PM',
+    '01:00 PM',
+    '02:00 PM',
+    '03:00 PM',
+    '04:00 PM',
+    '05:00 PM',
+    '06:00 PM',
+    '07:00 PM',
   ]
 
   const fetchClinicDetails = async () => {
@@ -174,10 +215,23 @@ const ClinicDetails = () => {
                         type="text"
                         value={editableClinicData.name || ''}
                         disabled={!isEditing}
-                        onChange={(e) =>
-                          setEditableClinicData({ ...editableClinicData, name: e.target.value })
-                        }
+                        onChange={(e) => {
+                          const value = e.target.value
+                          const regex = /^[A-Za-z\s]*$/
+
+                          if (!regex.test(value)) {
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              name: 'Only alphabets and spaces allowed',
+                            }))
+                          } else {
+                            setFormErrors((prev) => ({ ...prev, name: '' }))
+                          }
+
+                          setEditableClinicData((prev) => ({ ...prev, name: value }))
+                        }}
                       />
+                      {formErrors.name && <div className="text-danger mt-1">{formErrors.name}</div>}
                     </CCol>
                   </CRow>
 
@@ -187,16 +241,35 @@ const ClinicDetails = () => {
                       <CFormLabel>Contact Number</CFormLabel>
                       <CFormInput
                         type="text"
+                        maxLength={10}
                         value={editableClinicData.contactNumber || ''}
                         disabled={!isEditing}
-                        onChange={(e) =>
-                          setEditableClinicData({
-                            ...editableClinicData,
-                            contactNumber: e.target.value,
-                          })
-                        }
+                        onChange={(e) => {
+                          const value = e.target.value
+                          const regex = /^[6-9][0-9]{0,9}$/
+
+                          if (!/^\d*$/.test(value)) {
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              contactNumber: 'Only numeric values allowed',
+                            }))
+                          } else if (value.length > 0 && !regex.test(value)) {
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              contactNumber: 'Must start with 6-9 and be 10 digits',
+                            }))
+                          } else {
+                            setFormErrors((prev) => ({ ...prev, contactNumber: '' }))
+                          }
+
+                          setEditableClinicData((prev) => ({ ...prev, contactNumber: value }))
+                        }}
                       />
+                      {formErrors.contactNumber && (
+                        <div className="text-danger mt-1">{formErrors.contactNumber}</div>
+                      )}
                     </CCol>
+
                     <CCol md={6}>
                       <CFormLabel>Location</CFormLabel>
                       <CFormInput
@@ -289,13 +362,30 @@ const ClinicDetails = () => {
                         type="email"
                         value={editableClinicData.emailAddress || ''}
                         disabled={!isEditingAdditional}
-                        onChange={(e) =>
-                          setEditableClinicData({
-                            ...editableClinicData,
-                            emailAddress: e.target.value,
-                          })
-                        }
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            emailAddress: value,
+                          }))
+
+                          // live validation
+                          if (!value.includes('@')) {
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              emailAddress: 'Email must contain "@"',
+                            }))
+                          } else {
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              emailAddress: '',
+                            }))
+                          }
+                        }}
                       />
+                      {formErrors.emailAddress && (
+                        <div className="text-danger mt-1">{formErrors.emailAddress}</div>
+                      )}
                     </CCol>
 
                     <CCol md={6}>
@@ -304,12 +394,10 @@ const ClinicDetails = () => {
                         type="text"
                         value={editableClinicData.city || ''}
                         disabled={!isEditingAdditional}
-                        onChange={(e) =>
-                          setEditableClinicData({
-                            ...editableClinicData,
-                            city: e.target.value,
-                          })
-                        }
+                        onChange={(e) => {
+                          setEditableClinicData({ ...editableClinicData, city: e.target.value })
+                          setFormErrors((prev) => ({ ...prev, city: '' }))
+                        }}
                       />
                     </CCol>
                   </CRow>
@@ -332,44 +420,80 @@ const ClinicDetails = () => {
                         type="text"
                         value={editableClinicData.issuingAuthority || ''}
                         disabled={!isEditingAdditional}
-                        onChange={(e) =>
-                          setEditableClinicData({
-                            ...editableClinicData,
-                            issuingAuthority: e.target.value,
-                          })
-                        }
+                        onChange={(e) => {
+                          const value = e.target.value
+                          const regex = /^[A-Za-z\s]*$/
+
+                          if (!regex.test(value)) {
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              issuingAuthority: 'Only alphabets and spaces allowed',
+                            }))
+                          } else {
+                            setFormErrors((prev) => ({ ...prev, issuingAuthority: '' }))
+                          }
+
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            issuingAuthority: value,
+                          }))
+                        }}
                       />
+                      {formErrors.issuingAuthority && (
+                        <div className="text-danger mt-1">{formErrors.issuingAuthority}</div>
+                      )}
                     </CCol>
                   </CRow>
 
                   <CRow className="mb-3">
                     <CCol md={6}>
                       <CFormLabel>Opening Time</CFormLabel>
-                      <CFormInput
-                        type="text"
+                      <CFormSelect
                         value={editableClinicData.openingTime || ''}
                         disabled={!isEditingAdditional}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setEditableClinicData({
                             ...editableClinicData,
                             openingTime: e.target.value,
                           })
-                        }
-                      />
+                          setFormErrors((prev) => ({ ...prev, openingTime: '' }))
+                        }}
+                      >
+                        <option value="">Select Opening Time</option>
+                        {timeSlots.map((time) => (
+                          <option key={time} value={time}>
+                            {time}
+                          </option>
+                        ))}
+                      </CFormSelect>
+                      {formErrors.openingTime && (
+                        <div className="text-danger">{formErrors.openingTime}</div>
+                      )}
                     </CCol>
+
                     <CCol md={6}>
                       <CFormLabel>Closing Time</CFormLabel>
-                      <CFormInput
-                        type="text"
+                      <CFormSelect
                         value={editableClinicData.closingTime || ''}
                         disabled={!isEditingAdditional}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setEditableClinicData({
                             ...editableClinicData,
                             closingTime: e.target.value,
                           })
-                        }
-                      />
+                          setFormErrors((prev) => ({ ...prev, closingTime: '' }))
+                        }}
+                      >
+                        <option value="">Select Closing Time</option>
+                        {timeSlots.map((time) => (
+                          <option key={time} value={time}>
+                            {time}
+                          </option>
+                        ))}
+                      </CFormSelect>
+                      {formErrors.closingTime && (
+                        <div className="text-danger">{formErrors.closingTime}</div>
+                      )}
                     </CCol>
                   </CRow>
                   <CRow>

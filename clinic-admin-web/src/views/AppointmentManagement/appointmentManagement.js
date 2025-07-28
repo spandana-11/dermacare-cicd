@@ -106,7 +106,7 @@ const appointmentManagement = () => {
     // Map your filter buttons to actual data values:
     const consultationTypeMap = {
       'Service & Treatment': 'services & treatments',
-      'Video Consultation': 'online consultation',
+      'Video Consultation': 'video consultation',
       'In-clinic': 'in-clinic consultation',
     }
 
@@ -121,11 +121,20 @@ const appointmentManagement = () => {
     // Filter by consultation type (only one at a time)
     if (filterTypes.length === 1) {
       const selectedType = filterTypes[0]
-      const mappedType = consultationTypeMap[selectedType]
 
-      if (mappedType) {
-        filtered = filtered.filter((item) => normalize(item.consultationType) === mappedType)
+      if (selectedType === 'Video Consultation') {
+        filtered = filtered.filter(
+          (item) =>
+            normalize(item.consultationType) === 'video consultation' ||
+            normalize(item.consultationType) === 'online consultation',
+        )
         console.log(`After ${selectedType} filter:`, filtered)
+      } else {
+        const mappedType = consultationTypeMap[selectedType]
+        if (mappedType) {
+          filtered = filtered.filter((item) => normalize(item.consultationType) === mappedType)
+          console.log(`After ${selectedType} filter:`, filtered)
+        }
       }
     }
 
@@ -271,59 +280,58 @@ const appointmentManagement = () => {
           </CTableHead>
 
           <CTableBody>
-  {loading ? (
-    // ✅ Show loading row while fetching
-    <CTableRow>
-      <CTableDataCell colSpan="9" className="text-center text-primary fw-bold">
-        Loading appointments...
-      </CTableDataCell>
-    </CTableRow>
-  ) : Array.isArray(filteredData) && filteredData.length > 0 ? (
-    paginatedData.map((item, index) => (
-      <CTableRow key={`${item.id}-${index}`}>
-        <CTableDataCell>{index + 1}</CTableDataCell>
-        <CTableDataCell>{item.clinicId}</CTableDataCell>
-        <CTableDataCell>{item.name}</CTableDataCell>
-        <CTableDataCell>{item.subServiceName}</CTableDataCell>
-        <CTableDataCell>{item.consultationType}</CTableDataCell>
-        <CTableDataCell>
-          {item.sele ? `${item.sele} ` : ''}
-          {item.serviceDate}
-        </CTableDataCell>
-        <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
-        <CTableDataCell>
-          <CBadge color={getStatusColor(item.status)}>
-            {item.status
-              ?.split(' ')
-              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-              .join(' ')}
-          </CBadge>
-        </CTableDataCell>
-        <CTableDataCell>
-          <CButton
-            color="primary"
-            size="sm"
-            onClick={() =>
-              navigate(`/appointmentDetails/${item.bookingId}`, {
-                state: { appointment: item },
-              })
-            }
-          >
-            View
-          </CButton>
-        </CTableDataCell>
-      </CTableRow>
-    ))
-  ) : (
-    // ✅ Show only when loading is false and no data
-    <CTableRow>
-      <CTableDataCell colSpan="9" className="text-center text-danger fw-bold">
-        No appointments found.
-      </CTableDataCell>
-    </CTableRow>
-  )}
-</CTableBody>
-
+            {loading ? (
+              // ✅ Show loading row while fetching
+              <CTableRow>
+                <CTableDataCell colSpan="9" className="text-center text-primary fw-bold">
+                  Loading appointments...
+                </CTableDataCell>
+              </CTableRow>
+            ) : Array.isArray(filteredData) && filteredData.length > 0 ? (
+              paginatedData.map((item, index) => (
+                <CTableRow key={`${item.id}-${index}`}>
+                  <CTableDataCell>{index + 1}</CTableDataCell>
+                  <CTableDataCell>{item.clinicId}</CTableDataCell>
+                  <CTableDataCell>{item.name}</CTableDataCell>
+                  <CTableDataCell>{item.subServiceName}</CTableDataCell>
+                  <CTableDataCell>{item.consultationType}</CTableDataCell>
+                  <CTableDataCell>
+                    {item.sele ? `${item.sele} ` : ''}
+                    {item.serviceDate}
+                  </CTableDataCell>
+                  <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
+                  <CTableDataCell>
+                    <CBadge color={getStatusColor(item.status)}>
+                      {item.status
+                        ?.split(' ')
+                        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                        .join(' ')}
+                    </CBadge>
+                  </CTableDataCell>
+                  <CTableDataCell>
+                    <CButton
+                      color="primary"
+                      size="sm"
+                      onClick={() =>
+                        navigate(`/appointmentDetails/${item.bookingId}`, {
+                          state: { appointment: item },
+                        })
+                      }
+                    >
+                      View
+                    </CButton>
+                  </CTableDataCell>
+                </CTableRow>
+              ))
+            ) : (
+              // ✅ Show only when loading is false and no data
+              <CTableRow>
+                <CTableDataCell colSpan="9" className="text-center text-danger fw-bold">
+                  No appointments found.
+                </CTableDataCell>
+              </CTableRow>
+            )}
+          </CTableBody>
         </CTable>
 
         <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>

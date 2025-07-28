@@ -89,7 +89,14 @@ const AddClinic = () => {
     twitterHandle: '',
     facebookHandle: '',
   })
-
+ useEffect(() => {
+    if (mode === 'edit' && initialData) {
+      setFormData(initialData);
+      setClinicTypeOption(initialData.clinicType);
+      setSelectedOption(initialData.medicinesSoldOnSite);
+      setSelectedPharmacistOption(initialData.hasPharmacist);
+    }
+  }, [initialData, mode]);
   //get timings
   useEffect(() => {
     const fetchTimings = async () => {
@@ -443,6 +450,8 @@ const AddClinic = () => {
 
     const isValid = validateForm()
     if (!isValid) return
+
+    
     setIsSubmitting(true) // ⬅️ Start loading
 
     const { emailAddress, contactNumber } = formData

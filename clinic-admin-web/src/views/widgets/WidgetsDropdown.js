@@ -90,7 +90,7 @@ const WidgetsDropdown = (props) => {
   // Fetch Advertisements (unchanged)
   const fetchAdvertisements = async () => {
     try {
-      const response = await axios.get(`${servr_Url}/${AllCustomerAdvertisements}`)
+      const response = await axios.get(`${MainAdmin_URL}/${AllCustomerAdvertisements}`)
       console.log('✅ Advertisements Response:', response.data)
       if (Array.isArray(response.data)) {
         setSlides(response.data)

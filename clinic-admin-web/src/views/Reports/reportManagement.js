@@ -133,12 +133,42 @@ const fetchAppointments = async (hospitalId) => { // Added hospitalId parameter
 
   const selectedStatus = 'Completed' // or 'confirmed', etc.
   // 🔁 Filter when bookings or status changes
-  useEffect(() => {
-    const filtered = bookings.filter(
-      (booking) => booking.status?.toLowerCase().trim() === selectedStatus.toLowerCase().trim(),
-    )
-    setFilteredData(filtered)
-  }, [bookings, selectedStatus]) // dependencies: run whenever these change
+  // useEffect(() => {
+  //   const filtered = bookings.filter(
+  //     (booking) => booking.status?.toLowerCase().trim() === selectedStatus.toLowerCase().trim(),
+  //   )
+  //   setFilteredData(filtered)
+  // }, [bookings, selectedStatus]) // dependencies: run whenever these change
+useEffect(() => {
+  let currentFiltered = bookings
+
+  // 1. Filter by status (Completed only)
+  currentFiltered = currentFiltered.filter(
+    (booking) => normalize(booking.status) === 'completed'
+  )
+
+  // 2. Apply consultation type filter
+  if (filterTypes.length === 1) {
+    const selectedType = filterTypes[0]
+
+    if (selectedType === 'Video Consultation') {
+      currentFiltered = currentFiltered.filter(
+        (item) =>
+          normalize(item.consultationType) === 'video consultation' ||
+          normalize(item.consultationType) === 'online consultation'
+      )
+    } else {
+      const mappedType = consultationTypeMap[selectedType]
+      if (mappedType) {
+        currentFiltered = currentFiltered.filter(
+          (item) => normalize(item.consultationType) === mappedType
+        )
+      }
+    }
+  }
+
+  setFilteredData(currentFiltered)
+}, [bookings, filterTypes])
 
   useEffect(() => {
     const hospitalId = localStorage.getItem('HospitalId')

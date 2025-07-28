@@ -31,26 +31,36 @@ const Get_AllPayoutsData = async () => {
     setTimeout(() => {
       resolve({
         data: [
-          {
-            transactionId: 'TXN-2001',
-            bookingId: 'BKG-101',
-            billingName: 'Server User1',
-            amount: '2500',
-            paymentMethod: 'Card',
-            userEmail: 'server1@example.com',
-            userMobile: '9999000011',
-            billingAddress: 'Chennai, India',
-          },
-          {
-            transactionId: 'TXN-2002',
-            bookingId: 'BKG-102',
-            billingName: 'Server User2',
-            amount: '4500',
-            paymentMethod: 'UPI',
-            userEmail: 'server2@example.com',
-            userMobile: '9999000012',
-            billingAddress: 'Bangalore, India',
-          },
+  {
+    transactionId: 'TXN2025072801',
+    bookingId: 'BKG9011',
+    billingName: 'Ankit Sharma',
+    amount: '₹2,499.00',
+    paymentMethod: 'Credit Card (HDFC)',
+    userEmail: 'ankit.sharma@example.com',
+    userMobile: '9876543210',
+    billingAddress: 'Flat 204, Prestige Towers, Koramangala, Bangalore, India - 560034',
+  },
+  {
+    transactionId: 'TXN2025072802',
+    bookingId: 'BKG9012',
+    billingName: 'Priya Menon',
+    amount: '₹3,200.00',
+    paymentMethod: 'UPI (priya@ybl)',
+    userEmail: 'priya.menon@example.com',
+    userMobile: '9833012345',
+    billingAddress: 'C-16, Orchid Residency, Andheri West, Mumbai, India - 400058',
+  },
+  {
+    transactionId: 'TXN2025072803',
+    bookingId: 'BKG9013',
+    billingName: 'Rahul Verma',
+    amount: '₹1,750.00',
+    paymentMethod: 'Net Banking (SBI)',
+    userEmail: 'rahul.v@example.com',
+    userMobile: '9123456789',
+    billingAddress: 'A-10, Gaur City, Sector 121, Noida, India - 201301',
+  }
         ],
       })
     }, 2000) // 2s delay to simulate loading

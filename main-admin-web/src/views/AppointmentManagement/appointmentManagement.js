@@ -103,7 +103,7 @@ const appointmentManagement = () => {
     // Map your filter buttons to actual data values:
     const consultationTypeMap = {
       'Service & Treatment': 'services & treatments',
-      'Video Consultation': 'online consultation',
+      'video Consultation': 'online consultation',
       'In-clinic': 'in-clinic consultation',
     }
 
@@ -116,16 +116,24 @@ const appointmentManagement = () => {
     }
 
     // Filter by consultation type (only one at a time)
-    if (filterTypes.length === 1) {
+        if (filterTypes.length === 1) {
       const selectedType = filterTypes[0]
-      const mappedType = consultationTypeMap[selectedType]
 
-      if (mappedType) {
-        filtered = filtered.filter((item) => normalize(item.consultationType) === mappedType)
+      if (selectedType === 'Video Consultation') {
+        filtered = filtered.filter(
+          (item) =>
+            normalize(item.consultationType) === 'video consultation' ||
+            normalize(item.consultationType) === 'online consultation',
+        )
         console.log(`After ${selectedType} filter:`, filtered)
+      } else {
+        const mappedType = consultationTypeMap[selectedType]
+        if (mappedType) {
+          filtered = filtered.filter((item) => normalize(item.consultationType) === mappedType)
+          console.log(`After ${selectedType} filter:`, filtered)
+        }
       }
     }
-
     setFilteredData(filtered)
     setCurrentPage(1)
   }, [bookings, filterTypes, statusFilters])

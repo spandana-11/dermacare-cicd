@@ -1019,7 +1019,12 @@ const ServiceManagement = () => {
         </CModal>
       )}
 
-      <CModal visible={modalVisible} onClose={() => setModalVisible(false)} size="xl" backdrop="static">
+      <CModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        size="xl"
+        backdrop="static"
+      >
         <CModalHeader>
           <CModalTitle style={{ textAlign: 'center', width: '100%' }}>
             {modalMode === 'edit' ? 'Edit SubService Details' : 'Add New SubService Details'}
@@ -1251,14 +1256,20 @@ const ServiceManagement = () => {
             </CCol>
 
             <CCol md={12} className="mt-3">
-              <label className="mb-2">Question</label>
+              <label className="mb-2">
+                Question
+                <span className="text-danger">*</span>
+              </label>
               <CFormInput
                 placeholder="Enter your question"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
               />
 
-              <label className="mt-3">Answers</label>
+              <label className="mt-3">
+                Answers
+                <span className="text-danger">*</span>
+              </label>
               <CInputGroup className="mb-2">
                 <CFormInput
                   placeholder="Enter answer"
