@@ -547,7 +547,7 @@ const ServiceManagement = () => {
         hospitalId: localStorage.getItem('HospitalId'),
         subServiceName: newService.subServiceName,
         subServiceId: newService.subServiceId,
-        serviceID: newService.serviceId,
+        serviceId: newService.serviceId,
         serviceName: newService.serviceName,
         categoryName: newService.categoryName,
         categoryId: newService.categoryId,
@@ -872,7 +872,7 @@ const ServiceManagement = () => {
               </CCol>
               <CCol sm={6}>
                 <strong>Service Id:</strong>
-                <div>{viewService.serviceID}</div>
+                <div>{viewService.serviceId}</div>
               </CCol>
             </CRow>
 

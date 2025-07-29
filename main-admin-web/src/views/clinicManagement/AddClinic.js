@@ -26,7 +26,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import FileInputWithRemove from './FileInputWithRemove'
 import { getClinicTimings } from './AddClinicAPI'
 
-const AddClinic = () => {
+const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
   const navigate = useNavigate()
   const [errors, setErrors] = useState({})
   const [backendErrors, setBackendErrors] = ''
@@ -38,7 +38,7 @@ const AddClinic = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [timings, setTimings] = useState([])
   const [loadingTimings, setLoadingTimings] = useState(false)
-
+// const [initialData,setInitialData ]=useState()
   const fileInputRefs = {
     others: useRef(null),
     hospitalDocuments: useRef(null),

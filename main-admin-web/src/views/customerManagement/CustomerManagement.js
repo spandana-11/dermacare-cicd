@@ -581,6 +581,7 @@ const CustomerManagement = () => {
                   onPaste={(e) => e.preventDefault()}
                   maxLength={10}
                   invalid={!!formErrors.mobileNumber}
+                  disabled={isEditing}
                 />
 
                 {formErrors.mobileNumber && (

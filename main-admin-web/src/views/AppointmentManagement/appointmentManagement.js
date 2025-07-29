@@ -116,7 +116,7 @@ const appointmentManagement = () => {
     }
 
     // Filter by consultation type (only one at a time)
-        if (filterTypes.length === 1) {
+    if (filterTypes.length === 1) {
       const selectedType = filterTypes[0]
 
       if (selectedType === 'Video Consultation') {
@@ -177,13 +177,13 @@ const appointmentManagement = () => {
     fetchHospitals()
   }, [])
 
-  useEffect(() => {
-    if (hospitals.length > 0) {
-      const firstClinicId = hospitals.hospitalId
-      setSelectedHospitalId(firstClinicId)
-      fetchAppointments(firstClinicId)
-    }
-  }, [hospitals])
+  // useEffect(() => {
+  //   if (hospitals.length > 0) {
+  //     const firstClinicId = hospitals.hospitalId
+  //     setSelectedHospitalId(firstClinicId)
+  //     fetchAppointments(firstClinicId)
+  //   }
+  // }, [hospitals])
 
   //filtering for pending,completed ,in-progress - one selection at a time
   const handleStatusChange = (e) => {
@@ -301,12 +301,16 @@ const appointmentManagement = () => {
                 fetchAppointments(clinicId) // ✅ Now works based on API
               }}
             >
-              <option value="">Select Hospital</option>
-              {hospitals.map((hospital) => (
-                <option key={hospital.hospitalId} value={hospital.hospitalId}>
-                  {hospital.name}
-                </option>
-              ))}
+                <option value="">Select Hospital</option>
+              {Array.isArray(hospitals) && hospitals.length > 0 ? (
+                hospitals.map((hospital) => (
+                  <option key={hospital.hospitalId} value={hospital.hospitalId}>
+                    {hospital.name}
+                  </option>
+                ))
+              ) : (
+                <option disabled>No hospitals available</option>
+              )}
             </select>
 
             <CButton

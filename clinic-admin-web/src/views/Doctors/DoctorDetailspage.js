@@ -479,18 +479,18 @@ const DoctorDetailsPage = () => {
 
   // ✅ Handle update with validation
   const handleUpdateWithValidation = async () => {
-  if (validateForm()) {
-    // run update logic
-    const success = await handleUpdate() // make sure handleUpdate returns a success status
-    if (success) {
-      // ✅ show toast after update is actually done
-      toast.success("Doctor details updated successfully!", {
-        position: "top-right",
-        autoClose: 3000,
-      })
+    if (validateForm()) {
+      // run update logic
+      const success = await handleUpdate() // make sure handleUpdate returns a success status
+      if (success) {
+        // ✅ show toast after update is actually done
+        toast.success("Doctor details updated successfully!", {
+          position: "top-right",
+          autoClose: 3000,
+        })
+      }
     }
   }
-}
 
   return (
     <div className="doctor-details-page" style={{ padding: '1rem' }}>
@@ -784,14 +784,16 @@ const DoctorDetailsPage = () => {
                               name="doctorMobileNumber"
                               value={formData.doctorMobileNumber}
                               onChange={(e) => {
-                                // allow only digits
-                                const cleaned = e.target.value.replace(/[^0-9]/g, '')
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  doctorMobileNumber: cleaned,
-                                }))
-                                setErrors((prev) => ({ ...prev, doctorMobileNumber: '' }))
+                                const cleaned = e.target.value.replace(/[^0-9]/g, '') // remove non-digits
+                                if (cleaned.length <= 10) {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    doctorMobileNumber: cleaned,
+                                  }))
+                                  setErrors((prev) => ({ ...prev, doctorMobileNumber: '' }))
+                                }
                               }}
+                              maxLength={10}
                             />
                             {errors.doctorMobileNumber && (
                               <small className="text-danger">{errors.doctorMobileNumber}</small>
@@ -1040,7 +1042,7 @@ const DoctorDetailsPage = () => {
                             color="success"
                             className="text-white"
                             onClick={handleUpdateWithValidation}
-                            // disabled={Object.values(errors).some((err) => err)}
+                          // disabled={Object.values(errors).some((err) => err)}
                           >
                             Update
                           </CButton>
@@ -1109,13 +1111,12 @@ const DoctorDetailsPage = () => {
                           return (
                             <div
                               key={i}
-                              className={`slot-item px-3 py-2 border rounded ${
-                                slotObj?.slotbooked
+                              className={`slot-item px-3 py-2 border rounded ${slotObj?.slotbooked
                                   ? 'bg-danger text-white'
                                   : isSelected
                                     ? 'bg-primary text-white'
                                     : 'bg-light'
-                              }`}
+                                }`}
                               onClick={() => {
                                 if (isSelected) {
                                   setSelectedSlots((prev) => prev.filter((s) => s !== slotObj.slot))

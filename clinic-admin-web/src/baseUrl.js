@@ -5,7 +5,7 @@ export let wifiUrl = '35.154.59.127:9090'
 export const BASE_URL = `http://${wifiUrl}/clinic-admin`
 export const MainAdmin_URL = `http://${wifiUrl}/admin`
 export const subService_URL = `http://${wifiUrl}/api/v1`
-export const servr_Url=`http://${wifiUrl}:9090`
+export const servr_Url=`http://${wifiUrl}`
 // END POINTS
 // login
 export const endPoint = '/clinicLogin'
