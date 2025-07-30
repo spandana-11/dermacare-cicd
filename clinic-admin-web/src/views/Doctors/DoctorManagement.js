@@ -409,11 +409,16 @@ const DoctorManagement = () => {
       const hospitalName = localStorage.getItem('HospitalName')
       const allValidSubServiceIds = (subServiceOptions || []).map((ss) => ss.subServiceId)
 
-      const selectedSubServiceObjects = (subServiceOptions || []).filter(
-        (sub) =>
-          selectedSubService.includes(sub.subServiceId) &&
-          allValidSubServiceIds.includes(sub.subServiceId),
-      )
+      const selectedSubServiceObjects = (subServiceOptions || [])
+        .filter(
+          (sub) =>
+            selectedSubService.includes(sub.subServiceId) &&
+            allValidSubServiceIds.includes(sub.subServiceId),
+        )
+        .map((sub) => ({
+          subServiceId: sub.subServiceId,
+          subServiceName: sub.subServiceName,
+        }))
 
       //    if (!Array.isArray(doctorData.data)) {
       //   console.error('Doctor data not loaded properly.')

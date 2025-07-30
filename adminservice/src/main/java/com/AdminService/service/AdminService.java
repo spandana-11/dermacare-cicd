@@ -10,6 +10,7 @@ import com.AdminService.dto.CategoryDto;
 import com.AdminService.dto.ClinicCredentialsDTO;
 import com.AdminService.dto.ClinicDTO;
 import com.AdminService.dto.CustomerDTO;
+import com.AdminService.dto.ResponseDTO;
 import com.AdminService.dto.ServicesDto;
 import com.AdminService.dto.SubServicesInfoDto;
 import com.AdminService.dto.UpdateClinicCredentials;
@@ -31,7 +32,7 @@ public Response createClinic(ClinicDTO clinic);
 Response getClinicById(String clinicId);
 public Response getAllClinics();
 Response updateClinic(String clinicId, ClinicDTO clinic);
-Response deleteClinic(String clinicId);
+ResponseDTO deleteClinic(String clinicId);
 
 
 //CLINIC CREDENTIALS

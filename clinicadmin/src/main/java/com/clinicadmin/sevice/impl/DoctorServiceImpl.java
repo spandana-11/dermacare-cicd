@@ -418,6 +418,38 @@ public class DoctorServiceImpl implements DoctorService {
 	}
 
 	
+	@Override
+	public Response deleteDoctorsByClinic(String hospitalId) {
+	    Response response = new Response();
+	    try {
+	        List<Doctors> doctors = doctorsRepository.findByHospitalId(hospitalId);
+
+	        if (!doctors.isEmpty()) {
+	            for (Doctors doctor : doctors) {
+	                // Delete login credentials first
+	                Optional<DoctorLoginCredentials> optionalCredentials = credentialsRepository.findByDoctorId(doctor.getDoctorId());
+	                optionalCredentials.ifPresent(credentialsRepository::delete);
+
+	                // Then delete the doctor record
+	                doctorsRepository.deleteById(doctor.getId());
+	            }
+	            response.setSuccess(true);
+	            response.setStatus(HttpStatus.OK.value());
+	            response.setMessage("All doctors and their credentials linked to clinic ID " + hospitalId + " have been deleted.");
+	        } else {
+	            response.setSuccess(false);
+	            response.setStatus(HttpStatus.NOT_FOUND.value());
+	            response.setMessage("No doctors found for clinic ID: " + hospitalId);
+	        }
+	    } catch (Exception e) {
+	        response.setSuccess(false);
+	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	        response.setMessage("Error deleting doctors linked to clinic ID " + hospitalId + ": " + e.getMessage());
+	    }
+
+	    return response;
+	}
+
 	
 	// -------------------------------DOCTOR
 		// LOGIN-------------------------------------------------------------
@@ -1320,4 +1352,6 @@ public class DoctorServiceImpl implements DoctorService {
 			            return 0.0;
 			        }
 			    }
+
+				
 }

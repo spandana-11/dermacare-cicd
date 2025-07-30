@@ -3,6 +3,7 @@ import React from 'react'
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
 
 const Doctors = React.lazy(() => import('./views/Doctors/DoctorManagement'))
+const Disease = React.lazy(() => import('./views/DiseaseManagement/DiseaseManagement'))
 const DoctorNotofications = React.lazy(
   () => import('./views/DoctorNotifications/DoctorNotificationsManagement'),
 )
@@ -28,7 +29,8 @@ const routes = [
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
   { path: '/doctor-notifications', name: 'Doctor Notifications', element: DoctorNotofications },
   { path: '/doctor', name: 'Doctors', element: Doctors },
-  { path: '/service-Management', name: 'Service Management', element: ServiceManagement },
+  { path: '/disease', name: 'Disease-Management', element: Disease },
+  { path: '/service-Management', name: 'SubService Management', element: ServiceManagement },
   // { path: '/patients', name: 'Patients', element: Patients },
   { path: '/payouts', name: 'Payouts', element: Payouts },
   { path: '/help', name: 'Help', element: Help },

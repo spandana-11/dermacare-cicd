@@ -20,6 +20,7 @@ import com.AdminService.dto.CategoryDto;
 import com.AdminService.dto.ClinicCredentialsDTO;
 import com.AdminService.dto.ClinicDTO;
 import com.AdminService.dto.CustomerDTO;
+import com.AdminService.dto.ResponseDTO;
 import com.AdminService.dto.ServicesDto;
 import com.AdminService.dto.SubServicesInfoDto;
 import com.AdminService.dto.UpdateClinicCredentials;
@@ -95,9 +96,9 @@ public class AdminController {
     // Delete Clinic
     @DeleteMapping("/deleteClinic/{clinicId}")
     public ResponseEntity<?> deleteClinic(@PathVariable String clinicId) {
-    	Response response = serviceImpl.deleteClinic(clinicId);
-    	if(response != null && response.getStatus() != 0) {
-			 return ResponseEntity.status(response.getStatus()).body(response);
+    	ResponseDTO response = serviceImpl.deleteClinic(clinicId);
+    	if(response != null && response.getStatusCode() != 0) {
+			 return ResponseEntity.status(response.getStatusCode()).body(response);
 		 }else {
 				return null;}
 		

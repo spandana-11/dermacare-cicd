@@ -8,14 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
+
 import com.AdminService.dto.AdminHelper;
 import com.AdminService.dto.BookingResponse;
 import com.AdminService.dto.CategoryDto;
@@ -24,6 +24,7 @@ import com.AdminService.dto.ClinicDTO;
 import com.AdminService.dto.CustomerDTO;
 import com.AdminService.dto.DoctorsDTO;
 import com.AdminService.dto.DoctortInfo;
+import com.AdminService.dto.ResponseDTO;
 import com.AdminService.dto.ServicesDto;
 import com.AdminService.dto.SubServicesDto;
 import com.AdminService.dto.SubServicesInfoDto;
@@ -41,7 +42,9 @@ import com.AdminService.repository.ClinicRep;
 import com.AdminService.util.ExtractFeignMessage;
 import com.AdminService.util.Response;
 import com.AdminService.util.ResponseStructure;
+import com.AdminService.util.SequenceGeneratorService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import feign.FeignException;
 
 
@@ -68,6 +71,9 @@ public class AdminServiceImpl implements AdminService {
 	
 	@Autowired
 	private BookingFeign bookingFeign;
+	
+	@Autowired
+	private SequenceGeneratorService sequenceGeneratorService;
 	
 	
 	@Override
@@ -633,31 +639,53 @@ public class AdminServiceImpl implements AdminService {
 		}
 
 		
-		@Override
-	    public Response deleteClinic(String clinicId) {
-	        Response responseDTO = new Response();
-	        try {
-	            Clinic clinic = clinicRep.findByHospitalId(clinicId);
-	            if (clinic != null) {
-	                clinicRep.deleteByHospitalId(clinicId);
-	                clinicCredentialsRepository.deleteByUserName(clinicId);
-	                responseDTO.setMessage("Clinic deleted successfully");
-	                responseDTO.setSuccess(true);
-	                responseDTO.setStatus(200); // HTTP Status for OK
-	                return responseDTO ;
-	            } else {
-	                responseDTO.setMessage("Clinic not found for deletion");
-	                responseDTO.setSuccess(false);
-	                responseDTO.setStatus(404); // HTTP Status for Not Found
-	                return responseDTO ;
-	            }
-	        } catch (Exception e) {
-	            responseDTO.setMessage("Error occurred while deleting the clinic: " + e.getMessage());
-	            responseDTO.setSuccess(false);
-	            responseDTO.setStatus(500); // HTTP Status for Internal Server Error
-	        }
-	        return responseDTO;
-	    }
+		public ResponseDTO deleteClinic(String clinicId) {
+		    ResponseDTO responseDTO = new ResponseDTO();
+		    boolean doctorsDeleted = false;
+
+		    try {
+		        Response doctorDeleteResponse = clinicAdminFeign.deleteDoctorsByClinicId(clinicId);
+
+		        if (doctorDeleteResponse.isSuccess()) {
+		            doctorsDeleted = true; // Doctors deleted successfully
+		        } else if (doctorDeleteResponse.getStatus() == 404) {
+		            // No doctors found – skip but continue
+		        } else {
+		            responseDTO.setMessage("Failed to delete doctors: " + doctorDeleteResponse.getMessage());
+		            responseDTO.setSuccess(false);
+		            responseDTO.setStatusCode(500);
+		            return responseDTO;
+		        }
+
+		    } catch (FeignException feignEx) {
+		        if (feignEx.status() == 404) {
+		            // No doctors found – that’s fine
+		        } else {
+		            responseDTO.setMessage("Doctor service error: " + feignEx.getMessage());
+		            responseDTO.setSuccess(false);
+		            responseDTO.setStatusCode(500);
+		            return responseDTO;
+		        }
+		    }
+
+		    // Proceed to delete clinic data
+		    clinicRep.deleteByHospitalId(clinicId);
+		    clinicCredentialsRepository.deleteByUserName(clinicId);
+
+		    // Set message based on doctorsDeleted flag
+		    if (doctorsDeleted) {
+		        responseDTO.setMessage("Clinic and doctors deleted successfully.");
+		    } else {
+		        responseDTO.setMessage("Clinic deleted successfully.");
+		    }
+
+		    responseDTO.setSuccess(true);
+		    responseDTO.setStatusCode(200);
+		    return responseDTO;
+		}
+
+
+
     
     //GENERATE RANDOM PASSWORD
     
@@ -707,27 +735,11 @@ public class AdminServiceImpl implements AdminService {
     }
     
     // METHOD TO GENERATE SEQUANTIAL HOSPITAL ID
-    
     public String generateHospitalId() {
-        List<Clinic> allClinics = clinicRep.findAll(); // not optimal for huge DB
-
-        int maxId = 0;
-        Pattern pattern = Pattern.compile("H_(\\d+)");
-        
-        for (Clinic clinic : allClinics) {
-            String id = clinic.getHospitalId();
-            Matcher matcher = pattern.matcher(id);
-            if (matcher.find()) {
-                int num = Integer.parseInt(matcher.group(1));
-                if (num > maxId) {
-                    maxId = num;
-                }
-            }
-        }
-
-        int nextId = maxId + 1;
+        int nextId = sequenceGeneratorService.getNextSequence("hospitalId");
         return "H_" + nextId;
     }
+
 
 
     

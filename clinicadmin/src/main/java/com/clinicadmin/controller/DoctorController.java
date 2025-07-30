@@ -138,6 +138,13 @@ public class DoctorController {
 		return ResponseEntity.status(response.getStatus()).body(response);
 
 	}
+	
+	@DeleteMapping("/delete-doctors-by-clinic/{clinicId}")
+	public ResponseEntity<Response> deleteDoctorsByClinic(@PathVariable String clinicId) {
+	    Response response = doctorService.deleteDoctorsByClinic(clinicId);
+	    return ResponseEntity.status(response.getStatus()).body(response);
+	}
+
 
 	// ----------------------------Doctor
 	// Login----------------------------------------------------------

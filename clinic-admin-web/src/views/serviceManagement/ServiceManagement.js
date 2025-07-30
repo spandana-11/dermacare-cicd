@@ -105,7 +105,7 @@ const ServiceManagement = () => {
       serviceId: '',
       subServiceId: '',
       subServiceName: '',
-      // description: '',
+
       price: '',
       discount: 0,
       minTime: '',
@@ -197,7 +197,7 @@ const ServiceManagement = () => {
       serviceImageFile: null,
       status: service.status || '',
       viewDescription: service.viewDescription || '',
-      // description: service.description || '', // ✅ Added
+
       platformFeePercentage: service.platformFeePercentage || 0,
       descriptionQA: formattedQA,
       viewImage: service.viewImage || '',
@@ -222,7 +222,7 @@ const ServiceManagement = () => {
     serviceName: '',
     serviceId: '',
     categoryName: '',
-    // description: '',
+
     price: '',
     status: '',
     taxPercentage: '',
@@ -332,19 +332,19 @@ const ServiceManagement = () => {
     {
       name: 'S.No',
       selector: (row, index) => index + 1,
-      width: '50px',
+      width: '70px',
       sortable: false,
     },
     {
       name: 'SubService Name',
       selector: (row) => row.subServiceName,
       sortable: true,
-      width: '200px',
+      width: '230px',
     },
     {
       name: 'Service Name',
       selector: (row) => row.serviceName,
-      width: '200px',
+      width: '230px',
     },
     {
       name: 'Category Name',
@@ -365,7 +365,7 @@ const ServiceManagement = () => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            width: '230px',
+            width: '250px',
           }}
         >
           <div
@@ -430,10 +430,6 @@ const ServiceManagement = () => {
     if (!newService.categoryName) {
       newErrors.categoryName = 'Category is required.'
     }
-
-    // if (!newService.description) {
-    //   newErrors.description = 'Description is Required.'
-    // }
 
     if (!newService.price) {
       newErrors.price = 'price is required.'
@@ -523,7 +519,7 @@ const ServiceManagement = () => {
   }
 
   const handleAddService = async () => {
-    console.log('iam from handleAddService calling')
+    console.log('iam from handleAddSubService calling')
 
     const fullBase64String = await toBase64(newService.serviceImageFile)
     const base64ImageToSend = fullBase64String?.split(',')[1] || ''
@@ -551,7 +547,7 @@ const ServiceManagement = () => {
         serviceName: newService.serviceName,
         categoryName: newService.categoryName,
         categoryId: newService.categoryId,
-        // description: newService.description,
+
         price: newService.price,
         discountPercentage: newService.discount,
         taxPercentage: newService.taxPercentage,
@@ -596,7 +592,7 @@ const ServiceManagement = () => {
       serviceName: '',
       serviceid: '',
       categoryName: '',
-      // description: '',
+
       price: '',
       discount: 0,
       minTime: '',
@@ -676,12 +672,12 @@ const ServiceManagement = () => {
       }
 
       // Log the payload to verify it before sending
-      console.log('Payload for updateServiceData:', updatedService)
+      console.log('Payload for updateSubServiceData:', updatedService)
 
       // send cleaned payload
       const response = await updateServiceData(subServiceId, hospitalId, updatedService)
 
-      toast.success('Service updated successfully!', { position: 'top-right' })
+      toast.success('SubService updated successfully!', { position: 'top-right' })
       setEditServiceMode(false)
       setModalVisible(false)
       fetchData()
@@ -713,7 +709,7 @@ const ServiceManagement = () => {
     try {
       const result = await deleteServiceData(serviceIdToDelete, hospitalId)
       console.log('Service deleted:', result)
-      toast.success('Service deleted successfully!', { position: 'top-right' })
+      toast.success('SubService deleted successfully!', { position: 'top-right' })
 
       fetchData()
     } catch (error) {
@@ -753,7 +749,7 @@ const ServiceManagement = () => {
     setNewService({
       serviceName: '',
       categoryName: '',
-      // description: '',
+
       price: '',
       discount: 0,
       taxPercentage: 0,
@@ -892,10 +888,6 @@ const ServiceManagement = () => {
                 <strong>Status:</strong>
                 <div>{viewService.status}</div>
               </CCol>
-              {/* <CCol sm={6}>
-                <strong>Description:</strong>
-                <div>{viewService.description}</div>
-              </CCol> */}
             </CRow>
 
             <hr />

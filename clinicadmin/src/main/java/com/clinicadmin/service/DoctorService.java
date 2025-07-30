@@ -42,4 +42,5 @@ public ResponseEntity<?> notificationToClinic(String hospitalId);
 public Response getRecommendedClinicsAndDoctors();
 Response getBestDoctorBySubService(String subServiceId);
 Response getRecommendedClinicsAndDoctors(List<String> keyPointsFromUser);
+public Response deleteDoctorsByClinic(String hospitalId);
 }

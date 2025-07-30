@@ -8,6 +8,7 @@ import {
   cilCursor,
   cilDescription,
   cilDrop,
+  cilHealing,
   cilLightbulb,
   cilMedicalCross,
   cilNotes,
@@ -47,6 +48,12 @@ const _nav = [
     to: '/doctor-notifications',
     name: 'Doctor Notifications',
     icon: <CIcon icon={cilBell} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    to: '/disease',
+    name: 'Disease-Management',
+    icon: <CIcon icon={cilHealing} customClassName="nav-icon" />,
   },
 
   {
