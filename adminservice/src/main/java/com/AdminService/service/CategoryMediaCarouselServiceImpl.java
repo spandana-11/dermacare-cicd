@@ -29,22 +29,20 @@ public class CategoryMediaCarouselServiceImpl {
     private static final String VIDEO_FOLDER = "videos/";
     private static final String BASE_URL = "https://api.dermacare.com/derma-care/media/videos/";
 
-
     public CategoryMediaCarouselDTO createMedia(CategoryMediaCarouselDTO mediaDTO) {
         CategoryMediaCarousel media = new CategoryMediaCarousel();
         String mediaData = mediaDTO.getMediaUrlOrImage();
 
         if (isVideoUrl(mediaData)) {
-            media.setMediaUrlOrImage(mediaData); // Store video URL directly
+            media.setMediaUrlOrImage(mediaData); // Direct video URL
         } else if (isBase64(mediaData)) {
             String videoUrl = saveBase64Video(mediaData);
-            media.setMediaUrlOrImage(videoUrl);
+            media.setMediaUrlOrImage(videoUrl); // Generated URL after saving
         } else {
-            media.setMediaUrlOrImage(mediaData); // Assume it's an image URL
+            media.setMediaUrlOrImage(mediaData); // Image URL or other
         }
 
         CategoryMediaCarousel saved = mediaRepository.save(media);
-
         return new CategoryMediaCarouselDTO(
             saved.getCarouselId().toHexString(),
             saved.getMediaUrlOrImage()
@@ -100,16 +98,25 @@ public class CategoryMediaCarouselServiceImpl {
         return "Data not found";
     }
 
+    // ✅ Updated to handle "data:video/mp4;base64,..."
     private boolean isBase64(String data) {
-        return data != null && !data.startsWith("http") && data.matches("^[A-Za-z0-9+/=\\r\\n]+$");
+        return data != null && data.startsWith("data:video") && data.contains("base64,");
     }
 
     private boolean isVideoUrl(String url) {
         return url != null && VIDEO_PATTERN.matcher(url).matches();
     }
 
+
     private String saveBase64Video(String base64Data) {
         try {
+            // Remove base64 prefix like "data:video/mp4;base64,"
+            if (base64Data.contains(",")) {
+                base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
+            }
+
+            base64Data = base64Data.replaceAll("\\s+", ""); // Clean line breaks
+
             byte[] videoBytes = Base64.getDecoder().decode(base64Data);
             String fileName = "video_" + System.currentTimeMillis() + ".mp4";
 
