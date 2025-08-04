@@ -6,7 +6,9 @@ import static com.dermacare.doctorservice.dermacaredoctorutils.DermaCareUtils.UP
 import static com.dermacare.doctorservice.dermacaredoctorutils.DermaCareUtils.UPDATE_PASSWORD;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -22,7 +24,7 @@ import com.dermacare.doctorservice.service.DoctorService;
 
 @RestController
 @RequestMapping(value=DOCTOR)
-// @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class DoctorController {
 	@Autowired
     private final DoctorService doctorService;
@@ -51,5 +53,42 @@ public class DoctorController {
     	 
     	return doctorService.updateDoctorAvailability(doctorId, availabilityDTO);
     	
+    }
+    
+    //New Apis
+    
+    @GetMapping("/getAllDoctors")
+    public ResponseEntity<?> getAllDoctors(){
+    	return doctorService.getAllDoctors();
+    }
+    
+    
+    @GetMapping("/getDoctorById/{id}")
+    public ResponseEntity<?> getDoctorById(@PathVariable String id){
+    	return doctorService.getDoctorById(id);
+    }
+    
+    @GetMapping("/getDoctorByClinicAndDoctorId/{clinicId}/{doctorId}")
+    public ResponseEntity<?> getDoctorByClinicAndDoctorId(@PathVariable String clinicId,
+    		@PathVariable String doctorId){
+    	return doctorService.getDoctorByClinicAndDoctorId(clinicId, doctorId);
+    }
+    
+    
+    @GetMapping("/getDoctorsByHospitalById/{clinicId}")
+    public ResponseEntity<?> getDoctorsByHospitalById(@PathVariable String clinicId){
+    	return doctorService.getDoctorsByHospitalById(clinicId);
+    }
+    
+    
+    @GetMapping("/getDoctorsBySubServiceId/{hsptlId}/{subServiceId}")
+    public ResponseEntity<?> getDoctorsBySubServiceId(@PathVariable String hsptlId,@PathVariable String subServiceId){
+    	return doctorService.getDoctorsBySubServiceId(hsptlId, subServiceId);
+    }
+    
+    
+    @GetMapping("/getAllDoctorsBySubServiceId/{subServiceId}")
+    public ResponseEntity<?> getAllDoctorsBySubServiceId(@PathVariable String subServiceId){
+    	return doctorService.getAllDoctorsBySubServiceId(subServiceId);
     }
 }

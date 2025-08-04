@@ -50,5 +50,5 @@ public class BookingResponse {
 	private double totalFee;
 	private List<String> attachments;
 	private String paymentType;
-
+	private String patientAddress;
 }

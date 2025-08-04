@@ -1,5 +1,7 @@
 package com.dermacare.doctorservice.service;
 
+import org.springframework.http.ResponseEntity;
+
 import com.dermacare.doctorservice.dto.ChangeDoctorPasswordDTO;
 import com.dermacare.doctorservice.dto.DoctorAvailabilityStatusDTO;
 import com.dermacare.doctorservice.dto.DoctorLoginDTO;
@@ -12,4 +14,12 @@ public interface DoctorService {
 //	Response changePassword(ChangeDoctorPasswordDTO updateDTO);
 	Response changePassword(String username, ChangeDoctorPasswordDTO updateDTO);
 	Response updateDoctorAvailability(String doctorId ,DoctorAvailabilityStatusDTO availabilityDTO);
+	
+	public ResponseEntity<?> getAllDoctors();
+	public ResponseEntity<?> getDoctorById(String id);
+	public ResponseEntity<?> getDoctorByClinicAndDoctorId(String clinicId,
+			String doctorId);
+	public ResponseEntity<?> getDoctorsByHospitalById(String clinicId);
+	public ResponseEntity<?> getDoctorsBySubServiceId(String hsptlId,String subServiceId);
+	public ResponseEntity<?> getAllDoctorsBySubServiceId(String subServiceId);
 }

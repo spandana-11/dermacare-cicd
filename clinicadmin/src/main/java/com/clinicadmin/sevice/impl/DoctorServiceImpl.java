@@ -1301,7 +1301,7 @@ public class DoctorServiceImpl implements DoctorService {
 					}
 				}
 		}
-		return false;
+		return true;
 	}
 
 }

@@ -40,5 +40,5 @@ public class BookingRequset {
 	private String paymentType;
 	private List<String> attachments;
 	private String bookedAt;
-
+	private String patientAddress;
 }
