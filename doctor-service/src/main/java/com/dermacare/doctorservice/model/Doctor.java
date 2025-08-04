@@ -20,7 +20,7 @@ public class Doctor {
     private String doctorMobileNumber;
     private String password;
     private List<String> oldPasswords = new ArrayList<>();
-    private String fcmToken;
+//    private String fcmToken;
     private String deviceId;
     private String hospitalId; 
 

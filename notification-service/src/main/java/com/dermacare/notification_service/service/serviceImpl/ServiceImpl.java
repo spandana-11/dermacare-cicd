@@ -51,6 +51,9 @@ public class ServiceImpl implements ServiceInterface{
 	@Autowired
 	private CllinicFeign cllinicFeign;
 	
+	
+	public String jwtToken;
+	public String tokenExpireTime;
 
 	Set<String> bookings = new LinkedHashSet<>();
 	
@@ -66,14 +69,15 @@ public class ServiceImpl implements ServiceInterface{
 	public void sendNotification(BookingResponse booking) {
 		String title=buildTitle(booking);
 		String body =buildBody(booking);
-		appNotification.sendPushNotification(booking.getDoctorDeviceId(),title,body, "BOOKING",
-			    "BookingScreen","default");
+		if(booking.getClinicDeviceId() != null) {
+		appNotification.sendPushNotification(booking.getClinicDeviceId(),title,body, "BOOKING",
+			    "BookingScreen","default");}
 	}
 	
 	
 	private void convertToNotification(BookingResponse booking) {	
 			NotificationEntity notificationEntity = new NotificationEntity();
-			notificationEntity.setMessage("You have a new service appointment: " + booking.getSubServiceName());
+			notificationEntity.setMessage("New Service Appointment Request For: " + booking.getSubServiceName());
 			DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 			String currentDate = LocalDate.now().format(dateFormatter);	
 			notificationEntity.setDate(currentDate);
@@ -87,13 +91,13 @@ public class ServiceImpl implements ServiceInterface{
 	
 	
 	private String buildBody(BookingResponse booking) {
-		String body=booking.getBookingFor() + " booked a "+booking.getSubServiceName()+" on "
+		String body=booking.getBookingFor() + " booked a " +booking.getConsultationType()+" Appointment For "+booking.getSubServiceName()+" on "
 				+booking.getName()+" at "+booking.getServicetime();
 		return body;
 	}
 	
 	private String buildTitle(BookingResponse booking) {
-		String title="Hello "+booking.getDoctorName();;
+		String title=" Hello ClinicAdmin ";
 		return title;
 	} 
 	
@@ -111,7 +115,7 @@ public class ServiceImpl implements ServiceInterface{
 		String currentDate = LocalDate.now().format(dateFormatter);
 		if(dto != null) {
 		for(NotificationDTO n : dto) {	
-			if(n.getData().getStatus().equalsIgnoreCase("Pending") && n.getDate().equals(currentDate)){
+			if(n.getData().getStatus().equalsIgnoreCase("Confirmed") && n.getDate().equals(currentDate)){
 				eligibleNotifications.add(n);}}}
 		for(int i=eligibleNotifications.size()-1;i>=0;i--) {
 			reversedEligibleNotifications.add(eligibleNotifications.get(i));
@@ -132,6 +136,7 @@ public class ServiceImpl implements ServiceInterface{
 	public ResBody<List<NotificationDTO>> sendNotificationToClinic(String clinicId) {
 		ResBody<List<NotificationDTO>> r = new ResBody<List<NotificationDTO>>();
 		List<NotificationDTO> list = new ArrayList<>();
+		List<NotificationDTO> reversedList = new ArrayList<>();
 		try {
 			List<NotificationEntity> entity = repository.findAll();
 			List<NotificationDTO> dto = new ObjectMapper().convertValue(entity, new TypeReference<List<NotificationDTO>>() {});	
@@ -139,11 +144,14 @@ public class ServiceImpl implements ServiceInterface{
 			String currentDate = LocalDate.now().format(dateFormatter);	
 			if(dto != null) {
 			for(NotificationDTO n : dto) {												
-				if(n.getData().getStatus().equalsIgnoreCase("Pending") && timeDifference(n.getTime()) && 
+				if(n.getData().getStatus().equalsIgnoreCase("Pending") && 
 				n.getData().getClinicId().equals(clinicId) && n.getDate().equals(currentDate)){					
 					list.add(n);}}}
+			for(int i = list.size()-1; i>=0; i-- ) {
+				reversedList.add(list.get(i));
+			}
 		    if( list != null && ! list.isEmpty()) {
-		    	r = new ResBody<List<NotificationDTO>>("Notifications Are sent to the admin",200,list);
+		    	r = new ResBody<List<NotificationDTO>>("Notifications Are sent to the admin",200,reversedList);
 		    }else {
 		    r = new ResBody<List<NotificationDTO>>("Notifications Are Not Found",200,null); }  
 		}catch(Exception e) {
@@ -154,42 +162,42 @@ public class ServiceImpl implements ServiceInterface{
 	
 	
 	
-	 private boolean timeDifference(String notificationTime) {			
-		   try {
-			 
-			   SimpleDateFormat inputFormat = new SimpleDateFormat("hh:mm a"); 
-			   
-			   ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
-		        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
-		        String formattedTimeByZone = istTime.format(formatter);			   
-		        Date formattedCurrentTime = inputFormat.parse(formattedTimeByZone);		        
-		       SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm");
-		       String modifiedcurrentTime = simpleDateFormat.format(formattedCurrentTime);
-		       		      
-		      Date date = inputFormat.parse(notificationTime);		      
-		      SimpleDateFormat simpleDateFormatForNotificationTime = new SimpleDateFormat("HH:mm");
-		      String modifiednotificationTime = simpleDateFormatForNotificationTime.format(date);
-		      
-		       Date nTime = simpleDateFormat.parse(modifiednotificationTime);
-		       Date cTime = simpleDateFormat.parse(modifiedcurrentTime);
-		       
-		       System.out.println(nTime);
-		       System.out.println(cTime);
-		       
-		       long differenceInMilliSeconds
-		           = cTime.getTime() - nTime.getTime();     
-		           		      
-		       long differenceInMinutes
-		           = differenceInMilliSeconds / (60 * 1000);///it wont ignores hours 
-		       
-		       System.out.println(differenceInMinutes);
-		       if(differenceInMinutes != 0 && differenceInMinutes >= 5 ) {
-		    	   return true;
-		    	 }else{
-		    	    return false;}
-		   }catch(ParseException e) {
-			   return false;}
-		   }
+//	 private boolean timeDifference(String notificationTime) {			
+//		   try {
+//			 
+//			   SimpleDateFormat inputFormat = new SimpleDateFormat("hh:mm a"); 
+//			   
+//			   ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
+//		        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
+//		        String formattedTimeByZone = istTime.format(formatter);			   
+//		        Date formattedCurrentTime = inputFormat.parse(formattedTimeByZone);		        
+//		       SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm");
+//		       String modifiedcurrentTime = simpleDateFormat.format(formattedCurrentTime);
+//		       		      
+//		      Date date = inputFormat.parse(notificationTime);		      
+//		      SimpleDateFormat simpleDateFormatForNotificationTime = new SimpleDateFormat("HH:mm");
+//		      String modifiednotificationTime = simpleDateFormatForNotificationTime.format(date);
+//		      
+//		       Date nTime = simpleDateFormat.parse(modifiednotificationTime);
+//		       Date cTime = simpleDateFormat.parse(modifiedcurrentTime);
+//		       
+//		       System.out.println(nTime);
+//		       System.out.println(cTime);
+//		       
+//		       long differenceInMilliSeconds
+//		           = cTime.getTime() - nTime.getTime();     
+//		           		      
+//		       long differenceInMinutes
+//		           = differenceInMilliSeconds / (60 * 1000);///it wont ignores hours 
+//		       
+//		       System.out.println(differenceInMinutes);
+//		       if(differenceInMinutes != 0 && differenceInMinutes >= 5 ) {
+//		    	   return true;
+//		    	 }else{
+//		    	    return false;}
+//		   }catch(ParseException e) {
+//			   return false;}
+//		   }
 	
 	
 
@@ -222,10 +230,25 @@ public class ServiceImpl implements ServiceInterface{
 		                                b.getDoctorName() + " Accepted Your Appointment For " +
 		                                b.getSubServiceName() + " on " + b.getServiceDate() + " at " + b.getServicetime(),
 		                                "BOOKING SUCCESS",
-		                			    "BookingVerificationScreen","default" );
-		                        }
+		                			    "BookingVerificationScreen","default" );}
+		                        
+		                        if (b.getDoctorDeviceId() != null) {
+		                            appNotification.sendPushNotification(
+		                                b.getCustomerDeviceId(),
+		                                " Hello " + b.getDoctorName()," You Have A New "+b.getConsultationType() +" Appointment For " +
+		                                b.getSubServiceName() + " on " + b.getServiceDate() + " at " + b.getServicetime(),
+		                                "BOOKING SUCCESS",
+		                			    "BookingVerificationScreen","default" );}
+		                        
+		                        if(b.getDoctorWebDeviceId() != null) {
+		                            appNotification.sendPushNotification(
+		                                b.getCustomerDeviceId(),
+		                                " Hello " + b.getDoctorName()," You Have A New "+b.getConsultationType() +" Appointment For " +
+		                                b.getSubServiceName() + " on " + b.getServiceDate() + " at " + b.getServicetime(),
+		                                "BOOKING SUCCESS",
+		                			    "BookingVerificationScreen","default" );}
 		                    } catch (Exception ex) {}
-		                    break;
+		                      break;
 
 		                case "Rejected":
 		                    b.setStatus("Rejected");
@@ -284,7 +307,7 @@ public class ServiceImpl implements ServiceInterface{
 	 @Scheduled(fixedRate = 1 * 60 * 1000)
 	 public void sendAlertNotifications() {		 
 		 try {
-			 System.out.println("sendAlertNotifications method invoked");
+			 //System.out.println("sendAlertNotifications method invoked");
 			 List<NotificationEntity> notifications = repository.findAll();
 			 DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 				String currentDate = LocalDate.now().format(dateFormatter);
@@ -342,8 +365,8 @@ public class ServiceImpl implements ServiceInterface{
 		 try {
 			 ResponseEntity<ResponseStructure<BookingResponse>> res = bookServiceFeign.getBookedService(appointmentId);
 		        BookingResponse b = res.getBody().getData();
-		        System.out.println(b.getCustomerDeviceId());
-		        System.out.println(b.getDoctorDeviceId());
+		        //System.out.println(b.getCustomerDeviceId());
+		       // System.out.println(b.getDoctorDeviceId());
 		        if (b != null) {
 		        	 try {
 	                        if(b.getCustomerDeviceId() != null && b.getDoctorDeviceId() != null) {
@@ -352,16 +375,29 @@ public class ServiceImpl implements ServiceInterface{
 	                                " Hello " + b.getName()+ "," ,
 	                                b.getDoctorName() + " Connect With You Through Video Call within 5 Minutes ", "Alert",
 	                			    "AlertScreen","default");
-	                      
+	                            
 	                            appNotification.sendPushNotification(
 	                                b.getDoctorDeviceId(),
 	                                " Hello " +b.getDoctorName()+ "," , " You Have a Video Consultation within 5 Minutes With " +
 	                                b.getName(), "Alert",
-	                			    "AlertScreen","default");
+	                			    "AlertScreen","default");}
 	                            
-	                            System.out.println("Notification sent to doctor and customer");
-	                    }}catch (Exception ex) {}
-		        	 }
+	                            if(b.getDoctorWebDeviceId() != null) {
+	                            	 appNotification.sendPushNotification(
+	     	                                b.getDoctorWebDeviceId(),
+	     	                                " Hello " +b.getDoctorName()+ "," , " You Have a Video Consultation within 5 Minutes With " +
+	     	                                b.getName(), "Alert",
+	     	                			    "AlertScreen","default");}
+	                            
+	                            if(b.getClinicDeviceId() != null) {
+	                            	 appNotification.sendPushNotification(
+	     	                                b.getClinicDeviceId(),
+	     	                                " Hello ClinicAdmin", b.getDoctorName()+ " Have a Video Consultation within 5 Minutes With " +
+	     	                                b.getName(), "Alert",
+	     	                			    "AlertScreen","default");}
+	                            
+	                            //System.out.println("Notification sent to doctor and customer");
+	                    }catch (Exception ex) {}}
 			 }catch(Exception e) {}
 		  }
 	 

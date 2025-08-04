@@ -28,10 +28,4 @@ public class NotificationController {
 		return notificationService.notificationToDoctor(hospitalId, doctorId);
 	}
 	
-	
-	@PostMapping("/notificationResponse")
-	public  ResponseEntity<?> notificationResponse(@RequestBody NotificationResponse notificationResponse){
-		return notificationService.notificationResponse(notificationResponse);
-	}
-
 }

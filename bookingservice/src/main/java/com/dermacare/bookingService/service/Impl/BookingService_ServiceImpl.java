@@ -1,28 +1,30 @@
 package com.dermacare.bookingService.service.Impl;
 
+
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
-
+import java.util.UUID;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
 import com.dermacare.bookingService.dto.BookingRequset;
 import com.dermacare.bookingService.dto.BookingResponse;
-import com.dermacare.bookingService.dto.ReportsDtoList;
 import com.dermacare.bookingService.entity.Booking;
 import com.dermacare.bookingService.entity.ReportsList;
 import com.dermacare.bookingService.producer.KafkaProducer;
 import com.dermacare.bookingService.repository.BookingServiceRepository;
 import com.dermacare.bookingService.service.BookingService_Service;
 import com.dermacare.bookingService.util.ResponseStructure;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
@@ -42,6 +44,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		Booking res = repository.save(entity);
 		res.setReports(null);
 		res.setNotes(null);
+		res.setAttachments(null);
 		try {
 			kafkaProducer.publishBooking(res);
 			}catch (Exception e) {
@@ -50,9 +53,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		return toResponse(entity);
 	}
 
-	private static Booking toEntity(BookingRequset request) {
-		Booking entity = new Booking();
-		BeanUtils.copyProperties(request, entity);
+	private Booking toEntity(BookingRequset request) {
+		Booking entity = new ObjectMapper().convertValue(request,Booking.class );
 		//entity.setMobileNumber(Long.parseLong(request.getMobileNumber()));
 		ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
 	    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
@@ -62,18 +64,31 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			entity.setChannelId(randomNumber());
 		}else {
 			entity.setChannelId(null) ;
-		}	
+		}
+		List<Booking> existingBooking = repository.findByRelationIgnoreCaseAndMobileNumber(request.getRelation(),request.getMobileNumber());
+		if(existingBooking != null && !existingBooking.isEmpty()) {
+		for(Booking b : existingBooking) {
+		if(b != null) {
+			entity.setPatientId(b.getPatientId());
+		}}}
+		else {
+			entity.setPatientId(generatePatientId());}
 		return entity;
 	}
-
+	
+	
 	private static BookingResponse toResponse(Booking entity) {
-		BookingResponse response = new BookingResponse();
-		BeanUtils.copyProperties(entity, response);
-		response.setMobileNumber(String.valueOf(entity.getMobileNumber()));
+		BookingResponse response = new ObjectMapper().convertValue(entity,BookingResponse.class );
 		response.setBookingId(String.valueOf(entity.getBookingId()));
-		response.setReports(new ObjectMapper().convertValue(entity.getReports(),ReportsDtoList.class));	
 		return response;
 	}
+	
+	
+	  private static String generatePatientId() {	       
+	        String uuid = UUID.randomUUID().toString();
+	        String randomPart = uuid.replaceAll("-", "").substring(0, 8).toUpperCase();
+	        return "PA" + randomPart;
+	    }
 	
 	
 	private static String randomNumber() {
@@ -85,7 +100,211 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	private List<BookingResponse> toResponses(List<Booking> bookings) {
 		return bookings.stream().map(BookingService_ServiceImpl::toResponse).toList();
 	}
+	
+	
+	public ResponseEntity<?> getAppointsByPatientId(String patientId) {
+		ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
+		    try {
+			List<Booking> existingBooking = repository.findByPatientId(patientId);
+			if(existingBooking != null && !existingBooking.isEmpty() ) {
+			List<BookingResponse> respnse = new ObjectMapper().convertValue(existingBooking, new TypeReference<List<BookingResponse>>() {});
+			res.setStatusCode(200);
+			res.setData(respnse);
+			res.setMessage("Appointments Are Found");
+			return ResponseEntity.status(200).body(res); 
+			}
+			else{
+				res.setStatusCode(200);
+				res.setMessage("Appointments Are Not Found");
+				return ResponseEntity.status(200).body(res);}
+		    }catch(Exception e) {
+			res.setStatusCode(500);
+			res.setMessage(e.getMessage());
+			return ResponseEntity.status(500).body(res);
+		}
+	}
 
+	
+	
+	public ResponseEntity<?> getAppointsByInput(String input) {
+		ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
+		try {
+			List<Booking> existingBooking = repository.findByNameIgnoreCaseOrBookingIdOrPatientId(input);
+			if(existingBooking != null && !existingBooking.isEmpty() ) {
+			List<BookingResponse> respnse = new ObjectMapper().convertValue(existingBooking, new TypeReference<List<BookingResponse>>() {});
+			res.setStatusCode(200);
+			res.setData(respnse);
+			res.setMessage("Appointments Are Found");
+			return ResponseEntity.status(200).body(res); 
+			}
+			else {
+				res.setStatusCode(200);
+				res.setMessage("Appointments Are Not Found");
+				return ResponseEntity.status(200).body(res);
+			}
+		}catch(Exception e) {
+			res.setStatusCode(500);
+			res.setMessage(e.getMessage());
+			return ResponseEntity.status(500).body(res);
+		}
+	}
+	
+	
+	public ResponseEntity<?> getTodayDoctorAppointmentsByDoctorId(String hospitalId,String doctorId) {
+		ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
+		try {
+			List<Booking> existingBooking = repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
+			List<BookingResponse> respnse = new ArrayList<>();
+			if(existingBooking != null && !existingBooking.isEmpty()) {
+			for(Booking b : existingBooking) {
+			DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+			String currentDate = LocalDate.now().format(dateFormatter);	
+			if(b.getServiceDate().equals(currentDate)) {
+			respnse.add(toResponse(b));}}
+			if(respnse != null && !respnse.isEmpty()){
+			res.setStatusCode(200);
+			res.setData(respnse);
+			res.setMessage("Appointments Are Found");}
+			else {
+				res.setStatusCode(200);
+				res.setData(respnse);
+				res.setMessage("Appointments With Today Date Are Not Found");}
+			}else {
+				res.setStatusCode(200);
+				res.setData(respnse);
+				res.setMessage("Appointments Are Not Found");}
+		}catch(Exception e) {
+			res.setStatusCode(500);
+			res.setMessage(e.getMessage());}
+		return ResponseEntity.status(res.getStatusCode()).body(res);
+	}
+	
+	
+	
+	public ResponseEntity<?> filterDoctorAppointmentsByDoctorId(String hospitalId,String doctorId,String number) {
+		ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
+		List<BookingResponse> resnse = new ArrayList<>();
+		try {
+			List<Booking> existingBooking = repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
+			if(existingBooking != null && !existingBooking.isEmpty()) {
+			for(Booking b : existingBooking) {
+			switch(number) {
+			case "1" :if(b.getConsultationType().equalsIgnoreCase("Services & Treatments") || b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation")){
+				if(b.getStatus().equalsIgnoreCase("Confirmed")) {
+					resnse.add(toResponse(b));
+					if(resnse != null && !resnse.isEmpty()) {
+						res.setStatusCode(200);
+						res.setData(resnse);
+						res.setMessage("Appointments Are Found");}
+					}else{
+						res.setStatusCode(200);
+						res.setData(resnse);
+						res.setMessage("Appointments Are Not Found");	
+						}}else{
+							res.setStatusCode(200);
+							res.setData(resnse);
+							res.setMessage("Appointments Are Not Found");}
+			           break;
+			
+				case "2":if(b.getConsultationType().equalsIgnoreCase("Online Consultation")) {
+					if(b.getStatus().equalsIgnoreCase("Confirmed")) {
+						resnse.add(toResponse(b));
+						res.setStatusCode(200);
+						res.setData(resnse);
+						res.setMessage("Appointments Are Found");
+						}else {
+							res.setStatusCode(200);
+							res.setData(resnse);
+							res.setMessage("Appointments Are Not Found");
+						}}else{
+							res.setStatusCode(200);
+							res.setData(resnse);
+							res.setMessage("Appointments Are Not Found");}
+				            break;
+				       
+				case "3":if(b.getStatus().equalsIgnoreCase("Completed")) {
+					resnse.add(toResponse(b));
+					res.setStatusCode(200);
+					res.setData(resnse);
+					res.setMessage("Appointments Are Found");
+				}else{
+					res.setStatusCode(200);
+					res.setData(resnse);
+					res.setMessage("Appointments Are Not Found");}
+				    break;
+				
+			    default:
+					    resnse = null;
+				        res.setStatusCode(200);
+				        res.setData(resnse);
+				        res.setMessage("Appointments Are Not Found");}
+			}}}catch(Exception e) {
+			      resnse = null;
+			      res.setStatusCode(500);
+			      res.setData(resnse);
+			      res.setMessage("Appointments Are Not Found");}
+	      return ResponseEntity.status(res.getStatusCode()).body(res);}
+							
+
+		
+	public ResponseEntity<?> getCompletedApntsByDoctorId(String hospitalId,String doctorId) {
+		    Map<String,Object> m = new LinkedHashMap<>();
+		try {
+			List<Booking> existingBooking = repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
+			List<BookingResponse> res = new ArrayList<>();
+			if(existingBooking != null) {
+			for(Booking b : existingBooking) {
+			if(b.getStatus().equalsIgnoreCase("Completed")) {
+			res.add(toResponse(b));}}
+			 m.put("completedAppointmentsCount",res.size());
+			 m.put("status",200);
+			 return ResponseEntity.status(200).body(m);
+			}else {
+				 m.put("Message","No Appointsments Found");
+				 m.put("status",200);
+				return ResponseEntity.status(200).body(m);
+			}
+		}catch(Exception e) {
+			 m.put("Message",e.getMessage());
+			 m.put("status",500);
+			return ResponseEntity.status(500).body(m);}
+	}
+	
+	
+	public ResponseEntity<?> getSizeOfConsultationTypesByDoctorId(String hospitalId,String doctorId) {
+	    Map<String,Object> m = new LinkedHashMap<>();
+	try {
+		List<Booking> existingBooking = repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
+		List<BookingResponse> servicesAndConsul = new ArrayList<>();
+		List<BookingResponse> inClinic = new ArrayList<>();
+		List<BookingResponse> online = new ArrayList<>();
+		if(existingBooking != null) {
+		for(Booking b : existingBooking) {
+		if(b.getStatus().equalsIgnoreCase("Completed")) {
+		if(b.getConsultationType().equalsIgnoreCase("Services & Treatments")) {
+		servicesAndConsul.add(toResponse(b));}
+		if(b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation")){
+			inClinic.add(toResponse(b));}
+		if(b.getConsultationType().equalsIgnoreCase("Online Consultation")){
+			online.add(toResponse(b));}
+		}}
+		 m.put("services & Treatments",servicesAndConsul.size());
+		 m.put("in-Clinic Consultation",inClinic.size());
+		 m.put("online Consultation",online.size());
+		 m.put("status",200);
+		 return ResponseEntity.status(200).body(m);
+		}else {
+			 m.put("Message","No Appointsments Found");
+			 m.put("status",200);
+			return ResponseEntity.status(200).body(m);}
+	}catch(Exception e) {
+		 m.put("Message",e.getMessage());
+		 m.put("status",500);
+		return ResponseEntity.status(500).body(m);}
+}
+	
+	
+		
 	public BookingResponse getBookedService(String id) {
 		Booking entity = repository.findByBookingId(id)
 				.orElseThrow(() -> new RuntimeException("Invalid Booking Id Please provide Valid Id"));
@@ -115,18 +334,15 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	
 	@Override
 	public List<BookingResponse> getAllBookedServices() {
-	    List<Booking> bookings = repository.findAll();
-	    if (bookings == null || bookings.isEmpty()) {
-	        return Collections.emptyList();
-	    }
-
-	    // Reverse the list
-	    List<Booking> reversedBookings = new ArrayList<>();
-	    for (int i = bookings.size() - 1; i >= 0; i--) {
-	        reversedBookings.add(bookings.get(i));
-	    }
-
-	    return toResponses(reversedBookings);
+		List<Booking> bookings = repository.findAll();
+		List<Booking> reversedBookings = new ArrayList<>();
+		for(int i = bookings.size()-1; i >= 0; i--) {
+			reversedBookings.add(bookings.get(i));
+		}
+		if (bookings == null  || bookings.isEmpty()) {
+			return null;
+		}
+		return toResponses(reversedBookings);
 	}
 
 	@Override

@@ -78,23 +78,13 @@ public class BookingServiceController {
 	
 	@GetMapping("/getAllBookedServices")
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getAllBookedService() {
-	    List<BookingResponse> response = service.getAllBookedServices();
-
-	    if (response.isEmpty()) {
-	        return new ResponseEntity<>(
-	                ResponseStructure.buildResponse(null,
-	                        "Customer does not have any booking",
-	                        HttpStatus.OK,
-	                        HttpStatus.OK.value()),
-	                HttpStatus.OK);
-	    }
-
-	    return new ResponseEntity<>(
-	            ResponseStructure.buildResponse(response,
-	                    "Booked Service Fetched Successfully",
-	                    HttpStatus.OK,
-	                    HttpStatus.OK.value()),
-	            HttpStatus.OK);
+		List<BookingResponse> response = service.getAllBookedServices();
+		if (response == null || response.isEmpty() ) {
+			return new ResponseEntity<>(ResponseStructure.buildResponse(null, "Customer does not have any booking",
+					HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
+		}
+		return new ResponseEntity<>(ResponseStructure.buildResponse(response, "Booked Service Fetched Sucessfully",
+				HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
 	}
 
 	@GetMapping("/getAllBookedServices/{doctorId}")
@@ -150,6 +140,44 @@ public class BookingServiceController {
 	
 	}
 	
+	
+	@GetMapping("/getAppointmentByPatientId/{patientId}")
+	public ResponseEntity<?> getAppointmentByPatientId(@PathVariable String patientId){
+		return service.getAppointsByPatientId(patientId);
+	
+	}
+	
+	
+	@GetMapping("/getAppointsByInput/{input}")
+	public ResponseEntity<?> getAppointsByInput(@PathVariable String input){
+		return service.getAppointsByInput(input);
+	
+	}
+	
+	
+	@GetMapping("/getTodayDoctorAppointmentsByDoctorId/{clinicId}/{doctorId}")
+	public ResponseEntity<?> getTodayDoctorAppointmentsByDoctorId(@PathVariable String clinicId,@PathVariable String doctorId){
+		return service.getTodayDoctorAppointmentsByDoctorId(clinicId, doctorId);
+	
+	}
+	
+	@GetMapping("/filterDoctorAppointmentsByDoctorId/{clinicId}/{doctorId}/{number}")
+	public ResponseEntity<?> filterDoctorAppointmentsByDoctorId(@PathVariable String clinicId,@PathVariable String doctorId,@PathVariable String number){
+		return service.filterDoctorAppointmentsByDoctorId(clinicId, doctorId, number);
+	
+	}
+	
+	@GetMapping("/getCompletedApntsByDoctorId/{clinicId}/{doctorId}")
+	public ResponseEntity<?> filterDoctorAppointmentsByDoctorId(@PathVariable String clinicId,@PathVariable String doctorId){
+		return service.getCompletedApntsByDoctorId(clinicId, doctorId);
+	
+	}
+	
+	@GetMapping("/getSizeOfConsultationTypesByDoctorId/{clinicId}/{doctorId}")
+	public ResponseEntity<?> getSizeOfConsultationTypesByDoctorId(@PathVariable String clinicId,@PathVariable String doctorId){
+		return service.getSizeOfConsultationTypesByDoctorId(clinicId, doctorId);
+	
+	}
 	
 
 }

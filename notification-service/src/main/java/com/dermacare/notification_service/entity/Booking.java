@@ -6,11 +6,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"customerDeviceId","doctorDeviceId","reasonForCancel"})
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Booking  {
 	@Id
 	private String bookingId;

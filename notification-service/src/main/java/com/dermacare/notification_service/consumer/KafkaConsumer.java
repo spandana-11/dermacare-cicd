@@ -25,7 +25,7 @@ public class KafkaConsumer {
 		BookingResponse booking;
 		try {
 		   booking = mapper.readValue(jsonBooking, BookingResponse.class);
-			System.out.println("Booking received: " + booking);
+			//System.out.println("Booking received: " + booking);
 		} catch (JsonProcessingException e) {
 			throw new RuntimeException("Unable to Create Notification");
 		}

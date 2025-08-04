@@ -2,7 +2,6 @@ package com.clinicadmin.sevice.impl;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -49,7 +48,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import feign.FeignException;
-import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -61,13 +59,13 @@ public class DoctorServiceImpl implements DoctorService {
 	private final PasswordEncoder passwordEncoder;
 	private final DoctorSlotRepository slotRepository;
 	private final ServiceFeignClient serviceFeignClient;
-	
+
 	@Autowired
 	AdminServiceClient adminServiceClient;
-	
+
 	@Autowired
 	private NotificationFeign notificationFeign;
-	
+
 	@Autowired
 	private ObjectMapper objectMapper;
 
@@ -226,120 +224,119 @@ public class DoctorServiceImpl implements DoctorService {
 
 	@Override
 	public Response upDateDoctorById(String doctorId, DoctorsDTO dto) {
-	    Response response = new Response();
-	    try {
-	        Optional<Doctors> doctorOptional = doctorsRepository.findByDoctorId(doctorId);
+		Response response = new Response();
+		try {
+			Optional<Doctors> doctorOptional = doctorsRepository.findByDoctorId(doctorId);
 
-	        if (doctorOptional.isEmpty()) {
-	            response.setSuccess(false);
-	            response.setData(null);
-	            response.setMessage("Doctor not found with ID: " + doctorId);
-	            response.setStatus(HttpStatus.NOT_FOUND.value());
-	            return response;
-	        }
+			if (doctorOptional.isEmpty()) {
+				response.setSuccess(false);
+				response.setData(null);
+				response.setMessage("Doctor not found with ID: " + doctorId);
+				response.setStatus(HttpStatus.NOT_FOUND.value());
+				return response;
+			}
 
-	        // Validate categories
-	        if (dto.getCategory() != null) {
-	            for (DoctorCategoryDTO DoctorCatDTO : dto.getCategory()) {
-	                if (!serviceFeignClient.isCategoryExists(DoctorCatDTO.getCategoryId())) {
-	                    response.setSuccess(false);
-	                    response.setMessage("Category does not exist: " + DoctorCatDTO.getCategoryId());
-	                    response.setStatus(HttpStatus.NOT_FOUND.value());
-	                    return response;
-	                }
-	            }
-	        }
+			// Validate categories
+			if (dto.getCategory() != null) {
+				for (DoctorCategoryDTO DoctorCatDTO : dto.getCategory()) {
+					if (!serviceFeignClient.isCategoryExists(DoctorCatDTO.getCategoryId())) {
+						response.setSuccess(false);
+						response.setMessage("Category does not exist: " + DoctorCatDTO.getCategoryId());
+						response.setStatus(HttpStatus.NOT_FOUND.value());
+						return response;
+					}
+				}
+			}
 
-	        // Validate services
-	        if (dto.getService() != null) {
-	            for (DoctorServicesDTO DoctorSerDTO : dto.getService()) {
-	                if (!serviceFeignClient.isServiceExists(DoctorSerDTO.getServiceId())) {
-	                    response.setSuccess(false);
-	                    response.setMessage("Service does not exist: " + DoctorSerDTO.getServiceId());
-	                    response.setStatus(HttpStatus.NOT_FOUND.value());
-	                    return response;
-	                }
-	            }
-	        }
+			// Validate services
+			if (dto.getService() != null) {
+				for (DoctorServicesDTO DoctorSerDTO : dto.getService()) {
+					if (!serviceFeignClient.isServiceExists(DoctorSerDTO.getServiceId())) {
+						response.setSuccess(false);
+						response.setMessage("Service does not exist: " + DoctorSerDTO.getServiceId());
+						response.setStatus(HttpStatus.NOT_FOUND.value());
+						return response;
+					}
+				}
+			}
 
-	        // Validate sub-services
-	        if (dto.getSubServices() != null) {
-	            for (DoctorSubServiceDTO DoctorSubSerDTO : dto.getSubServices()) {
-	                if (!serviceFeignClient.isSubServiceExists(DoctorSubSerDTO.getSubServiceId())) {
-	                    response.setSuccess(false);
-	                    response.setMessage("SubService does not exist: " + DoctorSubSerDTO.getSubServiceId());
-	                    response.setStatus(HttpStatus.NOT_FOUND.value());
-	                    return response;
-	                }
-	            }
-	        }
+			// Validate sub-services
+			if (dto.getSubServices() != null) {
+				for (DoctorSubServiceDTO DoctorSubSerDTO : dto.getSubServices()) {
+					if (!serviceFeignClient.isSubServiceExists(DoctorSubSerDTO.getSubServiceId())) {
+						response.setSuccess(false);
+						response.setMessage("SubService does not exist: " + DoctorSubSerDTO.getSubServiceId());
+						response.setStatus(HttpStatus.NOT_FOUND.value());
+						return response;
+					}
+				}
+			}
 
-	        Doctors doctor = doctorOptional.get();
+			Doctors doctor = doctorOptional.get();
 
-	        // Update non-null fields only
-	        if (dto.getDoctorPicture() != null)
-	            doctor.setDoctorPicture(Base64CompressionUtil.compressBase64(dto.getDoctorPicture()));
-	        if (dto.getHospitalId() != null)
-	            doctor.setHospitalId(dto.getHospitalId());
-	        if (dto.getDoctorEmail() != null)
-	            doctor.setDoctorEmail(dto.getDoctorEmail());
-	        if (dto.getDoctorLicence() != null)
-	            doctor.setDoctorLicence(dto.getDoctorLicence());
-	        if (dto.getDoctorMobileNumber() != null)
-	            doctor.setDoctorMobileNumber(dto.getDoctorMobileNumber());
-	        if (dto.getDoctorName() != null)
-	            doctor.setDoctorName(dto.getDoctorName());
-	        if (dto.getCategory() != null)
-	            doctor.setCategory(dto.getCategory());
-	        if (dto.getService() != null)
-	            doctor.setService(dto.getService());
-	        if (dto.getSubServices() != null)
-	            doctor.setSubServices(dto.getSubServices());
-	        if (dto.getSpecialization() != null)
-	            doctor.setSpecialization(dto.getSpecialization());
-	        if (dto.getGender() != null)
-	            doctor.setGender(dto.getGender());
-	        if (dto.getExperience() != null)
-	            doctor.setExperience(dto.getExperience());
-	        if (dto.getQualification() != null)
-	            doctor.setQualification(dto.getQualification());
-	        if (dto.getAvailableDays() != null)
-	            doctor.setAvailableDays(dto.getAvailableDays());
-	        if (dto.getAvailableTimes() != null)
-	            doctor.setAvailableTimes(dto.getAvailableTimes());
-	        if (dto.getProfileDescription() != null)
-	            doctor.setProfileDescription(dto.getProfileDescription());
-	        if (dto.getFocusAreas() != null)
-	            doctor.setFocusAreas(dto.getFocusAreas());
-	        if (dto.getDoctorAverageRating() != 0.0)
-	            doctor.setDoctorAverageRating(dto.getDoctorAverageRating());
-	        if (dto.getLanguages() != null)
-	            doctor.setLanguages(dto.getLanguages());
-	        if (dto.getHighlights() != null)
-	            doctor.setHighlights(dto.getHighlights());
-	        if (dto.getDoctorFees() != null)
-	            doctor.setDoctorFees(DoctorMapper.mapDoctorFeeDTOtoEntity(dto.getDoctorFees()));
+			// Update non-null fields only
+			if (dto.getDoctorPicture() != null)
+				doctor.setDoctorPicture(Base64CompressionUtil.compressBase64(dto.getDoctorPicture()));
+			if (dto.getHospitalId() != null)
+				doctor.setHospitalId(dto.getHospitalId());
+			if (dto.getDoctorEmail() != null)
+				doctor.setDoctorEmail(dto.getDoctorEmail());
+			if (dto.getDoctorLicence() != null)
+				doctor.setDoctorLicence(dto.getDoctorLicence());
+			if (dto.getDoctorMobileNumber() != null)
+				doctor.setDoctorMobileNumber(dto.getDoctorMobileNumber());
+			if (dto.getDoctorName() != null)
+				doctor.setDoctorName(dto.getDoctorName());
+			if (dto.getCategory() != null)
+				doctor.setCategory(dto.getCategory());
+			if (dto.getService() != null)
+				doctor.setService(dto.getService());
+			if (dto.getSubServices() != null)
+				doctor.setSubServices(dto.getSubServices());
+			if (dto.getSpecialization() != null)
+				doctor.setSpecialization(dto.getSpecialization());
+			if (dto.getGender() != null)
+				doctor.setGender(dto.getGender());
+			if (dto.getExperience() != null)
+				doctor.setExperience(dto.getExperience());
+			if (dto.getQualification() != null)
+				doctor.setQualification(dto.getQualification());
+			if (dto.getAvailableDays() != null)
+				doctor.setAvailableDays(dto.getAvailableDays());
+			if (dto.getAvailableTimes() != null)
+				doctor.setAvailableTimes(dto.getAvailableTimes());
+			if (dto.getProfileDescription() != null)
+				doctor.setProfileDescription(dto.getProfileDescription());
+			if (dto.getFocusAreas() != null)
+				doctor.setFocusAreas(dto.getFocusAreas());
+			if (dto.getDoctorAverageRating() != 0.0)
+				doctor.setDoctorAverageRating(dto.getDoctorAverageRating());
+			if (dto.getLanguages() != null)
+				doctor.setLanguages(dto.getLanguages());
+			if (dto.getHighlights() != null)
+				doctor.setHighlights(dto.getHighlights());
+			if (dto.getDoctorFees() != null)
+				doctor.setDoctorFees(DoctorMapper.mapDoctorFeeDTOtoEntity(dto.getDoctorFees()));
 
-	        // Booleans (we assume default false if not set, so be cautious)
-	        doctor.setDoctorAvailabilityStatus(dto.isDoctorAvailabilityStatus());
-	        doctor.setRecommendation(dto.isRecommendation());
+			// Booleans (we assume default false if not set, so be cautious)
+			doctor.setDoctorAvailabilityStatus(dto.isDoctorAvailabilityStatus());
+			doctor.setRecommendation(dto.isRecommendation());
 
-	        Doctors updatedDoctor = doctorsRepository.save(doctor);
+			Doctors updatedDoctor = doctorsRepository.save(doctor);
 
-	        response.setSuccess(true);
-	        response.setData(updatedDoctor);
-	        response.setMessage("Doctor updated successfully");
-	        response.setStatus(HttpStatus.OK.value());
+			response.setSuccess(true);
+			response.setData(updatedDoctor);
+			response.setMessage("Doctor updated successfully");
+			response.setStatus(HttpStatus.OK.value());
 
-	    } catch (Exception e) {
-	        response.setSuccess(false);
-	        response.setData(null);
-	        response.setMessage("Error updating doctor: " + e.getMessage());
-	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-	    }
-	    return response;
+		} catch (Exception e) {
+			response.setSuccess(false);
+			response.setData(null);
+			response.setMessage("Error updating doctor: " + e.getMessage());
+			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+		}
+		return response;
 	}
-	
 
 	@Override
 	public Response getDoctorsByClinicIdAndDoctorId(String clinicId, String doctorId) {
@@ -417,91 +414,90 @@ public class DoctorServiceImpl implements DoctorService {
 		return response;
 	}
 
-	
 	@Override
 	public Response deleteDoctorsByClinic(String hospitalId) {
-	    Response response = new Response();
-	    try {
-	        List<Doctors> doctors = doctorsRepository.findByHospitalId(hospitalId);
+		Response response = new Response();
+		try {
+			List<Doctors> doctors = doctorsRepository.findByHospitalId(hospitalId);
 
-	        if (!doctors.isEmpty()) {
-	            for (Doctors doctor : doctors) {
-	                // Delete login credentials first
-	                Optional<DoctorLoginCredentials> optionalCredentials = credentialsRepository.findByDoctorId(doctor.getDoctorId());
-	                optionalCredentials.ifPresent(credentialsRepository::delete);
+			if (!doctors.isEmpty()) {
+				for (Doctors doctor : doctors) {
+					// Delete login credentials first
+					Optional<DoctorLoginCredentials> optionalCredentials = credentialsRepository
+							.findByDoctorId(doctor.getDoctorId());
+					optionalCredentials.ifPresent(credentialsRepository::delete);
 
-	                // Then delete the doctor record
-	                doctorsRepository.deleteById(doctor.getId());
-	            }
-	            response.setSuccess(true);
-	            response.setStatus(HttpStatus.OK.value());
-	            response.setMessage("All doctors and their credentials linked to clinic ID " + hospitalId + " have been deleted.");
-	        } else {
-	            response.setSuccess(false);
-	            response.setStatus(HttpStatus.NOT_FOUND.value());
-	            response.setMessage("No doctors found for clinic ID: " + hospitalId);
-	        }
-	    } catch (Exception e) {
-	        response.setSuccess(false);
-	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-	        response.setMessage("Error deleting doctors linked to clinic ID " + hospitalId + ": " + e.getMessage());
-	    }
+					// Then delete the doctor record
+					doctorsRepository.deleteById(doctor.getId());
+				}
+				response.setSuccess(true);
+				response.setStatus(HttpStatus.OK.value());
+				response.setMessage(
+						"All doctors and their credentials linked to clinic ID " + hospitalId + " have been deleted.");
+			} else {
+				response.setSuccess(false);
+				response.setStatus(HttpStatus.NOT_FOUND.value());
+				response.setMessage("No doctors found for clinic ID: " + hospitalId);
+			}
+		} catch (Exception e) {
+			response.setSuccess(false);
+			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+			response.setMessage("Error deleting doctors linked to clinic ID " + hospitalId + ": " + e.getMessage());
+		}
 
-	    return response;
+		return response;
 	}
 
-	
 	// -------------------------------DOCTOR
-		// LOGIN-------------------------------------------------------------
-		@Override
-		public Response login(DoctorLoginDTO loginDTO) {
-			Response responseDTO = new Response();
+	// LOGIN-------------------------------------------------------------
+	@Override
+	public Response login(DoctorLoginDTO loginDTO) {
+		Response responseDTO = new Response();
 
-			Optional<DoctorLoginCredentials> credentialsOptional = credentialsRepository
-					.findByUsername(loginDTO.getUsername());
+		Optional<DoctorLoginCredentials> credentialsOptional = credentialsRepository
+				.findByUsername(loginDTO.getUsername());
 
-			if (credentialsOptional.isPresent()) {
-				DoctorLoginCredentials credentials = credentialsOptional.get();
+		if (credentialsOptional.isPresent()) {
+			DoctorLoginCredentials credentials = credentialsOptional.get();
 
-				boolean matches = passwordEncoder.matches(loginDTO.getPassword(), credentials.getPassword());
+			boolean matches = passwordEncoder.matches(loginDTO.getPassword(), credentials.getPassword());
 
-				if (matches) {
-					Optional<Doctors> doctors=doctorsRepository.findByDoctorId(credentials.getDoctorId());
-					if(doctors.isPresent()) {
-						Doctors doctor=doctors.get();
-						doctor.setDeviceId(loginDTO.getDeviceId());
-						Doctors savedDoctor =doctorsRepository.save(doctor);
-						DoctorsDTO savedDTO=DoctorMapper.mapDoctorEntityToDoctorDTO(savedDoctor);
-					}
-			
-					DoctorLoginDTO dto = new DoctorLoginDTO();
-					dto.setUsername(credentials.getUsername());
-					dto.setPassword(credentials.getPassword());
-					dto.setDeviceId(loginDTO.getDeviceId());
-					dto.setDoctorId(credentials.getDoctorId());
-					dto.setHospitalId(credentials.getHospitalId());
-
-					responseDTO.setData(dto);
-					responseDTO.setStatus(HttpStatus.OK.value());
-					responseDTO.setMessage("Login successful");
-					responseDTO.setSuccess(true);
-				} else {
-					responseDTO.setData(null);
-					responseDTO.setStatus(HttpStatus.UNAUTHORIZED.value());
-					responseDTO.setMessage("Invalid password");
-					responseDTO.setSuccess(false);
+			if (matches) {
+				Optional<Doctors> doctors = doctorsRepository.findByDoctorId(credentials.getDoctorId());
+				if (doctors.isPresent()) {
+					Doctors doctor = doctors.get();
+					doctor.setDeviceId(loginDTO.getDeviceId());
+					Doctors savedDoctor = doctorsRepository.save(doctor);
+					DoctorsDTO savedDTO = DoctorMapper.mapDoctorEntityToDoctorDTO(savedDoctor);
 				}
+
+				DoctorLoginDTO dto = new DoctorLoginDTO();
+				dto.setUsername(credentials.getUsername());
+				dto.setPassword(credentials.getPassword());
+				dto.setDeviceId(loginDTO.getDeviceId());
+				dto.setDoctorId(credentials.getDoctorId());
+				dto.setHospitalId(credentials.getHospitalId());
+
+				responseDTO.setData(dto);
+				responseDTO.setStatus(HttpStatus.OK.value());
+				responseDTO.setMessage("Login successful");
+				responseDTO.setSuccess(true);
 			} else {
 				responseDTO.setData(null);
-				responseDTO.setStatus(HttpStatus.NOT_FOUND.value());
-				responseDTO.setMessage("Doctor not found");
+				responseDTO.setStatus(HttpStatus.UNAUTHORIZED.value());
+				responseDTO.setMessage("Invalid password");
 				responseDTO.setSuccess(false);
 			}
-
-			return responseDTO;
+		} else {
+			responseDTO.setData(null);
+			responseDTO.setStatus(HttpStatus.NOT_FOUND.value());
+			responseDTO.setMessage("Doctor not found");
+			responseDTO.setSuccess(false);
 		}
-	
-	
+
+		return responseDTO;
+	}
+
 	// -------------------------------DOCTOR can Change
 	// password-------------------------------------------------------------
 	@Override
@@ -577,8 +573,8 @@ public class DoctorServiceImpl implements DoctorService {
 
 	private String generateDoctorId() {
 		String doctorId = "DC_" + UUID.randomUUID().toString().substring(0, 8);
- // Get the current count of doctors
-		return doctorId; 
+		// Get the current count of doctors
+		return doctorId;
 	}
 
 	private String generateStructuredPassword() {
@@ -641,7 +637,8 @@ public class DoctorServiceImpl implements DoctorService {
 				response.setSuccess(false);
 				response.setMessage("Doctor not found with ID: " + doctorId);
 				response.setStatus(HttpStatus.NOT_FOUND.value());
-				return response;}
+				return response;
+			}
 
 			// Corrected line: assuming repository returns Optional<DoctorSlot>
 			DoctorSlot existingSlot = slotRepository.findByDoctorIdAndDate(doctorId, dto.getDate());
@@ -719,7 +716,8 @@ public class DoctorServiceImpl implements DoctorService {
 				response.setData(null);
 				response.setMessage("No slot found for the doctor on the given date");
 				response.setStatus(HttpStatus.NOT_FOUND.value());
-				return response;}
+				return response;
+			}
 
 			boolean slotExists = doctorSlot.getAvailableSlots().stream()
 					.anyMatch(s -> slotToDelete.equals(s.getSlot()) && !s.isSlotbooked());
@@ -765,7 +763,8 @@ public class DoctorServiceImpl implements DoctorService {
 				response.setData(null);
 				response.setMessage("No slot found for the doctor on the given date");
 				response.setStatus(HttpStatus.NOT_FOUND.value());
-				return response;}
+				return response;
+			}
 			List<DoctorAvailableSlotDTO> slots = doctorSlot.getAvailableSlots();
 
 			boolean slotUpdated = false;
@@ -817,8 +816,9 @@ public class DoctorServiceImpl implements DoctorService {
 			response.setData(null);
 			response.setMessage("No slots found for doctor on this date");
 			response.setStatus(HttpStatus.NOT_FOUND.value());
-			return response;}
-		
+			return response;
+		}
+
 		slotRepository.delete(doctorSlot);
 		Response response = new Response();
 		response.setSuccess(true);
@@ -876,109 +876,106 @@ public class DoctorServiceImpl implements DoctorService {
 		return response;
 	}
 
-	
 	public boolean updateSlot(String doctorId, String date, String time) {
 		try {
-			DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDate(doctorId, date);			
+			DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDate(doctorId, date);
 			for (DoctorAvailableSlotDTO slot : doctorSlots.getAvailableSlots()) {
 				if (slot.getSlot().equalsIgnoreCase(time)) {
 					slot.setSlotbooked(true);
 					slotRepository.save(doctorSlots);
-					return true;}}
+					return true;
+				}
+			}
 			return false;
 		} catch (NullPointerException e) {
 			return false;
 		}
 	}
 
-	
-	
 	public boolean makingFalseDoctorSlot(String doctorId, String date, String time) {
 		try {
-			DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDate(doctorId, date);			
+			DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDate(doctorId, date);
 			for (DoctorAvailableSlotDTO slot : doctorSlots.getAvailableSlots()) {
 				if (slot.getSlot().equalsIgnoreCase(time)) {
 					slot.setSlotbooked(false);
 					slotRepository.save(doctorSlots);
-					return true;}}
+					return true;
+				}
+			}
 			return false;
 		} catch (NullPointerException e) {
 			return false;
 		}
 	}
-	
-	
 
 //-------------------------Get Hopitals and Doctors using SubserviceId------------------------------------------------
 	@Override
 	public Response getHospitalAndDoctorsUsingSubserviceId(String subServiceId) {
-	    Response response = new Response();
+		Response response = new Response();
 
-	    try {
-	        List<Doctors> doctors = doctorsRepository.findBySubServiceById(subServiceId);
-	        log.info("Total doctors found for subServiceId {}: {}", subServiceId, doctors.size());
+		try {
+			List<Doctors> doctors = doctorsRepository.findBySubServiceById(subServiceId);
+			log.info("Total doctors found for subServiceId {}: {}", subServiceId, doctors.size());
 
-	        if (doctors.isEmpty()) {
-	            response.setSuccess(true); 
-	            response.setStatus(HttpStatus.OK.value());
-	            response.setData(Collections.emptyList());
-	            response.setMessage("No doctors found for the given subServiceId");
-	            return response;
-	        }
+			if (doctors.isEmpty()) {
+				response.setSuccess(true);
+				response.setStatus(HttpStatus.OK.value());
+				response.setData(Collections.emptyList());
+				response.setMessage("No doctors found for the given subServiceId");
+				return response;
+			}
 
-	        // Group by hospitalId
-	        Map<String, List<Doctors>> doctorsGroupedByHospital = doctors.stream()
-	                .filter(doc -> doc.getHospitalId() != null)
-	                .collect(Collectors.groupingBy(Doctors::getHospitalId));
+			// Group by hospitalId
+			Map<String, List<Doctors>> doctorsGroupedByHospital = doctors.stream()
+					.filter(doc -> doc.getHospitalId() != null).collect(Collectors.groupingBy(Doctors::getHospitalId));
 
-	        List<ClinicWithDoctorsDTO> resultList = new ArrayList<>();
-	        ObjectMapper mapper = new ObjectMapper();
+			List<ClinicWithDoctorsDTO> resultList = new ArrayList<>();
+			ObjectMapper mapper = new ObjectMapper();
 
-	        for (Map.Entry<String, List<Doctors>> entry : doctorsGroupedByHospital.entrySet()) {
-	            String hospitalId = entry.getKey();
-	            List<Doctors> doctorList = entry.getValue();
+			for (Map.Entry<String, List<Doctors>> entry : doctorsGroupedByHospital.entrySet()) {
+				String hospitalId = entry.getKey();
+				List<Doctors> doctorList = entry.getValue();
 
-	            try {
-	                log.info("Fetching clinic for hospitalId: {}", hospitalId);
-	                ResponseEntity<Response> hospitalRes = adminServiceClient.getClinicById(hospitalId);
+				try {
+					log.info("Fetching clinic for hospitalId: {}", hospitalId);
+					ResponseEntity<Response> hospitalRes = adminServiceClient.getClinicById(hospitalId);
 
-	                if (hospitalRes.getStatusCode().is2xxSuccessful() && hospitalRes.getBody() != null) {
-	                    Object data = hospitalRes.getBody().getData();
-	                    ClinicDTO clinic = mapper.convertValue(data, ClinicDTO.class);
+					if (hospitalRes.getStatusCode().is2xxSuccessful() && hospitalRes.getBody() != null) {
+						Object data = hospitalRes.getBody().getData();
+						ClinicDTO clinic = mapper.convertValue(data, ClinicDTO.class);
 
-	                    ClinicWithDoctorsDTO dto = mapToClinicWithDoctorsDTO(clinic, doctorList);
-	                    resultList.add(dto);
-	                } else {
-	                    log.warn("Invalid response from clinic API for hospitalId: {}", hospitalId);
-	                }
-	            } catch (Exception e) {
-	                log.error("Error while fetching clinic for hospitalId {}: {}", hospitalId, e.getMessage());
-	            }
-	        }
+						ClinicWithDoctorsDTO dto = mapToClinicWithDoctorsDTO(clinic, doctorList);
+						resultList.add(dto);
+					} else {
+						log.warn("Invalid response from clinic API for hospitalId: {}", hospitalId);
+					}
+				} catch (Exception e) {
+					log.error("Error while fetching clinic for hospitalId {}: {}", hospitalId, e.getMessage());
+				}
+			}
 
-	        if (resultList.isEmpty()) {
-	            response.setSuccess(true); // ✅ Not an error
-	            response.setStatus(HttpStatus.OK.value());
-	            response.setData(Collections.emptyList());
-	            response.setMessage("No clinics with matching doctors found for the given subServiceId");
-	            return response;
-	        }
+			if (resultList.isEmpty()) {
+				response.setSuccess(true); // ✅ Not an error
+				response.setStatus(HttpStatus.OK.value());
+				response.setData(Collections.emptyList());
+				response.setMessage("No clinics with matching doctors found for the given subServiceId");
+				return response;
+			}
 
-	        response.setSuccess(true);
-	        response.setStatus(HttpStatus.OK.value());
-	        response.setData(resultList);
-	        response.setMessage("Fetched successfully");
-	        return response;
+			response.setSuccess(true);
+			response.setStatus(HttpStatus.OK.value());
+			response.setData(resultList);
+			response.setMessage("Fetched successfully");
+			return response;
 
-	    } catch (Exception ex) {
-	        log.error("Exception in getHospitalAndDoctorsUsingSubserviceId: {}", ex.getMessage(), ex);
-	        response.setSuccess(false);
-	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-	        response.setMessage("Internal error: " + ex.getMessage());
-	        return response;
-	    }
+		} catch (Exception ex) {
+			log.error("Exception in getHospitalAndDoctorsUsingSubserviceId: {}", ex.getMessage(), ex);
+			response.setSuccess(false);
+			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+			response.setMessage("Internal error: " + ex.getMessage());
+			return response;
+		}
 	}
-
 
 //-------------------Mapper for clinic admin----------------------------------------------
 
@@ -1007,7 +1004,6 @@ public class DoctorServiceImpl implements DoctorService {
 		return dto;
 	}
 
-
 //----------------------------------Get Doctors By SubserviceId----------------------------------------------------------------
 	@Override
 	public Response getAllDoctorsBySubserviceId(String subServiceId) {
@@ -1035,323 +1031,277 @@ public class DoctorServiceImpl implements DoctorService {
 
 		return response;
 	}
-	
-	
-	///NOTIFICATIONOFDOCTOR
-	
-	public ResponseEntity<?> notificationToClinic(String hospitalId){
+
+	/// NOTIFICATIONOFDOCTOR
+
+	public ResponseEntity<?> notificationToClinic(String hospitalId) {
 		try {
-		return notificationFeign.sendNotificationToClinic(hospitalId);
-		}catch(FeignException e) {
-			ResBody<List<String>> res = new ResBody<List<String>>(ExtractFeignMessage.clearMessage(e),e.status(),null);
-			return ResponseEntity.status(e.status()).body(res);}
+			return notificationFeign.sendNotificationToClinic(hospitalId);
+		} catch (FeignException e) {
+			ResBody<List<String>> res = new ResBody<List<String>>(ExtractFeignMessage.clearMessage(e), e.status(),
+					null);
+			return ResponseEntity.status(e.status()).body(res);
+		}
+	}
+
+	// -----------------------------GET CLINICS AND DOCTORS BUY RECOMMONDATION ==
+	// TRUE---------------------------------
+	@Override
+	public Response getRecommendedClinicsAndDoctors() {
+		ResponseEntity<Response> responseEntity = adminServiceClient.getHospitalUsingRecommendentaion();
+		Response responseBody = responseEntity.getBody();
+
+		List<ClinicWithDoctorsDTO> result = new ArrayList<>();
+
+		if (responseBody != null && responseBody.isSuccess()) {
+			Object rawData = responseBody.getData();
+			List<?> clinicRawList = (List<?>) rawData;
+
+			for (Object obj : clinicRawList) {
+				LinkedHashMap<?, ?> map = (LinkedHashMap<?, ?>) obj;
+
+				// Map Clinic fields
+				ClinicWithDoctorsDTO clinic = new ClinicWithDoctorsDTO();
+				clinic.setHospitalId((String) map.get("hospitalId"));
+				clinic.setName((String) map.get("name"));
+				clinic.setAddress((String) map.get("address"));
+				clinic.setCity((String) map.get("city"));
+				clinic.setContactNumber((String) map.get("contactNumber"));
+				clinic.setHospitalOverallRating(getDouble1(map.get("hospitalOverallRating")));
+				clinic.setHospitalRegistrations((String) map.get("hospitalRegistrations"));
+				clinic.setOpeningTime((String) map.get("openingTime"));
+				clinic.setClosingTime((String) map.get("closingTime"));
+				clinic.setHospitalLogo((String) map.get("hospitalLogo"));
+				clinic.setEmailAddress((String) map.get("emailAddress"));
+				clinic.setWebsite((String) map.get("website"));
+				clinic.setLicenseNumber((String) map.get("licenseNumber"));
+				clinic.setIssuingAuthority((String) map.get("issuingAuthority"));
+				clinic.setHospitalDocuments((List<String>) map.get("hospitalDocuments"));
+				clinic.setContractorDocuments((List<String>) map.get("contractorDocuments"));
+				clinic.setRecommended(Boolean.TRUE.equals(map.get("recommended")));
+
+				// Fetch doctors for each clinic
+				List<Doctors> doctorEntities = doctorsRepository.findByHospitalId(clinic.getHospitalId());
+
+				List<DoctorsDTO> doctors = doctorEntities.stream().map(doc -> {
+					DoctorsDTO dto = new DoctorsDTO();
+					dto.setId(doc.getId().toString());
+					dto.setDoctorId(doc.getDoctorId());
+					dto.setDeviceId(doc.getDeviceId());
+					dto.setDoctorEmail(doc.getDoctorEmail());
+					dto.setHospitalId(doc.getHospitalId());
+					dto.setDoctorPicture(doc.getDoctorPicture());
+					dto.setDoctorLicence(doc.getDoctorLicence());
+					dto.setDoctorMobileNumber(doc.getDoctorMobileNumber());
+					dto.setDoctorName(doc.getDoctorName());
+					dto.setCategory(doc.getCategory());
+					dto.setService(doc.getService());
+					dto.setSubServices(doc.getSubServices());
+					dto.setSpecialization(doc.getSpecialization());
+					dto.setGender(doc.getGender());
+					dto.setExperience(doc.getExperience());
+					dto.setQualification(doc.getQualification());
+					dto.setAvailableDays(doc.getAvailableDays());
+					dto.setAvailableTimes(doc.getAvailableTimes());
+					dto.setProfileDescription(doc.getProfileDescription());
+					dto.setFocusAreas(doc.getFocusAreas());
+					dto.setLanguages(doc.getLanguages());
+					dto.setHighlights(doc.getHighlights());
+					dto.setDoctorAvailabilityStatus(doc.isDoctorAvailabilityStatus());
+					dto.setRecommendation(doc.isRecommendation());
+					dto.setDoctorAverageRating(doc.getDoctorAverageRating());
+//			                            if (dto.getDoctorFees() != null)
+					dto.setDoctorFees(DoctorMapper.mapDoctorFeeEntityToDTO(doc.getDoctorFees()));
+
+					return dto;
+				}).collect(Collectors.toList());
+
+				clinic.setDoctors(doctors);
+				result.add(clinic);
+			}
 		}
 
+		// Final response
+		Response finalResponse = new Response();
+		finalResponse.setSuccess(true);
+		finalResponse.setStatus(200);
+		finalResponse.setMessage("Recommended clinics with doctors retrieved successfully.");
+		finalResponse.setData(result);
 
+		return finalResponse;
+	}
 
-		  //-----------------------------GET CLINICS AND DOCTORS BUY RECOMMONDATION == TRUE---------------------------------
-			@Override
-			public Response getRecommendedClinicsAndDoctors() {
-				ResponseEntity<Response> responseEntity = adminServiceClient.getHospitalUsingRecommendentaion();
-				Response responseBody = responseEntity.getBody();
+	private double getDouble1(Object obj) {
+		try {
+			return obj != null ? Double.parseDouble(obj.toString()) : 0.0;
+		} catch (Exception e) {
+			return 0.0;
+		}
+	}
 
-				List<ClinicWithDoctorsDTO> result = new ArrayList<>();
+	@Override
+	public Response getBestDoctorBySubService(String subServiceId) {
+		List<Doctors> doctors = doctorsRepository.findBySubServiceById(subServiceId);
 
-				if (responseBody != null && responseBody.isSuccess()) {
-					Object rawData = responseBody.getData();
-					List<?> clinicRawList = (List<?>) rawData;
+		Doctors bestDoctor = null;
+		double highestScore = -1.0;
+		ClinicDTO selectedClinic = null;
 
-					for (Object obj : clinicRawList) {
-						LinkedHashMap<?, ?> map = (LinkedHashMap<?, ?>) obj;
+		for (Doctors doctor : doctors) {
+			if (!doctor.isDoctorAvailabilityStatus())
+				continue;
 
-						// Map Clinic fields
-						ClinicWithDoctorsDTO clinic = new ClinicWithDoctorsDTO();
-						clinic.setHospitalId((String) map.get("hospitalId"));
-						clinic.setName((String) map.get("name"));
-						clinic.setAddress((String) map.get("address"));
-						clinic.setCity((String) map.get("city"));
-						clinic.setContactNumber((String) map.get("contactNumber"));
-						clinic.setHospitalOverallRating(getDouble1(map.get("hospitalOverallRating")));
-						clinic.setHospitalRegistrations((String) map.get("hospitalRegistrations"));
-						clinic.setOpeningTime((String) map.get("openingTime"));
-						clinic.setClosingTime((String) map.get("closingTime"));
-						clinic.setHospitalLogo((String) map.get("hospitalLogo"));
-						clinic.setEmailAddress((String) map.get("emailAddress"));
-						clinic.setWebsite((String) map.get("website"));
-						clinic.setLicenseNumber((String) map.get("licenseNumber"));
-						clinic.setIssuingAuthority((String) map.get("issuingAuthority"));
-						clinic.setHospitalDocuments((List<String>) map.get("hospitalDocuments"));
-						clinic.setContractorDocuments((List<String>) map.get("contractorDocuments"));
-						clinic.setRecommended(Boolean.TRUE.equals(map.get("recommended")));
+			// Call main admin service to get clinic by hospitalId
+			ResponseEntity<Response> clinicResponse = adminServiceClient.getClinicById(doctor.getHospitalId());
 
-						// Fetch doctors for each clinic
-						List<Doctors> doctorEntities = doctorsRepository.findByHospitalId(clinic.getHospitalId());
+			if (clinicResponse == null || clinicResponse.getBody() == null
+					|| clinicResponse.getBody().getData() == null)
+				continue;
 
-						List<DoctorsDTO> doctors = doctorEntities.stream().map(doc -> {
-							DoctorsDTO dto = new DoctorsDTO();
-							dto.setId(doc.getId().toString());
-							dto.setDoctorId(doc.getDoctorId());
-							dto.setDeviceId(doc.getDeviceId());
-							dto.setDoctorEmail(doc.getDoctorEmail());
-							dto.setHospitalId(doc.getHospitalId());
-							dto.setDoctorPicture(doc.getDoctorPicture());
-							dto.setDoctorLicence(doc.getDoctorLicence());
-							dto.setDoctorMobileNumber(doc.getDoctorMobileNumber());
-							dto.setDoctorName(doc.getDoctorName());
-							dto.setCategory(doc.getCategory());
-							dto.setService(doc.getService());
-							dto.setSubServices(doc.getSubServices());
-							dto.setSpecialization(doc.getSpecialization());
-							dto.setGender(doc.getGender());
-							dto.setExperience(doc.getExperience());
-							dto.setQualification(doc.getQualification());
-							dto.setAvailableDays(doc.getAvailableDays());
-							dto.setAvailableTimes(doc.getAvailableTimes());
-							dto.setProfileDescription(doc.getProfileDescription());
-							dto.setFocusAreas(doc.getFocusAreas());
-							dto.setLanguages(doc.getLanguages());
-							dto.setHighlights(doc.getHighlights());
-							dto.setDoctorAvailabilityStatus(doc.isDoctorAvailabilityStatus());
-							dto.setRecommendation(doc.isRecommendation());
-							dto.setDoctorAverageRating(doc.getDoctorAverageRating());
-//			                            if (dto.getDoctorFees() != null)
-							dto.setDoctorFees(DoctorMapper.mapDoctorFeeEntityToDTO(doc.getDoctorFees()));
-
-							return dto;
-						}).collect(Collectors.toList());
-
-						clinic.setDoctors(doctors);
-						result.add(clinic);
-					}
-				}
-
-				// Final response
-				Response finalResponse = new Response();
-				finalResponse.setSuccess(true);
-				finalResponse.setStatus(200);
-				finalResponse.setMessage("Recommended clinics with doctors retrieved successfully.");
-				finalResponse.setData(result);
-
-				return finalResponse;
+			// Convert Object to ClinicDTO safely using ObjectMapper
+			ClinicDTO clinic;
+			try {
+				Object data = clinicResponse.getBody().getData();
+				clinic = objectMapper.convertValue(data, ClinicDTO.class);
+			} catch (Exception e) {
+				continue; // skip if conversion fails
 			}
 
-			private double getDouble1(Object obj) {
-				try {
-					return obj != null ? Double.parseDouble(obj.toString()) : 0.0;
-				} catch (Exception e) {
-					return 0.0;
+			boolean isGoodClinic = clinic.isRecommended() || clinic.getHospitalOverallRating() >= 4.0;
+			if (!isGoodClinic)
+				continue;
+
+			// Calculate doctor score
+			double score = 0;
+			if (doctor.isRecommendation())
+				score += 3;
+			score += doctor.getDoctorAverageRating();
+
+			try {
+				score += Double.parseDouble(doctor.getExperience()) * 0.2;
+			} catch (Exception ignored) {
+			}
+
+			// Choose the doctor with the highest score
+			if (score > highestScore) {
+				highestScore = score;
+				bestDoctor = doctor;
+				selectedClinic = clinic;
+			}
+		}
+
+		if (bestDoctor == null || selectedClinic == null) {
+			return Response.builder().success(false).status(404)
+					.message("No suitable doctor found for subService ID: " + subServiceId).build();
+		}
+
+		// Convert doctor to DoctorsDTO using your mapper
+		DoctorsDTO doctorDTO = DoctorMapper.mapDoctorEntityToDoctorDTO(bestDoctor);
+
+		// Build combined clinic + doctor response
+		ClinicWithDoctorsDTO2 responseDTO = new ClinicWithDoctorsDTO2(selectedClinic.getHospitalId(),
+				selectedClinic.getName(), selectedClinic.getAddress(), selectedClinic.getCity(),
+				selectedClinic.getContactNumber(), selectedClinic.getHospitalOverallRating(),
+				selectedClinic.getHospitalRegistrations(), selectedClinic.getOpeningTime(),
+				selectedClinic.getClosingTime(), selectedClinic.getHospitalLogo(), selectedClinic.getEmailAddress(),
+				selectedClinic.getWebsite(), selectedClinic.getLicenseNumber(), selectedClinic.getIssuingAuthority(),
+				selectedClinic.getHospitalDocuments(), selectedClinic.getContractorDocuments(),
+				selectedClinic.isRecommended(), doctorDTO);
+
+		return Response.builder().success(true).status(200).message("Best doctor with clinic retrieved successfully")
+				.data(responseDTO).build();
+	}
+
+	@Override
+	public Response getRecommendedClinicsAndDoctors(List<String> keyPointsFromUser) {
+		ResponseEntity<Response> responseEntity = adminServiceClient.getHospitalUsingRecommendentaion();
+		Response responseBody = responseEntity.getBody();
+
+		List<ClinicWithDoctorsDTO> result = new ArrayList<>();
+
+		if (responseBody != null && responseBody.isSuccess()) {
+			Object rawData = responseBody.getData();
+
+			List<ClinicWithDoctorsDTO> clinics = new ObjectMapper().convertValue(rawData,
+					new TypeReference<List<ClinicWithDoctorsDTO>>() {
+					});
+
+			for (ClinicWithDoctorsDTO clinic : clinics) {
+				List<DoctorsDTO> matchedDoctors = new ArrayList<>();
+
+				for (DoctorsDTO doctor : clinic.getDoctors()) {
+					if (isDoctorRelevant(doctor, keyPointsFromUser)) {
+						matchedDoctors.add(doctor);
+					}
+				}
+
+				if (!matchedDoctors.isEmpty()) {
+					ClinicWithDoctorsDTO matchedClinic = new ClinicWithDoctorsDTO();
+					matchedClinic.setHospitalId(clinic.getHospitalId());
+					matchedClinic.setName(clinic.getName());
+					matchedClinic.setAddress(clinic.getAddress());
+					matchedClinic.setCity(clinic.getCity());
+					matchedClinic.setContactNumber(clinic.getContactNumber());
+					matchedClinic.setHospitalOverallRating(clinic.getHospitalOverallRating());
+					matchedClinic.setHospitalRegistrations(clinic.getHospitalRegistrations());
+					matchedClinic.setOpeningTime(clinic.getOpeningTime());
+					matchedClinic.setClosingTime(clinic.getClosingTime());
+					matchedClinic.setHospitalLogo(clinic.getHospitalLogo());
+					matchedClinic.setEmailAddress(clinic.getEmailAddress());
+					matchedClinic.setWebsite(clinic.getWebsite());
+					matchedClinic.setLicenseNumber(clinic.getLicenseNumber());
+					matchedClinic.setIssuingAuthority(clinic.getIssuingAuthority());
+					matchedClinic.setHospitalDocuments(clinic.getHospitalDocuments());
+					matchedClinic.setContractorDocuments(clinic.getContractorDocuments());
+					matchedClinic.setRecommended(clinic.isRecommended());
+					matchedClinic.setDoctors(matchedDoctors);
+
+					result.add(matchedClinic);
+				}
+			}
+		}
+		Response response = new Response();
+		response.setSuccess(true);
+		response.setData(result);
+		response.setMessage("Matched doctors and clinics");
+		response.setStatus(HttpStatus.OK.value());
+		return response;
+	}
+
+	private boolean isDoctorRelevant(DoctorsDTO doctor, List<String> keyPoints) {
+		for (String key : keyPoints) {
+			String lowerKey = key.toLowerCase();
+
+			// 1. Priority: SubService matching
+			if (doctor.getSubServices() != null) {
+				for (DoctorSubServiceDTO subService : doctor.getSubServices()) {
+					if (subService != null && subService.getSubServiceName() != null
+							&& subService.getSubServiceName().toLowerCase().contains(lowerKey)) {
+						return true;
+					}
 				}
 			}
 
-			@Override
-			public Response getBestDoctorBySubService(String subServiceId) {
-				List<Doctors> doctors = doctorsRepository.findBySubServiceById(subServiceId);
-
-				Doctors bestDoctor = null;
-				double highestScore = -1.0;
-				ClinicDTO selectedClinic = null;
-
-				for (Doctors doctor : doctors) {
-					if (!doctor.isDoctorAvailabilityStatus())
-						continue;
-
-					// Call main admin service to get clinic by hospitalId
-					ResponseEntity<Response> clinicResponse = adminServiceClient.getClinicById(doctor.getHospitalId());
-
-					if (clinicResponse == null || clinicResponse.getBody() == null
-							|| clinicResponse.getBody().getData() == null)
-						continue;
-
-					// Convert Object to ClinicDTO safely using ObjectMapper
-					ClinicDTO clinic;
-					try {
-						Object data = clinicResponse.getBody().getData();
-						clinic = objectMapper.convertValue(data, ClinicDTO.class);
-					} catch (Exception e) {
-						continue; // skip if conversion fails
-					}
-
-					boolean isGoodClinic = clinic.isRecommended() || clinic.getHospitalOverallRating() >= 4.0;
-					if (!isGoodClinic)
-						continue;
-
-					// Calculate doctor score
-					double score = 0;
-					if (doctor.isRecommendation())
-						score += 3;
-					score += doctor.getDoctorAverageRating();
-
-					try {
-						score += Double.parseDouble(doctor.getExperience()) * 0.2;
-					} catch (Exception ignored) {
-					}
-
-					// Choose the doctor with the highest score
-					if (score > highestScore) {
-						highestScore = score;
-						bestDoctor = doctor;
-						selectedClinic = clinic;
+			// 2. Second Priority: Service name
+			if (doctor.getService() != null) {
+				for (DoctorServicesDTO service : doctor.getService()) {
+					if (service != null && service.getServiceName() != null
+							&& service.getServiceName().toLowerCase().contains(lowerKey)) {
+						return true;
 					}
 				}
-
-				if (bestDoctor == null || selectedClinic == null) {
-					return Response.builder().success(false).status(404)
-							.message("No suitable doctor found for subService ID: " + subServiceId).build();
-				}
-
-				// Convert doctor to DoctorsDTO using your mapper
-				DoctorsDTO doctorDTO = DoctorMapper.mapDoctorEntityToDoctorDTO(bestDoctor);
-
-				// Build combined clinic + doctor response
-				ClinicWithDoctorsDTO2 responseDTO = new ClinicWithDoctorsDTO2(selectedClinic.getHospitalId(),
-						selectedClinic.getName(), selectedClinic.getAddress(), selectedClinic.getCity(),
-						selectedClinic.getContactNumber(), selectedClinic.getHospitalOverallRating(),
-						selectedClinic.getHospitalRegistrations(), selectedClinic.getOpeningTime(),
-						selectedClinic.getClosingTime(), selectedClinic.getHospitalLogo(), selectedClinic.getEmailAddress(),
-						selectedClinic.getWebsite(), selectedClinic.getLicenseNumber(), selectedClinic.getIssuingAuthority(),
-						selectedClinic.getHospitalDocuments(), selectedClinic.getContractorDocuments(),
-						selectedClinic.isRecommended(), doctorDTO);
-
-				return Response.builder().success(true).status(200).message("Best doctor with clinic retrieved successfully")
-						.data(responseDTO).build();
 			}
-		//---------------------------------------------------Using Key Point of subservices----------------------------------------------------
-			    @Override
-			    public Response getRecommendedClinicsAndDoctors(List<String> keyPointsFromUser) {
-			        ResponseEntity<Response> responseEntity = adminServiceClient.getHospitalUsingRecommendentaion();
-			        Response responseBody = responseEntity.getBody();
 
-			        List<ClinicWithDoctorsDTO> result = new ArrayList<>();
+			// 3. Third Priority: Category name
+			if (doctor.getCategory() != null)
+				for (DoctorCategoryDTO category : doctor.getCategory()) {
+					if (category != null && category.getCategoryName() != null
+							&& category.getCategoryName().toLowerCase().contains(lowerKey)) {
+						return true;
+					}
+				}
+		}
+		return false;
+	}
 
-			        if (responseBody != null && responseBody.isSuccess()) {
-			            Object rawData = responseBody.getData();
-			            List<?> clinicRawList = (List<?>) rawData;
-
-			            for (Object obj : clinicRawList) {
-			                LinkedHashMap<?, ?> map = (LinkedHashMap<?, ?>) obj;
-
-			                ClinicWithDoctorsDTO clinic = new ClinicWithDoctorsDTO();
-			                clinic.setHospitalId((String) map.get("hospitalId"));
-			                clinic.setName((String) map.get("name"));
-			                clinic.setAddress((String) map.get("address"));
-			                clinic.setCity((String) map.get("city"));
-			                clinic.setContactNumber((String) map.get("contactNumber"));
-			                clinic.setHospitalOverallRating(getDouble1(map.get("hospitalOverallRating")));
-			                clinic.setHospitalRegistrations((String) map.get("hospitalRegistrations"));
-			                clinic.setOpeningTime((String) map.get("openingTime"));
-			                clinic.setClosingTime((String) map.get("closingTime"));
-			                clinic.setHospitalLogo((String) map.get("hospitalLogo"));
-			                clinic.setEmailAddress((String) map.get("emailAddress"));
-			                clinic.setWebsite((String) map.get("website"));
-			                clinic.setLicenseNumber((String) map.get("licenseNumber"));
-			                clinic.setIssuingAuthority((String) map.get("issuingAuthority"));
-			                clinic.setHospitalDocuments((List<String>) map.get("hospitalDocuments"));
-			                clinic.setContractorDocuments((List<String>) map.get("contractorDocuments"));
-			                clinic.setRecommended(Boolean.TRUE.equals(map.get("recommended")));
-
-			                List<Doctors> doctorEntities = doctorsRepository.findByHospitalId(clinic.getHospitalId());
-
-			                List<DoctorsDTO> matchingDoctors = doctorEntities.stream()
-			                    .map(this::mapToDoctorDTO)
-			                    .filter(doctor -> isDoctorRelevant(doctor, keyPointsFromUser))
-			                    .collect(Collectors.toList());
-
-			                if (!matchingDoctors.isEmpty()) {
-			                    clinic.setDoctors(matchingDoctors);
-			                    result.add(clinic);
-			                }
-			            }
-			        }
-
-			        Response finalResponse = new Response();
-			        finalResponse.setSuccess(true);
-			        finalResponse.setStatus(200);
-			        finalResponse.setMessage("Recommended clinics with doctors retrieved successfully.");
-			        finalResponse.setData(result);
-
-			        return finalResponse;
-			    }
-
-			    private boolean isDoctorRelevant(DoctorsDTO doctor, List<String> keyPoints) {
-			        Map<String, List<String>> subServiceKeyPoints = getSubServiceKeywords();
-
-			        for (@Valid DoctorSubServiceDTO subService : doctor.getSubServices()) {
-			            List<String> keywords = subServiceKeyPoints.getOrDefault(subService, Collections.emptyList());
-			            for (String key : keyPoints) {
-			                if (keywords.stream().anyMatch(kw -> kw.toLowerCase().contains(key.toLowerCase()))) {
-			                    return true;
-			                }
-			            }
-			        }
-			        return false;
-			    }
-
-
-
-			    private Map<String, List<String>> getSubServiceKeywords() {
-			        Map<String, List<String>> map = new HashMap<>();
-			        map.put("Chemical Peels", Arrays.asList("dark spots", "acne scars", "dull skin", "uneven tone", "melasma", "hyperpigmentation"));
-			        map.put("Laser Skin Resurfacing", Arrays.asList("fine lines", "wrinkles", "acne scars", "large pores", "skin rejuvenation"));
-			        map.put("Microneedling", Arrays.asList("acne scars", "large pores", "dull skin", "fine lines", "collagen boost"));
-			        map.put("Mesotherapy", Arrays.asList("dull skin", "pigmentation", "dehydration", "fine lines"));
-			        map.put("PRP for Skin", Arrays.asList("rejuvenation", "dark circles", "under-eye wrinkles", "collagen loss"));
-			        map.put("PRP for Hair", Arrays.asList("hair thinning", "receding hairline", "patchy baldness", "weak roots"));
-			        map.put("Hair Mesotherapy", Arrays.asList("hair loss", "nutrient deficiency", "weak scalp", "slow hair growth"));
-			        map.put("Laser Hair Therapy", Arrays.asList("hair shedding", "poor scalp circulation", "thinning hair"));
-			        map.put("FUE Hair Transplant", Arrays.asList("bald spots", "androgenetic alopecia", "hairline correction"));
-			        map.put("Botox", Arrays.asList("forehead lines", "crow’s feet", "frown lines", "fine wrinkles"));
-			        map.put("Dermal Fillers", Arrays.asList("sunken cheeks", "nasolabial folds", "lip volume loss"));
-			        map.put("Thread Lifts", Arrays.asList("sagging skin", "loose jawline", "droopy cheeks"));
-			        map.put("HydraFacial", Arrays.asList("dull skin", "blackheads", "whiteheads", "clogged pores"));
-			        map.put("Fractional CO2 Laser", Arrays.asList("wrinkles", "acne scars", "texture", "sun damage"));
-			        map.put("Ultherapy / HIFU", Arrays.asList("loose skin", "double chin", "neck sagging", "jawline lift"));
-			        map.put("Diode Laser Hair Removal", Arrays.asList("unwanted hair", "ingrown hair", "body hair"));
-			        map.put("Q-Switched Laser", Arrays.asList("tattoos", "pigmented lesions", "birthmarks", "sunspots"));
-			        map.put("IPL", Arrays.asList("uneven tone", "age spots", "redness", "rosacea"));
-			        map.put("Cryotherapy", Arrays.asList("warts", "skin tags", "molluscum"));
-			        map.put("Topical Treatment", Arrays.asList("psoriasis", "eczema", "rashes", "redness", "inflammation"));
-			        map.put("Phototherapy", Arrays.asList("vitiligo", "psoriasis", "eczema"));
-			        return map;
-			    }
-
-			    private DoctorsDTO mapToDoctorDTO(Doctors doc) {
-			        DoctorsDTO dto = new DoctorsDTO();
-			        dto.setId(doc.getId().toString());
-			        dto.setDoctorId(doc.getDoctorId());
-			        dto.setDeviceId(doc.getDeviceId());
-			        dto.setDoctorEmail(doc.getDoctorEmail());
-			        dto.setHospitalId(doc.getHospitalId());
-			        dto.setDoctorPicture(doc.getDoctorPicture());
-			        dto.setDoctorLicence(doc.getDoctorLicence());
-			        dto.setDoctorMobileNumber(doc.getDoctorMobileNumber());
-			        dto.setDoctorName(doc.getDoctorName());
-			        dto.setCategory(doc.getCategory());
-			        dto.setService(doc.getService());
-			        dto.setSubServices(doc.getSubServices());
-			        dto.setSpecialization(doc.getSpecialization());
-			        dto.setGender(doc.getGender());
-			        dto.setExperience(doc.getExperience());
-			        dto.setQualification(doc.getQualification());
-			        dto.setAvailableDays(doc.getAvailableDays());
-			        dto.setAvailableTimes(doc.getAvailableTimes());
-			        dto.setProfileDescription(doc.getProfileDescription());
-			        dto.setFocusAreas(doc.getFocusAreas());
-			        dto.setLanguages(doc.getLanguages());
-			        dto.setHighlights(doc.getHighlights());
-			        dto.setDoctorAvailabilityStatus(doc.isDoctorAvailabilityStatus());
-			        dto.setRecommendation(doc.isRecommendation());
-			        dto.setDoctorAverageRating(doc.getDoctorAverageRating());
-			        dto.setDoctorFees(DoctorMapper.mapDoctorFeeEntityToDTO(doc.getDoctorFees()));
-			        return dto;
-			    }
-
-			    private double getDouble(Object obj) {
-			        try {
-			            return obj != null ? Double.parseDouble(obj.toString()) : 0.0;
-			        } catch (Exception e) {
-			            return 0.0;
-			        }
-			    }
-
-				
 }

@@ -15,7 +15,7 @@ public class DoctorDTO {
     
     private String hospitalId; 
 
-    private String fcmToken;
+//    private String fcmToken;
     
     private String deviceId;
 
@@ -30,9 +30,9 @@ public class DoctorDTO {
         this.password = password != null ? password.trim() : null;
     }
 
-    public void fcmToken(String fcmToken) {
-        this.fcmToken = fcmToken != null ? fcmToken.trim() : null;
-    }
+//    public void fcmToken(String fcmToken) {
+//        this.fcmToken = fcmToken != null ? fcmToken.trim() : null;
+//    }
 
     public void deviceId(String deviceId) {
         this.deviceId = deviceId != null ? deviceId.trim() : null;

@@ -1,0 +1,143 @@
+package com.clinicadmin.sevice.impl;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
+import com.clinicadmin.dto.Response;
+import com.clinicadmin.dto.TreatmentDTO;
+import com.clinicadmin.entity.Treatment;
+import com.clinicadmin.repository.TreatmentRepository;
+import com.clinicadmin.service.TreatmentService;
+
+@Service
+public class TreatmentServiceImpl implements TreatmentService {
+
+    @Autowired
+    private TreatmentRepository treatmentRepository;
+
+    @Override
+    public Response addTreatment(TreatmentDTO dto) {
+    	
+        Treatment treatment = new Treatment();
+        treatment.setTreatmentName(dto.getTreatmentName());
+        treatment.setHospitalId(dto.getHospitalId());
+        Treatment saved = treatmentRepository.save(treatment);
+        TreatmentDTO responseDto = new TreatmentDTO(saved.getId().toString(), saved.getTreatmentName(),saved.getHospitalId());
+        Response response = new Response();
+        response.setSuccess(true);
+        response.setData(responseDto);
+        response.setMessage("Treatment added successfully");
+        response.setStatus(HttpStatus.OK.value());
+        return response;
+    }
+
+    @Override
+    public Response getAllTreatments() {
+        Response response = new Response();
+        try {
+            List<Treatment> treatments = treatmentRepository.findAll();
+            if (!treatments.isEmpty()) {
+                List<TreatmentDTO> dtoList = treatments.stream()
+                        .map(t -> new TreatmentDTO(t.getId().toString(), t.getTreatmentName(),t.getHospitalId()))
+                        .collect(Collectors.toList());
+                response.setSuccess(true);
+                response.setData(dtoList);
+                response.setMessage("Treatments retrieved successfully");
+                response.setStatus(HttpStatus.OK.value());
+            } else {
+                response.setSuccess(true);
+                response.setData(Collections.emptyList());
+                response.setMessage("No data found");
+                response.setStatus(HttpStatus.OK.value());
+            }
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Error while retrieving treatments: " + e.getMessage());
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+        return response;
+    }
+
+    @Override
+    public Response getTreatmentById(String id,String hospitalId ) {
+        Response response = new Response();
+        try {
+            Optional<Treatment> optional = treatmentRepository.findByIdAndHospitalId(new ObjectId(id),hospitalId);
+            if (optional.isPresent()) {
+                Treatment t = optional.get();
+                TreatmentDTO dto = new TreatmentDTO(t.getId().toString(), t.getTreatmentName(),t.getHospitalId());
+                response.setSuccess(true);
+                response.setData(dto);
+                response.setMessage("Treatment retrieved successfully");
+                response.setStatus(HttpStatus.OK.value());
+            } else {
+                response.setSuccess(true);
+                response.setData(Collections.emptyList());
+                response.setMessage("No treatment found with ID: " + id);
+                response.setStatus(HttpStatus.OK.value());
+            }
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Error retrieving treatment: " + e.getMessage());
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+        return response;
+    }
+
+    @Override
+    public Response deleteTreatmentById(String id ,String hospitalId) {
+        Response response = new Response();
+        try {
+            Optional<Treatment> optional = treatmentRepository.findByIdAndHospitalId(new ObjectId(id),hospitalId);
+            if (optional.isPresent()) {
+                treatmentRepository.deleteById(new ObjectId(id));
+                response.setSuccess(true);
+                response.setMessage("Treatment deleted successfully");
+                response.setStatus(HttpStatus.OK.value());
+            } else {
+                response.setSuccess(true);
+                response.setMessage("No treatment found with ID: " + id);
+                response.setStatus(HttpStatus.OK.value());
+            }
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Error deleting treatment: " + e.getMessage());
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+        return response;
+    }
+
+    @Override
+    public Response updateTreatmentById(String id, String hospitalId,TreatmentDTO dto) {
+        Response response = new Response();
+        try {
+            Optional<Treatment> optional = treatmentRepository.findByIdAndHospitalId(new ObjectId(id),hospitalId);
+            if (optional.isPresent()) {
+                Treatment t = optional.get();
+                t.setTreatmentName(dto.getTreatmentName());
+                Treatment saved = treatmentRepository.save(t);
+                TreatmentDTO updatedDto = new TreatmentDTO(saved.getId().toString(), saved.getTreatmentName(),saved.getHospitalId());
+                response.setSuccess(true);
+                response.setData(updatedDto);
+                response.setMessage("Treatment updated successfully");
+                response.setStatus(HttpStatus.OK.value());
+            } else {
+                response.setSuccess(true);
+                response.setMessage("No treatment found with ID: " + id);
+                response.setStatus(HttpStatus.OK.value());
+            }
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Error updating treatment: " + e.getMessage());
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+        return response;
+    }
+}

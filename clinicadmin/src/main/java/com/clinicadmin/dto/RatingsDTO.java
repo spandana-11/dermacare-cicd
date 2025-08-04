@@ -15,4 +15,6 @@ public class RatingsDTO {
 	private double overallDoctorRating;
 	private double overallHospitalRating;
 	private List<CustomerRatingDomain> comments;
+	private List<RatingCategoryStats> ratingCategoryStats;
+
 }

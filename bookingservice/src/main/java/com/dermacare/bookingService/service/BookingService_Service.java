@@ -18,5 +18,12 @@ public interface BookingService_Service {
 	public List<BookingResponse> bookingByServiceId(String serviceId);
 	public List<BookingResponse> bookingByClinicId(String clinicId);
 	public ResponseEntity<?> updateAppointment(BookingResponse bookingResponse);
-
+	
+	public ResponseEntity<?> getAppointsByPatientId(String patientId);
+	public ResponseEntity<?> getAppointsByInput(String input);
+	public ResponseEntity<?> getTodayDoctorAppointmentsByDoctorId(String hospitalId,String doctorId);
+	public ResponseEntity<?> filterDoctorAppointmentsByDoctorId(String hospitalId,String doctorId,String number);
+	public ResponseEntity<?> getCompletedApntsByDoctorId(String hospitalId,String doctorId);
+	public ResponseEntity<?> getSizeOfConsultationTypesByDoctorId(String hospitalId,String doctorId);
+	
 }

@@ -2,7 +2,7 @@ package com.clinicadmin.dto;
 
 import java.util.List;
 
-import com.clinicadmin.entity.Doctors;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ClinicWithDoctorsDTO2 {
 
 	private String hospitalId; // MongoDB uses String as the default ID type
