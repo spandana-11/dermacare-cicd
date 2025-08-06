@@ -23,7 +23,7 @@ public class CategoryMediaCarouselServiceImpl {
     );
 
     private static final String VIDEO_FOLDER = "videos/";
-    private static final String BASE_URL = "http://35.154.59.127:9090/derma-care/media/videos/";
+    private static final String BASE_URL = "http://13.202.16.119:9090/derma-care/media/videos/";
 
     public CategoryMediaCarouselDTO createMedia(CategoryMediaCarouselDTO mediaDTO) {
         CategoryMediaCarousel media = new CategoryMediaCarousel();
