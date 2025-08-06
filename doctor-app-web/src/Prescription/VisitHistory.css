@@ -1,0 +1,89 @@
+/* Accordion base */
+.vh-accordion {
+  margin-top: 12px;
+}
+.vh-acc-item + .vh-acc-item {
+  margin-top: 10px;
+}
+
+.vh-acc-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f7f7fb;
+  border: 1px solid #e6e6ef;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vh-acc-title {
+  font-size: 14px;
+}
+.vh-acc-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.vh-acc-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition:
+    max-height 220ms ease,
+    padding 220ms ease;
+  padding: 0 12px;
+  border-left: 1px solid #e6e6ef;
+  border-right: 1px solid #e6e6ef;
+  border-bottom: 1px solid #e6e6ef;
+  border-radius: 0 0 10px 10px;
+  background: #fff;
+}
+
+.vh-acc-panel.open {
+  padding: 10px 12px 12px;
+  max-height: 800px;
+}
+
+/* Keep your existing styles */
+.section {
+  margin-top: 14px;
+}
+.section-title {
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.symptoms-text {
+  margin: 6px 0 12px;
+}
+.item-list {
+  padding-left: 18px;
+  margin: 0;
+}
+.diagnosis {
+  font-weight: 600;
+}
+/* simple table styling for reports */
+.vh-table-wrap {
+  overflow: auto;
+}
+.vh-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.vh-table th,
+.vh-table td {
+  border: 1px solid #e6e6ef;
+  padding: 8px 10px;
+  text-align: left;
+}
+.vh-table thead th {
+  background: #f7f7fb;
+  font-weight: 600;
+}
+.muted {
+  color: #777;
+  margin: 6px 0;
+}
