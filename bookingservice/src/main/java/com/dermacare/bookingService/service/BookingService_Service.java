@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 
 import com.dermacare.bookingService.dto.BookingRequset;
 import com.dermacare.bookingService.dto.BookingResponse;
+import com.dermacare.bookingService.util.Response;
 
 public interface BookingService_Service {
 
@@ -25,5 +26,7 @@ public interface BookingService_Service {
 	public ResponseEntity<?> filterDoctorAppointmentsByDoctorId(String hospitalId,String doctorId,String number);
 	public ResponseEntity<?> getCompletedApntsByDoctorId(String hospitalId,String doctorId);
 	public ResponseEntity<?> getSizeOfConsultationTypesByDoctorId(String hospitalId,String doctorId);
-	
+	public ResponseEntity<?> getCompletedAppointsOfPatientId(String patientId);
+	public Response getPatientDetailsForConsetForm(String bookingId, String patientId, String mobileNumber);
+	  public ResponseEntity<?> getPatientFollowUpVisitsCountByAppointmentId(String appointmentId);
 }

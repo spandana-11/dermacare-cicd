@@ -20,7 +20,7 @@ import com.AdminService.service.ServiceMediaCarouselServiceImpl;
 
 @RestController
 @RequestMapping("/admin")
-//Origin(origins = {"http://localhost:3000", "http://localhost:3001"})
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class ServiceAdvertisementCarousel {
 
 	 @Autowired

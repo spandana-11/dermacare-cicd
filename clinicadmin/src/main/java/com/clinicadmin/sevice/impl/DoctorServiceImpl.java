@@ -11,6 +11,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -315,6 +317,8 @@ public class DoctorServiceImpl implements DoctorService {
 				doctor.setLanguages(dto.getLanguages());
 			if (dto.getHighlights() != null)
 				doctor.setHighlights(dto.getHighlights());
+			if (dto.getDoctorSignature() != null)
+				doctor.setDoctorSignature(dto.getDoctorSignature());
 			if (dto.getDoctorFees() != null)
 				doctor.setDoctorFees(DoctorMapper.mapDoctorFeeDTOtoEntity(dto.getDoctorFees()));
 
@@ -987,7 +991,7 @@ public class DoctorServiceImpl implements DoctorService {
 		dto.setCity(clinic.getCity());
 		dto.setContactNumber(clinic.getContactNumber());
 		dto.setHospitalOverallRating(clinic.getHospitalOverallRating());
-		dto.setHospitalRegistrations(clinic.getHospitalRegistrations());
+//		dto.setHospitalRegistrations(clinic.getHospitalRegistrations());
 		dto.setOpeningTime(clinic.getOpeningTime());
 		dto.setClosingTime(clinic.getClosingTime());
 		dto.setHospitalLogo(clinic.getHospitalLogo());
@@ -1068,7 +1072,7 @@ public class DoctorServiceImpl implements DoctorService {
 				clinic.setCity((String) map.get("city"));
 				clinic.setContactNumber((String) map.get("contactNumber"));
 				clinic.setHospitalOverallRating(getDouble1(map.get("hospitalOverallRating")));
-				clinic.setHospitalRegistrations((String) map.get("hospitalRegistrations"));
+//				clinic.setHospitalRegistrations((String) map.get("hospitalRegistrations"));
 				clinic.setOpeningTime((String) map.get("openingTime"));
 				clinic.setClosingTime((String) map.get("closingTime"));
 				clinic.setHospitalLogo((String) map.get("hospitalLogo"));
@@ -1202,105 +1206,202 @@ public class DoctorServiceImpl implements DoctorService {
 		ClinicWithDoctorsDTO2 responseDTO = new ClinicWithDoctorsDTO2(selectedClinic.getHospitalId(),
 				selectedClinic.getName(), selectedClinic.getAddress(), selectedClinic.getCity(),
 				selectedClinic.getContactNumber(), selectedClinic.getHospitalOverallRating(),
-				selectedClinic.getHospitalRegistrations(), selectedClinic.getOpeningTime(),
-				selectedClinic.getClosingTime(), selectedClinic.getHospitalLogo(), selectedClinic.getEmailAddress(),
-				selectedClinic.getWebsite(), selectedClinic.getLicenseNumber(), selectedClinic.getIssuingAuthority(),
-				selectedClinic.getHospitalDocuments(), selectedClinic.getContractorDocuments(),
-				selectedClinic.isRecommended(), doctorDTO);
+				selectedClinic.getOpeningTime(), selectedClinic.getClosingTime(), selectedClinic.getHospitalLogo(),
+				selectedClinic.getEmailAddress(), selectedClinic.getWebsite(), selectedClinic.getLicenseNumber(),
+				selectedClinic.getIssuingAuthority(), selectedClinic.getHospitalDocuments(),
+				selectedClinic.getContractorDocuments(), selectedClinic.isRecommended(), doctorDTO);
 
 		return Response.builder().success(true).status(200).message("Best doctor with clinic retrieved successfully")
 				.data(responseDTO).build();
 	}
 
+//	@Override
+//	public Response getRecommendedClinicsAndDoctors(List<String> keyPointsFromUser) {
+//	    Logger log = LoggerFactory.getLogger(getClass());
+//
+//	    // Step 1: Call Feign client to get clinics
+//	    ResponseEntity<Response> responseEntity = adminServiceClient.getHospitalUsingRecommendentaion();
+//	    Response responseBody = responseEntity.getBody();
+//
+//	    List<ClinicWithDoctorsDTO> result = new ArrayList<>();
+//
+//	    if (responseBody != null && responseBody.isSuccess()) {
+//	        Object rawData = responseBody.getData();
+//	        log.info("Raw clinic data from Feign: {}", rawData);
+//
+//	        List<ClinicWithDoctorsDTO> clinics = new ObjectMapper().convertValue(
+//	            rawData, new TypeReference<List<ClinicWithDoctorsDTO>>() {}
+//	        );
+//
+//	        log.info("Converted clinic list size: {}", clinics.size());
+//
+//	        for (ClinicWithDoctorsDTO clinic : clinics) {
+//	            log.info("Processing clinic: {} | ID: {}", clinic.getName(), clinic.getHospitalId());
+//
+//	            if (clinic.getHospitalId() == null) {
+//	                log.warn("Clinic missing hospitalId, skipping...");
+//	                continue;
+//	            }
+//
+//	            // Step 2: Fetch doctors for clinic
+//	            List<Doctors> doctorEntities = doctorsRepository.findByHospitalId(clinic.getHospitalId());
+//	            log.info("Doctors found for clinic {}: {}", clinic.getHospitalId(), doctorEntities.size());
+//
+//	            List<DoctorsDTO> matchedDoctors = new ArrayList<>();
+//
+//	            for (Doctors doctor : doctorEntities) {
+//	                DoctorsDTO dto = DoctorMapper.mapDoctorEntityToDoctorDTO(doctor);
+//	                log.info("Doctor: {} ", dto);
+//
+//	                boolean relevant = isDoctorRelevant(dto, keyPointsFromUser);
+//	                log.info("Doctor: {} | Relevant: {}", dto.getDoctorName(), relevant);
+//
+//	                if (relevant) {
+//	                    matchedDoctors.add(dto);
+//	                }
+//	            }
+//
+//	            if (!matchedDoctors.isEmpty()) {
+//	                clinic.setDoctors(matchedDoctors);
+//	                result.add(clinic);
+//	            }
+//	        }
+//	    } else {
+//	        log.warn("Feign response unsuccessful or null");
+//	    }
+//
+//	    Response response = new Response();
+//	    response.setSuccess(true);
+//	    response.setData(result);
+//	    response.setMessage("Matched doctors and clinics");
+//	    response.setStatus(HttpStatus.OK.value());
+//
+//	    log.info("Final matched clinics count: {}", result.size());
+//	    return response;
+//	}
 	@Override
 	public Response getRecommendedClinicsAndDoctors(List<String> keyPointsFromUser) {
+		Logger log = LoggerFactory.getLogger(getClass());
+
 		ResponseEntity<Response> responseEntity = adminServiceClient.getHospitalUsingRecommendentaion();
 		Response responseBody = responseEntity.getBody();
 
 		List<ClinicWithDoctorsDTO> result = new ArrayList<>();
+		boolean anyDoctorMatched = false;
 
 		if (responseBody != null && responseBody.isSuccess()) {
 			Object rawData = responseBody.getData();
+			log.info("Raw clinic data from Feign: {}", rawData);
 
 			List<ClinicWithDoctorsDTO> clinics = new ObjectMapper().convertValue(rawData,
 					new TypeReference<List<ClinicWithDoctorsDTO>>() {
 					});
 
+			log.info("Converted clinic list size: {}", clinics.size());
+
 			for (ClinicWithDoctorsDTO clinic : clinics) {
+				log.info("Processing clinic: {} | ID: {}", clinic.getName(), clinic.getHospitalId());
+
+				if (clinic.getHospitalId() == null) {
+					log.warn("Clinic missing hospitalId, skipping...");
+					continue;
+				}
+
+				List<Doctors> doctorEntities = doctorsRepository.findByHospitalId(clinic.getHospitalId());
+				log.info("Doctors found for clinic {}: {}", clinic.getHospitalId(), doctorEntities.size());
+
 				List<DoctorsDTO> matchedDoctors = new ArrayList<>();
 
-				for (DoctorsDTO doctor : clinic.getDoctors()) {
-					if (isDoctorRelevant(doctor, keyPointsFromUser)) {
-						matchedDoctors.add(doctor);
+				for (Doctors doctor : doctorEntities) {
+					DoctorsDTO dto = DoctorMapper.mapDoctorEntityToDoctorDTO(doctor);
+					boolean relevant = isDoctorRelevant(dto, keyPointsFromUser);
+					log.info("Doctor: {} | Relevant: {}", dto.getDoctorName(), relevant);
+
+					if (relevant) {
+						matchedDoctors.add(dto);
+						anyDoctorMatched = true;
 					}
 				}
 
-				if (!matchedDoctors.isEmpty()) {
-					ClinicWithDoctorsDTO matchedClinic = new ClinicWithDoctorsDTO();
-					matchedClinic.setHospitalId(clinic.getHospitalId());
-					matchedClinic.setName(clinic.getName());
-					matchedClinic.setAddress(clinic.getAddress());
-					matchedClinic.setCity(clinic.getCity());
-					matchedClinic.setContactNumber(clinic.getContactNumber());
-					matchedClinic.setHospitalOverallRating(clinic.getHospitalOverallRating());
-					matchedClinic.setHospitalRegistrations(clinic.getHospitalRegistrations());
-					matchedClinic.setOpeningTime(clinic.getOpeningTime());
-					matchedClinic.setClosingTime(clinic.getClosingTime());
-					matchedClinic.setHospitalLogo(clinic.getHospitalLogo());
-					matchedClinic.setEmailAddress(clinic.getEmailAddress());
-					matchedClinic.setWebsite(clinic.getWebsite());
-					matchedClinic.setLicenseNumber(clinic.getLicenseNumber());
-					matchedClinic.setIssuingAuthority(clinic.getIssuingAuthority());
-					matchedClinic.setHospitalDocuments(clinic.getHospitalDocuments());
-					matchedClinic.setContractorDocuments(clinic.getContractorDocuments());
-					matchedClinic.setRecommended(clinic.isRecommended());
-					matchedClinic.setDoctors(matchedDoctors);
+				clinic.setDoctors(matchedDoctors);
+				result.add(clinic);
+			}
 
-					result.add(matchedClinic);
+			// Step 3: If no doctor matched, return all clinics with all doctors
+			if (!anyDoctorMatched) {
+				log.info("No doctor matched. Returning all clinics and doctors.");
+
+				result.clear(); // Reset result
+
+				for (ClinicWithDoctorsDTO clinic : clinics) {
+					if (clinic.getHospitalId() == null)
+						continue;
+
+					List<Doctors> doctorEntities = doctorsRepository.findByHospitalId(clinic.getHospitalId());
+					List<DoctorsDTO> allDoctors = doctorEntities.stream().map(DoctorMapper::mapDoctorEntityToDoctorDTO)
+							.toList();
+
+					clinic.setDoctors(allDoctors);
+					result.add(clinic);
 				}
 			}
+
+		} else {
+			log.warn("Feign response unsuccessful or null");
 		}
-		Response response = new Response();
-		response.setSuccess(true);
-		response.setData(result);
-		response.setMessage("Matched doctors and clinics");
-		response.setStatus(HttpStatus.OK.value());
-		return response;
+
+		return Response.builder().success(true).status(HttpStatus.OK.value()).data(result)
+				.message("Matched clinics and doctors").build();
 	}
 
 	private boolean isDoctorRelevant(DoctorsDTO doctor, List<String> keyPoints) {
+		Logger logger = LoggerFactory.getLogger(getClass());
+		if (keyPoints == null || keyPoints.isEmpty())
+			return false;
+
 		for (String key : keyPoints) {
 			String lowerKey = key.toLowerCase();
 
-			// 1. Priority: SubService matching
+			// SubServices
 			if (doctor.getSubServices() != null) {
-				for (DoctorSubServiceDTO subService : doctor.getSubServices()) {
-					if (subService != null && subService.getSubServiceName() != null
-							&& subService.getSubServiceName().toLowerCase().contains(lowerKey)) {
+				for (DoctorSubServiceDTO sub : doctor.getSubServices()) {
+					if (sub != null && sub.getSubServiceName() != null
+							&& sub.getSubServiceName().toLowerCase().contains(lowerKey)) {
+						logger.debug("Matched subService: {} with keyword: {}", sub.getSubServiceName(), key);
 						return true;
 					}
 				}
 			}
 
-			// 2. Second Priority: Service name
+			// Services
 			if (doctor.getService() != null) {
 				for (DoctorServicesDTO service : doctor.getService()) {
 					if (service != null && service.getServiceName() != null
 							&& service.getServiceName().toLowerCase().contains(lowerKey)) {
+						logger.debug("Matched service: {} with keyword: {}", service.getServiceName(), key);
 						return true;
 					}
 				}
 			}
 
-			// 3. Third Priority: Category name
-			if (doctor.getCategory() != null)
+			// Category
+			if (doctor.getCategory() != null) {
 				for (DoctorCategoryDTO category : doctor.getCategory()) {
 					if (category != null && category.getCategoryName() != null
 							&& category.getCategoryName().toLowerCase().contains(lowerKey)) {
+						logger.debug("Matched category: {} with keyword: {}", category.getCategoryName(), key);
 						return true;
 					}
 				}
+			}
+
+			// Specialization
+			if (doctor.getSpecialization() != null && doctor.getSpecialization().toLowerCase().contains(lowerKey)) {
+				logger.debug("Matched specialization: {} with keyword: {}", doctor.getSpecialization(), key);
+				return true;
+			}
 		}
+
 		return true;
 	}
 

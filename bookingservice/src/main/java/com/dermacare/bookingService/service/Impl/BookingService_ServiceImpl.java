@@ -2,27 +2,37 @@ package com.dermacare.bookingService.service.Impl;
 
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
-import org.springframework.beans.BeanUtils;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
 import com.dermacare.bookingService.dto.BookingRequset;
 import com.dermacare.bookingService.dto.BookingResponse;
+import com.dermacare.bookingService.dto.NotificationDTO;
 import com.dermacare.bookingService.entity.Booking;
 import com.dermacare.bookingService.entity.ReportsList;
+import com.dermacare.bookingService.feign.NotificationFeign;
 import com.dermacare.bookingService.producer.KafkaProducer;
 import com.dermacare.bookingService.repository.BookingServiceRepository;
 import com.dermacare.bookingService.service.BookingService_Service;
+import com.dermacare.bookingService.util.Response;
 import com.dermacare.bookingService.util.ResponseStructure;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,6 +46,9 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	
 	@Autowired
 	private KafkaProducer kafkaProducer;
+	
+	@Autowired
+	private NotificationFeign notificationFeign;
 
 	@Override
 	public BookingResponse addService(BookingRequset request) {
@@ -57,7 +70,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		Booking entity = new ObjectMapper().convertValue(request,Booking.class );
 		//entity.setMobileNumber(Long.parseLong(request.getMobileNumber()));
 		ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
-	    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
+	    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy hh:mm a");
 	    String formattedTime = istTime.format(formatter);
 		entity.setBookedAt(formattedTime);
 		if(request.getConsultationType().equalsIgnoreCase("video consultation") || request.getConsultationType().equalsIgnoreCase("online consultation") ) {
@@ -65,6 +78,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		}else {
 			entity.setChannelId(null) ;
 		}
+		if(request.getRelation() != null) {
 		List<Booking> existingBooking = repository.findByRelationIgnoreCaseAndMobileNumber(request.getRelation(),request.getMobileNumber());
 		if(existingBooking != null && !existingBooking.isEmpty()) {
 		for(Booking b : existingBooking) {
@@ -73,7 +87,10 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		}}}
 		else {
 			entity.setPatientId(generatePatientId());}
-		return entity;
+		}else{
+			entity.setPatientId(generatePatientId());	
+		}
+		return entity;		
 	}
 	
 	
@@ -86,8 +103,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	
 	  private static String generatePatientId() {	       
 	        String uuid = UUID.randomUUID().toString();
-	        String randomPart = uuid.replaceAll("-", "").substring(0, 8).toUpperCase();
-	        return "PA" + randomPart;
+	        String randomPart = uuid.replaceAll("-", "").substring(0, 6).toUpperCase();
+	        return "PT_" + randomPart;
 	    }
 	
 	
@@ -112,8 +129,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			res.setData(respnse);
 			res.setMessage("Appointments Are Found");
 			return ResponseEntity.status(200).body(res); 
-			}
-			else{
+			}else{
 				res.setStatusCode(200);
 				res.setMessage("Appointments Are Not Found");
 				return ResponseEntity.status(200).body(res);}
@@ -136,13 +152,11 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			res.setData(respnse);
 			res.setMessage("Appointments Are Found");
 			return ResponseEntity.status(200).body(res); 
-			}
-			else {
+			}else {
 				res.setStatusCode(200);
 				res.setMessage("Appointments Are Not Found");
 				return ResponseEntity.status(200).body(res);
-			}
-		}catch(Exception e) {
+			}}catch(Exception e) {
 			res.setStatusCode(500);
 			res.setMessage(e.getMessage());
 			return ResponseEntity.status(500).body(res);
@@ -159,14 +173,16 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			for(Booking b : existingBooking) {
 			DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 			String currentDate = LocalDate.now().format(dateFormatter);	
-			if(b.getServiceDate().equals(currentDate)) {
+			if(b.getServiceDate().equals(currentDate) && !b.getStatus().equalsIgnoreCase("Completed") && !b.getStatus().equalsIgnoreCase("Pending")){
 			respnse.add(toResponse(b));}}
 			if(respnse != null && !respnse.isEmpty()){
 			res.setStatusCode(200);
+			res.setHttpStatus(HttpStatus.OK);
 			res.setData(respnse);
 			res.setMessage("Appointments Are Found");}
 			else {
 				res.setStatusCode(200);
+				res.setHttpStatus(HttpStatus.OK);
 				res.setData(respnse);
 				res.setMessage("Appointments With Today Date Are Not Found");}
 			}else {
@@ -238,7 +254,11 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 				        res.setStatusCode(200);
 				        res.setData(resnse);
 				        res.setMessage("Appointments Are Not Found");}
-			}}}catch(Exception e) {
+			     }}else{
+				    res.setStatusCode(200);
+			        res.setData(resnse);
+			        res.setMessage("Appointments Are Not Found");}
+				}catch(Exception e) {
 			      resnse = null;
 			      res.setStatusCode(500);
 			      res.setData(resnse);
@@ -412,7 +432,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		if (bookingResponse.getReasonForCancel() != null) entity.setReasonForCancel(bookingResponse.getReasonForCancel());
 		if (bookingResponse.getTotalFee() != 0) entity.setTotalFee(bookingResponse.getTotalFee());
 		Booking e = repository.save(entity);			
-		if(e != null) {	
+		if(e != null){	
 		return new ResponseEntity<>(ResponseStructure.buildResponse(e,
 				"Booking updated sucessfully",HttpStatus.OK, HttpStatus.OK.value()),
 				HttpStatus.OK);			
@@ -425,4 +445,134 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 					e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.value()),
 					HttpStatus.INTERNAL_SERVER_ERROR);
 		}}
+	
+
+	
+	@Scheduled(cron = "0 01 0 * * ?")
+	private void changingStatusFromConfirmedToCompleted() {
+		try {
+			List<Booking> bookings = repository.findAll();
+			for(Booking b : bookings ) {
+				if(b.getStatus().equalsIgnoreCase("Confirmed")){
+				
+					ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
+				    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+				    String currentTime = istTime.format(formatter);
+				    System.out.println(currentTime);
+				    DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+			        LocalDateTime bDate = LocalDateTime.parse(b.getBookedAt(), format);
+				    System.out.println(bDate);
+			        DateTimeFormatter frmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+			        LocalDateTime todayDate = LocalDateTime.parse(currentTime, frmt);
+				    System.out.println(todayDate);  
+				    Long gap = ChronoUnit.DAYS.between(bDate,todayDate);
+				    System.out.println(gap);
+				    if(gap > Character.getNumericValue(b.getConsultationExpiration().charAt(0))) {				    	
+				    	b.setStatus("Completed");
+				    	repository.save(b);
+				    	NotificationDTO n =	notificationFeign.getNotificationByBookingId(b.getBookingId());
+				    	n.getData().setStatus("Completed");
+				    	notificationFeign.updateNotification(n);
+				    	System.out.println("done");
+				    }
+				}
+			}
+		}catch(Exception e) {}
+	}
+	
+	
+	
+	public ResponseEntity<?> getCompletedAppointsOfPatientId(String patientId) {
+		ResponseStructure<Map<String,Object>> res = new ResponseStructure<Map<String,Object>>();
+		List<Booking> cmpltedApnts = new ArrayList<>();  
+		    try {
+			List<Booking> existingBooking = repository.findByPatientId(patientId);
+			if(existingBooking != null && !existingBooking.isEmpty()){
+			for(Booking b:existingBooking) {
+				if(b.getStatus().equalsIgnoreCase("Completed")) {
+			cmpltedApnts.add(b);}}
+			Map<String,Object> map = new LinkedHashMap<>();
+			map.put("Completed Patient Appointments", cmpltedApnts.size());
+			res.setData(map);
+			res.setStatusCode(200);
+			res.setHttpStatus(HttpStatus.OK);
+			res.setMessage("Appointments Are Found");
+			return ResponseEntity.status(200).body(res);
+			}else{
+				res.setStatusCode(200);
+				res.setHttpStatus(HttpStatus.OK);
+				res.setMessage("Appointments Are Not Found");
+				return ResponseEntity.status(200).body(res);}
+		    }catch(Exception e) {
+			res.setStatusCode(500);
+			res.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+			res.setMessage(e.getMessage());
+			return ResponseEntity.status(500).body(res);
+		}
+	}
+	
+	
+	//---------------------------to get patientdetails by bookingId,pateintId,mobileNumber---------------------------
+		@Override
+		public Response getPatientDetailsForConsetForm(String bookingId, String patientId, String mobileNumber) {
+		    try {
+			Optional<Booking> optionalBooking = repository.findByBookingIdAndPatientIdAndMobileNumber(bookingId, patientId, mobileNumber);
+		    if (optionalBooking.isPresent()) {
+		        Booking booking = optionalBooking.get();
+		        if(booking.getStatus().equalsIgnoreCase("Confirmed") || booking.getStatus().equalsIgnoreCase("Completed")){
+		        BookingResponse response = new ObjectMapper().convertValue(booking, BookingResponse.class);
+		        return Response.builder()
+		                .success(true)
+		                .status(200)
+		                .message("Booking details fetched successfully.")
+		                .data(response)
+		                .build();
+		    }else{
+		    	 return Response.builder()
+			                .success(false)
+			                .status(404)
+			                .message("No booking found with the given details.")
+			                .build();	
+		    }}else {
+		        return Response.builder()
+		                .success(false)
+		                .status(404)
+		                .message("No booking found with the given details.")
+		                .build();}
+		}catch(Exception e) {
+			return Response.builder()
+	                .success(false)
+	                .status(500)
+	                .message(e.getMessage())
+	                .build();	
+	}
+}	    
+		    
+		    public ResponseEntity<?> getPatientFollowUpVisitsCountByAppointmentId(String appointmentId){
+				ResponseStructure<Map<String,Object>> res = new ResponseStructure<Map<String,Object>>();  
+				    try {
+					Optional<Booking> existingBooking = repository.findByBookingId(appointmentId);
+					if(existingBooking.isPresent()){
+					if(existingBooking.get().getStatus().equalsIgnoreCase("Confirmed")||existingBooking.get().getStatus().equalsIgnoreCase("Completed")) {
+					Map<String,Object> map = new LinkedHashMap<>();
+					map.put("Patient Follow Up Visited Appointments", existingBooking.get().getClinicVisitCount());
+					res.setData(map);
+					res.setStatusCode(200);
+					res.setHttpStatus(HttpStatus.OK);
+					res.setMessage("Appointments Are Found");
+					}else{
+						res.setStatusCode(200);
+						res.setHttpStatus(HttpStatus.OK);
+						res.setMessage("Appointments Are Not Found With Status Confirmed Or Completed");}
+					}else {
+						res.setStatusCode(200);
+						res.setHttpStatus(HttpStatus.OK);
+						res.setMessage("Appointments Are Not Found");}
+					}catch(Exception e) {
+					res.setStatusCode(500);
+					res.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+					res.setMessage(e.getMessage());
+				}
+				    return ResponseEntity.status(res.getStatusCode()).body(res);
+			}
 }

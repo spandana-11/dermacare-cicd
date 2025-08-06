@@ -8,11 +8,13 @@ import java.util.stream.Collectors;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.clinicadmin.dto.ProbableDiagnosisDTO;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.entity.ProbableDiagnosis;
+import com.clinicadmin.feignclient.AdminServiceClient;
 import com.clinicadmin.repository.ProbableDiagnosisRepository;
 import com.clinicadmin.service.ProbableDiagnosisService;
 
@@ -20,23 +22,42 @@ import com.clinicadmin.service.ProbableDiagnosisService;
 public class ProbableDiagnosisServiceImpl implements ProbableDiagnosisService {
 	@Autowired
 	ProbableDiagnosisRepository probableDiagnosisRepository;
+	
+	@Autowired
+	AdminServiceClient adminServiceClient;
 //-----------------------------------------------------Adding Diseases-------------------------------------------------
 	@Override
 	public Response addDisease(ProbableDiagnosisDTO dto) {
-		ProbableDiagnosis ds = new ProbableDiagnosis();
-		ds.setDisease(dto.getDisease());
-		ds.setHospitalId(dto.getHospitalId());
-		ProbableDiagnosis savedDs = probableDiagnosisRepository.save(ds);
-		ProbableDiagnosisDTO resDto = new ProbableDiagnosisDTO();
-		resDto.setId(savedDs.getId().toString());
-		resDto.setDisease(savedDs.getDisease());
-		resDto.setHospitalId(savedDs.getHospitalId());
-		Response response = new Response();
-		response.setSuccess(true);
-		response.setData(resDto);
-		response.setMessage("Disease added successfully");
-		response.setStatus(HttpStatus.OK.value());
-		return response;
+	    Response response = new Response();
+
+	    // Check if hospital exists via admin service
+	    ResponseEntity<Response> clinicResponseEntity = adminServiceClient.getClinicById(dto.getHospitalId());
+	    Response clinicResponse = clinicResponseEntity.getBody();
+
+	    // Validate the clinic response
+	    if (clinicResponse == null || !clinicResponse.isSuccess() || clinicResponse.getData() == null) {
+	        response.setSuccess(false);
+	        response.setMessage("Hospital with ID " + dto.getHospitalId() + " does not exist.");
+	        response.setStatus(HttpStatus.NOT_FOUND.value());
+	        return response;
+	    }
+
+	    // Proceed to save disease
+	    ProbableDiagnosis ds = new ProbableDiagnosis();
+	    ds.setDisease(dto.getDisease());
+	    ds.setHospitalId(dto.getHospitalId());
+	    ProbableDiagnosis savedDs = probableDiagnosisRepository.save(ds);
+
+	    ProbableDiagnosisDTO resDto = new ProbableDiagnosisDTO();
+	    resDto.setId(savedDs.getId().toString());
+	    resDto.setDisease(savedDs.getDisease());
+	    resDto.setHospitalId(savedDs.getHospitalId());
+
+	    response.setSuccess(true);
+	    response.setData(resDto);
+	    response.setMessage("Disease added successfully");
+	    response.setStatus(HttpStatus.OK.value());
+	    return response;
 	}
 
 //----------------------------------------------------Get all Diseases-------------------------------------------------

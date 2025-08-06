@@ -41,6 +41,7 @@ public class BookingResponse {
 	private String servicetime;
 	private String consultationType;
 	private double consultationFee;
+	private String consultationExpiration;
 	private String channelId;
 	private String reasonForCancel;
 	private String notes;

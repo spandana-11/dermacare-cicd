@@ -1,19 +1,14 @@
 package com.AdminService.controller;
-
-
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import com.AdminService.dto.CategoryMediaCarouselDTO;
 import com.AdminService.service.CategoryMediaCarouselServiceImpl;
-
-
 @RestController
 @RequestMapping("/admin")
-//Origin(origins = {"http://localhost:3000", "http://localhost:3001"})
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class CategoryMediaCarouselController {
 
     @Autowired
@@ -41,11 +36,11 @@ public class CategoryMediaCarouselController {
     @GetMapping("/categoryAdvertisement/getById/{carouselId}")
     public ResponseEntity<CategoryMediaCarouselDTO> getMediaById(@PathVariable String carouselId) {
         Optional<CategoryMediaCarouselDTO> mediaDTO = mediaService.getMediaById(carouselId);
-        
         return mediaDTO.map(media -> ResponseEntity.ok().body(media)) // if found
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new CategoryMediaCarouselDTO("", "Media not found"))); // if not found
     }
+    
 
     // Update media by ID
     @PutMapping("/categoryAdvertisement/updateById/{carouselId}")
@@ -56,6 +51,7 @@ public class CategoryMediaCarouselController {
     }
 
     // Delete media by ID
+    
     @DeleteMapping("/categoryAdvertisement/deleteByCarouselId/{carouselId}")
     public ResponseEntity<String> deleteMedia(@PathVariable String carouselId) {
         String result = mediaService.deleteMedia(carouselId);

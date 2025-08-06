@@ -144,26 +144,26 @@ const CategoryAdvertisement = () => {
                     <CTableRow key={index}>
                       <CTableDataCell>{item.carouselId}</CTableDataCell>
                       <CTableDataCell>
-                        {item.mediaUrlOrImage ? (
-                          item.mediaUrlOrImage.startsWith('data:video') ? (
-                            <video
-                              src={item.mediaUrlOrImage}
-                              height={50}
-                              controls
-                              style={{ objectFit: 'cover' }}
-                            />
-                          ) : (
-                            <img
-                              src={item.mediaUrlOrImage}
-                              alt="Ad"
-                              height={50}
-                              style={{ objectFit: 'cover' }}
-                            />
-                          )
-                        ) : (
-                          <span className="text-muted">No Media</span>
-                        )}
-                      </CTableDataCell>
+  {item.mediaUrlOrImage ? (
+    item.mediaUrlOrImage.includes('/videos/') ? (
+      <video
+        src={item.mediaUrlOrImage}
+        height={50}
+        controls
+        style={{ objectFit: 'cover' }}
+      />
+    ) : (
+      <img
+        src={item.mediaUrlOrImage}
+        alt="Ad"
+        height={50}
+        style={{ objectFit: 'cover' }}
+      />
+    )
+  ) : (
+    <span className="text-muted">No Media</span>
+  )}
+</CTableDataCell>
 
                       <CTableDataCell>
                         <CButton

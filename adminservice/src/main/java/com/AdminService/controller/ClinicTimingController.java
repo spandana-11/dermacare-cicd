@@ -1,20 +1,17 @@
 package com.AdminService.controller;
-
 import java.util.List;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import com.AdminService.dto.ClinicTimingDTO;
 import com.AdminService.dto.ResponseDTO;
 import com.AdminService.service.ClinicTimingService;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/admin")
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 @RequiredArgsConstructor
 public class ClinicTimingController {
 

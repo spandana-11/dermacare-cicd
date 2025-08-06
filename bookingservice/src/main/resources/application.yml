@@ -12,7 +12,7 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
-    bootstrap-servers: kafka:9092
+    bootstrap-servers: localhost:9092
 
 server:
   port: 9900
@@ -24,7 +24,7 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: http://eureka-server:8761/eureka/
+      defaultZone: http://euraka-server:8761/eureka/
   instance:
     prefer-ip-address: true
 

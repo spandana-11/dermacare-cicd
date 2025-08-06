@@ -37,7 +37,7 @@ public interface CssFeign {
 	
     @DeleteMapping("/api/v1/category/deleteCategory/{categoryId}")
     @CircuitBreaker(name = "circuitBreaker", fallbackMethod = "deleteCategoryFallBack")
-    public ResponseEntity<ResponseStructure<String>> deleteCategory(@PathVariable ObjectId categoryId);  // Use string for compatibility
+    public ResponseEntity<ResponseStructure<String>> deleteCategory(@PathVariable("categoryId") ObjectId categoryId);  // Use string for compatibility
 	
     @PutMapping("/api/v1/category/updateCategory/{categoryId}")
     @CircuitBreaker(name = "circuitBreaker", fallbackMethod = "updateCategoryFallBack")
@@ -54,19 +54,19 @@ public interface CssFeign {
 	
 	@GetMapping("/api/v1/services/getServices/{categoryId}")
 	 @CircuitBreaker(name = "circuitBreaker", fallbackMethod = "getServiceByIdFallBack")
-	public ResponseEntity<ResponseStructure<List<ServicesDto>>> getServiceById(@PathVariable String categoryId);
+	public ResponseEntity<ResponseStructure<List<ServicesDto>>> getServiceById(@PathVariable("categoryId") String categoryId);
 
 	@GetMapping("/api/v1/services/getService/{serviceId}")
 	 @CircuitBreaker(name = "circuitBreaker", fallbackMethod = "getServiceByServiceIdFallBack")
-	public ResponseEntity<ResponseStructure<ServicesDto>> getServiceByServiceId(@PathVariable String serviceId);
+	public ResponseEntity<ResponseStructure<ServicesDto>> getServiceByServiceId(@PathVariable("serviceId") String serviceId);
 	
 	@DeleteMapping("/api/v1/services/deleteService/{serviceId}")
 	@CircuitBreaker(name = "circuitBreaker", fallbackMethod = "deleteServiceFallBack")
-	public ResponseEntity<ResponseStructure<String>> deleteService(@PathVariable String serviceId);	
+	public ResponseEntity<ResponseStructure<String>> deleteService(@PathVariable("serviceId") String serviceId);	
 
 	@PutMapping("/api/v1/services/updateService/{serviceId}")
 	 @CircuitBreaker(name = "circuitBreaker", fallbackMethod = "updateByServiceIdFallBack")
-	public ResponseEntity<ResponseStructure<ServicesDto>> updateByServiceId(@PathVariable String serviceId,
+	public ResponseEntity<ResponseStructure<ServicesDto>> updateByServiceId(@PathVariable("serviceId") String serviceId,
 			@RequestBody ServicesDto domainServices);
 	
 	@GetMapping("/api/v1/services/getAllServices")
@@ -82,15 +82,15 @@ public interface CssFeign {
 	
 	@GetMapping("/api/v1/SubServicesInfo/getSubServiceByIdCategory/{categoryId}")
 	 @CircuitBreaker(name = "circuitBreaker", fallbackMethod = "getSubServiceByIdCategoryFallBack")
-	public ResponseEntity<Response> getSubServiceByIdCategory(@PathVariable String categoryId);
+	public ResponseEntity<Response> getSubServiceByIdCategory(@PathVariable("categoryId") String categoryId);
 	
 	@GetMapping("/api/v1/SubServicesInfo/getSubServicesByServiceId/{serviceId}")
 	 @CircuitBreaker(name = "circuitBreaker", fallbackMethod = "getSubServicesByServiceIdFallBack")
-	public ResponseEntity<Response> getSubServicesByServiceId(@PathVariable String serviceId);
+	public ResponseEntity<Response> getSubServicesByServiceId(@PathVariable("serviceId") String serviceId);
 	
 	@GetMapping("/api/v1/SubServicesInfo/getSubServiceBySubServiceId/{subServiceId}")
 	 @CircuitBreaker(name = "circuitBreaker", fallbackMethod = "getSubServiceBySubServiceIdFallBack")
-	public ResponseEntity<Response> getSubServiceBySubServiceId(@PathVariable String subServiceId);
+	public ResponseEntity<Response> getSubServiceBySubServiceId(@PathVariable("subServiceId") String subServiceId);
 	
 	@GetMapping("/api/v1/SubServicesInfo/getAllSubServices")
 	 @CircuitBreaker(name = "circuitBreaker", fallbackMethod = "getAllSubServicesFallBack")
@@ -98,12 +98,12 @@ public interface CssFeign {
 	
 	@PutMapping("/api/v1/SubServicesInfo/updateBySubServiceId/{subServiceId}")
 	 @CircuitBreaker(name = "circuitBreaker", fallbackMethod = "updateBySubServiceIdFallBack")
-	public ResponseEntity<Response> updateBySubServiceId(@PathVariable String subServiceId,
+	public ResponseEntity<Response> updateBySubServiceId(@PathVariable("subServiceId") String subServiceId,
 			@RequestBody SubServicesInfoDto domainServices);
 	
 	@DeleteMapping("/api/v1/SubServicesInfo/deleteSubService/{subServiceId}")
 	 @CircuitBreaker(name = "circuitBreaker", fallbackMethod = " deleteSubServiceFallBack")
-	public ResponseEntity<Response> deleteSubService(@PathVariable String subServiceId);
+	public ResponseEntity<Response> deleteSubService(@PathVariable("subServiceId") String subServiceId);
 	
 	
 	

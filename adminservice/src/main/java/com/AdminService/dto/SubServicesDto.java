@@ -18,7 +18,7 @@ public class SubServicesDto {
 
 	private String subServiceName;
 
-	private String serviceId;
+	private String serviceID;
 
 	private String serviceName;
 

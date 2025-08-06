@@ -106,6 +106,8 @@ public class DoctorsDTO {
 	
 	private double doctorAverageRating;
 	
+	private String doctorSignature;
+	
 	
     public void trimAllDoctorFields() {
         id = trim(id);

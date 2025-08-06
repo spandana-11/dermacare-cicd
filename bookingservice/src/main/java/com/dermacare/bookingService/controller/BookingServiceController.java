@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.dermacare.bookingService.dto.BookingRequset;
 import com.dermacare.bookingService.dto.BookingResponse;
 import com.dermacare.bookingService.service.BookingService_Service;
+import com.dermacare.bookingService.util.Response;
 import com.dermacare.bookingService.util.ResponseStructure;
 
 @RestController
@@ -179,5 +180,24 @@ public class BookingServiceController {
 	
 	}
 	
+	@GetMapping("/getCompletedAppointmentByPatientId/{patientId}")
+	public ResponseEntity<?> getCompletedAppointmentByPatientId(@PathVariable String patientId){
+		return service.getCompletedAppointsOfPatientId(patientId);
+	
+	}
+	
+	//---------------------------to get patientdetails by bookingId,pateintId,mobileNumber---------------------------
+		@GetMapping("getPatientDetailsForConsetForm/{bookingId}/{patientId}/{mobileNumber}")
+		public ResponseEntity<Response>getPatientDetailsForConsentFor(@PathVariable String bookingId,@PathVariable String patientId,@PathVariable String mobileNumber){
+			Response response =service.getPatientDetailsForConsetForm(bookingId, patientId, mobileNumber);
+			return  ResponseEntity.status(response.getStatus()).body(response);
+		}
+	
+		
+		@GetMapping("/getPatientFollowUpVisitsCountByAppointmentId/{bookingId}")
+		public ResponseEntity<?>getPatientFollowUpVisitsCountByAppointmentId(@PathVariable String bookingId){
+			return service.getPatientFollowUpVisitsCountByAppointmentId(bookingId);
+		}
+		
 
 }

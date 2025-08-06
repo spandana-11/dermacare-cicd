@@ -30,7 +30,7 @@ public class DoctorSlot {
 
     private List<DoctorAvailableSlotDTO> availableSlots;
 
-    @JsonFormat(pattern = "dd-MM-yyyy")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     @Indexed(name = "slotExpiryIndex", expireAfter = "30d") // Correct usage
     private LocalDateTime createdAt = LocalDateTime.now();
 

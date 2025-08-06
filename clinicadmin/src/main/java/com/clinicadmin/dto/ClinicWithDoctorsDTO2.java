@@ -20,7 +20,7 @@ public class ClinicWithDoctorsDTO2 {
 	private String city;
 	private String contactNumber;
 	private double hospitalOverallRating;
-	private String hospitalRegistrations;
+//	private String hospitalRegistrations;
 	private String openingTime;
 	private String closingTime;
 	private String hospitalLogo;

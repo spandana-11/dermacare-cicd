@@ -14,7 +14,7 @@ public interface DoctorService {
 //	Response changePassword(ChangeDoctorPasswordDTO updateDTO);
 	Response changePassword(String username, ChangeDoctorPasswordDTO updateDTO);
 	Response updateDoctorAvailability(String doctorId ,DoctorAvailabilityStatusDTO availabilityDTO);
-	
+
 	public ResponseEntity<?> getAllDoctors();
 	public ResponseEntity<?> getDoctorById(String id);
 	public ResponseEntity<?> getDoctorByClinicAndDoctorId(String clinicId,
@@ -22,4 +22,5 @@ public interface DoctorService {
 	public ResponseEntity<?> getDoctorsByHospitalById(String clinicId);
 	public ResponseEntity<?> getDoctorsBySubServiceId(String hsptlId,String subServiceId);
 	public ResponseEntity<?> getAllDoctorsBySubServiceId(String subServiceId);
+
 }

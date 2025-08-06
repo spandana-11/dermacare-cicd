@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.clinicadmin.dto.BookingResponse;
+import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.ResponseStructure;
 
 @FeignClient(value = "bookingservice")
@@ -18,6 +19,10 @@ public interface BookingFeign {
 	
 	@PutMapping("/api/v1/updateAppointment")
 	public ResponseEntity<?> updateAppointment(@RequestBody BookingResponse bookingResponse );
+	
+	//---------------------------to get patientdetails by bookingId,pateintId,mobileNumber---------------------------
+	@GetMapping("/api/v1/getPatientDetailsForConsetForm/{bookingId}/{patientId}/{mobileNumber}")
+	public ResponseEntity<Response> getPatientDetailsForConsentForm(@PathVariable String bookingId,@PathVariable String patientId,@PathVariable String mobileNumber);
 	
 
 }

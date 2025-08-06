@@ -36,7 +36,9 @@ const ClinicDetails = () => {
   const navigate = useNavigate()
   const [formErrors, setFormErrors] = useState({})
   const [clinicData, setClinicData] = useState(null)
-  const [editableClinicData, setEditableClinicData] = useState({})
+  const [editableClinicData, setEditableClinicData] = useState({
+    consultationExpiration: '',
+  })
   const [isEditing, setIsEditing] = useState(false)
   const [activeTab, setActiveTab] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -45,6 +47,7 @@ const ClinicDetails = () => {
   const [showDoctorModal, setShowDoctorModal] = useState(false)
   const [allDoctors, setAllDoctors] = useState([])
   const [isEditingAdditional, setIsEditingAdditional] = useState(false)
+
   const tabList = ['Basic Details', 'Additional Details', 'Doctors', 'Appointments']
   const documentFields = [
     ['Drug License Certificate', 'drugLicenseCertificate'],
@@ -80,6 +83,12 @@ const ClinicDetails = () => {
     if (!editableClinicData.closingTime) {
       errors.closingTime = 'Closing time is required'
     }
+    if (!editableClinicData.subscription) {
+      errors.subscription = 'subscription is required'
+    }
+    if (!editableClinicData.consultationExpiration) {
+      errors.consultationExpiration = 'Consultation Expiration is required'
+    }
 
     setFormErrors(errors)
     return Object.keys(errors).length === 0
@@ -103,9 +112,14 @@ const ClinicDetails = () => {
     setLoading(true)
     try {
       const response = await axios.get(`${BASE_URL}/admin/getClinicById/${hospitalId}`)
-      console.log('Clinic Response:', response.data)
-      setClinicData(response.data.data)
-      setEditableClinicData(response.data.data)
+      const fetchedData = response.data.data
+      const localExpiration = localStorage.getItem(`clinic-${hospitalId}-consultation-expiration`)
+      if (localExpiration) {
+        fetchedData.consultationExpiration = localExpiration
+      }
+
+      setClinicData(fetchedData)
+      setEditableClinicData(fetchedData)
     } catch (error) {
       console.error('Error fetching clinic details:', error)
     }
@@ -498,74 +512,69 @@ const ClinicDetails = () => {
                   </CRow>
                   <CRow>
                     <CCol md={6} className="mt-3">
-                      <CFormLabel>Hospital Documents</CFormLabel>
-
-                      {Array.isArray(editableClinicData.hospitalDocuments) &&
-                      editableClinicData.hospitalDocuments.length > 0 ? (
-                        editableClinicData.hospitalDocuments.map((base64Data, index) => {
-                          const prefix = base64Data.substring(0, 20)
-
-                          let mime = 'application/octet-stream'
-                          let ext = 'bin'
-                          let isPreviewable = false
-
-                          if (prefix.startsWith('JVBERi0')) {
-                            mime = 'application/pdf'
-                            ext = 'pdf'
-                            isPreviewable = true
-                          } else if (prefix.startsWith('UEsDB')) {
-                            mime =
-                              'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-                            ext = 'docx' // choose docx as default for Office ZIP
+                      <CFormLabel>Consultation Expiration (in days)</CFormLabel>
+                      <CFormInput
+                        type="number"
+                        min={1}
+                        placeholder="Enter number of days"
+                        value={editableClinicData.consultationExpiration || ''}
+                        disabled={!isEditingAdditional}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          const isValid = /^\d+$/.test(value)
+                          if (!isValid) {
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              consultationExpiration: 'Only positive numbers allowed',
+                            }))
+                          } else {
+                            setFormErrors((prev) => ({ ...prev, consultationExpiration: '' }))
                           }
-
-                          const fileName = `${editableClinicData.name}_Doc_${index + 1}.${ext}`
-                          const fileDataUrl = `data:${mime};base64,${base64Data}`
-
-                          return (
-                            <div key={index} className="mb-3 border rounded p-2 bg-light">
-                              <div className="d-flex justify-content-between align-items-center">
-                                <span className="text-muted">{fileName}</span>
-                                <div className="d-flex gap-2">
-                                  {isPreviewable && (
-                                    <CButton
-                                      size="sm"
-                                      color="info"
-                                      variant="outline"
-                                      // onClick={() => window.open(fileDataUrl, '_blank')}
-                                      onClick={() => openPdfPreview(base64Data)}
-                                    >
-                                      Preview
-                                    </CButton>
-                                  )}
-                                  <CButton
-                                    size="sm"
-                                    color="primary"
-                                    variant="outline"
-                                    onClick={() => downloadBase64File(fileDataUrl, fileName)}
-                                  >
-                                    Download
-                                  </CButton>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        })
-                      ) : (
-                        <div className="text-muted">No documents available.</div>
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            consultationExpiration: value,
+                          }))
+                        }}
+                      />
+                      {formErrors.consultationExpiration && (
+                        <div className="text-danger">{formErrors.consultationExpiration}</div>
                       )}
                     </CCol>
-                    <CCol md={6} className="mt-3">
-                      <CFormLabel>Hospital Contract Documents</CFormLabel>
+                    <CCol md={6}>
+                      <CFormLabel>
+                        Subscription<span className="text-danger">*</span>
+                      </CFormLabel>
+                      <CFormSelect
+                        value={editableClinicData.subscription || ''}
+                        disabled={!isEditingAdditional}
+                        onChange={(e) => {
+                          setEditableClinicData({
+                            ...editableClinicData,
+                            subscription: e.target.value,
+                          })
+                          setFormErrors((prev) => ({ ...prev, subscription: '' }))
+                        }}
+                      >
+                        <option value="">Select Subscription</option>
+                        <option value="Basic">Basic</option>
+                        <option value="Standard">Standard</option>
+                        <option value="Premium">Premium</option>
+                      </CFormSelect>
 
-                      {Array.isArray(editableClinicData.contractorDocuments) &&
-                      editableClinicData.contractorDocuments.length > 0 ? (
-                        editableClinicData.contractorDocuments.map((base64Data, index) => {
+                      {formErrors.subscription && (
+                        <div className="text-danger">{formErrors.subscription}</div>
+                      )}
+                    </CCol>
+                  </CRow>
+
+                  <CRow>
+                    <CCol md={6} className="mt-3">
+                     <CFormLabel>Hospital Documents</CFormLabel>
+
+                      {editableClinicData.hospitalDocuments ? (
+                        (() => {
+                          const base64Data = editableClinicData.hospitalDocuments
                           const prefix = base64Data.substring(0, 20)
-                          console.log(
-                            '🔍 Contract Documents:',
-                            editableClinicData.contractorDocuments,
-                          )
 
                           let mime = 'application/octet-stream'
                           let ext = 'bin'
@@ -578,14 +587,14 @@ const ClinicDetails = () => {
                           } else if (prefix.startsWith('UEsDB')) {
                             mime =
                               'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-                            ext = 'docx' // choose docx as default for Office ZIP
+                            ext = 'docx'
                           }
 
-                          const fileName = `${editableClinicData.name}_Contract_Doc_${index + 1}.${ext}`
+                          const fileName = `${editableClinicData.name || 'Clinic'}_hospitalDocuments.${ext}`
                           const fileDataUrl = `data:${mime};base64,${base64Data}`
 
                           return (
-                            <div key={index} className="mb-3 border rounded p-2 bg-light">
+                            <div className="mb-3 border rounded p-2 bg-light">
                               <div className="d-flex justify-content-between align-items-center">
                                 <span className="text-muted">{fileName}</span>
                                 <div className="d-flex gap-2">
@@ -594,7 +603,6 @@ const ClinicDetails = () => {
                                       size="sm"
                                       color="info"
                                       variant="outline"
-                                      // onClick={() => window.open(fileDataUrl, '_blank')}
                                       onClick={() => openPdfPreview(base64Data)}
                                     >
                                       Preview
@@ -612,9 +620,67 @@ const ClinicDetails = () => {
                               </div>
                             </div>
                           )
-                        })
+                        })()
                       ) : (
-                        <div className="text-muted">No documents available.</div>
+                        <div className="text-muted">No hospital Documents available.</div>
+                      )}
+                    </CCol>
+                 
+                     <CCol md={6} className="mt-3">
+                     <CFormLabel>Hospital Contract Documents</CFormLabel>
+
+                      {editableClinicData.contractorDocuments ? (
+                        (() => {
+                          const base64Data = editableClinicData.contractorDocuments
+                          const prefix = base64Data.substring(0, 20)
+
+                          let mime = 'application/octet-stream'
+                          let ext = 'bin'
+                          let isPreviewable = false
+
+                          if (prefix.startsWith('JVBERi0')) {
+                            mime = 'application/pdf'
+                            ext = 'pdf'
+                            isPreviewable = true
+                          } else if (prefix.startsWith('UEsDB')) {
+                            mime =
+                              'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                            ext = 'docx'
+                          }
+
+                          const fileName = `${editableClinicData.name || 'Clinic'}_hospitalDocuments.${ext}`
+                          const fileDataUrl = `data:${mime};base64,${base64Data}`
+
+                          return (
+                            <div className="mb-3 border rounded p-2 bg-light">
+                              <div className="d-flex justify-content-between align-items-center">
+                                <span className="text-muted">{fileName}</span>
+                                <div className="d-flex gap-2">
+                                  {isPreviewable && (
+                                    <CButton
+                                      size="sm"
+                                      color="info"
+                                      variant="outline"
+                                      onClick={() => openPdfPreview(base64Data)}
+                                    >
+                                      Preview
+                                    </CButton>
+                                  )}
+                                  <CButton
+                                    size="sm"
+                                    color="primary"
+                                    variant="outline"
+                                    onClick={() => downloadBase64File(fileDataUrl, fileName)}
+                                  >
+                                    Download
+                                  </CButton>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })()
+                      ) : (
+                        <div className="text-muted">No contractor Documents available.</div>
                       )}
                     </CCol>
                   </CRow>
@@ -920,9 +986,8 @@ const ClinicDetails = () => {
                     <CCol md={6} className="mt-3">
                       <CFormLabel>Other Documents</CFormLabel>
 
-                      {editableClinicData.others ? (
-                        (() => {
-                          const base64Data = editableClinicData.others
+                      {editableClinicData.others && editableClinicData.others.length > 0 ? (
+                        editableClinicData.others.map((base64Data, index) => {
                           const prefix = base64Data.substring(0, 20)
 
                           let mime = 'application/octet-stream'
@@ -939,11 +1004,11 @@ const ClinicDetails = () => {
                             ext = 'docx'
                           }
 
-                          const fileName = `${editableClinicData.name || 'Clinic'}_OtherDocument.${ext}`
+                          const fileName = `${editableClinicData.name || 'Clinic'}_OtherDocument_${index + 1}.${ext}`
                           const fileDataUrl = `data:${mime};base64,${base64Data}`
 
                           return (
-                            <div className="mb-3 border rounded p-2 bg-light">
+                            <div key={index} className="mb-3 border rounded p-2 bg-light">
                               <div className="d-flex justify-content-between align-items-center">
                                 <span className="text-muted">{fileName}</span>
                                 <div className="d-flex gap-2">
@@ -969,7 +1034,7 @@ const ClinicDetails = () => {
                               </div>
                             </div>
                           )
-                        })()
+                        })
                       ) : (
                         <div className="text-muted">No other documents available.</div>
                       )}
@@ -1211,12 +1276,17 @@ const ClinicDetails = () => {
                       )}
                     </CCol>
                   </CRow>
+
                   <CButton
                     color="primary"
                     className="me-2"
                     onClick={async () => {
                       if (isEditingAdditional) {
                         try {
+                          localStorage.setItem(
+                            `clinic-${hospitalId}-consultation-expiration`,
+                            editableClinicData.consultationExpiration,
+                          )
                           await updateClinicData(hospitalId, editableClinicData)
                           await fetchClinicDetails()
                           setIsEditingAdditional(false)

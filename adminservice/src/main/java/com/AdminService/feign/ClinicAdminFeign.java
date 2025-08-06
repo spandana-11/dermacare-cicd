@@ -3,7 +3,6 @@ package com.AdminService.feign;
 import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
@@ -22,16 +21,13 @@ public interface ClinicAdminFeign {
     public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getAllSubServices();
 	
 	@GetMapping("/clinic-admin/doctor/{id}")
-	public ResponseEntity<Response> getDoctorById(@PathVariable String id);
+	public ResponseEntity<Response> getDoctorById(@PathVariable("id") String id);
 		
-	@DeleteMapping("/clinic-admin/delete-doctors-by-clinic/{clinicId}")
-    Response deleteDoctorsByClinicId(@PathVariable("clinicId") String clinicId);
+	
 	///FALLBACK METHODS
 	
 	default ResponseEntity<?> clinicAdminServiceFallBack(Exception e){		 
 		return ResponseEntity.status(503).body(new Response(false,null,"CLINIC ADMIN SERVICE NOT AVAILABLE",503,null,null));}
 
-	
-	
 }
 

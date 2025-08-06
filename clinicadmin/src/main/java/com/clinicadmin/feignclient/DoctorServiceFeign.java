@@ -3,6 +3,7 @@ package com.clinicadmin.feignclient;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -16,4 +17,8 @@ public interface DoctorServiceFeign {
 
 	@GetMapping("/api/doctor-notes/get-all-doctor-notes")
 	public ResponseEntity<Response> getAllNotes();
+	
+	@GetMapping("/api/appointments/patient/{patientId}")
+    public ResponseEntity<?> getAppointmentsByPatientId(@PathVariable String patientId);
+
 }

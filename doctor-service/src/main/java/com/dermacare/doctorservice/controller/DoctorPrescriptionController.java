@@ -10,7 +10,7 @@ import com.dermacare.doctorservice.service.DoctorPrescriptionService;
 
 @RestController
 @RequestMapping("/doctors")
-//@CrossOrigin(origins = "*")
+// @CrossOrigin(origins = "*")
 
 public class DoctorPrescriptionController {
 
@@ -42,11 +42,13 @@ public class DoctorPrescriptionController {
     }
     
  // DoctorPrescriptionController.java
-    @GetMapping("/searchMedicines")
-    public ResponseEntity<Response> searchMedicines(@RequestParam String keyword) {
+    
+    @GetMapping("/searchMedicines/{keyword}")
+    public ResponseEntity<Response> searchMedicines(@PathVariable String keyword) {
         Response response = service.searchMedicinesByName(keyword);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
+
 
 
     @DeleteMapping("/deletePrescription/{id}")

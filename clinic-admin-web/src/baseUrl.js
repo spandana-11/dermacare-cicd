@@ -1,11 +1,11 @@
 // export const BASE_URL = 'http://alb-dev-sc-197990416.ap-south-1.elb.amazonaws.com/api'
-export let wifiUrl = '3.111.245.153:9090'
+export let wifiUrl = '35.154.59.127:9090'
 // export let wifiUrl = '192.168.1.5'
 
 export const BASE_URL = `http://${wifiUrl}/clinic-admin`
 export const MainAdmin_URL = `http://${wifiUrl}/admin`
 export const subService_URL = `http://${wifiUrl}/api/v1`
-export const servr_Url=`http://${wifiUrl}`
+export const servr_Url = `http://${wifiUrl}`
 // END POINTS
 // login
 export const endPoint = '/clinicLogin'
@@ -38,6 +38,18 @@ export const GetBy_DoctorId = 'doctor'
 export const Doctor_Url = `http://${wifiUrl}/api`
 export const getAllDCtrNotifications = 'doctors/notificationToDoctor'
 export const getDoctorIdAndNotifications = 'doctors/hospitalById'
+
+//Test
+export const AllTest = 'labtest/getAllLabTests'
+export const AddTest = 'labtest/addLabTest'
+export const UpdateTest = 'labtest/updateLabTest'
+export const DeleteTest = 'labtest/deleteLabTest'
+
+//Treatments
+export const AllTreatment = 'treatment/getAllTreatments'
+export const AddTreatment = 'treatment/addTreatment'
+export const UpdateTreatment = 'treatment/updateTreatmentById'
+export const DeleteTreatment = 'treatment/deleteTreatmentById'
 
 //notifiction Reponse
 export const NoficationResponse = 'doctors/notificationResponse'

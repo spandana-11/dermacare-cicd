@@ -22,9 +22,11 @@ public class BookingResponse {
 	private String patientMobileNumber;
 	private String patientId;
 	private String visitType;
+	private String patientAddress;
 	private String age;
 	private String gender;
 	private String mobileNumber;
+	private String consultationExpiration;
 	private String customerDeviceId;
 	private String problem;
 	private String symptomsDuration;
@@ -50,5 +52,4 @@ public class BookingResponse {
 	private double totalFee;
 	private List<String> attachments;
 	private String paymentType;
-	private String patientAddress;
 }

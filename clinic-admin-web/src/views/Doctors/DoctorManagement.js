@@ -1300,8 +1300,9 @@ const DoctorManagement = () => {
             onAdd={(items) => setForm((prev) => ({ ...prev, focusAreas: items }))}
           />
           <div className="mb-3">
-            <label className="form-label label-required">Languages Known</label>
+            {/* <label label="Language">Languages Known</label> */}
             <ChipSection
+              label="Languages known"
               items={form.languages}
               onAdd={(items) => {
                 setForm((prev) => ({ ...prev, languages: items }))

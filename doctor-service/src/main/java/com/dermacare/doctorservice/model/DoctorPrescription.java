@@ -1,6 +1,7 @@
 package com.dermacare.doctorservice.model;
 
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.annotation.Id;
@@ -18,6 +19,8 @@ public class DoctorPrescription {
 
     @Id
     private String prescriptionId;
+    private LocalDateTime visitDateTime;
+
 
     private List<Medicine> medicines;  
 }

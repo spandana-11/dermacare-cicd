@@ -19,8 +19,9 @@ public interface BookingServiceRepository extends MongoRepository<Booking,String
 	 public Optional<Booking> findByBookingId(String bookingId);
 	 @Query("{$or: [ { 'name': ?0 }, { 'bookingId': ?0 }, { 'patientId': ?0 } ]}")
 	 public List<Booking> findByNameIgnoreCaseOrBookingIdOrPatientId(String input);
-//	 List<Booking> findByNameOrBookingIdOrPatientId(String input);
 	 public List<Booking> findByClinicIdAndDoctorId(String clinicId,String doctorId);
 	 public List<Booking> findByPatientId(String patientId);
 	public List<Booking> findByRelationIgnoreCaseAndMobileNumber(String relation, String mobileNumber);
+	public Optional<Booking> findByBookingIdAndPatientIdAndMobileNumber(String bookingId, String patientId,
+			String mobileNumber);     
 }

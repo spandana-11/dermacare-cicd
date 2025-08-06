@@ -1,10 +1,9 @@
 package com.AdminService.controller;
-
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,14 +12,12 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.AdminService.dto.AdminHelper;
 import com.AdminService.dto.BookingResponse;
 import com.AdminService.dto.CategoryDto;
 import com.AdminService.dto.ClinicCredentialsDTO;
 import com.AdminService.dto.ClinicDTO;
 import com.AdminService.dto.CustomerDTO;
-import com.AdminService.dto.ResponseDTO;
 import com.AdminService.dto.ServicesDto;
 import com.AdminService.dto.SubServicesInfoDto;
 import com.AdminService.dto.UpdateClinicCredentials;
@@ -32,7 +29,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/admin")
-//Origin(origins = {"http://localhost:3000", "http://localhost:3001"})
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class AdminController {
 
 	@Autowired
@@ -60,13 +57,15 @@ public class AdminController {
 	
 	
 	@PostMapping("/CreateClinic")
-	public ResponseEntity<?> clinicRegistration(@RequestBody @Valid ClinicDTO clinic){
-		Response response = serviceImpl.createClinic(clinic);
-    	if(response != null && response.getStatus() != 0) {
-			 return ResponseEntity.status(response.getStatus()).body(response);
-		 }else {
-				return null;}
-    }
+	public ResponseEntity<?> clinicRegistration(@RequestBody @Valid ClinicDTO clinic) {
+	    Response response = serviceImpl.createClinic(clinic);
+	    if (response != null && response.getStatus() != 0) {
+	        return ResponseEntity.status(response.getStatus()).body(response);
+	    } else {
+	        return null;
+	    }
+	}
+
 	
 
     // Get Clinic by ID
@@ -96,9 +95,9 @@ public class AdminController {
     // Delete Clinic
     @DeleteMapping("/deleteClinic/{clinicId}")
     public ResponseEntity<?> deleteClinic(@PathVariable String clinicId) {
-    	ResponseDTO response = serviceImpl.deleteClinic(clinicId);
-    	if(response != null && response.getStatusCode() != 0) {
-			 return ResponseEntity.status(response.getStatusCode()).body(response);
+    	Response response = serviceImpl.deleteClinic(clinicId);
+    	if(response != null && response.getStatus() != 0) {
+			 return ResponseEntity.status(response.getStatus()).body(response);
 		 }else {
 				return null;}
 		
@@ -193,6 +192,8 @@ public class AdminController {
 		else {
 				return null;}
     }
+    
+    
     	
 @PutMapping("updateCategory/{categoryId}")
 public ResponseEntity<?> updateCategory(@PathVariable String categoryId,
@@ -479,7 +480,6 @@ public ResponseEntity<Object> getBookingByDoctorId(@PathVariable String doctorId
 		 }
 }
 
-
 //GETDOCTORINFOBYDOCTORID
 @GetMapping("/getDoctorInfoByDoctorId/{doctorId}")
 public ResponseEntity<Object> getDoctorInfoByDoctorId(@PathVariable String doctorId){
@@ -490,14 +490,6 @@ public ResponseEntity<Object> getDoctorInfoByDoctorId(@PathVariable String docto
 			 return null;
 		 }
 }
-
-//-----------------------------GET CLINICS BUY RECOMMONDATION == TRUE---------------------------------
-@GetMapping("/clinics/recommended")
-public ResponseEntity<Response>getHospitalUsingRecommendentaion(){
-	Response response = serviceImpl.getClinicsByRecommondation();
-	 return ResponseEntity.status(response.getStatus()).body(response);
-}
-
 
 }
 

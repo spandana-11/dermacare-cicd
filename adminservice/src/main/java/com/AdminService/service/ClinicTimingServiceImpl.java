@@ -18,9 +18,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class ClinicTimingServiceImpl implements ClinicTimingService {
-
     private final ClinicTimingRepository repo;
-
     private static final DateTimeFormatter FMT =
             DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH);
 

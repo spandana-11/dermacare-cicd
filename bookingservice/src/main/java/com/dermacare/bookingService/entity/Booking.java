@@ -50,7 +50,8 @@ public class Booking  {
 	private String channelId;
 	private String BookedAt;
 	private String status;
+	private int clinicVisitCount;
 	private List<byte[]> attachments;
 	private double totalFee;
-
+	private String consultationExpiration;
 }

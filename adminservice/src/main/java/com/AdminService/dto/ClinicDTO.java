@@ -56,10 +56,10 @@ public class ClinicDTO {
     private String issuingAuthority;
 
     @NotNull(message = "Contractor documents must not be null")
-    private List<String> contractorDocuments;
+    private String contractorDocuments;
 
     @NotNull(message = "Hospital documents must not be null")
-    private List<String> hospitalDocuments;
+    private String hospitalDocuments;
 
     private boolean recommended;
 
@@ -86,10 +86,18 @@ public class ClinicDTO {
     private String fireSafetyCertificate; // Fire Dept
     private String professionalIndemnityInsurance; // Insurance
     private String gstRegistrationCertificate;
+    @NotBlank(message = "Consultation expiration is required")
+    private String consultationExpiration;
+    
+    private String subscription;
 
-    // Optional Certifications
-    private String others; // NABH/Aesthetic procedure training (optional, can be a combined doc)
 
+    // Allow multiple documents for 'others'
+    
+    @NotNull(message = "'Others' documents must not be null")
+    
+    private List<String> others;
+    
     // Social Media
     private String instagramHandle;
     private String twitterHandle;

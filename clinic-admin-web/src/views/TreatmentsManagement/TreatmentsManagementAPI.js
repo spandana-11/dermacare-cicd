@@ -1,0 +1,72 @@
+import axios from 'axios'
+import { AddTreatment, AllTreatment, BASE_URL, DeleteTreatment, UpdateTreatment } from '../../baseUrl'
+
+export const TreatmentData = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/${AllTreatment}`)
+    console.log('treatment data:', response.data)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching treatment data:', error.message)
+    if (error.response) {
+      console.error('Error Response Data:', error.response.data)
+      console.error('Error Response Status:', error.response.status)
+    }
+    throw error
+  }
+}
+
+export const postTreatmentData = async (treatmentData) => {
+  try {
+    const requestData = {
+      treatmentName: treatmentData.treatmentName || '',  // Consider renaming this to treatmentName in the backend
+      hospitalId: treatmentData.hospitalId || '',
+    }
+
+    const response = await axios.post(`${BASE_URL}/${AddTreatment}`, requestData, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    console.log('Treatment added successfully:', response.data)
+    return response.data
+  } catch (error) {
+    console.error('Error adding treatment:', error.response)
+    throw error
+  }
+}
+
+export const updateTreatmentData = async (updatedTreatment, treatmentId, hospitalId) => {
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/${UpdateTreatment}/${treatmentId}/${hospitalId}`,
+      updatedTreatment,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error updating treatment:', error)
+    throw error
+  }
+}
+
+export const deleteTreatmentData = async (treatmentId, hospitalId) => {
+  try {
+    const response = await axios.delete(`${BASE_URL}/${DeleteTreatment}/${treatmentId}/${hospitalId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    console.log('Treatment deleted successfully:', response.data)
+    return response.data
+  } catch (error) {
+    console.error('Error deleting treatment:', error.response ? error.response.data : error)
+    throw error
+  }
+}

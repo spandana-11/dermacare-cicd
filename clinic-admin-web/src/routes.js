@@ -4,6 +4,9 @@ const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
 
 const Doctors = React.lazy(() => import('./views/Doctors/DoctorManagement'))
 const Disease = React.lazy(() => import('./views/DiseaseManagement/DiseaseManagement'))
+const Forms = React.lazy(() => import('./views/Form/Forms'))
+const Tests = React.lazy(() => import('./views/TestsManagement/TestsManagement'))
+const Treatments = React.lazy(() => import('./views/TreatmentsManagement/TreatmentsManagement'))
 const DoctorNotofications = React.lazy(
   () => import('./views/DoctorNotifications/DoctorNotificationsManagement'),
 )
@@ -30,6 +33,9 @@ const routes = [
   { path: '/doctor-notifications', name: 'Doctor Notifications', element: DoctorNotofications },
   { path: '/doctor', name: 'Doctors', element: Doctors },
   { path: '/disease', name: 'Disease-Management', element: Disease },
+  { path: '/forms', name: 'Forms', element: Forms },
+  { path: '/tests', name: 'Tests', element: Tests },
+  { path: '/treatments', name: 'Treatments', element: Treatments },
   { path: '/service-Management', name: 'SubService Management', element: ServiceManagement },
   // { path: '/patients', name: 'Patients', element: Patients },
   { path: '/payouts', name: 'Payouts', element: Payouts },

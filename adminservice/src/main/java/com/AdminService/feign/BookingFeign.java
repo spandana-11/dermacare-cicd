@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,16 +14,17 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 @FeignClient(value = "bookingservice")
 @CircuitBreaker(name = "circuitBreaker", fallbackMethod = "bookServiceFallBack")
+@CrossOrigin
 public interface BookingFeign {
 	
 	@GetMapping("/api/v1/getAllBookedServices")
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getAllBookedService();
 	
 	@DeleteMapping("/api/v1/deleteService/{id}")
-	public ResponseEntity<ResponseStructure<BookingResponse>> deleteBookedService(@PathVariable String id);
+	public ResponseEntity<ResponseStructure<BookingResponse>> deleteBookedService(@PathVariable("id") String id);
 	
 	@GetMapping("/api/v1/getAllBookedServices/{doctorId}")
-	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingByDoctorId(@PathVariable String doctorId);
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingByDoctorId(@PathVariable("doctorId") String doctorId);
 
 	
 	///FALLBACK METHOD

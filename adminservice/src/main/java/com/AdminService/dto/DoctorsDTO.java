@@ -15,9 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DoctorsDTO {
-
     private String id;
-    
     private String doctorId;
     
     private String deviceId;

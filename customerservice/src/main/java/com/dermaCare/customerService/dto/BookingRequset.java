@@ -36,6 +36,7 @@ public class BookingRequset {
 	private String servicetime;
 	private String consultationType;
 	private double consultationFee;
+	private String consultationExpiration;
 	private double totalFee;
 	private String paymentType;
 	private List<String> attachments;

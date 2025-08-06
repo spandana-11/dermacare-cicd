@@ -25,20 +25,20 @@ public interface CustomerFeign {
 	public ResponseEntity<Response> saveCustomerBasicDetails(@RequestBody CustomerDTO customerDTO );
 	
 	@GetMapping("/api/customer/getCustomerByInput/{input}")
-  	public ResponseEntity<?> getCustomerByUsernameMobileEmail(@PathVariable String input);
+  	public ResponseEntity<?> getCustomerByUsernameMobileEmail(@PathVariable("input") String input);
 	
 	@GetMapping("/api/customer/getBasicDetails/{mobileNumber}")
-	public ResponseEntity<Response> getCustomerBasicDetails(@PathVariable String mobileNumber );
+	public ResponseEntity<Response> getCustomerBasicDetails(@PathVariable("mobileNumber") String mobileNumber );
 	
 	@GetMapping("/api/customer/getAllCustomers")
 	public ResponseEntity<Response> getAllCustomers();
 	
 	@PutMapping("/api/customer/updateCustomerBasicDetails/{mobileNumber}")
 	public ResponseEntity<Response> updateCustomerBasicDetails(@RequestBody CustomerDTO customerDTO,
-			@PathVariable String mobileNumber );
+			@PathVariable("mobileNumber") String mobileNumber );
 	
 	@DeleteMapping("/api/customer/deleteCustomerBasicDetails/{mobileNumber}")
-	public ResponseEntity<Response> deleteCustomerBasicDetails(@PathVariable String mobileNumber );
+	public ResponseEntity<Response> deleteCustomerBasicDetails(@PathVariable("mobileNumber") String mobileNumber );
 	
 	
 	//FALLBACK METHOD

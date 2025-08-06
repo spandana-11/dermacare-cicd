@@ -28,7 +28,7 @@ COPY --from=build /app/build .
 # Copy a custom Nginx configuration to use port 3000
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port 3000 for the Nginx server
+# Expose port 4000 for the Nginx server
 EXPOSE 4000
 
 # Start Nginx in the foreground

@@ -5,12 +5,14 @@ import {
   cilCalculator,
   cilCalendar,
   cilChartPie,
+  cilClipboard,
   cilCursor,
   cilDescription,
   cilDrop,
   cilHealing,
   cilLightbulb,
   cilMedicalCross,
+  cilNoteAdd,
   cilNotes,
   cilPencil,
   cilPuzzle,
@@ -18,6 +20,7 @@ import {
   cilSpeedometer,
   cilStar,
   cilWallet,
+  cilWarning,
   // cilHelpCircle ,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
@@ -53,6 +56,24 @@ const _nav = [
     component: CNavItem,
     to: '/disease',
     name: 'Disease-Management',
+    icon: <CIcon icon={cilWarning} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    to: '/forms',
+    name: 'Forms',
+    icon: <CIcon icon={cilNoteAdd} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    to: '/tests',
+    name: 'Tests',
+    icon: <CIcon icon={cilClipboard} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    to: '/treatments',
+    name: 'Treatments',
     icon: <CIcon icon={cilHealing} customClassName="nav-icon" />,
   },
 

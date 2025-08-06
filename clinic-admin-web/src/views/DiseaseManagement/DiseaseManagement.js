@@ -24,8 +24,10 @@ const DiseaseManagement = () => {
 
   const [newDisease, setNewDisease] = useState({
     diseaseName: '',
-    description: '',
-    department: '',
+    symptoms: '',
+    diagnosisMethod: '',
+    treatmentPlan: '',
+    severity: '',
     status: 'Active',
   })
 
@@ -47,8 +49,11 @@ const DiseaseManagement = () => {
   const validateForm = () => {
     const newErrors = {}
     if (!newDisease.diseaseName.trim()) newErrors.diseaseName = 'Disease Name is required'
-    if (!newDisease.description.trim()) newErrors.description = 'Description is required'
-    if (!newDisease.department) newErrors.department = 'Department is required'
+    if (!newDisease.symptoms.trim()) newErrors.symptoms = 'Symptoms are required'
+    if (!newDisease.diagnosisMethod.trim())
+      newErrors.diagnosisMethod = 'Diagnosis method is required'
+    if (!newDisease.treatmentPlan.trim()) newErrors.treatmentPlan = 'Treatment plan is required'
+    if (!newDisease.severity) newErrors.severity = 'Severity is required'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -122,8 +127,10 @@ const DiseaseManagement = () => {
         <CTableHead>
           <CTableRow>
             <CTableHeaderCell>Disease Name</CTableHeaderCell>
-            <CTableHeaderCell>Description</CTableHeaderCell>
-            <CTableHeaderCell>Department</CTableHeaderCell>
+            <CTableHeaderCell>Symptoms</CTableHeaderCell>
+            <CTableHeaderCell>Diagnosis</CTableHeaderCell>
+            <CTableHeaderCell>Treatment</CTableHeaderCell>
+            <CTableHeaderCell>Severity</CTableHeaderCell>
             <CTableHeaderCell>Status</CTableHeaderCell>
             <CTableHeaderCell>Actions</CTableHeaderCell>
           </CTableRow>
@@ -131,7 +138,7 @@ const DiseaseManagement = () => {
         <CTableBody>
           {diseases.length === 0 ? (
             <CTableRow>
-              <CTableDataCell colSpan={5} className="text-center">
+              <CTableDataCell colSpan={4} className="text-center">
                 No disease records found.
               </CTableDataCell>
             </CTableRow>
@@ -139,8 +146,10 @@ const DiseaseManagement = () => {
             diseases.map((disease, index) => (
               <CTableRow key={index}>
                 <CTableDataCell>{disease.diseaseName}</CTableDataCell>
-                <CTableDataCell>{disease.description}</CTableDataCell>
-                <CTableDataCell>{disease.department}</CTableDataCell>
+                <CTableDataCell>{disease.symptoms}</CTableDataCell>
+                <CTableDataCell>{disease.diagnosisMethod}</CTableDataCell>
+                <CTableDataCell>{disease.treatmentPlan}</CTableDataCell>
+                <CTableDataCell>{disease.severity}</CTableDataCell>
                 <CTableDataCell>{disease.status}</CTableDataCell>
                 <CTableDataCell>
                   <CButton size="sm" color="info" onClick={() => setViewDisease(disease)}>
@@ -167,33 +176,37 @@ const DiseaseManagement = () => {
         <CModalBody>
           <CForm>
             <label>Disease Name</label>
-            <CFormInput
-              name="diseaseName"
-              value={newDisease.diseaseName}
-              onChange={handleChange}
-              placeholder="Enter Disease Name"
-            />
+            <CFormInput name="diseaseName" value={newDisease.diseaseName} onChange={handleChange} />
             {errors.diseaseName && <p className="text-danger">{errors.diseaseName}</p>}
 
-            <label>Description</label>
-            <CFormInput
-              name="description"
-              value={newDisease.description}
-              onChange={handleChange}
-              placeholder="Enter Description"
-            />
-            {errors.description && <p className="text-danger">{errors.description}</p>}
+            <label>Symptoms</label>
+            <CFormInput name="symptoms" value={newDisease.symptoms} onChange={handleChange} />
+            {errors.symptoms && <p className="text-danger">{errors.symptoms}</p>}
 
-            <label>Department</label>
-            <CFormSelect name="department" value={newDisease.department} onChange={handleChange}>
-              <option value="">Select Department</option>
-              {departments.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
+            <label>Diagnosis Method</label>
+            <CFormInput
+              name="diagnosisMethod"
+              value={newDisease.diagnosisMethod}
+              onChange={handleChange}
+            />
+            {errors.diagnosisMethod && <p className="text-danger">{errors.diagnosisMethod}</p>}
+
+            <label>Treatment Plan</label>
+            <CFormInput
+              name="treatmentPlan"
+              value={newDisease.treatmentPlan}
+              onChange={handleChange}
+            />
+            {errors.treatmentPlan && <p className="text-danger">{errors.treatmentPlan}</p>}
+
+            <label>Severity</label>
+            <CFormSelect name="severity" value={newDisease.severity} onChange={handleChange}>
+              <option value="">Select Severity</option>
+              <option value="Mild">Mild</option>
+              <option value="Moderate">Moderate</option>
+              <option value="Severe">Severe</option>
             </CFormSelect>
-            {errors.department && <p className="text-danger">{errors.department}</p>}
+            {errors.severity && <p className="text-danger">{errors.severity}</p>}
 
             <label>Status</label>
             <CFormSelect name="status" value={newDisease.status} onChange={handleChange}>
@@ -219,10 +232,13 @@ const DiseaseManagement = () => {
             <CModalTitle>Disease Details</CModalTitle>
           </CModalHeader>
           <CModalBody>
-            <p><strong>Name:</strong> {viewDisease.diseaseName}</p>
-            <p><strong>Description:</strong> {viewDisease.description}</p>
-            <p><strong>Department:</strong> {viewDisease.department}</p>
-            <p><strong>Status:</strong> {viewDisease.status}</p>
+          <p><strong>Disease Name:</strong> {viewDisease.diseaseName}</p>
+<p><strong>Symptoms:</strong> {viewDisease.symptoms}</p>
+<p><strong>Diagnosis:</strong> {viewDisease.diagnosisMethod}</p>
+<p><strong>Treatment:</strong> {viewDisease.treatmentPlan}</p>
+<p><strong>Severity:</strong> {viewDisease.severity}</p>
+<p><strong>Status:</strong> {viewDisease.status}</p>
+
           </CModalBody>
           <CModalFooter>
             <CButton color="secondary" onClick={() => setViewDisease(null)}>

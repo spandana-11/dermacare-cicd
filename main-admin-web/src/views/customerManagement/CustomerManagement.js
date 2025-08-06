@@ -33,7 +33,7 @@ import {
   getCustomerByMobile,
   updateCustomerData,
 } from './CustomerAPI'
-import { toast } from 'react-toastify'
+import { ToastContainer, toast } from 'react-toastify'
 import { ConfirmationModal } from '../../Utils/ConfirmationDelete'
 
 const CustomerManagement = () => {
@@ -414,6 +414,7 @@ const CustomerManagement = () => {
 
   return (
     <>
+      <ToastContainer />
       {!isAdding ? (
         <>
           <CRow className="d-flex align-items-center mb-3">

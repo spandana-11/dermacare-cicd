@@ -8,11 +8,13 @@ import java.util.stream.Collectors;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.TreatmentDTO;
 import com.clinicadmin.entity.Treatment;
+import com.clinicadmin.feignclient.AdminServiceClient;
 import com.clinicadmin.repository.TreatmentRepository;
 import com.clinicadmin.service.TreatmentService;
 
@@ -21,16 +23,37 @@ public class TreatmentServiceImpl implements TreatmentService {
 
     @Autowired
     private TreatmentRepository treatmentRepository;
+    
+    @Autowired                                        
+    AdminServiceClient adminServiceClient;
 
     @Override
     public Response addTreatment(TreatmentDTO dto) {
-    	
+        Response response = new Response();
+
+        // Check if hospital exists by calling admin service
+        ResponseEntity<Response> clinicResponseEntity = adminServiceClient.getClinicById(dto.getHospitalId());
+        Response clinicResponse = clinicResponseEntity.getBody();
+
+        // Validate the clinic response
+        if (clinicResponse == null || !clinicResponse.isSuccess() || clinicResponse.getData() == null) {
+            response.setSuccess(false);
+            response.setMessage("Hospital with ID " + dto.getHospitalId() + " does not exist.");
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            return response;
+        }
+
+        // Proceed to save treatment
         Treatment treatment = new Treatment();
         treatment.setTreatmentName(dto.getTreatmentName());
         treatment.setHospitalId(dto.getHospitalId());
         Treatment saved = treatmentRepository.save(treatment);
-        TreatmentDTO responseDto = new TreatmentDTO(saved.getId().toString(), saved.getTreatmentName(),saved.getHospitalId());
-        Response response = new Response();
+
+        TreatmentDTO responseDto = new TreatmentDTO();
+        responseDto.setId(saved.getId().toString());
+        responseDto.setTreatmentName(saved.getTreatmentName());
+        responseDto.setHospitalId(saved.getHospitalId());
+        
         response.setSuccess(true);
         response.setData(responseDto);
         response.setMessage("Treatment added successfully");

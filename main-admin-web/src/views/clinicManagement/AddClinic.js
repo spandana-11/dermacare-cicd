@@ -35,10 +35,11 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
   const [selectedOption, setSelectedOption] = useState('')
   const [selectedPharmacistOption, setSelectedPharmacistOption] = useState('')
   const [clinicTypeOption, setClinicTypeOption] = useState('')
+  const [subscription, setSubscription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [timings, setTimings] = useState([])
   const [loadingTimings, setLoadingTimings] = useState(false)
-// const [initialData,setInitialData ]=useState()
+  // const [initialData,setInitialData ]=useState()
   const fileInputRefs = {
     others: useRef(null),
     hospitalDocuments: useRef(null),
@@ -67,9 +68,9 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
     licenseNumber: '',
     issuingAuthority: '',
     recommended: false,
-    hospitalDocuments: [],
+    hospitalDocuments: null,
     // hospitalcategory: [],
-    hospitalContract: [],
+    hospitalContract: null,
 
     clinicalEstablishmentCertificate: null,
     businessRegistrationCertificate: null,
@@ -84,19 +85,21 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
     fireSafetyCertificate: null,
     professionalIndemnityInsurance: null,
     gstRegistrationCertificate: null,
-    others: null,
+    others: [],
+    consultationExpiration: '',
+    subscription: '',
     instagramHandle: '',
     twitterHandle: '',
     facebookHandle: '',
   })
- useEffect(() => {
+  useEffect(() => {
     if (mode === 'edit' && initialData) {
-      setFormData(initialData);
-      setClinicTypeOption(initialData.clinicType);
-      setSelectedOption(initialData.medicinesSoldOnSite);
-      setSelectedPharmacistOption(initialData.hasPharmacist);
+      setFormData(initialData)
+      setClinicTypeOption(initialData.clinicType)
+      setSelectedOption(initialData.medicinesSoldOnSite)
+      setSelectedPharmacistOption(initialData.hasPharmacist)
     }
-  }, [initialData, mode]);
+  }, [initialData, mode])
   //get timings
   useEffect(() => {
     const fetchTimings = async () => {
@@ -183,7 +186,7 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
       newErrors.emailAddress = 'Email must contain "@" and "." in a valid format'
     }
     // Contact Number
-    const phoneRegex = /^[5-9]\d{9}$/ // This regex checks if the number starts with 5-9 and is followed by 9 digits
+    const phoneRegex = /^[5-9][0-9]{9}$/ // This regex checks if the number starts with 5-9 and is followed by 9 digits
 
     if (!formData.contactNumber) {
       newErrors.contactNumber = 'Contact number is required'
@@ -226,6 +229,13 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
       }
     }
 
+    //consultation Expiration
+    if (!formData.consultationExpiration) {
+      newErrors.consultationExpiration = 'Consultation days are required'
+    } else if (isNaN(formData.consultationExpiration) || formData.consultationExpiration <= 0) {
+      newErrors.consultationExpiration = 'Enter a valid number greater than 0'
+    }
+
     // License Number
     if (!formData.licenseNumber.trim()) {
       newErrors.licenseNumber = 'License number is required'
@@ -242,11 +252,11 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
     }
 
     // Hospital Documents
-    if (!formData.hospitalDocuments || formData.hospitalDocuments.length === 0) {
-      newErrors.hospitalDocuments = 'Please upload at least one document'
+    if (!formData.hospitalDocuments) {
+      newErrors.hospitalDocuments = 'Please upload the document'
     }
-    if (!formData.hospitalContract || formData.hospitalContract.length === 0) {
-      newErrors.hospitalContract = 'Please upload at least one document'
+    if (!formData.hospitalContract) {
+      newErrors.hospitalContract = 'Please upload the document'
     }
     if (!formData.clinicalEstablishmentCertificate) {
       newErrors.clinicalEstablishmentCertificate = 'Please upload at least one document'
@@ -260,9 +270,14 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
     if (!formData.drugLicenseFormType && selectedOption === 'Yes') {
       newErrors.drugLicenseFormType = 'Please upload at least one document'
     }
-    if (!formData.pharmacistCertificate && selectedOption === 'Yes') {
+    if (
+      selectedOption === 'Yes' &&
+      selectedPharmacistOption === 'Yes' &&
+      !formData.pharmacistCertificate
+    ) {
       newErrors.pharmacistCertificate = 'Please upload at least one document'
     }
+
     if (!formData.biomedicalWasteManagementAuth) {
       newErrors.biomedicalWasteManagementAuth = 'Please upload at least one document'
     }
@@ -285,17 +300,17 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
     if (!selectedOption || selectedOption.trim() === '') {
       newErrors.medicinesSoldOnSite = 'Please select  atleast one option'
     }
-    if (
-      !selectedPharmacistOption ||
-      (selectedPharmacistOption.trim() === '' && selectedPharmacistOption == 'Yes')
-    ) {
-      newErrors.hasPharmacist = 'Please select  atleast one option'
+    if (!selectedPharmacistOption || selectedPharmacistOption.trim() === '') {
+      newErrors.hasPharmacist = 'Please select whether clinic has a valid pharmacist.'
     }
 
     if (!formData.website.trim()) {
       newErrors.website = 'Website is required.'
     } else if (!websiteRegex.test(normalizeWebsite(formData.website.trim()))) {
       newErrors.website = 'Website must start with http:// or https:// and be a valid URL'
+    }
+    if (!formData.subscription || formData.subscription.trim() === '') {
+      newErrors.subscription = 'Please select a subscription type'
     }
 
     // No `else { newErrors.website = '' }`
@@ -445,13 +460,35 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
 
     fetchDoctors()
   }, [])
+  useEffect(() => {
+    const storedConsultation = localStorage.getItem('consultationExpiration')
+    if (storedConsultation) {
+      const onlyNumber = storedConsultation.replace(/\D/g, '')
+      setFormData((prev) => ({
+        ...prev,
+        consultationExpiration: onlyNumber,
+      }))
+    }
+  }, [])
+  // ✅ Save to localStorage for frontend-only preview/debug
+  const formattedConsultationDays = `${formData.consultationExpiration} days`
+  const previewData = {
+    ...formData,
+    consultationExpiration: formattedConsultationDays,
+  }
+  localStorage.setItem('clinicFormPreview', JSON.stringify(previewData))
+  console.log('👁️ Clinic Form Preview (Frontend only):', previewData)
+
+  const previewFromLocalStorage = JSON.parse(localStorage.getItem('clinicFormPreview'))
+  console.log('📦 Loaded from localStorage for preview:', previewFromLocalStorage)
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setIsSubmitting(true)
 
     const isValid = validateForm()
     if (!isValid) return
 
-    
     setIsSubmitting(true) // ⬅️ Start loading
 
     const { emailAddress, contactNumber } = formData
@@ -479,6 +516,18 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
       setErrors((prev) => ({ ...prev, ...newErrors }))
       return
     }
+    // ✅ Save to localStorage as "4 days"
+    // ✅ Save clinic formData to localStorage for preview
+    const formattedConsultationDays = `${formData.consultationExpiration} days`
+    const previewData = {
+      ...formData,
+      consultationExpiration: formattedConsultationDays,
+    }
+    localStorage.setItem('clinicFormPreview', JSON.stringify(previewData))
+    console.log('👁️ Clinic Form Preview (Frontend only):', previewData)
+
+    const previewFromLocalStorage = JSON.parse(localStorage.getItem('clinicFormPreview'))
+    console.log('📦 Loaded from localStorage for preview:', previewFromLocalStorage)
 
     try {
       const convertIfExists = async (file) => (file ? await convertFileToBase64(file) : '')
@@ -488,17 +537,17 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
       // Usage
       const hospitalLogoBase64 = await convertIfExists(formData.hospitalLogo)
 
-      const hospitalDocumentsBase64 = await convertMultipleIfExists(formData.hospitalDocuments)
+      const hospitalDocumentsBase64 = await convertIfExists(formData.hospitalDocuments)
 
       // Then check the result of that conversion
-      if (hospitalDocumentsBase64.some((doc) => typeof doc !== 'string' || !doc.length)) {
-        toast.error('One or more hospital documents failed to convert to base64.', {
-          position: 'top-right',
-        })
-        return
-      }
+      // if (hospitalDocumentsBase64.some((doc) => typeof doc !== 'string' || !doc.length)) {
+      //   toast.error('One or more hospital documents failed to convert to base64.', {
+      //     position: 'top-right',
+      //   })
+      //   return
+      // }
 
-      const hospitalContractBase64 = await convertMultipleIfExists(formData.hospitalContract)
+      const hospitalContractBase64 = await convertIfExists(formData.hospitalContract)
       const clinicalEstablishmentCertificateBase64 = await convertIfExists(
         formData.clinicalEstablishmentCertificate,
       )
@@ -565,6 +614,10 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
         twitterHandle: formData.twitterHandle,
         facebookHandle: formData.facebookHandle,
         recommended: !!formData.recommended,
+        consultationExpiration: formData.consultationExpiration
+          ? `${formData.consultationExpiration} days`
+          : '',
+        subscription: formData.subscription,
       }
 
       // API Submission
@@ -761,21 +814,6 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
                   <CFormFeedback invalid>{errors.issuingAuthority}</CFormFeedback>
                 )}
               </CCol>
-              {/* <CCol md={4}>
-                <CFormLabel>
-                  Hospital Registration<span style={{ color: 'red' }}>*</span>
-                </CFormLabel>
-                <CFormInput
-                  type="text"
-                  name="hospitalRegistrations"
-                  value={formData.hospitalRegistrations}
-                  onChange={handleInputChange}
-                  invalid={!!errors.hospitalRegistrations}
-                />
-                {errors.hospitalRegistrations && (
-                  <CFormFeedback invalid>{errors.hospitalRegistrations}</CFormFeedback>
-                )}
-              </CCol> */}
             </CRow>
             <CRow className="mb-3">
               <CCol md={6}>
@@ -826,34 +864,32 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
                 />
                 {errors.city && <CFormFeedback invalid>{errors.city}</CFormFeedback>}
               </CCol>
+
               <CCol md={6}>
-                <CFormLabel>
-                  Hospital Contract<span style={{ color: 'red' }}>*</span>
-                </CFormLabel>
+                <CTooltip content="Issued by Local Fire Department">
+                  <CFormLabel>
+                    Hospital Contract<span style={{ color: 'red' }}>*</span>
+                  </CFormLabel>
+                </CTooltip>
                 <CFormInput
                   type="file"
                   name="hospitalContract"
                   onChange={(e) => {
-                    const files = Array.from(e.target.files || [])
-
+                    const file = e.target.files?.[0] || null
                     setFormData((prev) => ({
                       ...prev,
-                      hospitalContract: files,
+                      hospitalContract: file,
                     }))
-
-                    // ✅ Clear error if files are selected
-                    if (files.length > 0) {
+                    if (file) {
                       setErrors((prev) => ({
                         ...prev,
                         hospitalContract: '',
                       }))
                     }
                   }}
-                  multiple
                   accept=".pdf,.doc,.docx,.jpeg,.png"
                   invalid={!!errors.hospitalContract}
                 />
-
                 {errors.hospitalContract && (
                   <CFormFeedback invalid>{errors.hospitalContract}</CFormFeedback>
                 )}
@@ -878,30 +914,30 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
                 />
               </CCol>
               <CCol md={6}>
-                <CFormLabel>
-                  Hospital Documents<span className="text-danger">*</span>
-                </CFormLabel>
+                <CTooltip content="Issued by Local Fire Department">
+                  <CFormLabel>
+                    Hospital Documents<span className="text-danger">*</span>
+                  </CFormLabel>
+                </CTooltip>
                 <CFormInput
                   type="file"
                   name="hospitalDocuments"
-                  multiple
-                  // ref={fileInputRefs.hospitalDocuments}
-                  accept=".pdf,.doc,.docx,.jpeg,.png"
                   onChange={(e) => {
-                    const files = Array.from(e.target.files || [])
-                    setFormData((prev) => ({ ...prev, hospitalDocuments: files }))
-                    if (files.length > 0) {
-                      setErrors((prev) => ({ ...prev, hospitalDocuments: '' }))
-                    }
-
-                    // ✅ reset so same file can be re-uploaded
-                    if (fileInputRefs.hospitalDocuments.current) {
-                      fileInputRefs.hospitalDocuments.current.value = ''
+                    const file = e.target.files?.[0] || null
+                    setFormData((prev) => ({
+                      ...prev,
+                      hospitalDocuments: file,
+                    }))
+                    if (file) {
+                      setErrors((prev) => ({
+                        ...prev,
+                        hospitalDocuments: '',
+                      }))
                     }
                   }}
+                  accept=".pdf,.doc,.docx,.jpeg,.png"
                   invalid={!!errors.hospitalDocuments}
                 />
-
                 {errors.hospitalDocuments && (
                   <CFormFeedback invalid>{errors.hospitalDocuments}</CFormFeedback>
                 )}
@@ -1248,66 +1284,110 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
 
               <CCol md={6}>
                 <CTooltip content="NABH Accreditation / Aesthetic Procedure Training Certificate">
-                  <CFormLabel>
-                    Others (NABH / Aesthetic Training)
-                    {/* Optional field */}
-                  </CFormLabel>
+                  <CFormLabel>Others (NABH / Aesthetic Training)</CFormLabel>
                 </CTooltip>
 
                 <CFormInput
                   type="file"
                   name="others"
-                  ref={fileInputRef}
+                  inputRef={fileInputRefs.others}
                   onChange={(e) => {
-                    const selectedFile = e.target.files?.[0] || null
+                    const selectedFiles = Array.from(e.target.files || [])
+
+                    const totalFiles = formData.others.length + selectedFiles.length
+
+                    if (totalFiles > 6) {
+                      setErrors((prev) => ({
+                        ...prev,
+                        others: 'You can upload up to 6 files only.',
+                      }))
+                      return
+                    }
 
                     setFormData((prev) => ({
                       ...prev,
-                      others: selectedFile, // ✅ store a single file object
+                      others: [...prev.others, ...selectedFiles],
                     }))
 
-                    if (selectedFile) {
-                      setErrors((prev) => ({
-                        ...prev,
-                        others: '',
-                      }))
-                    }
+                    // Clear error
+                    setErrors((prev) => ({ ...prev, others: '' }))
 
-                    // Reset input so same file can be selected again if removed
+                    // Reset input to allow re-upload of same file
                     if (fileInputRefs.others.current) {
                       fileInputRefs.others.current.value = ''
                     }
                   }}
-                  accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
-                  invalid={!!errors.others}
+                  multiple
+                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.zip"
                 />
 
                 {errors.others && <CFormFeedback invalid>{errors.others}</CFormFeedback>}
 
-                {/* ✅ Show file name only if a single file is stored */}
-                {formData.others && (
+                {/* Display selected file names below input */}
+                {Array.isArray(formData.others) && formData.others.length > 0 && (
                   <div className="mt-2">
-                    <small className="text-primary">{formData.others.name}</small>
-                    <div className="d-flex align-items-center justify-content-between mb-1">
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-danger"
-                        onClick={() => {
-                          setFormData((prev) => ({ ...prev, others: null }))
-
-                          if (fileInputRef.current) {
-                            fileInputRef.current.value = ''
-                          }
-                        }}
+                    {formData.others.map((file, index) => (
+                      <div
+                        key={index}
+                        className="d-flex justify-content-between align-items-center border rounded px-2 py-1 mb-1"
                       >
-                        Remove
-                      </button>
-                    </div>
+                        <small className="text-dark">{file.name}</small>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => {
+                            const updatedFiles = formData.others.filter((_, i) => i !== index)
+                            setFormData((prev) => ({
+                              ...prev,
+                              others: updatedFiles,
+                            }))
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </CCol>
             </CRow>
-
+            <CRow>
+              <CCol md={6}>
+                <CFormLabel>
+                  Consultation Expiration (in days) <span className="text-danger">*</span>
+                </CFormLabel>
+                <CFormInput
+                  type="number"
+                  name="consultationExpiration"
+                  value={formData.consultationExpiration}
+                  onChange={handleInputChange}
+                  min="1"
+                  placeholder="Enter next visit consultation count"
+                  invalid={!!errors.consultationExpiration}
+                />
+                {errors.consultationExpiration && (
+                  <CFormFeedback invalid>{errors.consultationExpiratione}</CFormFeedback>
+                )}
+              </CCol>
+              <CCol md={6}>
+                <CFormLabel>
+                  Subscription<span className="text-danger">*</span>
+                </CFormLabel>
+                <CFormSelect
+                  name="subscription" // ✅ Must match key in formData
+                  className="form-select"
+                  value={formData.subscription}
+                  onChange={handleInputChange} // ✅ Uses generic input handler
+                  invalid={!!errors.subscription}
+                >
+                  <option value="">Select Subscription</option>
+                  <option value="Free">Free</option>
+                  <option value="Basic">Basic</option>
+                  <option value="Premium">Premium</option>
+                </CFormSelect>
+                {errors.subscription && <div className="text-danger">{errors.subscription}</div>}
+              </CCol>
+            </CRow>
             <CRow className="mb-3">
               <CCol md={4}>
                 <CFormLabel>Instagram</CFormLabel>
