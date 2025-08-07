@@ -10,7 +10,6 @@ import com.dermacare.doctorservice.service.DoctorPrescriptionService;
 
 @RestController
 @RequestMapping("/doctors")
-@CrossOrigin(origins = "*")
 
 public class DoctorPrescriptionController {
 

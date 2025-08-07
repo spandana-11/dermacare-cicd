@@ -28,8 +28,8 @@ public class ClinicWithDoctorsDTO2 {
 	private String website;
 	private String licenseNumber;
 	private String issuingAuthority;
-	private List<String> hospitalDocuments;
-	private List<String> contractorDocuments;
+	private String hospitalDocuments;
+	private String contractorDocuments;
 	private boolean recommended;
 	private DoctorsDTO doctors;
 
