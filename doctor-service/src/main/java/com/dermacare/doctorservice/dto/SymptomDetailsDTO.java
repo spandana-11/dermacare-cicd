@@ -12,4 +12,5 @@ public class SymptomDetailsDTO {
 	    private String doctorObs;
 	    private String diagnosis;
 	    private String duration;
+	    private String reports;
 }

@@ -30,8 +30,8 @@ public class PreProcedureFormController {
 	}
 
 	@GetMapping("getPreProcedureFormByHospitalIdAndPreProcedureId/{hospitalId}/{preProcedureId}")
-	public ResponseEntity<Response> addPreProcedureFormByHospitalIdPreProcedureId(String hospitalId,
-			String preProcedureId) {
+	public ResponseEntity<Response> addPreProcedureFormByHospitalIdPreProcedureId(@PathVariable String hospitalId,
+			@PathVariable	String preProcedureId) {
 		Response response = preProcedureFormService.getPreProcedureFormBypreProcedureFormId(hospitalId, preProcedureId);
 		return ResponseEntity.status(response.getStatus()).body(response);
 

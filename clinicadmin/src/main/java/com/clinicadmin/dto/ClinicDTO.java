@@ -30,7 +30,6 @@ public class ClinicDTO {
 	private String issuingAuthority;
 	private String hospitalDocuments;
 	private String contractorDocuments;
-	 private boolean recommended;
-	
+	private boolean recommended;
 
 }

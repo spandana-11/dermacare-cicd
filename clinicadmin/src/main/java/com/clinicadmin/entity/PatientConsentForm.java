@@ -1,6 +1,5 @@
 package com.clinicadmin.entity;
 
-import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -18,6 +17,7 @@ import lombok.NoArgsConstructor;
 public class PatientConsentForm {
 	@Id
 	private String id;
+	
 	// Patient Details
 	private String fullName;
 	private String dateOfBirth;
@@ -58,5 +58,11 @@ public class PatientConsentForm {
 
 	private String physicianSignature;
 	private String physicianSignedDate;
+	
+	private String hospitalId;
+	private String hospitalName;
+	private byte[] hospitalLogo;
+	
+	
 
 }

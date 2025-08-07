@@ -2,6 +2,7 @@ package com.dermacare.doctorservice.serviceimpl;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -72,11 +73,12 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
     public Response getTemplateById(String id) {
         Optional<DoctorTemplate> template = repository.findById(id);
         if (template.isPresent()) {
+            DoctorTemplateDTO dto = convertToDto(template.get());
             return Response.builder()
                     .success(true)
                     .status(HttpStatus.OK.value())
                     .message("Doctor template found")
-                    .data(template.get())
+                    .data(dto)
                     .build();
         } else {
             return Response.builder()
@@ -88,16 +90,22 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
         }
     }
 
+
     @Override
     public Response getAllTemplates() {
         List<DoctorTemplate> templates = repository.findAll();
+        List<DoctorTemplateDTO> dtos = templates.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+
         return Response.builder()
                 .success(true)
                 .status(HttpStatus.OK.value())
                 .message("All doctor templates fetched successfully")
-                .data(templates)
+                .data(dtos)
                 .build();
     }
+
 
     @Override
     public Response deleteTemplate(String id) {
@@ -132,8 +140,9 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
                             .doctorObs(dto.getSymptoms().getDoctorObs())
                             .diagnosis(dto.getSymptoms().getDiagnosis())
                             .duration(dto.getSymptoms().getDuration())
+                            .reports(dto.getSymptoms().getReports()) // ✅ Use dto instead of entity
                             .build()
-                        : new SymptomDetails())
+                        : null)
 
                 // Mapping tests
                 .tests(dto.getTests() != null
@@ -141,7 +150,7 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
                             .selectedTests(dto.getTests().getSelectedTests())
                             .testReason(dto.getTests().getTestReason())
                             .build()
-                        : new TestDetails())
+                        : null)
 
                 // Mapping treatments
                 .treatments(dto.getTreatments() != null
@@ -149,7 +158,7 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
                             .selectedTreatments(dto.getTreatments().getSelectedTreatments())
                             .treatmentReason(dto.getTreatments().getTreatmentReason())
                             .build()
-                        : new TreatmentDetails())
+                        : null)
 
                 // Mapping follow-up
                 .followUp(dto.getFollowUp() != null
@@ -159,15 +168,17 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
                             .nextFollowUpDate(dto.getFollowUp().getNextFollowUpDate())
                             .followUpnote(dto.getFollowUp().getFollowUpnote())
                             .build()
-                        : new FollowUpDetails())
+                        : null)
 
                 // Mapping prescription
-                .prescription(PrescriptionDetails.builder()
-                        .medicines(
-                                dto.getPrescription() != null && dto.getPrescription().getMedicines() != null
-                                        ? dto.getPrescription().getMedicines().stream()
+                .prescription(dto.getPrescription() != null
+                        ? PrescriptionDetails.builder()
+                            .medicines(dto.getPrescription().getMedicines() != null
+                                    ? dto.getPrescription().getMedicines().stream()
                                         .map(m -> Medicines.builder()
-                                                .id(m.getId() != null && !m.getId().isEmpty() ? UUID.fromString(m.getId()) : UUID.randomUUID())
+                                                .id(m.getId() != null && !m.getId().isEmpty()
+                                                        ? UUID.fromString(m.getId())
+                                                        : UUID.randomUUID())
                                                 .name(m.getName())
                                                 .dose(m.getDose())
                                                 .duration(m.getDuration())
@@ -177,11 +188,11 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
                                                 .times(m.getTimes())
                                                 .build())
                                         .collect(Collectors.toList())
-                                        : new ArrayList<>()
-                        )
-                        .build())
+                                    : new ArrayList<>())
+                            .build()
+                        : null)
 
-                .build(); 
+                .build();
     }
 
 
@@ -319,6 +330,65 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
                     .build();
         }
     }
+    
+    private DoctorTemplateDTO convertToDto(DoctorTemplate entity) {
+        return DoctorTemplateDTO.builder()
+                .title(entity.getTitle())
+
+                .symptoms(entity.getSymptoms() != null ? 
+                    com.dermacare.doctorservice.dto.SymptomDetailsDTO.builder()
+                        .symptomDetails(entity.getSymptoms().getSymptomDetails())
+                        .doctorObs(entity.getSymptoms().getDoctorObs())
+                        .diagnosis(entity.getSymptoms().getDiagnosis())
+                        .duration(entity.getSymptoms().getDuration())
+                        .reports(entity.getSymptoms().getReports()) // ✅ No Base64 encoding
+                        .build()
+                    : null)
+
+                .tests(entity.getTests() != null ?
+                    com.dermacare.doctorservice.dto.TestDetailsDTO.builder()
+                        .selectedTests(entity.getTests().getSelectedTests())
+                        .testReason(entity.getTests().getTestReason())
+                        .build()
+                    : null)
+
+                .treatments(entity.getTreatments() != null ?
+                    com.dermacare.doctorservice.dto.TreatmentDetailsDTO.builder()
+                        .selectedTreatments(entity.getTreatments().getSelectedTreatments())
+                        .treatmentReason(entity.getTreatments().getTreatmentReason())
+                        .build()
+                    : null)
+
+                .followUp(entity.getFollowUp() != null ?
+                    com.dermacare.doctorservice.dto.FollowUpDetailsDTO.builder()
+                        .durationValue(entity.getFollowUp().getDurationValue())
+                        .durationUnit(entity.getFollowUp().getDurationUnit())
+                        .nextFollowUpDate(entity.getFollowUp().getNextFollowUpDate())
+                        .followUpnote(entity.getFollowUp().getFollowUpnote())
+                        .build()
+                    : null)
+
+                .prescription(entity.getPrescription() != null ?
+                    com.dermacare.doctorservice.dto.PrescriptionDetailsDTO.builder()
+                        .medicines(entity.getPrescription().getMedicines().stream()
+                            .map(med -> com.dermacare.doctorservice.dto.MedicinesDTO.builder()
+                                    .id(med.getId() != null ? med.getId().toString() : null)
+                                    .name(med.getName())
+                                    .dose(med.getDose())
+                                    .duration(med.getDuration())
+                                    .note(med.getNote())
+                                    .food(med.getFood())
+                                    .remindWhen(med.getRemindWhen())
+                                    .times(med.getTimes())
+                                    .build())
+                            .collect(Collectors.toList()))
+                        .build()
+                    : null)
+
+                .build();
+    }
+
+
 
 
 }

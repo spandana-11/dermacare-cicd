@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 public class PatientConsentFormDTO {
 	@Id
 	private String id;
+	
 	// Patient Details
 	private String fullName;
 	private String dateOfBirth;
@@ -54,4 +55,9 @@ public class PatientConsentFormDTO {
 
 	private String physicianSignature;
 	private String physicianSignedDate;
+
+	// Hospital Details
+	private String hospitalId;
+	private String hospitalName;
+	private String hospitalLogo;
 }

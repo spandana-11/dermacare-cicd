@@ -3,11 +3,7 @@ package com.dermacare.doctorservice.dto;
 
 import java.time.LocalDateTime;
 
-import com.dermacare.doctorservice.model.FollowUpDetails;
-import com.dermacare.doctorservice.model.PrescriptionDetails;
-import com.dermacare.doctorservice.model.SymptomDetails;
-import com.dermacare.doctorservice.model.TestDetails;
-import com.dermacare.doctorservice.model.TreatmentDetails;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,6 +14,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
+
 public class DoctorSaveDetailsDTO {
 
     private String id;
@@ -30,10 +28,10 @@ public class DoctorSaveDetailsDTO {
     private String bookingId;
     private LocalDateTime visitDateTime;
     private String visitType; 
-    private SymptomDetails symptoms;
-    private TestDetails tests;
-    private TreatmentDetails treatments;
-    private FollowUpDetails followUp;
-    private PrescriptionDetails prescription;
+    private SymptomDetailsDTO symptoms;
+    private TestDetailsDTO tests;
+    private TreatmentDetailsDTO treatments;
+    private FollowUpDetailsDTO followUp;
+    private PrescriptionDetailsDTO prescription;
 }
 

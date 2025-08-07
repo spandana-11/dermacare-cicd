@@ -43,6 +43,8 @@ public class BookingResponse {
 	private String servicetime;
 	private String consultationType;
 	private double consultationFee;
+	private Integer visitCount;
+	private Integer followClinicVisitCount;
 	private String channelId;
 	private String reasonForCancel;
 	private String notes;

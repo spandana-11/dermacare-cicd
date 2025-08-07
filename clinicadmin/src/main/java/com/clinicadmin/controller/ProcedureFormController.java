@@ -24,15 +24,14 @@ public class ProcedureFormController {
 	ProcedureFormService procedureFormService;
 
 	@PostMapping("/addProcedureForm/{hospitalId}/{subServiceId}")
-	public ResponseEntity<Response> addProcedure(@PathVariable String hospitalId,
-			@PathVariable String subServiceId, @RequestBody ProcedureFormDTO dto) {
+	public ResponseEntity<Response> addProcedure(@PathVariable String hospitalId, @PathVariable String subServiceId,
+			@RequestBody ProcedureFormDTO dto) {
 		Response response = procedureFormService.addProcedureForm(hospitalId, subServiceId, dto);
 		return ResponseEntity.status(response.getStatus()).body(response);
 	}
 
 	@GetMapping("/getProcedureFormByHospitalIdAndProcedureId/{hospitalId}/{procedureId}")
-	public ResponseEntity<Response> getProcedureByHospitalIdAndProcedureId(
-			@PathVariable String hospitalId,
+	public ResponseEntity<Response> getProcedureByHospitalIdAndProcedureId(@PathVariable String hospitalId,
 			@PathVariable String procedureId) {
 		Response response = procedureFormService.getProcedureById(hospitalId, procedureId);
 		return ResponseEntity.status(response.getStatus()).body(response);
@@ -45,17 +44,15 @@ public class ProcedureFormController {
 	}
 
 	@PutMapping("/update-procedureForm/{hospitalId}/{procedureId}")
-	public ResponseEntity<Response> updateProcedure(@PathVariable String hospitalId,
-			@PathVariable String procedureId, @RequestBody ProcedureFormDTO dto) {
+	public ResponseEntity<Response> updateProcedure(@PathVariable String hospitalId, @PathVariable String procedureId,
+			@RequestBody ProcedureFormDTO dto) {
 		Response response = procedureFormService.updateProcedureForm(hospitalId, procedureId, dto);
 		return ResponseEntity.status(response.getStatus()).body(response);
 	}
 
 	@DeleteMapping("/delete-procedureForm/{hospitalId}/{procedureId}")
-	public ResponseEntity<Response> deleteProcedure(@PathVariable String hospitalId,
-			@PathVariable String procedureId) {
+	public ResponseEntity<Response> deleteProcedure(@PathVariable String hospitalId, @PathVariable String procedureId) {
 		Response response = procedureFormService.deleteProcedureForm(hospitalId, procedureId);
 		return ResponseEntity.status(response.getStatus()).body(response);
 	}
 }
-

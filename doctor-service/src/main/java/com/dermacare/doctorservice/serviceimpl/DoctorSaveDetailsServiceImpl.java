@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,9 +13,20 @@ import org.springframework.stereotype.Service;
 
 import com.dermacare.doctorservice.dermacaredoctorutils.VisitTypeUtil;
 import com.dermacare.doctorservice.dto.DoctorSaveDetailsDTO;
+import com.dermacare.doctorservice.dto.FollowUpDetailsDTO;
+import com.dermacare.doctorservice.dto.MedicinesDTO;
+import com.dermacare.doctorservice.dto.PrescriptionDetailsDTO;
 import com.dermacare.doctorservice.dto.Response;
+import com.dermacare.doctorservice.dto.SymptomDetailsDTO;
+import com.dermacare.doctorservice.dto.TreatmentDetailsDTO;
 import com.dermacare.doctorservice.feignclient.ClinicAdminServiceClient;
 import com.dermacare.doctorservice.model.DoctorSaveDetails;
+import com.dermacare.doctorservice.model.FollowUpDetails;
+import com.dermacare.doctorservice.model.Medicines;
+import com.dermacare.doctorservice.model.PrescriptionDetails;
+import com.dermacare.doctorservice.model.SymptomDetails;
+import com.dermacare.doctorservice.model.TestDetails;
+import com.dermacare.doctorservice.model.TreatmentDetails;
 import com.dermacare.doctorservice.repository.DoctorSaveDetailsRepository;
 import com.dermacare.doctorservice.service.DoctorSaveDetailsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,14 +58,12 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             Map<String, Object> doctorData = objectMapper.convertValue(doctorResponse.getData(), Map.class);
             dto.setDoctorName((String) doctorData.get("doctorName"));
 
-            // Set clinicId and clinicName from frontend or use empty string as fallback
             String clinicId = dto.getClinicId() != null ? dto.getClinicId() : "";
             String clinicName = dto.getClinicName() != null ? dto.getClinicName() : "";
 
             dto.setClinicId(clinicId);
             dto.setClinicName(clinicName);
 
-            // Step 2: Check for existing visits
             List<DoctorSaveDetails> previousVisits = repository.findByPatientId(dto.getPatientId());
 
             boolean isRevisit = previousVisits.stream()
@@ -66,17 +77,14 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
 
             int visitNumber = (int) uniqueBookingCount + (isRevisit ? 0 : 1);
 
-            // Step 3: Set visit metadata
             dto.setVisitDateTime(LocalDateTime.now());
             int visitTypeCount = (int) uniqueBookingCount + (isRevisit ? 0 : 1);
             dto.setVisitType(VisitTypeUtil.getVisitTypeFromCount(visitTypeCount));
 
 
-            // Step 4: Convert and save entity
             DoctorSaveDetails entity = convertToEntity(dto);
             DoctorSaveDetails saved = repository.save(entity);
 
-            // Step 5: Return full saved details and visit number
             DoctorSaveDetailsDTO savedDto = convertToDto(saved);
 
             return buildResponse(true, Map.of(
@@ -102,7 +110,6 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
     public Response updateDoctorDetails(String id, DoctorSaveDetailsDTO dto) {
         Optional<DoctorSaveDetails> optional = repository.findById(id);
         if (optional.isPresent()) {
-            // Optionally fetch doctor/clinic info again if needed
             DoctorSaveDetails updated = convertToEntity(dto);
             updated.setId(id);
             DoctorSaveDetails saved = repository.save(updated);
@@ -183,26 +190,70 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
         }
     }
 
-    // Converts DTO to Entity
     private DoctorSaveDetails convertToEntity(DoctorSaveDetailsDTO dto) {
         return DoctorSaveDetails.builder()
+                .id(dto.getId())
                 .patientId(dto.getPatientId())
                 .doctorId(dto.getDoctorId())
                 .doctorName(dto.getDoctorName())
                 .clinicId(dto.getClinicId())
                 .clinicName(dto.getClinicName())
                 .bookingId(dto.getBookingId())
-                .symptoms(dto.getSymptoms())
-                .tests(dto.getTests())
-                .treatments(dto.getTreatments())
-                .followUp(dto.getFollowUp())
-                .prescription(dto.getPrescription())
+                .symptoms(dto.getSymptoms() != null ?
+                        SymptomDetails.builder()
+                                .symptomDetails(dto.getSymptoms().getSymptomDetails())
+                                .doctorObs(dto.getSymptoms().getDoctorObs())
+                                .diagnosis(dto.getSymptoms().getDiagnosis())
+                                .duration(dto.getSymptoms().getDuration())
+                                .reports(dto.getSymptoms().getReports()) 
+                                .build()
+                        : null)
+                .tests(dto.getTests() != null ?
+                        TestDetails.builder()
+                                .selectedTests(dto.getTests().getSelectedTests())
+                                .testReason(dto.getTests().getTestReason())
+                                .build()
+                        : null)
+                .treatments(dto.getTreatments() != null ?
+                        TreatmentDetails.builder()
+                                .selectedTreatments(dto.getTreatments().getSelectedTreatments())
+                                .treatmentReason(dto.getTreatments().getTreatmentReason())
+                                .build()
+                        : null)
+                .followUp(dto.getFollowUp() != null ?
+                        FollowUpDetails.builder()
+                                .durationValue(dto.getFollowUp().getDurationValue())
+                                .durationUnit(dto.getFollowUp().getDurationUnit())
+                                .nextFollowUpDate(dto.getFollowUp().getNextFollowUpDate())
+                                .followUpnote(dto.getFollowUp().getFollowUpnote())
+                                .build()
+                        : null)
+                .prescription(dto.getPrescription() != null ?
+                        PrescriptionDetails.builder()
+                                .medicines(dto.getPrescription().getMedicines() != null ?
+                                        dto.getPrescription().getMedicines().stream()
+                                                .map(med -> Medicines.builder()
+                                                        .id(UUID.randomUUID())
+                                                        .name(med.getName())
+                                                        .dose(med.getDose())
+                                                        .duration(med.getDuration())
+                                                        .food(med.getFood())
+                                                        .note(med.getNote())
+                                                        .remindWhen(med.getRemindWhen())
+                                                        .times(med.getTimes())
+                                                        .build())
+                                                .collect(Collectors.toList())
+                                        : null)
+                                .build()
+                        : null)
                 .visitType(dto.getVisitType())
                 .visitDateTime(dto.getVisitDateTime())
                 .build();
     }
 
-    // Converts Entity to DTO
+
+
+
     private DoctorSaveDetailsDTO convertToDto(DoctorSaveDetails entity) {
         return DoctorSaveDetailsDTO.builder()
                 .id(entity.getId())
@@ -212,15 +263,53 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                 .clinicId(entity.getClinicId())
                 .clinicName(entity.getClinicName())
                 .bookingId(entity.getBookingId())
-                .symptoms(entity.getSymptoms())
-                .tests(entity.getTests())
-                .treatments(entity.getTreatments())
-                .followUp(entity.getFollowUp())
-                .prescription(entity.getPrescription())
+                .symptoms(entity.getSymptoms() != null ?
+                        SymptomDetailsDTO.builder()
+                                .symptomDetails(entity.getSymptoms().getSymptomDetails())
+                                .doctorObs(entity.getSymptoms().getDoctorObs())
+                                .diagnosis(entity.getSymptoms().getDiagnosis())
+                                .duration(entity.getSymptoms().getDuration())
+                                .reports(entity.getSymptoms().getReports()) 
+
+                                .build()
+                        : null)
+                .treatments(entity.getTreatments() != null ?
+                        TreatmentDetailsDTO.builder()
+                                .selectedTreatments(entity.getTreatments().getSelectedTreatments())
+                                .treatmentReason(entity.getTreatments().getTreatmentReason())
+                                .build()
+                        : null)
+                .followUp(entity.getFollowUp() != null ?
+                        FollowUpDetailsDTO.builder()
+                                .durationValue(entity.getFollowUp().getDurationValue())
+                                .durationUnit(entity.getFollowUp().getDurationUnit())
+                                .nextFollowUpDate(entity.getFollowUp().getNextFollowUpDate())
+                                .followUpnote(entity.getFollowUp().getFollowUpnote())
+                                .build()
+                        : null)
+                .prescription(entity.getPrescription() != null ?
+                        PrescriptionDetailsDTO.builder()
+                                .medicines(entity.getPrescription().getMedicines() != null ?
+                                        entity.getPrescription().getMedicines().stream()
+                                                .map(med -> MedicinesDTO.builder()
+                                                        .id(med.getId().toString())
+                                                        .name(med.getName())
+                                                        .dose(med.getDose())
+                                                        .duration(med.getDuration())
+                                                        .food(med.getFood())
+                                                        .note(med.getNote())
+                                                        .remindWhen(med.getRemindWhen())
+                                                        .times(med.getTimes())
+                                                        .build())
+                                                .collect(Collectors.toList())
+                                        : null)
+                                .build()
+                        : null)
                 .visitType(entity.getVisitType())
                 .visitDateTime(entity.getVisitDateTime())
                 .build();
     }
+
 
     // Builds standard Response object
     private Response buildResponse(boolean success, Object data, String message, int status) {

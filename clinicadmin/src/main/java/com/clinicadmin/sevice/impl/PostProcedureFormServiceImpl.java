@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.clinicadmin.dto.PostProcedureFormDTO;
-import com.clinicadmin.dto.PreProcedureFormDTO;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.ResponseStructure;
 import com.clinicadmin.dto.SubServicesDto;
@@ -46,9 +45,9 @@ public class PostProcedureFormServiceImpl implements PostProcedureFormService {
             form.setServiceName(subDTO.getServiceName());
             form.setCategoryId(subDTO.getCategoryId());
             form.setCategoryName(subDTO.getCategoryName());
-            form.setProcedureName(dto.getProcedureName());
+            form.setPostProcedureName(dto.getPostProcedureName());
             form.setTotalDuration(dto.getTotalDuration());
-            form.setDescription(dto.getDescription());
+            form.setPostProcedureDetails(dto.getPostProcedureDetails());
 
             PostProcedureForm savedFormData = postProcedureFormRepository.save(form);
             PostProcedureFormDTO formDTO = new PostProcedureFormDTO();
@@ -60,9 +59,9 @@ public class PostProcedureFormServiceImpl implements PostProcedureFormService {
 			formDTO.setServiceName(savedFormData.getServiceName());
 			formDTO.setSubServiceId(savedFormData.getSubServiceId());
 			formDTO.setSubServiceName(savedFormData.getSubServiceName());
-			formDTO.setProcedureName(savedFormData.getProcedureName());
+			formDTO.setPostProcedureName(savedFormData.getPostProcedureName());
 			formDTO.setTotalDuration(savedFormData.getTotalDuration());
-			formDTO.setDescription(savedFormData.getDescription());
+			formDTO.setPostProcedureDetails(savedFormData.getPostProcedureDetails());
             
 
             response.setSuccess(true);
@@ -91,8 +90,8 @@ public class PostProcedureFormServiceImpl implements PostProcedureFormService {
                 PostProcedureFormDTO dto = new PostProcedureFormDTO(
                         form.getId().toString(), form.getHospitalId(), form.getSubServiceId(),
                         form.getSubServiceName(), form.getServiceId(), form.getServiceName(),
-                        form.getCategoryId(), form.getCategoryName(), form.getProcedureName(),
-                        form.getTotalDuration(), form.getDescription()
+                        form.getCategoryId(), form.getCategoryName(), form.getPostProcedureName(),
+                        form.getTotalDuration(), form.getPostProcedureDetails()
                 );
 
                 response.setSuccess(true);
@@ -126,8 +125,8 @@ public class PostProcedureFormServiceImpl implements PostProcedureFormService {
                 List<PostProcedureFormDTO> dtoList = forms.stream().map(form -> new PostProcedureFormDTO(
                         form.getId().toString(), form.getHospitalId(), form.getSubServiceId(),
                         form.getSubServiceName(), form.getServiceId(), form.getServiceName(),
-                        form.getCategoryId(), form.getCategoryName(), form.getProcedureName(),
-                        form.getTotalDuration(), form.getDescription()
+                        form.getCategoryId(), form.getCategoryName(), form.getPostProcedureName(),
+                        form.getTotalDuration(), form.getPostProcedureDetails()
                 )).collect(Collectors.toList());
 
                 response.setSuccess(true);
@@ -167,22 +166,22 @@ public class PostProcedureFormServiceImpl implements PostProcedureFormService {
 
             PostProcedureForm form = optional.get();
 
-            if (dto.getProcedureName() != null)
-                form.setProcedureName(dto.getProcedureName());
+            if (dto.getPostProcedureName() != null)
+                form.setPostProcedureName(dto.getPostProcedureName());
 
             if (dto.getTotalDuration() != null)
                 form.setTotalDuration(dto.getTotalDuration());
 
-            if (dto.getDescription() != null)
-                form.setDescription(dto.getDescription());
+            if (dto.getPostProcedureDetails() != null)
+                form.setPostProcedureDetails(dto.getPostProcedureDetails());
 
             PostProcedureForm updated = postProcedureFormRepository.save(form);
 
             PostProcedureFormDTO updatedDTO = new PostProcedureFormDTO(
                     updated.getId().toString(), updated.getHospitalId(), updated.getSubServiceId(),
                     updated.getSubServiceName(), updated.getServiceId(), updated.getServiceName(),
-                    updated.getCategoryId(), updated.getCategoryName(), updated.getProcedureName(),
-                    updated.getTotalDuration(), updated.getDescription()
+                    updated.getCategoryId(), updated.getCategoryName(), updated.getPostProcedureName(),
+                    updated.getTotalDuration(), updated.getPostProcedureDetails()
             );
 
             response.setSuccess(true);

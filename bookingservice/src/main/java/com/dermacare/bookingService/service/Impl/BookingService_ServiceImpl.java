@@ -8,21 +8,19 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
 import com.dermacare.bookingService.dto.BookingRequset;
 import com.dermacare.bookingService.dto.BookingResponse;
 import com.dermacare.bookingService.dto.NotificationDTO;
@@ -53,7 +51,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	@Override
 	public BookingResponse addService(BookingRequset request) {
 		Booking entity = toEntity(request);
-		entity.setStatus("Pending");
+		entity.setStatus("Confirm");
 		Booking res = repository.save(entity);
 		res.setReports(null);
 		res.setNotes(null);
@@ -449,67 +447,111 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 	
 	@Scheduled(cron = "0 01 0 * * ?")
+	////@Scheduled(fixedRate = 20000)
 	private void changingStatusFromConfirmedToCompleted() {
-		try {
-			List<Booking> bookings = repository.findAll();
-			for(Booking b : bookings ) {
-				if(b.getStatus().equalsIgnoreCase("Confirmed")){
-				
-					ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
-				    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-				    String currentTime = istTime.format(formatter);
-				    System.out.println(currentTime);
-				    DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-			        LocalDateTime bDate = LocalDateTime.parse(b.getBookedAt(), format);
-				    System.out.println(bDate);
-			        DateTimeFormatter frmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-			        LocalDateTime todayDate = LocalDateTime.parse(currentTime, frmt);
-				    System.out.println(todayDate);  
-				    Long gap = ChronoUnit.DAYS.between(bDate,todayDate);
-				    System.out.println(gap);
-				    if(gap > Character.getNumericValue(b.getConsultationExpiration().charAt(0))) {				    	
-				    	b.setStatus("Completed");
-				    	repository.save(b);
-				    	NotificationDTO n =	notificationFeign.getNotificationByBookingId(b.getBookingId());
-				    	n.getData().setStatus("Completed");
-				    	notificationFeign.updateNotification(n);
-				    	System.out.println("done");
-				    }
-				}
-			}
-		}catch(Exception e) {}
-	}
+	    try {
+	        List<Booking> bookings = repository.findAll();
+	        for (Booking b : bookings) {
+	            if (b.getStatus().equalsIgnoreCase("Confirmed")) {
+	            	
+	                DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy hh:mm a");
+	                LocalDateTime bookedDateTime = LocalDateTime.parse(b.getBookedAt(), inputFormatter);
+                   // System.out.println(bookedDateTime);
+                    
+	                ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
+	                LocalDate todayDate = istTime.toLocalDate(); // only date part
+	                LocalDate bookedDate = bookedDateTime.toLocalDate(); // only date part
+                   // System.out.println(bookedDate);
+	                long gap = ChronoUnit.DAYS.between(bookedDate, todayDate);
+                   // System.out.println(gap);	               
+	                int expirationDays = Character.getNumericValue(b.getConsultationExpiration().charAt(0));
+                   // System.out.println(expirationDays);
+	               
+	                if (gap > expirationDays) {
+	                    b.setStatus("Completed");
+	                    repository.save(b);
+
+	                    NotificationDTO n = notificationFeign.getNotificationByBookingId(b.getBookingId());
+	                    n.getData().setStatus("Completed");
+	                    notificationFeign.updateNotification(n);
+
+	                    //System.out.println("Updated to Completed for bookingId: " + b.getBookingId());
+	                }}}}catch (Exception e) {}
+	    }
+
 	
 	
+	@Scheduled(cron = "0 30 0 * * ?")
+	////@Scheduled(fixedRate = 20000)
+	private void changingStatusFromConfirmedToCompletedByUsingSecondTime() {
+	    try {
+	        List<Booking> bookings = repository.findAll();
+	        for (Booking b : bookings) {
+	            if (b.getStatus().equalsIgnoreCase("Confirmed")) {
+	              
+	                DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy hh:mm a");
+	                LocalDateTime bookedDateTime = LocalDateTime.parse(b.getBookedAt(), inputFormatter);
+	               // System.out.println(bookedDateTime);
+	                ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
+	                LocalDate todayDate = istTime.toLocalDate(); // only date part
+	                LocalDate bookedDate = bookedDateTime.toLocalDate(); // only date part
+	               // System.out.println(bookedDate);
+	                long gap = ChronoUnit.DAYS.between(bookedDate, todayDate);
+	                int expirationDays = Character.getNumericValue(b.getConsultationExpiration().charAt(0));
+	                //System.out.println(gap);
+	               // System.out.println(expirationDays);
+	                if (gap > expirationDays) {
+	                    b.setStatus("Completed");
+	                    repository.save(b);
+
+	                    NotificationDTO n = notificationFeign.getNotificationByBookingId(b.getBookingId());
+	                    n.getData().setStatus("Completed");
+	                    notificationFeign.updateNotification(n);
+
+	                    System.out.println("Updated to Completed for bookingId: " + b.getBookingId());
+	                }}}}catch (Exception e) {}
+	       }
+
 	
-	public ResponseEntity<?> getCompletedAppointsOfPatientId(String patientId) {
-		ResponseStructure<Map<String,Object>> res = new ResponseStructure<Map<String,Object>>();
-		List<Booking> cmpltedApnts = new ArrayList<>();  
+	
+	@Scheduled(fixedRate = 60 * 60 * 1000)
+	public void getCompletedAppointsOfPatientId() { 
+		Map<String,Integer> map = new LinkedHashMap<>();
+		Set<String> ids = new LinkedHashSet<>();
 		    try {
-			List<Booking> existingBooking = repository.findByPatientId(patientId);
+			List<Booking> existingBooking = repository.findAll();
+			//System.out.println("existingBooking");
 			if(existingBooking != null && !existingBooking.isEmpty()){
+				//System.out.println("not null");
 			for(Booking b:existingBooking) {
-				if(b.getStatus().equalsIgnoreCase("Completed")) {
-			cmpltedApnts.add(b);}}
-			Map<String,Object> map = new LinkedHashMap<>();
-			map.put("Completed Patient Appointments", cmpltedApnts.size());
-			res.setData(map);
-			res.setStatusCode(200);
-			res.setHttpStatus(HttpStatus.OK);
-			res.setMessage("Appointments Are Found");
-			return ResponseEntity.status(200).body(res);
+			if(b.getStatus().equalsIgnoreCase("Completed")) {
+				//System.out.println("find complted");
+				if(!ids.contains(b.getPatientId())){
+			List<Booking> bookings = repository.findByPatientId(b.getPatientId());
+			ids.add(b.getPatientId());
+			//System.out.println("got obj by patient id");
+			for(Booking c:bookings) {
+			if(c.getStatus().equalsIgnoreCase("Completed")) {
+				//System.out.println("patient id with cmplted");
+			if(map.containsKey(b.getPatientId())){
+				//System.out.println("adding to map");
+				Integer value = map.get(b.getPatientId());
+				int vlue = value.intValue();
+				vlue += 1;
+				value = Integer.valueOf(vlue);
+			map.put(b.getPatientId(),value);
 			}else{
-				res.setStatusCode(200);
-				res.setHttpStatus(HttpStatus.OK);
-				res.setMessage("Appointments Are Not Found");
-				return ResponseEntity.status(200).body(res);}
-		    }catch(Exception e) {
-			res.setStatusCode(500);
-			res.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-			res.setMessage(e.getMessage());
-			return ResponseEntity.status(500).body(res);
-		}
-	}
+				map.put(b.getPatientId(),1);
+			}
+			for(String key : map.keySet()) {
+				List<Booking> bkings = repository.findByPatientId(key);
+				//System.out.println("got obj with key in map");
+				for(Booking bkng : bkings ) {
+					bkng.setVisitCount(map.get(key));
+					repository.save(bkng);}
+			}}}}}}}}catch(Exception e) {}
+	   }
+	
 	
 	
 	//---------------------------to get patientdetails by bookingId,pateintId,mobileNumber---------------------------
@@ -527,52 +569,22 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                .message("Booking details fetched successfully.")
 		                .data(response)
 		                .build();
-		    }else{
+		         }else{
 		    	 return Response.builder()
 			                .success(false)
 			                .status(404)
 			                .message("No booking found with the given details.")
 			                .build();	
-		    }}else {
+		        }}else{
 		        return Response.builder()
 		                .success(false)
 		                .status(404)
 		                .message("No booking found with the given details.")
 		                .build();}
-		}catch(Exception e) {
-			return Response.builder()
+		        }catch(Exception e){
+			    return Response.builder()
 	                .success(false)
 	                .status(500)
 	                .message(e.getMessage())
-	                .build();	
-	}
-}	    
-		    
-		    public ResponseEntity<?> getPatientFollowUpVisitsCountByAppointmentId(String appointmentId){
-				ResponseStructure<Map<String,Object>> res = new ResponseStructure<Map<String,Object>>();  
-				    try {
-					Optional<Booking> existingBooking = repository.findByBookingId(appointmentId);
-					if(existingBooking.isPresent()){
-					if(existingBooking.get().getStatus().equalsIgnoreCase("Confirmed")||existingBooking.get().getStatus().equalsIgnoreCase("Completed")) {
-					Map<String,Object> map = new LinkedHashMap<>();
-					map.put("Patient Follow Up Visited Appointments", existingBooking.get().getClinicVisitCount());
-					res.setData(map);
-					res.setStatusCode(200);
-					res.setHttpStatus(HttpStatus.OK);
-					res.setMessage("Appointments Are Found");
-					}else{
-						res.setStatusCode(200);
-						res.setHttpStatus(HttpStatus.OK);
-						res.setMessage("Appointments Are Not Found With Status Confirmed Or Completed");}
-					}else {
-						res.setStatusCode(200);
-						res.setHttpStatus(HttpStatus.OK);
-						res.setMessage("Appointments Are Not Found");}
-					}catch(Exception e) {
-					res.setStatusCode(500);
-					res.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-					res.setMessage(e.getMessage());
-				}
-				    return ResponseEntity.status(res.getStatusCode()).body(res);
-			}
-}
+	                .build();}}	    
+		        }

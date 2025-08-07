@@ -18,7 +18,7 @@ public class PostProcedureFormDTO {
     private String serviceName;
     private String categoryId;
     private String categoryName;
-    private String procedureName;
-    private String totalDuration;
-    private String description;
+	private String postProcedureName;
+	private String totalDuration;
+	private String postProcedureDetails;
 }

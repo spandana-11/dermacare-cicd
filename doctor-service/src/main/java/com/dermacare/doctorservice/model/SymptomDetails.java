@@ -11,5 +11,6 @@ public class SymptomDetails {
     private String doctorObs;
     private String diagnosis;
     private String duration;
+    private String  reports;
 }
 

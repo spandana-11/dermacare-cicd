@@ -21,8 +21,8 @@ public class PostProcedureForm {
 	private String serviceName;						
 	private String categoryId;		
 	private String categoryName;
-	private String procedureName;
+	private String postProcedureName;
 	private String totalDuration;
-	private String description;
+	private String postProcedureDetails;
 
 }

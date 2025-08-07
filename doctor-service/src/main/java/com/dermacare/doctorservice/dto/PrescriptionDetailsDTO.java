@@ -1,4 +1,4 @@
-// PrescriptionDetailsDTO.java
+
 package com.dermacare.doctorservice.dto;
 
 import lombok.*;

@@ -46,9 +46,9 @@ public class PreProcedureFormServiceImpl implements PreProcedureFormService {
 			preProcedureFormData.setServiceName(subDTO.getServiceName());
 			preProcedureFormData.setSubServiceId(subServiceId);
 			preProcedureFormData.setSubServiceName(subDTO.getSubServiceName());
-			preProcedureFormData.setProcedureName(preProcedureFormDTO.getProcedureName());
+			preProcedureFormData.setPreProcedureName(preProcedureFormDTO.getPreProcedureName());
 			preProcedureFormData.setTotalDuration(preProcedureFormDTO.getTotalDuration());
-			preProcedureFormData.setDescription(preProcedureFormDTO.getDescription());
+			preProcedureFormData.setPreProcedureDetails(preProcedureFormDTO.getPreProcedureDetails());
 
 			PreProcedureForm savedFormData = preProcedureFormRepository.save(preProcedureFormData);
 			PreProcedureFormDTO formDTO = new PreProcedureFormDTO();
@@ -60,9 +60,9 @@ public class PreProcedureFormServiceImpl implements PreProcedureFormService {
 			formDTO.setServiceName(savedFormData.getServiceName());
 			formDTO.setSubServiceId(savedFormData.getSubServiceId());
 			formDTO.setSubServiceName(savedFormData.getSubServiceName());
-			formDTO.setProcedureName(savedFormData.getProcedureName());
+			formDTO.setPreProcedureName(savedFormData.getPreProcedureName());
 			formDTO.setTotalDuration(savedFormData.getTotalDuration());
-			formDTO.setDescription(savedFormData.getDescription());
+			formDTO.setPreProcedureDetails(savedFormData.getPreProcedureDetails());
 
 			response.setSuccess(true);
 			response.setData(formDTO);
@@ -81,48 +81,62 @@ public class PreProcedureFormServiceImpl implements PreProcedureFormService {
 	}
 
 	@Override
-	public Response getPreProcedureFormBypreProcedureFormId(String hospitalId,String preProcedureFormId) {
-		Response response = new Response();
-		try {
-			Optional<PreProcedureForm> dbFormData = preProcedureFormRepository
-					.findByHospitalIdAndId(hospitalId,new ObjectId(preProcedureFormId));
-			if (dbFormData.isPresent()) {
-				PreProcedureForm savedData = dbFormData.get();
-				PreProcedureFormDTO formDTO = new PreProcedureFormDTO();
-				formDTO.setId(savedData.getId().toString());
-				formDTO.setHospitalId(savedData.getHospitalId());
-				formDTO.setCategoryId(savedData.getCategoryId());
-				formDTO.setCategoryName(savedData.getServiceId());
-				formDTO.setServiceId(savedData.getServiceId());
-				formDTO.setServiceName(savedData.getServiceName());
-				formDTO.setSubServiceId(savedData.getSubServiceId());
-				formDTO.setSubServiceName(savedData.getSubServiceName());
-				formDTO.setProcedureName(savedData.getProcedureName());
-				formDTO.setTotalDuration(savedData.getTotalDuration());
-				formDTO.setDescription(savedData.getDescription());
+	public Response getPreProcedureFormBypreProcedureFormId(String hospitalId, String preProcedureFormId) {
+	    Response response = new Response();
 
-				response.setSuccess(true);
-				response.setData(formDTO);
-				response.setMessage(" PreProcedure form data retrive successfully");
-				response.setStatus(HttpStatus.OK.value());
-				return response;
+	    if (hospitalId == null || hospitalId.isEmpty() || preProcedureFormId == null || preProcedureFormId.isEmpty()) {
+	        response.setSuccess(false);
+	        response.setData(null);
+	        response.setMessage("Hospital ID or PreProcedureForm ID cannot be null or empty");
+	        response.setStatus(HttpStatus.BAD_REQUEST.value());
+	        return response;
+	    }
 
-			}
-			response.setSuccess(true);
-			response.setData(Collections.emptyList());
-			response.setMessage(" PreProcedure form data not found with this id :" + preProcedureFormId);
-			response.setStatus(HttpStatus.OK.value());
-			return response;
-		} catch (Exception e) {
-			response.setSuccess(false);
-			response.setData(null);
-			response.setMessage(
-					" Exception occured during GetpreProcedureForm data using preProcedureFormId :" + e.getMessage());
-			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-			return response;
-		}
+	    try {
+	        Optional<PreProcedureForm> dbFormData = preProcedureFormRepository
+	                .findByHospitalIdAndId(hospitalId, new ObjectId(preProcedureFormId));
 
+	        if (dbFormData.isPresent()) {
+	            PreProcedureForm savedData = dbFormData.get();
+
+	            PreProcedureFormDTO formDTO = new PreProcedureFormDTO();
+	            formDTO.setId(savedData.getId() != null ? savedData.getId().toString() : null);
+	            formDTO.setHospitalId(savedData.getHospitalId());
+	            formDTO.setCategoryId(savedData.getCategoryId());
+	            formDTO.setCategoryName(savedData.getCategoryName()); // Corrected from setServiceId
+	            formDTO.setServiceId(savedData.getServiceId());
+	            formDTO.setServiceName(savedData.getServiceName());
+	            formDTO.setSubServiceId(savedData.getSubServiceId());
+	            formDTO.setSubServiceName(savedData.getSubServiceName());
+	            formDTO.setPreProcedureName(savedData.getPreProcedureName());
+	            formDTO.setTotalDuration(savedData.getTotalDuration());
+	            formDTO.setPreProcedureDetails(savedData.getPreProcedureDetails());
+
+	            response.setSuccess(true);
+	            response.setData(formDTO);
+	            response.setMessage("PreProcedure form data retrieved successfully");
+	            response.setStatus(HttpStatus.OK.value());
+	        } else {
+	            response.setSuccess(true);
+	            response.setData(Collections.emptyList());
+	            response.setMessage("PreProcedure form data not found with ID: " + preProcedureFormId);
+	            response.setStatus(HttpStatus.OK.value());
+	        }
+	    } catch (IllegalArgumentException e) {
+	        response.setSuccess(false);
+	        response.setData(null);
+	        response.setMessage("Invalid PreProcedureForm ID format: " + e.getMessage());
+	        response.setStatus(HttpStatus.BAD_REQUEST.value());
+	    } catch (Exception e) {
+	        response.setSuccess(false);
+	        response.setData(null);
+	        response.setMessage("Exception occurred while retrieving data: " + e.getMessage());
+	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	    }
+
+	    return response;
 	}
+
 @Override
 	public Response getAllPreProcedureForm() {
 		Response response = new Response();
@@ -133,8 +147,8 @@ public class PreProcedureFormServiceImpl implements PreProcedureFormService {
 				List<PreProcedureFormDTO> dtoList = dataList.stream()
 						.map(form -> new PreProcedureFormDTO(form.getId().toString(),form.getHospitalId(), form.getCategoryId(),
 								form.getCategoryName(), form.getServiceId(), form.getServiceName(),
-								form.getSubServiceId(), form.getSubServiceName(), form.getProcedureName(),
-								form.getTotalDuration(), form.getDescription()))
+								form.getSubServiceId(), form.getSubServiceName(), form.getPreProcedureName(),
+								form.getTotalDuration(), form.getPreProcedureDetails()))
 						.collect(Collectors.toList());
 				response.setSuccess(true);
 				response.setData(dtoList);
@@ -175,14 +189,14 @@ public Response updatePreProcedureForm(String hospitalId, String preProcedureFor
 		PreProcedureForm form = optionalForm.get();
 
 		// Only update if DTO fields are not null
-		if (dto.getProcedureName() != null)
-			form.setProcedureName(dto.getProcedureName());
+		if (dto.getPreProcedureName() != null)
+			form.setPreProcedureName(dto.getPreProcedureName());
 
 		if (dto.getTotalDuration() != null)
 			form.setTotalDuration(dto.getTotalDuration());
 
-		if (dto.getDescription() != null)
-			form.setDescription(dto.getDescription());
+		if (dto.getPreProcedureDetails() != null)
+			form.setPreProcedureDetails(dto.getPreProcedureDetails());
 
 		// Save updated form
 		PreProcedureForm updatedForm = preProcedureFormRepository.save(form);
@@ -197,9 +211,9 @@ public Response updatePreProcedureForm(String hospitalId, String preProcedureFor
 				updatedForm.getServiceName(),
 				updatedForm.getSubServiceId(),
 				updatedForm.getSubServiceName(),
-				updatedForm.getProcedureName(),
+				updatedForm.getPreProcedureName(),
 				updatedForm.getTotalDuration(),
-				updatedForm.getDescription()
+				updatedForm.getPreProcedureDetails()
 		);
 
 		response.setSuccess(true);

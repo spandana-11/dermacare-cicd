@@ -21,8 +21,8 @@ public class PreProcedureForm {
 	private String serviceName;						
 	private String categoryId;		
 	private String categoryName;
-	private String procedureName;
+	private String preProcedureName;
 	private String totalDuration;
-	private String description;
+	private String preProcedureDetails;
 
 }

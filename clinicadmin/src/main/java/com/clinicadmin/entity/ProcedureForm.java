@@ -22,5 +22,5 @@ public class ProcedureForm {
 	private String categoryName;
 	private String procedureName;
 	private String totalDuration;
-	private String description;
+	private String procedureDetails;
 }

@@ -17,7 +17,7 @@ import com.clinicadmin.service.VitalService;
 
 @RestController
 @RequestMapping("/clinic-admin")
-
+// @CrossOrigin(origins = { "http://localhost:3000", "http://localhost:3001" })
 public class VitalsController {
 	@Autowired
 	VitalService vitalService;
