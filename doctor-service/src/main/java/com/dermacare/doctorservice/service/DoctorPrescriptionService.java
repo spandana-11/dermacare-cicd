@@ -12,4 +12,6 @@ public interface DoctorPrescriptionService {
     Response deletePrescription(String id);
     Response searchMedicinesByName(String keyword);
     Response deleteMedicineById(String medicineId);
+    Response getPrescriptionsByClinicId(String clinicId);
+
 }

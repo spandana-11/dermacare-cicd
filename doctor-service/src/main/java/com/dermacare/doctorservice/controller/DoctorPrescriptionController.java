@@ -10,7 +10,7 @@ import com.dermacare.doctorservice.service.DoctorPrescriptionService;
 
 @RestController
 @RequestMapping("/doctors")
-// @CrossOrigin(origins = "*")
+// @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 
 public class DoctorPrescriptionController {
 
@@ -62,5 +62,12 @@ public class DoctorPrescriptionController {
         Response res = service.deleteMedicineById(medicineId);
         return ResponseEntity.status(res.getStatus()).body(res);
     }
+    @GetMapping("/getPrescriptionsByClinicId/{clinicId}")
+    public ResponseEntity<Response> getPrescriptionsByClinicId(@PathVariable String clinicId) {
+        Response response = service.getPrescriptionsByClinicId(clinicId);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
+
 
 }

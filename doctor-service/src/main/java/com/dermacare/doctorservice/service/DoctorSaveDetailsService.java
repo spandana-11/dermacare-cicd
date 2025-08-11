@@ -20,4 +20,6 @@ public interface DoctorSaveDetailsService {
 //	Response getRevisitPrescriptions(String patientId, String bookingId);
 	Response getVisitHistoryByPatient(String patientId);
 
+	Response getVisitHistoryByPatientAndDoctor(String patientId, String doctorId);
+
 }

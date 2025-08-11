@@ -16,11 +16,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Document(collection = "DoctorPrescription")
 public class DoctorPrescription {
-
     @Id
-    private String prescriptionId;
+    private String id; 
     private LocalDateTime visitDateTime;
 
-
+    private String clinicId;
     private List<Medicine> medicines;  
 }

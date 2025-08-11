@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/doctors")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
+// @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 
 public class DoctorTemplateController {
 
@@ -50,4 +50,10 @@ public class DoctorTemplateController {
         Response response = doctorTemplateService.searchTemplatesByTitle(keyword);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
+    @GetMapping("/getTemplatesByClinicId/{clinicId}")
+    public ResponseEntity<Response> getTemplatesByClinicId(@PathVariable String clinicId) {
+        Response response = doctorTemplateService.getTemplatesByClinicId(clinicId);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
 }

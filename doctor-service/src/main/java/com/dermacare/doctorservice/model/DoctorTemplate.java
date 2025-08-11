@@ -21,7 +21,7 @@ public class DoctorTemplate {
     private String id;
     private String title;
     private LocalDateTime createdAt;
-
+    private String clinicId;
     private SymptomDetails symptoms;
     private TestDetails tests;
     private TreatmentDetails treatments;

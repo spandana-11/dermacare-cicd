@@ -27,69 +27,135 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
     @Override
     public Response createPrescription(DoctorPrescriptionDTO dto) {
         try {
-            DoctorPrescription entity = new DoctorPrescription();
-            entity.setPrescriptionId(UUID.randomUUID().toString());
+            if (dto == null || dto.getMedicines() == null || dto.getMedicines().isEmpty()) {
+                return new Response(false, null, "Prescription must have at least one medicine", HttpStatus.BAD_REQUEST.value());
+            }
 
-            // Fetch all existing prescriptions to check for existing medicine names
-            List<DoctorPrescription> allPrescriptions = repository.findAll();
-            List<Medicine> existingMedicines = allPrescriptions.stream()
-                .flatMap(p -> Optional.ofNullable(p.getMedicines()).orElse(List.of()).stream())
-                .collect(Collectors.toList());
+            DoctorPrescription entity;
+            if (dto.getId() != null && !dto.getId().isBlank()) {
+                entity = repository.findById(dto.getId()).orElse(new DoctorPrescription());
+            } else {
+                entity = new DoctorPrescription();
+            }
+            if (dto.getClinicId() != null && !dto.getClinicId().isBlank()) {
+                entity.setClinicId(dto.getClinicId());
+            }
 
-            List<Medicine> medicineList = dto.getMedicines().stream().map(m -> {
-                String incomingName = m.getName() != null ? m.getName().trim().toLowerCase() : "";
 
-                Optional<Medicine> existing = existingMedicines.stream()
-                    .filter(existingMed -> existingMed.getName() != null &&
-                            existingMed.getName().trim().equalsIgnoreCase(incomingName))
-                    .findFirst();
+            List<Medicine> existingMedicines = Optional.ofNullable(entity.getMedicines())
+                    .orElse(new ArrayList<>());
 
-                String medId;
-                if (existing.isPresent()) {
-                    // Update existing medicine by ID
-                    medId = existing.get().getId();
-                } else {
-                    // New unique medicine
-                    medId = UUID.randomUUID().toString();
+            // Process each incoming medicine
+            for (MedicineDTO incomingMed : dto.getMedicines()) {
+                if (incomingMed == null || incomingMed.getName() == null || incomingMed.getName().isBlank()) {
+                    continue;
                 }
 
-                return new Medicine(
-                    medId,
-                    m.getName(),
-                    m.getDose(),
-                    m.getDuration(),
-                    m.getNote(),
-                    m.getFood(),
-                    m.getRemindWhen(),
-                    m.getTimes()
-                );
-            }).collect(Collectors.toList());
+                String normalizedName = incomingMed.getName().trim().toLowerCase();
 
-            entity.setMedicines(medicineList);
+                // Find all prescriptions containing medicine with this name
+                List<DoctorPrescription> prescriptionsWithMedicine = repository.findAll().stream()
+                    .filter(prescription -> prescription.getMedicines() != null &&
+                        prescription.getMedicines().stream()
+                            .anyMatch(med -> med.getName() != null && med.getName().trim().equalsIgnoreCase(normalizedName)))
+                    .collect(Collectors.toList());
 
-            // Save prescription with updated/new medicines
+                if (!prescriptionsWithMedicine.isEmpty()) {
+                    // Update medicine details in all these prescriptions
+                    for (DoctorPrescription pres : prescriptionsWithMedicine) {
+                        for (Medicine med : pres.getMedicines()) {
+                            if (med.getName() != null && med.getName().trim().equalsIgnoreCase(normalizedName)) {
+                                med.setDose(incomingMed.getDose());
+                                med.setDuration(incomingMed.getDuration());
+                                med.setNote(incomingMed.getNote());
+                                med.setFood(incomingMed.getFood());
+                                med.setRemindWhen(incomingMed.getRemindWhen());
+                                med.setTimes(incomingMed.getTimes());
+                            }
+                        }
+                        repository.save(pres);
+                    }
+
+                    // Check if medicine exists in current prescription; if not, add it
+                    boolean existsInCurrent = existingMedicines.stream()
+                            .anyMatch(m -> m.getName() != null && m.getName().trim().equalsIgnoreCase(normalizedName));
+
+                    if (!existsInCurrent) {
+                        Medicine medToAdd = prescriptionsWithMedicine.get(0).getMedicines().stream()
+                            .filter(m -> m.getName() != null && m.getName().trim().equalsIgnoreCase(normalizedName))
+                            .findFirst()
+                            .orElse(null);
+
+                        if (medToAdd != null) {
+                            existingMedicines.add(medToAdd);
+                        }
+                    }
+                } else {
+                    // Medicine name does not exist anywhere: add new medicine with new UUID
+                    existingMedicines.add(new Medicine(
+                        UUID.randomUUID().toString(),
+                        incomingMed.getName().trim(),
+                        incomingMed.getDose(),
+                        incomingMed.getDuration(),
+                        incomingMed.getNote(),
+                        incomingMed.getFood(),
+                        incomingMed.getRemindWhen(),
+                        incomingMed.getTimes()
+                    ));
+                }
+            }
+
+            entity.setMedicines(existingMedicines);
             DoctorPrescription saved = repository.save(entity);
 
+            // Prepare response DTO
             DoctorPrescriptionDTO responseDTO = new DoctorPrescriptionDTO();
-            responseDTO.setPrescriptionId(saved.getPrescriptionId());
-            responseDTO.setMedicines(saved.getMedicines().stream().map(m -> new MedicineDTO(
-                m.getId(), m.getName(), m.getDose(), m.getDuration(), m.getNote(), m.getFood(), m.getRemindWhen(), m.getTimes()
-            )).collect(Collectors.toList()));
+            responseDTO.setId(saved.getId());
+            responseDTO.setClinicId(saved.getClinicId()); 
 
-            return new Response(true, responseDTO, "Prescription created successfully", HttpStatus.CREATED.value());
+            responseDTO.setMedicines(saved.getMedicines().stream()
+                    .map(m -> new MedicineDTO(
+                            m.getId(), m.getName(), m.getDose(), m.getDuration(),
+                            m.getNote(), m.getFood(), m.getRemindWhen(), m.getTimes()
+                    ))
+                    .collect(Collectors.toList())
+            );
+
+            return new Response(true, responseDTO, "Prescription created/updated successfully", HttpStatus.CREATED.value());
 
         } catch (Exception e) {
-            return new Response(false, null, "Failed to create prescription: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return new Response(false, null, "Failed to create/update prescription: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
+    private void updateMedicine(Medicine existing, MedicineDTO incoming) {
+        existing.setDose(incoming.getDose());
+        existing.setDuration(incoming.getDuration());
+        existing.setNote(incoming.getNote());
+        existing.setFood(incoming.getFood());
+        existing.setRemindWhen(incoming.getRemindWhen());
+        existing.setTimes(incoming.getTimes());
+    }
+
+
+    // Helper method to update medicine details
+//    private void updateMedicine(Medicine existing, MedicineDTO incoming) {
+//        existing.setName(incoming.getName().trim());
+//        existing.setDose(incoming.getDose());
+//        existing.setDuration(incoming.getDuration());
+//        existing.setNote(incoming.getNote());
+//        existing.setFood(incoming.getFood());
+//        existing.setRemindWhen(incoming.getRemindWhen());
+//        existing.setTimes(incoming.getTimes());
+//    }
 
     @Override
     public Response getAllPrescriptions() {
         try {
             List<DoctorPrescriptionDTO> dtos = repository.findAll().stream().map(p -> {
                 DoctorPrescriptionDTO dto = new DoctorPrescriptionDTO();
-                dto.setPrescriptionId(p.getPrescriptionId());
+                dto.setId(p.getId());
                 List<MedicineDTO> meds = Optional.ofNullable(p.getMedicines()).orElse(List.of()).stream().map(m -> new MedicineDTO(
                     m.getId(), m.getName(), m.getDose(), m.getDuration(), m.getNote(), m.getFood(), m.getRemindWhen(), m.getTimes()
                 )).collect(Collectors.toList());
@@ -111,7 +177,7 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
             if (optional.isPresent()) {
                 DoctorPrescription p = optional.get();
                 DoctorPrescriptionDTO dto = new DoctorPrescriptionDTO();
-                dto.setPrescriptionId(p.getPrescriptionId());
+                dto.setId(p.getId());
                 List<MedicineDTO> meds = Optional.ofNullable(p.getMedicines()).orElse(List.of()).stream().map(m -> new MedicineDTO(
                     m.getId(), m.getName(), m.getDose(), m.getDuration(), m.getNote(), m.getFood(), m.getRemindWhen(), m.getTimes()
                 )).collect(Collectors.toList());
@@ -132,6 +198,7 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
             List<Medicine> matches = repository.findAll().stream()
                 .flatMap(p -> Optional.ofNullable(p.getMedicines()).orElse(List.of()).stream())
                 .filter(m -> m.getId() != null && m.getId().equals(medicineId))
+                .distinct()
                 .collect(Collectors.toList());
 
             if (!matches.isEmpty()) {
@@ -139,7 +206,7 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                     m.getId(), m.getName(), m.getDose(), m.getDuration(), m.getNote(), m.getFood(), m.getRemindWhen(), m.getTimes()
                 )).collect(Collectors.toList());
 
-                return new Response(true, dtos, "Medicine(s) found with given ID", HttpStatus.OK.value());
+                return new Response(true, dtos, "Medicine found", HttpStatus.OK.value());
             } else {
                 return new Response(false, null, "No medicine found with given ID", HttpStatus.NOT_FOUND.value());
             }
@@ -169,47 +236,45 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                 return new Response(false, null, "Keyword must not be empty", HttpStatus.BAD_REQUEST.value());
             }
 
-            // Normalize keyword
             String normalizedKeyword = keyword.trim().replaceAll("\\s+", " ").toLowerCase();
 
-            // Get all prescriptions and extract exact name matches
-            List<DoctorPrescription> allPrescriptions = repository.findAll();
-
-            List<Medicine> matchedMedicines = allPrescriptions.stream()
+            // Use a map to avoid duplicates by medicine ID
+            var medicineMap = repository.findAll().stream()
                 .flatMap(prescription -> Optional.ofNullable(prescription.getMedicines())
                                                  .orElse(List.of()).stream())
                 .filter(medicine -> {
                     if (medicine.getName() == null) return false;
                     String normalizedMedicineName = medicine.getName().trim().replaceAll("\\s+", " ").toLowerCase();
-                    return normalizedMedicineName.equals(normalizedKeyword);  // ✅ exact match only
+                    return normalizedMedicineName.equals(normalizedKeyword);
                 })
-                .distinct()
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(
+                    Medicine::getId,  // key by medicine ID
+                    m -> new MedicineDTO(
+                        m.getId(),
+                        m.getName(),
+                        m.getDose(),
+                        m.getDuration(),
+                        m.getNote(),
+                        m.getFood(),
+                        m.getRemindWhen(),
+                        m.getTimes()
+                    ),
+                    (existing, replacement) -> existing // in case of duplicates, keep first
+                ));
+
+            List<MedicineDTO> matchedMedicines = new ArrayList<>(medicineMap.values());
 
             if (matchedMedicines.isEmpty()) {
                 return new Response(false, null, "No medicine found with exact name: " + keyword, HttpStatus.NOT_FOUND.value());
             }
 
-            // Convert matched medicines to DTOs
-            List<MedicineDTO> dtos = matchedMedicines.stream()
-                .map(m -> new MedicineDTO(
-                    m.getId(),
-                    m.getName(),
-                    m.getDose(),
-                    m.getDuration(),
-                    m.getNote(),
-                    m.getFood(),
-                    m.getRemindWhen(),
-                    m.getTimes()
-                ))
-                .collect(Collectors.toList());
-
-            return new Response(true, dtos, "Matching medicines found", HttpStatus.OK.value());
+            return new Response(true, matchedMedicines, "Matching medicine found", HttpStatus.OK.value());
 
         } catch (Exception e) {
             return new Response(false, null, "Error searching medicines: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+
 
     @Override
     public Response deleteMedicineById(String medicineId) {
@@ -241,4 +306,28 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
             return new Response(false, null, "Error deleting medicine: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+    @Override
+    public Response getPrescriptionsByClinicId(String clinicId) {
+        try {
+            List<DoctorPrescription> prescriptions = repository.findByClinicId(clinicId);
+            List<DoctorPrescriptionDTO> dtos = prescriptions.stream().map(p -> {
+                DoctorPrescriptionDTO dto = new DoctorPrescriptionDTO();
+                dto.setId(p.getId());
+                dto.setClinicId(p.getClinicId());  
+
+                List<MedicineDTO> meds = Optional.ofNullable(p.getMedicines()).orElse(List.of()).stream()
+                    .map(m -> new MedicineDTO(
+                        m.getId(), m.getName(), m.getDose(), m.getDuration(), m.getNote(), m.getFood(), m.getRemindWhen(), m.getTimes()
+                    )).collect(Collectors.toList());
+                dto.setMedicines(meds);
+                return dto;
+            }).collect(Collectors.toList());
+
+            return new Response(true, dtos, "Prescriptions fetched successfully for clinicId: " + clinicId, HttpStatus.OK.value());
+
+        } catch (Exception e) {
+            return new Response(false, null, "Error fetching prescriptions by clinicId: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
 }

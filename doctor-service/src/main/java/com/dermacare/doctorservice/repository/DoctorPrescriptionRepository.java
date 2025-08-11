@@ -10,4 +10,6 @@ public interface DoctorPrescriptionRepository extends MongoRepository<DoctorPres
 
     // ✅ Correct: finds all prescriptions containing a medicine with given ID
     List<DoctorPrescription> findByMedicines_Id(String medicineId);
+    List<DoctorPrescription> findByClinicId(String clinicId);
+
 }

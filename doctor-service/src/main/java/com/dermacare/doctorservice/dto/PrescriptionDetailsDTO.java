@@ -10,6 +10,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class PrescriptionDetailsDTO {
-    private String id;
+//    private String id;
     private List<MedicinesDTO> medicines;
 }

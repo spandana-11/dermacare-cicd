@@ -320,4 +320,47 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                 .status(status)
                 .build();
     }
+    @Override
+    public Response getVisitHistoryByPatientAndDoctor(String patientId, String doctorId) {
+        try {
+            List<DoctorSaveDetails> visits = repository.findByPatientId(patientId);
+
+            if (visits.isEmpty()) {
+                return buildResponse(false, null, "No visit history found for the patient ID", HttpStatus.NOT_FOUND.value());
+            }
+
+            // If doctorId is provided, filter visits by doctorId
+            if (doctorId != null && !doctorId.isBlank()) {
+                visits = visits.stream()
+                        .filter(v -> doctorId.equals(v.getDoctorId()))
+                        .collect(Collectors.toList());
+
+                if (visits.isEmpty()) {
+                    return buildResponse(false, null, "No visit history found for the patient with the specified doctor ID", HttpStatus.NOT_FOUND.value());
+                }
+            }
+
+            // Sort visits by visitDateTime ascending
+            visits.sort((v1, v2) -> {
+                LocalDateTime dt1 = v1.getVisitDateTime();
+                LocalDateTime dt2 = v2.getVisitDateTime();
+
+                if (dt1 == null && dt2 == null) return 0;
+                if (dt1 == null) return 1;
+                if (dt2 == null) return -1;
+                return dt1.compareTo(dt2);
+            });
+
+            return buildResponse(true, Map.of(
+                "patientId", patientId,
+                "doctorId", doctorId,
+                "totalVisits", visits.size(),
+                "visitHistory", visits
+            ), "Visit history fetched successfully", HttpStatus.OK.value());
+
+        } catch (Exception e) {
+            return buildResponse(false, null, "Error fetching visit history: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
 }

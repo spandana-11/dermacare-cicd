@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/doctors")
+// @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
+
 public class DoctorSaveDetailsController {
 
     @Autowired
@@ -56,5 +58,17 @@ public class DoctorSaveDetailsController {
         Response response = service.getVisitHistoryByPatient(patientId);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
+    @GetMapping("/getVisitHistoryByPatientIdAndDoctorId/{patientId}/{doctorId}")
+    public ResponseEntity<Response> getVisitHistoryByPatientAndDoctor(
+            @PathVariable String patientId,
+            @PathVariable String doctorId) {
+        if ("null".equalsIgnoreCase(doctorId) || "none".equalsIgnoreCase(doctorId) || doctorId.isBlank()) {
+            doctorId = null;
+        }
+
+        Response response = service.getVisitHistoryByPatientAndDoctor(patientId, doctorId);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
 
 }

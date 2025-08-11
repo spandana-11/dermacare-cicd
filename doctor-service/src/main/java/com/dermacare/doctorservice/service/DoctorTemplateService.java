@@ -42,4 +42,6 @@ public interface DoctorTemplateService {
     ResponseEntity<Response> updateTemplate(String id, DoctorTemplateDTO dto);
 
 	Response searchTemplatesByTitle(String keyword);
+
+	Response getTemplatesByClinicId(String clinicId);
 }

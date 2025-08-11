@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DoctorPrescriptionDTO {
 	
-	private String prescriptionId;
+   
+    private String id; 
+    private String clinicId;
     private List<MedicineDTO> medicines;  
 }

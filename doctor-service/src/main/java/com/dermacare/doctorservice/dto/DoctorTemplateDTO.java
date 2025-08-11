@@ -14,9 +14,9 @@ import lombok.NoArgsConstructor;
 public class DoctorTemplateDTO {
 	
     private String title;
-    private String patientName;
+//    private String patientName;
     private LocalDateTime createdAt;
-
+    private String clinicId;
     private SymptomDetailsDTO symptoms;
     private TestDetailsDTO tests;
     private TreatmentDetailsDTO treatments;

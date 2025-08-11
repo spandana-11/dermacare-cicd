@@ -10,6 +10,8 @@ import com.dermacare.doctorservice.service.BookingService;
 
 @RestController
 @RequestMapping("/doctors")
+// @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
+
 public class BookingController {
 
     @Autowired

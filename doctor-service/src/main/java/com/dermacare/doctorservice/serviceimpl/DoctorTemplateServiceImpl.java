@@ -1,8 +1,6 @@
 package com.dermacare.doctorservice.serviceimpl;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -132,6 +130,7 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
         return DoctorTemplate.builder()
                 .title(dto.getTitle())
                 .createdAt(LocalDateTime.now())
+                .clinicId(dto.getClinicId())
 
                 // Mapping symptoms
                 .symptoms(dto.getSymptoms() != null
@@ -140,7 +139,7 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
                             .doctorObs(dto.getSymptoms().getDoctorObs())
                             .diagnosis(dto.getSymptoms().getDiagnosis())
                             .duration(dto.getSymptoms().getDuration())
-                            .reports(dto.getSymptoms().getReports()) // ✅ Use dto instead of entity
+                            .reports(dto.getSymptoms().getReports()) 
                             .build()
                         : null)
 
@@ -334,7 +333,8 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
     private DoctorTemplateDTO convertToDto(DoctorTemplate entity) {
         return DoctorTemplateDTO.builder()
                 .title(entity.getTitle())
-
+                .clinicId(entity.getClinicId())
+                .createdAt(entity.getCreatedAt())
                 .symptoms(entity.getSymptoms() != null ? 
                     com.dermacare.doctorservice.dto.SymptomDetailsDTO.builder()
                         .symptomDetails(entity.getSymptoms().getSymptomDetails())
@@ -387,6 +387,33 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
 
                 .build();
     }
+    @Override
+    public Response getTemplatesByClinicId(String clinicId) {
+        try {
+            List<DoctorTemplate> templates = repository.findByClinicId(clinicId);
+
+            List<DoctorTemplateDTO> dtos = templates.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+
+            return Response.builder()
+                    .success(true)
+                    .status(HttpStatus.OK.value())
+                    .message("Doctor templates fetched successfully for clinicId: " + clinicId)
+                    .data(dtos)
+                    .build();
+
+        } catch (Exception e) {
+            return Response.builder()
+                    .success(false)
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                    .message("Error fetching doctor templates by clinicId: " + e.getMessage())
+                    .data(null)
+                    .build();
+        }
+    }
+    
+
 
 
 
