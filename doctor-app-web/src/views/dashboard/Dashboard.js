@@ -61,8 +61,8 @@ import TooltipButton from '../../components/CustomButton/TooltipButton'
 import avatar8 from './../../assets/images/12.png'
 // import { patientData } from '../../Prescription/patientData.json'
 import { useDoctorContext } from '../../Context/DoctorContext'
-import {  getTodayAppointments } from '../../Auth/Auth'
-
+import { getTodayAppointments } from '../../Auth/Auth'
+// import { patientData } from '../../Prescription/patientData.json'
 const Dashboard = () => {
   const { setPatientData, doctorId, setTodayAppointments, todayAppointments } = useDoctorContext() // this calls the persisted helper if you set it up
 
@@ -78,7 +78,7 @@ const Dashboard = () => {
     ? todayAppointments.filter((item) => item.consultationType === selectedType)
     : todayAppointments
   const [adImage, setAdImage] = useState(null) // null = not yet loaded
-  
+
   useEffect(() => {
     // Simulate backend fetch delay
     setTimeout(() => {
@@ -87,7 +87,6 @@ const Dashboard = () => {
     }, 2000) // 2 seconds delay
   }, [])
 
-
   useEffect(() => {
     // clear context + localStorage so sidebar shows doctor data
     setPatientData(null)
@@ -95,11 +94,10 @@ const Dashboard = () => {
 
   useEffect(() => {
     // clear context + localStorage so sidebar shows doctor data
-    appointmentDetails();
+    appointmentDetails()
   }, [])
 
   const appointmentDetails = async () => {
-
     const response = await getTodayAppointments()
     console.log(response)
 
@@ -107,7 +105,6 @@ const Dashboard = () => {
       console.log(response.data)
       setTodayAppointments(response.data)
     }
-
   }
 
   return (
@@ -148,12 +145,11 @@ const Dashboard = () => {
               maxHeight: 'calc(100vh - 250px)',
               overflowY: 'auto',
               borderRadius: '8px',
-              boxShadow: '0 2px 2px rgba(13, 110, 253, 0.3)',
 
               overflow: 'hidden',
             }}
           >
-            <CTable className="mb-5 border">
+            <CTable className=" border">
               <CTableHead>
                 <CTableRow
                   style={{
@@ -161,25 +157,31 @@ const Dashboard = () => {
                     backgroundColor: '#d6d8db',
                   }}
                 >
-                  {['S.No', 'Patient ID', 'Name', 'Mobile Number', 'Time', 'Consultation', 'Action'].map(
-                    (header, i) => (
-                      <CTableHeaderCell
-                        key={i}
-                        style={{
-                          fontWeight: 'bold',
-                          color: '#000',
-                          backgroundColor: '#dee2e6',
-                        }}
-                        className={header === 'Action' ? 'text-center' : ''}
-                      >
-                        {header}
-                      </CTableHeaderCell>
-                    )
-                  )}
+                  {[
+                    'S.No',
+                    'Patient ID',
+                    'Name',
+                    'Mobile Number',
+                    'Time',
+                    'Consultation',
+                    'Action',
+                  ].map((header, i) => (
+                    <CTableHeaderCell
+                      key={i}
+                      style={{
+                        fontWeight: 'bold',
+                        color: '#000',
+                        backgroundColor: '#dee2e6',
+                      }}
+                      className={header === 'Action' ? 'text-center' : ''}
+                    >
+                      {header}
+                    </CTableHeaderCell>
+                  ))}
                 </CTableRow>
               </CTableHead>
 
-              <CTableBody >
+              <CTableBody>
                 {filteredPatients.length === 0 ? (
                   <CTableRow>
                     <CTableDataCell colSpan="7" className="text-center py-4 text-muted">
@@ -203,7 +205,6 @@ const Dashboard = () => {
                 )}
               </CTableBody>
             </CTable>
-
           </div>
         </div>
 

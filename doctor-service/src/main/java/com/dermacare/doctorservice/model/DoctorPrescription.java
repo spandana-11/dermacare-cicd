@@ -21,5 +21,6 @@ public class DoctorPrescription {
     private LocalDateTime visitDateTime;
 
     private String clinicId;
+    
     private List<Medicine> medicines;  
 }

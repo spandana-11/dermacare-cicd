@@ -31,14 +31,58 @@ const FollowUp = ({ seed = {}, onNext, sidebarWidth = 0, patientData }) => {
   const [durationUnit, setDurationUnit] = useState('Days')
   const [nextFollowUpDate, setNextFollowUpDate] = useState('')
   const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
+  const [userTouched, setUserTouched] = useState(false)
   // Calculate next follow-up date when duration/unit changes
   useEffect(() => {
+    if (!seed) return
+    // backend sometimes uses followUpnote, or note
+    const note = seed.followUpNote ?? seed.followUpnote ?? seed.note ?? ''
+
+    setFollowUpNote(note)
+
+    if (seed.durationValue !== undefined && seed.durationValue !== null) {
+      setDurationValue(Number(seed.durationValue))
+    }
+    if (seed.durationUnit) {
+      setDurationUnit(seed.durationUnit)
+    }
+    if (seed.nextFollowUpDate) {
+      setNextFollowUpDate(seed.nextFollowUpDate)
+      setUserTouched(false) // respect template date until user edits
+    }
+  }, [seed])
+
+  // Calculate next follow-up date only if user edits OR we don't have a template date
+  useEffect(() => {
+    const hasTemplateDate = !!(seed && seed.nextFollowUpDate)
+    if (!userTouched && hasTemplateDate) return
+
+    const val = Number(durationValue) || 0
+    if (!val) {
+      setNextFollowUpDate('')
+      return
+    }
+
     const now = new Date()
-    const addedDays = durationUnit === 'Weeks' ? durationValue * 7 : durationValue
-    now.setDate(now.getDate() + addedDays)
+    if (durationUnit === 'Weeks') {
+      now.setDate(now.getDate() + val * 7)
+    } else if (durationUnit === 'Months') {
+      // month-aware increment
+      const d = new Date(now)
+      d.setMonth(d.getMonth() + val)
+      // handle month overflow (e.g., Jan 31 + 1 month)
+      if (d.getDate() !== now.getDate()) {
+        d.setDate(0)
+      }
+      now.setTime(d.getTime())
+    } else {
+      // Days
+      now.setDate(now.getDate() + val)
+    }
+
     const options = { day: '2-digit', month: 'short', year: 'numeric' }
     setNextFollowUpDate(now.toLocaleDateString('en-GB', options))
-  }, [durationValue, durationUnit])
+  }, [durationValue, durationUnit, userTouched, seed])
 
   const handleNext = () => {
     const payload = {
@@ -114,6 +158,7 @@ const FollowUp = ({ seed = {}, onNext, sidebarWidth = 0, patientData }) => {
                     rows={4}
                     value={followUpNote}
                     onChange={(e) => setFollowUpNote(e.target.value)}
+                    placeholder="Any special instructions…"
                   />
                 </CCol>
               </CRow>

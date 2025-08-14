@@ -22,6 +22,7 @@ public class Booking  {
 	private String bookingFor;
 	private String relation;
 	private String patientMobileNumber;
+	private String patientAddress;
 	private String patientId;
 	private String visitType;
 	private String name;

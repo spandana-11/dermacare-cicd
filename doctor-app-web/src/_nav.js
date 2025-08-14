@@ -5,7 +5,7 @@ import {
   cilSpeedometer,
   cilCommentSquare,
   cilUser,
-  cilCalendar,
+  cilCalendar,cilNotes
 } from '@coreui/icons'
 import { CNavItem } from '@coreui/react'
 
@@ -34,6 +34,12 @@ const _nav = [
     name: 'Help Centre',
     to: '/helpCentre',
     icon: <CIcon icon={cilCommentSquare} customClassName="nav-icon" />,
+  },
+    {
+    component: CNavItem,
+    name: 'Doctor Template',
+    to: '/doctor-template',
+    icon: <CIcon icon={cilNotes} customClassName="nav-icon" />,
   },
   // {
   //   component: CNavItem,

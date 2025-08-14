@@ -51,7 +51,7 @@ public class PatientConsentFormServiceImpl implements PatientConsentFormService 
 
 			return response;
 		}
-
+		
 		BookingResponseDTO bookingDto = objectMapper.convertValue(resData.getData(), BookingResponseDTO.class);
 
 		Doctors doctordata = doctorsRepository.findByDoctorId(bookingDto.getDoctorId()).orElse(null);
@@ -63,12 +63,23 @@ public class PatientConsentFormServiceImpl implements PatientConsentFormService 
 
 		}
 
-//		String decompressedSignature = Base64CompressionUtil.decompressBase64(doctordata.getDoctorSignature());
+ ResponseEntity<Response> clinicData =	adminServiceClient.getClinicById(bookingDto.getClinicId());
+ ClinicDTO clinics = objectMapper.convertValue(clinicData.getBody().getData(), ClinicDTO.class);
+	if (clinics == null) {
+		response.setSuccess(false);
+		response.setMessage("Clinic not found with this hospitalId"+bookingDto.getClinicId());
+		response.setStatus(404);
+		return response;
+
+	}
+		
+
+		String decompressedSignature = Base64CompressionUtil.decompressBase64(doctordata.getDoctorSignature());
 
 		ResponseEntity<Response> adminRes = adminServiceClient.getClinicById(bookingDto.getClinicId());
 		Response clinicRes = adminRes.getBody();
         ClinicDTO clincDTO = objectMapper.convertValue(clinicRes.getData(), ClinicDTO.class);
-        byte[] decompressedLogo =  Base64.getDecoder().decode(clincDTO.getHospitalLogo());
+        String decompressedLogo =  Base64CompressionUtil.decompressBase64(clinics.getHospitalLogo());
         
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 		String currentDate = LocalDate.now().format(formatter);
@@ -93,7 +104,7 @@ public class PatientConsentFormServiceImpl implements PatientConsentFormService 
 		formdata.setNoConsentForRecording(true);
 		formdata.setUnderstandsWithdrawalRight(true);
 		formdata.setConsentGiven(true);
-//		formdata.setPhysicianSignature(Base64CompressionUtil.compressBase64(decompressedSignature));
+		formdata.setPhysicianSignature(Base64CompressionUtil.compressBase64(decompressedSignature));
 		formdata.setPhysicianSignedDate(currentDate);
 		formdata.setHospitalId(bookingDto.getClinicId());
 		formdata.setHospitalName(bookingDto.getClinicName());
@@ -182,7 +193,7 @@ public class PatientConsentFormServiceImpl implements PatientConsentFormService 
 		if (dto.getHospitalName() != null)
 			existingForm.setHospitalName(dto.getHospitalName());
 		if (dto.getHospitalLogo() != null)
-			existingForm.setHospitalLogo(Base64.getDecoder().decode(dto.getHospitalLogo()));
+			existingForm.setHospitalLogo(Base64CompressionUtil.compressBase64(dto.getHospitalLogo()));
 			
 
 		// Save the updated form

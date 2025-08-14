@@ -1,61 +1,136 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+// DoctorProvider.tsx / .jsx
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
-// Create Context
-const DoctorContext = createContext()
+const DoctorContext = createContext(null)
+
+const LS = {
+  patientData: 'patientData',
+  doctorId: 'doctorId',
+  hospitalId: 'hospitalId',
+  doctorDetails: 'doctorDetails',
+  clinicDetails: 'clinicDetails',
+  todayAppointments: 'todayAppointments',
+}
 
 export const DoctorProvider = ({ children }) => {
-  const [state, setState] = useState(null) // keep if you use this elsewhere
-  const [patientData, setPatientData] = useState(null)
+  const [patientData, setPatientDataState] = useState(null)
   const [isPatientLoading, setIsPatientLoading] = useState(true)
-  const [doctorId, setDoctorId] = useState(null);
-  const [hospitalId, setHospitalId] = useState(null);
-  const [doctorDetails, setDoctorDetails] = useState([]);
-  const [clinicDetails, setClinicDetails] = useState([]);
-  const [todayAppointments, setTodayAppointments] = useState([]);
+
+  // Use objects for details (not arrays)
+  const [doctorId, setDoctorIdState] = useState(null)
+  const [hospitalId, setHospitalIdState] = useState(null)
+  const [doctorDetails, setDoctorDetailsState] = useState(null) // object or null
+  const [clinicDetails, setClinicDetailsState] = useState(null) // object or null
+  const [todayAppointments, setTodayAppointmentsState] = useState([])
+  const [updateTemplate, setUpdateTemplate] = useState(false)
+
   // Hydrate on first mount
   useEffect(() => {
     try {
-      const cached = localStorage.getItem('patientData')
-      if (cached) {
-        setPatientData(JSON.parse(cached))
-      }
+      const pd = localStorage.getItem(LS.patientData)
+      if (pd) setPatientDataState(JSON.parse(pd))
+
+      const did = localStorage.getItem(LS.doctorId)
+      if (did) setDoctorIdState(did)
+
+      const hid = localStorage.getItem(LS.hospitalId)
+      if (hid) setHospitalIdState(hid)
+
+      const dd = localStorage.getItem(LS.doctorDetails)
+      if (dd) setDoctorDetailsState(JSON.parse(dd)) // expect object
+
+      const cd = localStorage.getItem(LS.clinicDetails)
+      if (cd) setClinicDetailsState(JSON.parse(cd)) // expect object
+
+      const ta = localStorage.getItem(LS.todayAppointments)
+      if (ta) setTodayAppointmentsState(JSON.parse(ta))
     } catch (e) {
-      // ignore bad JSON
-      console.warn('Failed to parse cached patientData', e)
+      console.warn('Hydrate error', e)
     } finally {
       setIsPatientLoading(false)
     }
   }, [])
 
-  // Helper that keeps localStorage in sync
-  const updatePatient = (p) => {
-    setPatientData(p)
+  // Persist helpers (the only place that touches localStorage)
+  const setPatientData = (p) => {
+    setPatientDataState(p)
     try {
-      if (p) localStorage.setItem('patientData', JSON.stringify(p))
-      else localStorage.removeItem('patientData')
-    } catch (e) {
-      console.warn('Failed to persist patientData', e)
-    }
+      if (p) localStorage.setItem(LS.patientData, JSON.stringify(p))
+      else localStorage.removeItem(LS.patientData)
+    } catch {}
   }
 
-  const value = {
-    state,
-    setState,
-    patientData,
-    setPatientData: updatePatient, // keep the same name if you already use it
-    updatePatient, // and also expose explicit helper
-    isPatientLoading, doctorId,
-    setDoctorId,
-    hospitalId,
-    setHospitalId,
-    doctorDetails,
-    setDoctorDetails,
-    clinicDetails,
-    setClinicDetails, setTodayAppointments, todayAppointments
+  const setDoctorId = (v) => {
+    setDoctorIdState(v)
+    try {
+      v ? localStorage.setItem(LS.doctorId, v) : localStorage.removeItem(LS.doctorId)
+    } catch {}
   }
+
+  const setHospitalId = (v) => {
+    setHospitalIdState(v)
+    try {
+      v ? localStorage.setItem(LS.hospitalId, v) : localStorage.removeItem(LS.hospitalId)
+    } catch {}
+  }
+
+  const setDoctorDetails = (obj) => {
+    setDoctorDetailsState(obj)
+    try {
+      obj
+        ? localStorage.setItem(LS.doctorDetails, JSON.stringify(obj))
+        : localStorage.removeItem(LS.doctorDetails)
+    } catch {}
+  }
+
+  const setClinicDetails = (obj) => {
+    setClinicDetailsState(obj)
+    try {
+      obj
+        ? localStorage.setItem(LS.clinicDetails, JSON.stringify(obj))
+        : localStorage.removeItem(LS.clinicDetails)
+    } catch {}
+  }
+
+  const setTodayAppointments = (arr) => {
+    setTodayAppointmentsState(arr || [])
+    try {
+      arr?.length
+        ? localStorage.setItem(LS.todayAppointments, JSON.stringify(arr))
+        : localStorage.removeItem(LS.todayAppointments)
+    } catch {}
+  }
+
+  const value = useMemo(
+    () => ({
+      // data
+      isPatientLoading,
+      patientData,
+      doctorId,
+      hospitalId,
+      doctorDetails,
+      clinicDetails,
+      todayAppointments,
+      // setters (persisting)
+      setPatientData,
+      setDoctorId,
+      setHospitalId,
+      setDoctorDetails,
+      setClinicDetails,
+      setTodayAppointments,updateTemplate, setUpdateTemplate
+    }),
+    [
+      isPatientLoading,
+      patientData,
+      doctorId,
+      hospitalId,
+      doctorDetails,
+      clinicDetails,
+      todayAppointments,
+    ],
+  )
 
   return <DoctorContext.Provider value={value}>{children}</DoctorContext.Provider>
 }
 
-// Hook for easy access
 export const useDoctorContext = () => useContext(DoctorContext)

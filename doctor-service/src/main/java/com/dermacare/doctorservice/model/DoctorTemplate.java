@@ -2,6 +2,7 @@ package com.dermacare.doctorservice.model;
 
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -22,9 +23,9 @@ public class DoctorTemplate {
     private String title;
     private LocalDateTime createdAt;
     private String clinicId;
-    private SymptomDetails symptoms;
+    private String symptoms;
     private TestDetails tests;
-    private TreatmentDetails treatments;
+    private TreatmentResponse treatments;
     private FollowUpDetails followUp;
     private PrescriptionDetails prescription;
 }

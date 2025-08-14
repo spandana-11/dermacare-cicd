@@ -1,6 +1,7 @@
 package com.dermacare.doctorservice.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,9 +18,9 @@ public class DoctorTemplateDTO {
 //    private String patientName;
     private LocalDateTime createdAt;
     private String clinicId;
-    private SymptomDetailsDTO symptoms;
+    private String symptoms;
     private TestDetailsDTO tests;
-    private TreatmentDetailsDTO treatments;
+    private TreatmentResponseDTO treatments;
     private FollowUpDetailsDTO followUp;
     private PrescriptionDetailsDTO prescription;
 }

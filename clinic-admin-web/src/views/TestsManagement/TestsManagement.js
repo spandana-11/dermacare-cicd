@@ -32,7 +32,7 @@ const TestsManagement = () => {
   const [viewTest, setViewTest] = useState(null)
   const [editTestMode, setEditTestMode] = useState(false)
   const [testToEdit, setTestToEdit] = useState(null)
-  const [errors, setErrors] = useState({ testName: '', hospitalId: '' })
+ const [errors, setErrors] = useState({})
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [testIdToDelete, setTestIdToDelete] = useState(null)
   const [newTest, setNewTest] = useState({ testName: '', hospitalId: '' })
@@ -269,8 +269,24 @@ const handleConfirmDelete = async () => {
     type="text"
     name="testName"
     value={newTest.testName}
-    onChange={(e) => setNewTest({ ...newTest, testName: e.target.value })}
-  />
+  
+     onChange={(e) => {
+                const value = e.target.value
+                setNewTest({ ...newTest, testName: value })
+
+                // Clear error for this field as the user types
+                if (errors.testName) {
+                  setErrors((prev) => ({ ...prev, testName: '' }))
+                }
+              }}
+              placeholder="Enter test name"
+              className={errors.testName ? 'is-invalid' : ''}
+            />
+            {errors.testName && (
+              <div className="invalid-feedback" style={{ color: 'red' }}>
+                {errors.testName}
+              </div>
+            )}
 
   <h6 className="mt-3">
     Hospital ID <span style={{ color: 'red' }}>*</span>
@@ -279,8 +295,25 @@ const handleConfirmDelete = async () => {
     type="text"
     name="hospitalId"
     value={newTest.hospitalId}
-    onChange={(e) => setNewTest({ ...newTest, hospitalId: e.target.value })}
-  />
+  //   onChange={(e) => setNewTest({ ...newTest, hospitalId: e.target.value })}
+  // />
+  onChange={(e) => {
+                const value = e.target.value
+                setNewTest({ ...newTest, hospitalId: value })
+
+                // Clear error for this field as the user types
+                if (errors.hospitalId) {
+                  setErrors((prev) => ({ ...prev, hospitalId: '' }))
+                }
+              }}
+              placeholder="Enter Hospital Id"
+              className={errors.hospitalId ? 'is-invalid' : ''}
+            />
+            {errors.hospitalId && (
+              <div className="invalid-feedback" style={{ color: 'red' }}>
+                {errors.hospitalId}
+              </div>
+            )}
 </CForm>
 
         </CModalBody>

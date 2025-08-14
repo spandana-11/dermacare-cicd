@@ -38,7 +38,7 @@ public class DoctorMapper {
 		doctor.setHighlights(dto.getHighlights());
 		doctor.setDoctorAvailabilityStatus(dto.isDoctorAvailabilityStatus());
 		doctor.setRecommendation(dto.isRecommendation());
-//		doctor.setDoctorSignature(Base64CompressionUtil.compressBase64(dto.getDoctorSignature()));
+		doctor.setDoctorSignature(Base64CompressionUtil.compressBase64(dto.getDoctorSignature()));
 		
 		if (dto.getDoctorFees() != null) {
 			doctor.setDoctorFees(mapDoctorFeeDTOtoEntity(dto.getDoctorFees()));
@@ -77,7 +77,7 @@ public class DoctorMapper {
 		dto.setHighlights(doctor.getHighlights());
 		dto.setDoctorAvailabilityStatus(doctor.isDoctorAvailabilityStatus());
 		dto.setRecommendation(doctor.isRecommendation());
-//		dto.setDoctorSignature(Base64CompressionUtil.decompressBase64(doctor.getDoctorSignature()));
+		dto.setDoctorSignature(Base64CompressionUtil.decompressBase64(doctor.getDoctorSignature()));
 		
 		// Map DoctorFee
 		if (doctor.getDoctorFees() != null) {

@@ -51,7 +51,15 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	@Override
 	public BookingResponse addService(BookingRequset request) {
 		Booking entity = toEntity(request);
-		entity.setStatus("Confirm");
+		if(request.getVisitType().equalsIgnoreCase("follow-up")){
+		if(!repository.findByMobileNumberAndPatientId(request.getMobileNumber(),request.getPatientId()).isEmpty()){
+		for(Booking b : repository.findByMobileNumberAndPatientId(request.getMobileNumber(),request.getPatientId())){
+			if(b.getStatus().equalsIgnoreCase("In-Progress")){
+				b.setStatus("Confirmed");
+				repository.save(b);
+				break;
+		}}}}else{	
+		entity.setStatus("Confirmed");
 		Booking res = repository.save(entity);
 		res.setReports(null);
 		res.setNotes(null);
@@ -60,10 +68,11 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			kafkaProducer.publishBooking(res);
 			}catch (Exception e) {
 				throw new RuntimeException("Unable to book service");
-			}
+			}}
 		return toResponse(entity);
 	}
 
+	
 	private Booking toEntity(BookingRequset request) {
 		Booking entity = new ObjectMapper().convertValue(request,Booking.class );
 		//entity.setMobileNumber(Long.parseLong(request.getMobileNumber()));
@@ -200,11 +209,13 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		List<BookingResponse> resnse = new ArrayList<>();
 		try {
 			List<Booking> existingBooking = repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
+			DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+			String currentDate = LocalDate.now().format(dateFormatter);	
 			if(existingBooking != null && !existingBooking.isEmpty()) {
 			for(Booking b : existingBooking) {
 			switch(number) {
 			case "1" :if(b.getConsultationType().equalsIgnoreCase("Services & Treatments") || b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation")){
-				if(b.getStatus().equalsIgnoreCase("Confirmed")) {
+				if(b.getStatus().equalsIgnoreCase("Confirmed") && !b.getServiceDate().equals(currentDate)) {
 					resnse.add(toResponse(b));
 					if(resnse != null && !resnse.isEmpty()) {
 						res.setStatusCode(200);
@@ -221,7 +232,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			           break;
 			
 				case "2":if(b.getConsultationType().equalsIgnoreCase("Online Consultation")) {
-					if(b.getStatus().equalsIgnoreCase("Confirmed")) {
+					if(b.getStatus().equalsIgnoreCase("Confirmed") && !b.getServiceDate().equals(currentDate)) {
 						resnse.add(toResponse(b));
 						res.setStatusCode(200);
 						res.setData(resnse);
@@ -246,13 +257,24 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 					res.setData(resnse);
 					res.setMessage("Appointments Are Not Found");}
 				    break;
-				
+				    	    
+				case "4":if(b.getStatus().equalsIgnoreCase("In-Progress")) {
+					resnse.add(toResponse(b));
+					res.setStatusCode(200);
+					res.setData(resnse);
+					res.setMessage("Appointments Are Found");
+				}else{
+					res.setStatusCode(200);
+					res.setData(resnse);
+					res.setMessage("Appointments Are Not Found");}
+				    break;   
+				    			
 			    default:
-					    resnse = null;
-				        res.setStatusCode(200);
-				        res.setData(resnse);
-				        res.setMessage("Appointments Are Not Found");}
-			     }}else{
+				    resnse = null;
+				    res.setStatusCode(200);
+				    res.setData(resnse);
+				    res.setMessage("Appointments Are Not Found");}
+			    }}else{
 				    res.setStatusCode(200);
 			        res.setData(resnse);
 			        res.setMessage("Appointments Are Not Found");}
@@ -260,7 +282,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			      resnse = null;
 			      res.setStatusCode(500);
 			      res.setData(resnse);
-			      res.setMessage("Appointments Are Not Found");}
+			      res.setMessage(e.getMessage());}
 	      return ResponseEntity.status(res.getStatusCode()).body(res);}
 							
 
@@ -515,7 +537,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	
 	
 	@Scheduled(fixedRate = 60 * 60 * 1000)
-	public void getCompletedAppointsOfPatientId() { 
+	public void autoCalculatePatientCompletedAppointments() { 
 		Map<String,Integer> map = new LinkedHashMap<>();
 		Set<String> ids = new LinkedHashSet<>();
 		    try {
@@ -587,4 +609,33 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                .status(500)
 	                .message(e.getMessage())
 	                .build();}}	    
-		        }
+
+
+		public ResponseEntity<?> getInProgressAppointments(String number,String patientId){
+			ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
+			   try{
+				List<Booking> booked=repository.findByMobileNumberAndPatientId(number,patientId);
+				List<BookingResponse> response=new ArrayList<>();
+				if(booked!=null && !booked.isEmpty()){
+					for(Booking b:booked){
+						if(b.getStatus().equalsIgnoreCase("In-Progress")){
+							response.add(toResponse(b));
+						}}
+					if(response!=null && !response.isEmpty()){
+						res.setStatusCode(200);
+						res.setHttpStatus(HttpStatus.OK);
+						res.setData(response);
+						res.setMessage("In-Progress appointments found");
+					}else{
+						res.setStatusCode(200);
+						res.setHttpStatus(HttpStatus.OK);
+						res.setData(response);
+						res.setMessage("In-Progress appointments not found");
+					}}}
+			catch(Exception e){
+				res.setStatusCode(500);
+				res.setMessage(e.getMessage());}
+			return ResponseEntity.status(res.getStatusCode()).body(res);
+		}
+
+}

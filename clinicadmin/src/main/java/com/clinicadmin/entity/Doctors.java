@@ -49,6 +49,6 @@ public class Doctors {
 	private boolean doctorAvailabilityStatus = true;
 	private double doctorAverageRating;
 	private boolean recommendation;
-//	private String doctorSignature;
+	private String doctorSignature;
 	
 }

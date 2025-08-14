@@ -4,7 +4,7 @@ import React from 'react'
 
 const Tabs = ({ tabs, activeTab, setActiveTab }) => {
   return (
-    <div className="d-flex mt-3 mb-0 " style={{backgroundColor:"transparent"}}>
+    <div className="d-flex mt-3 mb-0 " style={{backgroundColor:"transparent",}}>
       {tabs.map((tab) => (
         <div
           key={tab}

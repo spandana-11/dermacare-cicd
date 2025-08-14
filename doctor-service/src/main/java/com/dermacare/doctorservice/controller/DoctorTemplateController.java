@@ -20,13 +20,13 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/doctors")
 @RequiredArgsConstructor
-// @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 
 public class DoctorTemplateController {
 
     private final DoctorTemplateService doctorTemplateService;
 
-    @PostMapping("/createDoctorTemplate")
+    @PostMapping(value = "/createDoctorTemplate", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Response> createDoctorTemplate(@Valid @RequestBody DoctorTemplateDTO dto) {
         return ResponseEntity.status(201).body(doctorTemplateService.createTemplate(dto));
     }
@@ -53,6 +53,13 @@ public class DoctorTemplateController {
     @GetMapping("/getTemplatesByClinicId/{clinicId}")
     public ResponseEntity<Response> getTemplatesByClinicId(@PathVariable String clinicId) {
         Response response = doctorTemplateService.getTemplatesByClinicId(clinicId);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+    @GetMapping("/getTemplatesByClinicIdAndTitle/{clinicId}/{title}")
+    public ResponseEntity<Response> getTemplatesByClinicIdAndTitle(
+            @PathVariable String clinicId,
+            @PathVariable String title) {
+        Response response = doctorTemplateService.getTemplatesByClinicIdAndTitle(clinicId, title);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 

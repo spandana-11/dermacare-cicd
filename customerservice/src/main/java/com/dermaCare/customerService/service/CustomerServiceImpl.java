@@ -865,7 +865,7 @@ public Response getDoctorsSlots(String hospitalId,String doctorId) {
 		    	try {
 		        CustomerRating customerRating = new CustomerRating(
 		        	null,ratingRequest.getDoctorRating(),ratingRequest.getHospitalRating(),ratingRequest.getFeedback(),ratingRequest.getHospitalId(),ratingRequest.getDoctorId(),
-		        	ratingRequest.getCustomerMobileNumber(),ratingRequest.getAppointmentId(),true,formattedTime
+		        	ratingRequest.getCustomerMobileNumber(),ratingRequest.getPatientId(),ratingRequest.getAppointmentId(),true,formattedTime
 		        );
 		        customerRatingRepository.save(customerRating);
 		        updateAvgRatingInClinicAndDoctorObject(ratingRequest.getHospitalId(),ratingRequest.getDoctorId());
@@ -920,7 +920,7 @@ public Response getDoctorsSlots(String hospitalId,String doctorId) {
 					return response;}
 				for(CustomerRating rating : ratings){
 				CustomerRatingDomain c = new CustomerRatingDomain(rating.getDoctorRating(), rating.getHospitalRating(),
-						rating.getFeedback(), rating.getHospitalId(), rating.getDoctorId(), rating.getCustomerMobileNumber(),
+						rating.getFeedback(), rating.getHospitalId(), rating.getDoctorId(), rating.getCustomerMobileNumber(),rating.getPatientId(),
 						rating.getAppointmentId(), rating.isRated(),rating.getDateAndTimeAtRating());
 				 listDto.add(c);}
 				response.setStatus(200);
@@ -1126,5 +1126,16 @@ public ResponseEntity<ResBody<List<NotificationToCustomer>>> notificationToCusto
 		return ResponseEntity.status(e.status()).body(res);		
 	}
 }
+
+
+public ResponseEntity<?> getInProgressAppointments( String mnumber,String patientId){
+try {		
+	return bookingFeign.inProgressAppointments(mnumber, patientId);		
+}catch(FeignException e) {		
+	 ResBody<List<NotificationToCustomer>>  res = new  ResBody<List<NotificationToCustomer>>(ExtractFeignMessage.clearMessage(e),e.status(),null);		
+	return ResponseEntity.status(e.status()).body(res);		
+}
+}
+
 
 }

@@ -44,4 +44,6 @@ public interface DoctorTemplateService {
 	Response searchTemplatesByTitle(String keyword);
 
 	Response getTemplatesByClinicId(String clinicId);
+
+	Response getTemplatesByClinicIdAndTitle(String clinicId, String title);
 }

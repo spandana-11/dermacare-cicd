@@ -103,4 +103,5 @@ public interface CustomerService {
 	public ResponseEntity<ResBody<List<NotificationToCustomer>>> notificationToCustomer(
 			 String customerMobileNumber);
 
+	public ResponseEntity<?> getInProgressAppointments( String mnumber,String patientId);
 }

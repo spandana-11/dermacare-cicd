@@ -106,7 +106,7 @@ public class DoctorsDTO {
 	
 	private double doctorAverageRating;
 	
-//	private String doctorSignature;
+	private String doctorSignature;
 	
 	
     public void trimAllDoctorFields() {

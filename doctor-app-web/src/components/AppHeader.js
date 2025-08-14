@@ -67,7 +67,6 @@ const AppHeader = () => {
     const fetchClinic = async () => {
       try {
         const res = await getClinicDetails();
-      
         console.log('✅ Clinic loaded:', res);
         setClinic(res);
       } catch (err) {
@@ -102,7 +101,7 @@ const AppHeader = () => {
       position="sticky"
       className="mb-0 p-0 app-header"
       // ref={headerRef}
-      style={{ top: 0, insetInline: 0, zIndex: 1030, margin: -20 }}
+      style={{ top: 0, insetInline: 0, zIndex: 1030, margin: -20, }}
     >
       <CContainer className="border-bottom px-4 header-row " fluid>
         <CHeaderToggler

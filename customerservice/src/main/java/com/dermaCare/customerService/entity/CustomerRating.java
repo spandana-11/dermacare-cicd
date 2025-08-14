@@ -22,6 +22,7 @@ public class CustomerRating {
     private String hospitalId;
     private String doctorId; // Provider's mobile number
     private String customerMobileNumber;
+    private String patientId;
     private String appointmentId;
     private boolean rated;
     private String dateAndTimeAtRating;

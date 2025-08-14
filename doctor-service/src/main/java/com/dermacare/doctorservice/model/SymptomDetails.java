@@ -1,6 +1,11 @@
 package com.dermacare.doctorservice.model;
 
-import lombok.*;
+import java.util.List;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -11,6 +16,6 @@ public class SymptomDetails {
     private String doctorObs;
     private String diagnosis;
     private String duration;
-    private String  reports;
+    private List<String> attachments;
 }
 

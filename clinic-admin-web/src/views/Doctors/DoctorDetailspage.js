@@ -479,18 +479,18 @@ const DoctorDetailsPage = () => {
 
   // ✅ Handle update with validation
   const handleUpdateWithValidation = async () => {
-  if (validateForm()) {
-    // run update logic
-    const success = await handleUpdate() // make sure handleUpdate returns a success status
-    if (success) {
-      // ✅ show toast after update is actually done
-      toast.success("Doctor details updated successfully!", {
-        position: "top-right",
-        autoClose: 3000,
-      })
+    if (validateForm()) {
+      // run update logic
+      const success = await handleUpdate() // make sure handleUpdate returns a success status
+      if (success) {
+        // ✅ show toast after update is actually done
+        toast.success('Doctor details updated successfully!', {
+          position: 'top-right',
+          autoClose: 3000,
+        })
+      }
     }
   }
-}
 
   return (
     <div className="doctor-details-page" style={{ padding: '1rem' }}>
@@ -861,6 +861,60 @@ const DoctorDetailsPage = () => {
                           />
                         ) : (
                           <p>{doctorData.availableTimes}</p>
+                        )}
+
+                        {/* DOCTOR SIGNATURE UPLOAD FIELD */}
+                        <p>
+                          <strong>Doctor Signature:</strong>
+                        </p>
+                        {isEditing ? (
+                          <CFormInput
+                            type="file"
+                            accept="image/jpeg, image/png"
+                            onChange={(e) => {
+                              const file = e.target.files[0]
+                              if (file) {
+                                const validTypes = ['image/jpeg', 'image/png']
+                                if (!validTypes.includes(file.type)) {
+                                  setErrors((prev) => ({
+                                    ...prev,
+                                    doctorSignature: 'Only JPG and PNG images are allowed',
+                                  }))
+                                  return
+                                }
+                                const reader = new FileReader()
+                                reader.onloadend = () => {
+                                  setFormData((p) => ({ ...p, doctorSignature: reader.result }))
+                                  setErrors((prev) => ({
+                                    ...prev,
+                                    doctorSignature: '',
+                                  }))
+                                }
+                                reader.readAsDataURL(file)
+                              } else {
+                                setErrors((prev) => ({
+                                  ...prev,
+                                  doctorSignature: 'Signature is required',
+                                }))
+                              }
+                            }}
+                            invalid={!!errors.doctorSignature}
+                          />
+                        ) : (
+                          <div style={{ width: '150px', height: 'auto' }}>
+                            {doctorData.doctorSignature ? (
+                              <img
+                                src={doctorData.doctorSignature}
+                                alt="Doctor Signature"
+                                style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
+                              />
+                            ) : (
+                              <p className="text-muted">No signature uploaded</p>
+                            )}
+                          </div>
+                        )}
+                        {errors.doctorSignature && (
+                          <small className="text-danger">{errors.doctorSignature}</small>
                         )}
                       </CCol>
                     </CRow>

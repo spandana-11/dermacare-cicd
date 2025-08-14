@@ -61,6 +61,8 @@ useEffect(() => {
       ? `data:image/png;base64,${clinic.hospitalLogo}`
       : avatar8 // fallback image
   }
+  //  src= {avatar8}
+  
   size="lg"
   className="profile-image"
 />

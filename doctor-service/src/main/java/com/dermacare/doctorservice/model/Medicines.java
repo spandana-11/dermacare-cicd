@@ -1,17 +1,19 @@
 package com.dermacare.doctorservice.model;
-
-
-
-
-import lombok.*;
-
 import java.util.List;
 import java.util.UUID;
+
+
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+
 public class Medicines {
     private UUID id = UUID.randomUUID();
     private String name;
@@ -21,6 +23,7 @@ public class Medicines {
     
     private String note;
     private String remindWhen;
+   
     private List<String> times;
 }
 

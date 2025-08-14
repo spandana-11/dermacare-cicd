@@ -1,71 +1,53 @@
-// PatientAppointmentDetails.jsx
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import TabContent from '../Prescription/TabContent'
 import Snackbar from '../components/Snackbar'
 import AppSidebar from './AppSidebar'
 import { COLORS } from '../Themes'
-// import { toast } from 'react-toastify';
-import { CCard, CCardBody, CNav, CNavItem, CNavLink, CBadge, CContainer } from '@coreui/react'
-import CIcon from '@coreui/icons-react'
-import {
-  cilNotes,
-  // cilFlask,
-  cilMedicalCross,
-  cilHealing,
-  cilCalendarCheck,
-  cilListRich,
-  cilHistory,
-  cilImage,
-} from '@coreui/icons'
+import { CCard, CCardBody, CNav, CNavItem, CNavLink, CContainer } from '@coreui/react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useDoctorContext } from '../Context/DoctorContext'
 import { SavePatientPrescription } from '../Auth/Auth'
 import { useToast } from '../utils/Toaster'
 
-const TABS = [
-  'Symptoms',
-  'Tests',
-  'Prescription',
-  'Treatments',
-  'Follow-up',
-  'Summary',
-  'History',
-  'ClinicImages',
-]
-
-const ICONS = {
-  Symptoms: cilNotes,
-  Tests: '',
-  Prescription: cilMedicalCross,
-  Treatments: cilHealing,
-  'Follow-up': cilCalendarCheck,
-  Summary: cilListRich,
-  History: cilHistory,
-  ClinicImages: cilImage,
-}
-
-const PatientAppointmentDetails = () => {
+const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = false }) => {
   const { id } = useParams()
   const { state } = useLocation()
   const { patientData } = useDoctorContext()
   const [patient, setPatient] = useState(patientData || state?.patient || null)
   const navigate = useNavigate()
- const { success, error, info, warning } = useToast()
-  const [activeTab, setActiveTab] = useState(TABS[0])
+  const { success, info } = useToast()
+
+  // Use tabs passed from props, or fallback to default
+  const TABS = tabs || [
+    'Symptoms',
+    'Tests',
+    'Prescription',
+    'Treatments',
+    'Follow-up',
+    'Summary',
+    'Images',
+    'History',
+  ]
+
+  const [activeTab, setActiveTab] = useState(defaultTab || TABS[0])
   const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
-  console.log(patient?.name || 'NS')
 
-  if (!patient || !state?.patient) {
-    return (
-      <div style={{ padding: 16 }}>
-        <p>Loading patient {id}…</p>
-        <button onClick={() => navigate(-1)}>Go back</button>
-      </div>
-    )
-  }
+  // Fetch patient if needed
+  useEffect(() => {
+    if (!patient && id) {
+      (async () => {
+        try {
+          const res = await fetch(`/api/patients/${id}`)
+          if (!res.ok) throw new Error('Failed to fetch patient')
+          const data = await res.json()
+          setPatient(data)
+        } catch (err) {
+          console.error('Error fetching patient:', err)
+        }
+      })()
+    }
+  }, [id, patient])
 
-  // return <PatientAppointmentDetails patientData={patient} />
-  // all form slices live here
   const [formData, setFormData] = useState({
     symptoms: {},
     tests: {},
@@ -77,17 +59,14 @@ const PatientAppointmentDetails = () => {
     ClinicImages: {},
   })
 
-  const showSnackbar = (message, type) => {
-    setSnackbar({ show: true, message, type })
-    setTimeout(() => setSnackbar({ show: false, message: '', type: '' }), 3000)
-  }
+  const goToNext = useCallback(
+    (current) => {
+      const i = TABS.indexOf(current)
+      if (i > -1 && i < TABS.length - 1) setActiveTab(TABS[i + 1])
+    },
+    [TABS]
+  )
 
-  const goToNext = useCallback((current) => {
-    const i = TABS.indexOf(current)
-    if (i > -1 && i < TABS.length - 1) setActiveTab(TABS[i + 1])
-  }, [])
-
-  // onNext handlers for each tab
   const onNextMap = {
     Symptoms: (data) => {
       setFormData((prev) => ({ ...prev, symptoms: { ...prev.symptoms, ...data } }))
@@ -113,104 +92,84 @@ const PatientAppointmentDetails = () => {
       const payload = { ...formData, summary: { ...formData.summary, ...data } }
       goToNext('Summary')
       console.log('FINAL SUBMIT (Summary):', payload)
-      // TODO: send to backend
+    },
+    Images: (data) => {
+      setFormData((prev) => ({ ...prev, ClinicImages: { ...prev.ClinicImages, ...data } }))
+      goToNext('Images')
     },
     History: (data) => {
       const payload = { ...formData, history: { ...formData.history, ...data } }
       setFormData((prev) => ({ ...prev, history: payload.history }))
-      goToNext('History')
       console.log('FINAL SUBMIT (History):', payload)
     },
   }
 
-  // Optional counts (progress badges)
   const counts = useMemo(
     () => ({
-      Tests: formData.tests?.selectedTests?.length || 0,
+      Tests: formData?.tests?.selectedTests?.length || 0,
       Prescription: formData.prescription?.medicines?.length || 0,
       Treatments: formData.treatments?.selectedTreatments?.length || 0,
-      ClinicImages: formData.ClinicImages?.items?.length || 0,
+      Images: formData.ClinicImages?.items?.length || 0,
     }),
-    [formData],
+    [formData]
   )
 
+  const savePrescriptionTemplate = async () => {
+    try {
+      const title = formData.symptoms.diagnosis || 'NA'
+      if (!title) {
+        alert('Diagnosis is missing. Cannot save template.')
+        return
+      }
+      const clinicId = localStorage.getItem('hospitalId')
+      const template = {
+        clinicId,
+        title,
+        symptoms: formData.symptoms.diagnosis,
+        tests: formData.tests,
+        prescription: formData.prescription,
+        treatments: formData.treatments,
+        followUp: formData.followUp,
+      }
+      if (template.symptoms != '') {
+        const res = await SavePatientPrescription(template)
+        console.log('✅ Saved template response:', res)
 
+        if (res.status == 200) {
+          success(`${res.message || 'Prescription Template saved successfully to server!'}`, {
+            title: 'Success',
+          })
+        } else {
+          info(`${res.message || 'A prescription template updated successfully'}`, {
+            title: 'Info',
+          })
+        }
+      } else {
+        info('Provide the probable diagnosis/disease before creating the template.', {
+          title: 'Info',
+        })
+      }
 
-const savePrescriptionTemplate = async () => {
-  try {
-  const  title = formData.symptoms.diagnosis || "NA";
-    // Validate formData before proceeding
-    if (!title) {
-      alert("Diagnosis is missing. Cannot save template.");
-      return;
+      // const res = await SavePatientPrescription(template)
+      // if (res.status === 200) {
+      //   success(`${res.message || 'Prescription Template saved successfully!'}`, { title: 'Success' })
+      // } else {
+      //   info(`${res.message || 'Prescription Template updated successfully'}`, { title: 'Info' })
+      // }
+    } catch (error) {
+      console.error('❌ Error saving template:', error)
+      alert('Failed to save prescription template. Please try again.')
     }
-
-    // Create a single template object
-    const template = {
-      title: title,
-      symptoms: formData.symptoms,
-      tests: formData.tests,
-      prescription: formData.prescription,
-      treatments: formData.treatments,
-      followUp: formData.followUp,
-    };
-
-    // Save to server
-    const res = await SavePatientPrescription(template);
-    console.log('✅ Saved template response:', res);
-    console.log('✅ Template sent:', template);
-
-    if (res) {
-            success('Prescription Template saved successfully to server!', { title: 'Success' })
- 
-
-      // // Optional: Save to localStorage
-      // const key = 'visit_templates';
-      // const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      // const updated = [template, ...existing];
-      // localStorage.setItem(key, JSON.stringify(updated));
-    } else {
-      alert('Server did not return a success response.');
-    }
-  } catch (error) {
-    console.error('❌ Error saving template:', error);
-    alert('Failed to save prescription template. Please try again.');
   }
-};
-
-
-
 
   return (
-    <div
-      style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: COLORS.theme,
-      }}
-    >
-      {/* If you use a sidebar, render it here (or in your layout) */}
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <AppSidebar />
 
-      {/* Sticky, scrollable tabs */}
-      <div
-        className="w-100"
-        style={{
-          position: 'sticky',
-          top: 110, // match your header height
-          zIndex: 1000,
-        }}
-      >
+      {/* Tabs */}
+      <div className="w-100" style={{ position: 'sticky', top: 110, zIndex: 10 }}>
         <CContainer fluid className="p-0">
-          <CCard
-            style={{
-              border: 0,
-              borderRadius: 0,
-              backgroundColor: `${COLORS.theme}`,
-              cursor: 'pointer',
-            }}
-          >
+          <CCard style={{ border: 0, borderRadius: 0, backgroundColor: `${COLORS.theme}` }}>
             <CCardBody className="py-1">
               <CNav variant="tabs" role="tablist" style={{ whiteSpace: 'nowrap' }}>
                 {TABS.map((t) => {
@@ -224,18 +183,24 @@ const savePrescriptionTemplate = async () => {
                         aria-selected={active}
                         onClick={() => setActiveTab(t)}
                         className="d-inline-flex align-items-center position-relative"
-                        style={{ padding: '.5rem .850rem' }}
+                        style={{ padding: '.5rem .850rem' ,cursor:"pointer"}}
                       >
-                        {/* <CIcon icon={ICONS[t]} className="me-1" /> */}
-                        <span
-                          style={{ fontSize: '17px', color: COLORS.primary, fontWeight: '600' }}
-                        >
+                        <span style={{ fontSize: '17px', color: COLORS.primary, fontWeight: '600' }}>
                           {t}
                         </span>
-                        {/* {!!count && (
-                          <CBadge color={active ? 'primary' : 'secondary'} className="ms-2">
+                        {/* {count > 0 && (
+                          <span
+                            style={{
+                              background: COLORS.primary,
+                              color: '#fff',
+                              borderRadius: '50%',
+                              padding: '0 6px',
+                              fontSize: '12px',
+                              marginLeft: 6,
+                            }}
+                          >
                             {count}
-                          </CBadge>
+                          </span>
                         )} */}
                         {active && (
                           <span
@@ -268,7 +233,9 @@ const savePrescriptionTemplate = async () => {
           onNext={onNextMap[activeTab]}
           setActiveTab={setActiveTab}
           onSaveTemplate={savePrescriptionTemplate}
-          patientData={patientData || state?.patient}
+          patientData={patient}
+          setFormData={setFormData}
+          fromDoctorTemplate={fromDoctorTemplate} // ✅ now correctly passed
         />
       </div>
 
@@ -276,5 +243,6 @@ const savePrescriptionTemplate = async () => {
     </div>
   )
 }
+
 
 export default PatientAppointmentDetails

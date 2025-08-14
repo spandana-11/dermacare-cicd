@@ -10,8 +10,7 @@ import com.dermacare.doctorservice.service.DoctorPrescriptionService;
 
 @RestController
 @RequestMapping("/doctors")
-// @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
-
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class DoctorPrescriptionController {
 
     @Autowired

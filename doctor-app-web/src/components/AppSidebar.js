@@ -21,30 +21,35 @@ import doctor from '../assets/images/doctor.jpg'
 import male from '../assets/images/male.png'
 import female from '../assets/images/female.png'
 import { useDoctorContext } from '../Context/DoctorContext'
-import { getClinicDetails, getDoctorDetails } from '../Auth/Auth'
+import { getClinicDetails, getDoctorDetails, averageRatings } from '../Auth/Auth'
 import { capitalizeWords } from '../utils/CaptalZeWord'
 
 const AppSidebar = () => {
   const dispatch = useDispatch()
   const unfoldable = useSelector((state) => state.sidebarUnfoldable)
   const sidebarShow = useSelector((state) => state.sidebarShow)
-  const [doctorDetails, setDoctorDetails] = useState(null);
-  const [clinicDetails, setClinicDetails] = useState(null);
+  const [doctorDetails, setDoctorDetails] = useState(null)
+  const [clinicDetails, setClinicDetails] = useState(null)
   const { patientData, isPatientLoading, setPatientData } = useDoctorContext()
   const hasPatient = !!patientData
-
+  const [ratings, setRatings] = useState([])
   const [showModal, setShowModal] = useState(false)
   useEffect(() => {
-    const fetchDetails = async () => {
-      const doctor = await getDoctorDetails();
-      const clinic = await getClinicDetails();
+    const fetchData = async () => {
+      const doctor = await getDoctorDetails()
+      const clinic = await getClinicDetails()
+      setDoctorDetails(doctor)
+      setClinicDetails(clinic)
 
-      if (doctor) setDoctorDetails(doctor);
-      if (clinic) setClinicDetails(clinic);
-    };
-
-    fetchDetails();
-  }, []);
+      if (doctor?.doctorId && clinic?.hospitalId) {
+        const ratingData = await averageRatings(clinic.hospitalId, doctor.doctorId)
+        if (ratingData?.ratingStats) {
+          setRatings(ratingData.ratingStats)
+        }
+      }
+    }
+    fetchData()
+  }, [])
   const genderImg = (patientData?.gender || '').toString().toLowerCase() === 'male' ? male : female
 
   const display = {
@@ -89,9 +94,9 @@ const AppSidebar = () => {
 
     // keep vitals for now (unknowns)
     vitals: {
-      height: '—',
-      weight: '—',
-      bp: '—',
+      height: '153 CM',
+      weight: '62 Kgs',
+      bp: '80/120',
       temperature: '—',
       bmi: '—',
     },
@@ -106,13 +111,12 @@ const AppSidebar = () => {
 
   const imgSrc = doctorDetails?.doctorPicture.startsWith('data:image')
     ? doctorDetails?.doctorPicture
-    : `data:image/png;base64,${doctorDetails?.doctorPicture}`;
-
+    : `data:image/png;base64,${doctorDetails?.doctorPicture}`
 
   return (
     <>
       <CSidebar
-        className="border-end"
+        className="border-end "
         colorScheme="white"
         position="fixed"
         unfoldable={unfoldable}
@@ -121,7 +125,7 @@ const AppSidebar = () => {
           dispatch({ type: 'set', sidebarShow: visible })
         }}
       >
-        <CSidebarHeader className="border-bottom">
+        <CSidebarHeader className="border-bottom ">
           <div
             role="button"
             tabIndex={0}
@@ -202,18 +206,24 @@ const AppSidebar = () => {
               </>
             ) : (
               <>
-                <div style={{display:"flex", flexDirection:"column", justifyContent:"center", alignContent:"center", alignItems:"center"}}>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
                   {doctorDetails?.doctorPicture ? (
                     <CImage
                       src={imgSrc}
                       alt="Doctor"
                       width={100}
                       height={100}
-
                       className="rounded-circle border"
                       style={{ borderWidth: 2, padding: 5, color: COLORS.gray, objectFit: 'cover' }}
                     />
-
                   ) : (
                     <p>Loading image...</p>
                   )}
@@ -232,8 +242,12 @@ const AppSidebar = () => {
                   >
                     {capitalizeWords(doctorDetails?.doctorName) || 'Doctor Name'}
                   </h4>
-                  <h6 className="mb-0 mt-1 text-center" style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
-                    {doctorDetails?.qualification || 'Qualification'} ( {doctorDetails?.specialization || 'Specialization'})
+                  <h6
+                    className="mb-0 mt-1 text-center"
+                    style={{ color: COLORS.secondary, fontSize: SIZES.small }}
+                  >
+                    {doctorDetails?.qualification || 'Qualification'} ({' '}
+                    {doctorDetails?.specialization || 'Specialization'})
                   </h6>
                 </div>
               </>
@@ -252,31 +266,38 @@ const AppSidebar = () => {
 
         {!isPatientLoading && !hasPatient && (
           <CSidebarFooter className="border-top d-none d-lg-flex flex-column mt-2">
-            <h6 className=" text-muted">Patient Reviews</h6>
-            {[
-              { label: 'Excellent', value: 80, color: 'success' },
-              { label: 'Great', value: 65, color: 'primary' },
-              { label: 'Good', value: 45, color: 'info' },
-              { label: 'Average', value: 30, color: 'warning' },
-            ].map((item, index) => (
-              <div key={index} className="d-flex align-items-center mb-2 w-100">
-                <div style={{ minWidth: 70 }}>
-                  <small>{item.label}</small>
-                </div>
-                <div className="flex-grow-1 mx-2">
-                  <div className="progress" style={{ height: 8 }}>
-                    <div
-                      className={`progress-bar bg-${item.color}`}
-                      role="progressbar"
-                      style={{ width: `${item.value}% ` }}
-                      aria-valuenow={item.value}
-                      aria-valuemin="0"
-                      aria-valuemax="100"
-                    />
+            <h6 className="text-muted">Patient Reviews</h6>
+            {ratings.length > 0 ? (
+              ratings.map((item, index) => (
+                <div key={index} className="d-flex align-items-center mb-2 w-100">
+                  <div style={{ minWidth: 70 }}>
+                    <small>{item.category}</small>
+                  </div>
+                  <div className="flex-grow-1 mx-2">
+                    <div className="progress" style={{ height: 8 }}>
+                      <div
+                        className={`progress-bar ${
+                          item.category.toLowerCase().includes('excellent')
+                            ? 'bg-success'
+                            : item.category.toLowerCase().includes('good')
+                              ? 'bg-primary'
+                              : item.category.toLowerCase().includes('average')
+                                ? 'bg-warning'
+                                : 'bg-secondary'
+                        }`}
+                        role="progressbar"
+                        style={{ width: `${item.percentage}%` }}
+                        aria-valuenow={item.percentage}
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <small className="text-muted">No reviews yet</small>
+            )}
           </CSidebarFooter>
         )}
       </CSidebar>

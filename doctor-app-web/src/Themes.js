@@ -12,6 +12,7 @@ export const COLORS = {
   teal: '#16a085',
   orange: '#f39c12',
   theme: '#f3f4f7',
+  // theme: '#007BFF',
 }
 
 export const FONT_SIZES = {

@@ -1,8 +1,32 @@
 // doctorUtils.js
 
 import axios from 'axios'
-import { BASE_URL, getAllDoctors, getDoctorByClinicId } from '../../baseUrl'
+import { BASE_URL, getAllDoctors, getDoctorByClinicId, doctorAvailableUrl } from '../../baseUrl'
 import { toast } from 'react-toastify'
+
+// 🆕 Update Doctor Availability (true/false)
+export const updateDoctorAvailability = async (doctorId, isAvailable) => {
+  try {
+    const url = `${BASE_URL}/${doctorAvailableUrl}/${doctorId}/availability`
+    console.log('Updating availability:', doctorId, isAvailable)
+
+    const response = await axios.post(
+      url,
+      { doctorAvailabilityStatus: isAvailable },
+      { headers: { 'Content-Type': 'application/json' } },
+    )
+
+    console.log('Update response:', response.data)
+
+    // You can check either axios status or your API success field
+    return response.status === 200 && response.data.success === true
+  } catch (error) {
+    toast.error(`${error.message}` || 'Failed to update doctor availability')
+    console.error('❌ Error updating availability:', error)
+    return false
+  }
+}
+
 
 export const handleDeleteToggle = async (doctorID) => {
   console.log(doctorID)

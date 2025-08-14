@@ -84,6 +84,7 @@ const DoctorManagement = () => {
     availableDays: '', // array of selected days
     availableTimes: '', // array of selected time slots
     profileDescription: '',
+    doctorSignature:null,
     doctorFees: {
       inClinicFee: '',
       vedioConsultationFee: '',
@@ -359,6 +360,10 @@ const DoctorManagement = () => {
       errors.doctorPicture = 'Profile picture is required'
       isValid = false
     }
+    if (!form.doctorSignature) {
+      errors.doctorSignature = 'Doctor Signature is required'
+      isValid = false
+    }
 
     if (!form.languages || form.languages.length === 0) {
       errors.languages = 'Please add at least one language.'
@@ -420,26 +425,6 @@ const DoctorManagement = () => {
           subServiceName: sub.subServiceName,
         }))
 
-      //    if (!Array.isArray(doctorData.data)) {
-      //   console.error('Doctor data not loaded properly.')
-      //   return
-      // }
-      // console.log(emailAddress)
-      // console.log(contactNumber)
-
-      // const isEmailDuplicate = doctorData.data.some(
-      //   (doc) => doc.doctorMobileNumber?.toLowerCase() === form.doctorMobileNumber,
-      // )
-      // const isMobileDuplicate = doctorData.data.some((doc) => doc.doctorEmail === form.doctorEmail)
-
-      // if (isEmailDuplicate || isMobileDuplicate) {
-      //   setIsSubmitting(false)
-      //   const newErrors = {}
-      //   if (isEmailDuplicate) newErrors.emailAddress = 'Email already exists'
-      //   if (isMobileDuplicate) newErrors.contactNumber = 'Mobile number already exists'
-      //   setErrors((prev) => ({ ...prev, ...newErrors }))
-      //   return
-      // }
 
       // 🔍 2. Check if any doctor already has the same mobile or email
       const mobileExists = doctorData.data?.some(
@@ -460,6 +445,7 @@ const DoctorManagement = () => {
       const payload = {
         hospitalId,
         doctorPicture: form.doctorPicture,
+        doctorSignature: form.doctorSignature,
         doctorName: form.doctorName,
         doctorMobileNumber: form.doctorMobileNumber,
         doctorEmail: form.doctorEmail,
@@ -517,11 +503,7 @@ const DoctorManagement = () => {
         clinicName: hospitalName,
       })
 
-      // ✅ Properly update doctorData state (ensures it shows without refresh)
-      // setDoctorData((prev) => ({
-      //   ...prev,
-      //   data: [...(prev?.data ?? []), newDoctor],
-      // }))
+    
 
       toast.success(response.data.message || 'Doctor added successfully', {
         position: 'top-right',
@@ -530,6 +512,7 @@ const DoctorManagement = () => {
       // ✅ Reset form
       setForm({
         doctorPicture: null,
+        doctorSignature: null,
         doctorLicence: '',
         doctorMobileNumber: '',
         doctorEmail: '',
@@ -1320,6 +1303,107 @@ const DoctorManagement = () => {
             items={form.highlights}
             onAdd={(items) => setForm((prev) => ({ ...prev, highlights: items }))}
           />
+<CCol md={6} className="d-flex align-items-center" style={{ gap: '20px' }}>
+  {/* The container for the custom file input and label */}
+  <div style={{ flex: 1 }}>
+    <CFormLabel htmlFor="doctorSignature">
+      Doctor Signature <span className="text-danger">*</span>
+    </CFormLabel>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        padding: '4px', // Reduced padding
+        backgroundColor: '#f8f9fa',
+      }}
+    >
+      <CButton
+        color="secondary"
+        onClick={() => document.getElementById('file-input-doctor-signature').click()}
+      >
+        Choose File
+      </CButton>
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {form.doctorSignatureFileName || 'No file selected'}
+      </span>
+    </div>
+    <CFormInput
+      id="file-input-doctor-signature"
+      type="file"
+      accept="image/jpeg, image/png"
+      style={{ display: 'none' }} // Hide the native file input
+      onChange={(e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const validTypes = ['image/jpeg', 'image/png'];
+          if (!validTypes.includes(file.type)) {
+            setFormErrors((prev) => ({
+              ...prev,
+              doctorSignature: 'Only JPG and PNG images are allowed',
+            }));
+            return;
+          }
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setForm((p) => ({ ...p, doctorSignature: reader.result, doctorPictureFileName: file.name }));
+            setFormErrors((prev) => ({
+              ...prev,
+              doctorSignature: '',
+            }));
+          };
+          reader.readAsDataURL(file);
+        } else {
+          setForm((p) => ({ ...p, doctorSignature: null, doctorSignatureFileName: null }));
+          setFormErrors((prev) => ({
+            ...prev,
+            doctorSignature: 'Profile picture is required',
+          }));
+        }
+      }}
+      invalid={!!formErrors.doctorSignature}
+    />
+    {formErrors.doctorSignature && (
+      <div className="text-danger p-2">{formErrors.doctorSignature}</div>
+    )}
+  </div>
+
+  {/* Image Preview on the right side */}
+  <div style={{ minWidth: '150px' }}>
+    {form.doctorSignature ? (
+      <img
+        src={form.doctorSignature}
+        alt="Doctor Signature Preview"
+        style={{
+          width: '150px',
+          height: 'auto', // Changed to 'auto'
+          border: '1px solid #ccc',
+          borderRadius: '4px',
+          objectFit: 'contain', // Changed to 'contain'
+        }}
+      />
+    ) : (
+      <div
+        style={{
+          width: '150px',
+          height: '80px', // Reduced height
+          border: '1px dashed #ccc',
+          borderRadius: '4px',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          color: '#999',
+          fontSize: '14px',
+        }}
+      >
+        No Image
+      </div>
+    )}
+  </div>
+</CCol>
+
         </CModalBody>
 
         <CModalFooter>

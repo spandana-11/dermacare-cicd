@@ -17,6 +17,7 @@ public class BookingRequset {
 	private String patientMobileNumber;
 	private String visitType;
 	private String patientAddress;
+	private String patientId;
 	private String name;
 	private String age;
 	private String gender;

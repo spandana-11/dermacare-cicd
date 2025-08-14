@@ -1,6 +1,8 @@
 package com.dermacare.doctorservice.serviceimpl;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -12,14 +14,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.dermacare.doctorservice.dermacaredoctorutils.VisitTypeUtil;
+import com.dermacare.doctorservice.dto.BookingResponse;
+import com.dermacare.doctorservice.dto.DatesDTO;
 import com.dermacare.doctorservice.dto.DoctorSaveDetailsDTO;
 import com.dermacare.doctorservice.dto.FollowUpDetailsDTO;
 import com.dermacare.doctorservice.dto.MedicinesDTO;
 import com.dermacare.doctorservice.dto.PrescriptionDetailsDTO;
 import com.dermacare.doctorservice.dto.Response;
 import com.dermacare.doctorservice.dto.SymptomDetailsDTO;
+import com.dermacare.doctorservice.dto.TestDetailsDTO;
 import com.dermacare.doctorservice.dto.TreatmentDetailsDTO;
+import com.dermacare.doctorservice.dto.TreatmentResponseDTO;
+import com.dermacare.doctorservice.feignclient.BookingFeignClient;
 import com.dermacare.doctorservice.feignclient.ClinicAdminServiceClient;
+import com.dermacare.doctorservice.model.Dates;
 import com.dermacare.doctorservice.model.DoctorSaveDetails;
 import com.dermacare.doctorservice.model.FollowUpDetails;
 import com.dermacare.doctorservice.model.Medicines;
@@ -27,6 +35,7 @@ import com.dermacare.doctorservice.model.PrescriptionDetails;
 import com.dermacare.doctorservice.model.SymptomDetails;
 import com.dermacare.doctorservice.model.TestDetails;
 import com.dermacare.doctorservice.model.TreatmentDetails;
+import com.dermacare.doctorservice.model.TreatmentResponse;
 import com.dermacare.doctorservice.repository.DoctorSaveDetailsRepository;
 import com.dermacare.doctorservice.service.DoctorSaveDetailsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,6 +53,10 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
 
     @Autowired
     private ObjectMapper objectMapper;
+   
+
+    @Autowired
+    private BookingFeignClient bookingFeignClient;
 
     @Override
     public Response saveDoctorDetails(DoctorSaveDetailsDTO dto) {
@@ -81,9 +94,16 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             int visitTypeCount = (int) uniqueBookingCount + (isRevisit ? 0 : 1);
             dto.setVisitType(VisitTypeUtil.getVisitTypeFromCount(visitTypeCount));
 
-
+            // Step 2: Save doctor details
             DoctorSaveDetails entity = convertToEntity(dto);
             DoctorSaveDetails saved = repository.save(entity);
+
+            // Step 3: Update booking status to "In-Progress" via Feign
+            BookingResponse bookingUpdate = new BookingResponse();
+            bookingUpdate.setBookingId(dto.getBookingId());
+            bookingUpdate.setStatus("In-Progress");
+
+            bookingFeignClient.updateAppointment(bookingUpdate);
 
             DoctorSaveDetailsDTO savedDto = convertToDto(saved);
 
@@ -93,12 +113,11 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             ), "Doctor details saved successfully", HttpStatus.CREATED.value());
 
         } catch (FeignException e) {
-            return buildResponse(false, null, "Error fetching doctor details: " + e.getMessage(), HttpStatus.BAD_GATEWAY.value());
+            return buildResponse(false, null, "Error fetching doctor/booking details: " + e.getMessage(), HttpStatus.BAD_GATEWAY.value());
         } catch (Exception e) {
             return buildResponse(false, null, "Unexpected error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
-
     @Override
     public Response getDoctorDetailsById(String id) {
         Optional<DoctorSaveDetails> optional = repository.findById(id);
@@ -205,29 +224,66 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                                 .doctorObs(dto.getSymptoms().getDoctorObs())
                                 .diagnosis(dto.getSymptoms().getDiagnosis())
                                 .duration(dto.getSymptoms().getDuration())
-                                .reports(dto.getSymptoms().getReports()) 
-                                .build()
-                        : null)
+                                .attachments(dto.getSymptoms().getAttachments() != null
+                                ? dto.getSymptoms().getAttachments().stream()
+                                      .map(this::decodeIfBase64)
+                                      .collect(Collectors.toList())
+                                : null)
+                        .build()
+                        : null
+                        
+)
+                
+                .prescriptionPdf(dto.getPrescriptionPdf() != null
+                ? dto.getPrescriptionPdf()
+                      .stream()
+                      .map(this::decodeIfBase64) // same as attachments
+                      .collect(Collectors.toList())
+                : null
+            )
+
+
+
                 .tests(dto.getTests() != null ?
                         TestDetails.builder()
                                 .selectedTests(dto.getTests().getSelectedTests())
                                 .testReason(dto.getTests().getTestReason())
                                 .build()
-                        : null)
-                .treatments(dto.getTreatments() != null ?
-                        TreatmentDetails.builder()
-                                .selectedTreatments(dto.getTreatments().getSelectedTreatments())
-                                .treatmentReason(dto.getTreatments().getTreatmentReason())
+                        : null
+                )
+                .treatments(dto.getTreatments() != null && dto.getTreatments().getGeneratedData() != null ?
+                        TreatmentResponse.builder()
+                                .selectedTestTreatment(dto.getTreatments().getSelectedTestTreatment())
+                                .generatedData(dto.getTreatments().getGeneratedData().entrySet().stream()
+                                        .collect(Collectors.toMap(
+                                                e -> e.getKey(),
+                                                e -> TreatmentDetails.builder()
+                                                        .dates(e.getValue().getDates() != null ?
+                                                                e.getValue().getDates().stream()
+                                                                        .map(d -> Dates.builder()
+                                                                                .date(d.getDate())
+                                                                                .sitting(d.getSitting())
+                                                                                .build())
+                                                                        .collect(Collectors.toList())
+                                                                : null)
+                                                        .reason(e.getValue().getReason())
+                                                        .frequency(e.getValue().getFrequency())
+                                                        .sittings(e.getValue().getSittings())
+                                                        .startDate(e.getValue().getStartDate())
+                                                        .build()
+                                        )))
                                 .build()
-                        : null)
+                        : null
+                )
                 .followUp(dto.getFollowUp() != null ?
                         FollowUpDetails.builder()
                                 .durationValue(dto.getFollowUp().getDurationValue())
                                 .durationUnit(dto.getFollowUp().getDurationUnit())
                                 .nextFollowUpDate(dto.getFollowUp().getNextFollowUpDate())
-                                .followUpnote(dto.getFollowUp().getFollowUpnote())
+                                .followUpNote(dto.getFollowUp().getFollowUpNote())
                                 .build()
-                        : null)
+                        : null
+                )
                 .prescription(dto.getPrescription() != null ?
                         PrescriptionDetails.builder()
                                 .medicines(dto.getPrescription().getMedicines() != null ?
@@ -245,10 +301,25 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                                                 .collect(Collectors.toList())
                                         : null)
                                 .build()
-                        : null)
+                        : null
+                )
                 .visitType(dto.getVisitType())
                 .visitDateTime(dto.getVisitDateTime())
                 .build();
+    }
+
+    private String decodeIfBase64(String base64String) {
+        if (base64String == null || base64String.trim().isEmpty()) {
+            return base64String; // return as is if null or empty
+        }
+        try {
+            // Try decoding just to validate format
+            Base64.getDecoder().decode(base64String);
+            return base64String; // It's valid Base64, return as is without converting to text
+        } catch (IllegalArgumentException e) {
+            // Not valid Base64, return original
+            return base64String;
+        }
     }
 
 
@@ -269,24 +340,64 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                                 .doctorObs(entity.getSymptoms().getDoctorObs())
                                 .diagnosis(entity.getSymptoms().getDiagnosis())
                                 .duration(entity.getSymptoms().getDuration())
-                                .reports(entity.getSymptoms().getReports()) 
+                                .attachments(entity.getSymptoms().getAttachments() != null
+                                ? entity.getSymptoms().getAttachments().stream()
+                                      .map(this::encodeIfNotBase64)
+                                      .collect(Collectors.toList())
+                                : null)
+                        .build()
+                        : null)
 
+                .prescriptionPdf(entity.getPrescriptionPdf() != null
+                ? entity.getPrescriptionPdf()
+                      .stream()
+                      .map(this::encodeIfNotBase64) // same as attachments
+                      .collect(Collectors.toList())
+                : null
+            )
+
+
+              
+                .tests(entity.getTests() != null ?
+                        TestDetailsDTO.builder()
+                                .selectedTests(entity.getTests().getSelectedTests())
+                                .testReason(entity.getTests().getTestReason())
                                 .build()
                         : null)
-                .treatments(entity.getTreatments() != null ?
-                        TreatmentDetailsDTO.builder()
-                                .selectedTreatments(entity.getTreatments().getSelectedTreatments())
-                                .treatmentReason(entity.getTreatments().getTreatmentReason())
+
+                .treatments(entity.getTreatments() != null && entity.getTreatments().getGeneratedData() != null ?
+                        TreatmentResponseDTO.builder()
+                                .selectedTestTreatment(entity.getTreatments().getSelectedTestTreatment())
+                                .generatedData(entity.getTreatments().getGeneratedData().entrySet().stream()
+                                        .collect(Collectors.toMap(
+                                                Map.Entry::getKey,
+                                                e -> TreatmentDetailsDTO.builder()
+                                                        .dates(e.getValue().getDates() != null ?
+                                                                e.getValue().getDates().stream()
+                                                                        .map(d -> DatesDTO.builder()
+                                                                                .date(d.getDate())
+                                                                                .sitting(d.getSitting())
+                                                                                .build())
+                                                                        .collect(Collectors.toList())
+                                                                : null)
+                                                        .reason(e.getValue().getReason())
+                                                        .frequency(e.getValue().getFrequency())
+                                                        .sittings(e.getValue().getSittings())
+                                                        .startDate(e.getValue().getStartDate())
+                                                        .build()
+                                        )))
                                 .build()
                         : null)
+
                 .followUp(entity.getFollowUp() != null ?
                         FollowUpDetailsDTO.builder()
                                 .durationValue(entity.getFollowUp().getDurationValue())
                                 .durationUnit(entity.getFollowUp().getDurationUnit())
                                 .nextFollowUpDate(entity.getFollowUp().getNextFollowUpDate())
-                                .followUpnote(entity.getFollowUp().getFollowUpnote())
+                                .followUpNote(entity.getFollowUp().getFollowUpNote())
                                 .build()
                         : null)
+
                 .prescription(entity.getPrescription() != null ?
                         PrescriptionDetailsDTO.builder()
                                 .medicines(entity.getPrescription().getMedicines() != null ?
@@ -305,10 +416,34 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                                         : null)
                                 .build()
                         : null)
+
                 .visitType(entity.getVisitType())
                 .visitDateTime(entity.getVisitDateTime())
                 .build();
     }
+
+    private String encodeIfNotBase64(String input) {
+        if (input == null || input.isBlank()) {
+            return input; // Null or empty, return as-is
+        }
+
+        // Base64 pattern: length multiple of 4, only A-Z a-z 0-9 + /, with optional padding "="
+        String base64Pattern = "^[A-Za-z0-9+/]*={0,2}$";
+
+        if (input.matches(base64Pattern) && (input.length() % 4 == 0)) {
+            try {
+                Base64.getDecoder().decode(input); // Validate decoding works
+                return input; // Already Base64
+            } catch (IllegalArgumentException e) {
+                // Not valid Base64 despite matching pattern — will encode below
+            }
+        }
+
+        // Encode if not valid Base64
+        return Base64.getEncoder().encodeToString(input.getBytes(StandardCharsets.UTF_8));
+    }
+
+
 
 
     // Builds standard Response object
@@ -362,5 +497,37 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             return buildResponse(false, null, "Error fetching visit history: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+    private String decodeAndSavePdf(String base64Pdf, String bookingId) {
+        try {
+            // Decode Base64
+            byte[] pdfBytes = Base64.getDecoder().decode(base64Pdf);
+
+            // Define file storage path (can be configured)
+            String fileName = "prescription_" + bookingId + "_" + System.currentTimeMillis() + ".pdf";
+            String storageDir = "/path/to/prescriptions"; // Change to your actual folder
+            java.nio.file.Path dirPath = java.nio.file.Paths.get(storageDir);
+            if (!java.nio.file.Files.exists(dirPath)) {
+                java.nio.file.Files.createDirectories(dirPath);
+            }
+
+            // Save file
+            java.nio.file.Path filePath = dirPath.resolve(fileName);
+            java.nio.file.Files.write(filePath, pdfBytes);
+
+            // Return stored file path (or a URL if serving via API)
+            return filePath.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to decode and save PDF", e);
+        }
+    }
+    private String encodePdfToBase64(String filePath) {
+        try {
+            byte[] pdfBytes = java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(filePath));
+            return Base64.getEncoder().encodeToString(pdfBytes);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to encode PDF to Base64", e);
+        }
+    }
+
 
 }

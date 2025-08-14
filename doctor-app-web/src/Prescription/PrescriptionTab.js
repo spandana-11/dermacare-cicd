@@ -11,9 +11,12 @@ import { FaTrash, FaEdit, FaCheck } from 'react-icons/fa'
 import Button from '../components/CustomButton/CustomButton'
 import { COLORS } from '../Themes'
 import {
+  CAlert,
   CButton,
+  CCol,
   CFormInput,
   CFormSelect,
+  CRow,
   CTable,
   CTableBody,
   CTableDataCell,
@@ -26,22 +29,37 @@ import CIcon from '@coreui/icons-react'
 import { cilCheck, cilPencil, cilTrash } from '@coreui/icons'
 import GradientTextCard from '../components/GradintColorText'
 import { useToast } from '../utils/Toaster'
-import { SavePrescription } from '../Auth/Auth'
+import { medicineTemplate, SavePrescription } from '../Auth/Auth'
+import Select from 'react-select'
+import api from '../Auth/axiosInterceptor'
+import AsyncSelect from 'react-select/async'
 
-const PrescriptionTab = ({ seed={},onNext, sidebarWidth = 0 }) => {
+const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
   const [search, setSearch] = useState('')
+  const [localsearch, setLocalsearch] = useState('')
+
   const [searchResults, setSearchResults] = useState([])
-  const [medicines, setMedicines] = useState(seed.medicines??[])
+
   const [templates, setTemplates] = useState([])
   const [recentSearches, setRecentSearches] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [showTemplateModal, setShowTemplateModal] = useState(false)
 
-  const [editingIndex, setEditingIndex] = useState(null)
+  const [activeMedicine, setActiveMedicine] = useState(null) // ← ADD THIS
 
+  const [editingIndex, setEditingIndex] = useState(null)
+  const [prescriptions, setPrescriptions] = useState([])
+
+  const [filteredPrescriptions, setFilteredPrescriptions] = useState([])
+  const [selectedPrescriptionMedicines, setSelectedPrescriptionMedicines] = useState([])
+  const [isSelectLoading, setIsSelectLoading] = useState(false)
+  const [medicines, setMedicines] = useState(Array.isArray(seed.medicines) ? seed.medicines : [])
+  const [note, setNote] = useState(seed.note ?? '')
   //Toaster
   const { success, error, info, warning } = useToast()
+  // --- add near other state/derived values ---
+  const hasPendingCards = Boolean(activeMedicine) || selectedPrescriptionMedicines.length > 0
 
   const debounce = useRef(null)
   // optional: sanitize before sending (fill blanks with 'NA')
@@ -53,10 +71,15 @@ const PrescriptionTab = ({ seed={},onNext, sidebarWidth = 0 }) => {
       food: m.food?.trim() || 'NA',
       duration: m.duration?.trim() || 'NA',
       remindWhen: m.remindWhen?.trim() || 'NA',
-    times: (m.times || []).map((t) => `${t}`).filter((t) => t)
-
+      times: Array.isArray(m.times)
+        ? m.times.map((t) => `${t}`.trim()).filter(Boolean)
+        : typeof m.times === 'string'
+          ? m.times
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : [],
     }))
-  
 
   useEffect(() => {
     const storedTemplates = JSON.parse(localStorage.getItem('templates') || '[]')
@@ -66,22 +89,63 @@ const PrescriptionTab = ({ seed={},onNext, sidebarWidth = 0 }) => {
   }, [])
 
   useEffect(() => {
+    setMedicines(Array.isArray(seed.medicines) ? seed.medicines : [])
+    setNote(seed.note ?? '')
+  }, [seed])
+  const handleDelete = (id) => setMedicines((prev) => prev.filter((m) => (m.id ?? m.name) !== id))
+
+  useEffect(() => {
+    const fetchPrescriptions = async () => {
+      try {
+        const res = await medicineTemplate()
+        if (res) {
+          console.log(res)
+          setPrescriptions(res)
+        }
+        // ✅ Use data array directly
+      } catch (err) {
+        console.error('Error fetching prescriptions:', err)
+      }
+    }
+
+    fetchPrescriptions()
+  }, [])
+
+  const options = Array.isArray(prescriptions)
+    ? prescriptions.map((presc) => ({
+        label: presc.medicines?.[0]?.name || `Prescription #${presc.prescriptionId}`,
+        value: presc.prescriptionId,
+        data: presc,
+      }))
+    : []
+
+  const handlePrescriptionSelect = (selectedOption) => {
+    const selected = selectedOption?.data
+    if (selected?.medicines?.length > 0) {
+      setSelectedPrescriptionMedicines(selected.medicines)
+      // or show all if needed
+    }
+  }
+
+  useEffect(() => {
     if (search.length < 2) return
     if (debounce.current) clearTimeout(debounce.current)
     debounce.current = setTimeout(() => fetchSearchResults(search), 300)
   }, [search])
 
   const fetchSearchResults = async (query) => {
+    setIsLoading(true)
     try {
-      setIsLoading(true)
       const { data } = await axios.get(
         `https://api.fda.gov/drug/label.json?search=openfda.generic_name:${query}*&limit=25`,
       )
       const results = data.results.map((item) => item.openfda?.generic_name?.[0]).filter(Boolean)
       setSearchResults([...new Set(results)])
+      setShowList(true)
     } catch (err) {
       console.error(err)
       setSearchResults([])
+      setShowList(false)
     } finally {
       setIsLoading(false)
     }
@@ -89,28 +153,21 @@ const PrescriptionTab = ({ seed={},onNext, sidebarWidth = 0 }) => {
 
   const addMedicine = (name) => {
     const exists = medicines.some((med) => med.name.toLowerCase() === name.toLowerCase())
+
     if (exists) {
       warning('Medicine already added', { title: 'Warning' })
-
       return
     }
 
-    // add medicine (you already have this)
-    setMedicines([
-      ...medicines,
-      {
-        name,
-        dose: '',
-        remindWhen: 'Thrice A Day',
-        note: '',
-        duration: '',
-        food: '',
-        times: ['', '', ''],
-      },
-    ])
-
-    const canAdd = (m) =>
-      (m?.name || '').trim() && (m?.dose || '').trim() && (m?.duration || '').trim()
+    setActiveMedicine({
+      name,
+      dose: '',
+      remindWhen: 'Thrice A Day',
+      note: '',
+      duration: '',
+      food: '',
+      times: ['', '', ''],
+    })
 
     setSearch('')
     setSearchResults([])
@@ -130,15 +187,16 @@ const PrescriptionTab = ({ seed={},onNext, sidebarWidth = 0 }) => {
       console.log('📦 Updated Local Templates Array:', updated)
 
       // Save to localStorage
-     localStorage.setItem('templates', JSON.stringify(updated))
+      // localStorage.setItem('templates', JSON.stringify(updated))
       setTemplates(updated)
       // console.log('💾 Saved to localStorage')
 
+      const clinicId = localStorage.getItem('hospitalId')
+
       // Prepare API data
       const prescriptionData = {
-        
         medicines: medicines,
-    
+        clinicId: clinicId,
       }
 
       console.log('📤 Sending to API (createPrescription):', prescriptionData)
@@ -158,8 +216,6 @@ const PrescriptionTab = ({ seed={},onNext, sidebarWidth = 0 }) => {
       info('Template already exists!', { title: 'Info' })
     }
   }
-
-
 
   const loadTemplate = (templateStr) => {
     try {
@@ -188,20 +244,29 @@ const PrescriptionTab = ({ seed={},onNext, sidebarWidth = 0 }) => {
     setMedicines(updated)
   }
 
+  // const handleNext = () => onNext?.({ medicines, note })
   const handleNext = () => {
-    const payload = { medicines: sanitizeMedicines(medicines) }
+    // stop if there are cards not added to the table yet
+    if (hasPendingCards) {
+      warning('Please add the medicine card(s) to the table before continuing.', {
+        title: 'Pending medicines',
+      })
+      return
+    }
+
+    const payload = { medicines: sanitizeMedicines(medicines), note }
     onNext?.(payload)
     console.log(payload)
-    // alert('clicked') // keep if you still want the alert
   }
 
-    const [showResults, setShowResults] = useState(true)
+  const [showList, setShowList] = useState(false)
+
   const listRef = useRef(null)
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (listRef.current && !listRef.current.contains(event.target)) {
-        setShowResults(false)
+        setShowList(false)
       }
     }
 
@@ -210,24 +275,131 @@ const PrescriptionTab = ({ seed={},onNext, sidebarWidth = 0 }) => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [])
-
+  // PrescriptionTab.jsx (only the changed/added bits inside the component)
+  const isDuplicateName = (name) => {
+    const n = String(name || '')
+      .trim()
+      .toLowerCase()
+    return medicines.some(
+      (m) =>
+        String(m?.name || '')
+          .trim()
+          .toLowerCase() === n,
+    )
+  }
 
   return (
     <div className="container pb-5">
-      <div className="input-group mb-3 no-focus-ring">
-        <CFormInput
-          type="text"
-          className="form-control"
-          placeholder="Type at least 3 letters to search medicines..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <Button className="btn btn-primary" onClick={() => addMedicine(search)}>
-          Add
-        </Button>
-      </div>
+      <CRow className="mb-4">
+        {/* Local Medicine Finder */}
+        <CCol xs={12} style={{ flex: '0 0 45%', minWidth: '300px' }}>
+          <GradientTextCard text={'🏥 Local Medicine Finder'} />
+          <div className="input-group no-focus-ring">
+            <div className="mb-4" style={{ width: '100%' }}>
+              <AsyncSelect
+                cacheOptions
+                loadOptions={(inputValue, callback) => {
+                  if (!inputValue || inputValue.length < 2) return callback([])
 
-      {isLoading && <div>Loading...</div>}
+                  const filtered = prescriptions
+                    .filter((presc) =>
+                      presc.medicines?.some((m) =>
+                        m.name?.toLowerCase().includes(inputValue.toLowerCase()),
+                      ),
+                    )
+                    .map((presc) => ({
+                      label: presc.medicines?.[0]?.name || `Prescription #${presc.prescriptionId}`,
+                      value: presc.prescriptionId,
+                      data: presc,
+                    }))
+
+                  callback(filtered)
+                }}
+                defaultOptions={false}
+                placeholder="Search prescription medicine..."
+                onChange={(selectedOption) => {
+                  const selected = selectedOption?.data
+                  if (selected?.medicines?.length > 0) {
+                    setSelectedPrescriptionMedicines(selected.medicines)
+                  }
+                }}
+                noOptionsMessage={() => 'Start typing to search...'}
+                styles={{
+                  container: (base) => ({
+                    ...base,
+                    width: '100%',
+                  }),
+                  menu: (base) => ({
+                    ...base,
+                    zIndex: 9999,
+                  }),
+                }}
+              />
+            </div>
+          </div>
+        </CCol>
+
+        {/* 🌐 Global Medicine Finder */}
+        <CCol xs={12} md={6}>
+          <GradientTextCard text={'🌐 Global Medicine Finder'} />
+
+          <div className="input-group position-relative">
+            {/* Search input */}
+            <CFormInput
+              type="text"
+              className="form-control pe-5"
+              placeholder="Search global medicines..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+
+            {/* Clear (×) button */}
+            {search && (
+              <button
+                type="button"
+                className="btn position-absolute end-0 top-50 translate-middle-y me-5 p-0 text-muted"
+                style={{ zIndex: 5 }}
+                onClick={() => setSearch('')}
+                aria-label="Clear"
+              >
+                &times;
+              </button>
+            )}
+
+            {/* Add Button (hide while loading) */}
+            {!isLoading && (
+              <Button
+                className="btn btn-primary"
+                onClick={() => addMedicine(search)}
+                style={{ zIndex: 1 }}
+              >
+                Add
+              </Button>
+            )}
+
+            {/* Loading spinner */}
+            {isLoading && (
+              <div
+                className="spinner-border text-primary position-absolute end-0 top-50 translate-middle-y me-2"
+                role="status"
+                style={{ width: '1.2rem', height: '1.2rem', zIndex: 10 }}
+              >
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            )}
+          </div>
+
+          {/* Optional: show loader text below */}
+          {isLoading && (
+            <div className="mt-2 text-muted small d-flex align-items-center gap-2">
+              <div className="spinner-border spinner-border-sm text-primary" role="status" />
+              <span>Searching global medicines...</span>
+            </div>
+          )}
+        </CCol>
+      </CRow>
+
+      {/* {isLoading && <div>Loading...</div>} */}
       {!isLoading && search && searchResults.length === 0 && (
         <p>No matching results. You can add manually.</p>
       )}
@@ -235,24 +407,28 @@ const PrescriptionTab = ({ seed={},onNext, sidebarWidth = 0 }) => {
         <RecentChips recent={recentSearches} onSelect={addMedicine} />
       )}
 
-      {showResults && (
-        <ul className="list-group mt-2"  >
-          {searchResults.map((res, idx) => (
-            <li
-              className="list-group-item d-flex justify-content-between"
-              key={idx}
-              style={{ cursor: 'pointer' }}
-               
-              onClick={() => addMedicine(res)}
-            >
-              {res}{' '}
-              <button className="btn btn-sm btn-outline-success">Add</button>
-            </li>
-          ))}
-        </ul>
-      )}
+      <ul
+        className="list-group mt-2"
+        ref={listRef}
+        style={{ display: showList ? 'block' : 'none' }}
+      >
+        {searchResults.map((res, idx) => (
+          <li
+            className="list-group-item d-flex justify-content-between"
+            key={idx}
+            style={{ cursor: 'pointer' }}
+            onClick={() => {
+              addMedicine(res)
+              setShowList(false) // hide after selection
+            }}
+          >
+            {res}
+            <button className="btn btn-sm btn-outline-success">Add</button>
+          </li>
+        ))}
+      </ul>
 
-      {medicines.length > 1 && (
+      {medicines.length > 0 && (
         <div className="mb-4">
           <GradientTextCard text={'Prescription Table'} />
 
@@ -274,7 +450,7 @@ const PrescriptionTab = ({ seed={},onNext, sidebarWidth = 0 }) => {
             </CTableHead>
 
             <CTableBody>
-              {medicines.slice(0, medicines.length - 1).map((med, index) => (
+              {medicines.map((med, index) => (
                 <CTableRow key={index}>
                   <CTableHeaderCell scope="row">{index + 1}</CTableHeaderCell>
 
@@ -376,21 +552,33 @@ const PrescriptionTab = ({ seed={},onNext, sidebarWidth = 0 }) => {
                   <CTableDataCell style={{ minWidth: 180 }}>
                     {editingIndex === index ? (
                       <div className="d-flex flex-column gap-1">
-                        {(med.times || []).map((time, i) => (
-                          <CFormInput
-                            key={i}
-                            size="sm"
-                            value={time}
-                            onChange={(e) => {
-                              const updated = [...med.times]
-                              updated[i] = e.target.value
-                              handleUpdate(index, 'times', updated)
-                            }}
-                          />
-                        ))}
+                        {Array.isArray(med.times)
+                          ? med.times.map((time, i) => (
+                              <CFormInput
+                                key={i}
+                                size="sm"
+                                value={time}
+                                onChange={(e) => {
+                                  const updated = [...med.times]
+                                  updated[i] = e.target.value
+                                  handleUpdate(index, 'times', updated)
+                                }}
+                              />
+                            ))
+                          : null}
                       </div>
+                    ) : Array.isArray(med.times) ? (
+                      med.times
+                        .filter((t) => t && t.trim())
+                        .map((t) => t.trim().charAt(0).toUpperCase()) // M, A, E
+                        .join(', ')
+                    ) : typeof med.times === 'string' ? (
+                      med.times
+                        .split(',')
+                        .map((t) => t.trim().charAt(0).toUpperCase())
+                        .join(', ')
                     ) : (
-                      (med.times || []).filter(Boolean).join(', ') || 'NA'
+                      'NA'
                     )}
                   </CTableDataCell>
 
@@ -431,19 +619,57 @@ const PrescriptionTab = ({ seed={},onNext, sidebarWidth = 0 }) => {
           </CTable>
         </div>
       )}
-
-      {medicines.length > 0 && (
+   
+          {selectedPrescriptionMedicines.length > 0 && (
+            <div className="d-flex flex-wrap gap-3 pb-5">
+              {selectedPrescriptionMedicines.map((med, idx) => (
+                <div key={med.id || idx} style={{ flex: '1 1 48%' }}>
+                  <MedicineCard
+                    index={idx}
+                    medicine={med}
+                    isDuplicateName={isDuplicateName}
+                    updateMedicine={(updated) => {
+                      const updatedList = [...selectedPrescriptionMedicines]
+                      updatedList[idx] = updated
+                      setSelectedPrescriptionMedicines(updatedList)
+                    }}
+                    removeMedicine={() => {
+                      const updatedList = selectedPrescriptionMedicines.filter((_, i) => i !== idx)
+                      setSelectedPrescriptionMedicines(updatedList)
+                    }}
+                    onAdd={(m) => {
+                      if (isDuplicateName(m?.name)) {
+                        info('Medicine already added', { title: 'Duplicate' })
+                        return
+                      }
+                      setMedicines([...medicines, m])
+                      setSelectedPrescriptionMedicines(
+                        selectedPrescriptionMedicines.filter((_, i) => i !== idx),
+                      )
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+   
+      {activeMedicine && (
         <div className="d-flex flex-wrap gap-3 pb-5">
           <div style={{ flex: '1 1 48%' }}>
             <MedicineCard
-              index={medicines.length - 1}
-              medicine={medicines[medicines.length - 1]}
-              updateMedicine={(updated) => {
-                const updatedList = [...medicines]
-                updatedList[medicines.length - 1] = updated
-                setMedicines(updatedList)
+              index={medicines.length}
+              medicine={activeMedicine}
+              updateMedicine={(updated) => setActiveMedicine(updated)}
+              removeMedicine={() => setActiveMedicine(null)}
+              isDuplicateName={isDuplicateName}
+              onAdd={(m) => {
+                if (isDuplicateName(m?.name)) {
+                  info('Medicine already added', { title: 'Duplicate' })
+                  return
+                }
+                setMedicines([...medicines, m])
+                setActiveMedicine(null)
               }}
-              removeMedicine={() => setMedicines(medicines.slice(0, medicines.length - 1))}
             />
           </div>
         </div>
@@ -456,20 +682,30 @@ const PrescriptionTab = ({ seed={},onNext, sidebarWidth = 0 }) => {
         >
           <div className="d-flex justify-content-between align-items-end w-100  ">
             <div className="d-flex gap-4">
-              <Button className="ms-2" size="medium" onClick={saveTemplate}>
+              <Button
+                customColor={COLORS.secondary}
+                className="ms-2"
+                size="medium"
+                onClick={saveTemplate}
+              >
                 Save Medicine Template
               </Button>
-              <Button
+              {/* <Button
                 className="ms-2"
                 size="medium"
                 customColor={COLORS.success}
                 onClick={() => setShowTemplateModal(true)}
               >
                 Load Medicine Template
-              </Button>
+              </Button> */}
             </div>
             <div>
-              <Button size="medium" onClick={handleNext}>
+              <Button
+                size="medium"
+                onClick={handleNext}
+                disabled={hasPendingCards}
+                title={hasPendingCards ? 'Add pending medicine card(s) first' : undefined}
+              >
                 Next
               </Button>
             </div>

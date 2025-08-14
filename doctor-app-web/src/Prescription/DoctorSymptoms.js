@@ -1,0 +1,331 @@
+import React, { useEffect, useMemo, useState } from 'react'
+import {
+    CRow,
+    CCol,
+    CCard,
+    CCardBody,
+    CForm,
+    CFormLabel,
+    CFormTextarea,
+    CFormInput,
+    CImage,
+    CSpinner,
+    CCarousel,
+    CCarouselItem,
+} from '@coreui/react'
+import './SymptomsDiseases.css'
+import FileUploader from './FileUploader'
+import Button from '../components/CustomButton/CustomButton'
+import temp from '../assets/images/temp.webp'
+import Snackbar from '../components/Snackbar'
+import { COLORS } from '../Themes'
+import GradientTextCard from '../components/GradintColorText'
+import { useToast } from '../utils/Toaster'
+import { getDoctorSaveDetails, getAllDiseases, addDisease } from '../Auth/Auth' // <-- ensure this exists
+import Select from 'react-select'
+import { useDoctorContext } from '../Context/DoctorContext'
+
+const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setFormData }) => {
+    const [symptomDetails, setSymptomDetails] = useState(
+        seed.symptomDetails ?? patientData?.problem ?? '',
+    )
+    const { updateTemplate, setUpdateTemplate } = useDoctorContext()
+
+    const [doctorObs, setDoctorObs] = useState(seed.doctorObs ?? '')
+    const [diagnosis, setDiagnosis] = useState(seed.diagnosis ?? '')
+    const [duration, setDuration] = useState(patientData?.symptomsDuration ?? '')
+    const [attachments, setAttachments] = useState(
+        Array.isArray(seed.attachments)
+            ? seed.attachments
+            : Array.isArray(patientData?.attachments)
+                ? patientData.attachments
+                : [],
+    )
+    const [template, setTemplate] = useState({})
+    const [diseases, setDiseases] = useState([])
+    const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
+    const [tplLoading, setTplLoading] = useState(false)
+    const [templateData, setTemplateData] = useState({
+        symptoms: '',
+        tests: {},
+        prescription: {},
+        treatments: {},
+        followUp: {},
+        summary: {},
+    })
+    // NEW: local state for react-select typing + adding
+    const [inputValue, setInputValue] = useState('')
+    const [adding, setAdding] = useState(false)
+
+    const [hasTemplate, setHasTemplate] = useState(false)
+
+    const handleNext = () => {
+        const payload = { symptomDetails, doctorObs, diagnosis, duration }
+        console.log('🚀 Submitting payload:', payload)
+        onNext?.(payload)
+    }
+
+    const { success, error, info, warning } = useToast()
+
+    useEffect(() => {
+        const fetchDiseases = async () => {
+            const data = await getAllDiseases()
+            console.log(data)
+            setDiseases(data || [])
+        }
+        fetchDiseases()
+    }, [])
+
+    // put this near other hooks
+    const fetchTemplate = async (dx) => {
+        if (!dx) return
+        setTplLoading(true)
+        try {
+            const res = await getDoctorSaveDetails(dx)
+            const raw = res?.data ?? res
+            const item = Array.isArray(raw) ? raw[0] : raw
+            setTemplateData(item || {})
+            setHasTemplate(!!item)
+        } catch (e) {
+            console.error(e)
+            setHasTemplate(false)
+        } finally {
+            setTplLoading(false)
+        }
+    }
+
+    // when user picks from Select
+    const handleDiagnosisChange = async (selected) => {
+        const selectedValue = selected?.value ?? ''
+        setDiagnosis(selectedValue)
+        if (!selectedValue) {
+            setHasTemplate(false)
+            return
+        }
+        await fetchTemplate(selectedValue)
+    }
+
+    // NEW: when you return to this tab, reload the template if diagnosis exists
+    useEffect(() => {
+        const dx = (seed?.diagnosis ?? diagnosis ?? '').trim()
+        if (dx && !hasTemplate) {
+            fetchTemplate(dx)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [seed?.diagnosis])
+
+    console.log(templateData)
+    const showSnackbar = (message, type) => {
+        setSnackbar({ show: true, message, type })
+        setTimeout(() => setSnackbar({ show: false, message: '', type: '' }), 3000)
+    }
+
+    // useEffect(() => {
+    //   if (!diagnosis) return
+    //   setTplLoading(true)
+    //   const timer = setTimeout(() => setTplLoading(false), 800)
+    //   return () => clearTimeout(timer)
+    // }, [diagnosis])
+
+    const applyTemplate = (dx) => {
+        const merged = mapTemplateToFormData(templateData, dx)
+
+        setFormData((prev) => ({
+            ...prev,
+            ...merged,
+            __templateApplied: { dx, at: Date.now() },
+        }))
+        setUpdateTemplate(true)
+        success('Template applied successfully!', { title: 'Success' })
+
+        const payload = { symptomDetails, doctorObs, diagnosis: dx, duration, attachments }
+        onNext?.(payload)
+    }
+
+    // NEW: options for react-select
+    const options = useMemo(
+        () =>
+            Array.isArray(diseases) ? diseases.map((d) => ({ label: d.disease, value: d.disease })) : [],
+        [diseases],
+    )
+
+    // NEW: add button visible only when user typed something that's not already an option
+    const canShowAdd =
+        inputValue.trim() &&
+        !options.some((opt) => opt.value.toLowerCase() === inputValue.trim().toLowerCase())
+
+    // NEW: Add-to-backend handler
+    const handleAddClick = async () => {
+        const name = inputValue.trim()
+        if (!name || adding) return
+        try {
+            setAdding(true)
+            const created = await addDisease(name) // make sure this function exists/imported
+            const createdName = name
+            console.log(created)
+            if (created) {
+                setDiseases((prev) => [
+                    ...prev,
+                    { id: created?.id ?? `tmp-${Date.now()}`, disease: createdName },
+                ])
+
+                setInputValue('')
+                success?.(`Saved "${createdName}" to diagnoses"`, { title: 'Success' })
+            } else {
+                info?.(`"${created.message}"`, { title: 'Info' })
+            }
+        } catch (e) {
+            console.error(e)
+            error?.('Could not add disease. Please try again.')
+        } finally {
+            setAdding(false)
+        }
+    }
+
+    // put this near the top of SymptomsDiseases.jsx
+    // SymptomsDiseases.jsx
+    const mapTemplateToFormData = (t = {}, dx) => {
+        // ---- Symptoms (API has a string)
+        const symptomStr = typeof t.symptoms === 'string' ? t.symptoms : ''
+
+        // ---- Tests
+        const selectedTests = Array.isArray(t?.tests?.selectedTests) ? t.tests.selectedTests : []
+        const testReason = t?.tests?.testReason ?? ''
+
+        // ---- Prescription (map 'food' -> remindWhen)
+        const medicines = Array.isArray(t?.prescription?.medicines)
+            ? t.prescription.medicines.map((m) => ({
+                id: m?.id ?? `tmp-${Date.now()}-${Math.random()}`,
+                name: m?.name ?? '',
+                dose: m?.dose ?? '',
+                duration: m?.duration ?? '',
+                remindWhen: m?.food ?? m?.remindWhen ?? '', // <- important mapping
+                note: m?.note ?? '',
+                times: m?.times ?? m?.time ?? '',
+            }))
+            : []
+
+        // ---- Treatments
+        const generatedData = t?.treatments?.generatedData ?? {}
+        const selectedTestTreatments =
+            t?.treatments?.selectedTestTreatments ?? t?.treatments?.selectedTreatment ?? []
+        const treatmentReason = t?.treatments?.reason ?? ''
+
+        // ---- Follow up (note: API has followUpnote)
+        const followUp = {
+            durationValue: t?.followUp?.durationValue ?? '',
+            durationUnit: t?.followUp?.durationUnit ?? '',
+            nextFollowUpDate: t?.followUp?.nextFollowUpDate ?? '',
+            followUpNote: t?.followUp?.followUpnote ?? t?.followUp?.followUpNote ?? '',
+        }
+
+        // ---- Final merged formData for the whole app
+        return {
+            symptoms: {
+                symptomDetails: symptomStr, // show the template’s symptom text
+                doctorObs, // keep whatever the doctor typed
+                diagnosis: dx,
+                duration,
+                attachments,
+            },
+            tests: {
+                selectedTests,
+                testReason,
+            },
+            prescription: {
+                medicines,
+            },
+            treatments: {
+                generatedData,
+                selectedTestTreatments,
+                treatmentReason,
+            },
+            followUp,
+            summary: { diagnosis: dx },
+        }
+    }
+
+    return (
+        <CCard className="border-1 bg-white mb-5" style={{ backgroundColor: 'transparent' }}>
+            <CForm className="w-100 " style={{ borderRadius: '10px' }}>
+                <CRow className="gx-0">
+                    {/* LEFT */}
+                    <CCol lg={6}>
+                        <CCardBody>
+                            <div className="mb-0">
+                                <GradientTextCard text="Probable Diagnosis / Disease" />
+
+                                {/* Field + right-side Add button */}
+                                <div className="mt-2 d-flex align-items-start gap-2">
+                                    <div className="flex-grow-1">
+                                        <Select
+                                            value={diagnosis ? { label: diagnosis, value: diagnosis } : null}
+                                            onChange={handleDiagnosisChange}
+                                            // IMPORTANT: control the input
+                                            inputValue={inputValue}
+                                            onInputChange={(val, meta) => {
+                                                if (meta.action === 'input-change') setInputValue(val) // ignore blur/menu-close resets
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && canShowAdd && !adding) {
+                                                    e.preventDefault()
+                                                    handleAddClick()
+                                                }
+                                            }}
+                                            options={options}
+                                            isSearchable
+                                            placeholder="Select diagnosis..."
+                                            menuPlacement="bottom"
+                                            noOptionsMessage={() =>
+                                                inputValue
+                                                    ? `No matches. Select Add to create "${inputValue}" as a diagnosis`
+                                                    : 'Type to search...'
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="pt-1">
+                                        <button
+                                            type="button"
+                                            className="btn btn-sm btn-primary"
+                                            disabled={!canShowAdd || adding}
+                                            // run BEFORE blur clears the input
+                                            onMouseDown={(e) => {
+                                                e.preventDefault()
+                                                e.stopPropagation()
+                                                handleAddClick()
+                                            }}
+                                            title={canShowAdd ? 'Add' : 'Type a new disease name'}
+                                        >
+                                            {adding ? 'Adding…' : 'Add'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </CCardBody>
+                    </CCol>
+
+                </CRow>
+            </CForm>
+
+            {/* Fixed bottom-right action */}
+            <div
+                className="position-fixed bottom-0 p-2"
+                style={{
+                    right: 0,
+                    left: sidebarWidth || 'auto',
+                    zIndex: 1000,
+                    backgroundColor: COLORS.theme,
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                }}
+            >
+                <Button onClick={handleNext}>Next</Button>
+            </div>
+
+            {snackbar.show && <Snackbar message={snackbar.message} type={snackbar.type} />}
+        </CCard>
+    )
+}
+
+export default DoctorSymptoms

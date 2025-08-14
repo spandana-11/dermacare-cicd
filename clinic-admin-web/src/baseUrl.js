@@ -26,6 +26,9 @@ export const allBooking_sevices = `getAllBookedServices`
 export const getAllBookingDetails = 'admin/getAllBookingDetails'
 
 //Doctors
+export const PatientConsentForm = 'getpatientConsentForm/'
+
+export const doctorAvailableUrl = 'doctorId'
 export const getDoctorByClinicId = 'doctors/hospitalById'
 
 export const getAllBookedServices = `customer/getAllBookedServices`
@@ -50,6 +53,39 @@ export const AllTreatment = 'treatment/getAllTreatments'
 export const AddTreatment = 'treatment/addTreatment'
 export const UpdateTreatment = 'treatment/updateTreatmentById'
 export const DeleteTreatment = 'treatment/deleteTreatmentById'
+
+//Diseases
+export const AllDiseases = 'get-all-diseases'
+export const AddDisease = 'addDisease'
+export const UpdateDisease = 'updateDisease'
+export const DeleteDisease = 'deleteDisease'
+
+//============= Forms ===============
+
+//To fetch category,service and subservice
+export const GetSubServiceByHospitalIdandSubServiceId = 'getSubService'
+//Procedure
+export const GetProcedureForm_ByHospitalIdAndProcedureId =
+  'getProcedureFormByHospitalIdAndProcedureId'
+export const Add_ProcedureForm = 'addProcedureForm'
+export const update_ProcedureForm = 'update-procedureForm'
+export const Delete_ProcedureForm = 'delete-procedureForm'
+export const All_ProcedureFormData = 'getAllProcedureForms'
+
+//Pre--Procedure
+export const GetPreProcedureForm_ByHospitalIdAndPreProcedureId =
+  'getPreProcedureFormByHospitalIdAndPreProcedureId'
+export const Add_PreProcedureForm = 'addPreProcedureForm'
+export const update_PreProcedureFormForm = 'update-preprocedure-forms'
+export const Delete_PreProcedureFormForm = 'delete-preprocedure-form'
+export const All_PreProceudreFormData = 'getAllPreProcedureForms'
+//post--Procedure
+export const GetPostProcedureForm_ByHospitalIdAndProcedureId =
+  'getPostProcedureFormByHospitalIdAndPostProcedureId'
+export const Add_PostProcedureForm = 'addPostProcedureForm'
+export const update_PostProcedureForm = 'update-postprocedure-forms'
+export const Delete_PostProcedureForm = 'delete-postprocedure-form'
+export const All_PostProceudreFormData = 'getAllPostProcedureForms'
 
 //notifiction Reponse
 export const NoficationResponse = 'doctors/notificationResponse'

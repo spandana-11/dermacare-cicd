@@ -1,8 +1,9 @@
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Button from '../components/CustomButton/CustomButton'
 import './Tests.css'
 import { COLORS } from '../Themes'
 import html2pdf from 'html2pdf.js' // <-- add this import
+import Select from 'react-select'
 import {
   CAlert,
   CBadge,
@@ -19,15 +20,8 @@ import {
   CContainer,
 } from '@coreui/react'
 import GradientTextCard from '../components/GradintColorText'
-const availableTests = [
-  'KOH Mount',
-  'CBC',
-  'TSH',
-  'ANA Test',
-  'Vitamin D',
-  'Thyroid Profile',
-  'Liver Function Test',
-]
+import { getAllLabTests } from '../../src/Auth/Auth'
+import { useDoctorContext } from '../Context/DoctorContext'
 
 /**
  * Props:
@@ -36,12 +30,13 @@ const availableTests = [
  * - patientName?: string
  * - doctor?: { name?: string, regNo?: string, clinic?: string, phone?: string }
  */
-const Tests = ({ seed = {}, onNext, sidebarWidth = 0 }) => {
+const Tests = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
   const [selectedTests, setSelectedTests] = useState(seed.selectedTests ?? [])
   const [testReason, setTestReason] = useState(seed.testReason ?? '')
   const [selectedTestOption, setSelectedTestOption] = useState('')
   const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
   const [isGenerating, setIsGenerating] = useState(false)
+  const [availableTests, setAvailableTests] = useState([])
   // print container ref
   const printRef = useRef(null)
 
@@ -49,6 +44,17 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0 }) => {
     setSnackbar({ show: true, message, type })
     setTimeout(() => setSnackbar({ show: false, message: '', type: '' }), 3000)
   }
+  const options = availableTests.map((t) => ({ label: t.testName, value: t.testName }))
+  // and filter with t.testName everywhere
+
+  const {
+    patientData,
+    doctorId,
+    setTodayAppointments,
+    todayAppointments,
+    clinicDetails,
+    doctorDetails,
+  } = useDoctorContext()
 
   const handleAddTest = (e) => {
     const value = e.target.value
@@ -58,28 +64,36 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0 }) => {
       showSnackbar('Test already added', 'warning')
     } else {
       setSelectedTests((prev) => [...prev, value])
+      setSelectedTestOption(value) // reset dropdown to "NA"
     }
-
-    setSelectedTestOption('') // reset dropdown to "NA"
   }
+
+  useEffect(() => {
+    const fetchTests = async () => {
+      try {
+        const tests = await getAllLabTests()
+        if (Array.isArray(tests)) {
+          setAvailableTests(tests) // store full objects
+        }
+      } catch (error) {
+        console.error('Error fetching lab tests:', error)
+      }
+    }
+    fetchTests()
+  }, [])
 
   const handleRemoveTest = (item) => {
     setSelectedTests((prev) => prev.filter((t) => t !== item))
+    if (selectedTestOption === item) {
+      setSelectedTestOption('')
+    }
   }
 
   const handleNext = () => {
     const payload = { selectedTests, testReason }
     onNext?.(payload)
   }
-  const patientName = 'Vaishnavi'
-  const doctorInfo = {
-    name: 'Dr. Haanvika',
-    regNo: 'TS/MD/2024/12345',
-    clinic: 'Derma Care Hospital',
-    address: '123 Health Street, Wellness City, India',
-    phone: '+91 9876543210',
-  }
-  const optionsToShow = availableTests.filter((t) => !selectedTests.includes(t))
+
   const handlePrint = () => {
     const today = new Date()
     const dateStr = today.toLocaleDateString('en-GB', {
@@ -104,158 +118,198 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0 }) => {
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Test Report – ${escapeHtml(patientName)}</title>
+  <title>Test Report – ${escapeHtml(patientData.name)}</title>
   <style>
-    :root {
-      --border: #d1d5db;
-      --text: #111827;
-      --muted: #6b7280;
-      --heading: #1f2937;
-      --accent: #3b82f6;
+    :root{
+      --ink:#0f172a;        /* slate-900 */
+      --muted:#6b7280;      /* gray-500 */
+      --line:#e5e7eb;       /* gray-200 */
+      --accent:#2563eb;     /* blue-600 */
+      --accent-soft:#eff6ff;/* blue-50 */
+      --chip:#f1f5f9;       /* slate-100 */
+      --bg:#ffffff;
     }
-    * { box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      padding: 32px;
-      font-size: 16px;
-      color: var(--text);
-      line-height: 1.6;
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; padding:0; }
+    body{
+      font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color:var(--ink);
+      background:var(--bg);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
-
-    header {
-      display: flex;
-      align-items: center;
-      border-bottom: 2px solid var(--border);
-      padding-bottom: 16px;
-      margin-bottom: 24px;
+    @page{
+      size: A4;
+      margin: 12mm;
     }
-
-    .logo {
-      font-weight: bold;
-      font-size: 28px;
-      color: var(--accent);
-      background: #e0f2fe;
-      padding: 12px;
+    .page{
+      padding: 20px 24px;
+      border: 1px solid var(--line);
       border-radius: 10px;
-      margin-right: 16px;
+    }
+    header{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      padding-bottom:14px;
+      margin-bottom:18px;
+      border-bottom:2px solid var(--line);
+    }
+    .logo{
+      display:flex; align-items:center; justify-content:center;
+      width: 110px; height: 72px;
+   
+     
+     
+      overflow:hidden;
+      flex-shrink:0;
+    }
+    .logo img{
+      max-width: 100%;
+      max-height: 100%;
+      display:block;
+      object-fit: contain;
+    }
+    .clinic-block{
+      display:flex; flex-direction:column; gap:4px;
+    }
+    .clinic-name{
+      font-size: 20px; font-weight: 700; letter-spacing:.2px;
+    }
+    .clinic-meta{
+      font-size: 13px; color:var(--muted);
     }
 
-    .clinic-info {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .clinic-name {
-      font-size: 20px;
-      font-weight: bold;
-      color: var(--heading);
-    }
-
-    .clinic-address {
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    .row {
-      display: flex;
-      justify-content: space-between;
+    /* Info grid */
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 24px;
       margin-bottom: 12px;
     }
+    .kv{ display:flex; flex-direction:column; }
+    .kv .label{ font-size:12px; color:var(--muted); }
+    .kv .value{ font-size:15px; font-weight:600; padding-top:2px; }
 
-    .label {
-      font-size: 13px;
-      color: var(--muted);
+    /* Section */
+    .section{ margin-top:18px; }
+    .section-card{
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:14px;
+      background:#fff;
+    }
+    .section-title{
+      display:flex; align-items:center; gap:8px;
+      font-size:16px; font-weight:700; margin:0 0 10px 0;
+      color:#111827;
+    }
+    .pill{
+      font-size:12px; font-weight:600; color:#1e293b;
+      background:var(--chip); border:1px solid var(--line);
+      padding:2px 8px; border-radius:999px;
     }
 
-    .value {
-      font-weight: 600;
+    /* Tests list as two columns if many */
+    .test-list{
+      margin:0; padding-left:18px;
+      columns: 2; column-gap: 36px;
+    }
+    .test-list li{ break-inside: avoid; padding:2px 0; }
+
+    /* Footer */
+    .footer{
+      margin-top: 22px;
+      padding-top: 12px;
+      border-top:1px solid var(--line);
+      display:flex; justify-content:space-between; gap:12px;
+      font-size:12px; color:var(--muted);
     }
 
-    .section {
-      margin-top: 24px;
+    /* Print tweaks */
+    @media print{
+      .no-print{ display:none !important; }
+      .page{ border:none; padding:0; }
+      header{ border-color:#d1d5db; }
+      
     }
 
-    .section-title {
-      font-size: 18px;
-      font-weight: bold;
-      margin-bottom: 8px;
-      color: var(--heading);
-    }
-
-    .test-list {
-      padding-left: 20px;
-      margin: 0;
-    }
-
-    .footer {
-      margin-top: 40px;
-      padding-top: 16px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    @media print {
-      .no-print {
-        display: none;
-      }
-      body {
-        padding: 10mm;
-      }
+    /* Small screens (if user views in new tab before print) */
+    @media screen and (max-width:720px){
+      .grid{ grid-template-columns: 1fr; }
+      .test-list{ columns:1; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="logo">DC</div>
-    <div class="clinic-info">
-      <div class="clinic-name">${escapeHtml(doctorInfo.clinic)}</div>
-      <div class="clinic-address">${escapeHtml(doctorInfo.address)} | ${escapeHtml(doctorInfo.phone)}</div>
+  <div class="page">
+    <header>
+      <div class="logo">
+        ${
+          clinicDetails?.hospitalLogo
+            ? `<img src="data:image/png;base64,${clinicDetails.hospitalLogo}" alt="Hospital Logo" />`
+            : ''
+        }
+      </div>
+      <div class="clinic-block">
+        <div class="clinic-name">${escapeHtml(clinicDetails.name)}</div>
+        <div class="clinic-meta">${escapeHtml(clinicDetails.address)} • ${escapeHtml(clinicDetails.contactNumber)}</div>
+      </div>
+    </header>
+
+    <!-- Patient & Report meta -->
+    <div class="grid">
+      <div class="kv">
+        <div class="label">Patient Name</div>
+        <div class="value">${escapeHtml(patientData.name)}</div>
+      </div>
+      <div class="kv">
+        <div class="label">Date</div>
+        <div class="value">${escapeHtml(dateStr)}</div>
+      </div>
+      <div class="kv">
+        <div class="label">Doctor</div>
+        <div class="value">${escapeHtml(doctorDetails.doctorName)}</div>
+      </div>
+      <div class="kv">
+        <div class="label">Licence No</div>
+        <div class="value"><span  >${escapeHtml(doctorDetails.doctorLicence)}</span></div>
+      </div>
     </div>
-  </header>
 
-  <div class="row">
-    <div>
-      <div class="label">Patient Name</div>
-      <div class="value">${escapeHtml(patientName)}</div>
+    <!-- Tests -->
+    <div class="section section-card">
+      <h3 class="section-title">Recommended Tests</h3>
+      ${testsHtml}
     </div>
-    <div>
-      <div class="label">Date</div>
-      <div class="value">${escapeHtml(dateStr)}</div>
+
+    <!-- Reason (optional) -->
+    ${
+      reasonHtml
+        ? `<div class="section section-card">
+            
+            ${reasonHtml.replace('<div class="section">', '').replace('</div>', '')}
+         </div>`
+        : ''
+    }
+
+    <div class="footer">
+      <div>Generated on ${escapeHtml(dateStr)}</div>
+      <div>${escapeHtml(clinicDetails.name)}</div>
     </div>
-  </div>
 
-  <div class="row">
-    <div>
-      <div class="label">Doctor</div>
-      <div class="value">${escapeHtml(doctorInfo.name)}</div>
+    <div class="no-print" style="margin-top: 12px; text-align:right;">
+      <button onclick="window.print()" style="
+        background: var(--accent);
+        color: white; border: 0;
+        padding: 8px 14px; border-radius: 8px;
+        font-weight:600; cursor:pointer;
+      ">Print</button>
     </div>
-    <div>
-      <div class="label">Reg. No</div>
-      <div class="value">${escapeHtml(doctorInfo.regNo)}</div>
-    </div>
-  </div>
-
-  <div class="section">
-    <h3 class="section-title">Recommended Tests</h3>
-    ${testsHtml}
-  </div>
-
-  ${reasonHtml}
-
-  <div class="footer">
-    <div>Generated on ${escapeHtml(dateStr)}</div>
-    <div>${escapeHtml(doctorInfo.clinic)}</div>
-  </div>
-
-  <div class="no-print" style="margin-top: 16px;">
-    <button onclick="window.print()">Print</button>
   </div>
 </body>
 </html>
-  `
+`
 
     const win = window.open('', '_blank', 'width=900,height=700')
     if (!win) {
@@ -281,10 +335,16 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0 }) => {
       .replace(/'/g, '&#039;')
   }
   const clearAllTests = () => {
-    // if you need confirmation:
-    // if (!window.confirm('Remove all selected tests?')) return;
-    setSelectedTests([]) // or your state updater
+    setSelectedTests([])
   }
+
+  // in Tests.jsx
+  useEffect(() => {
+    const incoming = seed || {}
+    const next = Array.isArray(incoming.selectedTests) ? incoming.selectedTests : []
+    setSelectedTests(next)
+    setTestReason(incoming.testReason ?? incoming.reason ?? '')
+  }, [seed])
 
   return (
     <div className="tests-wrapper pb-5">
@@ -312,14 +372,26 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0 }) => {
                       <CFormLabel className="label">
                         <GradientTextCard text={'Recommended Test (Optional)'} />
                       </CFormLabel>
-                      <CFormSelect value={selectedTestOption} onChange={handleAddTest}>
-                        <option value="dfkdsjf">NA</option>
-                        {optionsToShow.map((test) => (
-                          <option key={test} value={test}>
-                            {test}
-                          </option>
-                        ))}
-                      </CFormSelect>
+
+                      <Select
+                        options={
+                          availableTests
+                            .filter((t) => !selectedTests.includes(t.testName)) // remove already selected
+                            .map((t) => ({ label: t.testName, value: t.testName })) // format for react-select
+                        }
+                        placeholder="Select Tests..."
+                        value={
+                          selectedTestOption
+                            ? { label: selectedTestOption, value: selectedTestOption }
+                            : null
+                        }
+                        onChange={(selected) =>
+                          handleAddTest({ target: { value: selected?.value } })
+                        }
+                        isClearable
+                        isSearchable
+                      />
+
                       {/* <div className="text-body-secondary small mt-1">
                         Choose from common tests; duplicates are ignored.
                       </div> */}
@@ -397,7 +469,6 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0 }) => {
               </CCardBody>
             </CCard>
           </CCol>
-
         </CRow>
       </CContainer>
 
@@ -415,16 +486,16 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0 }) => {
         }}
       >
         <div style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: 8, marginBottom: 12 }}>
-          <div style={{ fontWeight: 700, fontSize: 18 }}>{doctorInfo?.clinic || 'Clinic'}</div>
+          <div style={{ fontWeight: 700, fontSize: 18 }}>{clinicDetails?.clinic || 'Clinic'}</div>
           <div style={{ fontSize: 13 }}>
-            {doctorInfo?.name || ''} • Reg. No: {doctorInfo?.regNo || ''}
+            {clinicDetails?.name || ''} • Reg. No: {clinicDetails?.regNo || ''}
           </div>
-          <div style={{ fontSize: 13 }}>{doctorInfo?.phone || ''}</div>
+          <div style={{ fontSize: 13 }}>{clinicDetails?.phone || ''}</div>
         </div>
 
         <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
           <div>
-            <strong>Patient:</strong> {doctorInfo?.patientName || '-'}
+            <strong>Patient:</strong> {clinicDetails?.patientName || '-'}
           </div>
           <div>
             <strong>Date:</strong>{' '}

@@ -19,7 +19,12 @@ import { cilSearch } from '@coreui/icons'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import DataTable from 'react-data-table-component'
-import { deleteTreatmentData, postTreatmentData, TreatmentData, updateTreatmentData } from './TreatmentsManagementAPI'
+import {
+  deleteTreatmentData,
+  postTreatmentData,
+  TreatmentData,
+  updateTreatmentData,
+} from './TreatmentsManagementAPI'
 
 const TreatmentsManagement = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -32,7 +37,7 @@ const TreatmentsManagement = () => {
   const [viewTreatment, setViewTreatment] = useState(null)
   const [editTreatmentMode, setEditTreatmentMode] = useState(false)
   const [treatmentToEdit, setTreatmentToEdit] = useState(null)
-  const [errors, setErrors] = useState({ treatmentName: '', hospitalId: '' })
+  const [errors, setErrors] = useState({})
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [treatmentIdToDelete, setTreatmentIdToDelete] = useState(null)
   const [newTreatment, setNewTreatment] = useState({ treatmentName: '', hospitalId: '' })
@@ -66,6 +71,22 @@ const TreatmentsManagement = () => {
       console.error('Delete error:', error)
     }
     setIsModalVisible(false)
+  }
+  const handleInputChange = (e) => {
+    const { name, value } = e.target
+
+    setNewTreatment((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+
+    // Clear the error for this field only if it previously existed
+    if (errors[name]) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        [name]: '',
+      }))
+    }
   }
 
   const handleCancelDelete = () => {
@@ -118,9 +139,12 @@ const TreatmentsManagement = () => {
         'An unexpected error occurred.'
       const statusCode = error.response?.status
       if (statusCode === 409 || errorMessage.toLowerCase().includes('duplicate')) {
-        toast.error(`Error: Duplicate treatment name - ${newTreatment.treatmentName} already exists!`, {
-          position: 'top-right',
-        })
+        toast.error(
+          `Error: Duplicate treatment name - ${newTreatment.treatmentName} already exists!`,
+          {
+            position: 'top-right',
+          },
+        )
       } else {
         toast.error(`Error adding treatment: ${errorMessage}`, { position: 'top-right' })
       }
@@ -133,18 +157,34 @@ const TreatmentsManagement = () => {
   }
 
   const handleUpdateTreatment = async () => {
-    const { id: treatmentId, hospitalId } = treatmentToEdit
+  const { id: treatmentId, hospitalId, treatmentName } = treatmentToEdit
 
-    try {
-      await updateTreatmentData(treatmentToEdit, treatmentId, hospitalId)
-      toast.success('Treatment updated successfully!')
-      setEditTreatmentMode(false)
-      fetchData()
-    } catch (error) {
-      console.error('Update error:', error)
-      toast.error('Failed to update treatment.')
-    }
+  if (!treatmentId || !/^[a-f\d]{24}$/i.test(treatmentId)) {
+    toast.error('Invalid treatment ID')
+    return
   }
+
+  if (!treatmentName.trim() || !hospitalId.trim()) {
+    toast.error('Both fields are required')
+    return
+  }
+
+  try {
+    await updateTreatmentData(
+      { treatmentName: treatmentName.trim(), hospitalId: hospitalId.trim() },
+      treatmentId,
+      hospitalId
+    )
+
+    toast.success('Treatment updated successfully!')
+    setEditTreatmentMode(false)
+    fetchData()
+  } catch (error) {
+    console.error('Update error:', error)
+    toast.error('Failed to update treatment.')
+  }
+}
+
 
   const handleTreatmentDelete = (treatment) => {
     setTreatmentIdToDelete(treatment.treatmentId || treatment.id || treatment._id)
@@ -171,10 +211,16 @@ const TreatmentsManagement = () => {
           <div onClick={() => setViewTreatment(row)} style={{ color: 'green', cursor: 'pointer' }}>
             View
           </div>
-          <div onClick={() => handleTreatmentEdit(row)} style={{ color: 'blue', cursor: 'pointer' }}>
+          <div
+            onClick={() => handleTreatmentEdit(row)}
+            style={{ color: 'blue', cursor: 'pointer' }}
+          >
             Edit
           </div>
-          <div onClick={() => handleTreatmentDelete(row)} style={{ color: 'red', cursor: 'pointer' }}>
+          <div
+            onClick={() => handleTreatmentDelete(row)}
+            style={{ color: 'red', cursor: 'pointer' }}
+          >
             Delete
           </div>
         </div>
@@ -260,9 +306,23 @@ const TreatmentsManagement = () => {
               type="text"
               name="treatmentName"
               value={newTreatment.treatmentName}
-              onChange={(e) => setNewTreatment({ ...newTreatment, treatmentName: e.target.value })}
-            />
+              onChange={(e) => {
+                const value = e.target.value
+                setNewTreatment({ ...newTreatment, treatmentName: value })
 
+                // Clear error for this field as the user types
+                if (errors.treatmentName) {
+                  setErrors((prev) => ({ ...prev, treatmentName: '' }))
+                }
+              }}
+              placeholder="Enter Treatment Name"
+              className={errors.treatmentName ? 'is-invalid' : ''}
+            />
+            {errors.treatmentName && (
+              <div className="invalid-feedback" style={{ color: 'red' }}>
+                {errors.treatmentName}
+              </div>
+            )}
             <h6 className="mt-3">
               Hospital ID <span style={{ color: 'red' }}>*</span>
             </h6>
@@ -270,8 +330,28 @@ const TreatmentsManagement = () => {
               type="text"
               name="hospitalId"
               value={newTreatment.hospitalId}
-              onChange={(e) => setNewTreatment({ ...newTreatment, hospitalId: e.target.value })}
+              //               onChange={(e) => setNewTreatment({ ...newTreatment, hospitalId: e.target.value })}
+              //             />
+              //             {errors.hospitalId && (
+              //   <div className="text-danger">{errors.hospitalId}</div>
+              // )}
+              onChange={(e) => {
+                const value = e.target.value
+                setNewTreatment({ ...newTreatment, hospitalId: value })
+
+                // Clear error for this field as the user types
+                if (errors.hospitalId) {
+                  setErrors((prev) => ({ ...prev, hospitalId: '' }))
+                }
+              }}
+              placeholder="Enter Hospital Id"
+              className={errors.hospitalId ? 'is-invalid' : ''}
             />
+            {errors.hospitalId && (
+              <div className="invalid-feedback" style={{ color: 'red' }}>
+                {errors.hospitalId}
+              </div>
+            )}
           </CForm>
         </CModalBody>
         <CModalFooter>
@@ -284,7 +364,11 @@ const TreatmentsManagement = () => {
         </CModalFooter>
       </CModal>
 
-      <CModal visible={editTreatmentMode} onClose={() => setEditTreatmentMode(false)} backdrop="static">
+      <CModal
+        visible={editTreatmentMode}
+        onClose={() => setEditTreatmentMode(false)}
+        backdrop="static"
+      >
         <CModalHeader>
           <CModalTitle>Edit Treatment</CModalTitle>
         </CModalHeader>
@@ -294,13 +378,17 @@ const TreatmentsManagement = () => {
             <CFormInput
               type="text"
               value={treatmentToEdit?.treatmentName || ''}
-              onChange={(e) => setTreatmentToEdit({ ...treatmentToEdit, treatmentName: e.target.value })}
+              onChange={(e) =>
+                setTreatmentToEdit({ ...treatmentToEdit, treatmentName: e.target.value })
+              }
             />
             <h6 className="mt-3">Hospital ID</h6>
             <CFormInput
               type="text"
               value={treatmentToEdit?.hospitalId || ''}
-              onChange={(e) => setTreatmentToEdit({ ...treatmentToEdit, hospitalId: e.target.value })}
+              onChange={(e) =>
+                setTreatmentToEdit({ ...treatmentToEdit, hospitalId: e.target.value })
+              }
             />
           </CForm>
         </CModalBody>
@@ -326,7 +414,11 @@ const TreatmentsManagement = () => {
       ) : error ? (
         <div>{error}</div>
       ) : (
-        <DataTable columns={columns} data={filteredData.length ? filteredData : treatment} pagination />
+        <DataTable
+          columns={columns}
+          data={filteredData.length ? filteredData : treatment}
+          pagination
+        />
       )}
     </div>
   )

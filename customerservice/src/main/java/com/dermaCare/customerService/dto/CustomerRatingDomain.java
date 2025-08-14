@@ -15,6 +15,7 @@ public class CustomerRatingDomain {
     private String hospitalId;
     private String doctorId; 
     private String customerMobileNumber;
+    private String patientId;
     private String appointmentId;
     private boolean rated;
     private String dateAndTimeAtRating;

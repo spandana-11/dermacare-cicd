@@ -2,6 +2,7 @@ package com.dermacare.doctorservice.model;
 
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -34,8 +35,9 @@ public class DoctorSaveDetails {
 
     private SymptomDetails symptoms;
     private TestDetails tests;
-    private TreatmentDetails treatments;
+    private TreatmentResponse treatments;
     private FollowUpDetails followUp;
     private PrescriptionDetails prescription;
+    private List<String> prescriptionPdf;
     
 }

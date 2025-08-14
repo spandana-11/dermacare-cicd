@@ -61,7 +61,7 @@ public class PatientConsentForm {
 	
 	private String hospitalId;
 	private String hospitalName;
-	private byte[] hospitalLogo;
+	private String hospitalLogo;
 	
 	
 

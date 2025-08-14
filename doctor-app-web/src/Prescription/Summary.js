@@ -23,180 +23,214 @@ import { useToast } from '../utils/Toaster'
 import FileUploader from './FileUploader'
 import { createDoctorSaveDetails, getClinicDetails, getDoctorDetails } from '../Auth/Auth'
 import { useDoctorContext } from '../Context/DoctorContext'
-import { PDFDownloadLink } from '@react-pdf/renderer'
 import PrescriptionPDF from '../utils/PdfGenerator'
+import { pdf } from '@react-pdf/renderer'
 
 /**
  * Props:
  * - patientData
  * - formData: {
- *    symptoms: { symptomDetails, doctorObs, diagnosis, duration }
- *    tests: { selectedTests: [{name, reason?}] }
- *    prescription: { medicines: [{ id, medicine, dose, remind, note, duration, time }] }
- *    treatments: { selectedTreatments: [{name, reason?}] }
- *    followUp: { duration, date, note }
+ *    symptoms: { symptomDetails, doctorObs, diagnosis, duration, attachments? }
+ *    tests: { selectedTests: string[], testReason?: string }
+ *    prescription: { medicines: [{ id?, name, dose, remindWhen, note, duration, times }] }
+ *    treatments: { selectedTestTreatments: string[], treatmentReason?, generatedData? }
+ *    followUp: { durationValue, durationUnit, nextFollowUpDate, followUpNote }
  *   }
  */
+
 const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formData = {} }) => {
-  const sampleFiles = [
-    { name: 'javascript.pdf', type: 'application/pdf', path: '/files/ReactJS- PWA.pdf' },
-    { name: 'mounika.png', type: 'image/png', path: '/files/mounika.png' },
-    { name: 'Hospital.png', type: 'image/png', path: '/files/Hospital.png' },
-  ]
-  const { doctorId, hospitalId, doctorDetails, setDoctorDetails, setClinicDetails, clinicDetails, } = useDoctorContext()
+  const { doctorDetails, setDoctorDetails, setClinicDetails, clinicDetails, updateTemplate } =
+    useDoctorContext()
+
   const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
   const navigate = useNavigate()
   const navigatingRef = useRef(false)
   const [showTemplateModal, setShowTemplateModal] = useState(false)
   const [pendingAction, setPendingAction] = useState(null)
+  const [clickedSaveTemplate, setClickedSaveTemplate] = useState(false)
 
   const { success, error, info, warning } = useToast()
 
-  // map safely
+  // ----------- Safe mapping from props -----------
   const symptomsDetails = formData?.symptoms?.symptomDetails ?? formData?.symptoms?.doctorObs ?? '—'
   const symptomsDuration = formData?.symptoms?.duration ?? patientData?.duration ?? '—'
   const doctorObs = formData?.symptoms?.doctorObs ?? patientData?.doctorObs ?? '—'
-  const attachments = formData?.symptoms?.attachments ?? patientData?.attachments ?? '—'
-  // const reports = Array.isArray(formData.symptoms.reports) ? patientData?.reports : []
+  const attachments = Array.isArray(formData?.symptoms?.attachments)
+    ? formData.symptoms.attachments
+    : Array.isArray(patientData?.attachments)
+      ? patientData.attachments
+      : []
 
   const diagnosis = formData?.symptoms?.diagnosis ?? formData?.summary?.diagnosis ?? ''
 
   const tests = Array.isArray(formData?.tests?.selectedTests) ? formData.tests.selectedTests : []
   const testsReason = formData?.tests?.testReason ? formData.tests.testReason : ''
+
   const treatmentReason = formData?.treatments?.treatmentReason
     ? formData.treatments.treatmentReason
     : ''
+
   const treatments = Array.isArray(formData?.treatments?.selectedTestTreatments)
     ? formData.treatments.selectedTestTreatments
     : []
+
+  const treatmentSchedules = formData?.treatments?.generatedData || {}
+
   const medicines = Array.isArray(formData?.prescription?.medicines)
     ? formData.prescription.medicines
     : []
 
   const followUp = {
-    durationValue: formData.followUp.durationValue || 'NA',
-    durationUnit: formData.followUp.durationUnit || 'NA',
-    date: formData.followUp.nextFollowUpDate || 'NA',
-    note: formData.followUp.followUpNote || 'NA',
+    durationValue: formData?.followUp?.durationValue ?? 'NA',
+    durationUnit: formData?.followUp?.durationUnit ?? 'NA',
+    date: formData?.followUp?.nextFollowUpDate ?? 'NA',
+    note: formData?.followUp?.followUpNote ?? 'NA',
   }
 
   const ACTIONS = { SAVE: 'save', SAVE_PRINT: 'savePrint' }
+  const freqLabel = (f) =>
+    f === 'day' ? 'Daily' : f === 'week' ? 'Weekly' : f === 'month' ? 'Monthly' : f || '—'
 
-  const handleDelete = (id) => {
-    // to actually delete, lift state to parent and update formData.prescription.medicines
-    console.log('Delete prescription with ID:', id)
+  const toInitials = (input, sep = ', ') => {
+    if (!input) return ''
+    let tokens = []
+    if (Array.isArray(input)) {
+      tokens = input
+    } else {
+      const s = String(input).trim()
+      if (s.includes(',') || s.includes('|') || /\s/.test(s)) {
+        tokens = s.split(/[,|\s]+/)
+      } else {
+        tokens = s.match(/morning|afternoon|evening|night/gi) || [s]
+      }
+    }
+    const map = {
+      morning: 'M',
+      m: 'M',
+      afternoon: 'A',
+      a: 'A',
+      evening: 'E',
+      e: 'E',
+      night: 'N',
+      n: 'N',
+    }
+    return tokens
+      .map((t) => map[t.toLowerCase()] ?? (t[0]?.toUpperCase() || ''))
+      .filter(Boolean)
+      .join(sep)
   }
 
-
-
-  const handlePrint = async () => {
-    const container = document.getElementById('print-area')
-    if (!container) return
-
-    const printContents = container.innerHTML
-    const printWindow = window.open('', '', 'height=800,width=600')
-    if (!printWindow) return alert('Please allow pop-ups to print.')
-
-    printWindow.document.open()
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Patient Summary</title>
-          <style>
-            body { margin: 20px; color: #000; font-family: Segoe UI, Arial, sans-serif; }
-            h3, h4, h5 { margin-top: 16px; font-size: 18px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 14px; }
-            .summary-section { margin-bottom: 18px; }
-          </style>
-        </head>
-        <body>${printContents}</body>
-      </html>
-    `)
-    printWindow.document.close()
-
-    await new Promise((resolve) => {
-      const done = () => resolve()
-      if (printWindow.document.readyState === 'complete') setTimeout(done, 50)
-      else printWindow.addEventListener('load', () => setTimeout(done, 50))
-    })
-
-    await new Promise((resolve) => {
-      let resolved = false
-      const cleanup = () => {
-        if (resolved) return
-        resolved = true
-        try {
-          printWindow.close()
-        } catch { }
-        resolve()
-      }
-      try {
-        printWindow.focus()
-        printWindow.onafterprint = cleanup
-        printWindow.print()
-        setTimeout(cleanup, 1500)
-      } catch {
-        cleanup()
-      }
-    })
-  }
   useEffect(() => {
     const fetchDetails = async () => {
-      const doctor = await getDoctorDetails();
-      const clinic = await getClinicDetails();
+      try {
+        const doctor = await getDoctorDetails()
+        const clinic = await getClinicDetails()
+        if (doctor) setDoctorDetails(doctor)
+        if (clinic) setClinicDetails(clinic)
+      } catch (e) {
+        console.error('Failed to load doctor/clinic details', e)
+      }
+    }
+    fetchDetails()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-      if (doctor) setDoctorDetails(doctor);
-      if (clinic) setClinicDetails(clinic);
-    };
+  // ---------------- PDF helpers ----------------
+  const renderPrescriptionPdfBlob = async () => {
+    return await pdf(
+      <PrescriptionPDF
+        doctorData={doctorDetails}
+        clicniData={clinicDetails}
+        formData={formData}
+        patientData={patientData}
+      />,
+    ).toBlob()
+  }
 
-    fetchDetails();
-  }, []);
+  const blobToBase64 = (blob) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const res = reader.result
+        const base64 = typeof res === 'string' ? res.split(',')[1] : ''
+        resolve(base64)
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
 
+  const downloadBlob = (blob, filename) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
+  // Package all data + pdf (base64) and send it
+  const uploadPrescription = async ({ downloadAfter = false } = {}) => {
+    try {
+      const blob = await renderPrescriptionPdfBlob()
+      const base64 = await blobToBase64(blob)
+      const safeName = (patientData?.name || 'Prescription').replace(/[^\w\-]+/g, '_')
+      const filename = `${safeName}.pdf`
+
+      const payload = {
+        bookingId: patientData?.bookingId,
+        clinicName: clinicDetails?.name,
+        clinicId: clinicDetails?.hospitalId,
+        patientId: patientData?.patientId,
+        doctorId: doctorDetails?.doctorId,
+        symptoms: formData?.symptoms,
+        tests: formData?.tests,
+        treatments: formData?.treatments,
+        followUp: formData?.followUp,
+        prescription: formData?.prescription,
+        prescriptionPdf: [base64], // base64 string only
+        // pdfFilename: filename,
+        // pdfMimeType: 'application/pdf',
+      }
+      console.log(payload)
+      const resp = await createDoctorSaveDetails(payload)
+      if (resp) {
+        success('Prescription saved successfully!', { title: 'Success' })
+      } else {
+        warning('Saved, but got an unexpected response.')
+      }
+
+      if (downloadAfter) {
+        downloadBlob(blob, filename)
+      }
+
+      return true
+    } catch (e) {
+      console.error(e)
+      error('Failed to generate or send the PDF.', { title: 'Error' })
+      return false
+    }
+  }
+
+  // ---------------- Actions ----------------
   const onClickSave = () => {
     setPendingAction(ACTIONS.SAVE)
     setShowTemplateModal(true)
   }
+
   const onClickSavePrint = () => {
     setPendingAction(ACTIONS.SAVE_PRINT)
     setShowTemplateModal(true)
   }
 
-  console.log(clinicDetails)
-
   const confirmSaveAsTemplate = async () => {
-    const action = pendingAction;
-   
+    const action = pendingAction
     setShowTemplateModal(false)
     try {
       await onSaveTemplate?.()
- 
-
-      // ✅ Call API after saving template
-      const payload = {
-        bookingId: patientData.bookingId,
-        doctorName: doctorDetails.doctorName,
-        clinicName: clinicDetails.name,
-        clinicId: clinicDetails.hospitalId,
-        patientId: patientData.patientId,
-        doctorId: doctorDetails.doctorId,
-        symptoms: formData.symptoms,
-        tests: formData.tests,
-        treatments: formData?.treatments,
-        followUp: formData.followUp,
-        prescription: formData.prescription
-      }
-      console.log(payload)
-      const response = await createDoctorSaveDetails(payload);
-      console.log(response);
-      if (response) {
-        success('Prescription Data Saved Successfully...!', { title: 'Success' })
-      }
-
-      if (action === ACTIONS.SAVE_PRINT) {
-        await handlePrint()
-      }
-      navigate('/dashboard', { replace: true })
+      const ok = await uploadPrescription({ downloadAfter: action === ACTIONS.SAVE_PRINT })
+      if (ok) navigate('/dashboard', { replace: true })
     } finally {
       setPendingAction(null)
     }
@@ -204,32 +238,15 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
 
   const skipTemplate = async () => {
     setShowTemplateModal(false)
-    setPendingAction(null)
-    // ✅ Call API after saving template
-    const payload = {
-      bookingId: patientData.bookingId,
-      doctorName: doctorDetails.doctorName,
-      clinicName: clinicDetails.name,
-      clinicId: clinicDetails.hospitalId,
-      patientId: patientData.patientId,
-      doctorId: doctorDetails.doctorId,
-      symptoms: formData.symptoms,
-      tests: formData.tests,
-      treatments: formData?.treatments,
-      followUp: formData.followUp,
-      prescription: formData.prescription
+    try {
+      const ok = await uploadPrescription({ downloadAfter: pendingAction === ACTIONS.SAVE_PRINT })
+      if (ok) navigate('/dashboard', { replace: true })
+    } finally {
+      setPendingAction(null)
     }
-    console.log(payload)
-    const response = await createDoctorSaveDetails(payload);
-    console.log(response);
-    if (response) {
-      success('Prescription Data Saved Successfully...!', { title: 'Success' })
-    }
-
-    navigate('/dashboard', { replace: true })
   }
-  console.log('durationValue:', followUp.durationValue)
 
+  // ---------------- Render ----------------
   return (
     <div className="pb-5" style={{ backgroundColor: COLORS.theme }}>
       <CContainer fluid className="p-0" id="print-area">
@@ -264,14 +281,14 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
 
         {/* Symptoms & Duration */}
         {(symptomsDetails !== '—' || symptomsDuration !== '—') && (
-          <CCard className="shadow-sm mb-3">
+          <CCard className="shadow-sm mb-4">
             <CCardHeader className="py-2">
               <strong>Symptoms & Duration</strong>
             </CCardHeader>
             <CCardBody>
               <CRow className="g-3">
                 <CCol xs={12} md={8}>
-                  <h6 className="mb-2">Patient-Provided Symptom</h6>
+                  <h6 className="mb-2">Patient-Provided Symptoms</h6>
                   <div style={{ whiteSpace: 'pre-wrap' }}>{symptomsDetails}</div>
                   <h6 className="mb-2 mt-2">
                     Doctor Observations <span className="text-body-secondary">(if any)</span>
@@ -285,8 +302,13 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
                   </CBadge>
                 </CCol>
               </CRow>
-              <h6 className="mb-2 mt-4">Previous Reports & Prescriptions</h6>
-              <FileUploader attachments={attachments} accept=".pdf,image/*" />
+
+              {Array.isArray(attachments) && attachments.length > 0 && (
+                <>
+                  <h6 className="mb-2 mt-4">Previous Reports & Prescriptions</h6>
+                  <FileUploader attachments={attachments} accept=".pdf,image/*" />
+                </>
+              )}
             </CCardBody>
           </CCard>
         )}
@@ -319,10 +341,12 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
                   </li>
                 ))}
               </ul>
-              <div className="mt-2 mb-2">
-                <strong>Reasons</strong>
-                <p>{testsReason}</p>
-              </div>
+              {testsReason ? (
+                <div className="mt-2 mb-2">
+                  <strong>Reasons</strong>
+                  <p className="mb-0">{testsReason}</p>
+                </div>
+              ) : null}
             </CCardBody>
           </CCard>
         )}
@@ -331,22 +355,62 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {treatments.length > 0 && (
           <CCard className="shadow-sm mb-3">
             <CCardHeader className="py-2">
-              <strong>
-                Treatments <span className="text-body-secondary">(with reasons)</span>
-              </strong>
+              <strong>Treatments</strong>
             </CCardHeader>
             <CCardBody>
-              <ul className="mb-0">
+              <ul className="mb-2">
                 {treatments.map((t, i) => (
-                  <li key={`${t.name || 'tx'}-${i}`}>
-                    <span className="fw-semibold">{t || '—'}</span>
-                  </li>
+                  <li key={`treat-${i}`}>{typeof t === 'string' ? t : t?.name || '—'}</li>
                 ))}
               </ul>
-              <div className="mt-2 mb-2">
-                <strong>Reasons</strong>
-                <p>{treatmentReason}</p>
-              </div>
+              {treatmentReason ? (
+                <div className="mt-2">
+                  <div className="text-muted">Reason</div>
+                  <div>{treatmentReason}</div>
+                </div>
+              ) : null}
+            </CCardBody>
+          </CCard>
+        )}
+
+        {/* Treatment Schedules */}
+        {treatmentSchedules && Object.keys(treatmentSchedules).length > 0 && (
+          <CCard className="shadow-sm mb-3">
+            <CCardHeader className="py-2">
+              <strong>Treatment Schedule</strong>
+            </CCardHeader>
+            <CCardBody>
+              {Object.entries(treatmentSchedules).map(([name, meta]) => (
+                <CCard key={name} className="mb-3 p-2">
+                  <div style={{ fontWeight: 'bold' }}>
+                    {name} — {freqLabel(meta?.frequency)} ({meta?.sittings ?? 0} sittings from{' '}
+                    {meta?.startDate ?? '—'})
+                  </div>
+
+                  <div className="mt-2 table-responsive">
+                    <table className="table table-sm mb-0">
+                      <thead className="table-light">
+                        <tr>
+                          <th style={{ width: '8%' }}>#</th>
+                          <th style={{ width: '46%' }}>Date</th>
+                          <th style={{ width: '46%' }}>Sitting</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(meta?.dates || []).map((d, i) => (
+                          <tr key={`${name}-row-${i}`}>
+                            <td>{i + 1}</td>
+                            <td>{d?.date ?? '—'}</td>
+                            <td>{d?.sitting ?? '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {meta?.reason ? <div className="mt-2">Reason: {meta.reason}</div> : null}
+                </CCard>
+              ))}
             </CCardBody>
           </CCard>
         )}
@@ -368,33 +432,29 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
                     <CTableHeaderCell>Note</CTableHeaderCell>
                     <CTableHeaderCell>Duration</CTableHeaderCell>
                     <CTableHeaderCell>Time</CTableHeaderCell>
-                    <CTableHeaderCell className="text-end">Action</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                  {medicines.map((item, idx) => (
-                    <CTableRow key={item.id ?? idx}>
-                      <CTableDataCell>{idx + 1}</CTableDataCell>
-                      <CTableDataCell>{item.name || '—'}</CTableDataCell>
-                      <CTableDataCell>{item.dose || '—'}</CTableDataCell>
-                      <CTableDataCell>{item.remindWhen || '—'}</CTableDataCell>
-                      <CTableDataCell>
-                        <div className="text-truncate" style={{ maxWidth: 220 }}>
-                          {item.note || '—'}
-                        </div>
-                      </CTableDataCell>
-                      <CTableDataCell>{item.duration || '—'}Days</CTableDataCell>
-                      <CTableDataCell>{item.times || '—'} </CTableDataCell>
-                      <CTableDataCell className="text-end">
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => handleDelete(item.id)}
-                        >
-                          Delete
-                        </button>
-                      </CTableDataCell>
-                    </CTableRow>
-                  ))}
+                  {medicines.map((item, idx) => {
+                    const timings = toInitials(item?.times, ', ')
+                    return (
+                      <CTableRow key={item.id ?? idx}>
+                        <CTableDataCell>{idx + 1}</CTableDataCell>
+                        <CTableDataCell>{item.name || '—'}</CTableDataCell>
+                        <CTableDataCell>{item.dose || '—'}</CTableDataCell>
+                        <CTableDataCell>{item.remindWhen || '—'}</CTableDataCell>
+                        <CTableDataCell>
+                          <div className="text-truncate" style={{ maxWidth: 220 }}>
+                            {item.note || '—'}
+                          </div>
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          {item.duration ? `${item.duration} Days` : '—'}
+                        </CTableDataCell>
+                        <CTableDataCell>{timings || '—'}</CTableDataCell>
+                      </CTableRow>
+                    )
+                  })}
                 </CTableBody>
               </CTable>
             </CCardBody>
@@ -402,7 +462,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         )}
 
         {/* Follow-up Plan */}
-        {followUp.durationValue != 'NA' && (
+        {followUp.durationValue !== 'NA' && (
           <CCard className="shadow-sm mb-4">
             <CCardHeader className="py-2">
               <strong>Follow-up Plan</strong>
@@ -443,45 +503,51 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
           width: sidebarWidth ? `calc(100vw - ${sidebarWidth}px)` : '100vw',
           backgroundColor: '#F3f3f7',
           display: 'flex',
-          justifyContent: 'flex-end',
-          gap: 16,
+          justifyContent: 'space-evenly',
           padding: 12,
+          zIndex: 999,
         }}
       >
         <div className="d-flex gap-2 mx-4 justify-content-between w-75">
-          <Button customColor={COLORS.secondary} onClick={onSaveTemplate}>
-            Save Prescription Template
+          <Button
+            customColor={COLORS.secondary}
+            onClick={() => {
+              setClickedSaveTemplate(true)
+              onSaveTemplate?.()
+              // info('Template saved. You can now Save or Save & Download.', { title: 'Template' })
+            }}
+          >
+            {!updateTemplate ? 'Save Prescription Template' : 'Update Prescription Template'}
           </Button>
+
           <div className="d-flex gap-2">
             <Button
               onClick={() => {
                 setPendingAction(ACTIONS.SAVE)
-                setShowTemplateModal(true)
+                clickedSaveTemplate
+                  ? skipTemplate() // skip modal, proceed
+                  : setShowTemplateModal(true)
               }}
             >
               Save
             </Button>
+
             <Button
               customColor={COLORS.success}
               onClick={() => {
                 setPendingAction(ACTIONS.SAVE_PRINT)
-                setShowTemplateModal(true)
+                clickedSaveTemplate
+                  ? skipTemplate() // skip modal, proceed with download
+                  : setShowTemplateModal(true)
               }}
             >
-              Save & Print
+              Save & Download PDF
             </Button>
-            <PDFDownloadLink
-  document={<PrescriptionPDF doctorData={doctorDetails} clicniData={clinicDetails} formData={formData}  patientData={patientData}/>}
-  fileName="prescription.pdf"
->
-  {({ blob, url, loading, error }) =>
-    loading ? 'Generating PDF...' : 'Download PDF'
-  }
-</PDFDownloadLink>
           </div>
 
-          {showTemplateModal && (
+          {showTemplateModal && !clickedSaveTemplate && (
             <div
+              style={{ zIndex: 999 }}
               className="vh-modal-backdrop"
               role="dialog"
               aria-modal="true"

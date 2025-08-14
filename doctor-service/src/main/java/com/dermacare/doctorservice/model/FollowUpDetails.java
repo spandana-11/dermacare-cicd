@@ -13,6 +13,6 @@ public class FollowUpDetails {
     private int durationValue;
     private String durationUnit;
     private String nextFollowUpDate;
-    private String followUpnote;
+    private String followUpNote;
 }
 

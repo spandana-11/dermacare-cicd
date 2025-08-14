@@ -43,6 +43,7 @@ import com.clinicadmin.repository.DoctorLoginCredentialsRepository;
 import com.clinicadmin.repository.DoctorSlotRepository;
 import com.clinicadmin.repository.DoctorsRepository;
 import com.clinicadmin.service.DoctorService;
+import com.clinicadmin.utils.Base64CompressionUtil;
 import com.clinicadmin.utils.DoctorMapper;
 import com.clinicadmin.utils.DoctorSlotMapper;
 import com.clinicadmin.utils.ExtractFeignMessage;
@@ -317,8 +318,8 @@ public class DoctorServiceImpl implements DoctorService {
 				doctor.setLanguages(dto.getLanguages());
 			if (dto.getHighlights() != null)
 				doctor.setHighlights(dto.getHighlights());
-//			if (dto.getDoctorSignature() != null)
-//				doctor.setDoctorSignature(dto.getDoctorSignature());
+			if (dto.getDoctorSignature() != null)
+				doctor.setDoctorSignature(Base64CompressionUtil.compressBase64(dto.getDoctorSignature()));
 			if (dto.getDoctorFees() != null)
 				doctor.setDoctorFees(DoctorMapper.mapDoctorFeeDTOtoEntity(dto.getDoctorFees()));
 
@@ -1116,6 +1117,7 @@ public class DoctorServiceImpl implements DoctorService {
 					dto.setDoctorAverageRating(doc.getDoctorAverageRating());
 //			                            if (dto.getDoctorFees() != null)
 					dto.setDoctorFees(DoctorMapper.mapDoctorFeeEntityToDTO(doc.getDoctorFees()));
+					dto.setDoctorSignature(Base64CompressionUtil.decompressBase64(doc.getDoctorSignature()));					
 
 					return dto;
 				}).collect(Collectors.toList());

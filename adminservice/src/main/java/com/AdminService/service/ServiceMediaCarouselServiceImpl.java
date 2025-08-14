@@ -27,8 +27,8 @@ public class ServiceMediaCarouselServiceImpl {
     private static final String VIDEO_FOLDER = "videos/";
     private static final String IMAGE_FOLDER = "images/";
 
-    private static final String VIDEO_BASE_URL = "http://localhost:8081/derma-care/media/videos/";
-    private static final String IMAGE_BASE_URL = "http://localhost:8081/derma-care/media/images/";
+    private static final String VIDEO_BASE_URL = "http://13.202.16.119:8081/derma-care/media/videos/";
+    private static final String IMAGE_BASE_URL = "http://13.202.16.119:8081/derma-care/media/images/";
 
     public CategoryMediaCarouselDTO createMedia(ServiceMediaCarouselDTO mediaDTO) {
         ServiceMediaCarousel media = new ServiceMediaCarousel();

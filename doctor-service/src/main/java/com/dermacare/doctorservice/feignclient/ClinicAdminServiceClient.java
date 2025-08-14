@@ -15,6 +15,7 @@ import com.dermacare.doctorservice.dto.DoctorAvailabilityStatusDTO;
 import com.dermacare.doctorservice.dto.DoctorLoginDTO;
 import com.dermacare.doctorservice.dto.Response;
 import com.dermacare.doctorservice.dto.TreatmentDTO;
+import com.dermacare.doctorservice.dto.VitalsDTO;
 
 @FeignClient(name = "clinicadmin")
 public interface ClinicAdminServiceClient {
@@ -76,6 +77,18 @@ public interface ClinicAdminServiceClient {
 
 		 @GetMapping("/clinics/doctor/{doctorId}")
 		    ClinicInfoDTO getClinicInfoByDoctorId(@PathVariable String doctorId);
-			
+		
+		// ------------------------------ Vitals ------------------------------
+		 @PostMapping("/clinic-admin/{patientId}/addingVitals")
+		 ResponseEntity<Response> addVitals(@PathVariable String patientId, @RequestBody VitalsDTO dto);
+
+		 @GetMapping("/clinic-admin/getVitals/{patientId}")
+		 ResponseEntity<Response> getVitals(@PathVariable String patientId);
+
+		 @DeleteMapping("/clinic-admin/deleteVitals/{patientId}")
+		 ResponseEntity<Response> delVitals(@PathVariable String patientId);
+
+		 @PutMapping("/clinic-admin/updateVitals/{patientId}")
+		 ResponseEntity<Response> updateVitals(@PathVariable String patientId, @RequestBody VitalsDTO dto);
 
 }

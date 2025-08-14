@@ -10,6 +10,8 @@ const Treatments = React.lazy(() => import('./views/TreatmentsManagement/Treatme
 const DoctorNotofications = React.lazy(
   () => import('./views/DoctorNotifications/DoctorNotificationsManagement'),
 )
+const ConsentFormPage = React.lazy(() => import('./views/AppointmentManagement/ConsentForm'))
+
 const Service = React.lazy(() => import('./views/serviceManagement/ServiceManagement'))
 // const Patients = React.lazy(() => import('./views/Patients/Patientmanagement'))
 const Payouts = React.lazy(() => import('./views/Payouts/Payoutmanagement'))
@@ -42,6 +44,7 @@ const routes = [
   { path: '/help', name: 'Help', element: Help },
   { path: '/reset-password', name: 'Reset-Password', element: Resetpassword },
   { path: '/doctor/:id', name: 'DoctorDetailspage', element: DoctorDetailspage },
+{ path: '/consent-form', name: 'Consent Form', element: ConsentFormPage },
 
   { path: '/appointment-management', name: 'Appointments', element: AppointmentManagement },
   { path: '/appointmentDetails/:id', name: 'Appointment Details', element: AppointmentDetailsPage },

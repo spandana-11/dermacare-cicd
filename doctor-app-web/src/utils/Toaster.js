@@ -8,7 +8,7 @@ import React, {
   useEffect,
 } from 'react'
 import { createPortal } from 'react-dom'
-import './ToasterStyles.css';
+import './ToasterStyles.css'
 
 const ToastCtx = createContext(null)
 export const useToast = () => {

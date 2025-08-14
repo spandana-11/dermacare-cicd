@@ -2,6 +2,7 @@ package com.dermacare.doctorservice.dto;
 
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -30,8 +31,9 @@ public class DoctorSaveDetailsDTO {
     private String visitType; 
     private SymptomDetailsDTO symptoms;
     private TestDetailsDTO tests;
-    private TreatmentDetailsDTO treatments;
+    private TreatmentResponseDTO treatments;
     private FollowUpDetailsDTO followUp;
     private PrescriptionDetailsDTO prescription;
+    private List<String> prescriptionPdf;
 }
 

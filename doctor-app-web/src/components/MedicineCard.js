@@ -28,7 +28,14 @@ const slotOptions = [
 
 const foodOptions = ['Before Food', 'After Food', 'With Food', 'NA']
 
-const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine }) => {
+const MedicineCard = ({
+  index,
+  medicine,
+  updateMedicine,
+  removeMedicine,
+  onAdd,
+  isDuplicateName,
+}) => {
   const handleChange = (field, value) => {
     updateMedicine({ ...medicine, [field]: value })
   }
@@ -59,12 +66,17 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine }) => {
     times: ['', '', ''],
   })
 
+  // const canAdd = (m) =>
+  //   (m?.name || '').trim() && (m?.dose || '').trim() && (m?.duration || '').trim()
+
   const canAdd = (m) =>
     (m?.name || '').trim() && (m?.dose || '').trim() && (m?.duration || '').trim()
 
+  const isDup = isDuplicateName?.(medicine?.name)
+
   return (
     <CCard
-      className="w-100 mb-3 shadow-sm p-1"
+      className="w-100 mb-3 shadow-sm p-3"
       // Use 70vh so it works without a fixed-height parent. If you truly want 70% of parent, change to '70%'.
       style={{ marginInline: '5px' }} // outer side gap only (optional)
     >
@@ -87,7 +99,8 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine }) => {
                 color="success"
                 variant="ghost"
                 size="sm"
-                disabled={!canAdd(medicine)}
+                // disabled={!canAdd(medicine)}// TODO:vaildation
+                //  disabled={!canAdd(medicine) || isDup}
                 onClick={() => onAdd?.(medicine)}
               >
                 <CIcon icon={cilPlus} />
@@ -104,10 +117,10 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine }) => {
         </div>
       </CCardHeader>
 
-      <CCardBody style={{ paddingInline: '5px', paddingTop: 5, paddingBottom: 0 }}>
-        <CRow className="gx-2 gy-2">
+      <CCardBody style={{ paddingTop: 5, paddingBottom: 0 }}>
+        <CRow className=" ">
           {/* Dose */}
-          <CCol xs={12} md={2}>
+          <CCol style={{ width: '25%' }}>
             <GradientTextCard text={'Dosage'} />
 
             <CFormInput
@@ -118,7 +131,7 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine }) => {
           </CCol>
 
           {/* Remind When */}
-          <CCol xs={12} md={3}>
+          <CCol style={{ width: '25%' }}>
             <GradientTextCard text={'Frequency'} />
 
             <CFormSelect
@@ -133,7 +146,7 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine }) => {
           </CCol>
 
           {/* Food */}
-          <CCol xs={12} md={3}>
+          <CCol style={{ width: '25%' }}>
             <GradientTextCard text={'Food'} />
 
             <CFormSelect
@@ -150,11 +163,11 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine }) => {
           </CCol>
 
           {/* Duration */}
-          <CCol xs={12} md={2}>
-            <GradientTextCard text={'Duration(In Days)'} />
+          <CCol style={{ width: '25%' }}>
+            <GradientTextCard text={'Duration '} />
 
             <CFormInput
-            type="number"
+              type="number"
               value={medicine.duration || ''}
               placeholder="e.g. 5 days"
               onChange={(e) => handleChange('duration', e.target.value)}
@@ -189,7 +202,7 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine }) => {
         </CRow>
 
         {/* Notes */}
-        <div className="mt-2">
+        <div className="mt-3">
           <GradientTextCard text={`Notes`} />
 
           <CFormTextarea

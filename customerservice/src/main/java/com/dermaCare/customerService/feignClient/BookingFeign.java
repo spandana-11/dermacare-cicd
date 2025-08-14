@@ -56,6 +56,9 @@ public interface BookingFeign {
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingByClinicId(@PathVariable String clinicId);
 
 	
+	@GetMapping("/api/v1/getInProgressAppointments/{mobilenumber}/{patientId}")
+	public ResponseEntity<?> inProgressAppointments(@PathVariable String mobilenumber,@PathVariable String patientId);
+	
 	//FALLBACK METHODS
 	
 //		default ResponseEntity<?> bookingServiceFallBack(Exception e){		 
