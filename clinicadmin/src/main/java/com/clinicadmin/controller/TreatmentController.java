@@ -44,4 +44,10 @@ public class TreatmentController {
         Response response = treatmentService.updateTreatmentById(id,hospitalId, dto);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
+    @GetMapping("/treatments/{hospitalId}")
+    public ResponseEntity<Response> getTreatmentsByHospitalId(@PathVariable String hospitalId) {
+    	 Response response = treatmentService.getAllTreatmentsByHospitalId(hospitalId);
+         return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
 }

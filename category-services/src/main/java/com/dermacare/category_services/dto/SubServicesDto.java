@@ -55,6 +55,8 @@ public class SubServicesDto {
 	
 	private byte gst;
 	
+	private double gstAmount;
+	
 	private double consultationFee;
 
 	private double discountedCost; // price - discount Amount

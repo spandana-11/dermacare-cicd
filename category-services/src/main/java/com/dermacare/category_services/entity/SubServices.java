@@ -66,6 +66,8 @@ public class SubServices implements Serializable {
 	
 	private byte gst;
 	
+	private double gstAmount;
+	
 	private double consultationFee;
 
 	private double discountedCost; // price - discount Amount

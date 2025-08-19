@@ -93,13 +93,17 @@ public class Clinic {
     
     private int freeFollowUps;
     
-    
     private double latitude;
     private double longitude;
     private String walkthrough;
     private int nabhScore;
     private String branch;
+    
+    private int score;
+    private int questionCount;
 
+    private QuetionsAndAnswerForAddClinic onboardingQA;
+    
     // Social Media Handles
     private String instagramHandle;
     private String twitterHandle;

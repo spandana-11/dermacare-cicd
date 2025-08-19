@@ -12,8 +12,9 @@ export const appointmentsCountbaseUrl = `${ipUrl}/api/doctors/appointments/compl
 export const savePrescriptionbaseUrl = `${ipUrl}/api/doctors`
 
 export const testsbaseUrl = `${ipUrl}/clinic-admin/labtest/getAllLabTests`
-export const diseasesbaseUrl = `${ipUrl}/clinic-admin/get-all-diseases`
+export const diseasesbaseUrl = `${ipUrl}/clinic-admin/diseases`
 export const treatmentsbaseUrl = `${ipUrl}/clinic-admin/treatment/getAllTreatments`
+export const treatmentUrl=`${ipUrl}/clinic-admin/treatments`
 
 export const ratingsbaseUrl = `${ipUrl}/clinic-admin/averageRatings`
 

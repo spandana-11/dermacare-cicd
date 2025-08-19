@@ -35,6 +35,7 @@ public class SubServicesDto {
 	private String minTime;
 
 	private byte gst;
+	private double gstAmount;
 	private double consultationFee;
 	private List<Map<String, List<String>>> preProcedureQA;
 	private List<Map<String, List<String>>> procedureQA;

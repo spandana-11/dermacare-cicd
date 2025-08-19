@@ -163,4 +163,33 @@ public class TreatmentServiceImpl implements TreatmentService {
         }
         return response;
     }
+  //----------------------------------------------------Get All Treatments by HospitalId-------------------------------------------------
+    @Override
+    public Response getAllTreatmentsByHospitalId(String hospitalId) {
+        Response response = new Response();
+        try {
+            List<Treatment> treatments = treatmentRepository.findByHospitalId(hospitalId);
+            if (!treatments.isEmpty()) {
+                List<TreatmentDTO> dtoList = treatments.stream()
+                        .map(t -> new TreatmentDTO(t.getId().toString(), t.getTreatmentName(), t.getHospitalId()))
+                        .collect(Collectors.toList());
+
+                response.setSuccess(true);
+                response.setData(dtoList);
+                response.setMessage("Treatments retrieved successfully for hospitalId: " + hospitalId);
+                response.setStatus(HttpStatus.OK.value());
+            } else {
+                response.setSuccess(true);
+                response.setData(Collections.emptyList());
+                response.setMessage("No treatments found for hospitalId: " + hospitalId);
+                response.setStatus(HttpStatus.OK.value());
+            }
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Error while retrieving treatments by hospitalId: " + e.getMessage());
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+        return response;
+    }
+
 }

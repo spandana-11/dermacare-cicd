@@ -216,5 +216,35 @@ public class ProbableDiagnosisServiceImpl implements ProbableDiagnosisService {
 	    }
 	}
 
+	//----------------------------------------------------Get all Diseases by HospitalId-------------------------------------------------
+	@Override
+	public Response getAllDiseasesByHospitalId(String hospitalId) {
+	    Response response = new Response();
+	    try {
+	        List<ProbableDiagnosis> diseases = probableDiagnosisRepository.findByHospitalId(hospitalId);
+	        if (!diseases.isEmpty()) {
+	            List<ProbableDiagnosisDTO> diseasesDTO = diseases.stream()
+	                    .map(a -> new ProbableDiagnosisDTO(a.getId().toString(), a.getDisease(), a.getHospitalId()))
+	                    .collect(Collectors.toList());
+
+	            response.setSuccess(true);
+	            response.setData(diseasesDTO);
+	            response.setMessage("Diseases retrieved successfully for hospitalId: " + hospitalId);
+	            response.setStatus(HttpStatus.OK.value());
+	            return response;
+	        } else {
+	            response.setSuccess(true);
+	            response.setData(Collections.emptyList());
+	            response.setMessage("No diseases found for hospitalId: " + hospitalId);
+	            response.setStatus(HttpStatus.OK.value());
+	            return response;
+	        }
+	    } catch (Exception e) {
+	        response.setSuccess(false);
+	        response.setMessage("Exception occurred while getting diseases by hospitalId: " + e.getMessage());
+	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	        return response;
+	    }
+	}
 
 }

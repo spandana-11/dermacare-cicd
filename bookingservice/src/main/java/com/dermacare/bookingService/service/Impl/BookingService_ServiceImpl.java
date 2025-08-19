@@ -55,7 +55,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		if(request.getVisitType().equalsIgnoreCase("follow-up")){
 		if(!repository.findByMobileNumberAndPatientId(request.getMobileNumber(),request.getPatientId()).isEmpty()){
 		for(Booking b : repository.findByMobileNumberAndPatientId(request.getMobileNumber(),request.getPatientId())){
-			if(b.getStatus().equalsIgnoreCase("In-Progress") && b.getBookingId().equals(request.getBookingId())){
+			if(b.getBookingId().equals(request.getBookingId())  &&  b.getStatus().equalsIgnoreCase("In-Progress")){
 			DateTimeFormatter date = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 			LocalDate previousServiceDate = LocalDate.parse(b.getServiceDate(), date);
 			LocalDate plusDays = previousServiceDate.plusDays(Integer.parseInt(Character.toString(b.getConsultationExpiration().charAt(0)) + 
@@ -64,13 +64,15 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			LocalDate currentAppoitnmentServiceDate = LocalDate.parse(request.getServiceDate(), date);
 			//System.out.println(currentAppoitnmentServiceDate);
 			boolean isEligible = false;
-			if(!currentAppoitnmentServiceDate.isBefore(previousServiceDate) && !currentAppoitnmentServiceDate.isAfter(plusDays) && b.getFreeFollowUpsLeft() < b.getFreeFollowUps() 
-			&& b.getFreeFollowUpsLeft() != 0){
+			if(!currentAppoitnmentServiceDate.isBefore(previousServiceDate) && !currentAppoitnmentServiceDate.isAfter(plusDays) && b.getFreeFollowUpsLeft() <= b.getFreeFollowUps()){
 				isEligible = true;}	
 			if(isEligible){
 				b.setStatus("Confirmed");
-				repository.save(b);
-				response = ResponseStructure.buildResponse(null, "Service Booked Sucessfully",
+				b.setServicetime(request.getServicetime());
+				b.setServiceDate(request.getServiceDate());
+				Booking ety = repository.save(b);
+				BookingResponse res = new ObjectMapper().convertValue(ety, BookingResponse.class);
+				response = ResponseStructure.buildResponse(res, "Service Booked Sucessfully",
 				HttpStatus.CREATED, HttpStatus.CREATED.value());
 				break;
 			}else{
@@ -511,7 +513,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
                    // System.out.println(bookedDate);
 	                long gap = ChronoUnit.DAYS.between(bookedDate, todayDate);
                    // System.out.println(gap);	               
-	                int expirationDays = Character.getNumericValue(b.getConsultationExpiration().charAt(0));
+	                int expirationDays = Integer.parseInt(Character.toString(b.getConsultationExpiration().charAt(0)) + 
+	            			Character.toString(b.getConsultationExpiration().charAt(1)));
                    // System.out.println(expirationDays);
 	               
 	                if (gap > expirationDays) {
@@ -542,7 +545,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                LocalDate bookedDate = bookedDateTime.toLocalDate(); // only date part
 	               // System.out.println(bookedDate);
 	                long gap = ChronoUnit.DAYS.between(bookedDate, todayDate);
-	                int expirationDays = Character.getNumericValue(b.getConsultationExpiration().charAt(0));
+	                int expirationDays = Integer.parseInt(Character.toString(b.getConsultationExpiration().charAt(0)) + 
+	            			Character.toString(b.getConsultationExpiration().charAt(1)));
 	                //System.out.println(gap);
 	               // System.out.println(expirationDays);
 	                if (gap > expirationDays) {

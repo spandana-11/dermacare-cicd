@@ -17,5 +17,7 @@ public interface ProbableDiagnosisService {
 	Response deleteDiseaseById(String id, String hospitalId);
 
 	Response updateDiseaseById(String id, String hospitalId, ProbableDiagnosisDTO dto);
+	Response getAllDiseasesByHospitalId(String hospitalId);
+
 
 }

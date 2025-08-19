@@ -134,6 +134,10 @@ const PrescriptionPDF = ({ logoSrc, doctorData, clicniData, formData, patientDat
     date: (formData?.followUp?.nextFollowUpDate || '').trim(),
     note: (formData?.followUp?.followUpNote || '').trim(),
   }
+ const hospitalLogo =
+    clicniData?.hospitalLogo
+      ? `data:image/png;base64,${clicniData.hospitalLogo}`
+      : logoSrc
 
   return (
     <Document>
@@ -141,7 +145,9 @@ const PrescriptionPDF = ({ logoSrc, doctorData, clicniData, formData, patientDat
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoBox}>
-            {logoSrc ? <Image style={styles.logo} src={logoSrc} /> : null}
+           {hospitalLogo && (
+              <Image style={styles.logo} src={hospitalLogo} />
+            )}
           </View>
 
           <View style={styles.hospitalInfo}>

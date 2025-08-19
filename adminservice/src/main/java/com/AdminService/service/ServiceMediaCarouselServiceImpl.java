@@ -1,5 +1,4 @@
 package com.AdminService.service;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
@@ -183,7 +182,6 @@ public class ServiceMediaCarouselServiceImpl {
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 fos.write(imageBytes);
             }
-
             return imageBaseUrl + fileName;
         } catch (Exception e) {
             throw new RuntimeException("Failed to save base64 image: " + e.getMessage(), e);

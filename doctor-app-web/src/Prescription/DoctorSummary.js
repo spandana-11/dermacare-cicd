@@ -228,7 +228,7 @@ const DoctorSummary = ({
         resolved = true
         try {
           printWindow.close()
-        } catch {}
+        } catch { }
         resolve()
       }
       try {
@@ -380,11 +380,11 @@ const DoctorSummary = ({
     <div className="pb-5" style={{ backgroundColor: COLORS.theme }}>
       <CContainer fluid className="p-0" id="print-area">
         {diagnosis ||
-        tests.length > 0 ||
-        treatments.length > 0 ||
-        (treatmentSchedules && Object.keys(treatmentSchedules).length > 0) ||
-        medicines.length > 0 ||
-        followUp.durationValue !== 'NA' ? (
+          tests.length > 0 ||
+          treatments.length > 0 ||
+          (treatmentSchedules && Object.keys(treatmentSchedules).length > 0) ||
+          medicines.length > 0 ||
+          followUp.durationValue !== 'NA' ? (
           <>
             {/* Diagnosis */}
             {diagnosis && (
@@ -570,7 +570,7 @@ const DoctorSummary = ({
             className="d-flex align-items-center justify-content-center"
             style={{ minHeight: '60vh' }}
           >
-            <span>No data found for this patient.</span>
+            <span style={{ fontWeight: 'bold' }}>No data found for this patient.</span>
           </div>
         )}
       </CContainer>

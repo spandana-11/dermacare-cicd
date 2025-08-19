@@ -1,4 +1,5 @@
 import React from 'react'
+import NotificationDemo from './Prescription/Notification'
 // import Login from './views/pages/login/Login'
 const DoctorProfile=React.lazy(()=>import('./views/Profile/DoctorProfile'))
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
@@ -11,6 +12,7 @@ const routes = [
   { path: '/appointments', name: 'Appointments', element: Appointments },
  { path:'/doctorprofile', name:'DoctorProfile', element:DoctorProfile},
 // { path: '/settings', name: 'Settings', element: Settings }
+{ path: '/notifications', name: 'Notifications', element: <NotificationDemo /> },
 ]
 
 export default routes

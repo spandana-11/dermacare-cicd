@@ -1,19 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import classNames from 'classnames'
 import 'bootstrap/dist/css/bootstrap.min.css'
-
 import {
-  CAvatar,
-  CButton,
-  CButtonGroup,
   CCard,
   CCardBody,
-  CCardFooter,
-  CCardHeader,
   CCardImage,
-  CCol,
-  CProgress,
-  CRow,
   CTable,
   CTableBody,
   CTableDataCell,
@@ -23,68 +13,74 @@ import {
 } from '@coreui/react'
 import { Carousel } from 'react-bootstrap'
 import Button from '../../components/CustomButton/CustomButton'
-import { COLORS, SIZES } from '../../Themes'
 import TooltipButton from '../../components/CustomButton/TooltipButton'
-import avatar8 from './../../assets/images/12.png'
-// import { patientData } from '../../Prescription/patientData.json'
+import { COLORS, SIZES } from '../../Themes'
 import { useDoctorContext } from '../../Context/DoctorContext'
 import { getAdImages, getTodayAppointments } from '../../Auth/Auth'
-// import { patientData } from '../../Prescription/patientData.json'
-const Dashboard = () => {
-  const { setPatientData, doctorId, setTodayAppointments, todayAppointments } = useDoctorContext() // this calls the persisted helper if you set it up
 
+const Dashboard = () => {
+  const { setPatientData, setTodayAppointments, todayAppointments } = useDoctorContext()
+
+  const [selectedType, setSelectedType] = useState(null)
+  const [adMediaList, setAdMediaList] = useState([])
+
+  // ✅ Fetch ads once
+  useEffect(() => {
+    const fetchAds = async () => {
+      try {
+        const mediaUrls = await getAdImages()
+        setAdMediaList(mediaUrls || [])
+      } catch (error) {
+        console.error('Error fetching ads:', error)
+      }
+    }
+    fetchAds()
+  }, [])
+
+  // ✅ Clear patient data once
+  useEffect(() => {
+    setPatientData(null)
+  }, [setPatientData])
+
+  // ✅ Fetch appointments once
+
+useEffect(() => {
+  const fetchAppointments = async () => {
+    const response = await getTodayAppointments()
+    console.log("📡 Normalized Response:", response)
+
+    if (response.statusCode === 200) {
+      setTodayAppointments(response.data)
+    } else {
+      setTodayAppointments([])
+    }
+  }
+
+  fetchAppointments()
+}, [])
+
+
+
+  // Count consultations
   const consultationCounts = todayAppointments.reduce((acc, item) => {
     const key = item.consultationType
     acc[key] = (acc[key] || 0) + 1
     return acc
   }, {})
 
-  const [selectedType, setSelectedType] = useState(null)
-
+  // Filter by consultation type
   const filteredPatients = selectedType
     ? todayAppointments.filter((item) => item.consultationType === selectedType)
     : todayAppointments
-  const [adMediaList, setAdMediaList] = useState([])  // null = not yet loaded
-
-  useEffect(() => {
-    const fetchAds = async () => {
-      const mediaUrls = await getAdImages()
-      if (mediaUrls.length > 0) {
-        setAdMediaList(mediaUrls)
-      }
-    }
-    fetchAds()
-  }, [])
-
-
-  useEffect(() => {
-    // clear context + localStorage so sidebar shows doctor data
-    setPatientData(null)
-  }, [])
-
-  useEffect(() => {
-    // clear context + localStorage so sidebar shows doctor data
-    appointmentDetails()
-  }, [])
-
-  const appointmentDetails = async () => {
-    const response = await getTodayAppointments()
-    console.log(response)
-
-    if (response.statusCode == 200) {
-      console.log(response.data)
-      setTodayAppointments(response.data)
-    }
-  }
 
   return (
-    <div className="container-fluid " style={{ marginTop: '2%' }}>
+    <div className="container-fluid" style={{ marginTop: '2%' }}>
       <h5 className="mb-4" style={{ fontSize: SIZES.medium }}>
         Today Appointments
       </h5>
 
       <div className="d-flex flex-wrap flex-md-nowrap gap-3">
-        {/* LEFT SIDE - Appointments and Filters (60%) */}
+        {/* LEFT SIDE - Appointments */}
         <div className="flex-grow-1" style={{ flexBasis: '60%' }}>
           {/* Filter Buttons */}
           <div className="mb-3 d-flex gap-2 flex-wrap">
@@ -109,45 +105,28 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* Table Section with Scroll */}
+          {/* Table */}
           <div
             style={{
               maxHeight: 'calc(100vh - 250px)',
               overflowY: 'auto',
               borderRadius: '8px',
-
-              overflow: 'hidden',
             }}
           >
-            <CTable className=" border">
+            <CTable className="border">
               <CTableHead>
-                <CTableRow
-                  style={{
-                    fontSize: '0.875rem',
-                    backgroundColor: '#d6d8db',
-                  }}
-                >
-                  {[
-                    'S.No',
-                    'Patient ID',
-                    'Name',
-                    'Mobile Number',
-                    'Time',
-                    'Consultation',
-                    'Action',
-                  ].map((header, i) => (
-                    <CTableHeaderCell
-                      key={i}
-                      style={{
-                        fontWeight: 'bold',
-                        color: '#000',
-                        backgroundColor: '#dee2e6',
-                      }}
-                      className={header === 'Action' ? 'text-center' : ''}
-                    >
-                      {header}
-                    </CTableHeaderCell>
-                  ))}
+                <CTableRow style={{ fontSize: '0.875rem', backgroundColor: '#d6d8db' }}>
+                  {['S.No', 'Patient ID', 'Name', 'Mobile Number', 'Time', 'Consultation', 'Action'].map(
+                    (header, i) => (
+                      <CTableHeaderCell
+                        key={i}
+                        style={{ fontWeight: 'bold', color: '#000', backgroundColor: '#dee2e6' }}
+                        className={header === 'Action' ? 'text-center' : ''}
+                      >
+                        {header}
+                      </CTableHeaderCell>
+                    )
+                  )}
                 </CTableRow>
               </CTableHead>
 
@@ -167,7 +146,6 @@ const Dashboard = () => {
                       <CTableDataCell>{item.mobileNumber}</CTableDataCell>
                       <CTableDataCell>{item.servicetime}</CTableDataCell>
                       <CTableDataCell>{item.consultationType}</CTableDataCell>
-
                       <CTableDataCell className="text-center">
                         <TooltipButton patient={item} tab={item.status} />
                       </CTableDataCell>
@@ -179,7 +157,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* RIGHT SIDE - Ads (40%) */}
+        {/* RIGHT SIDE - Ads */}
         <div
           className="d-flex align-items-start justify-content-start bg-dark"
           style={{
@@ -195,7 +173,6 @@ const Dashboard = () => {
                 {adMediaList.map((media, index) => (
                   <Carousel.Item
                     key={index}
-                    // If it's video → disable auto-slide until finished
                     interval={media.endsWith('.mp4') ? null : 3000}
                   >
                     {media.endsWith('.mp4') ? (
@@ -203,17 +180,8 @@ const Dashboard = () => {
                         src={media}
                         controls
                         autoPlay
-                        loop={false}   // play once before carousel moves
                         muted
                         style={{ width: '100%', height: '60vh', objectFit: 'cover' }}
-                        onEnded={(e) => {
-                          // manually move to next slide when video ends
-                          const carousel = e.target.closest('.carousel');
-                          if (carousel) {
-                            const nextBtn = carousel.querySelector('.carousel-control-next');
-                            if (nextBtn) nextBtn.click();
-                          }
-                        }}
                       />
                     ) : (
                       <CCardImage

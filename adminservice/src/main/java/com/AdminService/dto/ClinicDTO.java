@@ -1,6 +1,8 @@
 package com.AdminService.dto;
 import java.util.List;
 
+import com.AdminService.entity.QuetionsAndAnswerForAddClinic;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -108,7 +110,14 @@ public class ClinicDTO {
     @NotBlank(message = "Walkthrough URL is required")
     @Pattern(regexp = "^(http|https)://.*$", message = "Walkthrough must be a valid URL")
     private String walkthrough;
+    private String qaId;
+    
+private int score;
+    
+    private int questionCount;
+    private List<QuestionAnswerDTO> onboardingQA;
 
+    
     // Social Media
     private String instagramHandle;
     private String twitterHandle;

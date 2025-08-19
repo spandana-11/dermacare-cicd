@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState,useCallback  } from 'react'
 import {
     CRow,
     CCol,
@@ -26,224 +26,201 @@ import Select from 'react-select'
 import { useDoctorContext } from '../Context/DoctorContext'
 
 const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setFormData }) => {
-    const [symptomDetails, setSymptomDetails] = useState(
-        seed.symptomDetails ?? patientData?.problem ?? '',
-    )
-    const { updateTemplate, setUpdateTemplate } = useDoctorContext()
+  const [symptomDetails, setSymptomDetails] = useState(
+    seed.symptomDetails ?? patientData?.problem ?? ''
+  )
+  const { setUpdateTemplate } = useDoctorContext()
 
-    const [doctorObs, setDoctorObs] = useState(seed.doctorObs ?? '')
-    const [diagnosis, setDiagnosis] = useState(seed.diagnosis ?? '')
-    const [duration, setDuration] = useState(patientData?.symptomsDuration ?? '')
-    const [attachments, setAttachments] = useState(
-        Array.isArray(seed.attachments)
-            ? seed.attachments
-            : Array.isArray(patientData?.attachments)
-                ? patientData.attachments
-                : [],
-    )
-    const [template, setTemplate] = useState({})
-    const [diseases, setDiseases] = useState([])
-    const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
-    const [tplLoading, setTplLoading] = useState(false)
-    const [templateData, setTemplateData] = useState({
-        symptoms: '',
-        tests: {},
-        prescription: {},
-        treatments: {},
-        followUp: {},
-        summary: {},
-    })
-    // NEW: local state for react-select typing + adding
-    const [inputValue, setInputValue] = useState('')
-    const [adding, setAdding] = useState(false)
+  const [doctorObs, setDoctorObs] = useState(seed.doctorObs ?? '')
+  const [diagnosis, setDiagnosis] = useState(seed.diagnosis ?? '')
+  const [duration, setDuration] = useState(patientData?.symptomsDuration ?? '')
+  const [attachments, setAttachments] = useState(
+    Array.isArray(seed.attachments)
+      ? seed.attachments
+      : Array.isArray(patientData?.attachments)
+      ? patientData.attachments
+      : []
+  )
 
-    const [hasTemplate, setHasTemplate] = useState(false)
+  const [diseases, setDiseases] = useState([])
+  const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
+  const [tplLoading, setTplLoading] = useState(false)
+  const [templateData, setTemplateData] = useState({
+    symptoms: '',
+    tests: {},
+    prescription: {},
+    treatments: {},
+    followUp: {},
+    summary: {},
+  })
 
-    const handleNext = () => {
-        const payload = { symptomDetails, doctorObs, diagnosis, duration }
-        console.log('🚀 Submitting payload:', payload)
-        onNext?.(payload)
+  const [inputValue, setInputValue] = useState('')
+  const [adding, setAdding] = useState(false)
+  const [hasTemplate, setHasTemplate] = useState(false)
+
+  const { success, error, info } = useToast()
+
+  // ✅ Memoized mapping function
+  const mapTemplateToFormData = useMemo(
+    () => (t = {}, dx) => {
+      const symptomStr = typeof t.symptoms === 'string' ? t.symptoms : ''
+
+      const selectedTests = Array.isArray(t?.tests?.selectedTests) ? t.tests.selectedTests : []
+      const testReason = t?.tests?.testReason ?? ''
+
+      const medicines = Array.isArray(t?.prescription?.medicines)
+        ? t.prescription.medicines.map((m) => ({
+            id: m?.id ?? `tmp-${Date.now()}-${Math.random()}`,
+            name: m?.name ?? '',
+            dose: m?.dose ?? '',
+            duration: m?.duration ?? '',
+            remindWhen: m?.food ?? m?.remindWhen ?? '',
+            note: m?.note ?? '',
+            times: m?.times ?? m?.time ?? '',
+          }))
+        : []
+
+      const generatedData = t?.treatments?.generatedData ?? {}
+      const selectedTestTreatments =
+        t?.treatments?.selectedTestTreatments ?? t?.treatments?.selectedTreatment ?? []
+      const treatmentReason = t?.treatments?.reason ?? ''
+
+      const followUp = {
+        durationValue: t?.followUp?.durationValue ?? '',
+        durationUnit: t?.followUp?.durationUnit ?? '',
+        nextFollowUpDate: t?.followUp?.nextFollowUpDate ?? '',
+        followUpNote: t?.followUp?.followUpnote ?? t?.followUp?.followUpNote ?? '',
+      }
+
+      return {
+        symptoms: {
+          symptomDetails: symptomStr,
+          doctorObs,
+          diagnosis: dx,
+          duration,
+          attachments,
+        },
+        tests: {
+          selectedTests,
+          testReason,
+        },
+        prescription: {
+          medicines,
+        },
+        treatments: {
+          generatedData,
+          selectedTestTreatments,
+          treatmentReason,
+        },
+        followUp,
+        summary: { diagnosis: dx },
+      }
+    },
+    [doctorObs, duration, attachments]
+  )
+
+  // ✅ Fetch diseases on mount
+  useEffect(() => {
+    const fetchDiseases = async () => {
+      const data = await getAllDiseases()
+      setDiseases(data || [])
     }
+    fetchDiseases()
+  }, [])
 
-    const { success, error, info, warning } = useToast()
-
-    useEffect(() => {
-        const fetchDiseases = async () => {
-            const data = await getAllDiseases()
-            console.log(data)
-            setDiseases(data || [])
-        }
-        fetchDiseases()
-    }, [])
-
-    // put this near other hooks
-    const fetchTemplate = async (dx) => {
-        if (!dx) return
-        setTplLoading(true)
-        try {
-            const res = await getDoctorSaveDetails(dx)
-            const raw = res?.data ?? res
-            const item = Array.isArray(raw) ? raw[0] : raw
-            setTemplateData(item || {})
-            setHasTemplate(!!item)
-        } catch (e) {
-            console.error(e)
-            setHasTemplate(false)
-        } finally {
-            setTplLoading(false)
-        }
+  // ✅ Fetch template for a diagnosis
+  const fetchTemplate = useCallback(async (dx) => {
+    if (!dx) return
+    setTplLoading(true)
+    try {
+      const res = await getDoctorSaveDetails(dx)
+      const raw = res?.data ?? res
+      const item = Array.isArray(raw) ? raw[0] : raw
+      setTemplateData(item || {})
+      setHasTemplate(!!item)
+    } catch (e) {
+      console.error(e)
+      setHasTemplate(false)
+    } finally {
+      setTplLoading(false)
     }
+  }, [])
 
-    // when user picks from Select
-    const handleDiagnosisChange = async (selected) => {
-        const selectedValue = selected?.value ?? ''
-        setDiagnosis(selectedValue)
-        if (!selectedValue) {
-            setHasTemplate(false)
-            return
-        }
-        await fetchTemplate(selectedValue)
+  // when diagnosis changes → fetch template
+  useEffect(() => {
+    if (diagnosis && !hasTemplate) {
+      fetchTemplate(diagnosis)
     }
+  }, [diagnosis, hasTemplate, fetchTemplate])
 
-    // NEW: when you return to this tab, reload the template if diagnosis exists
-    useEffect(() => {
-        const dx = (seed?.diagnosis ?? diagnosis ?? '').trim()
-        if (dx && !hasTemplate) {
-            fetchTemplate(dx)
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [seed?.diagnosis])
-
-    console.log(templateData)
-    const showSnackbar = (message, type) => {
-        setSnackbar({ show: true, message, type })
-        setTimeout(() => setSnackbar({ show: false, message: '', type: '' }), 3000)
+  // handle diagnosis select
+  const handleDiagnosisChange = async (selected) => {
+    const selectedValue = selected?.value ?? ''
+    setDiagnosis(selectedValue)
+    if (!selectedValue) {
+      setHasTemplate(false)
+      return
     }
+    await fetchTemplate(selectedValue)
+  }
 
-    // useEffect(() => {
-    //   if (!diagnosis) return
-    //   setTplLoading(true)
-    //   const timer = setTimeout(() => setTplLoading(false), 800)
-    //   return () => clearTimeout(timer)
-    // }, [diagnosis])
+  // ✅ Apply template (no onNext call here!)
+  const applyTemplate = (dx) => {
+    const merged = mapTemplateToFormData(templateData, dx)
 
-    const applyTemplate = (dx) => {
-        const merged = mapTemplateToFormData(templateData, dx)
+    setFormData((prev) => ({
+      ...prev,
+      ...merged,
+      __templateApplied: { dx, at: Date.now() },
+    }))
+    setUpdateTemplate(true)
+    success('Template applied successfully!', { title: 'Success' })
+  }
 
-        setFormData((prev) => ({
-            ...prev,
-            ...merged,
-            __templateApplied: { dx, at: Date.now() },
-        }))
-        setUpdateTemplate(true)
-        success('Template applied successfully!', { title: 'Success' })
+  // react-select options
+  const options = useMemo(
+    () =>
+      Array.isArray(diseases)
+        ? diseases.map((d) => ({ label: d.disease, value: d.disease }))
+        : [],
+    [diseases]
+  )
 
-        const payload = { symptomDetails, doctorObs, diagnosis: dx, duration, attachments }
-        onNext?.(payload)
+  const canShowAdd =
+    inputValue.trim() &&
+    !options.some((opt) => opt.value.toLowerCase() === inputValue.trim().toLowerCase())
+
+  const handleAddClick = async () => {
+    const name = inputValue.trim()
+    if (!name || adding) return
+    try {
+      setAdding(true)
+      const created = await addDisease(name)
+      if (created) {
+        setDiseases((prev) => [
+          ...prev,
+          { id: created?.id ?? `tmp-${Date.now()}`, disease: name },
+        ])
+        setInputValue('')
+        success?.(`Saved "${name}" to diagnoses`, { title: 'Success' })
+      } else {
+        info?.(`${created.message}`, { title: 'Info' })
+      }
+    } catch (e) {
+      console.error(e)
+      error?.('Could not add disease. Please try again.')
+    } finally {
+      setAdding(false)
     }
+  }
 
-    // NEW: options for react-select
-    const options = useMemo(
-        () =>
-            Array.isArray(diseases) ? diseases.map((d) => ({ label: d.disease, value: d.disease })) : [],
-        [diseases],
-    )
+  // ✅ Next button handler
+  const handleNext = () => {
+    const payload = { symptomDetails, doctorObs, diagnosis, duration, attachments }
+    onNext?.(payload)
+  }
 
-    // NEW: add button visible only when user typed something that's not already an option
-    const canShowAdd =
-        inputValue.trim() &&
-        !options.some((opt) => opt.value.toLowerCase() === inputValue.trim().toLowerCase())
-
-    // NEW: Add-to-backend handler
-    const handleAddClick = async () => {
-        const name = inputValue.trim()
-        if (!name || adding) return
-        try {
-            setAdding(true)
-            const created = await addDisease(name) // make sure this function exists/imported
-            const createdName = name
-            console.log(created)
-            if (created) {
-                setDiseases((prev) => [
-                    ...prev,
-                    { id: created?.id ?? `tmp-${Date.now()}`, disease: createdName },
-                ])
-
-                setInputValue('')
-                success?.(`Saved "${createdName}" to diagnoses"`, { title: 'Success' })
-            } else {
-                info?.(`"${created.message}"`, { title: 'Info' })
-            }
-        } catch (e) {
-            console.error(e)
-            error?.('Could not add disease. Please try again.')
-        } finally {
-            setAdding(false)
-        }
-    }
-
-    // put this near the top of SymptomsDiseases.jsx
-    // SymptomsDiseases.jsx
-    const mapTemplateToFormData = (t = {}, dx) => {
-        // ---- Symptoms (API has a string)
-        const symptomStr = typeof t.symptoms === 'string' ? t.symptoms : ''
-
-        // ---- Tests
-        const selectedTests = Array.isArray(t?.tests?.selectedTests) ? t.tests.selectedTests : []
-        const testReason = t?.tests?.testReason ?? ''
-
-        // ---- Prescription (map 'food' -> remindWhen)
-        const medicines = Array.isArray(t?.prescription?.medicines)
-            ? t.prescription.medicines.map((m) => ({
-                id: m?.id ?? `tmp-${Date.now()}-${Math.random()}`,
-                name: m?.name ?? '',
-                dose: m?.dose ?? '',
-                duration: m?.duration ?? '',
-                remindWhen: m?.food ?? m?.remindWhen ?? '', // <- important mapping
-                note: m?.note ?? '',
-                times: m?.times ?? m?.time ?? '',
-            }))
-            : []
-
-        // ---- Treatments
-        const generatedData = t?.treatments?.generatedData ?? {}
-        const selectedTestTreatments =
-            t?.treatments?.selectedTestTreatments ?? t?.treatments?.selectedTreatment ?? []
-        const treatmentReason = t?.treatments?.reason ?? ''
-
-        // ---- Follow up (note: API has followUpnote)
-        const followUp = {
-            durationValue: t?.followUp?.durationValue ?? '',
-            durationUnit: t?.followUp?.durationUnit ?? '',
-            nextFollowUpDate: t?.followUp?.nextFollowUpDate ?? '',
-            followUpNote: t?.followUp?.followUpnote ?? t?.followUp?.followUpNote ?? '',
-        }
-
-        // ---- Final merged formData for the whole app
-        return {
-            symptoms: {
-                symptomDetails: symptomStr, // show the template’s symptom text
-                doctorObs, // keep whatever the doctor typed
-                diagnosis: dx,
-                duration,
-                attachments,
-            },
-            tests: {
-                selectedTests,
-                testReason,
-            },
-            prescription: {
-                medicines,
-            },
-            treatments: {
-                generatedData,
-                selectedTestTreatments,
-                treatmentReason,
-            },
-            followUp,
-            summary: { diagnosis: dx },
-        }
-    }
+   
 
     return (
         <CCard className="border-1 bg-white mb-5" style={{ backgroundColor: 'transparent' }}>

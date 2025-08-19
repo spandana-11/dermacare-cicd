@@ -235,7 +235,7 @@ const Appointments = ({ searchTerm = '' }) => {
                     </CTableRow>
                   ) : (
                     filteredPatients.map((p, i) => (
-                      <CTableRow key={p.id} style={{ fontSize: '0.85rem' }}>
+                      <CTableRow key={p.id || `${p.patientId}-${i}`} style={{ fontSize: '0.85rem' }}>
                         <CTableDataCell>{i + 1}</CTableDataCell>
                         <CTableDataCell>{p.patientId}</CTableDataCell>
                         <CTableDataCell>{p.name}</CTableDataCell>

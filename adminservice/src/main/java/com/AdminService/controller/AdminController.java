@@ -685,13 +685,7 @@ public ResponseEntity<?> deleteSubService(@PathVariable String subServiceId){
 
     }
 
-
-
-
-
 /// CUSTOMER MANAGEMENT
-
-
 
 @PostMapping("/saveBasicDetails")
 

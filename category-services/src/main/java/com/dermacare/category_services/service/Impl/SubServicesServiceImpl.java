@@ -102,6 +102,7 @@ public class SubServicesServiceImpl implements SubServicesService {
 	    entity.setPlatformFee(platformFee);
 	    entity.setDiscountedCost(entity.getPrice() - discountAmount);
 	    entity.setClinicPay(entity.getPrice() - platformFee);
+	    entity.setGstAmount(gstAmount);
 
 	    // Final cost = (Price - Discount) + Tax + GST + Consultation Fee
 	    entity.setFinalCost(entity.getPrice() - discountAmount + taxAmount + gstAmount + consultationFee);
@@ -245,6 +246,9 @@ public class SubServicesServiceImpl implements SubServicesService {
 		}
 		if (domainService.getTaxPercentage() != 0.0) {
 			optionalSubService.setTaxPercentage(domainService.getTaxPercentage());
+		}
+		if (domainService.getGstAmount() != 0.0) {
+			optionalSubService.setGstAmount(domainService.getGstAmount());
 		}
 		if (domainService.getViewDescription() != null) {
 			optionalSubService.setViewDescription(domainService.getViewDescription());
@@ -400,6 +404,9 @@ public class SubServicesServiceImpl implements SubServicesService {
 			dto.setTaxAmount(service.getTaxAmount());
 			dto.setPlatformFee(service.getPlatformFee());
 			dto.setDiscountedCost(service.getDiscountedCost());
+			dto.setGst(service.getGst());
+			dto.setGstAmount(service.getGstAmount());
+			dto.setConsultationFee(service.getConsultationFee());
 			dto.setClinicPay(service.getClinicPay());
 			dto.setFinalCost(service.getFinalCost());
 

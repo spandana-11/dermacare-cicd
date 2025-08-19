@@ -16,7 +16,7 @@ import Select from 'react-select'
 import GradientTextCard from '../components/GradintColorText'
 import Button from '../components/CustomButton/CustomButton'
 import { COLORS } from '../Themes'
-import { getAllTreatments } from '../../src/Auth/Auth'
+import { getAllTreatments, getAllTreatmentsByHospital } from '../../src/Auth/Auth'
 import CIcon from '@coreui/icons-react'
 import { cilTrash } from '@coreui/icons'
 import  './TestsTreatments.css'
@@ -65,7 +65,7 @@ const TestTreatments = ({ seed = {}, onNext }) => {
   useEffect(() => {
     const fetchTreatments = async () => {
       try {
-        const treatments = await getAllTreatments()
+        const treatments = await getAllTreatmentsByHospital()
         if (Array.isArray(treatments)) setAvailableTreatments(treatments)
       } catch (error) {
         console.error('Error fetching treatments:', error)

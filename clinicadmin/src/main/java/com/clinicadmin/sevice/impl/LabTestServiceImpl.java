@@ -162,4 +162,33 @@ public class LabTestServiceImpl implements LabTestService {
 		}
 		return response;
 	}
+	//----------------------------------------------------Get All Lab Tests by HospitalId-------------------------------------------------
+	@Override
+	public Response getAllLabTestsByHospitalId(String hospitalId) {
+	    Response response = new Response();
+	    try {
+	        List<LabTest> tests = labTestRepository.findByHospitalId(hospitalId);
+	        if (!tests.isEmpty()) {
+	            List<LabTestDTO> dtoList = tests.stream()
+	                    .map(t -> new LabTestDTO(t.getId().toString(), t.getTestName(), t.getHospitalId()))
+	                    .collect(Collectors.toList());
+
+	            response.setSuccess(true);
+	            response.setData(dtoList);
+	            response.setMessage("Lab Tests retrieved successfully for hospitalId: " + hospitalId);
+	            response.setStatus(HttpStatus.OK.value());
+	        } else {
+	            response.setSuccess(true);
+	            response.setData(Collections.emptyList());
+	            response.setMessage("No Lab Tests found for hospitalId: " + hospitalId);
+	            response.setStatus(HttpStatus.OK.value());
+	        }
+	    } catch (Exception e) {
+	        response.setSuccess(false);
+	        response.setMessage("Exception while retrieving Lab Tests by hospitalId: " + e.getMessage());
+	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	    }
+	    return response;
+	}
+
 }

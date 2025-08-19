@@ -11,7 +11,7 @@ import com.AdminService.service.ClinicAdminWebAdsServiceImpl;
 
 @RestController
 @RequestMapping("/admin")
-// @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class ClinicAdminWebAdsController {
 
     @Autowired

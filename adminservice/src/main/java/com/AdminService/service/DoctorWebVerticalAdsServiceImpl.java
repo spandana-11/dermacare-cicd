@@ -150,7 +150,6 @@ public class DoctorWebVerticalAdsServiceImpl {
             throw new RuntimeException("Failed to save base64 video: " + e.getMessage(), e);
         }
     }
-
     private String saveBase64Image(String base64Data) {
         try {
             if (base64Data.contains(",")) {
@@ -162,10 +161,11 @@ public class DoctorWebVerticalAdsServiceImpl {
             String fileName = "image_" + System.currentTimeMillis() + ".png";
 
             File directory = new File(imageFolder);
+            
             if (!directory.exists()) directory.mkdirs();
 
             File file = new File(directory, fileName);
-            try (FileOutputStream fos = new FileOutputStream(file)) {
+            try (FileOutputStream fos = new FileOutputStream(file)){
                 fos.write(imageBytes);
             }
             return imageBaseUrl + fileName;

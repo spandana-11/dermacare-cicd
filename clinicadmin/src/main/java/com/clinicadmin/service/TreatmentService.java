@@ -12,4 +12,5 @@ public interface TreatmentService {
 	Response getTreatmentById(String id, String hospitalId);
 	Response deleteTreatmentById(String id, String hospitalId);
 	Response updateTreatmentById(String id, String hospitalId, TreatmentDTO dto);
+	Response getAllTreatmentsByHospitalId(String hospitalId);
 }

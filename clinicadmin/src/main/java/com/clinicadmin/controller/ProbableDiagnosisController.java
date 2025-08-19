@@ -52,4 +52,10 @@ public class ProbableDiagnosisController {
 		return ResponseEntity.status(response.getStatus()).body(response);
 	
 	}
+	@GetMapping("/diseases/{hospitalId}")
+	public ResponseEntity<Response> getDiseasesByHospitalId(@PathVariable String hospitalId) {
+		Response response = probableDiagnosisService.getAllDiseasesByHospitalId(hospitalId);
+		return ResponseEntity.status(response.getStatus()).body(response);
+	    
+	}
 }

@@ -44,4 +44,11 @@ public class LabTestController {
         Response response = labTestService.updateLabTestById(id,hospitalId, dto);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
+    @GetMapping("/labtests/{hospitalId}")
+    public ResponseEntity<Response> getLabTestsByHospitalId(@PathVariable String hospitalId) {
+    	 Response response = labTestService.getAllLabTestsByHospitalId(hospitalId);
+         return ResponseEntity.status(response.getStatus()).body(response);
+       
+    }
+
 }

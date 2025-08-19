@@ -11,13 +11,14 @@ import {
   ratingsbaseUrl,
   savePrescriptionbaseUrl,
   todayappointmentsbaseUrl,
-  addDiseaseUrl,getVisitHistoryByPatientIdAndDoctorIdEndpoint,
+  addDiseaseUrl, getVisitHistoryByPatientIdAndDoctorIdEndpoint,
   // visitHistoryEndpoint,
   getdoctorSaveDetailsEndpoint,
   Get_ReportsByBookingId,
   reportbaseUrl,
-  AllReports,getDoctorSlotsEndpoint,
-  adminBaseUrl
+  AllReports, getDoctorSlotsEndpoint,
+  adminBaseUrl,
+  treatmentUrl
 } from './BaseUrl'
 
 export const postLogin = async (payload, endpoint) => {
@@ -71,17 +72,29 @@ export const getClinicDetails = async () => {
 }
 
 export const getTodayAppointments = async () => {
-  const doctorId = localStorage.getItem('doctorId')
-  const hospitalId = localStorage.getItem('hospitalId')
+  const doctorId = localStorage.getItem("doctorId");
+  const hospitalId = localStorage.getItem("hospitalId");
+
   try {
-    const response = await api.get(`${todayappointmentsbaseUrl}/${hospitalId}/${doctorId}`)
-    console.log(response.data)
-    return response.data || [] // ✅ Safely return patientData array
+    const response = await api.get(
+      `${todayappointmentsbaseUrl}/${hospitalId}/${doctorId}`
+    );
+
+    return {
+      statusCode: response.data?.statusCode ?? response.status ?? 500,
+      data: Array.isArray(response.data?.data) ? response.data.data : [],
+      message: response.data?.message ?? "No message from server",
+    };
   } catch (error) {
-    console.error('❌ Error fetching appointment details:', error)
-    return [] // Fallback to empty array on failure
+    return {
+      statusCode: error.response?.status ?? 500,
+      data: [],
+      message: error.message ?? "Network Error",
+    };
   }
-}
+};
+
+
 
 export const getAppointments = async (number) => {
   const doctorId = localStorage.getItem('doctorId')
@@ -231,29 +244,49 @@ export const getAllLabTests = async () => {
     } else {
       console.error('Failed to fetch lab tests:')
     }
-  } catch (error) {}
+  } catch (error) { }
 }
 
 // Get all diseases
 export const getAllDiseases = async () => {
+  const hospitalId = localStorage.getItem("hospitalId"); // should be "H_2"
+
+  if (!hospitalId) {
+    console.warn("⚠️ No hospitalId found in localStorage");
+    return [];
+  }
+
   try {
-    const response = await api.get(`${diseasesbaseUrl}`)
-    console.log('Diseases:', response)
-    if (response.data.success) {
-      console.log('Diseases:', response.data.data)
-      return response.data.data // returns array of diseases
+    // ✅ must match Postman working URL
+    const response = await api.get(`${diseasesbaseUrl}/${hospitalId}`);
+
+    console.log("✅ All Diseases Response:", response.data);
+
+    if (response?.data?.success) {
+      return Array.isArray(response.data.data) ? response.data.data : [];
     } else {
-      console.error('Failed to fetch diseases:', response.data.message)
-      return []
+      console.error("❌ Failed to fetch diseases:", response?.data?.message);
+      return [];
     }
   } catch (error) {
-    console.error('Error fetching diseases:', error)
-    return []
+    console.error(
+      "❌ Error fetching diseases:",
+      error.response?.data || error.message
+    );
+    return [];
   }
-}
+};
+
+
 
 // Get all treatments
 export const getAllTreatments = async () => {
+  const hospitalId = localStorage.getItem("hospitalId"); // should be "H_2"
+
+  if (!hospitalId) {
+    console.warn("⚠️ No hospitalId found in localStorage");
+    return [];
+  }
   try {
     const response = await api.get(`${treatmentsbaseUrl}`)
     if (response.data.success) {
@@ -268,6 +301,38 @@ export const getAllTreatments = async () => {
     return []
   }
 }
+
+
+//
+export const getAllTreatmentsByHospital = async () => {
+  const hospitalId = localStorage.getItem("hospitalId"); // should be "H_2"
+
+  if (!hospitalId) {
+    console.warn("⚠️ No hospitalId found in localStorage");
+    return [];
+  }
+
+  try {
+    // ✅ must match Postman working URL
+    const response = await api.get(`${treatmentUrl}/${hospitalId}`);
+
+    console.log("✅ All Treatments Response:", response.data);
+
+    if (response?.data?.success) {
+      return Array.isArray(response.data.data) ? response.data.data : [];
+    } else {
+      console.error("❌ Failed to fetch treatments:", response?.data?.message);
+      return [];
+    }
+  } catch (error) {
+    console.error(
+      "❌ Error fetching treatments:",
+      error.response?.data || error.message
+    );
+    return [];
+  }
+};
+
 
 export const averageRatings = async (hospitalId, doctorId) => {
   try {
@@ -339,7 +404,7 @@ export const getVisitHistoryByPatientIdAndDoctorId = async (patientId, doctorId)
     return response.data; // { success, data, message, status }
   } catch (error) {
     // Axios error object may contain response info
-    if (error.response.status==404) {
+    if (error.response.status == 404) {
       // Server responded with status code outside 2xx
       console.error('HTTP error:', error.response.status, error.response.data);
       throw new Error(`No visit history available`);
@@ -357,7 +422,7 @@ export const getVisitHistoryByPatientIdAndDoctorId = async (patientId, doctorId)
 
 //reports
 
- 
+
 export const ReportsData = async () => {
   try {
     const response = await api.get(`${reportbaseUrl}/${AllReports}`)
@@ -395,8 +460,8 @@ export const getAdImages = async () => {
     return [];
   } catch (error) {
     console.error("❌ Error fetching ad images:", error);
-    return [];
-  }
+    return [];
+  }
 };
 
 // Auth.js
@@ -490,20 +555,23 @@ export const clearImagesOnServer = async () => {
 //doctor slots
 export const getAvailableSlots = async (hospitalId, doctorId) => {
   try {
-    // Replace `slotsBaseUrl` with your actual API base URL
     const response = await api.get(`${getDoctorSlotsEndpoint}/${hospitalId}/${doctorId}`);
-console.log(response.data.data)
+    console.log("Slots API response:", response.data);
 
     if (response.data && response.data.success) {
-      // Assuming response.data.data is an array with one or more objects
-      const slotsData = response.data.data.map(item => ({
-        id: item.id,
-        doctorId: item.doctorId,
-        hospitalId: item.hospitalId,
-        date: item.date,
-        availableSlots: item.availableSlots, // array of { slot, slotbooked }
-        createdAt: item.createdAt,
-      }));
+      const rawData = response.data.data;
+
+      // Make sure it's an array
+      const slotsData = Array.isArray(rawData)
+        ? rawData.map(item => ({
+          id: item.id,
+          doctorId: item.doctorId,
+          hospitalId: item.hospitalId,
+          date: item.date,
+          availableSlots: item.availableSlots || [], // safe default
+          createdAt: item.createdAt,
+        }))
+        : [];
 
       return {
         slots: slotsData,
@@ -515,6 +583,31 @@ console.log(response.data.data)
     }
   } catch (error) {
     console.error('Error fetching slots:', error);
-    return null;
+    return {
+      slots: [],
+      message: error.message || 'Something went wrong',
+      status: 'error',
+    };
   }
 };
+
+
+
+// export const getNotifications = async () => {
+//   try {
+//     const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+//     const res = await fetch(`${apiUrl}/notifications`, {
+//       method: 'GET',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         Authorization: `Bearer ${localStorage.getItem('token')}`,
+//       },
+//     });
+//     return await res.json();
+//   } catch (err) {
+//     console.error("❌ Error fetching notifications:", err);
+//     return { statusCode: 500, message: "Failed to fetch notifications" };
+//   }
+// };
+
+
