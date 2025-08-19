@@ -254,7 +254,7 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
       return
     }
 
-    const payload = { medicines: sanitizeMedicines(medicines), note }
+    const payload = { medicines: sanitizeMedicines(medicines)}
     onNext?.(payload)
     console.log(payload)
   }
