@@ -45,8 +45,8 @@ public class RatingCalculationService {
 
             // Check if data exists at all
             if (allRatings.isEmpty()) {
-                response.setSuccess(true);
-                response.setStatus(200);
+                response.setSuccess(false);
+                response.setStatus(404);
                 response.setMessage("No ratings found for the given hospitalId and doctorId.");
                 return response;
             }

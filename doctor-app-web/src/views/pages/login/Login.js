@@ -70,20 +70,20 @@ const Login = () => {
         const { doctorId, hospitalId } = response.data.data
         localStorage.setItem('doctorId', doctorId)
         localStorage.setItem('hospitalId', hospitalId)
-        success('Login successful!')
 
         const doctorDetails = await getDoctorDetails()
         const clinicDetails = await getClinicDetails()
-
-        localStorage.setItem('doctorDetails', JSON.stringify(doctorDetails))
-        localStorage.setItem('clinicDetails', JSON.stringify(clinicDetails))
-
-        setDoctorId(doctorId)
-        setHospitalId(hospitalId)
-        setDoctorDetails(doctorDetails)
-        setClinicDetails(clinicDetails)
-
-        navigate('/dashboard')
+        console.log(response)
+        if (doctorDetails) {
+          localStorage.setItem('doctorDetails', JSON.stringify(doctorDetails))
+          localStorage.setItem('clinicDetails', JSON.stringify(clinicDetails))
+          setDoctorId(doctorId)
+          setHospitalId(hospitalId)
+          setDoctorDetails(doctorDetails)
+          setClinicDetails(clinicDetails)
+          success(`${response.data.message || `Login successful!`}`)
+          navigate('/dashboard')
+        }
       } else {
         setErrors({ login: response.data.message || 'Login failed' })
       }
@@ -236,7 +236,7 @@ const Login = () => {
                   WebkitTextFillColor: 'transparent',
                   fontSize: '40px',
                   margin: '1rem 0',
-                  fontWeight:"bolder"
+                  fontWeight: 'bolder',
                 }}
               >
                 Derma Care, Hyderabad

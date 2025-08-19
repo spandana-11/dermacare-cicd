@@ -60,18 +60,11 @@ import jakarta.validation.Valid;
 
 @RequestMapping("/admin")
 
-//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
+// @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
+
 public class AdminController {
-
-
-
 	@Autowired
-
 	private AdminService serviceImpl;
-
-
-
-	
 
 	@PostMapping("/adminRegister")
 
@@ -89,8 +82,6 @@ public class AdminController {
 
 }
 
-	
-
 	@PostMapping("/adminLogin")
 
 	public ResponseEntity<?> adminLogin(@RequestBody AdminHelper helperAdmin) {
@@ -104,14 +95,9 @@ public class AdminController {
 		 }else {
 
 				return null;}
-
-		
+	
 
     }    
-
-	
-
-	
 
 	@PostMapping("/CreateClinic")
 
@@ -132,11 +118,6 @@ public class AdminController {
 	}
 
 
-
-	
-
-
-
     // Get Clinic by ID
 
     @GetMapping("/getClinicById/{clinicId}")
@@ -148,8 +129,6 @@ public class AdminController {
     	return response;
 
     }
-
-  
 
     //GET ALL CUSTOMERS
 
@@ -183,8 +162,6 @@ public class AdminController {
 
     }
 
-
-
     // Delete Clinic
 
     @DeleteMapping("/deleteClinic/{clinicId}")
@@ -205,14 +182,10 @@ public class AdminController {
 
     }
 
-   
-
-    
-
+ 
    /// CLINIC CREDENTIALS
 
  
-
     // Get clinic credentials by hospitalId
 
     @GetMapping("/getClinicCredentials/{userName}")
@@ -258,8 +231,7 @@ public class AdminController {
 				return null;}
 
     }
-
-    
+  
 
     // clinic admin login
 
@@ -836,8 +808,8 @@ public ResponseEntity<Response> deleteCustomerBasicDetails(@PathVariable String 
 	 }
 
 	else {
-
-			return null;}
+			return null;
+			}
 
 }
 
@@ -854,8 +826,6 @@ public ResponseEntity<Response> deleteCustomerBasicDetails(@PathVariable String 
 
 
 //GETALLSUBSERVICES
-
-
 
 @GetMapping("/getAllSubservicesByClinicAdmin")
 
@@ -879,13 +849,7 @@ public ResponseEntity<Object> getAllSubservicesByClinicAdmin(){
 
 }
 
-
-
-
-
 ///GETALLBOOKINGS
-
-
 
 @GetMapping("/getAllBookedServices")
 
@@ -990,10 +954,6 @@ public ResponseEntity<Object> getDoctorInfoByDoctorId(@PathVariable String docto
 		 return ResponseEntity.status(response.getStatus()).body(response);
 
 	}
-
-
-
-
 
 }
 

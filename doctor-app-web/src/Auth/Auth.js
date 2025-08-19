@@ -13,7 +13,11 @@ import {
   todayappointmentsbaseUrl,
   addDiseaseUrl,getVisitHistoryByPatientIdAndDoctorIdEndpoint,
   // visitHistoryEndpoint,
-  getdoctorSaveDetailsEndpoint
+  getdoctorSaveDetailsEndpoint,
+  Get_ReportsByBookingId,
+  reportbaseUrl,
+  AllReports,getDoctorSlotsEndpoint,
+  adminBaseUrl
 } from './BaseUrl'
 
 export const postLogin = async (payload, endpoint) => {
@@ -271,7 +275,7 @@ export const averageRatings = async (hospitalId, doctorId) => {
 
     if (response.data && response.data.success) {
       const { overallDoctorRating, overallHospitalRating, comments, ratingCategoryStats } =
-        response.data.data
+        response.data
 
       return {
         doctorRating: overallDoctorRating,
@@ -348,5 +352,169 @@ export const getVisitHistoryByPatientIdAndDoctorId = async (patientId, doctorId)
       console.error('Error', error.message);
       throw error;
     }
+  }
+};
+
+//reports
+
+ 
+export const ReportsData = async () => {
+  try {
+    const response = await api.get(`${reportbaseUrl}/${AllReports}`)
+    const reports = response.data.data
+    console.log(reports)
+    return reports
+  } catch (error) {
+    console.error('Error fetching report by ID:', error.message)
+    return null
+  }
+}
+export const Get_ReportsByBookingIdData = async (bookingId) => {
+  try {
+    const response = await api.get(`${reportbaseUrl}/${Get_ReportsByBookingId}/${bookingId}`)
+    console.log(response)
+    return response.data.data
+  } catch (error) {
+    console.error('Error fetching report by ID:', error.message)
+    return null
+  }
+}
+
+
+export const getAdImages = async () => {
+  try {
+    const response = await api.get(`${adminBaseUrl}/categoryAdvertisement/getAll`);
+
+    if (Array.isArray(response?.data) && response.data.length > 0) {
+      return response.data
+        .filter(item => item?.mediaUrlOrImage) // keep only valid ones
+        .map(item => item.mediaUrlOrImage);
+    }
+
+    console.warn("⚠ No ad media found in API response:", response.data);
+    return [];
+  } catch (error) {
+    console.error("❌ Error fetching ad images:", error);
+    return [];
+  }
+};
+
+// Auth.js
+export const getAdImagesView = async () => {
+  try {
+    const response = await api.get(`${adminBaseUrl}/doctorWebAds/getAll`);
+
+    console.log("📌 API Raw Response:", response.data); // <-- log full response
+
+    if (Array.isArray(response?.data) && response.data.length > 0) {
+      return response.data
+        .filter((item) => item?.mediaUrlOrImage)
+        .map((item) => ({
+          id: item.id,
+          url: item.mediaUrlOrImage,
+          type: item.type || (item.mediaUrlOrImage.endsWith(".mp4") ? "video" : "image"),
+        }));
+    }
+
+    console.warn("⚠️ No ad media found in API response:", response.data);
+    return [];
+  } catch (error) {
+    console.error("❌ Error fetching ads:", error);
+    return [];
+  }
+};
+
+
+// Save uploaded images
+export const saveImagesToServer = async (files) => {
+  try {
+    console.log("📤 Sending files to server:", files.map(f => f.name));
+
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("images", file, file.name);
+    });
+
+    const response = await api.post(`${adminBaseUrl}/images/save`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    console.log("✅ Save API Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error saving images:", error);
+    throw error;
+  }
+};
+
+// Load images
+export const loadImagesFromServer = async () => {
+  try {
+    console.log("📥 Requesting saved images...");
+
+    const response = await api.get(`${adminBaseUrl}/images/getAll`);
+
+    console.log("✅ Load API Response:", response.data);
+
+    if (Array.isArray(response?.data) && response.data.length > 0) {
+      return response.data.map((item) => ({
+        id: item.id,
+        url: item.url,
+        type: item.type || (item.url.endsWith(".mp4") ? "video" : "image"),
+        savedAt: item.savedAt || null,
+      }));
+    }
+
+    console.warn("⚠️ No images found:", response.data);
+    return [];
+  } catch (error) {
+    console.error("❌ Error loading images:", error);
+    return [];
+  }
+};
+
+// Clear all images
+export const clearImagesOnServer = async () => {
+  try {
+    console.log("🗑️ Requesting server to clear all images...");
+
+    const response = await api.delete(`${adminBaseUrl}/images/clearAll`);
+
+    console.log("✅ Clear API Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error clearing images:", error);
+    throw error;
+  }
+};
+//doctor slots
+export const getAvailableSlots = async (hospitalId, doctorId) => {
+  try {
+    // Replace `slotsBaseUrl` with your actual API base URL
+    const response = await api.get(`${getDoctorSlotsEndpoint}/${hospitalId}/${doctorId}`);
+console.log(response.data.data)
+
+    if (response.data && response.data.success) {
+      // Assuming response.data.data is an array with one or more objects
+      const slotsData = response.data.data.map(item => ({
+        id: item.id,
+        doctorId: item.doctorId,
+        hospitalId: item.hospitalId,
+        date: item.date,
+        availableSlots: item.availableSlots, // array of { slot, slotbooked }
+        createdAt: item.createdAt,
+      }));
+
+      return {
+        slots: slotsData,
+        message: response.data.message,
+        status: response.data.status,
+      };
+    } else {
+      throw new Error(response.data?.message || 'Failed to fetch slots');
+    }
+  } catch (error) {
+    console.error('Error fetching slots:', error);
+    return null;
   }
 };

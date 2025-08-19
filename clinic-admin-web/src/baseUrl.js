@@ -26,7 +26,8 @@ export const allBooking_sevices = `getAllBookedServices`
 export const getAllBookingDetails = 'admin/getAllBookingDetails'
 
 //Doctors
-export const PatientConsentForm = 'getpatientConsentForm/'
+export const PatientConsentForm = 'getpatientConsentForm'
+export const UpdateConsentForm = 'updatePatientConsentForm'
 
 export const doctorAvailableUrl = 'doctorId'
 export const getDoctorByClinicId = 'doctors/hospitalById'

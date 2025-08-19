@@ -17,6 +17,8 @@ import CIcon from '@coreui/icons-react'
 import { cilPlus, cilTrash } from '@coreui/icons'
 import './MedicineCard.css'
 import GradientTextCard from './GradintColorText'
+import Button from './CustomButton/CustomButton'
+import { COLORS } from '../Themes'
 
 const slotOptions = [
   { value: 'morning', label: 'Morning (8–9 AM)' },
@@ -95,24 +97,24 @@ const MedicineCard = ({
           {/* Add to Table */}
           <CTooltip content="Add to table">
             <span>
-              <CButton
-                color="success"
-                variant="ghost"
+              <Button
+               customColor={COLORS.primary}
+                variant="primary"
                 size="sm"
                 // disabled={!canAdd(medicine)}// TODO:vaildation
                 //  disabled={!canAdd(medicine) || isDup}
                 onClick={() => onAdd?.(medicine)}
               >
                 <CIcon icon={cilPlus} />
-              </CButton>
+              </Button>
             </span>
           </CTooltip>
 
           {/* Remove card */}
           <CTooltip content="Remove card">
-            <CButton color="danger" variant="ghost" size="sm" onClick={removeMedicine}>
+            <Button customColor={COLORS.danger} variant="primary" size="sm" onClick={removeMedicine}>
               <CIcon icon={cilTrash} />
-            </CButton>
+            </Button>
           </CTooltip>
         </div>
       </CCardHeader>

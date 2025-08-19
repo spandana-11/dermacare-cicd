@@ -9,7 +9,9 @@ import React, {
 } from 'react'
 import { createPortal } from 'react-dom'
 import './ToasterStyles.css'
-
+import { toast } from 'react-toastify'
+// utils/Toaster.js
+ 
 const ToastCtx = createContext(null)
 export const useToast = () => {
   const ctx = useContext(ToastCtx)
@@ -113,3 +115,17 @@ export function ToastProvider({
     </ToastCtx.Provider>
   )
 }
+
+
+
+// utils/Toaster.js
+
+
+export const showSuccess = (message, options) => {
+  toast.success(message, options);
+};
+
+export const showInfo = (message, options) => {
+  toast.info(message, options);
+};
+

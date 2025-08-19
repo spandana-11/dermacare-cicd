@@ -19,7 +19,7 @@ import { COLORS } from '../Themes'
 import { getAllTreatments } from '../../src/Auth/Auth'
 import CIcon from '@coreui/icons-react'
 import { cilTrash } from '@coreui/icons'
-
+import  './TestsTreatments.css'
 const DEFAULT_CFG = { frequency: 'day', sittings: 1, startDate: '', reason: '' }
 
 const TestTreatments = ({ seed = {}, onNext }) => {
@@ -27,6 +27,8 @@ const TestTreatments = ({ seed = {}, onNext }) => {
     seed.selectedTestTreatments ?? [],
   )
   const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
+  // at the top of the component, before any return
+  const [activeIdx, setActiveIdx] = React.useState(0) // open first by default
 
   // Per-treatment inputs (now includes reason)
   const [treatmentConfigs, setTreatmentConfigs] = useState(
@@ -241,17 +243,17 @@ const TestTreatments = ({ seed = {}, onNext }) => {
   }
 
   return (
-    <div className="pb-4 bg-white mb-5 w-100">
+    <div className="pb-5 treatment-wrapper">
       {snackbar.show && (
         <CAlert color={snackbar.type === 'error' ? 'danger' : snackbar.type} className="mb-3">
           {snackbar.message}
         </CAlert>
       )}
 
-      <CContainer fluid>
-        <CRow className="g-4">
+      <CContainer fluid className='p-1'>
+        <CRow className="g-3">
           {/* Add Treatments */}
-          <CCol md={12}>
+          <CCol md={12} className="g-3" >
             <CFormLabel>
               <GradientTextCard text="Recommended Treatments" />
             </CFormLabel>
@@ -359,10 +361,20 @@ const TestTreatments = ({ seed = {}, onNext }) => {
           {Object.keys(generatedData).length > 0 && (
             <CCol md={12} className="mt-4">
               <GradientTextCard text="Treatment Schedule" />
-              <CAccordion alwaysOpen>
+
+              <CAccordion activeItemKey={activeIdx}>
                 {Object.entries(generatedData).map(([treatment, meta], idx) => (
                   <CAccordionItem itemKey={idx} key={treatment}>
-                    <CAccordionHeader>
+                    <CAccordionHeader
+                      onClick={(e) => {
+                        // keep exactly one open; to allow closing the same one, use the toggle line below
+                        e.preventDefault()
+                        setActiveIdx(idx)
+
+                        // If you want toggle behavior (clicking the open one closes it), use this instead:
+                        // setActiveIdx(prev => (prev === idx ? -1 : idx));
+                      }}
+                    >
                       <div className="d-flex align-items-center justify-content-between w-100">
                         <span>
                           {treatment} —{' '}
@@ -380,6 +392,7 @@ const TestTreatments = ({ seed = {}, onNext }) => {
                             className="btn btn-sm btn-outline-secondary mx-2"
                             onClick={(e) => {
                               e.stopPropagation()
+                              e.preventDefault()
                               editSchedule(treatment)
                             }}
                             onKeyDown={(e) => {
@@ -400,6 +413,7 @@ const TestTreatments = ({ seed = {}, onNext }) => {
                             className="btn btn-sm btn-outline-danger mx-2"
                             onClick={(e) => {
                               e.stopPropagation()
+                              e.preventDefault()
                               deleteSchedule(treatment)
                             }}
                             onKeyDown={(e) => {

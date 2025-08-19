@@ -42,6 +42,8 @@ import {
   getadminSubServicesbyserviceId,
   BASE_URL,
 } from '../../baseUrl'
+import ProcedureQA from './QASection'
+import { View } from 'lucide-react'
 
 const ServiceManagement = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -64,6 +66,7 @@ const ServiceManagement = () => {
   const [selectedSubService, setSelectedSubService] = useState('')
   const [subServiceId, setSubServiceId] = useState('')
   const [previewImage, setPreviewImage] = useState(null)
+  
   const [serviceToEdit, setServiceToEdit] = useState({
     serviceImage: '',
     viewImage: '',
@@ -71,6 +74,22 @@ const ServiceManagement = () => {
     serviceName: '',
     serviceImageFile: null,
   })
+  const [qaPreProcedure, setQaPreProcedure] = useState([])
+  const [qaProcedure, setQaProcedure] = useState([])
+  const [qaPostProcedure, setQaPostProcedure] = useState([])
+
+  const addQuestionAnswer = (section, question, answers) => {
+    const newQA = { question, answers }
+
+    if (section === 'preProcedure') {
+      setQaPreProcedure([...qaPreProcedure, newQA])
+    } else if (section === 'procedure') {
+      setQaProcedure([...qaProcedure, newQA])
+    } else if (section === 'postProcedure') {
+      setQaPostProcedure([...qaPostProcedure, newQA])
+    }
+  }
+
 
   let descriptionQA = []
   try {
@@ -88,6 +107,12 @@ const ServiceManagement = () => {
     categoryId: '',
     serviceName: '',
     subServiceName: '',
+    description: '',
+    // preProcedure: '',
+    // postProcedure: '',
+    procedureQA: [],
+    preProcedureQA: [],
+    postProcedureQA: [],
   })
   const [modalMode, setModalMode] = useState('add') // or 'edit'
 
@@ -173,9 +198,9 @@ const ServiceManagement = () => {
     const resolvedSubServiceName = selectedSubServiceObj?.subServiceName || ''
 
     setSelectedSubService(resolvedSubServiceId)
-    const formattedQA = Array.isArray(service.descriptionQA)
-      ? service.descriptionQA
-      : JSON.parse(service.descriptionQA || '[]')
+    const formattedQA = Array.isArray(service.procedureQA)
+      ? service.procedureQA
+      : JSON.parse(service.procedureQA || '[]')
 
     const rawImage = service.serviceImage || ''
     const fullImage = rawImage.startsWith('data:') ? rawImage : `data:image/jpeg;base64,${rawImage}`
@@ -199,8 +224,11 @@ const ServiceManagement = () => {
       viewDescription: service.viewDescription || '',
 
       platformFeePercentage: service.platformFeePercentage || 0,
-      descriptionQA: formattedQA,
+      // descriptionQA: formattedQA,
       viewImage: service.viewImage || '',
+       procedureQA: formattedQA,
+    preProcedureQA: [],
+    postProcedureQA: [],
     })
     setQaList(formattedQA)
   }
@@ -222,7 +250,6 @@ const ServiceManagement = () => {
     serviceName: '',
     serviceId: '',
     categoryName: '',
-
     price: '',
     status: '',
     taxPercentage: '',
@@ -336,7 +363,7 @@ const ServiceManagement = () => {
       sortable: false,
     },
     {
-      name: 'SubService Name',
+      name: 'Procedure Name',
       selector: (row) => row.subServiceName,
       sortable: true,
       width: '230px',
@@ -507,7 +534,18 @@ const ServiceManagement = () => {
     }))
   }
 
-  const buildDescriptionQA = () => {
+  // const buildDescriptionQA = () => {
+  //   const finalQA = [...qaList]
+
+  //   // Include the latest unsaved input, if any
+  //   if (question.trim() && answers.length > 0) {
+  //     finalQA.push({ [question.trim()]: [...answers] })
+  //   }
+
+  //   return finalQA
+  // }
+
+  const buildQA = (question, answers, qaList) => {
     const finalQA = [...qaList]
 
     // Include the latest unsaved input, if any
@@ -517,7 +555,13 @@ const ServiceManagement = () => {
 
     return finalQA
   }
-
+const buildDescriptionQA = () => {
+  return {
+    general: buildQA(question, answers, qaList),
+    preProcedure: buildQA(preQuestion, preAnswers, preQaList),
+    postProcedure: buildQA(postQuestion, postAnswers, postQaList),
+  }
+}
   const handleAddService = async () => {
     console.log('iam from handleAddSubService calling')
 
@@ -554,7 +598,10 @@ const ServiceManagement = () => {
         minTime: newService.minTime,
         status: newService.status,
         subServiceImage: base64ImageToSend,
-        descriptionQA: buildDescriptionQA(),
+        // descriptionQA: buildDescriptionQA(),
+        procedureQA: newService.procedureQA,
+        preProcedureQA: newService.preProcedureQA,
+        postProcedureQA: newService.postProcedureQA,
         viewDescription: newService.viewDescription,
         platformFeePercentage: newService.platformFeePercentage,
         discountAmount: newService.discount,
@@ -838,7 +885,7 @@ const ServiceManagement = () => {
           </CInputGroup>
 
           <CButton color="primary" style={{ height: '40px' }} onClick={() => openAddModal()}>
-            Add SubService Details
+            Add Procedure Details
           </CButton>
         </CForm>
       </div>
@@ -847,17 +894,17 @@ const ServiceManagement = () => {
         <CModal visible={!!viewService} onClose={() => setViewService(null)} size="xl">
           <CModalHeader>
             <CModalTitle className="w-100 text-center text-primary fs-4">
-              SubService Details
+              Procedure Details
             </CModalTitle>
           </CModalHeader>
           <CModalBody>
             <CRow className="mb-3">
               <CCol sm={6}>
-                <strong>SubService Name:</strong>
+                <strong>Procedure Name:</strong>
                 <div>{viewService.subServiceName}</div>
               </CCol>
               <CCol sm={6}>
-                <strong>SubService ID:</strong>
+                <strong>Procedure ID:</strong>
                 <div>{viewService.subServiceId}</div>
               </CCol>
             </CRow>
@@ -950,30 +997,78 @@ const ServiceManagement = () => {
 
             <hr />
 
-            <CRow className="mb-3">
-              <CCol sm={12}>
-                <strong className="mb-3">Description QA:</strong>
-                {Array.isArray(viewService.descriptionQA) &&
-                viewService.descriptionQA.length > 0 ? (
-                  viewService.descriptionQA.map((qa, index) => {
-                    const question = Object.keys(qa)[0]
-                    const answers = qa[question]
-                    return (
-                      <div key={index} style={{ marginBottom: '10px' }}>
-                        <strong>{question}</strong>
-                        <ul>
-                          {answers.map((ans, i) => (
-                            <li key={i}>{ans}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )
-                  })
-                ) : (
-                  <div>No Q&A available</div>
-                )}
-              </CCol>
-            </CRow>
+           <CRow className="mb-3">
+  <CCol sm={12}>
+    <strong className="mb-3">Pre-Procedure QA:</strong>
+    {Array.isArray(viewService.preProcedureQA) && viewService.preProcedureQA.length > 0 ? (
+      viewService.preProcedureQA.map((qa, index) => {
+        const question = Object.keys(qa)[0]
+        const answers = qa[question]
+        return (
+          <div key={index} style={{ marginBottom: '10px' }}>
+            <strong>{question}</strong>
+            <ul>
+              {answers.map((ans, i) => (
+                <li key={i}>{ans}</li>
+              ))}
+            </ul>
+          </div>
+        )
+      })
+    ) : (
+      <div>No Pre-Procedure Q&A available</div>
+    )}
+  </CCol>
+</CRow>
+
+<CRow className="mb-3">
+  <CCol sm={12}>
+    <strong className="mb-3">Procedure QA:</strong>
+    {Array.isArray(viewService.procedureQA) && viewService.procedureQA.length > 0 ? (
+      viewService.procedureQA.map((qa, index) => {
+        const question = Object.keys(qa)[0]
+        const answers = qa[question]
+        return (
+          <div key={index} style={{ marginBottom: '10px' }}>
+            <strong>{question}</strong>
+            <ul>
+              {answers.map((ans, i) => (
+                <li key={i}>{ans}</li>
+              ))}
+            </ul>
+          </div>
+        )
+      })
+    ) : (
+      <div>No Procedure Q&A available</div>
+    )}
+  </CCol>
+</CRow>
+
+<CRow className="mb-3">
+  <CCol sm={12}>
+    <strong className="mb-3">Post-Procedure QA:</strong>
+    {Array.isArray(viewService.postProcedureQA) && viewService.postProcedureQA.length > 0 ? (
+      viewService.postProcedureQA.map((qa, index) => {
+        const question = Object.keys(qa)[0]
+        const answers = qa[question]
+        return (
+          <div key={index} style={{ marginBottom: '10px' }}>
+            <strong>{question}</strong>
+            <ul>
+              {answers.map((ans, i) => (
+                <li key={i}>{ans}</li>
+              ))}
+            </ul>
+          </div>
+        )
+      })
+    ) : (
+      <div>No Post-Procedure Q&A available</div>
+    )}
+  </CCol>
+</CRow>
+
 
             <hr />
 
@@ -1019,7 +1114,7 @@ const ServiceManagement = () => {
       >
         <CModalHeader>
           <CModalTitle style={{ textAlign: 'center', width: '100%' }}>
-            {modalMode === 'edit' ? 'Edit SubService Details' : 'Add New SubService Details'}
+            {modalMode === 'edit' ? 'Edit Procedure Details' : 'Add New Procedure Details'}
           </CModalTitle>
         </CModalHeader>
         <CModalBody>
@@ -1074,7 +1169,7 @@ const ServiceManagement = () => {
             <CRow className="mb-4">
               <CCol md={6}>
                 <h6>
-                  Sub Service <span className="text-danger">*</span>
+                  Procedure Name <span className="text-danger">*</span>
                 </h6>
                 <CFormSelect
                   name="subServiceId"
@@ -1246,78 +1341,23 @@ const ServiceManagement = () => {
                 />
               )}
             </CCol>
+        
+             <h6 className='m-3'>
+                Procedure (Optional)  
+              </h6>
 
-            <CCol md={12} className="mt-3">
-              <label className="mb-2">
-                Question
-                <span className="text-danger">*</span>
-              </label>
-              <CFormInput
-                placeholder="Enter your question"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-              />
-
-              <label className="mt-3">
-                Answers
-                <span className="text-danger">*</span>
-              </label>
-              <CInputGroup className="mb-2">
-                <CFormInput
-                  placeholder="Enter answer"
-                  value={answerInput}
-                  onChange={(e) => setAnswerInput(e.target.value)}
-                />
-                <CButton color="success" onClick={addAnswer} className="text-white">
-                  <FaPlus />
-                </CButton>
-              </CInputGroup>
-
-              {answers.length > 0 && (
-                <CListGroup className="mb-3">
-                  {answers.map((ans, idx) => (
-                    <CListGroupItem
-                      key={idx}
-                      className="d-flex justify-content-between align-items-center"
-                    >
-                      {ans}
-                      <FaTrash
-                        onClick={() => removeAnswer(ans)}
-                        style={{ color: 'gray', cursor: 'pointer' }}
-                      />
-                    </CListGroupItem>
-                  ))}
-                </CListGroup>
-              )}
-              <CButton color="info" className="mb-3 text-white" onClick={saveCurrentQA}>
-                Save Q&A
-              </CButton>
-
-              {qaList.length > 0 && (
-                <>
-                  <h6 className="mt-4">Saved Questions & Answers</h6>
-                  {qaList.map((qaItem, index) => {
-                    const questionText = Object.keys(qaItem)[0]
-                    const answerList = qaItem[questionText]
-
-                    return (
-                      <div key={index} className="mb-3">
-                        <strong>{questionText}</strong>
-                        <ul>
-                          {answerList.map((ans, idx) => (
-                            <li key={idx}>{ans}</li>
-                          ))}
-                        </ul>
-                        <FaTrash
-                          onClick={() => removeQA(index)}
-                          style={{ color: 'red', cursor: 'pointer' }}
-                        />
-                      </div>
-                    )
-                  })}
-                </>
-              )}
-            </CCol>
+            <ProcedureQA
+              preQAList={newService.preProcedureQA}
+              setPreQAList={(data) => setNewService((prev) => ({ ...prev, preProcedureQA: data }))}
+              procedureQAList={newService.procedureQA}
+              setProcedureQAList={(data) =>
+                setNewService((prev) => ({ ...prev, procedureQA: data }))
+              }
+              postQAList={newService.postProcedureQA}
+              setPostQAList={(data) =>
+                setNewService((prev) => ({ ...prev, postProcedureQA: data }))
+              }
+            />
           </CForm>
         </CModalBody>
         <CModalFooter>

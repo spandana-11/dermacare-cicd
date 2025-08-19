@@ -21,47 +21,14 @@ import {
   CTableHeaderCell,
   CTableRow,
 } from '@coreui/react'
-import CIcon from '@coreui/icons-react'
-import {
-  cibCcAmex,
-  cibCcApplePay,
-  cibCcMastercard,
-  cibCcPaypal,
-  cibCcStripe,
-  cibCcVisa,
-  cibGoogle,
-  cibFacebook,
-  cibLinkedin,
-  cifBr,
-  cifEs,
-  cifFr,
-  cifIn,
-  cifPl,
-  cifUs,
-  cibTwitter,
-  cilCloudDownload,
-  cilPeople,
-  cilUser,
-  cilUserFemale,
-} from '@coreui/icons'
-
-import avatar1 from 'src/assets/images/avatars/1.jpg'
-import avatar2 from 'src/assets/images/avatars/2.jpg'
-import avatar3 from 'src/assets/images/avatars/3.jpg'
-import avatar4 from 'src/assets/images/avatars/4.jpg'
-import avatar5 from 'src/assets/images/avatars/5.jpg'
-import avatar6 from 'src/assets/images/avatars/6.jpg'
-
-import WidgetsBrand from '../widgets/WidgetsBrand'
-import WidgetsDropdown from '../widgets/WidgetsDropdown'
-import MainChart from './MainChart'
+import { Carousel } from 'react-bootstrap'
 import Button from '../../components/CustomButton/CustomButton'
 import { COLORS, SIZES } from '../../Themes'
 import TooltipButton from '../../components/CustomButton/TooltipButton'
 import avatar8 from './../../assets/images/12.png'
 // import { patientData } from '../../Prescription/patientData.json'
 import { useDoctorContext } from '../../Context/DoctorContext'
-import { getTodayAppointments } from '../../Auth/Auth'
+import { getAdImages, getTodayAppointments } from '../../Auth/Auth'
 // import { patientData } from '../../Prescription/patientData.json'
 const Dashboard = () => {
   const { setPatientData, doctorId, setTodayAppointments, todayAppointments } = useDoctorContext() // this calls the persisted helper if you set it up
@@ -77,15 +44,18 @@ const Dashboard = () => {
   const filteredPatients = selectedType
     ? todayAppointments.filter((item) => item.consultationType === selectedType)
     : todayAppointments
-  const [adImage, setAdImage] = useState(null) // null = not yet loaded
+  const [adMediaList, setAdMediaList] = useState([])  // null = not yet loaded
 
   useEffect(() => {
-    // Simulate backend fetch delay
-    setTimeout(() => {
-      // Replace with actual fetch later
-      setAdImage(avatar8) // or set to a backend URL
-    }, 2000) // 2 seconds delay
+    const fetchAds = async () => {
+      const mediaUrls = await getAdImages()
+      if (mediaUrls.length > 0) {
+        setAdMediaList(mediaUrls)
+      }
+    }
+    fetchAds()
   }, [])
+
 
   useEffect(() => {
     // clear context + localStorage so sidebar shows doctor data
@@ -197,8 +167,9 @@ const Dashboard = () => {
                       <CTableDataCell>{item.mobileNumber}</CTableDataCell>
                       <CTableDataCell>{item.servicetime}</CTableDataCell>
                       <CTableDataCell>{item.consultationType}</CTableDataCell>
+
                       <CTableDataCell className="text-center">
-                        <TooltipButton patient={item} />
+                        <TooltipButton patient={item} tab={item.status} />
                       </CTableDataCell>
                     </CTableRow>
                   ))
@@ -215,21 +186,45 @@ const Dashboard = () => {
             height: '60vh',
             width: '200px',
             overflow: 'hidden',
-            position: 'relative', // or 'fixed' if you want it to stay on screen always
             borderRadius: '10px',
           }}
         >
           <CCard style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
-            {adImage ? (
-              <CCardImage
-                src={adImage}
-                alt="Profile Ad"
-                style={{
-                  objectFit: 'fit', // or 'contain' if you want full image inside without cropping
-                  height: '100%',
-                  width: '100%',
-                }}
-              />
+            {adMediaList.length > 0 ? (
+              <Carousel controls indicators interval={3000} fade>
+                {adMediaList.map((media, index) => (
+                  <Carousel.Item
+                    key={index}
+                    // If it's video → disable auto-slide until finished
+                    interval={media.endsWith('.mp4') ? null : 3000}
+                  >
+                    {media.endsWith('.mp4') ? (
+                      <video
+                        src={media}
+                        controls
+                        autoPlay
+                        loop={false}   // play once before carousel moves
+                        muted
+                        style={{ width: '100%', height: '60vh', objectFit: 'cover' }}
+                        onEnded={(e) => {
+                          // manually move to next slide when video ends
+                          const carousel = e.target.closest('.carousel');
+                          if (carousel) {
+                            const nextBtn = carousel.querySelector('.carousel-control-next');
+                            if (nextBtn) nextBtn.click();
+                          }
+                        }}
+                      />
+                    ) : (
+                      <CCardImage
+                        src={media}
+                        alt={`Ad ${index}`}
+                        style={{ width: '100%', height: '60vh', objectFit: 'contain' }}
+                      />
+                    )}
+                  </Carousel.Item>
+                ))}
+              </Carousel>
             ) : (
               <div
                 style={{
@@ -242,7 +237,7 @@ const Dashboard = () => {
                   color: '#888',
                 }}
               >
-                Loading Ad...
+                Loading Ads...
               </div>
             )}
           </CCard>

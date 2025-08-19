@@ -11,6 +11,9 @@ import DoctorSummary from './DoctorSummary' // <-- NEW
 import Tests from './Tests'
 import MultiImageUpload from './ClinicImages'
 import { COLORS } from '../Themes'
+import ReportsManagement from '../components/Reports/Reports'
+import ReportDetails from '../components/Reports/Reports'
+import ImageGallery from './RetiveImages'
 
 const TabContent = ({
   activeTab,
@@ -21,6 +24,7 @@ const TabContent = ({
   patientData,
   setFormData,
   fromDoctorTemplate,
+  setImage,
 }) => {
   let content = null
 
@@ -49,33 +53,16 @@ const TabContent = ({
 
     case 'Tests':
       content = (
-        <Tests
-          seed={formData.tests}
-          onNext={onNext}
-          sidebarWidth={260}
-          formData={formData}
-        />
+        <Tests seed={formData.tests} onNext={onNext} sidebarWidth={260} formData={formData} />
       )
       break
 
-    case 'Prescription':
-      content = (
-        <PrescriptionTab
-          seed={formData.prescription}
-          onNext={onNext}
-          formData={formData}
-        />
-      )
+    case 'Medication':
+      content = <PrescriptionTab seed={formData.prescription} onNext={onNext} formData={formData} />
       break
 
     case 'Treatments':
-      content = (
-        <TestsTreatments
-          seed={formData.treatments}
-          onNext={onNext}
-          formData={formData}
-        />
-      )
+      content = <TestsTreatments seed={formData.treatments} onNext={onNext} formData={formData} />
       break
 
     case 'Follow-up':
@@ -105,11 +92,13 @@ const TabContent = ({
           onNext={onNext}
           patientId={patientData?.patientId || formData.patientId}
           doctorId={patientData?.doctorId || formData.doctorId}
+          patientData={patientData} // expects patientData.bookingId
+          formData={formData}
         />
       )
       break
 
-    case 'Summary':
+    case 'Prescription':
       content = fromDoctorTemplate ? (
         <DoctorSummary
           onNext={onNext}
@@ -131,24 +120,30 @@ const TabContent = ({
       break
 
     case 'Images':
+      content = setImage ? (
+        <MultiImageUpload data={formData} onSubmit={onNext} patientData={patientData} />
+      ) : (
+        <ImageGallery data={formData} patientData={patientData} />
+      )
+      break
+
+    // in TabContent.jsx (Reports case)
+    case 'Reports':
       content = (
-        <MultiImageUpload
-          data={formData}
-          onSubmit={onNext}
-          patientData={patientData}
+        <ReportDetails
+          patientData={patientData} // expects patientData.bookingId
+          formData={formData} // or formData.bookingId
+          show={true}
         />
       )
+
       break
 
     default:
       content = null
   }
 
-  return (
-    <div style={{ marginTop: '5%', backgroundColor: COLORS.theme ,}}>
-      {content}
-    </div>
-  )
+  return <div style={{ marginTop: '3%', backgroundColor: COLORS.theme }}>{content}</div>
 }
 
 export default TabContent

@@ -21,7 +21,7 @@ import Snackbar from '../components/Snackbar'
 import { COLORS } from '../Themes'
 import GradientTextCard from '../components/GradintColorText'
 import { useToast } from '../utils/Toaster'
-import { getDoctorSaveDetails, getAllDiseases, addDisease } from '../Auth/Auth' // <-- ensure this exists
+import { getDoctorSaveDetails, getAllDiseases, addDisease, getAdImagesView } from '../Auth/Auth' // <-- ensure this exists
 import Select from 'react-select'
 import { useDoctorContext } from '../Context/DoctorContext'
 
@@ -45,6 +45,8 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
   const [diseases, setDiseases] = useState([])
   const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
   const [tplLoading, setTplLoading] = useState(false)
+  const [ads, setAds] = useState([]);        // ✅ new state
+  const [loadingAds, setLoadingAds] = useState(false);
   const [templateData, setTemplateData] = useState({
     symptoms: '',
     tests: {},
@@ -67,6 +69,19 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
 
   const { success, error, info, warning } = useToast()
 
+
+  // ✅ Fetch Ads on mount
+  useEffect(() => {
+    const fetchAds = async () => {
+      setLoadingAds(true);
+      const data = await getAdImagesView();
+      console.log("✅ Processed Ads:", data); // <-- check what comes back
+      setAds(data);
+      setLoadingAds(false);
+    };
+    fetchAds();
+  }, []);
+  // --- existing fetchDiseases useEffect...
   useEffect(() => {
     const fetchDiseases = async () => {
       const data = await getAllDiseases()
@@ -195,14 +210,14 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
     // ---- Prescription (map 'food' -> remindWhen)
     const medicines = Array.isArray(t?.prescription?.medicines)
       ? t.prescription.medicines.map((m) => ({
-          id: m?.id ?? `tmp-${Date.now()}-${Math.random()}`,
-          name: m?.name ?? '',
-          dose: m?.dose ?? '',
-          duration: m?.duration ?? '',
-          remindWhen: m?.food ?? m?.remindWhen ?? '', // <- important mapping
-          note: m?.note ?? '',
-          times: m?.times ?? m?.time ?? '',
-        }))
+        id: m?.id ?? `tmp-${Date.now()}-${Math.random()}`,
+        name: m?.name ?? '',
+        dose: m?.dose ?? '',
+        duration: m?.duration ?? '',
+        remindWhen: m?.food ?? m?.remindWhen ?? '', // <- important mapping
+        note: m?.note ?? '',
+        times: m?.times ?? m?.time ?? '',
+      }))
       : []
 
     // ---- Treatments
@@ -246,7 +261,7 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
   }
 
   return (
-    <CCard className="border-1 bg-white mb-5" style={{ backgroundColor: 'transparent' }}>
+    <CCard className="border-1 bg-white mb-5 pb-5" style={{ backgroundColor: 'transparent' }}>
       <CForm className="w-100 " style={{ borderRadius: '10px' }}>
         <CRow className="gx-0">
           {/* LEFT */}
@@ -268,7 +283,7 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
                   className="mt-2"
                   value={duration}
                   disabled
-                  // onChange={(e) => setDuration(e.target.value)}
+                // onChange={(e) => setDuration(e.target.value)}
                 />
               </div>
 
@@ -379,23 +394,41 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
               )}
             </CCardBody>
 
-            <CCarousel controls indicators interval={3000} className="p-3">
-              {[
-                'https://tse2.mm.bing.net/th/id/OIP.Qt6GFcp7On1UC1_IuSp71QHaDt?rs=1&pid=ImgDetMain&o=7&rm=3',
-                'https://getkuwa.com/cdn/shop/collections/Derma_Co_1920x.png?v=1718355215',
-                'https://dermasense.pk/wp-content/uploads/2021/07/DermaSense-Skin-Care-Slider.jpg',
-              ].map((ad, idx) => (
-                <CCarouselItem key={idx}>
-                  <CImage
-                    className="d-block w-100"
-                    src={ad}
-                    alt={`Ad ${idx + 1}`}
-                    height={150}
-                    style={{ borderRadius: 8, objectFit: 'cover' }}
-                  />
-                </CCarouselItem>
-              ))}
-            </CCarousel>
+            {loadingAds ? (
+              <div className="d-flex align-items-center gap-2 text-body-secondary p-3">
+                <CSpinner size="sm" /> <span>Loading ads…</span>
+              </div>
+            ) : ads.length > 0 ? (
+              <CCarousel controls indicators interval={3000} className="p-3">
+                {ads.map((ad, idx) => (
+                  <CCarouselItem key={ad.id || idx}>
+                    {ad.type === "video" ? (
+                      <video
+                        className="d-block w-100"
+                        src={ad.url}
+                        height={150}
+                        style={{ borderRadius: 8, objectFit: "cover" }}
+                        autoPlay
+                        loop
+                        muted
+                      />
+                    ) : (
+                      <CImage
+                        className="d-block w-100"
+                        src={ad.url}
+                        alt={`Ad ${idx + 1}`}
+                        height={150}
+                        style={{ borderRadius: 8, objectFit: "cover" }}
+                      />
+                    )}
+                  </CCarouselItem>
+                ))}
+              </CCarousel>
+            ) : (
+              <div className="text-body-secondary small p-3">
+                No advertisements available
+              </div>
+            )}
           </CCol>
         </CRow>
       </CForm>
@@ -404,8 +437,9 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
       <div
         className="position-fixed bottom-0 p-2"
         style={{
+          left: 0,
           right: 0,
-          left: sidebarWidth || 'auto',
+          // left: sidebarWidth || 'auto',
           zIndex: 1000,
           backgroundColor: COLORS.theme,
           display: 'flex',

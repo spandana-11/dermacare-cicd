@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,7 +22,6 @@ import com.dermacare.bookingService.util.ResponseStructure;
 
 @RestController
 @RequestMapping("/v1")
-//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class BookingServiceController {
 
 
@@ -32,15 +30,9 @@ public class BookingServiceController {
 
 
 	@PostMapping("/bookService")
-	public ResponseEntity<ResponseStructure<BookingResponse>> bookService(@RequestBody BookingRequset req) {
-		BookingResponse response = service.addService(req);
-		if(response != null) {
-		return new ResponseEntity<>(ResponseStructure.buildResponse(response, "Service Booked Sucessfully",
-				HttpStatus.CREATED, HttpStatus.CREATED.value()), HttpStatus.CREATED);}
-		else {
-			return new ResponseEntity<>(ResponseStructure.buildResponse(null, "Incorrect Json Body",
-					HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.value()), HttpStatus.BAD_REQUEST);}}
-	
+	public  ResponseEntity<?> bookService(@RequestBody BookingRequset req) {
+		return service.addService(req);}
+		
 
 	@DeleteMapping("/deleteService/{id}")
 	public ResponseEntity<ResponseStructure<BookingResponse>> deleteBookedService(@PathVariable String id) {
@@ -189,10 +181,10 @@ public class BookingServiceController {
 			return  ResponseEntity.status(response.getStatus()).body(response);
 	}
 		
-		@GetMapping("/getInProgressAppointments/{mobilenumber}/{patientId}")
-		public ResponseEntity<?> inProgressAppointments(@PathVariable String mobilenumber,@PathVariable String patientId)
+		@GetMapping("/getInProgressAppointments/{mobilenumber}")
+		public ResponseEntity<?> inProgressAppointments(@PathVariable String mobilenumber)
 		{
-			return service.getInProgressAppointments(mobilenumber, patientId);
+			return service.getInProgressAppointments(mobilenumber);
 		}
 		
 			

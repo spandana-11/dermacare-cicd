@@ -12,10 +12,12 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class BookingRequset {
 	
+	private String bookingId;
 	private String bookingFor;
 	private String relation;
 	private String patientMobileNumber;
 	private String visitType;
+	private Integer freeFollowUps;
 	private String patientAddress;
 	private String patientId;
 	private String name;

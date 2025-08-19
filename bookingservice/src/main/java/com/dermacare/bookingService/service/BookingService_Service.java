@@ -10,7 +10,7 @@ import com.dermacare.bookingService.util.Response;
 
 public interface BookingService_Service {
 
-	public BookingResponse addService(BookingRequset req);
+	public ResponseEntity<?> addService(BookingRequset req);
 	public BookingResponse deleteService(String id);
 	public BookingResponse getBookedService(String id);
 	public List<BookingResponse> getBookedServices(String mobileNumber);
@@ -27,5 +27,5 @@ public interface BookingService_Service {
 	public ResponseEntity<?> getCompletedApntsByDoctorId(String hospitalId,String doctorId);
 	public ResponseEntity<?> getSizeOfConsultationTypesByDoctorId(String hospitalId,String doctorId);
 	public Response getPatientDetailsForConsetForm(String bookingId, String patientId, String mobileNumber);
-	public ResponseEntity<?> getInProgressAppointments(String number,String patientId);
+	public ResponseEntity<?> getInProgressAppointments(String number);
 }

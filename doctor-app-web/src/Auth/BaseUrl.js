@@ -2,8 +2,9 @@ export const ipUrl = 'http://13.202.16.119:9090'
 export const baseUrl = `${ipUrl}/api/doctors`
 //login
 export const loginEndpoint = 'login'
-
+export const adminBaseUrl = `${ipUrl}/admin`
 export const doctorbaseUrl = `${ipUrl}/clinic-admin/doctor`
+export const reportbaseUrl = `${ipUrl}/clinic-admin`
 export const clinicbaseUrl = `${ipUrl}/admin/getClinicById`
 export const todayappointmentsbaseUrl = `${ipUrl}/api/doctors/appointments/today`
 export const appointmentsbaseUrl = `${ipUrl}/api/doctors/appointments/filter`
@@ -20,3 +21,10 @@ export const updateLoginEndpoint = 'update-password'
 export const addDiseaseUrl = `${ipUrl}/clinic-admin`
 export const getdoctorSaveDetailsEndpoint = `${ipUrl}/api/doctors/getDoctorSaveDetailsById`
 export const getVisitHistoryByPatientIdAndDoctorIdEndpoint = `${ipUrl}/api/doctors/getVisitHistoryByPatientIdAndDoctorId`
+
+//reports
+export const AllReports = `getallreports`
+export const SavingReports = `savereports`
+export const Get_ReportsByBookingId = `getReportByBookingId`
+//doctor slots
+export const getDoctorSlotsEndpoint = `${ipUrl}/clinic-admin/getDoctorslots`

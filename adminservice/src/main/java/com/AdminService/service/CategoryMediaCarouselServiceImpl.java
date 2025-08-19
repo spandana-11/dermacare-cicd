@@ -1,5 +1,4 @@
 package com.AdminService.service;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
@@ -7,7 +6,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
-
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -134,6 +132,7 @@ public class CategoryMediaCarouselServiceImpl {
             return false;
         }
     }
+    
 
     private boolean isBase64Image(String data) {
         if (data == null) return false;
@@ -176,8 +175,7 @@ public class CategoryMediaCarouselServiceImpl {
         } catch (Exception e) {
             throw new RuntimeException("Failed to save base64 video: " + e.getMessage(), e);
         }
-    }
-
+    }   
     private String saveBase64Image(String base64Data) {
         try {
             if (base64Data.contains(",")) {
@@ -195,7 +193,6 @@ public class CategoryMediaCarouselServiceImpl {
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 fos.write(imageBytes);
             }
-
             return imageBaseUrl + fileName;
         } catch (Exception e) {
             throw new RuntimeException("Failed to save base64 image: " + e.getMessage(), e);

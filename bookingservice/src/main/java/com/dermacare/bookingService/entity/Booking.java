@@ -24,6 +24,8 @@ public class Booking  {
 	private String patientMobileNumber;
 	private String patientAddress;
 	private String patientId;
+	private Integer freeFollowUpsLeft;
+	private Integer freeFollowUps;
 	private String visitType;
 	private String name;
 	private String age;
@@ -52,7 +54,6 @@ public class Booking  {
 	private String BookedAt;
 	private String status;
 	private Integer visitCount;
-	private Integer followClinicVisitCount;
 	private List<byte[]> attachments;
 	private double totalFee;
 	private String consultationExpiration;

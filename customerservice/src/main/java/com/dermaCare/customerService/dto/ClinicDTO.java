@@ -57,10 +57,10 @@ public class ClinicDTO {
     private String issuingAuthority;
 
     @NotNull(message = "Contractor documents must not be null")
-    private List<String> contractorDocuments;
+    private String contractorDocuments;
 
     @NotNull(message = "Hospital documents must not be null")
-    private List<String> hospitalDocuments;
+    private String hospitalDocuments;
 
     private boolean recommended;
 

@@ -23,6 +23,7 @@ import {
   CFormSelect,
 } from '@coreui/react'
 import { DoctorAllData } from '../../baseUrl'
+import { getClinicTimings } from './AddClinicAPI'
 
 import { CLINIC_ADMIN_URL } from '../../baseUrl'
 import classNames from 'classnames'
@@ -39,9 +40,11 @@ const ClinicDetails = () => {
   const [editableClinicData, setEditableClinicData] = useState({
     consultationExpiration: '',
   })
+  const [timings, setTimings] = useState([])
   const [isEditing, setIsEditing] = useState(false)
   const [activeTab, setActiveTab] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [loadingTimings, setLoadingTimings] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedDoctor, setSelectedDoctor] = useState(null)
   const [showDoctorModal, setShowDoctorModal] = useState(false)
@@ -93,20 +96,20 @@ const ClinicDetails = () => {
     setFormErrors(errors)
     return Object.keys(errors).length === 0
   }
-  const timeSlots = [
-    '08:00 AM',
-    '09:00 AM',
-    '10:00 AM',
-    '11:00 AM',
-    '12:00 PM',
-    '01:00 PM',
-    '02:00 PM',
-    '03:00 PM',
-    '04:00 PM',
-    '05:00 PM',
-    '06:00 PM',
-    '07:00 PM',
-  ]
+  // const timeSlots = [
+  //   '08:00 AM',
+  //   '09:00 AM',
+  //   '10:00 AM',
+  //   '11:00 AM',
+  //   '12:00 PM',
+  //   '01:00 PM',
+  //   '02:00 PM',
+  //   '03:00 PM',
+  //   '04:00 PM',
+  //   '05:00 PM',
+  //   '06:00 PM',
+  //   '07:00 PM',
+  // ]
 
   const fetchClinicDetails = async () => {
     setLoading(true)
@@ -125,6 +128,7 @@ const ClinicDetails = () => {
     }
     setLoading(false)
   }
+  
   const fetchAllDoctors = async () => {
     try {
       const response = await axios.get(`${CLINIC_ADMIN_URL}${DoctorAllData}/${hospitalId}`)
@@ -161,7 +165,22 @@ const ClinicDetails = () => {
       fetchAllDoctors()
     }
   }, [hospitalId])
+  useEffect(() => {
+    const fetchTimings = async () => {
+      setLoadingTimings(true)
+      const result = await getClinicTimings()
+      console.log("API Timings Result:", result);
 
+      if (result.success) {
+        setTimings(result.data)
+      } else {
+        toast.error(result.message || 'Failed to fetch clinic timings')
+      }
+      setLoadingTimings(false)
+    }
+
+    fetchTimings()
+  }, [])
   const updateClinicData = async (id, data) => {
     await axios.put(`${BASE_URL}/${UpdateClinic}/${id}`, data)
   }
@@ -460,30 +479,33 @@ const ClinicDetails = () => {
                   </CRow>
 
                   <CRow className="mb-3">
-                    <CCol md={6}>
-                      <CFormLabel>Opening Time</CFormLabel>
-                      <CFormSelect
-                        value={editableClinicData.openingTime || ''}
-                        disabled={!isEditingAdditional}
-                        onChange={(e) => {
-                          setEditableClinicData({
-                            ...editableClinicData,
-                            openingTime: e.target.value,
-                          })
-                          setFormErrors((prev) => ({ ...prev, openingTime: '' }))
-                        }}
-                      >
-                        <option value="">Select Opening Time</option>
-                        {timeSlots.map((time) => (
-                          <option key={time} value={time}>
-                            {time}
-                          </option>
-                        ))}
-                      </CFormSelect>
-                      {formErrors.openingTime && (
-                        <div className="text-danger">{formErrors.openingTime}</div>
-                      )}
-                    </CCol>
+                   <CCol md={6}>
+  <CFormLabel>Opening Time</CFormLabel>
+  <CFormSelect
+    value={editableClinicData.openingTime || ''}
+    disabled={!isEditingAdditional}
+    onChange={(e) => {
+      setEditableClinicData({
+        ...editableClinicData,
+        openingTime: e.target.value,
+      });
+      setFormErrors((prev) => ({ ...prev, openingTime: '' }));
+    }}
+  >
+    <option value="">Select Opening Time</option>
+    {timings.length > 0 &&
+      timings.map((slot, idx) => (
+        <option key={idx} value={slot.openingTime}>
+          {slot.openingTime}
+        </option>
+      ))}
+  </CFormSelect>
+
+  {formErrors.openingTime && (
+    <div className="text-danger">{formErrors.openingTime}</div>
+  )}
+</CCol>
+
 
                     <CCol md={6}>
                       <CFormLabel>Closing Time</CFormLabel>
@@ -499,11 +521,11 @@ const ClinicDetails = () => {
                         }}
                       >
                         <option value="">Select Closing Time</option>
-                        {timeSlots.map((time) => (
-                          <option key={time} value={time}>
-                            {time}
-                          </option>
-                        ))}
+                    {timings.map((slot, idx) => (
+                      <option key={idx} value={slot.closingTime}>
+                        {slot.closingTime}
+                      </option>
+                    ))}
                       </CFormSelect>
                       {formErrors.closingTime && (
                         <div className="text-danger">{formErrors.closingTime}</div>
@@ -555,7 +577,7 @@ const ClinicDetails = () => {
                           setFormErrors((prev) => ({ ...prev, subscription: '' }))
                         }}
                       >
-                        <option value="">Select Subscription</option>
+                        <option value="">Select Subscription</option> 
                         <option value="Basic">Basic</option>
                         <option value="Standard">Standard</option>
                         <option value="Premium">Premium</option>

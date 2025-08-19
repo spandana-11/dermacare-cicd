@@ -5,7 +5,9 @@ import routes from '../routes'
 import Dashboard from '../views/dashboard/Dashboard'
 import { COLORS } from '../Themes'
 import PatientAppointmentDetails from './PatientAppointmnetDetails'
-
+import ReportDetails from './Reports/Reports'
+import CompletedAppointmentsView from './ComplatedAppointmnetView'
+import DoctorProfile from '../views/Profile/DoctorProfile'
 const AppContent = () => {
   return (
     <CContainer className="px-4" lg style={{ backgroundColor: COLORS.theme }}>
@@ -28,6 +30,9 @@ const AppContent = () => {
           <Route path="/" element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="/tab-content/:id" element={<PatientAppointmentDetails />} />
+          <Route path="/tab-completed-content/:id" element={<CompletedAppointmentsView />} />
+          <Route path="doctorprofile" element={<DoctorProfile />} />
+          {/* <Route path="/reportDetails/:id" element={<ReportDetails />} /> */}
 
           {/* Doctor-template opens with all tabs but History active */}
           <Route
@@ -39,15 +44,14 @@ const AppContent = () => {
                 tabs={[
                   'Symptoms',
                   'Tests',
-                  'Prescription',
+                  'Medication',
                   'Treatments',
                   'Follow-up',
-                  'Summary'
+                  'Prescription',
                 ]}
               />
             }
           />
-
 
           {/* Optional: Doctor-template Images direct */}
           <Route

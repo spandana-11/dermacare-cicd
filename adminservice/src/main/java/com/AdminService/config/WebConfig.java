@@ -14,12 +14,12 @@ public class WebConfig implements WebMvcConfigurer {
         String videoPath = Paths.get("videos").toAbsolutePath().toUri().toString();
         String imagePath = Paths.get("images").toAbsolutePath().toUri().toString();
 
-        registry.addResourceHandler("/derma-care/media/videos/")
+        registry.addResourceHandler("/derma-care/media/videos/**")
                 .addResourceLocations(videoPath)
                 .setCachePeriod(3600)
                 .resourceChain(true);
 
-        registry.addResourceHandler("/derma-care/media/images/")
+        registry.addResourceHandler("/derma-care/media/images/**")
                 .addResourceLocations(imagePath)
                 .setCachePeriod(3600)
                 .resourceChain(true);

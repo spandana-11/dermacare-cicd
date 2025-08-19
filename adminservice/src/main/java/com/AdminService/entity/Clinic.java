@@ -1,12 +1,9 @@
 package com.AdminService.entity;
-
 import java.util.List;
-
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.FieldType;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -93,9 +90,19 @@ public class Clinic {
 
     @Field(targetType = FieldType.BINARY)
     private List<byte[]> others;
+    
+    private int freeFollowUps;
+    
+    
+    private double latitude;
+    private double longitude;
+    private String walkthrough;
+    private int nabhScore;
+    private String branch;
 
     // Social Media Handles
     private String instagramHandle;
     private String twitterHandle;
     private String facebookHandle;
+    
 }

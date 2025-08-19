@@ -7,10 +7,11 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
+
 import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import com.AdminService.dto.CategoryMediaCarouselDTO;
+
 import com.AdminService.dto.ServiceMediaCarouselDTO;
 import com.AdminService.entity.ServiceMediaCarousel;
 import com.AdminService.repository.ServiceMediaCarousalRepository;
@@ -18,66 +19,75 @@ import com.AdminService.repository.ServiceMediaCarousalRepository;
 @Service
 public class ServiceMediaCarouselServiceImpl {
 
-    @Autowired
-    private ServiceMediaCarousalRepository mediaRepository;
+    private final ServiceMediaCarousalRepository mediaRepository;
 
-    private static final Pattern VIDEO_PATTERN = Pattern.compile(".*\\.(mp4|avi|mov|wmv|flv|mkv|webm|ogg|m4v)$", Pattern.CASE_INSENSITIVE);
-    private static final Pattern IMAGE_PATTERN = Pattern.compile(".*\\.(jpg|jpeg|png|gif|bmp|webp)$", Pattern.CASE_INSENSITIVE);
+    @Value("${app.video.folder}")
+    private String videoFolder;
 
-    private static final String VIDEO_FOLDER = "videos/";
-    private static final String IMAGE_FOLDER = "images/";
+    @Value("${app.video.base-url}")
+    private String videoBaseUrl;
 
-    private static final String VIDEO_BASE_URL = "http://13.202.16.119:8081/derma-care/media/videos/";
-    private static final String IMAGE_BASE_URL = "http://13.202.16.119:8081/derma-care/media/images/";
+    @Value("${app.image.folder}")
+    private String imageFolder;
 
-    public CategoryMediaCarouselDTO createMedia(ServiceMediaCarouselDTO mediaDTO) {
+    @Value("${app.image.base-url}")
+    private String imageBaseUrl;
+
+    private static final Pattern VIDEO_PATTERN = Pattern.compile(
+        ".*\\.(mp4|avi|mov|wmv|flv|mkv|webm|ogg|m4v)$",
+        Pattern.CASE_INSENSITIVE
+    );
+
+    public ServiceMediaCarouselServiceImpl(ServiceMediaCarousalRepository mediaRepository) {
+        this.mediaRepository = mediaRepository;
+    }
+
+    public ServiceMediaCarouselDTO createMedia(ServiceMediaCarouselDTO mediaDTO) {
         ServiceMediaCarousel media = new ServiceMediaCarousel();
         String mediaData = mediaDTO.getMediaUrlOrImage();
 
-        if (isVideoUrl(mediaData) || isImageUrl(mediaData)) {
-            media.setMediaUrlOrImage(mediaData); // direct URL
+        if (isVideoUrl(mediaData)) {
+            media.setMediaUrlOrImage(mediaData);
         } else if (isBase64Video(mediaData)) {
-            String url = saveBase64Video(mediaData);
-            media.setMediaUrlOrImage(url);
+            media.setMediaUrlOrImage(saveBase64Video(mediaData));
         } else if (isBase64Image(mediaData)) {
-            String url = saveBase64Image(mediaData);
-            media.setMediaUrlOrImage(url);
+            media.setMediaUrlOrImage(saveBase64Image(mediaData));
         } else {
             media.setMediaUrlOrImage(mediaData);
         }
 
-        media = mediaRepository.save(media);
-
-        return new CategoryMediaCarouselDTO(
-            media.getCarouselId().toHexString(),
-            media.getMediaUrlOrImage()
+        ServiceMediaCarousel saved = mediaRepository.save(media);
+        return new ServiceMediaCarouselDTO(
+            saved.getCarouselId().toHexString(),
+            saved.getMediaUrlOrImage()
         );
     }
 
-    public Iterable<CategoryMediaCarouselDTO> getAllMedia() {
-        List<CategoryMediaCarouselDTO> mediaDTOs = new ArrayList<>();
+    public Iterable<ServiceMediaCarouselDTO> getAllMedia() {
+        List<ServiceMediaCarouselDTO> list = new ArrayList<>();
         for (ServiceMediaCarousel media : mediaRepository.findAll()) {
-            mediaDTOs.add(new CategoryMediaCarouselDTO(
+            list.add(new ServiceMediaCarouselDTO(
                 media.getCarouselId().toHexString(),
                 media.getMediaUrlOrImage()
             ));
         }
-        return mediaDTOs;
+        return list;
     }
 
-    public Optional<CategoryMediaCarouselDTO> getMediaById(String carouselId) {
-        return mediaRepository.findById(new ObjectId(carouselId))
-            .map(media -> new CategoryMediaCarouselDTO(
+    public Optional<ServiceMediaCarouselDTO> getMediaById(String carouselId) {
+        return mediaRepository.findById(new ObjectId(carouselId)).map(
+            media -> new ServiceMediaCarouselDTO(
                 media.getCarouselId().toHexString(),
                 media.getMediaUrlOrImage()
-            ));
+            )
+        );
     }
 
-    public Optional<CategoryMediaCarouselDTO> updateMediaOptional(String carouselId, ServiceMediaCarouselDTO mediaDTO) {
+    public Optional<ServiceMediaCarouselDTO> updateMediaOptional(String carouselId, ServiceMediaCarouselDTO mediaDTO) {
         return mediaRepository.findById(new ObjectId(carouselId)).map(media -> {
             String mediaData = mediaDTO.getMediaUrlOrImage();
 
-            if (isVideoUrl(mediaData) || isImageUrl(mediaData)) {
+            if (isVideoUrl(mediaData)) {
                 media.setMediaUrlOrImage(mediaData);
             } else if (isBase64Video(mediaData)) {
                 media.setMediaUrlOrImage(saveBase64Video(mediaData));
@@ -88,8 +98,7 @@ public class ServiceMediaCarouselServiceImpl {
             }
 
             ServiceMediaCarousel updated = mediaRepository.save(media);
-
-            return new CategoryMediaCarouselDTO(
+            return new ServiceMediaCarouselDTO(
                 updated.getCarouselId().toHexString(),
                 updated.getMediaUrlOrImage()
             );
@@ -105,74 +114,79 @@ public class ServiceMediaCarouselServiceImpl {
         return "Data not found";
     }
 
-    // ----------------------------------
-    // 🔍 Helpers
-    // ----------------------------------
-
-    private boolean isBase64Image(String data) {
-        return data != null && data.startsWith("data:image") && data.contains("base64,");
-    }
-
-    private boolean isBase64Video(String data) {
-        return data != null && data.startsWith("data:video") && data.contains("base64,");
-    }
-
-    public boolean isVideoUrl(String url) {
+    private boolean isVideoUrl(String url) {
         return url != null && VIDEO_PATTERN.matcher(url).matches();
     }
 
-    public boolean isImageUrl(String url) {
-        return url != null && IMAGE_PATTERN.matcher(url).matches();
+    private boolean isBase64Video(String data) {
+        if (data == null) return false;
+        if (data.startsWith("data:video") && data.contains("base64,")) return true;
+
+        try {
+            byte[] bytes = Base64.getDecoder().decode(data.replaceAll("\\s+", ""));
+            if (bytes.length < 12) return false;
+            String header = new String(bytes, 4, 4);
+            return "ftyp".equals(header);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
-    // ----------------------------------
-    // 💾 Save Base64 as Files
-    // ----------------------------------
+    private boolean isBase64Image(String data) {
+        if (data == null) return false;
+        if (data.startsWith("data:image") && data.contains("base64,")) return true;
 
-    private String saveBase64Image(String base64Data) {
         try {
-            String extension = "jpg";
-            if (base64Data.contains("image/")) {
-                extension = base64Data.substring(base64Data.indexOf("image/") + 6, base64Data.indexOf(";"));
-            }
-
-            String cleaned = base64Data.substring(base64Data.indexOf(",") + 1).replaceAll("\\s+", "");
-            byte[] imageBytes = Base64.getDecoder().decode(cleaned);
-            String fileName = "image_" + System.currentTimeMillis() + "." + extension;
-
-            File dir = new File(IMAGE_FOLDER);
-            if (!dir.exists()) dir.mkdirs();
-
-            File file = new File(dir, fileName);
-            try (FileOutputStream fos = new FileOutputStream(file)) {
-                fos.write(imageBytes);
-            }
-
-            return IMAGE_BASE_URL + fileName;
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to save base64 image: " + e.getMessage(), e);
+            Base64.getDecoder().decode(data.replaceAll("\\s+", ""));
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
         }
     }
 
     private String saveBase64Video(String base64Data) {
         try {
-            String cleaned = base64Data.substring(base64Data.indexOf(",") + 1).replaceAll("\\s+", "");
-            byte[] videoBytes = Base64.getDecoder().decode(cleaned);
+            if (base64Data.contains(",")) {
+                base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
+            }
+            base64Data = base64Data.replaceAll("\\s+", "");
+            byte[] videoBytes = Base64.getDecoder().decode(base64Data);
+
             String fileName = "video_" + System.currentTimeMillis() + ".mp4";
+            File directory = new File(videoFolder);
+            if (!directory.exists()) directory.mkdirs();
 
-            File dir = new File(VIDEO_FOLDER);
-            if (!dir.exists()) dir.mkdirs();
-
-            File file = new File(dir, fileName);
+            File file = new File(directory, fileName);
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 fos.write(videoBytes);
             }
 
-            return VIDEO_BASE_URL + fileName;
-            
+            return videoBaseUrl + fileName;
         } catch (Exception e) {
-        	
             throw new RuntimeException("Failed to save base64 video: " + e.getMessage(), e);
+        }
+    }
+
+    private String saveBase64Image(String base64Data) {
+        try {
+            if (base64Data.contains(",")) {
+                base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
+            }
+            base64Data = base64Data.replaceAll("\\s+", "");
+            byte[] imageBytes = Base64.getDecoder().decode(base64Data);
+
+            String fileName = "image_" + System.currentTimeMillis() + ".png";
+            File directory = new File(imageFolder);
+            if (!directory.exists()) directory.mkdirs();
+
+            File file = new File(directory, fileName);
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                fos.write(imageBytes);
+            }
+
+            return imageBaseUrl + fileName;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save base64 image: " + e.getMessage(), e);
         }
     }
 }

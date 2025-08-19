@@ -2,8 +2,10 @@ package com.clinicadmin.utils;
 
 import org.bson.types.ObjectId;
 
+import com.clinicadmin.dto.ConsultationTypeDTO;
 import com.clinicadmin.dto.DoctorFeeDTO;
 import com.clinicadmin.dto.DoctorsDTO;
+import com.clinicadmin.entity.ConsultationType;
 import com.clinicadmin.entity.DoctorFee;
 import com.clinicadmin.entity.Doctors;
 
@@ -39,12 +41,22 @@ public class DoctorMapper {
 		doctor.setDoctorAvailabilityStatus(dto.isDoctorAvailabilityStatus());
 		doctor.setRecommendation(dto.isRecommendation());
 		doctor.setDoctorSignature(Base64CompressionUtil.compressBase64(dto.getDoctorSignature()));
+		doctor.setAssociatedWithIADVC(dto.isAssociatedWithIADVC());
 		
 		if (dto.getDoctorFees() != null) {
 			doctor.setDoctorFees(mapDoctorFeeDTOtoEntity(dto.getDoctorFees()));
 		}
+		if (dto.getConsultation() != null) {
+			ConsultationType consultation = new ConsultationType();
+			consultation.setServiceAndTreatments(dto.getConsultation().getServiceAndTreatments());
+			consultation.setInClinic(dto.getConsultation().getInClinic());
+			consultation.setVideoOrOnline(dto.getConsultation().getVideoOrOnline());
+			doctor.setConsultation(consultation);
+		}
+
 		return doctor;
 	}
+	
 
 	
 	public static DoctorsDTO mapDoctorEntityToDoctorDTO(Doctors doctor) {
@@ -78,11 +90,20 @@ public class DoctorMapper {
 		dto.setDoctorAvailabilityStatus(doctor.isDoctorAvailabilityStatus());
 		dto.setRecommendation(doctor.isRecommendation());
 		dto.setDoctorSignature(Base64CompressionUtil.decompressBase64(doctor.getDoctorSignature()));
+		dto.setAssociatedWithIADVC(doctor.isAssociatedWithIADVC());
 		
 		// Map DoctorFee
 		if (doctor.getDoctorFees() != null) {
 			dto.setDoctorFees(mapDoctorFeeEntityToDTO(doctor.getDoctorFees()));
 		}
+		if (doctor.getConsultation() != null) {
+			ConsultationTypeDTO consultationDTO = new ConsultationTypeDTO();
+			consultationDTO.setServiceAndTreatments(doctor.getConsultation().getServiceAndTreatments());
+			consultationDTO.setInClinic(doctor.getConsultation().getInClinic());
+			consultationDTO.setVideoOrOnline(doctor.getConsultation().getVideoOrOnline());
+			dto.setConsultation(consultationDTO);
+		}
+
 		return dto;
 	}
 

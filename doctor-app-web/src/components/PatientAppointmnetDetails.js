@@ -21,12 +21,13 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
   const TABS = tabs || [
     'Symptoms',
     'Tests',
-    'Prescription',
+    'Medication',
     'Treatments',
     'Follow-up',
-    'Summary',
+    'Prescription',
     'Images',
     'History',
+    'Reports',
   ]
 
   const [activeTab, setActiveTab] = useState(defaultTab || TABS[0])
@@ -35,7 +36,7 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
   // Fetch patient if needed
   useEffect(() => {
     if (!patient && id) {
-      (async () => {
+      ;(async () => {
         try {
           const res = await fetch(`/api/patients/${id}`)
           if (!res.ok) throw new Error('Failed to fetch patient')
@@ -64,7 +65,7 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
       const i = TABS.indexOf(current)
       if (i > -1 && i < TABS.length - 1) setActiveTab(TABS[i + 1])
     },
-    [TABS]
+    [TABS],
   )
 
   const onNextMap = {
@@ -78,7 +79,7 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
     },
     Prescription: (data) => {
       setFormData((prev) => ({ ...prev, prescription: { ...prev.prescription, ...data } }))
-      goToNext('Prescription')
+      goToNext('Medication')
     },
     Treatments: (data) => {
       setFormData((prev) => ({ ...prev, treatments: { ...prev.treatments, ...data } }))
@@ -90,7 +91,7 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
     },
     Summary: async (data) => {
       const payload = { ...formData, summary: { ...formData.summary, ...data } }
-      goToNext('Summary')
+      goToNext('Prescription')
       console.log('FINAL SUBMIT (Summary):', payload)
     },
     Images: (data) => {
@@ -111,7 +112,7 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
       Treatments: formData.treatments?.selectedTreatments?.length || 0,
       Images: formData.ClinicImages?.items?.length || 0,
     }),
-    [formData]
+    [formData],
   )
 
   const savePrescriptionTemplate = async () => {
@@ -131,9 +132,15 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
         treatments: formData.treatments,
         followUp: formData.followUp,
       }
-      if (template.symptoms != '') {
+      console.log('✅ Saved template response:', template)
+      if (
+        template.title !== '' &&
+        template.title !== 'NA' &&
+        template.title !== undefined &&
+        template.title !== null
+      ) {
         const res = await SavePatientPrescription(template)
-        console.log('✅ Saved template response:', res)
+        console.log('✅ Saved template response:', template.title)
 
         if (res.status == 200) {
           success(`${res.message || 'Prescription Template saved successfully to server!'}`, {
@@ -170,11 +177,10 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
       <div className="w-100" style={{ position: 'sticky', top: 110, zIndex: 10 }}>
         <CContainer fluid className="p-0">
           <CCard style={{ border: 0, borderRadius: 0, backgroundColor: `${COLORS.theme}` }}>
-            <CCardBody className="py-1">
+            <CCardBody className="p-0 pt-3">
               <CNav variant="tabs" role="tablist" style={{ whiteSpace: 'nowrap' }}>
                 {TABS.map((t) => {
                   const active = t === activeTab
-                  const count = counts?.[t]
                   return (
                     <CNavItem key={t}>
                       <CNavLink
@@ -183,26 +189,27 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
                         aria-selected={active}
                         onClick={() => setActiveTab(t)}
                         className="d-inline-flex align-items-center position-relative"
-                        style={{ padding: '.5rem .850rem' ,cursor:"pointer"}}
+                        style={{
+                          padding: '.5rem .850rem',
+                          cursor: 'pointer',
+                          // backgroundColor: active ? '#1976d2' : 'transparent',
+                          borderRadius: '6px 6px 0 0',
+                          transition: 'all 0.3s ease',
+                        }}
                       >
-                        <span style={{ fontSize: '17px', color: COLORS.primary, fontWeight: '600' }}>
+                        <span
+                          style={{
+                            fontSize: '16px',
+                            color: active ? COLORS.primary : COLORS.gray,
+                            fontWeight: active ? '700' : '500',
+                            backgroundColor:"transparent"
+                          }}
+                        >
                           {t}
                         </span>
-                        {/* {count > 0 && (
-                          <span
-                            style={{
-                              background: COLORS.primary,
-                              color: '#fff',
-                              borderRadius: '50%',
-                              padding: '0 6px',
-                              fontSize: '12px',
-                              marginLeft: 6,
-                            }}
-                          >
-                            {count}
-                          </span>
-                        )} */}
-                        {active && (
+
+                        {/* Active underline effect */}
+                        {/* {active && (
                           <span
                             style={{
                               position: 'absolute',
@@ -211,10 +218,10 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
                               bottom: 0,
                               height: 3,
                               borderRadius: 2,
-                              background: 'linear-gradient(90deg, #0d6efd, #42a5f5)',
+                              background: 'linear-gradient(90deg, #ffffffff, #ffffffff)',
                             }}
                           />
-                        )}
+                        )} */}
                       </CNavLink>
                     </CNavItem>
                   )
@@ -236,6 +243,7 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
           patientData={patient}
           setFormData={setFormData}
           fromDoctorTemplate={fromDoctorTemplate} // ✅ now correctly passed
+          setImage={true}
         />
       </div>
 
@@ -243,6 +251,5 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
     </div>
   )
 }
-
 
 export default PatientAppointmentDetails

@@ -51,7 +51,7 @@ const appointmentManagement = () => {
 
       if (!hospitalId) {
         setBookings([])
-        setLoading(false) // ✅ stop loading even if no hospitalId
+        setLoading(false) //stop loading even if no hospitalId
         return
       }
 
@@ -77,10 +77,10 @@ const appointmentManagement = () => {
     switch (status?.toLowerCase()) {
       case 'completed':
         return 'success'
-      case 'Rejected':
-        return 'danger'
-      case 'pending':
-        return 'warning'
+      // case 'Rejected':
+      //   return 'danger'
+      // case 'pending':
+      //   return 'warning'
       case 'confirmed':
         return 'info'
       case 'in progress':
@@ -219,12 +219,12 @@ const appointmentManagement = () => {
 
         <div className="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div className="d-flex gap-2 flex-wrap">
-            <CFormCheck
+            {/* <CFormCheck
               label="Pending"
               value="Pending"
               onChange={handleStatusChange}
               checked={statusFilters.includes('Pending')}
-            />
+            /> */}
             <CFormCheck
               label="In-Progress"
               value="In-Progress"
@@ -244,12 +244,12 @@ const appointmentManagement = () => {
               onChange={handleStatusChange}
               checked={statusFilters.includes('Confirmed')}
             />
-            <CFormCheck
+            {/* <CFormCheck
               label="Rejected"
               value="Rejected"
               onChange={handleStatusChange}
               checked={statusFilters.includes('Rejected')}
-            />
+            /> */}
           </div>
           <CButton
             color="secondary"

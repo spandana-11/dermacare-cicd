@@ -49,15 +49,33 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	private NotificationFeign notificationFeign;
 
 	@Override
-	public BookingResponse addService(BookingRequset request) {
+	public ResponseEntity<?> addService(BookingRequset request) {
+		ResponseStructure<BookingResponse> response = new ResponseStructure<BookingResponse>();
 		Booking entity = toEntity(request);
 		if(request.getVisitType().equalsIgnoreCase("follow-up")){
 		if(!repository.findByMobileNumberAndPatientId(request.getMobileNumber(),request.getPatientId()).isEmpty()){
 		for(Booking b : repository.findByMobileNumberAndPatientId(request.getMobileNumber(),request.getPatientId())){
-			if(b.getStatus().equalsIgnoreCase("In-Progress")){
+			if(b.getStatus().equalsIgnoreCase("In-Progress") && b.getBookingId().equals(request.getBookingId())){
+			DateTimeFormatter date = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+			LocalDate previousServiceDate = LocalDate.parse(b.getServiceDate(), date);
+			LocalDate plusDays = previousServiceDate.plusDays(Integer.parseInt(Character.toString(b.getConsultationExpiration().charAt(0)) + 
+			Character.toString(b.getConsultationExpiration().charAt(1))));
+			//System.out.println(plusDays);
+			LocalDate currentAppoitnmentServiceDate = LocalDate.parse(request.getServiceDate(), date);
+			//System.out.println(currentAppoitnmentServiceDate);
+			boolean isEligible = false;
+			if(!currentAppoitnmentServiceDate.isBefore(previousServiceDate) && !currentAppoitnmentServiceDate.isAfter(plusDays) && b.getFreeFollowUpsLeft() < b.getFreeFollowUps() 
+			&& b.getFreeFollowUpsLeft() != 0){
+				isEligible = true;}	
+			if(isEligible){
 				b.setStatus("Confirmed");
 				repository.save(b);
+				response = ResponseStructure.buildResponse(null, "Service Booked Sucessfully",
+				HttpStatus.CREATED, HttpStatus.CREATED.value());
 				break;
+			}else{
+			response = ResponseStructure.buildResponse(null, "Unable to proceed with booking. Please check the service date and your available free follow-ups.",
+			HttpStatus.PAYMENT_REQUIRED, HttpStatus.PAYMENT_REQUIRED.value());}	
 		}}}}else{	
 		entity.setStatus("Confirmed");
 		Booking res = repository.save(entity);
@@ -68,10 +86,12 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			kafkaProducer.publishBooking(res);
 			}catch (Exception e) {
 				throw new RuntimeException("Unable to book service");
-			}}
-		return toResponse(entity);
+			}
+		response = ResponseStructure.buildResponse(toResponse(entity), "Service Booked Sucessfully",
+				HttpStatus.CREATED, HttpStatus.CREATED.value());}
+		return ResponseEntity.status(response.getStatusCode()).body(response);
 	}
-
+		
 	
 	private Booking toEntity(BookingRequset request) {
 		Booking entity = new ObjectMapper().convertValue(request,Booking.class );
@@ -80,11 +100,13 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy hh:mm a");
 	    String formattedTime = istTime.format(formatter);
 		entity.setBookedAt(formattedTime);
+		entity.setFreeFollowUpsLeft(request.getFreeFollowUps());
+		if(request.getConsultationType() != null){
 		if(request.getConsultationType().equalsIgnoreCase("video consultation") || request.getConsultationType().equalsIgnoreCase("online consultation") ) {
 			entity.setChannelId(randomNumber());
 		}else {
 			entity.setChannelId(null) ;
-		}
+		}}
 		if(request.getRelation() != null) {
 		List<Booking> existingBooking = repository.findByRelationIgnoreCaseAndMobileNumber(request.getRelation(),request.getMobileNumber());
 		if(existingBooking != null && !existingBooking.isEmpty()) {
@@ -180,7 +202,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			for(Booking b : existingBooking) {
 			DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 			String currentDate = LocalDate.now().format(dateFormatter);	
-			if(b.getServiceDate().equals(currentDate) && !b.getStatus().equalsIgnoreCase("Completed") && !b.getStatus().equalsIgnoreCase("Pending")){
+			if(b.getServiceDate().equals(currentDate) && !b.getStatus().equalsIgnoreCase("Completed") && !b.getStatus().equalsIgnoreCase("Pending") 
+			&& !b.getStatus().equalsIgnoreCase("In-Progress")){
 			respnse.add(toResponse(b));}}
 			if(respnse != null && !respnse.isEmpty()){
 			res.setStatusCode(200);
@@ -451,6 +474,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		if (bookingResponse.getSubServiceName() != null) entity.setSubServiceName(bookingResponse.getSubServiceName());
 		if (bookingResponse.getReasonForCancel() != null) entity.setReasonForCancel(bookingResponse.getReasonForCancel());
 		if (bookingResponse.getTotalFee() != 0) entity.setTotalFee(bookingResponse.getTotalFee());
+		if (bookingResponse.getFreeFollowUpsLeft() != null) entity.setFreeFollowUpsLeft(bookingResponse.getFreeFollowUpsLeft());
+		
 		Booking e = repository.save(entity);			
 		if(e != null){	
 		return new ResponseEntity<>(ResponseStructure.buildResponse(e,
@@ -496,10 +521,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                    NotificationDTO n = notificationFeign.getNotificationByBookingId(b.getBookingId());
 	                    n.getData().setStatus("Completed");
 	                    notificationFeign.updateNotification(n);
-
 	                    //System.out.println("Updated to Completed for bookingId: " + b.getBookingId());
-	                }}}}catch (Exception e) {}
-	    }
+	                    }}}}catch (Exception e) {}}
 
 	
 	
@@ -530,9 +553,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                    n.getData().setStatus("Completed");
 	                    notificationFeign.updateNotification(n);
 
-	                    System.out.println("Updated to Completed for bookingId: " + b.getBookingId());
-	                }}}}catch (Exception e) {}
-	       }
+	                    //System.out.println("Updated to Completed for bookingId: " + b.getBookingId());
+	                }}}}catch (Exception e) {}}
 
 	
 	
@@ -611,16 +633,15 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                .build();}}	    
 
 
-		public ResponseEntity<?> getInProgressAppointments(String number,String patientId){
+		public ResponseEntity<?> getInProgressAppointments(String number){
 			ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
 			   try{
-				List<Booking> booked=repository.findByMobileNumberAndPatientId(number,patientId);
+				List<Booking> booked=repository.findByMobileNumber(number);
 				List<BookingResponse> response=new ArrayList<>();
 				if(booked!=null && !booked.isEmpty()){
 					for(Booking b:booked){
 						if(b.getStatus().equalsIgnoreCase("In-Progress")){
-							response.add(toResponse(b));
-						}}
+							response.add(toResponse(b));}}
 					if(response!=null && !response.isEmpty()){
 						res.setStatusCode(200);
 						res.setHttpStatus(HttpStatus.OK);
@@ -630,8 +651,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 						res.setStatusCode(200);
 						res.setHttpStatus(HttpStatus.OK);
 						res.setData(response);
-						res.setMessage("In-Progress appointments not found");
-					}}}
+						res.setMessage("In-Progress appointments not found");}}}
 			catch(Exception e){
 				res.setStatusCode(500);
 				res.setMessage(e.getMessage());}

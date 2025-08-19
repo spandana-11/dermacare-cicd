@@ -29,26 +29,32 @@ import {
 const TreatmentsManagement = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [treatment, setTreatment] = useState([])
-
   const [filteredData, setFilteredData] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
   const [modalVisible, setModalVisible] = useState(false)
   const [viewTreatment, setViewTreatment] = useState(null)
   const [editTreatmentMode, setEditTreatmentMode] = useState(false)
   const [treatmentToEdit, setTreatmentToEdit] = useState(null)
   const [errors, setErrors] = useState({})
+
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [treatmentIdToDelete, setTreatmentIdToDelete] = useState(null)
-  const [newTreatment, setNewTreatment] = useState({ treatmentName: '', hospitalId: '' })
   const [hospitalIdToDelete, setHospitalIdToDelete] = useState(null)
 
+  const [newTreatment, setNewTreatment] = useState({ treatmentName: '' })
+
+  const hospitalId = localStorage.getItem('HospitalId')
+
+  // Normalize API data to have consistent IDs
   const normalizeTreatments = (data) =>
     data.map((item) => ({
       ...item,
-      id: item.id || item._id, // fallback
+      id: item.id || item._id,
     }))
 
+  // Fetch data
   const fetchData = async () => {
     setLoading(true)
     try {
@@ -61,6 +67,24 @@ const TreatmentsManagement = () => {
     }
   }
 
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  // Search filter
+  useEffect(() => {
+    const trimmedQuery = searchQuery.toLowerCase().trim()
+    if (!trimmedQuery) {
+      setFilteredData([])
+      return
+    }
+    const filtered = treatment.filter((t) =>
+      t.treatmentName?.toLowerCase().includes(trimmedQuery),
+    )
+    setFilteredData(filtered)
+  }, [searchQuery, treatment])
+
+  // Delete confirm
   const handleConfirmDelete = async () => {
     try {
       await deleteTreatmentData(treatmentIdToDelete, hospitalIdToDelete)
@@ -72,22 +96,6 @@ const TreatmentsManagement = () => {
     }
     setIsModalVisible(false)
   }
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
-
-    setNewTreatment((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-
-    // Clear the error for this field only if it previously existed
-    if (errors[name]) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        [name]: '',
-      }))
-    }
-  }
 
   const handleCancelDelete = () => {
     setTreatmentIdToDelete(null)
@@ -95,43 +103,24 @@ const TreatmentsManagement = () => {
     setIsModalVisible(false)
   }
 
-  useEffect(() => {
-    fetchData()
-  }, [])
-
-  useEffect(() => {
-    const trimmedQuery = searchQuery.toLowerCase().trim()
-    if (!trimmedQuery) {
-      setFilteredData([])
+  // Add treatment
+  const handleAddTreatment = async () => {
+    if (!newTreatment.treatmentName.trim()) {
+      setErrors({ treatmentName: 'Treatment name is required.' })
       return
     }
-    const filtered = treatment.filter((t) => t.treatmentName?.toLowerCase().includes(trimmedQuery))
-    setFilteredData(filtered)
-  }, [searchQuery, treatment])
 
-  const validateForm = () => {
-    const newErrors = {}
-    if (!newTreatment.treatmentName.trim()) newErrors.treatmentName = 'Treatment name is required.'
-    if (!newTreatment.hospitalId.trim()) newErrors.hospitalId = 'Hospital ID is required.'
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const isValidObjectId = (id) => /^[a-f\d]{24}$/i.test(id)
-
-  const handleAddTreatment = async () => {
-    if (!validateForm()) return
     try {
       const payload = {
         treatmentName: newTreatment.treatmentName,
-        hospitalId: newTreatment.hospitalId,
+        hospitalId: hospitalId,
       }
 
       await postTreatmentData(payload)
       toast.success('Treatment added successfully!')
       fetchData()
       setModalVisible(false)
-      setNewTreatment({ treatmentName: '', hospitalId: '' })
+      setNewTreatment({ treatmentName: '' })
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
@@ -141,9 +130,7 @@ const TreatmentsManagement = () => {
       if (statusCode === 409 || errorMessage.toLowerCase().includes('duplicate')) {
         toast.error(
           `Error: Duplicate treatment name - ${newTreatment.treatmentName} already exists!`,
-          {
-            position: 'top-right',
-          },
+          { position: 'top-right' },
         )
       } else {
         toast.error(`Error adding treatment: ${errorMessage}`, { position: 'top-right' })
@@ -151,47 +138,44 @@ const TreatmentsManagement = () => {
     }
   }
 
+  // Edit treatment
   const handleTreatmentEdit = (treatment) => {
     setTreatmentToEdit(treatment)
     setEditTreatmentMode(true)
   }
 
   const handleUpdateTreatment = async () => {
-  const { id: treatmentId, hospitalId, treatmentName } = treatmentToEdit
+    const { id: treatmentId, hospitalId, treatmentName } = treatmentToEdit
 
-  if (!treatmentId || !/^[a-f\d]{24}$/i.test(treatmentId)) {
-    toast.error('Invalid treatment ID')
-    return
+    if (!treatmentName.trim()) {
+      toast.error('Treatment name is required.')
+      return
+    }
+
+    try {
+      await updateTreatmentData(
+        { treatmentName: treatmentName.trim(), hospitalId: hospitalId.trim() },
+        treatmentId,
+        hospitalId,
+      )
+
+      toast.success('Treatment updated successfully!')
+      setEditTreatmentMode(false)
+      fetchData()
+    } catch (error) {
+      console.error('Update error:', error)
+      toast.error('Failed to update treatment.')
+    }
   }
 
-  if (!treatmentName.trim() || !hospitalId.trim()) {
-    toast.error('Both fields are required')
-    return
-  }
-
-  try {
-    await updateTreatmentData(
-      { treatmentName: treatmentName.trim(), hospitalId: hospitalId.trim() },
-      treatmentId,
-      hospitalId
-    )
-
-    toast.success('Treatment updated successfully!')
-    setEditTreatmentMode(false)
-    fetchData()
-  } catch (error) {
-    console.error('Update error:', error)
-    toast.error('Failed to update treatment.')
-  }
-}
-
-
+  // Delete handler
   const handleTreatmentDelete = (treatment) => {
     setTreatmentIdToDelete(treatment.treatmentId || treatment.id || treatment._id)
     setHospitalIdToDelete(treatment.hospitalId)
     setIsModalVisible(true)
   }
 
+  // Table columns
   const columns = [
     {
       name: 'S.No',
@@ -211,10 +195,7 @@ const TreatmentsManagement = () => {
           <div onClick={() => setViewTreatment(row)} style={{ color: 'green', cursor: 'pointer' }}>
             View
           </div>
-          <div
-            onClick={() => handleTreatmentEdit(row)}
-            style={{ color: 'blue', cursor: 'pointer' }}
-          >
+          <div onClick={() => handleTreatmentEdit(row)} style={{ color: 'blue', cursor: 'pointer' }}>
             Edit
           </div>
           <div
@@ -272,7 +253,7 @@ const TreatmentsManagement = () => {
       </CForm>
 
       {viewTreatment && (
-        <CModal visible={!!viewTreatment} onClose={() => setViewTreatment(null)}>
+        <CModal visible={!!viewTreatment} onClose={() => setViewTreatment(null)} backdrop="static">
           <CModalHeader>
             <CModalTitle>Treatment Details</CModalTitle>
           </CModalHeader>
@@ -283,16 +264,17 @@ const TreatmentsManagement = () => {
               </CCol>
               <CCol sm={8}>{viewTreatment.treatmentName}</CCol>
             </CRow>
-            <CRow className="mb-3">
+            {/* <CRow className="mb-3">
               <CCol sm={4}>
                 <strong>Hospital ID:</strong>
               </CCol>
               <CCol sm={8}>{viewTreatment.hospitalId}</CCol>
-            </CRow>
+            </CRow> */}
           </CModalBody>
         </CModal>
       )}
 
+      {/* Add Modal */}
       <CModal visible={modalVisible} onClose={() => setModalVisible(false)} backdrop="static">
         <CModalHeader>
           <CModalTitle>Add New Treatment</CModalTitle>
@@ -309,8 +291,6 @@ const TreatmentsManagement = () => {
               onChange={(e) => {
                 const value = e.target.value
                 setNewTreatment({ ...newTreatment, treatmentName: value })
-
-                // Clear error for this field as the user types
                 if (errors.treatmentName) {
                   setErrors((prev) => ({ ...prev, treatmentName: '' }))
                 }
@@ -321,35 +301,6 @@ const TreatmentsManagement = () => {
             {errors.treatmentName && (
               <div className="invalid-feedback" style={{ color: 'red' }}>
                 {errors.treatmentName}
-              </div>
-            )}
-            <h6 className="mt-3">
-              Hospital ID <span style={{ color: 'red' }}>*</span>
-            </h6>
-            <CFormInput
-              type="text"
-              name="hospitalId"
-              value={newTreatment.hospitalId}
-              //               onChange={(e) => setNewTreatment({ ...newTreatment, hospitalId: e.target.value })}
-              //             />
-              //             {errors.hospitalId && (
-              //   <div className="text-danger">{errors.hospitalId}</div>
-              // )}
-              onChange={(e) => {
-                const value = e.target.value
-                setNewTreatment({ ...newTreatment, hospitalId: value })
-
-                // Clear error for this field as the user types
-                if (errors.hospitalId) {
-                  setErrors((prev) => ({ ...prev, hospitalId: '' }))
-                }
-              }}
-              placeholder="Enter Hospital Id"
-              className={errors.hospitalId ? 'is-invalid' : ''}
-            />
-            {errors.hospitalId && (
-              <div className="invalid-feedback" style={{ color: 'red' }}>
-                {errors.hospitalId}
               </div>
             )}
           </CForm>
@@ -364,11 +315,8 @@ const TreatmentsManagement = () => {
         </CModalFooter>
       </CModal>
 
-      <CModal
-        visible={editTreatmentMode}
-        onClose={() => setEditTreatmentMode(false)}
-        backdrop="static"
-      >
+      {/* Edit Modal */}
+      <CModal visible={editTreatmentMode} onClose={() => setEditTreatmentMode(false)} backdrop="static">
         <CModalHeader>
           <CModalTitle>Edit Treatment</CModalTitle>
         </CModalHeader>
@@ -380,14 +328,6 @@ const TreatmentsManagement = () => {
               value={treatmentToEdit?.treatmentName || ''}
               onChange={(e) =>
                 setTreatmentToEdit({ ...treatmentToEdit, treatmentName: e.target.value })
-              }
-            />
-            <h6 className="mt-3">Hospital ID</h6>
-            <CFormInput
-              type="text"
-              value={treatmentToEdit?.hospitalId || ''}
-              onChange={(e) =>
-                setTreatmentToEdit({ ...treatmentToEdit, hospitalId: e.target.value })
               }
             />
           </CForm>
@@ -402,6 +342,7 @@ const TreatmentsManagement = () => {
         </CModalFooter>
       </CModal>
 
+      {/* Delete Confirmation */}
       <ConfirmationModal
         isVisible={isModalVisible}
         message="Are you sure you want to delete this treatment?"
@@ -423,5 +364,4 @@ const TreatmentsManagement = () => {
     </div>
   )
 }
-
 export default TreatmentsManagement

@@ -683,7 +683,7 @@ public Response getDoctorsSlots(String hospitalId,String doctorId) {
 	    			response.setData(res.getBody());}  
 	    		}catch(FeignException e) {
 	    		response.setStatus(e.status());
-	    		response.setMessage(e.getMessage());
+	    		response.setMessage(ExtractFeignMessage.clearMessage(e));
 	    		response.setSuccess(false);	
 	    	}
 	    	return response;
@@ -1079,6 +1079,7 @@ public Response getSubServiceInfoBySubServiceId(String subServiceId) throws Json
 	Response responseObj = new Response();
 	try {
 		ResponseEntity<ResponseStructure<List<SubServicesDto>>>  res = categoryServicesFeign.getAllSubServices();
+		System.out.println(res);
 		List<SubServicesDetailsDto> hospitalAndSubServiceInfo = new ArrayList<>();
 		if(res.getBody().getData() != null && !res.getBody().getData().isEmpty()) {
 			for(SubServicesDto subsrvice:res.getBody().getData()) {
@@ -1101,7 +1102,7 @@ public Response getSubServiceInfoBySubServiceId(String subServiceId) throws Json
 			 }else {
 				 responseObj.setMessage("SubServices Not Found ");
 				 responseObj.setStatus(200);
-			 }}}else {
+			 }}}else{
 				 responseObj.setMessage("No SubService Found ");
 				 responseObj.setStatus(200);}
 	    }catch(FeignException e) {
@@ -1128,9 +1129,9 @@ public ResponseEntity<ResBody<List<NotificationToCustomer>>> notificationToCusto
 }
 
 
-public ResponseEntity<?> getInProgressAppointments( String mnumber,String patientId){
+public ResponseEntity<?> getInProgressAppointments( String mnumber){
 try {		
-	return bookingFeign.inProgressAppointments(mnumber, patientId);		
+	return bookingFeign.inProgressAppointments(mnumber);		
 }catch(FeignException e) {		
 	 ResBody<List<NotificationToCustomer>>  res = new  ResBody<List<NotificationToCustomer>>(ExtractFeignMessage.clearMessage(e),e.status(),null);		
 	return ResponseEntity.status(e.status()).body(res);		

@@ -245,12 +245,12 @@ const appointmentManagement = () => {
               gridRow: '1 / 2',
             }}
           >
-            <CFormCheck
+            {/* <CFormCheck
               label="Pending"
               value="Pending"
               onChange={handleStatusChange}
               checked={statusFilters.includes('Pending')}
-            />
+            /> */}
             <CFormCheck
               label="In-Progress"
               value="In-Progress"
@@ -269,12 +269,12 @@ const appointmentManagement = () => {
               onChange={handleStatusChange}
               checked={statusFilters.includes('Confirmed')}
             />
-            <CFormCheck
+            {/* <CFormCheck
               label="Rejected"
               value="Rejected"
               onChange={handleStatusChange}
               checked={statusFilters.includes('Rejected')}
-            />
+            /> */}
           </div>
 
           {/* Right: dropdown + button container */}

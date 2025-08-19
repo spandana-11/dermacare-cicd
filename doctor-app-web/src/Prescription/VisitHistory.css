@@ -87,3 +87,33 @@
   color: #777;
   margin: 6px 0;
 }
+/* One scrollable region inside the accordion item */
+.accordion-scroller {
+  max-height: 65vh;       /* adjust to your layout */
+  overflow: auto;         /* vertical scroll when needed */
+  padding-right: .5rem;   /* space for scrollbar */
+}
+
+/* Optional: make the "Reports" heading stick at top while scrolling */
+.sticky-heading {
+  position: sticky;
+  top: 0;
+  background: var(--cui-body-bg, #fff);
+  z-index: 1;
+  padding: .25rem 0;
+}
+
+/* Optional: prettier scrollbar */
+.accordion-scroller::-webkit-scrollbar {
+  width: 8px;
+}
+.accordion-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+.accordion-scroller::-webkit-scrollbar-thumb {
+  background: #cfd4dc;
+  border-radius: 8px;
+}
+.accordion-scroller:hover::-webkit-scrollbar-thumb {
+  background: #b6bcc7;
+}

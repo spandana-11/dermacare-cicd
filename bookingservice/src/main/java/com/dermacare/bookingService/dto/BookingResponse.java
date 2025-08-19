@@ -1,7 +1,6 @@
 package com.dermacare.bookingService.dto;
 
 import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -22,6 +21,8 @@ public class BookingResponse {
 	private String patientMobileNumber;
 	private String patientId;
 	private String visitType;
+	private Integer freeFollowUpsLeft;
+	private Integer freeFollowUps;
 	private String patientAddress;
 	private String age;
 	private String gender;
@@ -44,7 +45,6 @@ public class BookingResponse {
 	private String consultationType;
 	private double consultationFee;
 	private Integer visitCount;
-	private Integer followClinicVisitCount;
 	private String channelId;
 	private String reasonForCancel;
 	private String notes;
@@ -54,4 +54,5 @@ public class BookingResponse {
 	private double totalFee;
 	private List<String> attachments;
 	private String paymentType;
+
 }

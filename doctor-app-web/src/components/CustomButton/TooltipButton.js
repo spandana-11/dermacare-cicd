@@ -35,7 +35,7 @@ const generateContent = (patient) => (
   </div>
 )
 
-const TooltipButton = ({ patient, onSelect }) => {
+const TooltipButton = ({ patient, onSelect, tab }) => {
   const navigate = useNavigate() // ✅ hook inside component
   const { setPatientData } = useDoctorContext()
   const [navLoading, setNavLoading] = useState(false)
@@ -62,7 +62,12 @@ const TooltipButton = ({ patient, onSelect }) => {
     onSelect?.()
 
     // navigate after we’ve shown the overlay
-    navigate(`/tab-content/${patient.patientId}`, { state: { patient } })
+    if (tab === 'Confirmed') {
+      navigate(`/tab-content/${patient.patientId}`, { state: { patient } })
+    } else if (tab === 'Completed') {
+      navigate(`/tab-completed-content/${patient.patientId}`, { state: { patient } })
+    }
+
     // no need to setNavLoading(false); this component will unmount after navigation
   }
 

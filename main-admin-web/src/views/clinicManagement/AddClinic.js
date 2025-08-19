@@ -16,6 +16,11 @@ import {
   CCol,
   CTooltip,
   CFormCheck,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter,
 } from '@coreui/react'
 import { BASE_URL, subService_URL, getService, ClinicAllData } from '../../baseUrl'
 import { CategoryData } from '../categoryManagement/CategoryAPI'
@@ -25,6 +30,29 @@ import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import FileInputWithRemove from './FileInputWithRemove'
 import { getClinicTimings } from './AddClinicAPI'
+// 🛠️ Add this array at the top of your component
+const nabhQuestions = [
+  "Are patient rights displayed prominently in the clinic?",
+  "Is informed consent taken for all procedures?",
+  "Is there a documented infection control policy?",
+  "Are hand hygiene practices followed by staff?",
+  "Is biomedical waste segregated and disposed of properly?",
+  "Are emergency exits clearly marked and accessible?",
+  "Is fire safety training conducted for staff?",
+  "Are patient records maintained and kept confidential?",
+  "Is staff trained in CPR and Basic Life Support?",
+  "Is there a system for handling patient complaints?",
+  "Are medicines stored as per guidelines with temperature monitoring?",
+  "Is there a valid pharmacist present in the clinic?",
+  "Are all medical equipment calibrated and maintained?",
+  "Are staff health checks done periodically?",
+  "Is there a documented disaster management plan?",
+  "Are safety drills conducted regularly?",
+  "Is there a system for continuous quality improvement (CQI)?",
+  "Are internal audits carried out and documented?",
+  "Are patients informed about estimated treatment costs?",
+  "Is data backup done regularly for patient records?",
+];
 
 const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
   const navigate = useNavigate()
@@ -39,6 +67,9 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [timings, setTimings] = useState([])
   const [loadingTimings, setLoadingTimings] = useState(false)
+  const [showNabhModal, setShowNabhModal] = useState(false);
+  const [nabhScore, setNabhScore]=useState(null);
+const [nabhAnswers, setNabhAnswers] = useState(Array(20).fill(""));
   // const [initialData,setInitialData ]=useState()
   const fileInputRefs = {
     others: useRef(null),
@@ -91,6 +122,12 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
     instagramHandle: '',
     twitterHandle: '',
     facebookHandle: '',
+    latitude: "",
+  longitude: "",
+  walkthrough: "",
+  branch: "",
+  nabhScore:10,
+
   })
   useEffect(() => {
     if (mode === 'edit' && initialData) {
@@ -156,6 +193,20 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
       setErrors((prev) => ({ ...prev, website: '' }))
     }
   }
+  const handleNabhSubmit =async() => {
+    try{
+      const response=await fetch("/api/nabh/score",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({answers:nabhAnswers}),
+      })
+      const data=await response.json();
+      setNabhScore(data.score);
+      setShowNabhModal(false);
+    }catch(error){
+      console.error("Error submitting NABH answers", error)
+    }
+};
   const websiteRegex = /^(https?:\/\/)[\w\-]+(\.[\w\-]+)+[/#?]?.*$/
   const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
   const validateForm = () => {
@@ -404,7 +455,7 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
       }))
     }
   }
-
+  
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData({ ...formData, [name]: value })
@@ -618,6 +669,11 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
           ? `${formData.consultationExpiration} days`
           : '',
         subscription: formData.subscription,
+        latitude:formData.latitude,
+        longitude:formData.longitude,
+        walkthrough:formData.walkthrough,
+        nabhScore:formData.nabhScore,
+        branch:formData.branch,
       }
 
       // API Submission
@@ -770,6 +826,7 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
                     disabled={loadingTimings}
                   >
                     <option value="">Select Closing Time</option>
+                    
                     {timings.map((slot, idx) => (
                       <option key={idx} value={slot.closingTime}>
                         {slot.closingTime}
@@ -1353,7 +1410,9 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
             </CRow>
             <CRow>
               <CCol md={6}>
-                <CFormLabel>
+               <CRow>
+                <CCol md={6}>
+                   <CFormLabel>
                   Consultation Expiration (in days) <span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormInput
@@ -1368,6 +1427,25 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
                 {errors.consultationExpiration && (
                   <CFormFeedback invalid>{errors.consultationExpiratione}</CFormFeedback>
                 )}
+                </CCol>
+                <CCol md={6}>
+                   <CFormLabel>
+                  No. of Free Follow Ups <span className="text-danger">*</span>
+                </CFormLabel>
+                <CFormInput
+                  type="number"
+                  name="consultationExpiration"
+                  value={formData.consultationExpiration}
+                  onChange={handleInputChange}
+                  min="1"
+                  placeholder="Enter next visit consultation count"
+                  invalid={!!errors.consultationExpiration}
+                />
+                {errors.consultationExpiration && (
+                  <CFormFeedback invalid>{errors.consultationExpiratione}</CFormFeedback>
+                )}
+                </CCol>
+               </CRow>
               </CCol>
               <CCol md={6}>
                 <CFormLabel>
@@ -1479,6 +1557,156 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
                 </CCol>
               )}
             </CRow>
+              {/* ✅ Clinic Coordinates */}
+<CRow className="mb-3">
+  <CCol md={6}>
+    <CFormLabel>
+      Clinic Latitude <span className="text-danger">*</span>
+    </CFormLabel>
+    <CFormInput
+      type="number"
+      step="any"
+      placeholder="Enter latitude"
+      value={formData.latitude || ""}
+      onChange={(e) =>
+        setFormData((prev) => ({ ...prev, latitude: e.target.value }))
+      }
+      invalid={!!errors.latitude}
+    />
+    {errors.latitude && <CFormFeedback invalid>{errors.latitude}</CFormFeedback>}
+  </CCol>
+
+  <CCol md={6}>
+    <CFormLabel>
+      Clinic Longitude <span className="text-danger">*</span>
+    </CFormLabel>
+    <CFormInput
+      type="number"
+      step="any"
+      placeholder="Enter longitude"
+      value={formData.longitude || ""}
+      onChange={(e) =>
+        setFormData((prev) => ({ ...prev, longitude: e.target.value }))
+      }
+      invalid={!!errors.longitude}
+    />
+    {errors.longitude && <CFormFeedback invalid>{errors.longitude}</CFormFeedback>}
+  </CCol>
+</CRow>
+
+{/* ✅ Walkthrough URL */}
+<CRow className="mb-3">
+  <CCol md={6}>
+    <CFormLabel>
+      Walkthrough URL <span className="text-danger">*</span>
+    </CFormLabel>
+    <CFormInput
+      type="url"
+      placeholder="https://example.com/walkthrough"
+      value={formData.walkthrough || ""}
+      onChange={(e) =>
+        setFormData((prev) => ({ ...prev, walkthrough: e.target.value }))
+      }
+      invalid={!!errors.walkthrough}
+    />
+    {errors.walkthrough && (
+      <CFormFeedback invalid>{errors.walkthrough}</CFormFeedback>
+    )}
+  </CCol>
+  {/* ✅ Branch Input */}
+
+  <CCol md={6}>
+    <CFormLabel>
+      Branch <span className="text-danger">*</span>
+    </CFormLabel>
+    <CFormInput
+      type="text"
+      placeholder="Enter branch name"
+      value={formData.branch || ""}
+      onChange={(e) =>
+        setFormData((prev) => ({ ...prev, branch: e.target.value }))
+      }
+      invalid={!!errors.branch}
+    />
+    {errors.branch && <CFormFeedback invalid>{errors.branch}</CFormFeedback>}
+  </CCol>
+
+</CRow>
+
+{/* ✅ NABH Score - Opens Modal */}
+<CRow className="mb-3">
+  <CCol md={12} className='d-flex align-items-center'>
+    <CFormLabel className="me-3">NABH Score </CFormLabel>
+    {nabhScore!==null && (
+      <span className="me-3 fw-bold text-success">{nabhScore}%</span>
+    )}
+    <CButton
+      color="primary"
+      onClick={() => setShowNabhModal(true)}
+    >
+       Open NABH Questionnaire
+    </CButton>
+  </CCol>
+</CRow>
+
+<CModal visible={showNabhModal} onClose={() => setShowNabhModal(false)} size="lg">
+  <CModalHeader>
+    <CModalTitle>NABH Questionnaire</CModalTitle>
+  </CModalHeader>
+  <CModalBody>
+    {nabhQuestions.map((question, index) => (
+      <CRow key={index} className="mb-4">
+        {/* Question with number */}
+        <CCol md={12}>
+          <CFormLabel>
+            {index + 1}. {question}
+          </CFormLabel>
+        </CCol>
+
+        {/* Radio buttons below the question */}
+        <CCol md={12} className="d-flex mt-2">
+          <CFormCheck
+            type="radio"
+            name={`nabh-${index}`}
+            id={`nabh-${index}-yes`}
+            label="Yes"
+            checked={nabhAnswers[index] === "Yes"}
+            onChange={() => {
+              const updated = [...nabhAnswers];
+              updated[index] = "Yes";
+              setNabhAnswers(updated);
+            }}
+            className="me-4"
+          />
+          <CFormCheck
+            type="radio"
+            name={`nabh-${index}`}
+            id={`nabh-${index}-no`}
+            label="No"
+            checked={nabhAnswers[index] === "No"}
+            onChange={() => {
+              const updated = [...nabhAnswers];
+              updated[index] = "No";
+              setNabhAnswers(updated);
+            }}
+          />
+        </CCol>
+      </CRow>
+    ))}
+  </CModalBody>
+  <CModalFooter>
+    <CButton color="secondary" onClick={() => setShowNabhModal(false)}>
+      Close
+    </CButton>
+    <CButton color="primary" onClick={handleNabhSubmit}>
+      Save
+    </CButton>
+  </CModalFooter>
+</CModal>
+
+
+
+
 
             {errors.submit && <div className="alert alert-danger">{errors.submit}</div>}
 

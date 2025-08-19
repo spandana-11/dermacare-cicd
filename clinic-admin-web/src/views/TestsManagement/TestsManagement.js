@@ -37,7 +37,8 @@ const TestsManagement = () => {
   const [testIdToDelete, setTestIdToDelete] = useState(null)
   const [newTest, setNewTest] = useState({ testName: '', hospitalId: '' })
 const [hospitalIdToDelete, setHospitalIdToDelete] = useState(null)
-
+ const hospitalId = localStorage.getItem('HospitalId')
+     
   const normalizeTests = (data) =>
     data.map((item) => ({
       ...item,
@@ -106,34 +107,39 @@ const handleConfirmDelete = async () => {
   }
   const isValidObjectId = (id) => /^[a-f\d]{24}$/i.test(id)
 
-  const handleAddTest = async () => {
-    if (!validateForm()) return
-    try {
-      const payload = {
-        testName: newTest.testName,
-        hospitalId: newTest.hospitalId,
-      }
+ const handleAddTest = async () => {
+  if (!newTest.testName.trim()) {
+    setErrors({ testName: 'Test name is required.' })
+    return
+  }
 
-      await postTestData(payload)
-      toast.success('Test added successfully!')
-      fetchData()
-      setModalVisible(false)
-      setNewTest({ testName: '', hospitalId: '' })
-    } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.statusText ||
-        'An unexpected error occurred.'
-      const statusCode = error.response?.status
-      if (statusCode === 409 || errorMessage.toLowerCase().includes('duplicate')) {
-        toast.error(`Error: Duplicate test name - ${newTest.testName} already exists!`, {
-          position: 'top-right',
-        })
-      } else {
-        toast.error(`Error adding test: ${errorMessage}`, { position: 'top-right' })
-      }
+  try {
+    const payload = {
+      testName: newTest.testName,
+      hospitalId: hospitalId, 
+    }
+
+    await postTestData(payload)
+    toast.success('Test added successfully!')
+    fetchData()
+    setModalVisible(false)
+    setNewTest({ testName: '' })
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.statusText ||
+      'An unexpected error occurred.'
+    const statusCode = error.response?.status
+    if (statusCode === 409 || errorMessage.toLowerCase().includes('duplicate')) {
+      toast.error(`Error: Duplicate test name - ${newTest.testName} already exists!`, {
+        position: 'top-right',
+      })
+    } else {
+      toast.error(`Error adding test: ${errorMessage}`, { position: 'top-right' })
     }
   }
+}
+
 
   const handleTestEdit = (test) => {
     setTestToEdit(test) // test should have `id` and `hospitalId`
@@ -235,7 +241,7 @@ const handleConfirmDelete = async () => {
       </CForm>
 
       {viewTest && (
-        <CModal visible={!!viewTest} onClose={() => setViewTest(null)}>
+        <CModal visible={!!viewTest} onClose={() => setViewTest(null)}backdrop="static">
           <CModalHeader>
             <CModalTitle>Test Details</CModalTitle>
           </CModalHeader>
@@ -288,7 +294,7 @@ const handleConfirmDelete = async () => {
               </div>
             )}
 
-  <h6 className="mt-3">
+  {/* <h6 className="mt-3">
     Hospital ID <span style={{ color: 'red' }}>*</span>
   </h6>
   <CFormInput
@@ -313,7 +319,7 @@ const handleConfirmDelete = async () => {
               <div className="invalid-feedback" style={{ color: 'red' }}>
                 {errors.hospitalId}
               </div>
-            )}
+            )} */}
 </CForm>
 
         </CModalBody>
@@ -339,12 +345,12 @@ const handleConfirmDelete = async () => {
               value={testToEdit?.testName || ''}
               onChange={(e) => setTestToEdit({ ...testToEdit, testName: e.target.value })}
             />
-            <h6 className="mt-3">Hospital ID</h6>
+            {/* <h6 className="mt-3">Hospital ID</h6>
             <CFormInput
   type="text"
   value={testToEdit?.hospitalId || ''}
   onChange={(e) => setTestToEdit({ ...testToEdit, hospitalId: e.target.value })}
-/>
+/> */}
    </CForm>
         </CModalBody>
         <CModalFooter>

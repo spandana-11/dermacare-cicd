@@ -50,5 +50,7 @@ public class Doctors {
 	private double doctorAverageRating;
 	private boolean recommendation;
 	private String doctorSignature;
+	private boolean associatedWithIADVC;
+	private ConsultationType Consultation;
 	
 }

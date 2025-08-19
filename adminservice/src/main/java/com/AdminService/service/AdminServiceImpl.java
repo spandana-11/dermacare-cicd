@@ -86,14 +86,7 @@ import com.AdminService.util.ResponseStructure;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-
-
 import feign.FeignException;
-
-
-
-
-
 @Service
 
 public class AdminServiceImpl implements AdminService {
@@ -101,49 +94,27 @@ public class AdminServiceImpl implements AdminService {
 
 
 	@Autowired
-
 	private AdminRepository adminRepository;
 
-	
-
 	@Autowired
-
 	private ClinicRep clinicRep;
 
-	
-
 	@Autowired
-
 	private ClinicCredentialsRepository clinicCredentialsRepository;
 
-	
-
 	@Autowired
-
 	private CssFeign cssFeign;
 
-	
-
 	@Autowired
-
 	private CustomerFeign customerFeign;
 
-	
-
 	@Autowired
-
 	private  ClinicAdminFeign clinicAdminFeign;
-
 	
-
 	@Autowired
-
 	private BookingFeign bookingFeign;
 
 	
-
-	
-
 	@Override
 
 	public Response adminRegister(AdminHelper helperAdmin) {
@@ -309,12 +280,7 @@ public class AdminServiceImpl implements AdminService {
 	            return response;
 
 	        }
-
-
-
 	        Clinic savedClinic = new Clinic();
-
-
 
 	        savedClinic.setName(clinic.getName());
 
@@ -345,6 +311,14 @@ public class AdminServiceImpl implements AdminService {
 	        savedClinic.setHospitalOverallRating(0.0); // default rating on creation
 
 	        savedClinic.setSubscription(clinic.getSubscription());
+	        
+	        savedClinic.setFreeFollowUps(clinic.getFreeFollowUps());
+	        
+	        savedClinic.setLatitude(clinic.getLatitude());
+	        savedClinic.setLongitude(clinic.getLongitude());
+	        savedClinic.setWalkthrough(clinic.getWalkthrough());
+	        savedClinic.setNabhScore(clinic.getNabhScore());
+	        savedClinic.setBranch(clinic.getBranch());
 
 
 
@@ -491,10 +465,8 @@ public class AdminServiceImpl implements AdminService {
 	            savedClinic.setDrugLicenseFormType(null);
 
 	        }
-
-
-
-	        // Consultation Expiration (required)
+	        
+ // Consultation Expiration (required)
 
 	        if (clinic.getConsultationExpiration() == null || clinic.getConsultationExpiration().isBlank()) {
 
@@ -697,8 +669,13 @@ public class AdminServiceImpl implements AdminService {
 	            clnc.setRecommended(clinic.isRecommended());
 
 	            clnc.setHospitalOverallRating(clinic.getHospitalOverallRating());
-
-
+	            clnc.setFreeFollowUps(clinic.getFreeFollowUps());
+	            clnc.setSubscription(clinic.getSubscription());
+	            clnc.setLatitude(clinic.getLatitude());
+	            clnc.setLongitude(clinic.getLongitude());
+	            clnc.setWalkthrough(clinic.getWalkthrough());
+	            clnc.setNabhScore(clinic.getNabhScore());
+	            clnc.setBranch(clinic.getBranch());
 
 	            // Hospital Logo
 
@@ -943,6 +920,14 @@ public class AdminServiceImpl implements AdminService {
 	                clnc.setRecommended(clinic.isRecommended());
 
 	                clnc.setHospitalOverallRating(clinic.getHospitalOverallRating());
+	                clnc.setFreeFollowUps(clinic.getFreeFollowUps());
+	                
+	                clnc.setLatitude(clinic.getLatitude());
+	                clnc.setLongitude(clinic.getLongitude());
+	                clnc.setSubscription(clinic.getSubscription());
+	                clnc.setWalkthrough(clinic.getWalkthrough());
+	                clnc.setNabhScore(clinic.getNabhScore());
+	                clnc.setBranch(clinic.getBranch());
 
 
 
@@ -959,7 +944,6 @@ public class AdminServiceImpl implements AdminService {
 	                );
 
 
-
 	                // Hospital Documents
 
 	                clnc.setHospitalDocuments(
@@ -971,8 +955,6 @@ public class AdminServiceImpl implements AdminService {
 	                        : ""
 
 	                );
-
-
 
 	                // Contractor Documents
 
@@ -1022,8 +1004,6 @@ public class AdminServiceImpl implements AdminService {
 
 	                }
 
-
-
 	                // Pharmacist Certificate
 
 	                clnc.setHasPharmacist(clinic.getHasPharmacist() != null ? clinic.getHasPharmacist() : "");
@@ -1037,9 +1017,6 @@ public class AdminServiceImpl implements AdminService {
 	                        : ""
 
 	                );
-
-
-
 	                // Extended Certifications
 
 	                clnc.setClinicType(clinic.getClinicType() != null ? clinic.getClinicType() : "");
@@ -1129,7 +1106,6 @@ public class AdminServiceImpl implements AdminService {
 	                );
 
 
-
 	                // Others – list of documents
 
 	                List<String> othersList = new ArrayList<>();
@@ -1175,9 +1151,6 @@ public class AdminServiceImpl implements AdminService {
 	                list.add(clnc);
 
 	            }
-
-
-
 	            response.setData(list);
 
 	            response.setMessage("Clinics fetched successfully");
@@ -1217,10 +1190,6 @@ public class AdminServiceImpl implements AdminService {
 
 
 	@Override
-
-	
-
-	
 
 		
 
@@ -1451,10 +1420,9 @@ public class AdminServiceImpl implements AdminService {
 	            if (clinic.getConsultationExpiration() != null && !clinic.getConsultationExpiration().isEmpty()) {
 
 	                savedClinic.setConsultationExpiration(clinic.getConsultationExpiration());
+	                
 
 	            }
-
-
 
 	            // Social Media
 
@@ -1774,10 +1742,6 @@ public class AdminServiceImpl implements AdminService {
 
     }
 
-
-
-    
-
     @Override
 
     public Response updateClinicCredentials(UpdateClinicCredentials credentials,String userName) {
@@ -1867,13 +1831,8 @@ public class AdminServiceImpl implements AdminService {
         return response;}
 
     }
-
-
-
     @Override
-
     public Response deleteClinicCredentials(String userName ) {
-
         Response response = new Response();
 
         try {
@@ -1919,8 +1878,6 @@ public class AdminServiceImpl implements AdminService {
         return response;
 
     }
-
-    
 
     @Override
 

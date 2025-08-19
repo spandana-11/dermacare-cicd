@@ -108,6 +108,9 @@ public class DoctorsDTO {
 	
 	private String doctorSignature;
 	
+	private boolean associatedWithIADVC;
+	
+	private ConsultationTypeDTO Consultation;
 	
     public void trimAllDoctorFields() {
         id = trim(id);

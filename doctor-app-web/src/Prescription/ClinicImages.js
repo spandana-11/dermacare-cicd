@@ -18,12 +18,16 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilCamera, cilColumns, cilFolderOpen, cilTrash } from '@coreui/icons'
 import Button from '../components/CustomButton/CustomButton'
-import { COLORS, compareSvg } from '../Themes'
+import { COLORS /*, compareSvg*/ } from '../Themes'
 import './ClinicImages.css'
+
 export default function MultiImageUpload() {
+  const STORAGE_KEY = 'multiImageUpload.items.v1'
+
   const [items, setItems] = useState([]) // { id, file, preview }
   const [msg, setMsg] = useState({ type: '', text: '' })
   const [busy, setBusy] = useState(false)
+
   // Compare modal state
   const [showCompare, setShowCompare] = useState(false)
   const [savedGrid, setSavedGrid] = useState([]) // [{id, name, dataUrl, savedAt}]
@@ -39,6 +43,7 @@ export default function MultiImageUpload() {
 
   // true camera capture (getUserMedia)
   const [camOpen, setCamOpen] = useState(false)
+  const [cameraReady, setCameraReady] = useState(false) // <-- missing before
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const canvasRef = useRef(document.createElement('canvas'))
@@ -55,7 +60,6 @@ export default function MultiImageUpload() {
     if (!raw) return []
     try {
       const arr = JSON.parse(raw)
-      // Normalize and include savedAt (fallback to now if missing)
       return arr.map((s) => ({
         id: s.id || `${s.name}-${Math.random()}`,
         name: s.name || 'image.jpg',
@@ -66,6 +70,7 @@ export default function MultiImageUpload() {
       return []
     }
   }
+
   // Open compare modal (requires at least 1 uploaded image)
   const openCompare = () => {
     if (items.length === 0) {
@@ -132,12 +137,12 @@ export default function MultiImageUpload() {
   const removeOne = (id) => {
     setItems((prev) => {
       const gone = prev.find((x) => x.id === id)
-      if (gone?.preview) URL.revokeObjectURL(gone.preview)
+      if (gone?.preview?.startsWith('blob:')) URL.revokeObjectURL(gone.preview)
       return prev.filter((x) => x.id !== id)
     })
   }
   const clearAll = () => {
-    items.forEach((x) => x.preview && URL.revokeObjectURL(x.preview))
+    items.forEach((x) => x.preview?.startsWith('blob:') && URL.revokeObjectURL(x.preview))
     setItems([])
   }
 
@@ -153,24 +158,11 @@ export default function MultiImageUpload() {
     handleFiles(e.dataTransfer.files)
   }
 
-  // ---- True camera (getUserMedia) ----
-  const startCamera = async () => {
+  // ---- Live Camera: open modal first, then attach stream ----
+  const startCamera = () => {
     clearMsg()
-    try {
-      // environment tries rear camera on mobile; not guaranteed on all devices
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } },
-        audio: false,
-      })
-      streamRef.current = stream
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        await videoRef.current.play()
-      }
-      setCamOpen(true)
-    } catch (err) {
-      setErr('Unable to access camera. Use HTTPS and a real device, and allow camera permissions.')
-    }
+    setCameraReady(false)
+    setCamOpen(true)
   }
 
   const stopCamera = () => {
@@ -180,34 +172,92 @@ export default function MultiImageUpload() {
     }
   }
 
+  useEffect(() => {
+    let cancelled = false
+
+    const attachStream = async () => {
+      if (!camOpen) {
+        stopCamera()
+        setCameraReady(false)
+        return
+      }
+      try {
+        let stream
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' } },
+            audio: false,
+          })
+        } catch {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        }
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop())
+          return
+        }
+        streamRef.current = stream
+
+        const video = videoRef.current
+        if (video) {
+          video.srcObject = stream
+          video.setAttribute('playsinline', '')
+          await video.play()
+          setCameraReady(true)
+          setInfo('Camera ready.')
+        }
+      } catch (err) {
+        console.error(err)
+        setErr('Unable to access camera. Use HTTPS/localhost and allow camera permission.')
+        setCamOpen(false)
+      }
+    }
+
+    attachStream()
+    return () => {
+      cancelled = true
+      stopCamera()
+    }
+  }, [camOpen])
+
   const capturePhoto = async () => {
+    clearMsg()
     const video = videoRef.current
     const canvas = canvasRef.current
     if (!video) return
+
+    if (!cameraReady || !video.videoWidth || !video.videoHeight) {
+      setWarn('Camera not ready yet. Give it a second.')
+      return
+    }
+
     const w = video.videoWidth
     const h = video.videoHeight
-    if (!w || !h) return
     canvas.width = w
     canvas.height = h
     const ctx = canvas.getContext('2d')
     ctx.drawImage(video, 0, 0, w, h)
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9))
-    if (!blob) return
+
+    const getBlob = () =>
+      new Promise((resolve) => {
+        if (canvas.toBlob) {
+          canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.9)
+        } else {
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.9)
+          dataUrlToBlob(dataUrl).then(resolve)
+        }
+      })
+
+    const blob = await getBlob()
+    if (!blob) {
+      setErr('Capture failed.')
+      return
+    }
     const file = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' })
     addFiles([file])
     setInfo('Captured a photo from camera.')
   }
 
-  useEffect(() => {
-    if (!camOpen) stopCamera()
-    // cleanup on unmount
-    return () => stopCamera()
-  }, [camOpen])
-
   // --- LocalStorage helpers ---
-  const STORAGE_KEY = 'multiImageUpload.items.v1'
-
-  // File -> data URL
   const fileToDataUrl = (file) =>
     new Promise((resolve, reject) => {
       const fr = new FileReader()
@@ -216,25 +266,21 @@ export default function MultiImageUpload() {
       fr.readAsDataURL(file)
     })
 
-  // data URL -> Blob
   const dataUrlToBlob = async (dataUrl) => {
     const res = await fetch(dataUrl)
     return await res.blob()
   }
 
-  // Optional: reconstruct a File from data URL (keeps type, name-ish)
   const dataUrlToFile = async (dataUrl, name = `image-${Date.now()}.jpg`) => {
     const blob = await dataUrlToBlob(dataUrl)
     return new File([blob], name, { type: blob.type || 'image/jpeg', lastModified: Date.now() })
   }
 
-  // Save current items to localStorage (as data URLs)
   const saveToLocalStorage = async () => {
     try {
       setBusy(true)
       clearMsg()
 
-      // Convert each file to data URL (or keep preview if it’s already a data URL)
       const serialized = await Promise.all(
         items.map(async (it) => {
           const isDataUrl = typeof it.preview === 'string' && it.preview.startsWith('data:')
@@ -242,7 +288,7 @@ export default function MultiImageUpload() {
             ? it.preview
             : it.file
               ? await fileToDataUrl(it.file)
-              : it.preview // blob URL; may not persist across sessions
+              : it.preview
 
           return {
             id: it.id,
@@ -250,13 +296,12 @@ export default function MultiImageUpload() {
             type: it.file?.type || (isDataUrl ? dataUrl.split(';')[0].replace('data:', '') : ''),
             size: it.file?.size || undefined,
             lastModified: it.file?.lastModified || undefined,
-            dataUrl, // persisted image data
+            dataUrl,
           }
         }),
       )
 
       const payload = JSON.stringify(serialized)
-      // Rough size check
       const bytes = new TextEncoder().encode(payload).length
       const mb = (bytes / (1024 * 1024)).toFixed(2)
       if (bytes > 4.5 * 1024 * 1024) {
@@ -264,12 +309,14 @@ export default function MultiImageUpload() {
       }
 
       localStorage.setItem(STORAGE_KEY, payload)
-      setInfo(`Saved ${serialized.length} image(s) to device.`) + // 🔽 Clear current UI after successful save
-        items.forEach((x) => {
-          if (typeof x.preview === 'string' && x.preview.startsWith('blob:')) {
-            URL.revokeObjectURL(x.preview)
-          }
-        })
+      setInfo(`Saved ${serialized.length} image(s) to device.`)
+
+      // Revoke old blob URLs and clear UI
+      items.forEach((x) => {
+        if (typeof x.preview === 'string' && x.preview.startsWith('blob:')) {
+          URL.revokeObjectURL(x.preview)
+        }
+      })
       setItems([])
     } catch (err) {
       console.error(err)
@@ -279,7 +326,6 @@ export default function MultiImageUpload() {
     }
   }
 
-  // Load items from localStorage
   const loadFromLocalStorage = async () => {
     clearMsg()
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -289,24 +335,18 @@ export default function MultiImageUpload() {
     }
     try {
       setBusy(true)
-      const saved = JSON.parse(raw) // [{id, name, type, dataUrl, ...}]
-
-      // Rebuild previews. We can either use dataUrl directly as <img src>,
-      // or reconstruct File objects if you need to upload later.
+      const saved = JSON.parse(raw)
       const rebuilt = await Promise.all(
         saved.map(async (s) => {
-          // If you need actual File for later upload, uncomment next line:
-          // const file = await dataUrlToFile(s.dataUrl, s.name);
-          const file = undefined // keep lightweight; use dataUrl for preview
+          const file = undefined // keep light; preview from dataUrl
           return {
             id: s.id || `${s.name}-${Math.random()}`,
-            file, // optional
-            preview: s.dataUrl, // safe to render directly
+            file,
+            preview: s.dataUrl,
           }
         }),
       )
 
-      // Revoke old blob previews to avoid leaks
       items.forEach((x) => x.preview?.startsWith('blob:') && URL.revokeObjectURL(x.preview))
       setItems(rebuilt)
       setInfo(`Loaded ${rebuilt.length} image(s) from device.`)
@@ -318,12 +358,55 @@ export default function MultiImageUpload() {
     }
   }
 
-  // Clear saved data (does not clear current UI items)
   const clearSaved = () => {
     localStorage.removeItem(STORAGE_KEY)
     setInfo('Cleared saved images.')
   }
 
+
+  // Save
+  const saveToServer = async () => {
+    try {
+      setBusy(true);
+      clearMsg();
+      await saveImagesToServer(items.map((it) => it.file));
+      setInfo(`Saved ${items.length} image(s) to server.`);
+      clearAll();
+    } catch (err) {
+      setErr("Failed to save images.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Load
+  const loadFromServer = async () => {
+    try {
+      setBusy(true);
+      clearMsg();
+      const saved = await loadImagesFromServer();
+      setItems(saved.map((s) => ({ id: s.id, file: undefined, preview: s.url })));
+      setInfo(`Loaded ${saved.length} image(s) from server.`);
+    } catch (err) {
+      setErr("Failed to load saved images.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Clear
+  const clearServer = async () => {
+    try {
+      setBusy(true);
+      clearMsg();
+      await clearImagesOnServer();
+      setInfo("Cleared saved images from server.");
+    } catch (err) {
+      setErr("Failed to clear saved images.");
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <CContainer fluid className="p-0 pb-4">
       <CRow className="g-3">
@@ -356,7 +439,7 @@ export default function MultiImageUpload() {
                 ref={cameraRef}
                 type="file"
                 accept="image/*"
-                capture="environment" /* hint; browsers may still show chooser */
+                capture="environment"
                 style={{ display: 'none' }}
                 onChange={onPickCamera}
               />
@@ -373,7 +456,8 @@ export default function MultiImageUpload() {
                   Choose from Gallery
                 </Button>
 
-                <Button
+                {/* File-input camera (optional) */}
+                {/* <Button
                   customColor={COLORS.teal}
                   size="small"
                   onClick={() => cameraRef.current?.click()}
@@ -382,7 +466,7 @@ export default function MultiImageUpload() {
                 >
                   <CIcon icon={cilCamera} className="me-2" />
                   Camera (File Input)
-                </Button>
+                </Button> */}
 
                 <Button
                   size="small"
@@ -445,55 +529,74 @@ export default function MultiImageUpload() {
               </div>
 
               {/* Grid previews */}
-              {items.length === 0 ? (
-                <div className="text-body-secondary">No images selected yet.</div>
-              ) : (
-                <CRow className="g-3">
-                  {items.map((it) => (
-                    <CCol key={it.id} xs={12} sm={6} md={4} lg={3}>
-                      <div className="border rounded position-relative bg-body-tertiary">
-                        <img
-                          src={it.preview}
-                          alt="uploaded"
-                          style={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover' }}
-                        />
-                        <Button
-                          color="danger"
-                          size="sm"
-                          variant="ghost"
-                          className="position-absolute"
-                          style={{ top: 6, right: 6 }}
-                          onClick={() => removeOne(it.id)}
-                          aria-label="Remove"
-                          title="Remove"
-                        >
-                          <CIcon icon={cilTrash} />
-                        </Button>
-                      </div>
-                    </CCol>
-                  ))}
-                </CRow>
-              )}
-            </CCardBody>
-            <div className="d-flex flex-wrap gap-2 mb-3 ps-3">
-              {/* existing buttons ... */}
+            {items.length === 0 ? (
+  <div className="text-body-secondary">No images selected yet.</div>
+) : (
+<div className="d-flex flex-wrap gap-2">
+  {items.map((it) => (
+    <div key={it.id} className="position-relative image-container">
+      <img
+        src={it.preview}
+        alt="uploaded"
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          borderRadius: 6,
+        }}
+      />
+      <CButton
+        color="danger"
+        size="sm"
+        className="position-absolute"
+        style={{ top: 6, right: 6, backgroundColor: "black", border: "none" }}
+        onClick={() => removeOne(it.id)}
+      >
+        <CIcon icon={cilTrash} />
+      </CButton>
+    </div>
+  ))}
 
-              {/* Save to localStorage */}
+  <style jsx>{`
+    .image-container {
+      width: 100%; /* 1 image per row on extra-small screens */
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+    }
+
+    @media (min-width: 576px) {
+      .image-container {
+        width: calc((100% - 1 * 0.5rem) / 2); /* 2 images per row on small screens */
+      }
+    }
+
+    @media (min-width: 992px) {
+      .image-container {
+        width: calc((100% - 2 * 0.5rem) / 3); /* 3 images per row on large screens and above */
+      }
+    }
+  `}</style>
+</div>
+
+)}
+
+
+            </CCardBody>
+
+            <div className="d-flex flex-wrap gap-2 mb-3 ps-3">
               <Button
                 size="small"
                 variant="outline"
                 onClick={saveToLocalStorage}
                 disabled={busy || items.length === 0}
               >
-                Save to Device
+                Save to Server
               </Button>
 
-              {/* Load from localStorage */}
               <Button color="secondary" size="small" onClick={loadFromLocalStorage} disabled={busy}>
                 Load Saved
               </Button>
 
-              {/* Clear saved (localStorage only) */}
               <Button
                 customColor={COLORS.danger}
                 size="small"
@@ -520,19 +623,29 @@ export default function MultiImageUpload() {
               autoPlay
               playsInline
               muted
+              onLoadedMetadata={() => setCameraReady(true)}
               style={{ width: '100%', maxWidth: 640, background: '#000', borderRadius: 6 }}
             />
           </div>
         </CModalBody>
         <CModalFooter className="d-flex justify-content-between">
-          <CButton color="secondary" variant="outline" onClick={() => setCamOpen(false)}>
+          <CButton
+            color="secondary"
+            variant="outline"
+            onClick={() => {
+              setCamOpen(false)
+              setCameraReady(false)
+            }}
+          >
             Close
           </CButton>
-          <CButton color="success" onClick={capturePhoto}>
+          <CButton color="success" onClick={capturePhoto} disabled={!cameraReady}>
             Capture Photo
           </CButton>
         </CModalFooter>
       </CModal>
+
+      {/* Compare Modal */}
       <CModal
         visible={showCompare}
         onClose={() => setShowCompare(false)}
@@ -576,7 +689,7 @@ export default function MultiImageUpload() {
             </div>
           </div>
 
-          {/* Pickers: Saved grid (with date) + Current grid */}
+          {/* Pickers: Saved grid + Current grid */}
           <div className="d-flex flex-wrap gap-3">
             {/* Saved grid */}
             <div style={{ flex: 1, minWidth: 280 }}>
@@ -611,21 +724,24 @@ export default function MultiImageUpload() {
                 <div className="text-body-secondary small">No uploads.</div>
               ) : (
                 <div className="compare-grid">
-                  {items.map((it) => (
-                    <button
-                      key={it.id}
-                      type="button"
-                      className={`cmp-card ${selectedCurrentId === it.id ? 'active' : ''}`}
-                      onClick={() => setSelectedCurrentId(it.id)}
-                      title={it.file?.name || 'uploaded'}
-                    >
-                      <img src={it.preview} alt="uploaded" />
-                      <div className="cmp-meta">
-                        <div className="cmp-name">{it.file?.name || 'uploaded'}</div>
-                        <div className="cmp-date">Now</div>
+                  <div className="preview-grid">
+                    {items.map((it) => (
+                      <div key={it.id} className="preview-item">
+                        <img src={it.preview} alt="uploaded" className="preview-img" />
+                        <Button
+                          color="danger"
+                          size="sm"
+                          variant="ghost"
+                          className="remove-btn"
+                          onClick={() => removeOne(it.id)}
+                          aria-label="Remove"
+                          title="Remove"
+                        >
+                          <CIcon icon={cilTrash} />
+                        </Button>
                       </div>
-                    </button>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -640,11 +756,7 @@ export default function MultiImageUpload() {
             <CButton
               color="primary"
               disabled={!selectedSavedId || !selectedCurrentId}
-              onClick={() => {
-                if (!selectedSavedId || !selectedCurrentId) return
-                // Optional: do something on confirm compare (e.g., export a combined view)
-                setInfo('Comparison ready.')
-              }}
+              onClick={() => setInfo('Comparison ready.')}
             >
               Confirm Compare
             </CButton>

@@ -39,7 +39,9 @@ const DiseasesManagement = () => {
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [diseaseIdToDelete, setDiseaseIdToDelete] = useState(null)
   const [hospitalIdToDelete, setHospitalIdToDelete] = useState(null)
-  const [newDisease, setNewDisease] = useState({ disease: '', hospitalId: '' })
+  const [newDisease, setNewDisease] = useState({ disease: '' })
+
+  const hospitalId = localStorage.getItem('HospitalId')
 
   const normalizeDiseases = (data) =>
     data.map((item) => ({
@@ -95,7 +97,6 @@ const DiseasesManagement = () => {
   const validateForm = () => {
     const newErrors = {}
     if (!newDisease.disease.trim()) newErrors.disease = 'Disease name is required.'
-    if (!newDisease.hospitalId.trim()) newErrors.hospitalId = 'Hospital ID is required.'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -105,13 +106,13 @@ const DiseasesManagement = () => {
     try {
       const payload = {
         disease: newDisease.disease,
-        hospitalId: newDisease.hospitalId,
+        hospitalId: hospitalId, // Always from localStorage
       }
 
       await postDiseaseData(payload)
       toast.success('Disease added successfully!')
-      setNewDisease({ disease: '', hospitalId: '' })
-      setSearchQuery('') // Reset search
+      setNewDisease({ disease: '' })
+      setSearchQuery('')
       fetchData()
       setModalVisible(false)
     } catch (error) {
@@ -131,23 +132,26 @@ const DiseasesManagement = () => {
   }
 
   const handleDiseaseEdit = (disease) => {
-    setDiseaseToEdit(disease)
+    setDiseaseToEdit({
+      ...disease,
+      hospitalId, // Always from localStorage
+    })
     setEditDiseaseMode(true)
   }
 
   const handleUpdateDisease = async () => {
-    if (!diseaseToEdit || !diseaseToEdit.id || !diseaseToEdit.hospitalId) {
+    if (!diseaseToEdit || !diseaseToEdit.id) {
       toast.error('Missing disease data to update.')
       return
     }
 
-    const { id: diseaseId, hospitalId } = diseaseToEdit
+    const { id: diseaseId } = diseaseToEdit
     setLoading(true)
     try {
       await updateDiseaseData(
         {
           disease: diseaseToEdit.disease,
-          hospitalId: diseaseToEdit.hospitalId,
+          hospitalId: hospitalId, // Always from localStorage
         },
         diseaseId,
         hospitalId,
@@ -208,16 +212,9 @@ const DiseasesManagement = () => {
         </CModalHeader>
         <CModalBody>{message}</CModalBody>
         <CModalFooter>
-          <CButton
-            color="secondary"
-            onClick={() => {
-              setEditDiseaseMode(false)
-              setDiseaseToEdit(null)
-            }}
-          >
+          <CButton color="secondary" onClick={onCancel}>
             Cancel
           </CButton>
-
           <CButton color="danger" onClick={onConfirm}>
             Confirm
           </CButton>
@@ -262,12 +259,12 @@ const DiseasesManagement = () => {
               </CCol>
               <CCol sm={8}>{viewDisease.disease}</CCol>
             </CRow>
-            <CRow className="mb-3">
+            {/* <CRow className="mb-3">
               <CCol sm={4}>
                 <strong>Hospital ID:</strong>
               </CCol>
               <CCol sm={8}>{viewDisease.hospitalId}</CCol>
-            </CRow>
+            </CRow> */}
           </CModalBody>
         </CModal>
       )}
@@ -301,29 +298,6 @@ const DiseasesManagement = () => {
                 {errors.disease}
               </div>
             )}
-
-            <h6 className="mt-3">
-              Hospital ID <span style={{ color: 'red' }}>*</span>
-            </h6>
-            <CFormInput
-              type="text"
-              name="hospitalId"
-              value={newDisease.hospitalId}
-              onChange={(e) => {
-                const value = e.target.value
-                setNewDisease({ ...newDisease, hospitalId: value })
-                if (errors.hospitalId) {
-                  setErrors((prev) => ({ ...prev, hospitalId: '' }))
-                }
-              }}
-              placeholder="Enter Hospital Id"
-              className={errors.hospitalId ? 'is-invalid' : ''}
-            />
-            {errors.hospitalId && (
-              <div className="invalid-feedback" style={{ color: 'red' }}>
-                {errors.hospitalId}
-              </div>
-            )}
           </CForm>
         </CModalBody>
         <CModalFooter>
@@ -348,12 +322,6 @@ const DiseasesManagement = () => {
               type="text"
               value={diseaseToEdit?.disease || ''}
               onChange={(e) => setDiseaseToEdit({ ...diseaseToEdit, disease: e.target.value })}
-            />
-            <h6 className="mt-3">Hospital ID</h6>
-            <CFormInput
-              type="text"
-              value={diseaseToEdit?.hospitalId || ''}
-              onChange={(e) => setDiseaseToEdit({ ...diseaseToEdit, hospitalId: e.target.value })}
             />
           </CForm>
         </CModalBody>

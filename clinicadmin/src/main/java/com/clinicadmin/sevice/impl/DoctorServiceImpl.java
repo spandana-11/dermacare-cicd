@@ -23,6 +23,7 @@ import com.clinicadmin.dto.ChangeDoctorPasswordDTO;
 import com.clinicadmin.dto.ClinicDTO;
 import com.clinicadmin.dto.ClinicWithDoctorsDTO;
 import com.clinicadmin.dto.ClinicWithDoctorsDTO2;
+import com.clinicadmin.dto.ConsultationTypeDTO;
 import com.clinicadmin.dto.DoctorAvailabilityStatusDTO;
 import com.clinicadmin.dto.DoctorAvailableSlotDTO;
 import com.clinicadmin.dto.DoctorCategoryDTO;
@@ -33,6 +34,7 @@ import com.clinicadmin.dto.DoctorSubServiceDTO;
 import com.clinicadmin.dto.DoctorsDTO;
 import com.clinicadmin.dto.ResBody;
 import com.clinicadmin.dto.Response;
+import com.clinicadmin.entity.ConsultationType;
 import com.clinicadmin.entity.DoctorLoginCredentials;
 import com.clinicadmin.entity.DoctorSlot;
 import com.clinicadmin.entity.Doctors;
@@ -326,6 +328,7 @@ public class DoctorServiceImpl implements DoctorService {
 			// Booleans (we assume default false if not set, so be cautious)
 			doctor.setDoctorAvailabilityStatus(dto.isDoctorAvailabilityStatus());
 			doctor.setRecommendation(dto.isRecommendation());
+			doctor.setAssociatedWithIADVC(dto.isAssociatedWithIADVC());
 
 			Doctors updatedDoctor = doctorsRepository.save(doctor);
 
@@ -1003,10 +1006,31 @@ public class DoctorServiceImpl implements DoctorService {
 		dto.setHospitalDocuments(clinic.getHospitalDocuments());
 		dto.setContractorDocuments(clinic.getContractorDocuments());
 		dto.setRecommended(clinic.isRecommended());
-		List<DoctorsDTO> maptoDTO = doctorList.stream().map(DoctorMapper::mapDoctorEntityToDoctorDTO)
-				.collect(Collectors.toList());
-		dto.setDoctors(maptoDTO);
-		return dto;
+		List<DoctorsDTO> maptoDTO = doctorList.stream().map(doc -> {
+	        DoctorsDTO doctorDTO = DoctorMapper.mapDoctorEntityToDoctorDTO(doc);
+
+	        if (doc.getConsultation() != null) {
+	            ConsultationType consultation = doc.getConsultation();
+	            ConsultationTypeDTO consultationDTO = new ConsultationTypeDTO();
+	            consultationDTO.setServiceAndTreatments(consultation.getServiceAndTreatments());
+	            consultationDTO.setInClinic(consultation.getInClinic());
+	            consultationDTO.setVideoOrOnline(consultation.getVideoOrOnline());
+	            doctorDTO.setConsultation(consultationDTO);
+	        } else {
+	            doctorDTO.setConsultation(null);
+	        }
+
+	        return doctorDTO;
+	    }).collect(Collectors.toList());
+
+	    dto.setDoctors(maptoDTO);
+	    return dto;
+	
+		
+//		List<DoctorsDTO> maptoDTO = doctorList.stream().map(DoctorMapper::mapDoctorEntityToDoctorDTO)
+//				.collect(Collectors.toList());
+//		dto.setDoctors(maptoDTO);
+//		return dto;
 	}
 
 //----------------------------------Get Doctors By SubserviceId----------------------------------------------------------------
@@ -1117,7 +1141,8 @@ public class DoctorServiceImpl implements DoctorService {
 					dto.setDoctorAverageRating(doc.getDoctorAverageRating());
 //			                            if (dto.getDoctorFees() != null)
 					dto.setDoctorFees(DoctorMapper.mapDoctorFeeEntityToDTO(doc.getDoctorFees()));
-					dto.setDoctorSignature(Base64CompressionUtil.decompressBase64(doc.getDoctorSignature()));					
+					dto.setDoctorSignature(Base64CompressionUtil.decompressBase64(doc.getDoctorSignature()));	
+					dto.setAssociatedWithIADVC(doc.isAssociatedWithIADVC());
 
 					return dto;
 				}).collect(Collectors.toList());

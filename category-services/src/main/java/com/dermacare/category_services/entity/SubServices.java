@@ -22,15 +22,15 @@ public class SubServices implements Serializable {
 
 	@Id
 	private ObjectId id;
-	
+
 	private String hospitalId;
-	
+
 	private ObjectId subServiceId;
 
 	private String subServiceName;
-	
+
 	private ObjectId serviceId;
-	
+
 	private String serviceName;
 
 	private String categoryName;
@@ -38,14 +38,17 @@ public class SubServices implements Serializable {
 	private ObjectId categoryId;
 
 	private String viewDescription;
-	
+
 	private byte[] subServiceImage;
 
 	private String status;
 
 	private String minTime;
 
-	private List<Map<String, List<String>>> descriptionQA;
+	
+	private List<Map<String, List<String>>> preProcedureQA;
+	private List<Map<String, List<String>>> procedureQA;
+	private List<Map<String, List<String>>> postProcedureQA;
 
 	private double price;
 
@@ -60,6 +63,10 @@ public class SubServices implements Serializable {
 	private double taxAmount;
 
 	private double platformFee;
+	
+	private byte gst;
+	
+	private double consultationFee;
 
 	private double discountedCost; // price - discount Amount
 

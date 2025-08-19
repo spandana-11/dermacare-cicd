@@ -63,12 +63,27 @@ const DoctorManagement = () => {
     serviceTreatment: false,
   })
 
-  const toggleType = (key) => {
-    setEnabledTypes((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }))
+  const toggleType = (type) => {
+    setEnabledTypes((prev) => {
+      const updated = { ...prev, [type]: !prev[type] }
+
+      // Build availableConsultations array based on updated enabledTypes
+      const consultations = []
+      if (updated.serviceTreatment) consultations.push('Services & Treatments')
+      if (updated.inClinic) consultations.push('In-Clinic')
+      if (updated.online) consultations.push('Video/Online')
+
+      setForm((prevForm) => ({
+        ...prevForm,
+        availableConsultations: consultations,
+      }))
+
+      console.log('Available Consultations:', consultations)
+
+      return updated
+    })
   }
+
   const [form, setForm] = useState({
     doctorPicture: null, // file input or image URL
     doctorLicence: '',
@@ -84,7 +99,7 @@ const DoctorManagement = () => {
     availableDays: '', // array of selected days
     availableTimes: '', // array of selected time slots
     profileDescription: '',
-    doctorSignature:null,
+    doctorSignature: null,
     doctorFees: {
       inClinicFee: '',
       vedioConsultationFee: '',
@@ -92,6 +107,7 @@ const DoctorManagement = () => {
     focusAreas: [], // array of objects like [{label: '', value: ''}]
     languages: [],
     highlights: [],
+    availableConsultations: [],
   })
 
   console.log(doctorData.data)
@@ -346,14 +362,28 @@ const DoctorManagement = () => {
       isValid = false
     }
 
-    if (!form.doctorFees.inClinicFee || isNaN(form.doctorFees.inClinicFee)) {
-      errors.inClinicFee = 'Enter valid in-clinic fee'
-      isValid = false
+    // In-Clinic Fee validation
+    if (enabledTypes.inClinic) {
+      if (
+        !form.doctorFees.inClinicFee ||
+        isNaN(form.doctorFees.inClinicFee) ||
+        Number(form.doctorFees.inClinicFee) <= 0
+      ) {
+        errors.inClinicFee = 'Enter valid in-clinic fee'
+        isValid = false
+      }
     }
 
-    if (!form.doctorFees.vedioConsultationFee || isNaN(form.doctorFees.vedioConsultationFee)) {
-      errors.vedioConsultationFee = 'Enter valid video consultation fee'
-      isValid = false
+    // Video/Online Fee validation
+    if (enabledTypes.online) {
+      if (
+        !form.doctorFees.vedioConsultationFee ||
+        isNaN(form.doctorFees.vedioConsultationFee) ||
+        Number(form.doctorFees.vedioConsultationFee) <= 0
+      ) {
+        errors.vedioConsultationFee = 'Enter valid video consultation fee'
+        isValid = false
+      }
     }
 
     if (!form.doctorPicture) {
@@ -425,7 +455,6 @@ const DoctorManagement = () => {
           subServiceName: sub.subServiceName,
         }))
 
-
       // 🔍 2. Check if any doctor already has the same mobile or email
       const mobileExists = doctorData.data?.some(
         (doc) => doc.doctorMobileNumber === form.doctorMobileNumber,
@@ -471,6 +500,7 @@ const DoctorManagement = () => {
         focusAreas: form.focusAreas,
         languages: form.languages,
         highlights: form.highlights,
+        // ServiceAvailability:form.ServiceAvailability,
         doctorFees: {
           inClinicFee: form.doctorFees.inClinicFee,
           vedioConsultationFee: form.doctorFees.vedioConsultationFee,
@@ -502,8 +532,6 @@ const DoctorManagement = () => {
         userID: response.data.data.username,
         clinicName: hospitalName,
       })
-
-    
 
       toast.success(response.data.message || 'Doctor added successfully', {
         position: 'top-right',
@@ -1138,13 +1166,13 @@ const DoctorManagement = () => {
                 />
                 <CFormCheck
                   type="checkbox"
-                  label="In-Clinic"
+                  label="In-Clinic Consultation"
                   checked={enabledTypes.inClinic}
                   onChange={() => toggleType('inClinic')}
                 />
                 <CFormCheck
                   type="checkbox"
-                  label="Video/Online"
+                  label="Online Consultation"
                   checked={enabledTypes.online}
                   onChange={() => toggleType('online')}
                 />
@@ -1157,12 +1185,12 @@ const DoctorManagement = () => {
                 {/* In-Clinic Fee Input */}
                 <div style={{ flex: 1 }}>
                   <CFormLabel>
-                    In-Clinic Fee
+                    In-Clinic Consultation Fee
                     <span className="text-danger">*</span>
                   </CFormLabel>
                   <CFormInput
                     type="number"
-                    placeholder="In-Clinic Fee"
+                    placeholder="In-Clinic Consultation Fee"
                     disabled={!enabledTypes.inClinic}
                     value={form.doctorFees.inClinicFee}
                     onChange={(e) => {
@@ -1185,12 +1213,12 @@ const DoctorManagement = () => {
                 {/* Video/Online Fee Input */}
                 <div style={{ flex: 1 }}>
                   <CFormLabel>
-                    Online Fee
+                    Online Consultation Fee
                     <span className="text-danger">*</span>
                   </CFormLabel>
                   <CFormInput
                     type="number"
-                    placeholder="Video/Online Fee"
+                    placeholder="Online Consultation Fee"
                     disabled={!enabledTypes.online}
                     value={form.doctorFees.vedioConsultationFee}
                     onChange={(e) => {
@@ -1303,107 +1331,112 @@ const DoctorManagement = () => {
             items={form.highlights}
             onAdd={(items) => setForm((prev) => ({ ...prev, highlights: items }))}
           />
-<CCol md={6} className="d-flex align-items-center" style={{ gap: '20px' }}>
-  {/* The container for the custom file input and label */}
-  <div style={{ flex: 1 }}>
-    <CFormLabel htmlFor="doctorSignature">
-      Doctor Signature <span className="text-danger">*</span>
-    </CFormLabel>
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        border: '1px solid #ccc',
-        borderRadius: '4px',
-        padding: '4px', // Reduced padding
-        backgroundColor: '#f8f9fa',
-      }}
-    >
-      <CButton
-        color="secondary"
-        onClick={() => document.getElementById('file-input-doctor-signature').click()}
-      >
-        Choose File
-      </CButton>
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {form.doctorSignatureFileName || 'No file selected'}
-      </span>
-    </div>
-    <CFormInput
-      id="file-input-doctor-signature"
-      type="file"
-      accept="image/jpeg, image/png"
-      style={{ display: 'none' }} // Hide the native file input
-      onChange={(e) => {
-        const file = e.target.files[0];
-        if (file) {
-          const validTypes = ['image/jpeg', 'image/png'];
-          if (!validTypes.includes(file.type)) {
-            setFormErrors((prev) => ({
-              ...prev,
-              doctorSignature: 'Only JPG and PNG images are allowed',
-            }));
-            return;
-          }
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            setForm((p) => ({ ...p, doctorSignature: reader.result, doctorPictureFileName: file.name }));
-            setFormErrors((prev) => ({
-              ...prev,
-              doctorSignature: '',
-            }));
-          };
-          reader.readAsDataURL(file);
-        } else {
-          setForm((p) => ({ ...p, doctorSignature: null, doctorSignatureFileName: null }));
-          setFormErrors((prev) => ({
-            ...prev,
-            doctorSignature: 'Profile picture is required',
-          }));
-        }
-      }}
-      invalid={!!formErrors.doctorSignature}
-    />
-    {formErrors.doctorSignature && (
-      <div className="text-danger p-2">{formErrors.doctorSignature}</div>
-    )}
-  </div>
+          <CCol md={6} className="d-flex align-items-center" style={{ gap: '20px' }}>
+            {/* The container for the custom file input and label */}
+            <div style={{ flex: 1 }}>
+              <CFormLabel htmlFor="doctorSignature">
+                Doctor Signature <span className="text-danger">*</span>
+              </CFormLabel>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  padding: '4px', // Reduced padding
+                  backgroundColor: '#f8f9fa',
+                }}
+              >
+                <CButton
+                  color="secondary"
+                  onClick={() => document.getElementById('file-input-doctor-signature').click()}
+                >
+                  Choose File
+                </CButton>
+                <span
+                  style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                >
+                  {form.doctorSignatureFileName || 'No file selected'}
+                </span>
+              </div>
+              <CFormInput
+                id="file-input-doctor-signature"
+                type="file"
+                accept="image/jpeg, image/png"
+                style={{ display: 'none' }} // Hide the native file input
+                onChange={(e) => {
+                  const file = e.target.files[0]
+                  if (file) {
+                    const validTypes = ['image/jpeg', 'image/png']
+                    if (!validTypes.includes(file.type)) {
+                      setFormErrors((prev) => ({
+                        ...prev,
+                        doctorSignature: 'Only JPG and PNG images are allowed',
+                      }))
+                      return
+                    }
+                    const reader = new FileReader()
+                    reader.onloadend = () => {
+                      setForm((p) => ({
+                        ...p,
+                        doctorSignature: reader.result,
+                        doctorPictureFileName: file.name,
+                      }))
+                      setFormErrors((prev) => ({
+                        ...prev,
+                        doctorSignature: '',
+                      }))
+                    }
+                    reader.readAsDataURL(file)
+                  } else {
+                    setForm((p) => ({ ...p, doctorSignature: null, doctorSignatureFileName: null }))
+                    setFormErrors((prev) => ({
+                      ...prev,
+                      doctorSignature: 'Profile picture is required',
+                    }))
+                  }
+                }}
+                invalid={!!formErrors.doctorSignature}
+              />
+              {formErrors.doctorSignature && (
+                <div className="text-danger p-2">{formErrors.doctorSignature}</div>
+              )}
+            </div>
 
-  {/* Image Preview on the right side */}
-  <div style={{ minWidth: '150px' }}>
-    {form.doctorSignature ? (
-      <img
-        src={form.doctorSignature}
-        alt="Doctor Signature Preview"
-        style={{
-          width: '150px',
-          height: 'auto', // Changed to 'auto'
-          border: '1px solid #ccc',
-          borderRadius: '4px',
-          objectFit: 'contain', // Changed to 'contain'
-        }}
-      />
-    ) : (
-      <div
-        style={{
-          width: '150px',
-          height: '80px', // Reduced height
-          border: '1px dashed #ccc',
-          borderRadius: '4px',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          color: '#999',
-          fontSize: '14px',
-        }}
-      >
-        No Image
-      </div>
-    )}
-  </div>
-</CCol>
-
+            {/* Image Preview on the right side */}
+            <div style={{ minWidth: '150px' }}>
+              {form.doctorSignature ? (
+                <img
+                  src={form.doctorSignature}
+                  alt="Doctor Signature Preview"
+                  style={{
+                    width: '150px',
+                    height: 'auto', // Changed to 'auto'
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    objectFit: 'contain', // Changed to 'contain'
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: '150px',
+                    height: '80px', // Reduced height
+                    border: '1px dashed #ccc',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    color: '#999',
+                    fontSize: '14px',
+                  }}
+                >
+                  No Image
+                </div>
+              )}
+            </div>
+          </CCol>
         </CModalBody>
 
         <CModalFooter>

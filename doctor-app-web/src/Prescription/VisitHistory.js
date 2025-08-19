@@ -6,7 +6,6 @@ import {
   CCard,
   CCardBody,
   CCardHeader,
-  CImage,
   CSpinner,
   CTable,
   CTableBody,
@@ -16,8 +15,10 @@ import {
   CTableRow,
 } from '@coreui/react'
 import { getVisitHistoryByPatientIdAndDoctorId } from '../Auth/Auth'
+import ReportDetails from '../components/Reports/Reports'
+import { Accordion } from 'react-bootstrap'
 
-// Accordion component stays same
+// Accordion (lazy-mount children)
 const AccordionItem = ({ id, title, children, defaultOpen = false }) => {
   const [open, setOpen] = useState(defaultOpen)
   return (
@@ -38,19 +39,17 @@ const AccordionItem = ({ id, title, children, defaultOpen = false }) => {
         role="region"
         aria-labelledby={`${id}-button`}
       >
-        {children}
+        {open ? children : null}
       </div>
     </div>
   )
 }
 
-// Helper to transform API visit to expected shape
-// Helper: normalize anything to an array of strings
+// normalize anything to array of strings
 const normalizeAttachments = (raw) => {
   if (!raw) return []
   if (Array.isArray(raw)) return raw.filter(Boolean)
   if (typeof raw === 'string') {
-    // some APIs send comma-separated names/paths/base64
     return raw
       .split(',')
       .map((s) => s && s.trim())
@@ -58,6 +57,7 @@ const normalizeAttachments = (raw) => {
   }
   return []
 }
+
 const freqLabel = (f) => {
   switch ((f || '').toLowerCase()) {
     case 'day':
@@ -72,7 +72,7 @@ const freqLabel = (f) => {
 }
 
 const transformVisit = (visit) => {
-  // --- symptoms -> strings ---
+  // symptoms -> strings
   const symptomsArr = []
   if (visit.symptoms) {
     if (visit.symptoms.symptomDetails) symptomsArr.push(visit.symptoms.symptomDetails)
@@ -82,16 +82,12 @@ const transformVisit = (visit) => {
     if (visit.symptoms.duration) symptomsArr.push(`Duration: ${visit.symptoms.duration}`)
   }
 
-  // --- tests ---
-  const testsArr = (visit.tests?.selectedTests || []).map((testName) => ({
-    name: testName,
-  }))
+  // tests
+  const testsArr = (visit.tests?.selectedTests || []).map((testName) => ({ name: testName }))
   const testsReason = visit.tests?.testReason || ''
   const prescriptionPdf = visit.prescriptionPdf || []
 
-  // --- treatments (your current API shows selectedTreatment/generateData,
-  // keep existing mapping; if nothing, this will be empty which is fine) ---
-  // --- treatments: derive names from selectedTestTreatments or from generatedData keys ---
+  // treatments
   const rawSchedules = visit.treatments?.generatedData || {}
   const selectedTreatments =
     visit.treatments?.selectedTestTreatments ||
@@ -99,7 +95,6 @@ const transformVisit = (visit) => {
     Object.keys(rawSchedules) ||
     []
 
-  // normalize schedules to a consistent shape
   const treatmentSchedules = Object.fromEntries(
     Object.entries(rawSchedules).map(([name, meta]) => [
       name,
@@ -113,13 +108,12 @@ const transformVisit = (visit) => {
     ]),
   )
 
-  // treatments list for the bullet list (reason optional)
   const treatmentsArr = selectedTreatments.filter(Boolean).map((name) => ({
     name,
-    reason: treatmentSchedules?.[name]?.reason || '', // keep if you want per-treatment reason
+    reason: treatmentSchedules?.[name]?.reason || '',
   }))
 
-  // --- prescription ---
+  // prescription
   const prescriptionArr = (visit.prescription?.medicines || []).map((med) => ({
     medicine: med.name,
     dose: med.dose,
@@ -130,24 +124,29 @@ const transformVisit = (visit) => {
     times: med.times,
   }))
 
-  // --- attachments (THIS is the important part) ---
-  // Your data shows: visit.symptoms.attachments = [ "�PNG...", "�PNG..." ]
+  // attachments (patient-provided)
   const attachmentsFromSymptoms = normalizeAttachments(visit.symptoms?.attachments)
+  const attachmentsFromReports = visit.symptoms?.reports ? [visit.symptoms.reports] : []
 
-  // also include symptoms.reports if your backend uses that for a single base64 image
-  const attachmentsFromReports = visit.symptoms?.reports
-    ? [visit.symptoms.reports] // let FileUploader detect type/base64/binary
-    : []
-
-  // date / title
+  // title
   const d = new Date(visit.visitDateTime)
   const day = String(d.getDate()).padStart(2, '0')
   const month = String(d.getMonth() + 1).padStart(2, '0')
   const year = d.getFullYear()
   const visitNumTitle = `${visit.visitType?.replace('_', ' ') || 'VISIT'} (${day}–${month}–${year})`
 
+  // **robust bookingId** for ReportDetails
+  const bookingId =
+    visit.bookingId ||
+    visit.appointmentId ||
+    visit.item?.bookingId ||
+    visit.appointmentInfo?.bookingId ||
+    visit?.booking?.id ||
+    ''
+
   return {
     id: visit.id,
+    bookingId, // <-- expose per-visit bookingId
     title: visitNumTitle,
     symptoms: symptomsArr,
     diagnosis: visit.symptoms?.diagnosis || '',
@@ -156,23 +155,12 @@ const transformVisit = (visit) => {
     treatments: treatmentsArr,
     treatmentSchedules,
     prescription: prescriptionArr,
-    prescriptionPdf: prescriptionPdf,
-    // expose attachments for the UI
+    prescriptionPdf,
     attachments: [...attachmentsFromSymptoms, ...attachmentsFromReports],
   }
 }
 
-// Helper for reports date formatting (dd-mm-yyyy)
-const transformDateForReport = (dateString) => {
-  if (!dateString) return ''
-  const d = new Date(dateString)
-  const dd = String(d.getDate()).padStart(2, '0')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const yyyy = d.getFullYear()
-  return `${dd}-${mm}-${yyyy}`
-}
-
-const VisitHistory = ({ patientId, doctorId }) => {
+const VisitHistory = ({ formData, patientData, patientId, doctorId }) => {
   const [visits, setVisits] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -182,17 +170,16 @@ const VisitHistory = ({ patientId, doctorId }) => {
 
     const fetchData = async () => {
       setLoading(true)
-      console.log('callingsahdjs')
       try {
         const response = await getVisitHistoryByPatientIdAndDoctorId(patientId, doctorId)
-        if (response.status == 200) {
+        if (response.status === 200) {
           const transformedVisits = (response.data.visitHistory || []).map(transformVisit)
           setVisits(transformedVisits)
-          setLoading(false)
+        } else {
+          setError('Failed to fetch visit history')
+          setVisits([])
         }
       } catch (e) {
-        console.log(e)
-
         setError(e.message || 'Failed to fetch visit history')
         setVisits([])
       } finally {
@@ -215,23 +202,37 @@ const VisitHistory = ({ patientId, doctorId }) => {
     )
   }
 
-  if (error) return <div>{error}</div>
-  if (!visits.length) return <div>No visit history available</div>
+  if (error) {
+    return (
+      <div
+        className="d-flex align-items-center justify-content-center"
+        style={{ minHeight: '60vh' }}
+      >
+        <span>{error}</span>
+      </div>
+    )
+  }
+
+  if (!visits.length) {
+    return (
+      <div
+        className="d-flex align-items-center justify-content-center"
+        style={{ minHeight: '60vh' }}
+      >
+        <span>No visit history available</span>
+      </div>
+    )
+  }
+
   const toInitials = (input, sep = ', ') => {
     if (!input) return ''
-
     let tokens = []
-    if (Array.isArray(input)) {
-      tokens = input
-    } else {
+    if (Array.isArray(input)) tokens = input
+    else {
       const s = String(input).trim()
-      if (s.includes(',') || s.includes('|') || /\s/.test(s)) {
-        tokens = s.split(/[,|\s]+/)
-      } else {
-        tokens = s.match(/morning|afternoon|evening|night/gi) || [s]
-      }
+      if (s.includes(',') || s.includes('|') || /\s/.test(s)) tokens = s.split(/[,|\s]+/)
+      else tokens = s.match(/morning|afternoon|evening|night/gi) || [s]
     }
-
     const map = {
       morning: 'M',
       m: 'M',
@@ -242,7 +243,6 @@ const VisitHistory = ({ patientId, doctorId }) => {
       night: 'N',
       n: 'N',
     }
-
     return tokens
       .map((t) => map[t.toLowerCase()] ?? (t[0]?.toUpperCase() || ''))
       .filter(Boolean)
@@ -253,7 +253,7 @@ const VisitHistory = ({ patientId, doctorId }) => {
     <div className="visit-history">
       <h4 className="visit-title">Visit History</h4>
 
-      <div className="vh-accordion pb-5">
+      <div className="vh-accordion pb-5 mb-5">
         {visits.map((v, idx) => (
           <AccordionItem key={v.id} id={v.id} title={v.title} defaultOpen={idx === 0}>
             {/* Symptoms */}
@@ -282,7 +282,7 @@ const VisitHistory = ({ patientId, doctorId }) => {
               <AccordionItem
                 id={`${v.id}-tests`}
                 title="Tests Recommended (With Reasons)"
-                defaultOpen
+                // defaultOpen
               >
                 {v.tests?.length ? (
                   <>
@@ -293,7 +293,6 @@ const VisitHistory = ({ patientId, doctorId }) => {
                         </li>
                       ))}
                     </ul>
-
                     {v.testsReason && (
                       <div className="mt-2">
                         <strong>Reason:</strong> {v.testsReason}
@@ -320,7 +319,6 @@ const VisitHistory = ({ patientId, doctorId }) => {
                       ))}
                     </ul>
 
-                    {/* Schedule block inside the same accordion */}
                     {v.treatmentSchedules && Object.keys(v.treatmentSchedules).length > 0 && (
                       <div className="mt-3">
                         {Object.entries(v.treatmentSchedules).map(([name, meta]) => (
@@ -329,7 +327,6 @@ const VisitHistory = ({ patientId, doctorId }) => {
                               {name} — {freqLabel(meta?.frequency)} ({meta?.sittings ?? 0} sittings
                               from {meta?.startDate || '—'})
                             </div>
-
                             <div className="mt-2 table-responsive">
                               <table className="table table-sm mb-0">
                                 <thead className="table-light">
@@ -350,7 +347,6 @@ const VisitHistory = ({ patientId, doctorId }) => {
                                 </tbody>
                               </table>
                             </div>
-
                             {meta?.reason ? (
                               <div className="mt-2">
                                 <strong>Reason:</strong> {meta.reason}
@@ -383,13 +379,11 @@ const VisitHistory = ({ patientId, doctorId }) => {
                             <CTableHeaderCell>Note</CTableHeaderCell>
                             <CTableHeaderCell>Duration</CTableHeaderCell>
                             <CTableHeaderCell>Time</CTableHeaderCell>
-                            {/* <CTableHeaderCell className="text-end">Action</CTableHeaderCell> */}
                           </CTableRow>
                         </CTableHead>
                         <CTableBody>
                           {v.prescription.map((item, idx) => {
                             const timings = toInitials(item?.times, ', ')
-
                             return (
                               <CTableRow key={item.id ?? idx}>
                                 <CTableDataCell>{idx + 1}</CTableDataCell>
@@ -420,18 +414,36 @@ const VisitHistory = ({ patientId, doctorId }) => {
                 defaultOpen={false}
                 className="mb-5 pb-5"
               >
-                <div style={{ marginTop: 10 }}>
-                  {Array.isArray(v.attachments) && v.attachments.length ? (
-                    <FileUploader label="Past Reports" attachments={v.attachments} />
-                  ) : (
-                    <p>No reports available</p>
-                  )}
-                </div>
-                <div style={{ marginTop: 10 }}>
-                  {Array.isArray(v.prescriptionPdf) && v.prescriptionPdf.length && (
-                    <FileUploader label="Prescription" attachments={v.prescriptionPdf} />
-                  )}
-                </div>
+                <Accordion defaultActiveKey="0" alwaysOpen={false}>
+                  <Accordion.Item eventKey="reports">
+                    <Accordion.Header>Reports</Accordion.Header>
+                    <Accordion.Body>
+                      <ReportDetails formData={formData} patientData={patientData} show={false} />
+                    </Accordion.Body>
+                  </Accordion.Item>
+
+                  <Accordion.Item eventKey="past-reports">
+                    <Accordion.Header>Past Reports</Accordion.Header>
+                    <Accordion.Body>
+                      {v.attachments.length > 0 ? (
+                        <FileUploader attachments={v.attachments} />
+                      ) : (
+                        <p>No past reports available</p>
+                      )}
+                    </Accordion.Body>
+                  </Accordion.Item>
+
+                  <Accordion.Item eventKey="prescription">
+                    <Accordion.Header>Prescription</Accordion.Header>
+                    <Accordion.Body>
+                      {v.prescriptionPdf.length > 0 ? (
+                        <FileUploader attachments={v.prescriptionPdf} />
+                      ) : (
+                        <p>No prescription available</p>
+                      )}
+                    </Accordion.Body>
+                  </Accordion.Item>
+                </Accordion>
               </AccordionItem>
             </div>
           </AccordionItem>

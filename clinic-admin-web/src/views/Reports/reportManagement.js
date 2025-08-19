@@ -30,35 +30,33 @@ const ReportsManagement = () => {
   const [selectedServiceTypes, setSelectedServiceTypes] = useState([])
   const [selectedConsultationTypes, setSelectedConsultationTypes] = useState([])
   const [clinicId, setClinicId] = useState(null)
-  
+
   const consultationTypeMap = {
     'Service & Treatment': 'services & treatments',
     'Video Consultation': 'online consultation',
     'In-clinic': 'in-clinic consultation',
   }
 
-const fetchAppointments = async (hospitalId) => { // Added hospitalId parameter
+  const fetchAppointments = async (hospitalId) => {
+    // Added hospitalId parameter
     try {
       const data = await AppointmentData()
       if (data && data.data) {
         // Filter initial bookings by clinicId here if it exists
         const relevantBookings = hospitalId
-          ? data.data.filter(
-              (booking) => normalize(booking.clinicId) === normalize(hospitalId),
-            )
+          ? data.data.filter((booking) => normalize(booking.clinicId) === normalize(hospitalId))
           : data.data
         setBookings(relevantBookings || [])
-        setLoading(false);
+        setLoading(false)
       }
     } catch (error) {
       console.error('Failed to fetch appointments:', error)
       setBookings([]) // Ensure bookings is an empty array on error
-      setLoading(false);
+      setLoading(false)
     }
   }
 
-
- useEffect(() => {
+  useEffect(() => {
     const hospitalId = localStorage.getItem('HospitalId')
     if (hospitalId) {
       setClinicId(hospitalId) // Store clinicId in state
@@ -67,49 +65,55 @@ const fetchAppointments = async (hospitalId) => { // Added hospitalId parameter
       console.warn('No HospitalId found in localStorage. Displaying all relevant appointments.')
       // If no HospitalId, you might still want to fetch all appointments
       // or handle this case based on your application's requirements.
-      fetchAppointments(null); // Fetch all if no specific clinicId
+      fetchAppointments(null) // Fetch all if no specific clinicId
     }
   }, [])
 
   const handleStatusChange = (e) => {
     const value = e.target.value
-
     if (statusFilters.includes(value)) {
-      setStatusFilters([]) // Deselect if the same one is clicked
+      setStatusFilters(statusFilters.filter((s) => s !== value)) // remove if selected again
     } else {
-      setStatusFilters([value]) // Allow only one selection
+      setStatusFilters([...statusFilters, value]) // add new one
     }
   }
 
- useEffect(() => {
-    // 1. Filter by "Completed" status
-    let currentFiltered = bookings.filter(
-      (booking) => normalize(booking.status) === 'completed',
-    )
+useEffect(() => {
+  let currentFiltered = bookings
 
-    // 2. Apply consultation type filter if selected
-    if (filterTypes.length === 1) {
-      const selectedType = filterTypes[0]
+  // 1. Filter by status (Completed / In-Progress)
+  if (statusFilters.length > 0) {
+    currentFiltered = currentFiltered.filter((booking) =>
+      statusFilters.some(
+        (status) => normalize(booking.status) === normalize(status)
+      )
+    )
+  }
+
+  // 2. Apply consultation type filter
+  if (filterTypes.length === 1) {
+    const selectedType = filterTypes[0]
+
+    if (selectedType === "Video Consultation") {
+      currentFiltered = currentFiltered.filter(
+        (item) =>
+          normalize(item.consultationType) === "video consultation" ||
+          normalize(item.consultationType) === "online consultation"
+      )
+    } else {
       const mappedType = consultationTypeMap[selectedType]
       if (mappedType) {
         currentFiltered = currentFiltered.filter(
-          (item) => normalize(item.consultationType) === mappedType,
+          (item) => normalize(item.consultationType) === mappedType
         )
       }
     }
+  }
 
-    // No need for a separate clinicId filter here if you filtered it during fetchAppointments
-    // If you prefer to filter here, uncomment and adjust:
-    /*
-    if (clinicId) {
-      currentFiltered = currentFiltered.filter(
-        (item) => normalize(item.clinicId) === normalize(clinicId),
-      )
-    }
-    */
+  setFilteredData(currentFiltered)
+}, [bookings, filterTypes, statusFilters])
 
-    setFilteredData(currentFiltered)
-  }, [bookings, filterTypes, clinicId]) // Added clinicId to dependencies
+
 
   useEffect(() => {
     const serviceTypes = [...new Set(bookings.map((item) => item.servicename).filter(Boolean))]
@@ -139,36 +143,34 @@ const fetchAppointments = async (hospitalId) => { // Added hospitalId parameter
   //   )
   //   setFilteredData(filtered)
   // }, [bookings, selectedStatus]) // dependencies: run whenever these change
-useEffect(() => {
-  let currentFiltered = bookings
+  // useEffect(() => {
+  //   let currentFiltered = bookings
 
-  // 1. Filter by status (Completed only)
-  currentFiltered = currentFiltered.filter(
-    (booking) => normalize(booking.status) === 'completed'
-  )
+  //   // 1. Filter by status (Completed only)
+  //   currentFiltered = currentFiltered.filter((booking) => normalize(booking.status) === 'completed')
 
-  // 2. Apply consultation type filter
-  if (filterTypes.length === 1) {
-    const selectedType = filterTypes[0]
+  //   // 2. Apply consultation type filter
+  //   if (filterTypes.length === 1) {
+  //     const selectedType = filterTypes[0]
 
-    if (selectedType === 'Video Consultation') {
-      currentFiltered = currentFiltered.filter(
-        (item) =>
-          normalize(item.consultationType) === 'video consultation' ||
-          normalize(item.consultationType) === 'online consultation'
-      )
-    } else {
-      const mappedType = consultationTypeMap[selectedType]
-      if (mappedType) {
-        currentFiltered = currentFiltered.filter(
-          (item) => normalize(item.consultationType) === mappedType
-        )
-      }
-    }
-  }
+  //     if (selectedType === 'Video Consultation') {
+  //       currentFiltered = currentFiltered.filter(
+  //         (item) =>
+  //           normalize(item.consultationType) === 'video consultation' ||
+  //           normalize(item.consultationType) === 'online consultation',
+  //       )
+  //     } else {
+  //       const mappedType = consultationTypeMap[selectedType]
+  //       if (mappedType) {
+  //         currentFiltered = currentFiltered.filter(
+  //           (item) => normalize(item.consultationType) === mappedType,
+  //         )
+  //       }
+  //     }
+  //   }
 
-  setFilteredData(currentFiltered)
-}, [bookings, filterTypes])
+  //   setFilteredData(currentFiltered)
+  // }, [bookings, filterTypes])
 
   useEffect(() => {
     const hospitalId = localStorage.getItem('HospitalId')
@@ -198,9 +200,27 @@ useEffect(() => {
         </div>
 
         <div className="mb-3">
-          <CButton color="secondary" onClick={() => setFilterTypes([])}>
-            Reset Filters
-          </CButton>
+          <CButton color="secondary" onClick={() => {
+  setFilterTypes([])
+  setStatusFilters([])
+}}>
+  Reset Filters
+</CButton>
+
+        </div>
+        <div className="d-flex gap-3 mb-3">
+          <CFormCheck
+            label="Completed"
+            value="Completed"
+            onChange={handleStatusChange}
+            checked={statusFilters.includes('Completed')}
+          />
+          <CFormCheck
+            label="In-Progress"
+            value="In-Progress"
+            onChange={handleStatusChange}
+            checked={statusFilters.includes('In-Progress')}
+          />
         </div>
 
         <CTable striped hover responsive>
@@ -217,58 +237,58 @@ useEffect(() => {
             </CTableRow>
           </CTableHead>
 
-       <CTableBody>
-  {loading ? (
-    // ✅ Show loading while data is being fetched
-    <CTableRow>
-      <CTableDataCell colSpan="8" className="text-center text-primary fw-bold">
-        Loading reports...
-      </CTableDataCell>
-    </CTableRow>
-  ) : filteredData.length > 0 ? (
-    filteredData.map((item, index) => (
-      <CTableRow key={`${item.bookingId}-${index}`}>
-        <CTableDataCell>{index + 1}</CTableDataCell>
-        <CTableDataCell>{item.name}</CTableDataCell>
-        <CTableDataCell>{item.consultationType}</CTableDataCell>
-        <CTableDataCell>{item.serviceDate}</CTableDataCell>
-        <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
-        <CTableDataCell>{item.status}</CTableDataCell>
-        <CTableDataCell>
-          <CButton
-            color="primary"
-            size="sm"
-            onClick={() =>
-              navigate(`/reportDetails/${item.bookingId}`, {
-                state: {
-                  report: item,
-                  appointmentInfo: {
-                    name: item.name,
-                    age: item.age,
-                    gender: item.gender,
-                    problem: item.problem,
-                    bookingId: item.bookingId,
-                    item: item,
-                  },
-                },
-              })
-            }
-          >
-            View
-          </CButton>
-        </CTableDataCell>
-      </CTableRow>
-    ))
-  ) : (
-    // ✅ Show only after loading is done and no data
-    <CTableRow>
-      <CTableDataCell colSpan="8" className="text-center text-danger fw-bold">
-        No completed appointments found.
-      </CTableDataCell>
-    </CTableRow>
-  )}
-</CTableBody>
+          <CTableBody>
+            {loading ? (
+              // ✅ Show loading while data is being fetched
+              <CTableRow>
+                <CTableDataCell colSpan="8" className="text-center text-primary fw-bold">
+                  Loading reports...
+                </CTableDataCell>
+              </CTableRow>
+            ) : filteredData.length > 0 ? (
+              filteredData.map((item, index) => (
+                <CTableRow key={`${item.bookingId}-${index}`}>
+                  <CTableDataCell>{index + 1}</CTableDataCell>
+                  <CTableDataCell>{item.name}</CTableDataCell>
+                  <CTableDataCell>{item.consultationType}</CTableDataCell>
+                  <CTableDataCell>{item.serviceDate}</CTableDataCell>
+                  <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
+                  <CTableDataCell>{item.status}</CTableDataCell>
+                  <CTableDataCell>
+                    <CButton
+                      color="primary"
+                      size="sm"
+                      onClick={() =>
+                        navigate(`/reportDetails/${item.bookingId}`, {
+                          state: {
+                            report: item,
+                            appointmentInfo: {
+                              name: item.name,
+                              age: item.age,
+                              gender: item.gender,
+                              problem: item.problem,
+                              bookingId: item.bookingId,
+                              item: item,
+                            },
+                          },
+                        })
+                      }
+                    >
+                      View
+                    </CButton>
+                  </CTableDataCell>
+                </CTableRow>
+              ))
+            ) : (
+              // ✅ Show only after loading is done and no data
+              <CTableRow>
+               <CTableDataCell colSpan="8" className="text-center text-danger fw-bold">
+  No appointments found.
+</CTableDataCell>
 
+              </CTableRow>
+            )}
+          </CTableBody>
         </CTable>
       </div>
       {/* {viewService && (
