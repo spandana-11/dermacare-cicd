@@ -77,7 +77,7 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
       setFormData((prev) => ({ ...prev, tests: { ...prev.tests, ...data } }))
       goToNext('Tests')
     },
-    Prescription: (data) => {
+    Medication: (data) => {
       setFormData((prev) => ({ ...prev, prescription: { ...prev.prescription, ...data } }))
       goToNext('Medication')
     },
