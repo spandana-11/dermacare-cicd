@@ -239,7 +239,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			if(existingBooking != null && !existingBooking.isEmpty()) {
 			for(Booking b : existingBooking) {
 			switch(number) {
-			case "1" :if(b.getConsultationType().equalsIgnoreCase("Services & Treatments") || b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation")){
+			case "1" :if(b.getConsultationType().equalsIgnoreCase("Services & Treatments") || b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation") || b.getConsultationType().equalsIgnoreCase("Online Consultation")){
 				if(b.getStatus().equalsIgnoreCase("Confirmed") && !b.getServiceDate().equals(currentDate)) {
 					resnse.add(toResponse(b));
 					if(resnse != null && !resnse.isEmpty()) {

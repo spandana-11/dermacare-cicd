@@ -24,12 +24,10 @@ import { getAppointments, getAppointmentsCount } from '../../Auth/Auth'
 const tabLabels = {
   upcoming: 'Upcoming',
   completed: 'Completed',
-  online: 'Online Appointments',
 }
 
 const tabToNumberMap = {
   upcoming: 1,
-  online: 2,
   completed: 3,
 }
 
@@ -73,24 +71,23 @@ const Appointments = ({ searchTerm = '' }) => {
       <CRow>
         <CCol>
           <div
-            className="position-sticky z-3 w-100  pt-4"
+            className="position-sticky z-3 w-100 pt-4"
             style={{ top: 105, backgroundColor: `${COLORS.theme}` }}
           >
-             <h5 style={{ fontSize: SIZES.medium}} className='pb-3'>Appointments</h5>
+            <h5 style={{ fontSize: SIZES.medium }} className="pb-3">
+              Appointments
+            </h5>
             <CRow className="w-100 d-flex justify-content-between align-items-center mb-2">
-             
               <CCol xs={12} md={8}>
                 <div className="d-flex align-items-center gap-2 flex-wrap pb-2">
-                  {/* Dropdown for Upcoming / Online / Completed */}
-                  <CDropdown style={{ cursor: 'pointer' }} >
+                  {/* Dropdown for Upcoming / Completed */}
+                  <CDropdown style={{ cursor: 'pointer' }}>
                     <CDropdownToggle
                       size="sm"
                       className="d-flex align-items-center gap-2"
                       style={{
-                        // minWidth: '220px',
                         border: `1px solid ${COLORS.logocolor}`,
                         borderRadius: '6px',
-                        // backgroundColor: COLORS.lowgray,
                         color: COLORS.logocolor,
                         fontWeight: '600',
                       }}
@@ -118,69 +115,47 @@ const Appointments = ({ searchTerm = '' }) => {
                     </CDropdownMenu>
                   </CDropdown>
 
-                  {/* Consultation Filters - hidden in ONLINE tab */}
-                  {activeTab !== 'online' && (
-                    <>
-                      {' '}
+                  {/* Consultation Filters */}
+                  <>
+                    <Button
+                      variant={filter === 'Services & Treatments' ? 'primary' : 'outline'}
+                      onClick={() => setFilter('Services & Treatments')}
+                      customColor={
+                        filter === 'Services & Treatments' ? COLORS.bgcolor : COLORS.logocolor
+                      }
+                      size="small"
+                    >
+                      Services & Treatments
+                    </Button>
+
+                    <Button
+                      variant={filter === 'In-Clinic Consultation' ? 'primary' : 'outline'}
+                      onClick={() => setFilter('In-Clinic Consultation')}
+                      customColor={
+                        filter === 'In-Clinic Consultation' ? COLORS.bgcolor : COLORS.logocolor
+                      }
+                      size="small"
+                    >
+                      In-Clinic Consultation
+                    </Button>
+
+                    {/* ✅ Online Consultation only for Upcoming & Completed */}
+                    {(activeTab === 'upcoming' || activeTab === 'completed') && (
                       <Button
-                        variant={filter === 'Services & Treatments' ? 'primary' : 'outline'}
-                        onClick={() => setFilter('Services & Treatments')}
+                        variant={filter === 'Online Consultation' ? 'primary' : 'outline'}
+                        onClick={() => setFilter('Online Consultation')}
                         customColor={
-                          filter === 'Services & Treatments' ? COLORS.bgcolor : COLORS.logocolor
+                          filter === 'Online Consultation' ? COLORS.bgcolor : COLORS.logocolor
                         }
                         size="small"
                       >
-                        {' '}
-                        Services & Treatments{' '}
-                      </Button>{' '}
-                      <Button
-                        variant={filter === 'In-Clinic Consultation' ? 'primary' : 'outline'}
-                        onClick={() => setFilter('In-Clinic Consultation')}
-                        customColor={
-                          filter === 'In-Clinic Consultation' ? COLORS.bgcolor : COLORS.logocolor
-                        }
-                        size="small"
-                      >
-                        {' '}
-                        In-Clinic Consultation{' '}
-                      </Button>{' '}
-                      {activeTab === 'completed' && (
-                        <Button
-                          variant={filter === 'Online Consultation' ? 'primary' : 'outline'}
-                          onClick={() => setFilter('Online Consultation')}
-                          customColor={
-                            filter === 'Online Consultation' ? COLORS.bgcolor : COLORS.logocolor
-                          }
-                          size="small"
-                        >
-                          {' '}
-                          Online Consultation{' '}
-                        </Button>
-                      )}{' '}
-                    </>
-                  )}
+                        Online Consultation
+                      </Button>
+                    )}
+                  </>
                 </div>
               </CCol>
-
-              {/* Total Patients */}
-              {/* <CCol xs={12} md={3} className="text-md-end text-start">
-                <Button
-                  className="mb-3"
-                  customGradient={`linear-gradient(145deg, ${COLORS.primary}, ${COLORS.secondary})`}
-                >
-                  Total Patients: <strong>{patientCount}</strong>
-                </Button>
-              </CCol> */}
             </CRow>
-
-            {/* Count for current filter */}
-            {/* <CRow className="align-items-center mb-2 w-100">
-              <CCol xs={12} md={2} className="text-md-end text-start mb-2">
-                <span className="badge bg-primary text-white px-3 py-2 rounded-pill">
-                  Patient Count: {filteredPatients.length}
-                </span>
-              </CCol>
-            </CRow> */}
           </div>
 
           {/* Table */}
@@ -195,7 +170,7 @@ const Appointments = ({ searchTerm = '' }) => {
             <CCardBody style={{ padding: '0', overflowY: 'auto' }}>
               <CTable hover responsive className="mb-0 table-horizontal-lines striped">
                 <CTableHead>
-                  <CTableRow className="text-nowrap" style={{ fontSize: '0.875rem',}}>
+                  <CTableRow className="text-nowrap" style={{ fontSize: '0.875rem' }}>
                     {[
                       'S.No',
                       'Patient ID',
@@ -210,7 +185,7 @@ const Appointments = ({ searchTerm = '' }) => {
                       <CTableHeaderCell
                         key={header}
                         style={{
-                         backgroundColor: COLORS.bgcolor ,
+                          backgroundColor: COLORS.bgcolor,
                           color: COLORS.black,
                           fontWeight: 'bold',
                         }}
@@ -229,13 +204,20 @@ const Appointments = ({ searchTerm = '' }) => {
                     </CTableRow>
                   ) : filteredPatients.length === 0 ? (
                     <CTableRow>
-                      <CTableDataCell colSpan={9} className="text-center text-muted py-4" style={{color:COLORS.logocolor}}>
+                      <CTableDataCell
+                        colSpan={9}
+                        className="text-center text-muted py-4"
+                        style={{ color: COLORS.logocolor }}
+                      >
                         No appointments found
                       </CTableDataCell>
                     </CTableRow>
                   ) : (
                     filteredPatients.map((p, i) => (
-                      <CTableRow key={p.id || `${p.patientId}-${i}`} style={{ fontSize: '0.85rem' }}>
+                      <CTableRow
+                        key={p.id || `${p.patientId}-${i}`}
+                        style={{ fontSize: '0.85rem' }}
+                      >
                         <CTableDataCell>{i + 1}</CTableDataCell>
                         <CTableDataCell>{p.patientId}</CTableDataCell>
                         <CTableDataCell>{p.name}</CTableDataCell>
