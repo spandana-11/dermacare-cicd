@@ -16,5 +16,11 @@ public class SubServicesDetailsDto {
 	private String serviceName;
 	private String subServiceName;
 	private double subServicePrice;
-
+	private double price;
+	private double discountedCost; 
+	private double taxAmount;
+	private byte discountPercentage;
+	private double hospitalOverallRating;
+	private String website;
+	private double consultationFee;;
 }

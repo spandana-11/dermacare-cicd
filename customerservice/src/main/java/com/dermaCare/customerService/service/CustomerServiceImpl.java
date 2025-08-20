@@ -674,8 +674,8 @@ public Response getDoctorsSlots(String hospitalId,String doctorId) {
 	    		  ResponseEntity<ResponseStructure<BookingResponse>> res = bookingFeign.bookService(req);
 	    		  BookingResponse bookingResponse  = res.getBody().getData(); 
 	    		  if(bookingResponse!=null) {
-	    		  clinicAdminFeign.updateDoctorSlotWhileBooking(bookingResponse.getDoctorId(), 
-	    		  bookingResponse.getServiceDate(),bookingResponse.getServicetime());
+	    		System.out.println( clinicAdminFeign.updateDoctorSlotWhileBooking(bookingResponse.getDoctorId(), 
+	  	    		  bookingResponse.getServiceDate(),bookingResponse.getServicetime()));     ;
     			     response.setData(res.getBody());			
 		    		 response.setStatus(res.getBody().getStatusCode());	 
 	    		  }else{
@@ -1079,7 +1079,7 @@ public Response getSubServiceInfoBySubServiceId(String subServiceId) throws Json
 	Response responseObj = new Response();
 	try {
 		ResponseEntity<ResponseStructure<List<SubServicesDto>>>  res = categoryServicesFeign.getAllSubServices();
-		System.out.println(res);
+		//System.out.println(res);
 		List<SubServicesDetailsDto> hospitalAndSubServiceInfo = new ArrayList<>();
 		if(res.getBody().getData() != null && !res.getBody().getData().isEmpty()) {
 			for(SubServicesDto subsrvice:res.getBody().getData()) {
@@ -1088,13 +1088,20 @@ public Response getSubServiceInfoBySubServiceId(String subServiceId) throws Json
 			subServicesDetailsDto.setServiceName(subsrvice.getServiceName());
 			subServicesDetailsDto.setSubServiceName(subsrvice.getSubServiceName());
 			subServicesDetailsDto.setSubServicePrice(subsrvice.getFinalCost());
-		    Response response = adminFeign.getClinicById(subsrvice.getHospitalId());
+			subServicesDetailsDto.setDiscountedCost(subsrvice.getDiscountedCost());
+			subServicesDetailsDto.setDiscountPercentage(subsrvice.getDiscountPercentage());
+			subServicesDetailsDto.setPrice(subsrvice.getPrice());
+			subServicesDetailsDto.setTaxAmount(subsrvice.getTaxAmount());
+			subServicesDetailsDto.setConsultationFee(subsrvice.getConsultationFee());
+            Response response = adminFeign.getClinicById(subsrvice.getHospitalId());
 		    if(response.getData() != null) {
 		     ClinicDTO clinicDto = new ObjectMapper().convertValue(response.getData(),ClinicDTO.class);
 			 subServicesDetailsDto.setHospitalId(clinicDto.getHospitalId());
 			 subServicesDetailsDto.setHospitalName(clinicDto.getName());
 			 subServicesDetailsDto.setHospitalLogo(clinicDto.getHospitalLogo());
-			 subServicesDetailsDto.setRecommanded(clinicDto.isRecommended());}
+			 subServicesDetailsDto.setRecommanded(clinicDto.isRecommended());
+			 subServicesDetailsDto.setHospitalOverallRating(clinicDto.getHospitalOverallRating());
+			 subServicesDetailsDto.setWebsite(clinicDto.getWebsite());}
 			 hospitalAndSubServiceInfo.add(subServicesDetailsDto);}
 			 if( hospitalAndSubServiceInfo != null && !hospitalAndSubServiceInfo.isEmpty()) {
 				 responseObj.setData(hospitalAndSubServiceInfo);

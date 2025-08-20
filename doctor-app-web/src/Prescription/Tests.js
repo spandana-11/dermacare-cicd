@@ -20,7 +20,7 @@ import {
   CContainer,
 } from '@coreui/react'
 import GradientTextCard from '../components/GradintColorText'
-import { getAllLabTests } from '../../src/Auth/Auth'
+import {  getLabTests } from '../../src/Auth/Auth'
 import { useDoctorContext } from '../Context/DoctorContext'
 
 /**
@@ -71,7 +71,7 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
   useEffect(() => {
     const fetchTests = async () => {
       try {
-        const tests = await getAllLabTests()
+        const tests = await getLabTests()
         if (Array.isArray(tests)) {
           setAvailableTests(tests) // store full objects
         }

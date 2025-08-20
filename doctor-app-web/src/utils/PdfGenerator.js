@@ -134,7 +134,7 @@ const PrescriptionPDF = ({ logoSrc, doctorData, clicniData, formData, patientDat
     date: (formData?.followUp?.nextFollowUpDate || '').trim(),
     note: (formData?.followUp?.followUpNote || '').trim(),
   }
- const hospitalLogo =
+  const hospitalLogo =
     clicniData?.hospitalLogo
       ? `data:image/png;base64,${clicniData.hospitalLogo}`
       : logoSrc
@@ -145,7 +145,7 @@ const PrescriptionPDF = ({ logoSrc, doctorData, clicniData, formData, patientDat
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoBox}>
-           {hospitalLogo && (
+            {hospitalLogo && (
               <Image style={styles.logo} src={hospitalLogo} />
             )}
           </View>
@@ -180,7 +180,7 @@ const PrescriptionPDF = ({ logoSrc, doctorData, clicniData, formData, patientDat
             </View>
             <View style={styles.kvCol}>
               <Text style={styles.label}>Symptoms Duration</Text>
-              <Text style={styles.value}>{patientData?.duration ?? '—'}</Text>
+              <Text style={styles.value}>{patientData?.symptomsDuration ?? '—'}</Text>
             </View>
           </View>
         </View>
@@ -358,9 +358,20 @@ const PrescriptionPDF = ({ logoSrc, doctorData, clicniData, formData, patientDat
             </Text>
             <Text>Licence: {doctorData?.doctorLicence ?? ''}</Text>
           </View>
-          <View style={{ marginTop: 15 }}>
-            <Text>Doctor's Signature</Text>
+          <View style={{ marginTop: 15, alignItems: 'flex-start' }}>
+            {doctorData?.doctorSignature ? (
+              <Image
+                source={{ uri: doctorData.doctorSignature }}
+                style={{ width: 120, height: 60, marginBottom: 5 }}
+                resizeMode="contain"
+              />
+            ) : (
+              <Text style={{ marginBottom: 5 }}>No Signature Available</Text>
+            )}
+
+            <Text style={styles.value}>Doctor's Signature</Text>
           </View>
+
         </View>
       </Page>
     </Document>

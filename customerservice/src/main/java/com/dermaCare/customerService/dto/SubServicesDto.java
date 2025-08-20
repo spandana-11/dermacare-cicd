@@ -2,6 +2,7 @@ package com.dermaCare.customerService.dto;
 
 import java.util.List;
 import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,11 +10,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SubServicesDto {
 
 	private String hospitalId;
-	
+
 	private String subServiceId;
 
 	private String subServiceName;
@@ -34,7 +35,9 @@ public class SubServicesDto {
 
 	private String minTime;
 
-	private List<Map<String, List<String>>> descriptionQA;
+	private List<Map<String, List<String>>> preProcedureQA;
+	private List<Map<String, List<String>>> procedureQA;
+	private List<Map<String, List<String>>> postProcedureQA;
 
 	private double price;
 
@@ -49,13 +52,17 @@ public class SubServicesDto {
 	private double taxAmount;
 
 	private double platformFee;
+	
+	private byte gst;
+	
+	private double gstAmount;
+	
+	private double consultationFee;
 
 	private double discountedCost; // price - discount Amount
 
 	private double clinicPay; // Price - platformFee
 
 	private double finalCost; // taxAmount + discounedCost
-
-
 
 }

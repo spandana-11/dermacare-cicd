@@ -8,10 +8,11 @@ export const reportbaseUrl = `${ipUrl}/clinic-admin`
 export const clinicbaseUrl = `${ipUrl}/admin/getClinicById`
 export const todayappointmentsbaseUrl = `${ipUrl}/api/doctors/appointments/today`
 export const appointmentsbaseUrl = `${ipUrl}/api/doctors/appointments/filter`
-export const appointmentsCountbaseUrl = `${ipUrl}/api/doctors/appointments/completed`
-export const savePrescriptionbaseUrl = `${ipUrl}/api/doctors`
+export const appointmentsCountbaseUrl = `${ipUrl}:8082/api/doctors/appointments/completed`
+export const savePrescriptionbaseUrl = `${ipUrl}:8082/api/doctors`
 
 export const testsbaseUrl = `${ipUrl}/clinic-admin/labtest/getAllLabTests`
+export const labtestsbase = `${ipUrl}/clinic-admin/labtests`
 export const diseasesbaseUrl = `${ipUrl}/clinic-admin/diseases`
 export const treatmentsbaseUrl = `${ipUrl}/clinic-admin/treatment/getAllTreatments`
 export const treatmentUrl=`${ipUrl}/clinic-admin/treatments`

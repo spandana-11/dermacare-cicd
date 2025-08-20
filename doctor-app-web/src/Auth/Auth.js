@@ -18,7 +18,8 @@ import {
   reportbaseUrl,
   AllReports, getDoctorSlotsEndpoint,
   adminBaseUrl,
-  treatmentUrl
+  treatmentUrl,
+  labtestsbase
 } from './BaseUrl'
 
 export const postLogin = async (payload, endpoint) => {
@@ -246,6 +247,31 @@ export const getAllLabTests = async () => {
     }
   } catch (error) { }
 }
+//Based on the HospitalID get all Lab tests
+export const getLabTests = async () => {
+  const hospitalId = localStorage.getItem("hospitalId"); // should be "H_2"
+
+  if (!hospitalId) {
+    console.warn("⚠️ No hospitalId found in localStorage");
+    return [];
+  }
+
+  try {
+    const response = await api.get(`${labtestsbase}/${hospitalId}`);
+    
+    if (response.data?.success) {
+      console.log("✅ Lab tests:", response.data.data);
+      return response.data.data;
+    } else {
+      console.error("❌ Failed to fetch lab tests:", response.data?.message || "Unknown error");
+      return [];
+    }
+  } catch (error) {
+    console.error("🚨 Error fetching lab tests:", error);
+    return [];
+  }
+};
+
 
 // Get all diseases
 export const getAllDiseases = async () => {
@@ -303,7 +329,7 @@ export const getAllTreatments = async () => {
 }
 
 
-//
+//Based on the Clinic ID 
 export const getAllTreatmentsByHospital = async () => {
   const hospitalId = localStorage.getItem("hospitalId"); // should be "H_2"
 
