@@ -22,5 +22,7 @@ public class SubServicesDetailsDto {
 	private byte discountPercentage;
 	private double hospitalOverallRating;
 	private String website;
-	private double consultationFee;;
+	private double consultationFee;
+	private String walkthrough;
+
 }

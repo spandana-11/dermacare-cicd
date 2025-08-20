@@ -16,5 +16,6 @@ public class ClinicDTO {
     private boolean recommended;
     private double hospitalOverallRating;
     private String website;
+    private String walkthrough;
 
 }

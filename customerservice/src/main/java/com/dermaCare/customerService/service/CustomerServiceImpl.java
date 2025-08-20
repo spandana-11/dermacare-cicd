@@ -1101,7 +1101,8 @@ public Response getSubServiceInfoBySubServiceId(String subServiceId) throws Json
 			 subServicesDetailsDto.setHospitalLogo(clinicDto.getHospitalLogo());
 			 subServicesDetailsDto.setRecommanded(clinicDto.isRecommended());
 			 subServicesDetailsDto.setHospitalOverallRating(clinicDto.getHospitalOverallRating());
-			 subServicesDetailsDto.setWebsite(clinicDto.getWebsite());}
+			 subServicesDetailsDto.setWebsite(clinicDto.getWebsite());
+			 subServicesDetailsDto.setWalkthrough(clinicDto.getWalkthrough());}
 			 hospitalAndSubServiceInfo.add(subServicesDetailsDto);}
 			 if( hospitalAndSubServiceInfo != null && !hospitalAndSubServiceInfo.isEmpty()) {
 				 responseObj.setData(hospitalAndSubServiceInfo);
