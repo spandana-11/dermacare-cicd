@@ -26,7 +26,7 @@ const CompletedAppointmentsView = ({ defaultTab, tabs, fromDoctorTemplate = fals
   // Fetch patient if needed
   useEffect(() => {
     if (!patient && id) {
-      ;(async () => {
+      ; (async () => {
         try {
           const res = await fetch(`/api/patients/${id}`)
           if (!res.ok) throw new Error('Failed to fetch patient')
@@ -174,7 +174,7 @@ const CompletedAppointmentsView = ({ defaultTab, tabs, fromDoctorTemplate = fals
                         aria-selected={active}
                         onClick={() => setActiveTab(t)}
                         className="d-inline-flex align-items-center position-relative"
-                       style={{
+                        style={{
                           padding: '.5rem .850rem',
                           cursor: 'pointer',
                           // backgroundColor: active ? '#1976d2' : 'transparent',
@@ -183,12 +183,12 @@ const CompletedAppointmentsView = ({ defaultTab, tabs, fromDoctorTemplate = fals
                         }}
                       >
                         <span
-                         style={{
-                                                    fontSize: '16px',
-                                                    color: active ? COLORS.primary : COLORS.gray,
-                                                    fontWeight: active ? '700' : '500',
-                                                    backgroundColor:"transparent"
-                                                  }}
+                          style={{
+                            fontSize: '16px',
+                            color: active ? COLORS.primary : COLORS.gray,
+                            fontWeight: active ? '700' : '500',
+                            backgroundColor: "transparent"
+                          }}
                         >
                           {t}
                         </span>

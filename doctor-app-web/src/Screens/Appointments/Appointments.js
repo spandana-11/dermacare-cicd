@@ -23,8 +23,8 @@ import { getAppointments, getAppointmentsCount } from '../../Auth/Auth'
 
 const tabLabels = {
   upcoming: 'Upcoming',
-  online: 'Online Appointments',
   completed: 'Completed',
+  online: 'Online Appointments',
 }
 
 const tabToNumberMap = {
@@ -88,15 +88,15 @@ const Appointments = ({ searchTerm = '' }) => {
                       className="d-flex align-items-center gap-2"
                       style={{
                         // minWidth: '220px',
-                        border: `1px solid ${COLORS.gray}`,
+                        border: `1px solid ${COLORS.logocolor}`,
                         borderRadius: '6px',
                         // backgroundColor: COLORS.lowgray,
-                        color: COLORS.gray,
+                        color: COLORS.logocolor,
                         fontWeight: '600',
                       }}
                     >
                       <span>{tabLabels[activeTab]}</span>
-                      <span style={{ color: COLORS.gray, fontWeight: '600' }}>
+                      <span style={{ color: COLORS.logocolor, fontWeight: '600' }}>
                         ({filteredPatients.length})
                       </span>
                     </CDropdownToggle>
@@ -126,7 +126,7 @@ const Appointments = ({ searchTerm = '' }) => {
                         variant={filter === 'Services & Treatments' ? 'primary' : 'outline'}
                         onClick={() => setFilter('Services & Treatments')}
                         customColor={
-                          filter === 'Services & Treatments' ? COLORS.primary : COLORS.gray
+                          filter === 'Services & Treatments' ? COLORS.bgcolor : COLORS.logocolor
                         }
                         size="small"
                       >
@@ -137,7 +137,7 @@ const Appointments = ({ searchTerm = '' }) => {
                         variant={filter === 'In-Clinic Consultation' ? 'primary' : 'outline'}
                         onClick={() => setFilter('In-Clinic Consultation')}
                         customColor={
-                          filter === 'In-Clinic Consultation' ? COLORS.primary : COLORS.gray
+                          filter === 'In-Clinic Consultation' ? COLORS.bgcolor : COLORS.logocolor
                         }
                         size="small"
                       >
@@ -149,7 +149,7 @@ const Appointments = ({ searchTerm = '' }) => {
                           variant={filter === 'Online Consultation' ? 'primary' : 'outline'}
                           onClick={() => setFilter('Online Consultation')}
                           customColor={
-                            filter === 'Online Consultation' ? COLORS.primary : COLORS.gray
+                            filter === 'Online Consultation' ? COLORS.bgcolor : COLORS.logocolor
                           }
                           size="small"
                         >
@@ -195,7 +195,7 @@ const Appointments = ({ searchTerm = '' }) => {
             <CCardBody style={{ padding: '0', overflowY: 'auto' }}>
               <CTable hover responsive className="mb-0 table-horizontal-lines striped">
                 <CTableHead>
-                  <CTableRow className="text-nowrap" style={{ fontSize: '0.875rem' }}>
+                  <CTableRow className="text-nowrap" style={{ fontSize: '0.875rem',}}>
                     {[
                       'S.No',
                       'Patient ID',
@@ -210,8 +210,8 @@ const Appointments = ({ searchTerm = '' }) => {
                       <CTableHeaderCell
                         key={header}
                         style={{
-                          backgroundColor: '#dee2e6',
-                          color: '#000',
+                         backgroundColor: COLORS.bgcolor ,
+                          color: COLORS.black,
                           fontWeight: 'bold',
                         }}
                       >
@@ -229,7 +229,7 @@ const Appointments = ({ searchTerm = '' }) => {
                     </CTableRow>
                   ) : filteredPatients.length === 0 ? (
                     <CTableRow>
-                      <CTableDataCell colSpan={9} className="text-center text-muted py-4">
+                      <CTableDataCell colSpan={9} className="text-center text-muted py-4" style={{color:COLORS.logocolor}}>
                         No appointments found
                       </CTableDataCell>
                     </CTableRow>

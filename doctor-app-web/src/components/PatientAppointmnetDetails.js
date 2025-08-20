@@ -200,7 +200,7 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
                         <span
                           style={{
                             fontSize: '16px',
-                            color: active ? COLORS.primary : COLORS.gray,
+                            color: active ? COLORS.black : COLORS.logocolor,
                             fontWeight: active ? '700' : '500',
                             backgroundColor:"transparent"
                           }}

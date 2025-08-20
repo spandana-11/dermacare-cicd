@@ -32,30 +32,46 @@ const AppointmentDetails = () => {
   }
 
   const handleDownloadConsentForm = () => {
-  const doc = new jsPDF()
+    const doc = new jsPDF()
 
-  doc.setFontSize(16)
-  doc.text('Patient Consent Form', 14, 20)
+    doc.setFontSize(16)
+    doc.text('Patient Consent Form', 14, 20)
 
-  doc.setFontSize(12)
-  doc.text(`Booking ID: ${appointment.bookingId}`, 14, 30)
-  doc.text(`Patient Name: ${appointment.name}`, 14, 40)
-  doc.text(`Mobile Number: ${appointment.mobileNumber}`, 14, 50)
-  doc.text(`Procedure: ${appointment.subServiceName}`, 14, 60)
-  doc.text(`Doctor Name: ${doctor?.doctorName || ''}`, 14, 70)
-  doc.text(`Service Date: ${appointment.serviceDate}`, 14, 80)
-  doc.text(`Time: ${appointment.servicetime}`, 14, 90)
+    doc.setFontSize(12)
+    doc.text(`Booking ID: ${appointment.bookingId}`, 14, 30)
+    doc.text(`Patient Name: ${appointment.name}`, 14, 40)
+    doc.text(`Mobile Number: ${appointment.mobileNumber}`, 14, 50)
+    doc.text(`Procedure: ${appointment.subServiceName}`, 14, 60)
+    doc.text(`Doctor Name: ${doctor?.doctorName || ''}`, 14, 70)
+    doc.text(`Service Date: ${appointment.serviceDate}`, 14, 80)
+    doc.text(`Time: ${appointment.servicetime}`, 14, 90)
 
-  // If you want to dump all details as JSON:
-  // doc.text(JSON.stringify(appointment, null, 2), 14, 100)
+    // If you want to dump all details as JSON:
+    // doc.text(JSON.stringify(appointment, null, 2), 14, 100)
 
-  doc.save(`ConsentForm_${appointment.bookingId}.pdf`)
-}
+    doc.save(`ConsentForm_${appointment.bookingId}.pdf`)
+  }
+  // useEffect(() => {
+  //   const fetchDoctorDetails = async () => {
+  //     if (
+  //       appointment?.status?.toLowerCase() === 'confirmed' ||
+  //       (appointment?.status?.toLowerCase() === 'completed' && appointment?.doctorId)
+  //     ) {
+  //       try {
+  //         const res = await GetdoctorsByClinicIdData(appointment.doctorId)
+  //         setDoctor(res.data.data)
+  //       } catch (error) {
+  //         console.error('Failed to fetch doctor details:', error)
+  //       }
+  //     }
+  //   }
+  //   fetchDoctorDetails()
+  // }, [appointment])
   useEffect(() => {
     const fetchDoctorDetails = async () => {
       if (
-        appointment?.status?.toLowerCase() === 'confirmed' ||
-        (appointment?.status?.toLowerCase() === 'completed' && appointment?.doctorId)
+        ['confirmed', 'completed', 'in-progress'].includes(appointment?.status?.toLowerCase()) &&
+        appointment?.doctorId
       ) {
         try {
           const res = await GetdoctorsByClinicIdData(appointment.doctorId)
@@ -73,34 +89,38 @@ const AppointmentDetails = () => {
     return picture.startsWith('data:image') ? picture : `data:image/jpeg;base64,${picture}`
   }
 
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'completed':
-        return 'success'
-      case 'rejected':
-        return 'danger'
-      case 'pending':
-        return 'warning'
-      case 'confirmed':
-        return 'info'
-      case 'in progress':
-        return 'primary'
-      case 'rescheduled':
-        return 'secondary'
-      default:
-        return 'dark'
-    }
-  }
+  // const getStatusColor = (status) => {
+  //   switch (status?.toLowerCase()) {
+  //     case 'completed':
+  //       return 'success'
+  //     case 'rejected':
+  //       return 'danger'
+  //     case 'pending':
+  //       return 'warning'
+  //     case 'confirmed':
+  //       return 'info'
+  //     case 'in progress':
+  //       return 'primary'
+  //     case 'rescheduled':
+  //       return 'secondary'
+  //     default:
+  //       return 'dark'
+  //   }
+  // }
 
-  const showConfirmedOrCompleted =
-    appointment?.status?.toLowerCase() === 'confirmed' ||
-    appointment?.status?.toLowerCase() === 'completed'
+  // const showConfirmedOrCompleted =
+  //   appointment?.status?.toLowerCase() === 'confirmed' ||
+  //   appointment?.status?.toLowerCase() === 'completed' ||
+  //   appointment?.status?.toLowerCase() === 'In-Progress'
+  const showConfirmedOrCompleted = ['confirmed', 'completed', 'in-progress'].includes(
+    appointment?.status?.toLowerCase(),
+  )
 
   return (
     <div className="container mt-4">
       {/* Header */}
       <div className="bg-info text-white p-3 d-flex justify-content-between align-items-center rounded">
-        <h5 className="mb-0">Booking ID: {appointment.bookingId}</h5>
+        <h5 className="mb-0">Patient File Name: {appointment.bookingId}</h5>
         <div className="d-flex gap-2">
           <CButton color="secondary" size="sm" onClick={() => navigate(-1)}>
             Back
@@ -111,9 +131,9 @@ const AppointmentDetails = () => {
       <div className="mt-4 p-4 border rounded shadow-sm bg-white">
         {/* Patient Details */}
         <div className="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
-          <h5 className="fw-bold text-primary mb-0">Patient Details</h5>
+          <h5 className="fw-bold text-info mb-0">Patient Details</h5>
           <span
-            className={`badge bg-${getStatusColor(appointment.status)} text-uppercase px-3 py-2`}
+            className={`badge bg-info text-uppercase px-3 py-2`}
           >
             {appointment.status}
           </span>
@@ -182,10 +202,11 @@ const AppointmentDetails = () => {
         {showConfirmedOrCompleted && (
           <>
             <div className="mt-4 d-flex justify-content-end gap-2">
-              <CButton color="primary" onClick={handleGenerateConsentForm}>
-                Consent Form<FaEye />
+              <CButton color="info" onClick={handleGenerateConsentForm}>
+                Consent Form
+                <FaEye />
               </CButton>
-              <CButton color="primary" onClick={handleDownloadConsentForm}>
+              <CButton color="info" onClick={handleDownloadConsentForm}>
                 <FaDownload />
               </CButton>
             </div>
@@ -202,7 +223,7 @@ const AppointmentDetails = () => {
                     className="rounded-circle border"
                   />
                   <div>
-                    <h6 className="text-primary fw-bold mb-1">{doctor.doctorName}</h6>
+                    <h6 className="text-info fw-bold mb-1">{doctor.doctorName}</h6>
                     <p className="mb-1">
                       <strong>Specialization:</strong> {doctor.specialization}
                     </p>
@@ -218,7 +239,7 @@ const AppointmentDetails = () => {
                   </div>
                   <div className="ms-auto">
                     <CButton
-                      color="primary"
+                      color="info"
                       size="sm"
                       className="px-3"
                       onClick={() => navigate(`/doctor/${doctor.doctorId}`, { state: { doctor } })}

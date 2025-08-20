@@ -297,7 +297,8 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
                     justifyContent: 'flex-end',
                 }}
             >
-                <Button onClick={handleNext}>Next</Button>
+                <Button onClick={handleNext} customColor={COLORS.bgcolor} // background color of button
+                    color={COLORS.black}>Next</Button>
             </div>
 
             {snackbar.show && <Snackbar message={snackbar.message} type={snackbar.type} />}

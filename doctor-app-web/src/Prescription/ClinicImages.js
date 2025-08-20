@@ -593,7 +593,8 @@ export default function MultiImageUpload() {
                 Save to Server
               </Button>
 
-              <Button color="secondary" size="small" onClick={loadFromLocalStorage} disabled={busy}>
+              <Button customColor={COLORS.bgcolor} // background color of button
+                  color={COLORS.black} size="small" onClick={loadFromLocalStorage} disabled={busy}>
                 Load Saved
               </Button>
 

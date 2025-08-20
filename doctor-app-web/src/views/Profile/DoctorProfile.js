@@ -153,7 +153,7 @@ const DoctorProfile = () => {
             <span
               style={{
                 fontSize: '16px',
-                color: activeKey === 1 ? COLORS.primary : COLORS.gray,
+                color: activeKey === 1 ? COLORS.black: COLORS.logocolor,
                 fontWeight: activeKey === 1 ? '700' : '500',
                 backgroundColor: 'transparent',
               }}
@@ -178,7 +178,7 @@ const DoctorProfile = () => {
             <span
               style={{
                 fontSize: '16px',
-                color: activeKey === 2 ? COLORS.primary : COLORS.gray,
+                color: activeKey === 2 ? COLORS.black: COLORS.logocolor,
                 fontWeight: activeKey === 2 ? '700' : '500',
                 backgroundColor: 'transparent',
               }}
@@ -203,7 +203,7 @@ const DoctorProfile = () => {
             <span
               style={{
                 fontSize: '16px',
-                color: activeKey === 3 ? COLORS.primary : COLORS.gray,
+                color: activeKey === 3 ? COLORS.black: COLORS.logocolor,
                 fontWeight: activeKey === 3 ? '700' : '500',
                 backgroundColor: 'transparent',
               }}
@@ -228,7 +228,7 @@ const DoctorProfile = () => {
             <span
               style={{
                 fontSize: '16px',
-                color: activeKey === 4 ? COLORS.primary : COLORS.gray,
+                color: activeKey === 4 ? COLORS.black: COLORS.logocolor,
                 fontWeight: activeKey === 4 ? '700' : '500',
                 backgroundColor: 'transparent',
               }}
@@ -443,19 +443,26 @@ const DoctorProfile = () => {
         {/* Doctor Slots Tab */}
         <CTabPane visible={activeKey === 2} className="pt-3">
           {/* Date Selector */}
-          <div className="d-flex gap-2 flex-wrap mb-3 border-1">
-            {days.map((dayObj, idx) => (
-              <CButton
-                key={idx}
-                color={selectedDate === format(dayObj.date, 'yyyy-MM-dd') ? 'primary' : 'light'}
-                onClick={() => handleDateClick(dayObj)}
-                style={{ border: '1px solid gray' }}
-              >
-                <div style={{ fontSize: '14px' }}>{dayObj.dayLabel}</div>
-                <div style={{ fontSize: '12px' }}>{dayObj.dateLabel}</div>
-              </CButton>
-            ))}
-          </div>
+         <div className="d-flex gap-2 flex-wrap mb-3 border-1">
+  {days.map((dayObj, idx) => {
+    const isSelected = selectedDate === format(dayObj.date, 'yyyy-MM-dd');
+    return (
+      <CButton
+        key={idx}
+        onClick={() => handleDateClick(dayObj)}
+        style={{
+          backgroundColor: isSelected ? COLORS.bgcolor : 'white', // selected vs unselected
+          color: COLORS.logocolor,                                         // text color
+          border: '1px solid gray',
+        }}
+      >
+        <div style={{ fontSize: '14px' }}>{dayObj.dayLabel}</div>
+        <div style={{ fontSize: '12px' }}>{dayObj.dateLabel}</div>
+      </CButton>
+    );
+  })}
+</div>
+
 
           {/* Slots Section */}
           <div className="doctor-slots">

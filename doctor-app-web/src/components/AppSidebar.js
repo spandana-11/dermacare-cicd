@@ -117,13 +117,15 @@ const AppSidebar = () => {
     <>
       <CSidebar
         className="border-end "
-        colorScheme="white"
+        //colorScheme="white"
         position="fixed"
         unfoldable={unfoldable}
         visible={sidebarShow}
+        style={{backgroundColor:COLORS.bgcolor}}
         onVisibleChange={(visible) => {
           dispatch({ type: 'set', sidebarShow: visible })
         }}
+        
       >
         <CSidebarHeader className="border-bottom ">
           <div
@@ -237,14 +239,14 @@ const AppSidebar = () => {
   style={{ borderWidth: 2, padding: 5, color: COLORS.gray }}
 /> */}
                   <h4
-                    className="doctor-header mb-0 mt-2 text-center"
-                    style={{ color: COLORS.secondary, fontWeight: 'bold', fontSize: SIZES.large }}
+                    className=" mb-0 mt-2 text-center"
+                    style={{ color: COLORS.black, fontWeight: 'bold', fontSize: SIZES.large }}
                   >
                     {capitalizeWords(doctorDetails?.doctorName) || 'Doctor Name'}
                   </h4>
                   <h6
                     className="mb-0 mt-1 text-center"
-                    style={{ color: COLORS.secondary, fontSize: SIZES.small }}
+                    style={{ color: COLORS.black, fontSize: SIZES.small }}
                   >
                     {doctorDetails?.qualification || 'Qualification'} ({' '}
                     {doctorDetails?.specialization || 'Specialization'})
@@ -266,7 +268,7 @@ const AppSidebar = () => {
 
         {!isPatientLoading && !hasPatient && (
           <CSidebarFooter className="border-top d-none d-lg-flex flex-column mt-2">
-            <h6 className="text-muted">Patient Reviews</h6>
+            <h6  style={{color:COLORS.black}}>Patient Reviews</h6>
             {ratings.length > 0 ? (
               ratings.map((item, index) => (
                 <div key={index} className="d-flex align-items-center mb-2 w-100">
@@ -296,7 +298,7 @@ const AppSidebar = () => {
                 </div>
               ))
             ) : (
-              <small className="text-muted">No reviews yet</small>
+              <small  style={{color:COLORS.black}}>No reviews yet</small>
             )}
           </CSidebarFooter>
         )}

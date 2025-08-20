@@ -182,7 +182,8 @@ const FollowUp = ({ seed = {}, onNext, sidebarWidth = 0, patientData }) => {
         }}
       >
         <div className="d-flex gap-3">
-          <Button color="primary" onClick={handleNext}>
+          <Button customColor={COLORS.bgcolor} // background color of button
+              color={COLORS.black} onClick={handleNext}>
             Next
           </Button>
         </div>

@@ -77,7 +77,7 @@ const TooltipButton = ({ patient, onSelect, tab }) => {
         <span>
           <Button
             size="small"
-            customColor={COLORS.secondary}
+            customColor={COLORS.bgcolor}
             onClick={handleClick}
             disabled={navLoading}
           >

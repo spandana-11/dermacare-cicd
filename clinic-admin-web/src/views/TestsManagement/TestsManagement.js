@@ -19,7 +19,7 @@ import { cilSearch } from '@coreui/icons'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import DataTable from 'react-data-table-component'
-import { deleteTestData, postTestData, TestData, updateTestData } from './TestsManagementAPI'
+import { deleteTestData, postTestData, TestData, TestDataById, updateTestData } from './TestsManagementAPI'
 
 const TestsManagement = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -56,12 +56,24 @@ const [hospitalIdToDelete, setHospitalIdToDelete] = useState(null)
       setLoading(false)
     }
   }
+  const fetchDataById = async (hospitalId) => {
+    setLoading(true)
+    try {
+      const response = await TestDataById(hospitalId)
+      setTest(normalizeTests(response.data))
+    } catch (error) {
+      setError('Failed to fetch test data.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
 const handleConfirmDelete = async () => {
   try {
     await deleteTestData(testIdToDelete, hospitalIdToDelete)
     toast.success('Test deleted successfully!', { position: 'top-right' })
-    fetchData()
+    // fetchData()
+    fetchDataById(hospitalId)
   } catch (error) {
     toast.error('Failed to delete test.')
     console.error('Delete error:', error)
@@ -77,8 +89,9 @@ const handleConfirmDelete = async () => {
 
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    // fetchData()
+    fetchDataById(hospitalId)
+  }, [hospitalId])
 
   useEffect(() => {
     const trimmedQuery = searchQuery.toLowerCase().trim()
@@ -121,7 +134,8 @@ const handleConfirmDelete = async () => {
 
     await postTestData(payload)
     toast.success('Test added successfully!')
-    fetchData()
+    // fetchData()
+    fetchDataById(hospitalId)
     setModalVisible(false)
     setNewTest({ testName: '' })
   } catch (error) {
@@ -153,7 +167,8 @@ const handleConfirmDelete = async () => {
       await updateTestData(testToEdit, testId, hospitalId)
       toast.success('Test updated successfully!')
       setEditTestMode(false)
-      fetchData()
+      // fetchData()
+      fetchDataById(hospitalId)
     } catch (error) {
       console.error('Update error:', error)
       toast.error('Failed to update test.')

@@ -484,7 +484,8 @@ const TestTreatments = ({ seed = {}, onNext }) => {
         )} */}
 
         <Button
-          color="primary"
+          customColor={COLORS.bgcolor} // background color of button
+              color={COLORS.black}
           disabled={hasPendingCards /* or use: nextDisabled for stricter gating */}
           onClick={handleNext}
         >

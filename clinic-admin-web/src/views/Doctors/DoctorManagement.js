@@ -110,7 +110,7 @@ const DoctorManagement = () => {
     availableConsultations: [],
   })
 
-  console.log(doctorData.data)
+  // console.log(doctorData.data)
 
   const [startDay, setStartDay] = useState('')
   const [endDay, setEndDay] = useState('')

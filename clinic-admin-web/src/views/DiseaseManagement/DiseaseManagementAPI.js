@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { AddDisease, AllDiseases, BASE_URL, DeleteDisease, UpdateDisease } from '../../baseUrl'
+import { AddDisease, AllDiseases, BASE_URL, DeleteDisease, GetDiseasesByHId, UpdateDisease } from '../../baseUrl'
 
 export const DiseaseData = async () => {
   try {
@@ -16,6 +16,20 @@ export const DiseaseData = async () => {
   }
 }
 
+export const TestdDiseaseByHId = async (hospitalId) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/${GetDiseasesByHId}/${hospitalId}`)
+    console.log('test data:', response.data)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching test data:', error.message)
+    if (error.response) {
+      console.error('Error Response Data:', error.response.data)
+      console.error('Error Response Status:', error.response.status)
+    }
+    throw error
+  }
+}
 // ✅ 2. Add a new disease
 export const postDiseaseData = async (diseaseData) => {
   try {

@@ -58,12 +58,12 @@ const _nav = [
     name: 'Disease-Management',
     icon: <CIcon icon={cilWarning} customClassName="nav-icon" />,
   },
-  {
-    component: CNavItem,
-    to: '/forms',
-    name: 'Forms',
-    icon: <CIcon icon={cilNoteAdd} customClassName="nav-icon" />,
-  },
+  // {
+  //   component: CNavItem,
+  //   to: '/forms',
+  //   name: 'Forms',
+  //   icon: <CIcon icon={cilNoteAdd} customClassName="nav-icon" />,
+  // },
   {
     component: CNavItem,
     to: '/tests',

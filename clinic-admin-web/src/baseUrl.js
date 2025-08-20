@@ -45,18 +45,21 @@ export const getDoctorIdAndNotifications = 'doctors/hospitalById'
 
 //Test
 export const AllTest = 'labtest/getAllLabTests'
+export const GetTestByHId = 'labtests'
 export const AddTest = 'labtest/addLabTest'
 export const UpdateTest = 'labtest/updateLabTest'
 export const DeleteTest = 'labtest/deleteLabTest'
 
 //Treatments
 export const AllTreatment = 'treatment/getAllTreatments'
+export const GetTreatmentsByHId = 'treatments'
 export const AddTreatment = 'treatment/addTreatment'
 export const UpdateTreatment = 'treatment/updateTreatmentById'
 export const DeleteTreatment = 'treatment/deleteTreatmentById'
 
 //Diseases
 export const AllDiseases = 'get-all-diseases'
+export const GetDiseasesByHId = 'diseases'
 export const AddDisease = 'addDisease'
 export const UpdateDisease = 'updateDisease'
 export const DeleteDisease = 'deleteDisease'

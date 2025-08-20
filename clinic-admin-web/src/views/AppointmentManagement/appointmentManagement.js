@@ -72,25 +72,25 @@ const appointmentManagement = () => {
     }
   }
   //Status color logics
-  const getStatusColor = (status) => {
-    console.log(status)
-    switch (status?.toLowerCase()) {
-      case 'completed':
-        return 'success'
-      // case 'Rejected':
-      //   return 'danger'
-      // case 'pending':
-      //   return 'warning'
-      case 'confirmed':
-        return 'info'
-      case 'in progress':
-        return 'primary'
-      case 'rescheduled':
-        return 'secondary'
-      default:
-        return 'dark'
-    }
-  }
+  // const getStatusColor = (status) => {
+  //   console.log(status)
+  //   switch (status?.toLowerCase()) {
+  //     case 'completed':
+  //       return 'success'
+  //     // case 'Rejected':
+  //     //   return 'danger'
+  //     // case 'pending':
+  //     //   return 'warning'
+  //     case 'confirmed':
+  //       return 'info'
+  //     case 'in progress':
+  //       return 'primary'
+  //     case 'rescheduled':
+  //       return 'secondary'
+  //     default:
+  //       return 'dark'
+  //   }
+  // }
 
   useEffect(() => {
     fetchAppointments()
@@ -177,7 +177,7 @@ const appointmentManagement = () => {
     }
   }
 
-  //filtering for pending,completed ,in-progress - one selection at a time
+  //filtering for pending,completed ,Active - one selection at a time
   const handleStatusChange = (e) => {
     const value = e.target.value
 
@@ -213,7 +213,7 @@ const appointmentManagement = () => {
               filterTypes.includes('Video Consultation') ? 'btn-dark' : 'btn-outline-dark'
             }`}
           >
-            Video Consultation
+            Tele Consultation
           </button>
         </div>
 
@@ -226,10 +226,10 @@ const appointmentManagement = () => {
               checked={statusFilters.includes('Pending')}
             /> */}
             <CFormCheck
-              label="In-Progress"
-              value="In-Progress"
+              label="Active"
+              value="Active"
               onChange={handleStatusChange}
-              checked={statusFilters.includes('In-Progress')}
+              checked={statusFilters.includes('Active')}
             />
 
             <CFormCheck
@@ -301,7 +301,7 @@ const appointmentManagement = () => {
                   </CTableDataCell>
                   <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
                   <CTableDataCell>
-                    <CBadge color={getStatusColor(item.status)}>
+                    <CBadge color="info">
                       {item.status
                         ?.split(' ')
                         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -310,7 +310,7 @@ const appointmentManagement = () => {
                   </CTableDataCell>
                   <CTableDataCell>
                     <CButton
-                      color="primary"
+                      color="info"
                       size="sm"
                       onClick={() =>
                         navigate(`/appointmentDetails/${item.bookingId}`, {

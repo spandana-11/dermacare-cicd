@@ -31,6 +31,7 @@ import Button from './CustomButton/CustomButton'
 import TooltipButton from './CustomButton/TooltipButton'
 import { getClinicDetails, getTodayAppointments } from '../Auth/Auth'
 import { useDoctorContext } from '../Context/DoctorContext'
+import { capitalizeWords } from '../utils/CaptalZeWord'
 
 const AppHeader = () => {
   const { patientData ,setTodayAppointments,todayAppointments} = useDoctorContext()
@@ -101,7 +102,7 @@ const AppHeader = () => {
       position="sticky"
       className="mb-0 p-0 app-header"
       // ref={headerRef}
-      style={{ top: 0, insetInline: 0, zIndex: 1030, margin: -20, }}
+      style={{ top: 0, insetInline: 0, zIndex: 1030, margin: -20, backgroundColor:COLORS.bgcolor}}
     >
       <CContainer className="border-bottom px-4 header-row " fluid>
         <CHeaderToggler
@@ -138,7 +139,7 @@ const AppHeader = () => {
                   border: 'none',
                   cursor: 'pointer',
                   fontSize: '1rem',
-                  color: '#aaa',
+                  color:COLORS.logocolor,
                 }}
               >
                 ×
@@ -179,16 +180,16 @@ const AppHeader = () => {
           )}
         </div>
 
-        <div className="d-flex flex-column text-end me-3 text-center px-2">
+        {/* <div className="d-flex flex-column text-end me-3 text-center px-2">
           <small style={{ fontWeight: 600, color: COLORS.gray }}>
             {date} ({day}), {time}
           </small>
-        </div>
+        </div> */}
 
         <CHeaderNav className="ms-auto">
           <CNavItem>
             <CNavLink href="#">
-              <CIcon icon={cilBell} size="lg" />
+              <CIcon icon={cilBell} size="lg" style={{color:COLORS.black}}/>
             </CNavLink>
           </CNavItem>
         </CHeaderNav>
@@ -201,10 +202,11 @@ const AppHeader = () => {
           <div className="d-flex flex-column align-items-center justify-content-center text-center px-2">
             {clinic ? (
               <>
-                <h5 className="fw-bold clinic-header" style={{ fontSize: SIZES.large }}>
-                  {clinic.name || 'No name'}
+                <h5 className="fw-bold " style={{ fontSize: SIZES.large ,color: COLORS.black}}>
+                  {capitalizeWords(clinic.name) || 'Clinic Name'}
+             
                 </h5>
-                <h6 style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+                <h6 style={{ color: COLORS.black, fontSize: SIZES.small }}>
                   {clinic.city || 'No city'}
                 </h6>
               </>

@@ -17,6 +17,7 @@ import TooltipButton from '../../components/CustomButton/TooltipButton'
 import { COLORS, SIZES } from '../../Themes'
 import { useDoctorContext } from '../../Context/DoctorContext'
 import { getAdImages, getTodayAppointments } from '../../Auth/Auth'
+import { color } from 'framer-motion'
 
 const Dashboard = () => {
   const { setPatientData, setTodayAppointments, todayAppointments } = useDoctorContext()
@@ -44,20 +45,20 @@ const Dashboard = () => {
 
   // ✅ Fetch appointments once
 
-useEffect(() => {
-  const fetchAppointments = async () => {
-    const response = await getTodayAppointments()
-    console.log("📡 Normalized Response:", response)
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      const response = await getTodayAppointments()
+      console.log("📡 Normalized Response:", response)
 
-    if (response.statusCode === 200) {
-      setTodayAppointments(response.data)
-    } else {
-      setTodayAppointments([])
+      if (response.statusCode === 200) {
+        setTodayAppointments(response.data)
+      } else {
+        setTodayAppointments([])
+      }
     }
-  }
 
-  fetchAppointments()
-}, [])
+    fetchAppointments()
+  }, [])
 
 
 
@@ -85,10 +86,13 @@ useEffect(() => {
           {/* Filter Buttons */}
           <div className="mb-3 d-flex gap-2 flex-wrap">
             <Button
+
               variant={selectedType === null ? 'primary' : 'outline'}
-              customColor={COLORS.gray}
+              customColor={COLORS.bgcolor}
+              color={COLORS.black}
               onClick={() => setSelectedType(null)}
               size="small"
+
             >
               All ({todayAppointments.length})
             </Button>
@@ -96,7 +100,7 @@ useEffect(() => {
               <Button
                 key={type}
                 variant={selectedType === type ? 'primary' : 'outline'}
-                customColor={selectedType === type ? COLORS.primary : COLORS.gray}
+                customColor={selectedType === type ? COLORS.bgcolor : COLORS.logocolor}
                 onClick={() => setSelectedType(type)}
                 size="small"
               >
@@ -115,12 +119,12 @@ useEffect(() => {
           >
             <CTable className="border">
               <CTableHead>
-                <CTableRow style={{ fontSize: '0.875rem', backgroundColor: '#d6d8db' }}>
+                <CTableRow style={{ fontSize: '0.875rem', backgroundColor: COLORS.bgcolor}}>
                   {['S.No', 'Patient ID', 'Name', 'Mobile Number', 'Time', 'Consultation', 'Action'].map(
                     (header, i) => (
                       <CTableHeaderCell
                         key={i}
-                        style={{ fontWeight: 'bold', color: '#000', backgroundColor: '#dee2e6' }}
+                        style={{ fontWeight: 'bold', color: COLORS.black, backgroundColor: COLORS.bgcolor }}
                         className={header === 'Action' ? 'text-center' : ''}
                       >
                         {header}
@@ -167,8 +171,8 @@ useEffect(() => {
             borderRadius: '10px',
           }}
         >
-          <CCard style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
-            {adMediaList.length > 0 ? (
+          <CCard style={{ width: '100%', height: '100%', overflow: 'hidden', backgroundColor: COLORS.bgcolor, display: "flex", justifyContent: "center", alignItems: 'center' }}>
+            {/* {adMediaList.length > 0 ? (
               <Carousel controls indicators interval={3000} fade>
                 {adMediaList.map((media, index) => (
                   <Carousel.Item
@@ -207,7 +211,10 @@ useEffect(() => {
               >
                 Loading Ads...
               </div>
-            )}
+            )} */}
+
+            <span style={{ color: COLORS.black, textAlign: 'center', fontWeight: 'bold',
+    fontSize: '1rem', }}>Ad Space</span>
           </CCard>
         </div>
       </div>

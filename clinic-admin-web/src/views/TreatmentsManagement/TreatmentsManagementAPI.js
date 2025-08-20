@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { AddTreatment, AllTreatment, BASE_URL, DeleteTreatment, UpdateTreatment } from '../../baseUrl'
+import { AddTreatment, AllTreatment, BASE_URL, DeleteTreatment, GetTreatmentsByHId, UpdateTreatment } from '../../baseUrl'
 
 export const TreatmentData = async () => {
   try {
@@ -15,7 +15,20 @@ export const TreatmentData = async () => {
     throw error
   }
 }
-
+export const TreatmentDataById = async (hospitalId) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/${GetTreatmentsByHId}/${hospitalId}`)
+    console.log('treatment data:', response.data)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching treatment data:', error.message)
+    if (error.response) {
+      console.error('Error Response Data:', error.response.data)
+      console.error('Error Response Status:', error.response.status)
+    }
+    throw error
+  }
+}
 export const postTreatmentData = async (treatmentData) => {
   try {
     const requestData = {

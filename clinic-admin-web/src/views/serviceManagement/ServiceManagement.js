@@ -66,7 +66,7 @@ const ServiceManagement = () => {
   const [selectedSubService, setSelectedSubService] = useState('')
   const [subServiceId, setSubServiceId] = useState('')
   const [previewImage, setPreviewImage] = useState(null)
-  
+
   const [serviceToEdit, setServiceToEdit] = useState({
     serviceImage: '',
     viewImage: '',
@@ -90,7 +90,6 @@ const ServiceManagement = () => {
     }
   }
 
-
   let descriptionQA = []
   try {
     if (typeof service.descriptionQA === 'string') {
@@ -108,6 +107,9 @@ const ServiceManagement = () => {
     serviceName: '',
     subServiceName: '',
     description: '',
+    price: '',
+    gst: 0,
+    consultationFee: 0,
     // preProcedure: '',
     // postProcedure: '',
     procedureQA: [],
@@ -115,6 +117,102 @@ const ServiceManagement = () => {
     postProcedureQA: [],
   })
   const [modalMode, setModalMode] = useState('add') // or 'edit'
+  const [editingIndex, setEditingIndex] = useState(null)
+  const [editingValue, setEditingValue] = useState('')
+  // ✅ Handle Add QA
+  const handleAddQA = (type) => {
+    if (editingValue.trim() === '') return
+    setNewService((prev) => ({
+      ...prev,
+      [type]: [...prev[type], editingValue],
+    }))
+    setEditingValue('')
+  }
+
+  // ✅ Handle Remove QA
+  const handleRemoveQA = (type, index) => {
+    setNewService((prev) => ({
+      ...prev,
+      [type]: prev[type].filter((_, i) => i !== index),
+    }))
+  }
+
+  // ✅ Handle Edit QA (start editing)
+  const handleEditQA = (type, index) => {
+    setEditingIndex({ type, index })
+    setEditingValue(newService[type][index])
+  }
+
+  // ✅ Handle Save Edit QA
+  const handleSaveQA = () => {
+    if (!editingIndex) return
+    const { type, index } = editingIndex
+    setNewService((prev) => {
+      const updated = [...prev[type]]
+      updated[index] = editingValue
+      return { ...prev, [type]: updated }
+    })
+    setEditingIndex(null)
+    setEditingValue('')
+  }
+
+  // ✅ Handle Cancel Edit
+  const handleCancelEdit = () => {
+    setEditingIndex(null)
+    setEditingValue('')
+  }
+
+  // ✅ Save Service (Add / Update)
+  const handleSaveService = () => {
+    const price = Number(newService.price || 0)
+    const discountPercentage = parseFloat(newService.discountPercentage || 0)
+    const taxPercentage = parseFloat(newService.taxPercentage || 0)
+    const gst = parseFloat(newService.gst || 0)
+    const consultationFee = parseFloat(newService.consultationFee || 0)
+
+    // discount calc
+    const discountAmount = (price * discountPercentage) / 100
+    const discountedCost = price - discountAmount
+
+    // tax calc
+    const taxAmount = (discountedCost * taxPercentage) / 100
+    const finalCost = discountedCost + taxAmount + consultationFee
+
+    const payload = {
+      // ✅ dynamically pick from newService or selected hospital context
+      hospitalId: newService.hospitalId,
+
+      serviceId: newService.serviceId,
+      serviceName: newService.serviceName,
+      categoryId: newService.categoryId,
+      categoryName: newService.categoryName,
+      subServiceId: newService.subServiceId,
+      subServiceName: newService.subServiceName,
+
+      viewDescription: newService.viewDescription,
+      status: 'Active',
+      minTime: newService.minTime,
+
+      preProcedureQA: newService.preProcedureQA,
+      procedureQA: newService.procedureQA,
+      postProcedureQA: newService.postProcedureQA,
+
+      price,
+      discountPercentage,
+      discountAmount,
+      discountedCost,
+      taxPercentage,
+      taxAmount,
+      gst,
+      consultationFee,
+      finalCost,
+
+      subServiceImage: newService.subServiceImage || '',
+    }
+
+    console.log('Final Payload:', payload)
+    // 👉 call API here
+  }
 
   // Open for adding
   const openAddModal = () => {
@@ -130,9 +228,10 @@ const ServiceManagement = () => {
       serviceId: '',
       subServiceId: '',
       subServiceName: '',
-
       price: '',
       discount: 0,
+      gst: 0,
+      consultationFee: 0,
       minTime: '',
       taxPercentage: 0,
       status: '',
@@ -163,6 +262,7 @@ const ServiceManagement = () => {
     try {
       const res = await axios.get(`${BASE_URL}/${getservice}/${categoryId}`)
       fetchedServiceOptions = res.data?.data || []
+      console.log(fetchedServiceOptions)
       setServiceOptions(fetchedServiceOptions)
     } catch (err) {
       console.error('Error fetching service list:', err)
@@ -198,9 +298,15 @@ const ServiceManagement = () => {
     const resolvedSubServiceName = selectedSubServiceObj?.subServiceName || ''
 
     setSelectedSubService(resolvedSubServiceId)
-    const formattedQA = Array.isArray(service.procedureQA)
+    const procedureQA = Array.isArray(service.procedureQA)
       ? service.procedureQA
       : JSON.parse(service.procedureQA || '[]')
+    const preProcedureQA = Array.isArray(service.preProcedureQA)
+      ? service.preProcedureQA
+      : JSON.parse(service.preProcedureQA || '[]')
+    const postProcedureQA = Array.isArray(service.postProcedureQA)
+      ? service.postProcedureQA
+      : JSON.parse(service.postProcedureQA || '[]')
 
     const rawImage = service.serviceImage || ''
     const fullImage = rawImage.startsWith('data:') ? rawImage : `data:image/jpeg;base64,${rawImage}`
@@ -215,6 +321,8 @@ const ServiceManagement = () => {
       categoryId: categoryId || '',
       price: service.price || '',
       discount: service.discountPercentage || 0,
+      gst: service.gst || 0,
+      consultationFee: service.consultationFee || 0,
       taxPercentage: service.taxPercentage || 0,
       minTime: service.minTime || '',
       serviceImage: rawImage,
@@ -226,9 +334,9 @@ const ServiceManagement = () => {
       platformFeePercentage: service.platformFeePercentage || 0,
       // descriptionQA: formattedQA,
       viewImage: service.viewImage || '',
-       procedureQA: formattedQA,
-    preProcedureQA: [],
-    postProcedureQA: [],
+      procedureQA: procedureQA,
+      preProcedureQA: preProcedureQA,
+      postProcedureQA: postProcedureQA,
     })
     setQaList(formattedQA)
   }
@@ -288,6 +396,7 @@ const ServiceManagement = () => {
           // you might need to flatten if response is nested
           // but usually GetSubServices_ByClinicId should return a clean array
           setService(subServiceData)
+          console.log(subServiceData)
         } else {
           setService([])
           console.warn('No subservices found for this hospital.')
@@ -469,6 +578,16 @@ const ServiceManagement = () => {
     if (!newService.status) {
       newErrors.status = 'Status is required.'
     }
+    if (newService.gst === '' || isNaN(newService.gst) || parseFloat(newService.gst) < 0) {
+      newErrors.gst = 'GST must be a valid number and not negative.'
+    }
+    if (
+      newService.consultationFee === '' ||
+      isNaN(newService.consultationFee) ||
+      parseFloat(newService.consultationFee) < 0
+    ) {
+      newErrors.consultationFee = 'Consultation fee must be a valid number and not negative.'
+    }
 
     if (!newService.discount && newService.discount !== 0) {
       newErrors.discount = 'Discount is required.'
@@ -534,17 +653,6 @@ const ServiceManagement = () => {
     }))
   }
 
-  // const buildDescriptionQA = () => {
-  //   const finalQA = [...qaList]
-
-  //   // Include the latest unsaved input, if any
-  //   if (question.trim() && answers.length > 0) {
-  //     finalQA.push({ [question.trim()]: [...answers] })
-  //   }
-
-  //   return finalQA
-  // }
-
   const buildQA = (question, answers, qaList) => {
     const finalQA = [...qaList]
 
@@ -555,102 +663,116 @@ const ServiceManagement = () => {
 
     return finalQA
   }
-const buildDescriptionQA = () => {
-  return {
-    general: buildQA(question, answers, qaList),
-    preProcedure: buildQA(preQuestion, preAnswers, preQaList),
-    postProcedure: buildQA(postQuestion, postAnswers, postQaList),
+  const buildDescriptionQA = () => {
+    return {
+      general: buildQA(question, answers, qaList),
+      preProcedure: buildQA(preQuestion, preAnswers, preQaList),
+      postProcedure: buildQA(postQuestion, postAnswers, postQaList),
+    }
   }
-}
   const handleAddService = async () => {
-    console.log('iam from handleAddSubService calling')
+    console.log('--- handleAddService START ---')
+
+    // Calculate derived values before sending
+    const discountAmount = (newService.price * newService.discount) / 100
+    const discountedCost = newService.price - discountAmount
+    const taxAmount = (discountedCost * newService.taxPercentage) / 100
+    const gst = newService.gst || 0
+    const platformFee = (discountedCost * (newService.platformFeePercentage || 0)) / 100
+    const clinicPay = discountedCost + taxAmount - platformFee
+    const finalCost = clinicPay + gst + (newService.consultationFee || 0)
+
+    console.log('Calculated values:', {
+      discountAmount,
+      discountedCost,
+      taxAmount,
+      platformFee,
+      clinicPay,
+      finalCost,
+    })
 
     const fullBase64String = await toBase64(newService.serviceImageFile)
     const base64ImageToSend = fullBase64String?.split(',')[1] || ''
 
-    // const payload = {
-    //   ...otherFields,
-    //   subServiceImage: base64ImageToSend,
-    // }
-
-    console.log('Calling validateForm...')
     if (!validateForm()) {
       toast.error('Validation failed', { position: 'top-right' })
-      console.log('Validation failed')
-      setModalVisible(true)
       return
     }
-    setModalVisible(false)
+
+    const payload = {
+      hospitalId: localStorage.getItem('HospitalId'),
+      subServiceName: newService.subServiceName,
+      subServiceId: newService.subServiceId,
+      serviceId: newService.serviceId,
+      serviceName: newService.serviceName,
+      categoryName: newService.categoryName,
+      categoryId: newService.categoryId,
+
+      price: newService.price,
+      discountPercentage: newService.discount,
+      discountAmount,
+      discountedCost,
+      taxPercentage: newService.taxPercentage,
+      taxAmount,
+      platformFeePercentage: newService.platformFeePercentage,
+      platformFee,
+      clinicPay,
+      finalCost,
+      gst: newService.gst,
+      consultationFee: newService.consultationFee,
+
+      minTime: newService.minTime,
+      status: newService.status,
+      subServiceImage: base64ImageToSend,
+      procedureQA: newService.procedureQA,
+      preProcedureQA: newService.preProcedureQA,
+      postProcedureQA: newService.postProcedureQA,
+      viewDescription: newService.viewDescription,
+    }
+
+    console.log('Payload ready to submit:', payload)
+
     try {
-      console.log('iam from try calling')
-      const payload = {
-        hospitalId: localStorage.getItem('HospitalId'),
-        subServiceName: newService.subServiceName,
-        subServiceId: newService.subServiceId,
-        serviceId: newService.serviceId,
-        serviceName: newService.serviceName,
-        categoryName: newService.categoryName,
-        categoryId: newService.categoryId,
-
-        price: newService.price,
-        discountPercentage: newService.discount,
-        taxPercentage: newService.taxPercentage,
-        minTime: newService.minTime,
-        status: newService.status,
-        subServiceImage: base64ImageToSend,
-        // descriptionQA: buildDescriptionQA(),
-        procedureQA: newService.procedureQA,
-        preProcedureQA: newService.preProcedureQA,
-        postProcedureQA: newService.postProcedureQA,
-        viewDescription: newService.viewDescription,
-        platformFeePercentage: newService.platformFeePercentage,
-        discountAmount: newService.discount,
-        taxAmount: newService.taxAmount,
-        discountedCost: newService.discountedCost,
-        clinicPay: newService.clinicPay,
-        finalCost: newService.finalCost,
-      }
-      console.log(payload)
-      console.log(newService.subServiceId)
-
-      if (!/^[a-f\d]{24}$/i.test(newService.subServiceId)) {
-        toast.error('SubService ID is invalid. Please re-select sub-service.', {
-          position: 'top-right',
-        })
-        return
-      }
-      console.log(payload)
       const response = await postServiceData(payload, newService.subServiceId)
-
+      console.log('Response received:', response)
       if (response.status === 201) {
         toast.success(response.data.message, { position: 'top-right' })
+        setModalVisible(false)
         fetchData()
         serviceData()
-      } else if (response.status === 500) {
-        toast.error(error.response?.data?.message, { position: 'top-right' })
       }
     } catch (error) {
-      console.error('Error response:', error.response)
+      console.error('Error in handleAddService:', error.response)
       toast.error(error.response?.data?.message, { position: 'top-right' })
     }
 
+    // Reset form
+    // Reset form using default object
     setNewService({
-      subServiceName: '',
-      serviceName: '',
-      serviceid: '',
       categoryName: '',
-
-      price: '',
+      categoryId: '',
+      serviceName: '',
+      serviceId: '',
+      subServiceId: '',
+      subServiceName: '',
+      price: 0,
       discount: 0,
-      minTime: '',
+      gst: 0,
+      consultationFee: 0,
       taxPercentage: 0,
+      minTime: '',
       status: '',
       serviceImage: '',
-      viewImage: '',
       viewDescription: '',
-      categoryId: '',
+      procedureQA: [],
+      preProcedureQA: [],
+      postProcedureQA: [],
+      platformFeePercentage: 0,
+      descriptionQA: [],
     })
-    setQaList([]) // reset Q&A
+
+    setQaList([])
+    console.log('--- handleAddService END ---')
   }
 
   const formatMinutes = (minTime) => {
@@ -710,12 +832,19 @@ const buildDescriptionQA = () => {
         viewDescription: newService.viewDescription || '',
         status: newService.status || '',
         minTime: newService.minTime || '',
-        descriptionQA: Array.isArray(newService.descriptionQA) ? newService.descriptionQA : [],
-        price,
+        procedureQA: Array.isArray(newService.procedureQA) ? newService.procedureQA : [],
+        preProcedureQA: Array.isArray(newService.preProcedureQA) ? newService.preProcedureQA : [],
+        postProcedureQA: Array.isArray(newService.postProcedureQA)
+          ? newService.postProcedureQA
+          : [],
+        price: newService.price || 0,
         discountPercentage: newService.discount || 0,
         taxPercentage: newService.taxPercentage || 0,
         platformFeePercentage: newService.platformFeePercentage || 0,
         subServiceImage: base64ImageToSend,
+        gst: newService.gst || 0,
+        consultationFee: newService.consultationFee || 0,
+        // ProcedureQA:newService.ProcedureQA
       }
 
       // Log the payload to verify it before sending
@@ -773,23 +902,43 @@ const buildDescriptionQA = () => {
   const handleChange = (e) => {
     const { name, value } = e.target
 
-    if (name === 'categoryName') {
-      const selectedCategory = category.find((cat) => cat.categoryName === value)
-      setNewService((prevState) => ({
-        ...prevState,
+    setNewService((prev) => {
+      // If categoryName, also update categoryId
+      if (name === 'categoryName') {
+        const selectedCategory = category.find((cat) => cat.categoryName === value)
+        return {
+          ...prev,
+          [name]: value,
+          categoryId: selectedCategory ? selectedCategory.categoryId : '',
+        }
+      }
+
+      // For numeric fields, parseFloat
+      if (
+        name === 'gst' ||
+        name === 'consultationFee' ||
+        name === 'price' ||
+        name === 'discount' ||
+        name === 'taxPercentage' ||
+        name === 'minTime'
+      ) {
+        return {
+          ...prev,
+          [name]: parseFloat(value) || 0,
+        }
+      }
+
+      // Default: just update value
+      return {
+        ...prev,
         [name]: value,
-        categoryId: selectedCategory ? selectedCategory.categoryId : '',
-      }))
-    } else {
-      setNewService((prevState) => ({
-        ...prevState,
-        [name]: value,
-      }))
-    }
-    setErrors({
-      ...errors,
-      [name]: '',
+      }
     })
+
+    setErrors((prev) => ({
+      ...prev,
+      [name]: '',
+    }))
   }
 
   const AddCancel = () => {
@@ -864,6 +1013,8 @@ const buildDescriptionQA = () => {
       }))
     }
   }
+  console.log(newService)
+  console.log(viewService)
 
   return (
     <div style={{ overflow: 'hidden' }}>
@@ -986,9 +1137,20 @@ const buildDescriptionQA = () => {
 
             <CRow className="mb-3">
               <CCol sm={4}>
+                <strong>GST:</strong>
+                <div>₹ {Math.round(viewService.gst)}</div>
+              </CCol>
+              <CCol sm={4}>
+                <strong>Consultation Fee:</strong>
+                <div>₹ {viewService.consultationFee}</div>
+              </CCol>
+              <CCol sm={4}>
                 <strong>Final Cost:</strong>
                 <div>₹ {Math.round(viewService.finalCost)}</div>
               </CCol>
+            </CRow>
+
+            <CRow className="mb-3">
               <CCol sm={4}>
                 <strong>Service Time:</strong>
                 <div>{formatMinutes(viewService.minTime)}</div>
@@ -997,78 +1159,79 @@ const buildDescriptionQA = () => {
 
             <hr />
 
-           <CRow className="mb-3">
-  <CCol sm={12}>
-    <strong className="mb-3">Pre-Procedure QA:</strong>
-    {Array.isArray(viewService.preProcedureQA) && viewService.preProcedureQA.length > 0 ? (
-      viewService.preProcedureQA.map((qa, index) => {
-        const question = Object.keys(qa)[0]
-        const answers = qa[question]
-        return (
-          <div key={index} style={{ marginBottom: '10px' }}>
-            <strong>{question}</strong>
-            <ul>
-              {answers.map((ans, i) => (
-                <li key={i}>{ans}</li>
-              ))}
-            </ul>
-          </div>
-        )
-      })
-    ) : (
-      <div>No Pre-Procedure Q&A available</div>
-    )}
-  </CCol>
-</CRow>
+            <CRow className="mb-3">
+              <CCol sm={12}>
+                <strong className="mb-3">Pre-Procedure QA:</strong>
+                {Array.isArray(viewService.preProcedureQA) &&
+                viewService.preProcedureQA.length > 0 ? (
+                  viewService.preProcedureQA.map((qa, index) => {
+                    const question = Object.keys(qa)[0]
+                    const answers = qa[question]
+                    return (
+                      <div key={index} style={{ marginBottom: '10px' }}>
+                        <strong>{question}</strong>
+                        <ul>
+                          {answers.map((ans, i) => (
+                            <li key={i}>{ans}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div>No Pre-Procedure Q&A available</div>
+                )}
+              </CCol>
+            </CRow>
 
-<CRow className="mb-3">
-  <CCol sm={12}>
-    <strong className="mb-3">Procedure QA:</strong>
-    {Array.isArray(viewService.procedureQA) && viewService.procedureQA.length > 0 ? (
-      viewService.procedureQA.map((qa, index) => {
-        const question = Object.keys(qa)[0]
-        const answers = qa[question]
-        return (
-          <div key={index} style={{ marginBottom: '10px' }}>
-            <strong>{question}</strong>
-            <ul>
-              {answers.map((ans, i) => (
-                <li key={i}>{ans}</li>
-              ))}
-            </ul>
-          </div>
-        )
-      })
-    ) : (
-      <div>No Procedure Q&A available</div>
-    )}
-  </CCol>
-</CRow>
+            <CRow className="mb-3">
+              <CCol sm={12}>
+                <strong className="mb-3">Procedure QA:</strong>
+                {Array.isArray(viewService.procedureQA) && viewService.procedureQA.length > 0 ? (
+                  viewService.procedureQA.map((qa, index) => {
+                    const question = Object.keys(qa)[0]
+                    const answers = qa[question]
+                    return (
+                      <div key={index} style={{ marginBottom: '10px' }}>
+                        <strong>{question}</strong>
+                        <ul>
+                          {answers.map((ans, i) => (
+                            <li key={i}>{ans}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div>No Procedure Q&A available</div>
+                )}
+              </CCol>
+            </CRow>
 
-<CRow className="mb-3">
-  <CCol sm={12}>
-    <strong className="mb-3">Post-Procedure QA:</strong>
-    {Array.isArray(viewService.postProcedureQA) && viewService.postProcedureQA.length > 0 ? (
-      viewService.postProcedureQA.map((qa, index) => {
-        const question = Object.keys(qa)[0]
-        const answers = qa[question]
-        return (
-          <div key={index} style={{ marginBottom: '10px' }}>
-            <strong>{question}</strong>
-            <ul>
-              {answers.map((ans, i) => (
-                <li key={i}>{ans}</li>
-              ))}
-            </ul>
-          </div>
-        )
-      })
-    ) : (
-      <div>No Post-Procedure Q&A available</div>
-    )}
-  </CCol>
-</CRow>
-
+            <CRow className="mb-3">
+              <CCol sm={12}>
+                <strong className="mb-3">Post-Procedure QA:</strong>
+                {Array.isArray(viewService.postProcedureQA) &&
+                viewService.postProcedureQA.length > 0 ? (
+                  viewService.postProcedureQA.map((qa, index) => {
+                    const question = Object.keys(qa)[0]
+                    const answers = qa[question]
+                    return (
+                      <div key={index} style={{ marginBottom: '10px' }}>
+                        <strong>{question}</strong>
+                        <ul>
+                          {answers.map((ans, i) => (
+                            <li key={i}>{ans}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div>No Post-Procedure Q&A available</div>
+                )}
+              </CCol>
+            </CRow>
 
             <hr />
 
@@ -1187,6 +1350,9 @@ const buildDescriptionQA = () => {
                       ...prev,
                       subServiceId: selectedId,
                       subServiceName: selectedObj?.subServiceName || '',
+                      preProcedureQA: service.preProcedureQA || [],
+                      procedureQA: service.procedureQA || [],
+                      postProcedureQA: service.postProcedureQA || [],
                     }))
                   }}
                 >
@@ -1304,6 +1470,31 @@ const buildDescriptionQA = () => {
                 </div>
               </CCol>
             </CRow>
+            <CRow className="mt-3">
+              <CCol md={6}>
+                <CFormInput
+                  label="GST (%)"
+                  type="number"
+                  value={newService.gst || ''}
+                  onChange={(e) =>
+                    setNewService((prev) => ({ ...prev, gst: Number(e.target.value) }))
+                  }
+                />
+              </CCol>
+              <CCol md={6}>
+                <CFormInput
+                  label="Consultation Fee"
+                  type="number"
+                  value={newService.consultationFee || ''}
+                  onChange={(e) =>
+                    setNewService((prev) => ({
+                      ...prev,
+                      consultationFee: Number(e.target.value),
+                    }))
+                  }
+                />
+              </CCol>
+            </CRow>
 
             <CCol md={12}>
               <h6>
@@ -1341,10 +1532,8 @@ const buildDescriptionQA = () => {
                 />
               )}
             </CCol>
-        
-             <h6 className='m-3'>
-                Procedure (Optional)  
-              </h6>
+
+            <h6 className="m-3">Procedure (Optional)</h6>
 
             <ProcedureQA
               preQAList={newService.preProcedureQA}

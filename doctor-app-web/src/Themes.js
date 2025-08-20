@@ -6,13 +6,14 @@ export const COLORS = {
   danger: '#ff4d4f',
   success: '#28a745',
   white: '#fff',
-  black: '#000',
+  black: '#7e3a93',
   gray: '#6c757d',
   lowgray: '#6c757d3e',
   teal: '#16a085',
   orange: '#f39c12',
   theme: '#f3f4f7',
-  // theme: '#007BFF',
+  bgcolor:'#a5c4d4ff',
+   logocolor: '#000',
 }
 
 export const FONT_SIZES = {

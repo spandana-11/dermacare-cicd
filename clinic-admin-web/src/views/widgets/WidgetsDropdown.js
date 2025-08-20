@@ -15,6 +15,8 @@ import {
   CTableHeaderCell,
   CTableDataCell,
   CButton,
+  CCard,
+  CCardBody,
 } from '@coreui/react'
 import { useNavigate } from 'react-router-dom'
 import Slider from 'react-slick'
@@ -53,8 +55,6 @@ const WidgetsDropdown = (props) => {
 
   const navigate = useNavigate()
 
-  // Helper function to convert date to YYYY-MM-DD format
-  // This function is crucial for consistent date comparison.
   const convertToISODate = useCallback((dateString) => {
     if (!dateString) return ''
 
@@ -124,7 +124,7 @@ const WidgetsDropdown = (props) => {
           setTodayBookings(filteredAppointments)
         } else {
           setTodayBookings([])
-          setAppointmentError('No pending appointments for today.')
+          setAppointmentError('No completed appointments for today.')
         }
       } catch (error) {
         console.error('Failed to fetch appointments:', error)
@@ -198,9 +198,9 @@ const WidgetsDropdown = (props) => {
     }
   }, [fetchAppointments, fetchDoctors]) // Depend on fetchAppointments
 
-  // Pending appointments count for today
-  const pendingTodayCount = todayBookings.filter(
-    (item) => item.status?.toLowerCase() === 'pending',
+  // completed appointments count for today
+  const completedTodayCount = todayBookings.filter(
+    (item) => item.status?.toLowerCase() === 'completed',
   ).length
 
   // Slider settings for react-slick
@@ -326,7 +326,7 @@ const WidgetsDropdown = (props) => {
       <CRow className={props.className} xs={{ gutter: 4 }}>
         <CCol sm={6} xl={4}>
           <CWidgetStatsA
-            color="primary"
+            color="info"
             value={totalAppointmentsCount}
             title="Total Appointments"
             action={
@@ -470,53 +470,13 @@ const WidgetsDropdown = (props) => {
       </CRow>
 
       {/* Carousel Section */}
-      <div style={{ marginTop: '2rem' }}>
-        {slides.length > 0 ? (
-          <Slider ref={sliderRef} {...sliderSettings}>
-            {slides.map((item, idx) => {
-              const mediaSrc = item.mediaUrlOrImage
-              const isVideo = isVideoFile(mediaSrc)
-              return (
-                <div key={item.carouselId || idx}>
-                  {isVideo ? (
-                    <video
-                      id={`video-${idx}`}
-                      src={mediaSrc}
-                      controls
-                      autoPlay
-                      muted
-                      style={{
-                        width: '100%',
-                        maxHeight: '300px',
-                        objectFit: 'contain',
-                        borderRadius: '8px',
-                      }}
-                    />
-                  ) : (
-                    <img
-                      src={mediaSrc}
-                      alt={`Slide ${idx + 1}`}
-                      style={{
-                        width: '100%',
-                        maxHeight: '300px',
-                        objectFit: 'cover',
-                        borderRadius: '8px',
-                      }}
-                    />
-                  )}
-                </div>
-              )
-            })}
-          </Slider>
-        ) : (
-          <p>No media found</p>
-        )}
-      </div>
+      <CCard className="mt-4 text-center border-2 border-dashed rounded bg-light">
+        <CCardBody className="fw-bold text-secondary fs-5">Ad Space</CCardBody>
+      </CCard>
 
-      {/*to display appointmnt */}
-      {/* Appointments Table */}
+      {/*to display today Appointments Table */}
       <div className="container mt-4">
-        <h5>Today's Pending Appointments</h5>
+        <h5>Today's completed Appointments</h5>
         <CTable striped hover responsive>
           <CTableHead>
             <CTableRow>
@@ -545,10 +505,10 @@ const WidgetsDropdown = (props) => {
                   {appointmentError}
                 </CTableDataCell>
               </CTableRow>
-            ) : todayBookings.filter((item) => item.status?.toLowerCase() === 'pending').length >
+            ) : todayBookings.filter((item) => item.status?.toLowerCase() === 'completed').length >
               0 ? (
               todayBookings
-                .filter((item) => item.status?.toLowerCase() === 'pending')
+                .filter((item) => item.status?.toLowerCase() === 'completed')
                 .map((item, index) => (
                   <CTableRow key={`${item.id}-${index}`}>
                     <CTableDataCell>{index + 1}</CTableDataCell>
@@ -561,7 +521,8 @@ const WidgetsDropdown = (props) => {
                     <CTableDataCell>{item.status}</CTableDataCell>
                     <CTableDataCell>
                       <CButton
-                        color="primary"
+                        color="info"
+                         className='text-white'
                         size="sm"
                         onClick={() =>
                           navigate(`/appointmentDetails/${item.bookingId}`, {
@@ -577,7 +538,7 @@ const WidgetsDropdown = (props) => {
             ) : (
               <CTableRow>
                 <CTableDataCell colSpan="9" className="text-center text-info fw-bold">
-                  No pending appointments for today.
+                  No completed appointments for today.
                 </CTableDataCell>
               </CTableRow>
             )}

@@ -23,6 +23,7 @@ import {
   postDiseaseData,
   DiseaseData,
   updateDiseaseData,
+  TestdDiseaseByHId,
 } from './DiseaseManagementAPI'
 
 const DiseasesManagement = () => {
@@ -61,12 +62,24 @@ const DiseasesManagement = () => {
       setLoading(false)
     }
   }
+  const fetchDataByHid = async (hospitalId) => {
+    setLoading(true)
+    try {
+      const response = await TestdDiseaseByHId(hospitalId)
+      setDiseases(normalizeDiseases(response.data))
+    } catch (error) {
+      setError('Failed to fetch disease data.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleConfirmDelete = async () => {
     try {
       await deleteDiseaseData(diseaseIdToDelete, hospitalIdToDelete)
       toast.success('Disease deleted successfully!', { position: 'top-right' })
-      fetchData()
+      // fetchData()
+      fetchDataByHid(hospitalId)
     } catch (error) {
       toast.error('Failed to delete disease.')
       console.error('Delete error:', error)
@@ -81,7 +94,8 @@ const DiseasesManagement = () => {
   }
 
   useEffect(() => {
-    fetchData()
+    // fetchData()
+    fetchDataByHid(hospitalId)
   }, [])
 
   useEffect(() => {
@@ -113,7 +127,8 @@ const DiseasesManagement = () => {
       toast.success('Disease added successfully!')
       setNewDisease({ disease: '' })
       setSearchQuery('')
-      fetchData()
+      // fetchData()
+      fetchDataByHid(hospitalId)
       setModalVisible(false)
     } catch (error) {
       const errorMessage =
@@ -159,7 +174,8 @@ const DiseasesManagement = () => {
 
       toast.success('Disease updated successfully!')
       setEditDiseaseMode(false)
-      fetchData()
+      // fetchData()
+      fetchDataByHid(hospitalId)
     } catch (error) {
       console.error('Update error:', error)
       toast.error('Failed to update disease.')

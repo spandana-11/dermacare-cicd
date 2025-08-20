@@ -251,7 +251,7 @@ const Login = () => {
           <CCol
             xs={12}
             md={5}
-            className="d-flex align-items-center justify-content-center px-4"
+            className="d-flex align-items-center justify-content-start px-4"
             style={{ zIndex: 1 }}
           >
             <CCard

@@ -17,15 +17,15 @@ const Button = ({
 
   if (variant === 'primary' && customGradient) {
     customStyle.background = customGradient
-    customStyle.color = '#fff'
+    customStyle.color = '#000'
   } else if (variant === 'primary' && customColor) {
     customStyle.background = customColor
-    customStyle.color = '#fff'
+    customStyle.color = '#000'
   }
 
   if (variant === 'outline' && customColor) {
-    customStyle.border = `1.5px solid ${customColor}`
-    customStyle.color = customColor
+    customStyle.border = `1.5px solid ${COLORS.logocolor}`
+    customStyle.color = `${COLORS.logocolor}`
   }
 
   return (

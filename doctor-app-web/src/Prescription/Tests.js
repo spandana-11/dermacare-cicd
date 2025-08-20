@@ -543,10 +543,11 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
         }}
       >
         <div className="d-flex gap-3">
-          <Button customColor={COLORS.success} onClick={handlePrint} disabled={isGenerating}>
+          <Button customColor={COLORS.success} style={{ color: COLORS.white }}  onClick={handlePrint} disabled={isGenerating}>
             {isGenerating ? 'Printing…' : 'Print'}
           </Button>
-          <Button color="primary" onClick={handleNext}>
+          <Button customColor={COLORS.bgcolor} // background color of button
+              color={COLORS.black} onClick={handleNext}>
             Next
           </Button>
         </div>

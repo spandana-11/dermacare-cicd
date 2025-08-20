@@ -23,6 +23,9 @@ import {
   deleteTreatmentData,
   postTreatmentData,
   TreatmentData,
+
+  TreatmentDataById,
+
   updateTreatmentData,
 } from './TreatmentsManagementAPI'
 
@@ -66,9 +69,21 @@ const TreatmentsManagement = () => {
       setLoading(false)
     }
   }
+  const fetchDataBy_HId = async (hospitalId) => {
+    setLoading(true)
+    try {
+      const response = await TreatmentDataById(hospitalId)
+      setTreatment(normalizeTreatments(response.data))
+    } catch (error) {
+      setError('Failed to fetch treatment data.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    fetchData()
+    // fetchData()
+    fetchDataBy_HId(hospitalId)
   }, [])
 
   // Search filter
@@ -89,7 +104,8 @@ const TreatmentsManagement = () => {
     try {
       await deleteTreatmentData(treatmentIdToDelete, hospitalIdToDelete)
       toast.success('Treatment deleted successfully!', { position: 'top-right' })
-      fetchData()
+      // fetchData()
+      fetchDataBy_HId(hospitalId)
     } catch (error) {
       toast.error('Failed to delete treatment.')
       console.error('Delete error:', error)
@@ -118,7 +134,8 @@ const TreatmentsManagement = () => {
 
       await postTreatmentData(payload)
       toast.success('Treatment added successfully!')
-      fetchData()
+      // fetchData()
+      fetchDataBy_HId(hospitalId)
       setModalVisible(false)
       setNewTreatment({ treatmentName: '' })
     } catch (error) {
@@ -161,7 +178,8 @@ const TreatmentsManagement = () => {
 
       toast.success('Treatment updated successfully!')
       setEditTreatmentMode(false)
-      fetchData()
+      // fetchData()
+      fetchDataBy_HId(hospitalId)
     } catch (error) {
       console.error('Update error:', error)
       toast.error('Failed to update treatment.')

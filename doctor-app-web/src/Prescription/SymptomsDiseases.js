@@ -394,7 +394,7 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
               )}
             </CCardBody>
 
-            {loadingAds ? (
+            {/* {loadingAds ? (
               <div className="d-flex align-items-center gap-2 text-body-secondary p-3">
                 <CSpinner size="sm" /> <span>Loading ads…</span>
               </div>
@@ -428,7 +428,22 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
               <div className="text-body-secondary small p-3">
                 No advertisements available
               </div>
-            )}
+            )} */}
+           <div
+  className="d-flex align-items-center justify-content-center"
+  style={{
+    height: 150,
+    width: 500,                   // set the desired width
+    borderRadius: 8,
+    border: `1px dashed ${COLORS.primary}`,
+    backgroundColor: COLORS.bgcolor,
+    color: COLORS.black,
+    fontWeight: 'bold',
+    fontSize: '1rem',
+  }}
+>
+  Ad Space
+</div>
           </CCol>
         </CRow>
       </CForm>
@@ -446,7 +461,8 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
           justifyContent: 'flex-end',
         }}
       >
-        <Button onClick={handleNext}>Next</Button>
+        <Button onClick={handleNext} customColor={COLORS.bgcolor} // background color of button
+    color={COLORS.black}>Next</Button>
       </div>
 
       {snackbar.show && <Snackbar message={snackbar.message} type={snackbar.type} />}

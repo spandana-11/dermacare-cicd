@@ -361,6 +361,8 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                 style={{ zIndex: 5 }}
                 onClick={() => setSearch('')}
                 aria-label="Clear"
+                customColor={COLORS.bgcolor} // background color of button
+                    color={COLORS.black}
               >
                 &times;
               </button>
@@ -369,9 +371,11 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
             {/* Add Button (hide while loading) */}
             {!isLoading && (
               <Button
-                className="btn btn-primary"
+               // className="btn btn-primary"
                 onClick={() => addMedicine(search)}
                 style={{ zIndex: 1 }}
+                customColor={COLORS.bgcolor} // background color of button
+                    color={COLORS.black}
               >
                 Add
               </Button>
@@ -423,7 +427,8 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
             }}
           >
             {res}
-            <button className="btn btn-sm btn-outline-success">Add</button>
+            <button className="btn btn-sm btn-outline-success" customColor={COLORS.bgcolor} // background color of button
+                color={COLORS.black}>Add</button>
           </li>
         ))}
       </ul>
@@ -683,7 +688,8 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
           <div className="d-flex justify-content-between align-items-end w-100  ">
             <div className="d-flex gap-4">
               <Button
-                customColor={COLORS.secondary}
+                customColor={COLORS.bgcolor} // background color of button
+                    color={COLORS.black}
                 className="ms-2"
                 size="medium"
                 onClick={saveTemplate}
@@ -702,6 +708,8 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
             <div>
               <Button
                 size="medium"
+                customColor={COLORS.bgcolor} // background color of button
+                    color={COLORS.black}
                 onClick={handleNext}
                 disabled={hasPendingCards}
                 title={hasPendingCards ? 'Add pending medicine card(s) first' : undefined}

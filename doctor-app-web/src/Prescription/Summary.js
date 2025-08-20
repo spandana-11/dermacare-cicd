@@ -528,6 +528,8 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
                   ? skipTemplate() // skip modal, proceed
                   : setShowTemplateModal(true)
               }}
+              customColor={COLORS.bgcolor} // background color of button
+                  color={COLORS.black}
             >
               Save
             </Button>

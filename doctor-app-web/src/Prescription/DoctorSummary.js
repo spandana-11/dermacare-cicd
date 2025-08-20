@@ -579,6 +579,7 @@ const DoctorSummary = ({
 
       <div
         className="position-fixed bottom-0 end-0"
+        
         style={{
           backgroundColor: '#F3f3f7',
           padding: 12,
@@ -587,7 +588,8 @@ const DoctorSummary = ({
           alignItems: 'center',
         }}
       >
-        <Button customColor={COLORS.secondary} onClick={handleClick}>
+        <Button customColor={COLORS.bgcolor} 
+            color={COLORS.black} onClick={handleClick}>
           {!updateTemplate ? 'Update' : 'Save Prescription Template'}
         </Button>
       </div>
