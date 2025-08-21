@@ -249,21 +249,22 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
 
             String normalizedKeyword = keyword.trim().replaceAll("\\s+", " ").toLowerCase();
 
+            // Get only medicines that exactly match the searched keyword
             List<MedicineDTO> matchedMedicines = repository.findAll().stream()
                 .flatMap(prescription -> Optional.ofNullable(prescription.getMedicines())
                                                  .orElse(List.of())
                                                  .stream())
                 .filter(medicine -> medicine.getName() != null &&
-                        medicine.getName().trim().replaceAll("\\s+", " ").toLowerCase().equals(normalizedKeyword))
+                    medicine.getName().trim().replaceAll("\\s+", " ").toLowerCase().equals(normalizedKeyword))
                 .map(m -> new MedicineDTO(
-                        m.getId(),
-                        m.getName(),
-                        m.getDose(),
-                        m.getDuration(),
-                        m.getNote(),
-                        m.getFood(),
-                        m.getRemindWhen(),
-                        m.getTimes()
+                    m.getId(),
+                    m.getName(),
+                    m.getDose(),
+                    m.getDuration(),
+                    m.getNote(),
+                    m.getFood(),
+                    m.getRemindWhen(),
+                    m.getTimes()
                 ))
                 .collect(Collectors.toList());
 
@@ -271,14 +272,13 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                 return new Response(false, null, "No medicine found with exact name: " + keyword, HttpStatus.NOT_FOUND.value());
             }
 
-            return new Response(true, matchedMedicines, "Matching medicine(s) found", HttpStatus.OK.value());
+            return new Response(true, matchedMedicines, "Medicine found", HttpStatus.OK.value());
 
         } catch (Exception e) {
-            return new Response(false, null, "Error searching medicines: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return new Response(false, null, "Error searching medicine: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
-
-
     @Override
     public Response deleteMedicineById(String medicineId) {
         try {

@@ -22,6 +22,8 @@ import com.dermacare.doctorservice.dto.DoctorLoginDTO;
 import com.dermacare.doctorservice.dto.Response;
 import com.dermacare.doctorservice.service.DoctorService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping(value=DOCTOR)
 //@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
@@ -43,9 +45,12 @@ public class DoctorController {
         return response;
    }
     @PostMapping(value=LOGIN_DOCTOR)
-    public Response login( @RequestBody DoctorLoginDTO dto) {
-        return doctorService.login(dto);
-    }
+    public ResponseEntity<Response> login(@Valid @RequestBody DoctorLoginDTO dto) {
+		Response res = doctorService.login(dto);
+		 if(res!=null) {
+			 return ResponseEntity.status(res.getStatus()).body(res);
+		 }
+		return null;}
     
     @PutMapping(value = UPDATE_DOCTOR_AVAILABILITY)
     

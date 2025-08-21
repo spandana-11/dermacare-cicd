@@ -16,7 +16,7 @@ public class QuetionsAndAnswerForAddClinicController {
     private QuetionsAndAnswerForAddClinicService quetionsAndAnswerForAddClinicService;
 
     // ------------------------Add questions & answers---------------------------------
-    @PostMapping("/clinicQuetions/addQuetions")
+    @PostMapping("/clinicQuestions/addQuestions")
     public ResponseEntity<Response> addQuestions(@RequestBody QuetionsAndAnswerForAddClinicDTO clinicQA) {
         Response res = quetionsAndAnswerForAddClinicService.saveQuetions(clinicQA);
         return ResponseEntity.status(res.getStatus()).body(res);

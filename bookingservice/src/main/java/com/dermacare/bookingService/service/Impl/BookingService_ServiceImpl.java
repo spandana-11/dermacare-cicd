@@ -53,9 +53,9 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		ResponseStructure<BookingResponse> response = new ResponseStructure<BookingResponse>();
 		Booking entity = toEntity(request);
 		if(request.getVisitType().equalsIgnoreCase("follow-up")){
-		if(!repository.findByMobileNumberAndPatientId(request.getMobileNumber(),request.getPatientId()).isEmpty()){
-		for(Booking b : repository.findByMobileNumberAndPatientId(request.getMobileNumber(),request.getPatientId())){
-			if(b.getBookingId().equals(request.getBookingId())  &&  b.getStatus().equalsIgnoreCase("In-Progress")){
+		if(repository.findByMobileNumberAndPatientIdAndBookingId(request.getMobileNumber(),request.getPatientId(),request.getBookingId()) != null){
+		Booking b = repository.findByMobileNumberAndPatientIdAndBookingId(request.getMobileNumber(),request.getPatientId(),request.getBookingId());
+			if(b.getStatus().equalsIgnoreCase("In-Progress")){
 			DateTimeFormatter date = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 			LocalDate previousServiceDate = LocalDate.parse(b.getServiceDate(), date);
 			LocalDate plusDays = previousServiceDate.plusDays(Integer.parseInt(Character.toString(b.getConsultationExpiration().charAt(0)) + 
@@ -71,19 +71,33 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 				b.setServicetime(request.getServicetime());
 				b.setServiceDate(request.getServiceDate());
 				Booking ety = repository.save(b);
+				ety.setReports(null);
+				ety.setNotes(null);
+				ety.setAttachments(null);
+				ety.setConsentFormPdf(null);
+				try {
+					kafkaProducer.publishBooking(ety);
+					}catch (Exception e) {
+						throw new RuntimeException("Unable to book service");}
 				BookingResponse res = new ObjectMapper().convertValue(ety, BookingResponse.class);
 				response = ResponseStructure.buildResponse(res, "Service Booked Sucessfully",
-				HttpStatus.CREATED, HttpStatus.CREATED.value());
-				break;
+				HttpStatus.OK, HttpStatus.OK.value());			
 			}else{
 			response = ResponseStructure.buildResponse(null, "Unable to proceed with booking. Please check the service date and your available free follow-ups.",
 			HttpStatus.PAYMENT_REQUIRED, HttpStatus.PAYMENT_REQUIRED.value());}	
-		}}}}else{	
+		}else {
+			response = ResponseStructure.buildResponse(null, "No In Progress Appointments Found With Priovided AppointmentId.",
+					HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value());}	
+		}else {
+			response = ResponseStructure.buildResponse(null, "No Appointment Found.",
+					HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value());}	
+		}else{	
 		entity.setStatus("Confirmed");
 		Booking res = repository.save(entity);
 		res.setReports(null);
 		res.setNotes(null);
 		res.setAttachments(null);
+		res.setConsentFormPdf(null);
 		try {
 			kafkaProducer.publishBooking(res);
 			}catch (Exception e) {

@@ -464,7 +464,6 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                 return buildResponse(false, null, "No visit history found for the patient ID", HttpStatus.NOT_FOUND.value());
             }
 
-            // If doctorId is provided, filter visits by doctorId
             if (doctorId != null && !doctorId.isBlank()) {
                 visits = visits.stream()
                         .filter(v -> doctorId.equals(v.getDoctorId()))
@@ -475,7 +474,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                 }
             }
 
-            // Sort visits by visitDateTime ascending
+            // Sort latest first
             visits.sort((v1, v2) -> {
                 LocalDateTime dt1 = v1.getVisitDateTime();
                 LocalDateTime dt2 = v2.getVisitDateTime();
@@ -483,7 +482,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                 if (dt1 == null && dt2 == null) return 0;
                 if (dt1 == null) return 1;
                 if (dt2 == null) return -1;
-                return dt1.compareTo(dt2);
+                return dt2.compareTo(dt1); // descending
             });
 
             return buildResponse(true, Map.of(
@@ -497,6 +496,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             return buildResponse(false, null, "Error fetching visit history: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+    
     private String decodeAndSavePdf(String base64Pdf, String bookingId) {
         try {
             // Decode Base64

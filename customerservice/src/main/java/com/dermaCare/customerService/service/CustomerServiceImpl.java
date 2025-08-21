@@ -674,8 +674,8 @@ public Response getDoctorsSlots(String hospitalId,String doctorId) {
 	    		  ResponseEntity<ResponseStructure<BookingResponse>> res = bookingFeign.bookService(req);
 	    		  BookingResponse bookingResponse  = res.getBody().getData(); 
 	    		  if(bookingResponse!=null) {
-	    		System.out.println( clinicAdminFeign.updateDoctorSlotWhileBooking(bookingResponse.getDoctorId(), 
-	  	    		  bookingResponse.getServiceDate(),bookingResponse.getServicetime()));     ;
+	    	clinicAdminFeign.updateDoctorSlotWhileBooking(bookingResponse.getDoctorId(), 
+	  	    		  bookingResponse.getServiceDate(),bookingResponse.getServicetime());
     			     response.setData(res.getBody());			
 		    		 response.setStatus(res.getBody().getStatusCode());	 
 	    		  }else{
@@ -683,14 +683,12 @@ public Response getDoctorsSlots(String hospitalId,String doctorId) {
 	    			response.setData(res.getBody());}  
 	    		}catch(FeignException e) {
 	    		response.setStatus(e.status());
-	    		response.setMessage(ExtractFeignMessage.clearMessage(e));
-	    		response.setSuccess(false);	
-	    	}
+	    		response.setMessage(e.getMessage());
+	    		response.setSuccess(false);}
 	    	return response;
 	    }
 
-	   
-	   
+	  	   
 	    public Response deleteBookedService(String id){
 	    	 Response response = new  Response();
 	    	try {

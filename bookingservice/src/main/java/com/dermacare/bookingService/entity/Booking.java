@@ -55,6 +55,7 @@ public class Booking  {
 	private String status;
 	private Integer visitCount;
 	private List<byte[]> attachments;
+	private byte[] consentFormPdf;
 	private double totalFee;
 	private String consultationExpiration;
 }

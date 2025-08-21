@@ -78,8 +78,8 @@ public class AdminServiceImpl implements AdminService {
 	@Autowired
 
 	private BookingFeign bookingFeign;
-	@Autowired
-	private QuetionsAndAnswerForAddClinicRepository quetionsAndAnswerForAddClinicRepository;
+//	@Autowired
+//	private QuetionsAndAnswerForAddClinicRepository quetionsAndAnswerForAddClinicRepository;
 
 	@Override
 
@@ -150,64 +150,48 @@ public class AdminServiceImpl implements AdminService {
 	
 
 	@Override
-
 	public Response adminLogin(String userName, String password) {
+	    Response response = new Response();
 
-		Response response = new Response();
+	    try {
+	        Optional<Admin> userOptional = adminRepository.findByUserName(userName);
 
-		try {
+	        if (userOptional.isPresent()) {
+	            Admin user = userOptional.get();
 
-			Optional<Admin> ExistUserName = adminRepository.findByUserName(userName);
+	            // Check if password matches
+	            if (user.getPassword().equals(password)) {
+	                response.setMessage("Login Successful");
+	                response.setStatus(200);
+	                response.setSuccess(true);
+	            } else {
+	                response.setMessage("Incorrect Password");
+	                response.setStatus(401);
+	                response.setSuccess(false);
+	            }
+	        } else {
+	            // Check if password matches any other user
+	            List<Admin> allAdmins = adminRepository.findAll();
+	            boolean passwordExists = allAdmins.stream()
+	                    .anyMatch(admin -> admin.getPassword().equals(password));
 
-			if(!ExistUserName.isPresent()) {
+	            if (passwordExists) {
+	                response.setMessage("Incorrect UserName");
+	            } else {
+	                response.setMessage("Incorrect UserName and Password");
+	            }
 
-				response.setMessage("Incorrect UserName");
+	            response.setStatus(401);
+	            response.setSuccess(false);
+	        }
 
-		        response.setStatus(401);
-
-		        response.setSuccess(false);
-
-		        return response;
-
-			}
-
-
-			Optional<Admin> credentials = adminRepository.findByUsernameAndPassword(userName, password);
-
-			if(credentials.isPresent()) {
-
-				response.setMessage("Login Successful");
-
-		        response.setStatus(200);
-
-		        response.setSuccess(true);
-
-		        return response;
-
-			}else {
-
-				response.setMessage("Incorrect Password");
-
-		        response.setStatus(401);
-
-		        response.setSuccess(false);
-
-		        return response;
-
-			}
-
-		}catch(Exception e) {
-
-			response.setMessage(e.getMessage());
-
+	    } catch (Exception e) {
+	        response.setMessage("Internal Server Error: " + e.getMessage());
 	        response.setStatus(500);
-
 	        response.setSuccess(false);
+	    }
 
-	        return response;
-
-		}
-
+	    return response;
 	}
 
 	
@@ -514,31 +498,31 @@ public class AdminServiceImpl implements AdminService {
 
 	        savedClinic.setFacebookHandle(clinic.getFacebookHandle());
 	        
-	        if (clinic.getOnboardingQA() != null && !clinic.getOnboardingQA().isEmpty()) {
-	            List<QuestionAnswerDTO> qaListDTO = clinic.getOnboardingQA(); // It's already a list
+//	        if (clinic.getOnboardingQA() != null && !clinic.getOnboardingQA().isEmpty()) {
+//	            List<QuestionAnswerDTO> qaListDTO = clinic.getOnboardingQA(); // It's already a list
 
-	            // Convert DTO list to entity list, ignoring null questions
-	            List<QuestionAnswer> clinicQAList = qaListDTO.stream()
-	                .filter(dto -> dto != null && dto.getQuestion() != null && !dto.getQuestion().isBlank())
-	                .map(dto -> new QuestionAnswer(dto.getQuestion(), dto.isAnswer()))
-	                .collect(Collectors.toList());
-
-	            // Set onboarding QA for clinic
-	            QuetionsAndAnswerForAddClinic clinicQA = new QuetionsAndAnswerForAddClinic();
-	            clinicQA.setQuestionsAndAnswers(clinicQAList);
-	            savedClinic.setOnboardingQA(clinicQA);
-
-	            // Calculate score: count of true answers (rounded just in case)
-	            int totalQuestions = clinicQAList.size();
-	            double answeredCount = clinicQAList.stream().filter(QuestionAnswer::isAnswer).count();
-	            int roundedScore = (int) Math.round(answeredCount / 2.0);
-	            savedClinic.setScore(roundedScore);
-	            
-
-	            savedClinic.setScore(roundedScore);
-	            savedClinic.setQuestionCount(totalQuestions); 
-
-	        }
+//	            // Convert DTO list to entity list, ignoring null questions
+//	            List<QuestionAnswer> clinicQAList = qaListDTO.stream()
+//	                .filter(dto -> dto != null && dto.getQuestion() != null && !dto.getQuestion().isBlank())
+//	                .map(dto -> new QuestionAnswer(dto.getQuestion(), dto.isAnswer()))
+//	                .collect(Collectors.toList());
+//
+//	            // Set onboarding QA for clinic
+//	            QuetionsAndAnswerForAddClinic clinicQA = new QuetionsAndAnswerForAddClinic();
+//	            clinicQA.setQuestionsAndAnswers(clinicQAList);
+//	            savedClinic.setOnboardingQA(clinicQA);
+//
+//	            // Calculate score: count of true answers (rounded just in case)
+//	            int totalQuestions = clinicQAList.size();
+//	            double answeredCount = clinicQAList.stream().filter(QuestionAnswer::isAnswer).count();
+//	            int roundedScore = (int) Math.round(answeredCount / 2.0);
+//	            savedClinic.setScore(roundedScore);
+//	            
+//
+//	            savedClinic.setScore(roundedScore);
+//	            savedClinic.setQuestionCount(totalQuestions); 
+//
+//	        }
 
 
 	        // Save clinic entity

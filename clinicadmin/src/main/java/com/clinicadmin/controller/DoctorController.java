@@ -149,10 +149,13 @@ public class DoctorController {
 	// ----------------------------Doctor
 	// Login----------------------------------------------------------
 	@PostMapping("/doctorLogin")
-	public ResponseEntity<?> updateDoctorById(@Valid @RequestBody DoctorLoginDTO loginDTO) {
-		Response response = doctorService.login(loginDTO);
-		return ResponseEntity.status(response.getStatus()).body(response);
-	}
+	    public  Response updateDoctorById( @RequestBody @Valid DoctorLoginDTO loginDTO) {
+
+	    Response response =  doctorService.login(loginDTO);
+
+	    return response;
+
+	    }
 
 	// -------------------------Change
 	// Password----------------------------------------------------------

@@ -53,6 +53,7 @@ public class BookingResponse {
 	private String status;
 	private double totalFee;
 	private List<String> attachments;
+	private String consentFormPdf;
 	private String paymentType;
 
 }

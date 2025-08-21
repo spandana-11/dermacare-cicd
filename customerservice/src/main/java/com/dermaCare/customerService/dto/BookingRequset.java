@@ -44,6 +44,7 @@ public class BookingRequset {
 	private double totalFee;
 	private String paymentType;
 	private List<String> attachments;
+	private String consentFormPdf;
 	private String bookedAt;
 
 }
