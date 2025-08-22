@@ -160,7 +160,7 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
   // NEW: options for react-select
   const options = useMemo(
     () =>
-      Array.isArray(diseases) ? diseases.map((d) => ({ label: d.disease, value: d.disease })) : [],
+      Array.isArray(diseases) ? diseases.map((d) => ({ label: d.diseaseName, value: d.diseaseName })) : [],
     [diseases],
   )
 
@@ -306,10 +306,9 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
                     <Select
                       value={diagnosis ? { label: diagnosis, value: diagnosis } : null}
                       onChange={handleDiagnosisChange}
-                      // IMPORTANT: control the input
                       inputValue={inputValue}
                       onInputChange={(val, meta) => {
-                        if (meta.action === 'input-change') setInputValue(val) // ignore blur/menu-close resets
+                        if (meta.action === 'input-change') setInputValue(val)
                       }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && canShowAdd && !adding) {
@@ -320,12 +319,26 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
                       options={options}
                       isSearchable
                       placeholder="Select diagnosis..."
-                      menuPlacement="top"
+                      menuPlacement="bottom"
                       noOptionsMessage={() =>
                         inputValue
-                          ? `No matches. Select Add to create "${inputValue}" as a diagnosis`
+                          ? `No matches. Click Add to create "${inputValue}" as a diagnosis`
                           : 'Type to search...'
                       }
+                      styles={{
+                        input: (provided) => ({
+                          ...provided,
+                          color: 'black', // input text color
+                        }),
+                        singleValue: (provided) => ({
+                          ...provided,
+                          color: 'black', // selected value text color
+                        }),
+                        placeholder: (provided) => ({
+                          ...provided,
+                          color: '#000', // placeholder text color
+                        }),
+                      }}
                     />
                   </div>
 

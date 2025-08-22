@@ -164,7 +164,7 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
   const options = useMemo(
     () =>
       Array.isArray(diseases)
-        ? diseases.map((d) => ({ label: d.disease, value: d.disease }))
+        ? diseases.map((d) => ({ label: d.diseaseName, value: d.diseaseName }))
         : [],
     [diseases]
   )
@@ -238,6 +238,20 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
                           ? `No matches. Click Add to create "${inputValue}" as a diagnosis`
                           : 'Type to search...'
                       }
+                      styles={{
+                        input: (provided) => ({
+                          ...provided,
+                          color: 'black', // input text color
+                        }),
+                        singleValue: (provided) => ({
+                          ...provided,
+                          color: 'black', // selected value text color
+                        }),
+                        placeholder: (provided) => ({
+                          ...provided,
+                          color: '#000', // placeholder text color
+                        }),
+                      }}
                     />
                   </div>
 
