@@ -1436,10 +1436,67 @@ public class DoctorServiceImpl implements DoctorService {
 	}
 
 //---------------- get All doctors with respective their clinics --------------------------
-//	public Response getAllDoctorsWithRespectiveClinic() {
-//		ResponseEntity<Response> clinics = adminServiceClient.firstRecommendedTureClincs();
-//		Object clinicObj = clinics.getBody().getData();
-//		ClinicDTO clinicDTO = objectMapper.convertValue(clinicObj, ClinicDTO.class);
-//		doctorsRepository.findBy
-//	}
+	@Override
+	public Response getAllDoctorsWithRespectiveClinic() {
+	    Response response = new Response();
+
+	    try {
+	        // 1. Get list of clinics (recommended ones)
+	        ResponseEntity<Response> clinicsResponse = adminServiceClient.firstRecommendedTureClincs();
+	        Object clinicObj = clinicsResponse.getBody().getData();
+
+	        // Convert to list of ClinicDTO
+	        List<ClinicDTO> clinics = objectMapper.convertValue(
+	                clinicObj,
+	                new TypeReference<List<ClinicDTO>>() {}
+	        );
+
+	        List<ClinicWithDoctorsDTO> clinicsWithDoctors = new ArrayList<>();
+
+	        for (ClinicDTO clinicDTO : clinics) {
+	            List<Doctors> doctorsDbData = doctorsRepository.findByHospitalId(clinicDTO.getHospitalId());
+
+	            List<DoctorsDTO> doctorDTOs = doctorsDbData.stream()
+	                    .map(DoctorMapper::mapDoctorEntityToDoctorDTO)
+	                    .collect(Collectors.toList());
+
+	            ClinicWithDoctorsDTO clDTO = new ClinicWithDoctorsDTO();
+	            clDTO.setHospitalId(clinicDTO.getHospitalId());
+	            clDTO.setName(clinicDTO.getName());
+	            clDTO.setAddress(clinicDTO.getAddress());
+	            clDTO.setCity(clinicDTO.getCity());
+	            clDTO.setContactNumber(clinicDTO.getContactNumber());
+	            clDTO.setHospitalOverallRating(clinicDTO.getHospitalOverallRating());
+	            clDTO.setOpeningTime(clinicDTO.getOpeningTime());
+	            clDTO.setClosingTime(clinicDTO.getClosingTime());
+	            clDTO.setHospitalLogo(clinicDTO.getHospitalLogo());
+	            clDTO.setEmailAddress(clinicDTO.getEmailAddress());
+	            clDTO.setWebsite(clinicDTO.getWebsite());
+	            clDTO.setLicenseNumber(clinicDTO.getLicenseNumber());
+	            clDTO.setIssuingAuthority(clinicDTO.getIssuingAuthority());
+	            clDTO.setHospitalDocuments(clinicDTO.getHospitalDocuments());
+	            clDTO.setContractorDocuments(clinicDTO.getContractorDocuments());
+	            clDTO.setRecommended(clinicDTO.isRecommended());
+
+	            // set doctors list
+	            clDTO.setDoctors(doctorDTOs);
+
+	            clinicsWithDoctors.add(clDTO);
+	        }
+
+	        // 3. Wrap response
+	        response.setSuccess(true);
+	        response.setData(clinicsWithDoctors);
+	        response.setMessage("Fetched clinics with respective doctors");
+	        response.setStatus(HttpStatus.OK.value());
+
+	    } catch (Exception e) {
+	        response.setSuccess(false);
+	        response.setMessage("Error fetching clinics and doctors: " + e.getMessage());
+	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	    }
+
+	    return response;
+	}
+
 }

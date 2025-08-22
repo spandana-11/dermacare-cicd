@@ -4,14 +4,14 @@ import { useNavigate } from 'react-router-dom'
 
 // Import your custom vector images (make sure these files exist in assets/images)
 import doctorIcon from '../../assets/images/avatars/Doctors.png'
-import nurseIcon from '../../assets/images/avatars/Nurse.png'
+import nurseIcon from '../../assets/images/avatars/nurse.png'
 import laboratoryIcon from '../../assets/images/avatars/Laboratory.png'
 import pharmacistIcon from '../../assets/images/avatars/Pharmacist.png'
-import receptionistIcon from '../../assets/images/avatars/Receptionist.png'
+import receptionistIcon from '../../assets/images/avatars/receptionist.png'
 import AdminIcon from '../../assets/images/avatars/Admin.png'
 import FrontDeskIcon from '../../assets/images/avatars/Front_Desk.png'
 import securityIcon from '../../assets/images/avatars/Security.png'
-import otherStaffIcon from '../../assets/images/avatars/other_Staff.png'
+import otherStaffIcon from '../../assets/images/avatars/Other_Staff.png'
 
 
 const EmployeeManagement = () => {

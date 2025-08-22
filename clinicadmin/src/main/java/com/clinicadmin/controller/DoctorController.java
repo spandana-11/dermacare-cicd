@@ -331,4 +331,11 @@ public class DoctorController {
 		    Response response = doctorService.getRecommendedClinicsAndDoctors(keyPointList);
 		    return ResponseEntity.status(response.getStatus()).body(response);
 		}
+//	----------------- Get All doctors with respective their clinic---------------------
+		@GetMapping("/clinics/getAllDoctorWithRespectiveClinics")
+		public ResponseEntity<Response> getAllDoctorWithRespectiveClinics(){
+			  Response response = doctorService.getAllDoctorsWithRespectiveClinic();
+			    return ResponseEntity.status(response.getStatus()).body(response);
+			
+		}
 }
