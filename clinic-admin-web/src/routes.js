@@ -3,8 +3,12 @@ import React from 'react'
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
 
 const Doctors = React.lazy(() => import('./views/Doctors/DoctorManagement'))
+// const Forms = React.lazy(() => import('./views/Form/ConsentForm'))
+const Nurse = React.lazy(() => import('./views/NurseManagement/Nurse'))
+const Receptionist = React.lazy(() => import('./views/ReceptionistManagement/Receptionist'))
+const EmployeeManagement = React.lazy(() => import('./views/EmployeeManagement/EmployeeManagement'))
 const Disease = React.lazy(() => import('./views/DiseaseManagement/DiseaseManagement'))
-const Forms = React.lazy(() => import('./views/Form/Forms'))
+// const Forms = React.lazy(() => import('./views/Form/Forms'))
 const Tests = React.lazy(() => import('./views/TestsManagement/TestsManagement'))
 const Treatments = React.lazy(() => import('./views/TreatmentsManagement/TreatmentsManagement'))
 const DoctorNotofications = React.lazy(
@@ -32,19 +36,23 @@ const ReportsDetails = React.lazy(() => import('./views/Reports/ReportDetails'))
 
 const routes = [
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
-  { path: '/doctor-notifications', name: 'Doctor Notifications', element: DoctorNotofications },
+  // { path: '/doctor-notifications', name: 'Doctor Notifications', element: DoctorNotofications },
   { path: '/doctor', name: 'Doctors', element: Doctors },
+  // { path: '/consentForm', name: 'Forms', element: Forms },
+  { path: '/nurse', name: 'nurse', element: Nurse },
+  { path: '/receptionist', name: 'receptionist', element: Receptionist },
+  { path: '/Employee management', name: 'Employee management', element: EmployeeManagement },
   { path: '/disease', name: 'Disease-Management', element: Disease },
-  { path: '/forms', name: 'Forms', element: Forms },
+  // { path: '/forms', name: 'Forms', element: Forms },
   { path: '/tests', name: 'Tests', element: Tests },
   { path: '/treatments', name: 'Treatments', element: Treatments },
-  { path: '/service-Management', name: 'SubService Management', element: ServiceManagement },
+  { path: '/service-Management', name: 'Procedure Management', element: ServiceManagement },
   // { path: '/patients', name: 'Patients', element: Patients },
   { path: '/payouts', name: 'Payouts', element: Payouts },
   { path: '/help', name: 'Help', element: Help },
   { path: '/reset-password', name: 'Reset-Password', element: Resetpassword },
   { path: '/doctor/:id', name: 'DoctorDetailspage', element: DoctorDetailspage },
-{ path: '/consent-form', name: 'Consent Form', element: ConsentFormPage },
+  { path: '/consent-form', name: 'Consent Form', element: ConsentFormPage },
 
   { path: '/appointment-management', name: 'Appointments', element: AppointmentManagement },
   { path: '/appointmentDetails/:id', name: 'Appointment Details', element: AppointmentDetailsPage },

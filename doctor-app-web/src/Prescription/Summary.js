@@ -253,7 +253,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {/* Patient Info */}
         <CCard className="shadow-sm mb-3">
           <CCardHeader className="py-2">
-            <strong>Patient Information</strong>
+            <strong style={{color:COLORS.black}}>Patient Information</strong>
           </CCardHeader>
           <CCardBody>
             <CRow className="g-3">
@@ -283,7 +283,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {(symptomsDetails !== '—' || symptomsDuration !== '—') && (
           <CCard className="shadow-sm mb-4">
             <CCardHeader className="py-2">
-              <strong>Symptoms & Duration</strong>
+              <strong style={{color:COLORS.black}}>Symptoms & Duration</strong>
             </CCardHeader>
             <CCardBody>
               <CRow className="g-3">
@@ -317,7 +317,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {diagnosis && (
           <CCard className="shadow-sm mb-3">
             <CCardHeader className="py-2">
-              <strong>Probable Diagnosis / Disease</strong>
+              <strong style={{color:COLORS.black}}>Probable Diagnosis / Disease</strong>
             </CCardHeader>
             <CCardBody>
               <div className="fs-6">{diagnosis}</div>
@@ -329,7 +329,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {tests.length > 0 && (
           <CCard className="shadow-sm mb-3">
             <CCardHeader className="py-2">
-              <strong>
+              <strong style={{color:COLORS.black}}>
                 Tests Recommended <span className="text-body-secondary">(with reasons)</span>
               </strong>
             </CCardHeader>
@@ -343,7 +343,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
               </ul>
               {testsReason ? (
                 <div className="mt-2 mb-2">
-                  <strong>Reasons</strong>
+                  <strong style={{color:COLORS.black}}>Reasons</strong>
                   <p className="mb-0">{testsReason}</p>
                 </div>
               ) : null}
@@ -355,7 +355,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {treatments.length > 0 && (
           <CCard className="shadow-sm mb-3">
             <CCardHeader className="py-2">
-              <strong>Treatments</strong>
+              <strong style={{color:COLORS.black}}>Treatments</strong>
             </CCardHeader>
             <CCardBody>
               <ul className="mb-2">
@@ -377,7 +377,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {treatmentSchedules && Object.keys(treatmentSchedules).length > 0 && (
           <CCard className="shadow-sm mb-3">
             <CCardHeader className="py-2">
-              <strong>Treatment Schedule</strong>
+              <strong style={{color:COLORS.black}}>Treatment Schedule</strong>
             </CCardHeader>
             <CCardBody>
               {Object.entries(treatmentSchedules).map(([name, meta]) => (
@@ -419,7 +419,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {medicines.length > 0 && (
           <CCard className="shadow-sm mb-3">
             <CCardHeader className="py-2">
-              <strong>Prescription Details</strong>
+              <strong style={{color:COLORS.black}}>Prescription Details</strong>
             </CCardHeader>
             <CCardBody>
               <CTable striped hover responsive className="align-middle">
@@ -465,7 +465,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {followUp.durationValue !== 'NA' && (
           <CCard className="shadow-sm mb-4">
             <CCardHeader className="py-2">
-              <strong>Follow-up Plan</strong>
+              <strong style={{color:COLORS.black}}>Follow-up Plan</strong>
             </CCardHeader>
             <CCardBody>
               <CCol xs={12} md={6}>
@@ -510,7 +510,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
       >
         <div className="d-flex gap-2 mx-4 justify-content-between w-75">
           <Button
-            customColor={COLORS.secondary}
+            customColor={COLORS.bgcolor}
             onClick={() => {
               setClickedSaveTemplate(true)
               onSaveTemplate?.()
@@ -535,7 +535,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
             </Button>
 
             <Button
-              customColor={COLORS.success}
+              customColor={COLORS.bgcolor}
               onClick={() => {
                 setPendingAction(ACTIONS.SAVE_PRINT)
                 clickedSaveTemplate

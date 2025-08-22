@@ -13,28 +13,14 @@ import {
   CTabContent,
   CTabPane,
   CButton,
-  CModal,
-  CModalHeader,
-  CModalTitle,
-  CModalBody,
-  CModalFooter,
-  CFormInput,
-  CInputGroup,
-  CListGroup,
-  CListGroupItem,
+
   CRow,
   CCol,
-  CFormTextarea,
-  CTable,
-  CTableHead,
-  CTableRow,
-  CTableHeaderCell,
-  CTableDataCell,
-  CTableBody,
-  CImage,
+
 } from '@coreui/react'
 import { averageRatings, getAvailableSlots } from '../../Auth/Auth'
 import { COLORS } from '../../Themes'
+import { capitalizeWords } from '../../utils/CaptalZeWord'
 
 const DoctorProfile = () => {
   const [doctorDetails, setDoctorDetails] = useState(null)
@@ -42,8 +28,7 @@ const DoctorProfile = () => {
   const [ratingsData, setRatingsData] = useState(null)
   const [slotsData, setSlotsData] = useState([])
   const [doctorImage, setDoctorImage] = useState(null)
-  const [allSlots, setAllSlots] = useState([])
-  const [timeSlots, setTimeSlots] = useState([])
+
 
   const [loading, setLoading] = useState(false)
 
@@ -88,9 +73,6 @@ const DoctorProfile = () => {
     fetchDoctorDetails()
   }, [])
 
-  //   const handleDateClick = (dayObj) => {
-  //   setSelectedDate(format(dayObj.date, 'yyyy-MM-dd'))
-  // }
 
   useEffect(() => {
     const fetchSlots = async () => {
@@ -115,16 +97,28 @@ const DoctorProfile = () => {
       const hospitalId = localStorage.getItem('hospitalId')
 
       if (!doctorId || !hospitalId) {
-        console.warn('Missing doctorId or hospitalId in localStorage')
+        console.warn('⚠️ Missing doctorId or hospitalId in localStorage')
         return
       }
-      const response = await averageRatings(hospitalId, doctorId)
-      if (response) {
-        setRatingsData(response)
+
+      try {
+        const response = await averageRatings(hospitalId, doctorId)
+
+        console.log('✅ Ratings API raw response:', response) // 👈 log what comes back
+
+        if (response) {
+          setRatingsData(response)
+        } else {
+          console.warn('⚠️ No ratings data returned')
+        }
+      } catch (error) {
+        console.error('❌ Error fetching ratings in DoctorProfile:', error)
       }
     }
+
     fetchRatings()
   }, [])
+
 
   const handleDateClick = (dayObj, idx) => {
     setSelectedDate(format(dayObj.date, 'yyyy-MM-dd'))
@@ -153,7 +147,7 @@ const DoctorProfile = () => {
             <span
               style={{
                 fontSize: '16px',
-                color: activeKey === 1 ? COLORS.black: COLORS.logocolor,
+                color: activeKey === 1 ? COLORS.black : COLORS.black,
                 fontWeight: activeKey === 1 ? '700' : '500',
                 backgroundColor: 'transparent',
               }}
@@ -178,7 +172,7 @@ const DoctorProfile = () => {
             <span
               style={{
                 fontSize: '16px',
-                color: activeKey === 2 ? COLORS.black: COLORS.logocolor,
+                color: activeKey === 2 ? COLORS.black : COLORS.black,
                 fontWeight: activeKey === 2 ? '700' : '500',
                 backgroundColor: 'transparent',
               }}
@@ -203,7 +197,7 @@ const DoctorProfile = () => {
             <span
               style={{
                 fontSize: '16px',
-                color: activeKey === 3 ? COLORS.black: COLORS.logocolor,
+                color: activeKey === 3 ? COLORS.black : COLORS.black,
                 fontWeight: activeKey === 3 ? '700' : '500',
                 backgroundColor: 'transparent',
               }}
@@ -228,7 +222,7 @@ const DoctorProfile = () => {
             <span
               style={{
                 fontSize: '16px',
-                color: activeKey === 4 ? COLORS.black: COLORS.logocolor,
+                color: activeKey === 4 ? COLORS.black : COLORS.black,
                 fontWeight: activeKey === 4 ? '700' : '500',
                 backgroundColor: 'transparent',
               }}
@@ -281,10 +275,10 @@ const DoctorProfile = () => {
                   )}
                 </div>
                 <div>
-                  <h3 className="fw-bold mb-1">Dr. {doctorDetails?.doctorName || "N/A"}</h3>
-                  <p className="mb-1"><strong>Qualification:</strong> {doctorDetails?.qualification || "N/A"}</p>
-                  <p className="mb-1"><strong>License No:</strong> {doctorDetails?.doctorLicence || "N/A"}</p>
-                  <p className="mb-0"><strong>Experience:</strong> {doctorDetails?.experience ? `${doctorDetails.experience} Years` : "N/A"}</p>
+                  <h3 className="fw-bold mb-1">{capitalizeWords(doctorDetails?.doctorName) || 'Doctor Name'}</h3>
+                  <p className="mb-1"><strong>Qualification:</strong> {doctorDetails?.qualification || "Qualification"}</p>
+                  <p className="mb-1"><strong>License No:</strong> {doctorDetails?.doctorLicence || "DoctorLicence"}</p>
+                  <p className="mb-0"><strong>Experience:</strong> {doctorDetails?.experience ? `${doctorDetails.experience} Years` : "Experience"}</p>
                 </div>
               </div>
             </CCardBody>
@@ -293,7 +287,7 @@ const DoctorProfile = () => {
           {/* Contact & Availability */}
           <CCard className="mb-4 shadow-sm border-0 rounded-3">
             <CCardBody>
-              <h5 className="fw-bold mb-3 border-bottom pb-2 text-primary">📞 Contact & Availability</h5>
+              <h6 className="fw-bold mb-3 border-bottom pb-2 " style={{ color: COLORS.black }}>📞 Contact & Availability</h6>
 
               {/* Two columns row */}
               <CRow className="mt-3">
@@ -362,7 +356,7 @@ const DoctorProfile = () => {
           {/* Profile Info */}
           <CCard className="mb-4 shadow-sm border-0 rounded-3">
             <CCardBody>
-              <h5 className="fw-bold mb-3 border-bottom pb-2 text-primary">📝 Profile Information</h5>
+              <h6 className="fw-bold mb-3 border-bottom pb-2 " style={{ color: COLORS.black }}>📝 Profile Information</h6>
 
               <CRow className="mt-3">
                 {/* Column 1 - Description */}
@@ -416,7 +410,7 @@ const DoctorProfile = () => {
           {/* Professional Info */}
           <CCard className="mb-4 shadow-sm border-0 rounded-3">
             <CCardBody>
-              <h5 className="fw-bold mb-3 border-bottom pb-2 text-primary">💼 Professional Info</h5>
+              <h6 className="fw-bold mb-3 border-bottom pb-2 " style={{ color: COLORS.black }}>💼 Professional Info</h6>
 
               <CRow>
                 <CCol md={12}>
@@ -443,25 +437,25 @@ const DoctorProfile = () => {
         {/* Doctor Slots Tab */}
         <CTabPane visible={activeKey === 2} className="pt-3">
           {/* Date Selector */}
-         <div className="d-flex gap-2 flex-wrap mb-3 border-1">
-  {days.map((dayObj, idx) => {
-    const isSelected = selectedDate === format(dayObj.date, 'yyyy-MM-dd');
-    return (
-      <CButton
-        key={idx}
-        onClick={() => handleDateClick(dayObj)}
-        style={{
-          backgroundColor: isSelected ? COLORS.bgcolor : 'white', // selected vs unselected
-          color: COLORS.logocolor,                                         // text color
-          border: '1px solid gray',
-        }}
-      >
-        <div style={{ fontSize: '14px' }}>{dayObj.dayLabel}</div>
-        <div style={{ fontSize: '12px' }}>{dayObj.dateLabel}</div>
-      </CButton>
-    );
-  })}
-</div>
+          <div className="d-flex gap-2 flex-wrap mb-3 border-1">
+            {days.map((dayObj, idx) => {
+              const isSelected = selectedDate === format(dayObj.date, 'yyyy-MM-dd');
+              return (
+                <CButton
+                  key={idx}
+                  onClick={() => handleDateClick(dayObj)}
+                  style={{
+                    backgroundColor: isSelected ? COLORS.bgcolor : 'white', // selected vs unselected
+                    color: COLORS.black,                                         // text color
+                    border: '1px solid gray',
+                  }}
+                >
+                  <div style={{ fontSize: '14px' }}>{dayObj.dayLabel}</div>
+                  <div style={{ fontSize: '12px' }}>{dayObj.dateLabel}</div>
+                </CButton>
+              );
+            })}
+          </div>
 
 
           {/* Slots Section */}
@@ -545,7 +539,7 @@ const DoctorProfile = () => {
                       <span className="fs-2 text-primary">👨‍⚕️</span>
                       <div>
                         <p className="mb-1 text-muted fw-medium">
-                          Doctor Overall Rating: {ratingsData?.overallDoctorRating ?? 'N/A'}
+                          Doctor Overall Rating: {ratingsData?.doctorRating ?? 'N/A'}
                           <span className="text-warning"> / 5 ⭐</span>
                         </p>
                       </div>
@@ -555,7 +549,7 @@ const DoctorProfile = () => {
                       <span className="fs-2 text-success">🏥</span>
                       <div>
                         <p className="mb-1 text-muted fw-medium">
-                          Hospital Overall Rating: {ratingsData?.overallHospitalRating ?? 'N/A'}
+                          Hospital Overall Rating: {ratingsData?.hospitalRating ?? 'N/A'}
                           <span className="text-warning"> / 5 ⭐</span>
                         </p>
                       </div>
@@ -565,7 +559,7 @@ const DoctorProfile = () => {
               </CRow>
               <br />
               {/* Patient Feedback Section */}
-              <h5 className="fw-bold mb-3 border-bottom pb-2 text-primary">💬 Patient Feedback</h5>
+              <h6 className="fw-bold mb-3 border-bottom pb-2 " style={{ color: COLORS.black }}>💬 Patient Feedback</h6>
 
               {ratingsData?.comments?.length ? (
                 ratingsData.comments.map((feedback, idx) => {
@@ -597,7 +591,9 @@ const DoctorProfile = () => {
                         <div className="flex-grow-1">
                           <div className="d-flex justify-content-between align-items-start mb-2">
                             <div>
-                              <h6 className="mb-0 fw-semibold">Patient {idx + 1}</h6>
+                              <h6 className="mb-0 fw-semibold">
+                                {feedback.patientName || "N/A"}
+                              </h6>
                               <small className="text-muted">
                                 {fullDateTime
                                   ? formatDistanceToNow(fullDateTime, { addSuffix: true })
@@ -630,9 +626,9 @@ const DoctorProfile = () => {
         <CTabPane visible={activeKey === 4} className="pt-3">
 
           <CCardBody>
-            <h5 className="fw-bold mb-3 border-bottom pb-2 text-primary">
+            <h6 className="fw-bold mb-3 border-bottom pb-2 " style={{ color: COLORS.black }}>
               📂 Categories & Services
-            </h5>
+            </h6>
 
             <CRow>
               {/* Categories */}

@@ -21,4 +21,7 @@ public class LabTest {
     private ObjectId id;
     private String testName;
     private String hospitalId;
+    private String description;
+    private String purpose;
+   
 }

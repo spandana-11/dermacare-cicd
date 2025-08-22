@@ -169,7 +169,7 @@ services:
     ports:
       - "3000:80"
     environment:
-      - HOST=13.202.16.119
+      - HOST=13.235.239.208
       - PORT=3000
     networks:
       - app-network
@@ -183,7 +183,7 @@ services:
     ports:
       - "4000:80"
     environment:
-      - HOST=13.202.16.119
+      - HOST=13.235.239.208
       - PORT=4000
     networks:
       - app-network
@@ -197,7 +197,7 @@ services:
     ports:
       - "5000:80"
     environment:
-      - HOST=13.202.16.119
+      - HOST=13.235.239.208
       - PORT=5000
     networks:
       - app-network

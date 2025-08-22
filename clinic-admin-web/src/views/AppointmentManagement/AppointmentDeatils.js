@@ -70,7 +70,7 @@ const AppointmentDetails = () => {
   useEffect(() => {
     const fetchDoctorDetails = async () => {
       if (
-        ['confirmed', 'completed', 'in-progress'].includes(appointment?.status?.toLowerCase()) &&
+        ['confirmed', 'completed', 'active'].includes(appointment?.status?.toLowerCase()) &&
         appointment?.doctorId
       ) {
         try {
@@ -111,8 +111,8 @@ const AppointmentDetails = () => {
   // const showConfirmedOrCompleted =
   //   appointment?.status?.toLowerCase() === 'confirmed' ||
   //   appointment?.status?.toLowerCase() === 'completed' ||
-  //   appointment?.status?.toLowerCase() === 'In-Progress'
-  const showConfirmedOrCompleted = ['confirmed', 'completed', 'in-progress'].includes(
+  //   appointment?.status?.toLowerCase() === 'active'
+  const showConfirmedOrCompleted = ['confirmed', 'completed', 'active'].includes(
     appointment?.status?.toLowerCase(),
   )
 
@@ -120,7 +120,7 @@ const AppointmentDetails = () => {
     <div className="container mt-4">
       {/* Header */}
       <div className="bg-info text-white p-3 d-flex justify-content-between align-items-center rounded">
-        <h5 className="mb-0">Patient File Name: {appointment.bookingId}</h5>
+        <h5 className="mb-0">Patient File Name: {appointment.patientId}</h5>
         <div className="d-flex gap-2">
           <CButton color="secondary" size="sm" onClick={() => navigate(-1)}>
             Back
@@ -203,11 +203,11 @@ const AppointmentDetails = () => {
           <>
             <div className="mt-4 d-flex justify-content-end gap-2">
               <CButton color="info" onClick={handleGenerateConsentForm}>
-                Consent Form
-                <FaEye />
+        
+                <FaEye color="white"/>
               </CButton>
               <CButton color="info" onClick={handleDownloadConsentForm}>
-                <FaDownload />
+                <FaDownload color="white"/>
               </CButton>
             </div>
 
@@ -241,7 +241,7 @@ const AppointmentDetails = () => {
                     <CButton
                       color="info"
                       size="sm"
-                      className="px-3"
+                      className="px-3 text-white"
                       onClick={() => navigate(`/doctor/${doctor.doctorId}`, { state: { doctor } })}
                     >
                       View Details

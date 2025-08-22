@@ -797,7 +797,7 @@ const DoctorManagement = () => {
 
             <CCol md={12}>
               <h6>
-                Sub Services <span className="text-danger">*</span>
+                Procedure Name <span className="text-danger">*</span>
               </h6>
 
               <Select
@@ -834,10 +834,10 @@ const DoctorManagement = () => {
               />
               {!isSubServiceComplete && (
                 <div className="text-danger mt-2">
-                  Some selected sub-services are missing details like price or final cost.
+                  Some selected Procedures are missing details like price or final cost.
                   <br />
                   <a href="/service-Management" className="text-primary">
-                    Please add sub-service details
+                    Please add Procedure details
                   </a>
                 </div>
               )}
@@ -852,31 +852,6 @@ const DoctorManagement = () => {
 
           <h5 className="mb-3">Doctor Details</h5>
           <CRow className="g-4 mb-4">
-            <CCol md={6}>
-              <CFormLabel>
-                License Number
-                <span className="text-danger">*</span>
-              </CFormLabel>
-              <CFormInput
-                value={form.doctorLicence}
-                onChange={(e) => {
-                  const value = e.target.value
-                  setForm((prev) => ({ ...prev, doctorLicence: value }))
-
-                  if (value.trim()) {
-                    setFormErrors((prev) => {
-                      const updated = { ...prev }
-                      delete updated.doctorLicence
-                      return updated
-                    })
-                  }
-                }}
-                invalid={!!formErrors?.doctorLicence} // CoreUI validation styling
-              />
-              {formErrors?.doctorLicence && (
-                <small className="text-danger">{formErrors.doctorLicence}</small>
-              )}
-            </CCol>
             <CCol md={6}>
               <CFormLabel>
                 Doctor Name
@@ -901,6 +876,31 @@ const DoctorManagement = () => {
               </div>
               {formErrors.doctorName && (
                 <div className="text-danger mt-1">{formErrors.doctorName}</div>
+              )}
+            </CCol>{' '}
+            <CCol md={6}>
+              <CFormLabel>
+                License Number
+                <span className="text-danger">*</span>
+              </CFormLabel>
+              <CFormInput
+                value={form.doctorLicence}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setForm((prev) => ({ ...prev, doctorLicence: value }))
+
+                  if (value.trim()) {
+                    setFormErrors((prev) => {
+                      const updated = { ...prev }
+                      delete updated.doctorLicence
+                      return updated
+                    })
+                  }
+                }}
+                invalid={!!formErrors?.doctorLicence} // CoreUI validation styling
+              />
+              {formErrors?.doctorLicence && (
+                <small className="text-danger">{formErrors.doctorLicence}</small>
               )}
             </CCol>
             <CCol md={6}>
@@ -1335,7 +1335,7 @@ const DoctorManagement = () => {
             {/* The container for the custom file input and label */}
             <div style={{ flex: 1 }}>
               <CFormLabel htmlFor="doctorSignature">
-                Doctor Signature <span className="text-danger">*</span>
+                Doctor Signature(to add in the E-Prescription)<span className="text-danger">*</span>
               </CFormLabel>
               <div
                 style={{

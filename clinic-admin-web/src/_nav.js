@@ -19,6 +19,7 @@ import {
   cilSettings,
   cilSpeedometer,
   cilStar,
+  cilUser,
   cilWallet,
   cilWarning,
   // cilHelpCircle ,
@@ -42,10 +43,16 @@ const _nav = [
 
   {
     component: CNavItem,
-    to: '/doctor',
-    name: 'Doctors',
-    icon: <CIcon icon={cilMedicalCross} customClassName="nav-icon" />,
+    to: '/Employee management',
+    name: 'Employee management',
+    icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
   },
+  // {
+  //   component: CNavItem,
+  //   to: '/doctor',
+  //   name: 'Doctors',
+  //   icon: <CIcon icon={cilMedicalCross} customClassName="nav-icon" />,
+  // },
   // {
   //   component: CNavItem,
   //   to: '/doctor-notifications',
@@ -81,7 +88,7 @@ const _nav = [
     // {
     component: CNavItem,
     to: '/service-Management',
-    name: 'Sub-Service Management',
+    name: 'Procedure Management',
     icon: <CIcon icon={cilSettings} customClassName="nav-icon" />,
   },
   // {

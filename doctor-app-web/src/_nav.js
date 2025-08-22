@@ -17,7 +17,7 @@ const _nav = [
     name: 'Dashboard',
     to: '/dashboard',
     icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon"  style={{color:COLORS.black}}/>,
-    style:{color:COLORS.black},
+    style:{color:COLORS.black,fontWeight: 'bold'},
   },
 
   {
@@ -25,7 +25,7 @@ const _nav = [
     name: 'Appointments',
     to: '/appointments',
     icon: <CIcon icon={cilCalendar} customClassName="nav-icon" style={{color:COLORS.black}}/>,
-    style:{color:COLORS.black},
+    style:{color:COLORS.black,fontWeight: 'bold'},
   },
 
   {
@@ -33,21 +33,21 @@ const _nav = [
     name: 'Doctor Template',
     to: '/doctor-template',
     icon: <CIcon icon={cilNotes} customClassName="nav-icon" style={{color:COLORS.black}}/>,
-    style:{color:COLORS.black},
+    style:{color:COLORS.black,fontWeight: 'bold'},
   },
   {
     component: CNavItem,
     name: 'Profile',
     to: '/doctorprofile',
     icon: <CIcon icon={cilUser} customClassName="nav-icon" style={{color:COLORS.black}}/>,
-    style:{color:COLORS.black},
+    style:{color:COLORS.black,fontWeight: 'bold'},
   },
   {
     component: CNavItem,
     name: 'Help Centre',
     to: '/helpCentre',
     icon: <CIcon icon={cilCommentSquare} customClassName="nav-icon" style={{color:COLORS.black}}/>,
-    style:{color:COLORS.black},
+    style:{color:COLORS.black,fontWeight: 'bold'},
   },
 
   

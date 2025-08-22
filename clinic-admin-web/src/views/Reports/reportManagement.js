@@ -33,7 +33,7 @@ const ReportsManagement = () => {
 
   const consultationTypeMap = {
     'Service & Treatment': 'services & treatments',
-    'Video Consultation': 'online consultation',
+    'Tele Consultation': 'tele consultation',
     'In-clinic': 'in-clinic consultation',
   }
 
@@ -69,49 +69,60 @@ const ReportsManagement = () => {
     }
   }, [])
 
-  const handleStatusChange = (e) => {
-    const value = e.target.value
-    if (statusFilters.includes(value)) {
-      setStatusFilters(statusFilters.filter((s) => s !== value)) // remove if selected again
-    } else {
-      setStatusFilters([...statusFilters, value]) // add new one
-    }
+const handleStatusChange = (e) => {
+  const value = e.target.value;
+  // Only allow 'Completed' or 'Active'
+  if (!['Completed', 'Active'].includes(value)) return;
+
+  if (statusFilters.includes(value)) {
+    setStatusFilters(statusFilters.filter((s) => s !== value)); // remove if selected again
+  } else {
+    setStatusFilters([...statusFilters, value]); // add new one
   }
+};
+
 
 useEffect(() => {
-  let currentFiltered = bookings
+  let currentFiltered = bookings;
 
-  // 1. Filter by status (Completed / In-Progress)
+  // Only include Completed or Active
+  currentFiltered = currentFiltered.filter(
+    (booking) =>
+      ['completed', 'active'].includes(normalize(booking.status))
+  );
+
+  // Apply user-selected status filters
   if (statusFilters.length > 0) {
     currentFiltered = currentFiltered.filter((booking) =>
       statusFilters.some(
         (status) => normalize(booking.status) === normalize(status)
       )
-    )
+    );
   }
 
-  // 2. Apply consultation type filter
+  // Consultation type filter
   if (filterTypes.length === 1) {
-    const selectedType = filterTypes[0]
+    const selectedType = filterTypes[0];
 
-    if (selectedType === "Video Consultation") {
+    if (selectedType === "Tele Consultation") {
       currentFiltered = currentFiltered.filter(
         (item) =>
-          normalize(item.consultationType) === "video consultation" ||
+          normalize(item.consultationType) === "tele consultation" ||
           normalize(item.consultationType) === "online consultation"
-      )
+      );
     } else {
-      const mappedType = consultationTypeMap[selectedType]
+      const mappedType = consultationTypeMap[selectedType];
       if (mappedType) {
         currentFiltered = currentFiltered.filter(
           (item) => normalize(item.consultationType) === mappedType
-        )
+        );
       }
     }
   }
 
-  setFilteredData(currentFiltered)
-}, [bookings, filterTypes, statusFilters])
+  setFilteredData(currentFiltered);
+}, [bookings, filterTypes, statusFilters]);
+
 
 
 
@@ -153,10 +164,10 @@ useEffect(() => {
   //   if (filterTypes.length === 1) {
   //     const selectedType = filterTypes[0]
 
-  //     if (selectedType === 'Video Consultation') {
+  //     if (selectedType === 'Tele Consultation') {
   //       currentFiltered = currentFiltered.filter(
   //         (item) =>
-  //           normalize(item.consultationType) === 'video consultation' ||
+  //           normalize(item.consultationType) === 'tele consultation' ||
   //           normalize(item.consultationType) === 'online consultation',
   //       )
   //     } else {
@@ -188,7 +199,7 @@ useEffect(() => {
       <div className="container mt-4">
         <h5 className="mb-3">Appointments</h5>
         <div className="d-flex gap-2 mb-3">
-          {['Service & Treatment', 'In-clinic', 'Video Consultation'].map((label) => (
+          {['Service & Treatment', 'In-clinic', 'Tele Consultation'].map((label) => (
             <button
               key={label}
               onClick={() => toggleFilter(label)}
@@ -216,10 +227,10 @@ useEffect(() => {
             checked={statusFilters.includes('Completed')}
           />
           <CFormCheck
-            label="In-Progress"
-            value="In-Progress"
+            label="Active"
+            value="Active"
             onChange={handleStatusChange}
-            checked={statusFilters.includes('In-Progress')}
+            checked={statusFilters.includes('Active')}
           />
         </div>
 
@@ -241,7 +252,7 @@ useEffect(() => {
             {loading ? (
               // ✅ Show loading while data is being fetched
               <CTableRow>
-                <CTableDataCell colSpan="8" className="text-center text-primary fw-bold">
+                <CTableDataCell colSpan="8" className="text-center text-info fw-bold">
                   Loading reports...
                 </CTableDataCell>
               </CTableRow>
@@ -256,7 +267,7 @@ useEffect(() => {
                   <CTableDataCell>{item.status}</CTableDataCell>
                   <CTableDataCell>
                     <CButton
-                      color="primary"
+                      color="info"
                       size="sm"
                       onClick={() =>
                         navigate(`/reportDetails/${item.bookingId}`, {

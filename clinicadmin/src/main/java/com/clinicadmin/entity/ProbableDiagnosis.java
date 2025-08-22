@@ -20,7 +20,11 @@ public class ProbableDiagnosis {
 	@Id
 	@JsonSerialize(using = ObjectIdSerializer.class)
 	private ObjectId id;
-	private String disease;
+	private String diseaseName;
 	private String hospitalId;
+	private String probableSymptoms;
+	private String notes;
+	
+	
 
 }

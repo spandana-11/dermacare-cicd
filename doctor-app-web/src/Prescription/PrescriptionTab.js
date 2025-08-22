@@ -75,9 +75,9 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
         ? m.times.map((t) => `${t}`.trim()).filter(Boolean)
         : typeof m.times === 'string'
           ? m.times
-              .split(',')
-              .map((t) => t.trim())
-              .filter(Boolean)
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean)
           : [],
     }))
 
@@ -113,10 +113,10 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
 
   const options = Array.isArray(prescriptions)
     ? prescriptions.map((presc) => ({
-        label: presc.medicines?.[0]?.name || `Prescription #${presc.prescriptionId}`,
-        value: presc.prescriptionId,
-        data: presc,
-      }))
+      label: presc.medicines?.[0]?.name || `Prescription #${presc.prescriptionId}`,
+      value: presc.prescriptionId,
+      data: presc,
+    }))
     : []
 
   const handlePrescriptionSelect = (selectedOption) => {
@@ -177,43 +177,32 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
     localStorage.setItem('recent_searches', JSON.stringify(updatedRecent))
   }
 
+  // ✅ FIXED SAVE TEMPLATE FUNCTION
   const saveTemplate = async () => {
+    if (!medicines.length) {
+      warning('Please add medicines before saving.', { title: 'No Medicines' })
+      return
+    }
+
     const newTemplate = JSON.stringify(medicines)
-    console.log('🆕 New Template:', newTemplate)
+    const updated = [...templates, newTemplate]
+    setTemplates(updated)
 
-    // Check if template already exists
-    if (!templates.includes(newTemplate)) {
-      const updated = [...templates, newTemplate]
-      console.log('📦 Updated Local Templates Array:', updated)
+    const clinicId = localStorage.getItem('hospitalId')
+    const prescriptionData = {
+      medicines,
+      clinicId,
+    }
 
-      // Save to localStorage
-      // localStorage.setItem('templates', JSON.stringify(updated))
-      setTemplates(updated)
-      // console.log('💾 Saved to localStorage')
-
-      const clinicId = localStorage.getItem('hospitalId')
-
-      // Prepare API data
-      const prescriptionData = {
-        medicines: medicines,
-        clinicId: clinicId,
-      }
-
-      console.log('📤 Sending to API (createPrescription):', prescriptionData)
-
-      // Send to backend
+    try {
       const result = await SavePrescription(prescriptionData)
-
       if (result) {
-        console.log('✅ API response:', result)
-        success('Template saved successfully to server!', { title: 'Success' })
+        success('Medicines saved successfully!', { title: 'Success' })
       } else {
-        console.warn('⚠️ Failed to save on server')
-        info('Saved locally, but failed to save on server.', { title: 'Partial Save' })
+        warning('Failed to save medicines. Try again.', { title: 'Warning' })
       }
-    } else {
-      console.log('ℹ️ Template already exists in localStorage')
-      info('Template already exists!', { title: 'Info' })
+    } catch (err) {
+      error('Error saving medicines', { title: 'Error' })
     }
   }
 
@@ -301,26 +290,27 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                 loadOptions={(inputValue, callback) => {
                   if (!inputValue || inputValue.length < 2) return callback([])
 
-                  const filtered = prescriptions
-                    .filter((presc) =>
-                      presc.medicines?.some((m) =>
-                        m.name?.toLowerCase().includes(inputValue.toLowerCase()),
-                      ),
-                    )
-                    .map((presc) => ({
-                      label: presc.medicines?.[0]?.name || `Prescription #${presc.prescriptionId}`,
-                      value: presc.prescriptionId,
-                      data: presc,
-                    }))
+                  const filtered = prescriptions.flatMap((presc) =>
+                    presc.medicines
+                      ?.filter((m) =>
+                        m.name?.toLowerCase().includes(inputValue.toLowerCase())
+                      )
+                      .map((m) => ({
+                        label: m.name,                      // ✅ individual medicine name
+                        value: m.id,                        // ✅ unique medicine id
+                        prescriptionId: presc.prescriptionId,
+                        data: m,                            // ✅ store medicine data
+                      })) || []
+                  )
 
                   callback(filtered)
                 }}
                 defaultOptions={false}
                 placeholder="Search prescription medicine..."
                 onChange={(selectedOption) => {
-                  const selected = selectedOption?.data
-                  if (selected?.medicines?.length > 0) {
-                    setSelectedPrescriptionMedicines(selected.medicines)
+                  const selectedMed = selectedOption?.data
+                  if (selectedMed) {
+                    setSelectedPrescriptionMedicines((prev) => [...prev, selectedMed]) // ✅ add medicine individually
                   }
                 }}
                 noOptionsMessage={() => 'Start typing to search...'}
@@ -335,6 +325,7 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                   }),
                 }}
               />
+
             </div>
           </div>
         </CCol>
@@ -362,7 +353,7 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                 onClick={() => setSearch('')}
                 aria-label="Clear"
                 customColor={COLORS.bgcolor} // background color of button
-                    color={COLORS.black}
+                color={COLORS.black}
               >
                 &times;
               </button>
@@ -371,11 +362,11 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
             {/* Add Button (hide while loading) */}
             {!isLoading && (
               <Button
-               // className="btn btn-primary"
+                // className="btn btn-primary"
                 onClick={() => addMedicine(search)}
                 style={{ zIndex: 1 }}
                 customColor={COLORS.bgcolor} // background color of button
-                    color={COLORS.black}
+                color={COLORS.black}
               >
                 Add
               </Button>
@@ -428,7 +419,7 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
           >
             {res}
             <button className="btn btn-sm btn-outline-success" customColor={COLORS.bgcolor} // background color of button
-                color={COLORS.black}>Add</button>
+              color={COLORS.black}>Add</button>
           </li>
         ))}
       </ul>
@@ -559,17 +550,17 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                       <div className="d-flex flex-column gap-1">
                         {Array.isArray(med.times)
                           ? med.times.map((time, i) => (
-                              <CFormInput
-                                key={i}
-                                size="sm"
-                                value={time}
-                                onChange={(e) => {
-                                  const updated = [...med.times]
-                                  updated[i] = e.target.value
-                                  handleUpdate(index, 'times', updated)
-                                }}
-                              />
-                            ))
+                            <CFormInput
+                              key={i}
+                              size="sm"
+                              value={time}
+                              onChange={(e) => {
+                                const updated = [...med.times]
+                                updated[i] = e.target.value
+                                handleUpdate(index, 'times', updated)
+                              }}
+                            />
+                          ))
                           : null}
                       </div>
                     ) : Array.isArray(med.times) ? (
@@ -624,40 +615,40 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
           </CTable>
         </div>
       )}
-   
-          {selectedPrescriptionMedicines.length > 0 && (
-            <div className="d-flex flex-wrap gap-3 pb-5">
-              {selectedPrescriptionMedicines.map((med, idx) => (
-                <div key={med.id || idx} style={{ flex: '1 1 48%' }}>
-                  <MedicineCard
-                    index={idx}
-                    medicine={med}
-                    isDuplicateName={isDuplicateName}
-                    updateMedicine={(updated) => {
-                      const updatedList = [...selectedPrescriptionMedicines]
-                      updatedList[idx] = updated
-                      setSelectedPrescriptionMedicines(updatedList)
-                    }}
-                    removeMedicine={() => {
-                      const updatedList = selectedPrescriptionMedicines.filter((_, i) => i !== idx)
-                      setSelectedPrescriptionMedicines(updatedList)
-                    }}
-                    onAdd={(m) => {
-                      if (isDuplicateName(m?.name)) {
-                        info('Medicine already added', { title: 'Duplicate' })
-                        return
-                      }
-                      setMedicines([...medicines, m])
-                      setSelectedPrescriptionMedicines(
-                        selectedPrescriptionMedicines.filter((_, i) => i !== idx),
-                      )
-                    }}
-                  />
-                </div>
-              ))}
+
+      {selectedPrescriptionMedicines.length > 0 && (
+        <div className="d-flex flex-wrap gap-3 pb-5">
+          {selectedPrescriptionMedicines.map((med, idx) => (
+            <div key={med.id || idx} style={{ flex: '1 1 48%' }}>
+              <MedicineCard
+                index={idx}
+                medicine={med}
+                isDuplicateName={isDuplicateName}
+                updateMedicine={(updated) => {
+                  const updatedList = [...selectedPrescriptionMedicines]
+                  updatedList[idx] = updated
+                  setSelectedPrescriptionMedicines(updatedList)
+                }}
+                removeMedicine={() => {
+                  const updatedList = selectedPrescriptionMedicines.filter((_, i) => i !== idx)
+                  setSelectedPrescriptionMedicines(updatedList)
+                }}
+                onAdd={(m) => {
+                  if (isDuplicateName(m?.name)) {
+                    info('Medicine already added', { title: 'Duplicate' })
+                    return
+                  }
+                  setMedicines([...medicines, m])
+                  setSelectedPrescriptionMedicines(
+                    selectedPrescriptionMedicines.filter((_, i) => i !== idx),
+                  )
+                }}
+              />
             </div>
-          )}
-   
+          ))}
+        </div>
+      )}
+
       {activeMedicine && (
         <div className="d-flex flex-wrap gap-3 pb-5">
           <div style={{ flex: '1 1 48%' }}>
@@ -688,14 +679,26 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
           <div className="d-flex justify-content-between align-items-end w-100  ">
             <div className="d-flex gap-4">
               <Button
-                customColor={COLORS.bgcolor} // background color of button
-                    color={COLORS.black}
+                customColor={COLORS.bgcolor}
+                color={COLORS.black}
                 className="ms-2"
                 size="medium"
-                onClick={saveTemplate}
+                onClick={() => {
+                  if (hasPendingCards) {
+                    warning('Please add the medicine to the table before saving/going next.', { title: 'Info' })
+                  } else {
+                    saveTemplate()
+                  }
+                }}
+                style={{
+                  opacity: hasPendingCards ? 0.5 : 1,   // looks disabled
+                  pointerEvents: 'auto',                // clickable even when "disabled"
+                  cursor: hasPendingCards ? 'not-allowed' : 'pointer',
+                }}
               >
                 Save Medicine Template
               </Button>
+
               {/* <Button
                 className="ms-2"
                 size="medium"
@@ -708,14 +711,24 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
             <div>
               <Button
                 size="medium"
-                customColor={COLORS.bgcolor} // background color of button
-                    color={COLORS.black}
-                onClick={handleNext}
-                disabled={hasPendingCards}
-                title={hasPendingCards ? 'Add pending medicine card(s) first' : undefined}
+                customColor={COLORS.bgcolor}
+                color={COLORS.black}
+                onClick={() => {
+                  if (hasPendingCards) {
+                    warning('Please add the medicine to the table before saving/going next.', { title: 'Info' })
+                  } else {
+                    handleNext()
+                  }
+                }}
+                style={{
+                  opacity: hasPendingCards ? 0.5 : 1,
+                  pointerEvents: 'auto',
+                  cursor: hasPendingCards ? 'not-allowed' : 'pointer',
+                }}
               >
                 Next
               </Button>
+
             </div>
           </div>
         </div>

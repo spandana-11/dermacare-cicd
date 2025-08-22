@@ -1,4 +1,4 @@
-export const ipUrl = 'http://13.202.16.119:9090'
+export const ipUrl = 'http://13.235.239.208:9090'
 export const baseUrl = `${ipUrl}/api/doctors`
 //login
 export const loginEndpoint = 'login'

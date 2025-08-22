@@ -332,17 +332,21 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
                   <div className="pt-1">
                     <button
                       type="button"
-                      className="btn btn-sm btn-primary"
                       disabled={!canShowAdd || adding}
-                      // run BEFORE blur clears the input
-                      onMouseDown={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        handleAddClick()
+                      onClick={handleAddClick}
+                      style={{
+                        backgroundColor: !canShowAdd || adding ? "#a5c4d4ff" : "#7e3a93", // disabled → light bg, enabled → purple bg
+                        color: !canShowAdd || adding ? "#7e3a93" : "#fff",           // disabled → purple text, enabled → light text
+                        cursor: !canShowAdd || adding ? "not-allowed" : "pointer",
+                        border: "none",
+                        padding: "6px 14px",
+                        borderRadius: "6px",
+                        fontWeight: "600",
+                        transition: "all 0.3s ease",
                       }}
-                      title={canShowAdd ? 'Add' : 'Type a new disease name'}
+                      title={canShowAdd ? "Add new disease" : "Type a new disease name"}
                     >
-                      {adding ? 'Adding…' : 'Add'}
+                      {adding ? "Adding…" : "Add"}
                     </button>
                   </div>
                 </div>
@@ -429,21 +433,21 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
                 No advertisements available
               </div>
             )} */}
-           <div
-  className="d-flex align-items-center justify-content-center"
-  style={{
-    height: 150,
-    width: 500,                   // set the desired width
-    borderRadius: 8,
-    border: `1px dashed ${COLORS.primary}`,
-    backgroundColor: COLORS.bgcolor,
-    color: COLORS.black,
-    fontWeight: 'bold',
-    fontSize: '1rem',
-  }}
->
-  Ad Space
-</div>
+            <div
+              className="d-flex align-items-center justify-content-center"
+              style={{
+                height: 150,
+                width: 500,                   // set the desired width
+                borderRadius: 8,
+                border: `1px dashed ${COLORS.primary}`,
+                backgroundColor: COLORS.bgcolor,
+                color: COLORS.black,
+                fontWeight: 'bold',
+                fontSize: '1rem',
+              }}
+            >
+              Ad Space
+            </div>
           </CCol>
         </CRow>
       </CForm>
@@ -462,7 +466,7 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
         }}
       >
         <Button onClick={handleNext} customColor={COLORS.bgcolor} // background color of button
-    color={COLORS.black}>Next</Button>
+          color={COLORS.black}>Next</Button>
       </div>
 
       {snackbar.show && <Snackbar message={snackbar.message} type={snackbar.type} />}

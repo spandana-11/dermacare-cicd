@@ -364,9 +364,13 @@ export const averageRatings = async (hospitalId, doctorId) => {
   try {
     const response = await api.get(`${ratingsbaseUrl}/${hospitalId}/${doctorId}`)
 
-    if (response.data && response.data.success) {
-      const { overallDoctorRating, overallHospitalRating, comments, ratingCategoryStats } =
-        response.data
+    if (response.data?.success && response.data?.data) {
+      const {
+        overallDoctorRating = 0,
+        overallHospitalRating = 0,
+        comments = [],
+        ratingCategoryStats = [],
+      } = response.data.data  // ✅ safe destructuring with defaults
 
       return {
         doctorRating: overallDoctorRating,
@@ -379,9 +383,17 @@ export const averageRatings = async (hospitalId, doctorId) => {
     }
   } catch (error) {
     console.error('Error fetching ratings:', error)
-    return null
+
+    // ✅ return defaults instead of null to avoid breaking UI
+    return {
+      doctorRating: 0,
+      hospitalRating: 0,
+      comments: [],
+      ratingStats: [],
+    }
   }
 }
+
 
 export const updateLogin = async (payload, username) => {
   try {

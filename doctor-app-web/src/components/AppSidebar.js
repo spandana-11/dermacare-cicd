@@ -162,21 +162,21 @@ const AppSidebar = () => {
                   style={{ borderWidth: 2, padding: 5, color: COLORS.gray }}
                 />
                 <h4
-                  className="doctor-header mb-2 mt-2"
-                  style={{ color: COLORS.secondary, fontWeight: 'bold', fontSize: SIZES.large }}
+                  className=" mb-2 mt-2"
+                  style={{ color: COLORS.black, fontWeight: 'bold', fontSize: SIZES.large }}
                 >
                   {display.name}
                 </h4>
-                <h6 className="mb-1" style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+                <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
                   {display.age} Years / {display.gender}
                 </h6>
-                <h6 className="mb-1" style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+                <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
                   {display.mobile}
                 </h6>
-                <h6 className="mb-1" style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+                <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
                   Visit Type: {display.visitType}
                 </h6>
-                <h6 className="mb-1" style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+                <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
                   Visit Count: {display.visitCount}
                 </h6>
 
@@ -184,24 +184,24 @@ const AppSidebar = () => {
 
                 <div className="w-100 px-2">
                   <h4
-                    className="doctor-header mb-2 mt-2"
-                    style={{ color: COLORS.secondary, fontWeight: 'bold', fontSize: SIZES.large }}
+                    className=" mb-2 mt-2"
+                    style={{ color: COLORS.black, fontWeight: 'bold', fontSize: SIZES.large }}
                   >
                     Vitals
                   </h4>
-                  <h6 className="mb-1" style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+                  <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
                     Height : {display.vitals.height}
                   </h6>
-                  <h6 className="mb-1" style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+                  <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
                     Weight : {display.vitals.weight}
                   </h6>
-                  <h6 className="mb-1" style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+                  <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
                     Blood Pressure: {display.vitals.bp}
                   </h6>
-                  <h6 className="mb-1" style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+                  <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
                     Temperature: {display.vitals.temperature}
                   </h6>
-                  <h6 className="mb-1" style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+                  <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
                     BMI: {display.vitals.bmi}
                   </h6>
                 </div>
@@ -322,10 +322,10 @@ const AppSidebar = () => {
                   style={{ borderWidth: 2, padding: 5, color: COLORS.gray }}
                 />
                 <div>
-                  <h5 className="mb-1" style={{ color: COLORS.secondary, fontWeight: 'bold' }}>
+                  <h5 className="mb-1" style={{ color: COLORS.black, fontWeight: 'bold' }}>
                     {display.name}
                   </h5>
-                  <div style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+                  <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
                     <div>
                       Age/Gender: {display.age} / {display.gender}
                     </div>
@@ -342,10 +342,10 @@ const AppSidebar = () => {
             <CCol lg={5}>
               <CCol>
                 <CCol>
-                  <h6 className="mb-2" style={{ color: COLORS.secondary, fontWeight: 600 }}>
+                  <h6 className="mb-2" style={{ color: COLORS.black, fontWeight: 600 }}>
                     Clinic
                   </h6>
-                  <div className="mb-4" style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+                  <div className="mb-4" style={{ color: COLORS.black, fontSize: SIZES.small }}>
                     <div>
                       {display.clinicName} ({display.clinicId})
                     </div>
@@ -353,10 +353,10 @@ const AppSidebar = () => {
                   </div>
                 </CCol>
                 <CCol>
-                  <h6 className="mb-2" style={{ color: COLORS.secondary, fontWeight: 600 }}>
+                  <h6 className="mb-2" style={{ color: COLORS.black, fontWeight: 600 }}>
                     Doctor
                   </h6>
-                  <div className="mb-2" style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+                  <div className="mb-2" style={{ color: COLORS.black, fontSize: SIZES.small }}>
                     <div>
                       {display.doctorName} ({display.doctorId})
                     </div>
@@ -371,18 +371,18 @@ const AppSidebar = () => {
           {/* ROW 2: Duration | Problem */}
           <CRow className="g-3">
             <CCol lg={6}>
-              <h6 className="mb-2" style={{ color: COLORS.secondary, fontWeight: 600 }}>
+              <h6 className="mb-2" style={{ color: COLORS.black, fontWeight: 600 }}>
                 Duration
               </h6>
-              <div style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+              <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
                 <div>{display.duration}</div>
               </div>
             </CCol>
             <CCol lg={5}>
-              <h6 className="mb-2" style={{ color: COLORS.secondary, fontWeight: 600 }}>
+              <h6 className="mb-2" style={{ color: COLORS.black, fontWeight: 600 }}>
                 Problem
               </h6>
-              <div style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+              <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
                 <div>{display.symptom}</div>
               </div>
             </CCol>
@@ -393,19 +393,19 @@ const AppSidebar = () => {
           {/* ROW 3: Appointment | Service (sub-service only if available) */}
           <CRow className="g-3">
             <CCol lg={6}>
-              <h6 className="mb-2" style={{ color: COLORS.secondary, fontWeight: 600 }}>
+              <h6 className="mb-2" style={{ color: COLORS.black, fontWeight: 600 }}>
                 Appointment
               </h6>
-              <div style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+              <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
                 <div>Date: {display.serviceDate}</div>
                 <div>Time: {display.serviceTime}</div>
               </div>
             </CCol>
             <CCol lg={5}>
-              <h6 className="mb-2" style={{ color: COLORS.secondary, fontWeight: 600 }}>
+              <h6 className="mb-2" style={{ color: COLORS.black, fontWeight: 600 }}>
                 Sub-Service
               </h6>
-              <div style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+              <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
                 {display.subServiceName && display.subServiceName !== '—' ? (
                   <div> {display.subServiceName}</div>
                 ) : (
@@ -420,10 +420,10 @@ const AppSidebar = () => {
           {/* ROW 4: Fees */}
           <CRow className="g-3">
             <CCol lg={12}>
-              <h6 className="mb-2" style={{ color: COLORS.secondary, fontWeight: 600 }}>
+              <h6 className="mb-2" style={{ color: COLORS.black, fontWeight: 600 }}>
                 Fees
               </h6>
-              <div style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+              <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
                 <div>Consultation Fee: {fmt(display.consultationFee)}</div>
                 <div>Total Fee: {fmt(display.totalFee)}</div>
               </div>
@@ -435,10 +435,10 @@ const AppSidebar = () => {
           {/* ROW 5: Vitals */}
           <CRow className="g-3">
             <CCol lg={12}>
-              <h6 className="mb-2" style={{ color: COLORS.secondary, fontWeight: 600 }}>
+              <h6 className="mb-2" style={{ color: COLORS.black, fontWeight: 600 }}>
                 Vitals
               </h6>
-              <div style={{ color: COLORS.secondary, fontSize: SIZES.small }}>
+              <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
                 <div>Height: {display.vitals.height}</div>
                 <div>Weight: {display.vitals.weight}</div>
                 <div>Blood Pressure: {display.vitals.bp}</div>

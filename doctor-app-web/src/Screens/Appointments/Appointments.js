@@ -74,7 +74,7 @@ const Appointments = ({ searchTerm = '' }) => {
             className="position-sticky z-3 w-100 pt-4"
             style={{ top: 105, backgroundColor: `${COLORS.theme}` }}
           >
-            <h5 style={{ fontSize: SIZES.medium }} className="pb-3">
+            <h5 style={{ fontSize: SIZES.medium ,color:COLORS.black}} className="pb-3">
               Appointments
             </h5>
             <CRow className="w-100 d-flex justify-content-between align-items-center mb-2">
@@ -86,14 +86,14 @@ const Appointments = ({ searchTerm = '' }) => {
                       size="sm"
                       className="d-flex align-items-center gap-2"
                       style={{
-                        border: `1px solid ${COLORS.logocolor}`,
+                        border: `1px solid ${COLORS.bgcolor}`,
                         borderRadius: '6px',
-                        color: COLORS.logocolor,
+                        color: COLORS.black,
                         fontWeight: '600',
                       }}
                     >
                       <span>{tabLabels[activeTab]}</span>
-                      <span style={{ color: COLORS.logocolor, fontWeight: '600' }}>
+                      <span style={{ color: COLORS.black, fontWeight: '600' }}>
                         ({filteredPatients.length})
                       </span>
                     </CDropdownToggle>
@@ -121,7 +121,7 @@ const Appointments = ({ searchTerm = '' }) => {
                       variant={filter === 'Services & Treatments' ? 'primary' : 'outline'}
                       onClick={() => setFilter('Services & Treatments')}
                       customColor={
-                        filter === 'Services & Treatments' ? COLORS.bgcolor : COLORS.logocolor
+                        filter === 'Services & Treatments' ? COLORS.bgcolor : COLORS.black
                       }
                       size="small"
                     >
@@ -132,7 +132,7 @@ const Appointments = ({ searchTerm = '' }) => {
                       variant={filter === 'In-Clinic Consultation' ? 'primary' : 'outline'}
                       onClick={() => setFilter('In-Clinic Consultation')}
                       customColor={
-                        filter === 'In-Clinic Consultation' ? COLORS.bgcolor : COLORS.logocolor
+                        filter === 'In-Clinic Consultation' ? COLORS.bgcolor : COLORS.black
                       }
                       size="small"
                     >
@@ -145,7 +145,7 @@ const Appointments = ({ searchTerm = '' }) => {
                         variant={filter === 'Online Consultation' ? 'primary' : 'outline'}
                         onClick={() => setFilter('Online Consultation')}
                         customColor={
-                          filter === 'Online Consultation' ? COLORS.bgcolor : COLORS.logocolor
+                          filter === 'Online Consultation' ? COLORS.bgcolor : COLORS.black
                         }
                         size="small"
                       >

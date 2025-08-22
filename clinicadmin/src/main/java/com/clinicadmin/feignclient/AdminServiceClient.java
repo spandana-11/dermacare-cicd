@@ -39,5 +39,9 @@ public interface AdminServiceClient {
 	
 	@GetMapping("/admin/clinics/recommended")
 	public ResponseEntity<Response>getHospitalUsingRecommendentaion();
+	
+//	sorted recommended clincs first;
+	@GetMapping("/admin/clinics/firstRecommendedTureClincs")
+	public ResponseEntity<Response>firstRecommendedTureClincs();
 
 }

@@ -853,19 +853,35 @@ public Response getDoctorsSlots(String hospitalId,String doctorId) {
 	    }
 	    
 
-	    //RATING MANAGEMENT
-	    
+	    //RATING MANAGEMENT    
 	   public Response submitCustomerRating(CustomerRatingDomain ratingRequest) {
 			 Response response = new Response();
 			 ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
 			    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
 			    String formattedTime = istTime.format(formatter);
 		    	try {
-		        CustomerRating customerRating = new CustomerRating(
-		        	null,ratingRequest.getDoctorRating(),ratingRequest.getHospitalRating(),ratingRequest.getFeedback(),ratingRequest.getHospitalId(),ratingRequest.getDoctorId(),
-		        	ratingRequest.getCustomerMobileNumber(),ratingRequest.getPatientId(),ratingRequest.getAppointmentId(),true,formattedTime
-		        );
+		    		CustomerRating customerRating =	customerRatingRepository.findByHospitalIdAndDoctorIdAndCustomerMobileNumberAndPatientIdAndAppointmentId(ratingRequest.getHospitalId(), ratingRequest.getDoctorId(), 
+		    		ratingRequest.getCustomerMobileNumber(),ratingRequest.getPatientId(), ratingRequest.getAppointmentId());
+		    	if(customerRating != null) {
+		    	if(customerRating.getRated() == false){		    	
+		    	  customerRating.setRated(true);
 		        customerRatingRepository.save(customerRating);
+		        response.setStatus(200);
+	            response.setMessage("Successfully Submitted Rating");
+	            response.setSuccess(true);
+		    	}else{
+		    		 response.setStatus(409);
+			            response.setMessage("Already Rated");
+			            response.setSuccess(false);}
+		    	}else{
+		    		 CustomerRating cRating = new CustomerRating(
+		 		        	null,ratingRequest.getDoctorRating(),ratingRequest.getHospitalRating(),ratingRequest.getFeedback(),ratingRequest.getHospitalId(),ratingRequest.getDoctorId(),
+		 		        	ratingRequest.getCustomerMobileNumber(),ratingRequest.getPatientId(),ratingRequest.getPatientName(),ratingRequest.getAppointmentId(),true,formattedTime
+		 		        );
+		 		customerRatingRepository.save(cRating);
+		 		 response.setStatus(200);
+		         response.setMessage("Successfully Submitted Rating");
+		         response.setSuccess(true);}
 		        updateAvgRatingInClinicAndDoctorObject(ratingRequest.getHospitalId(),ratingRequest.getDoctorId());
 		        response.setStatus(200);
 	            response.setMessage("Rating saved successfully");
@@ -919,7 +935,7 @@ public Response getDoctorsSlots(String hospitalId,String doctorId) {
 				for(CustomerRating rating : ratings){
 				CustomerRatingDomain c = new CustomerRatingDomain(rating.getDoctorRating(), rating.getHospitalRating(),
 						rating.getFeedback(), rating.getHospitalId(), rating.getDoctorId(), rating.getCustomerMobileNumber(),rating.getPatientId(),
-						rating.getAppointmentId(), rating.isRated(),rating.getDateAndTimeAtRating());
+						rating.getPatientName(),rating.getAppointmentId(), rating.getRated(),rating.getDateAndTimeAtRating());
 				 listDto.add(c);}
 				response.setStatus(200);
 				response.setData(listDto);

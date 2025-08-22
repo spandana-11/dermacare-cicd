@@ -34,7 +34,7 @@ const appointmentManagement = () => {
   const [availableConsultationTypes, setAvailableConsultationTypes] = useState([])
   const consultationTypeLabels = {
     'In-clinic': 'In-clinic',
-    Online: 'Video Consultation',
+    Online: 'Tele Consultation',
   }
   const [bookings, setBookings] = useState([])
   const [filterTypes, setFilterTypes] = useState([])
@@ -106,7 +106,7 @@ const appointmentManagement = () => {
     // Map your filter buttons to actual data values:
     const consultationTypeMap = {
       'Service & Treatment': 'services & treatments',
-      'Video Consultation': 'video consultation',
+      'Tele Consultation': 'Tele consultation',
       'In-clinic': 'in-clinic consultation',
     }
 
@@ -122,10 +122,10 @@ const appointmentManagement = () => {
     if (filterTypes.length === 1) {
       const selectedType = filterTypes[0]
 
-      if (selectedType === 'Video Consultation') {
+      if (selectedType === 'Tele Consultation') {
         filtered = filtered.filter(
           (item) =>
-            normalize(item.consultationType) === 'video consultation' ||
+            normalize(item.consultationType) === 'tele consultation' ||
             normalize(item.consultationType) === 'online consultation',
         )
         console.log(`After ${selectedType} filter:`, filtered)
@@ -166,7 +166,7 @@ const appointmentManagement = () => {
   }
   const normalize = (value) => value?.toLowerCase().trim()
 
-  //filtering for  service&treatment,in-clinic,video-consultaion
+  //filtering for  service&treatment,in-clinic,tele-consultaion
   const toggleFilter = (type) => {
     if (filterTypes.includes(type)) {
       // setFilterTypes(filterTypes.filter((t) => t !== type))// multiple selections.
@@ -208,9 +208,9 @@ const appointmentManagement = () => {
             In-Clinic Consultation
           </button>
           <button
-            onClick={() => toggleFilter('Video Consultation')}
+            onClick={() => toggleFilter('Tele Consultation')}
             className={`btn ${
-              filterTypes.includes('Video Consultation') ? 'btn-dark' : 'btn-outline-dark'
+              filterTypes.includes('Tele Consultation') ? 'btn-dark' : 'btn-outline-dark'
             }`}
           >
             Tele Consultation
@@ -268,9 +268,9 @@ const appointmentManagement = () => {
           <CTableHead>
             <CTableRow>
               <CTableHeaderCell>S.No</CTableHeaderCell>
-              <CTableHeaderCell>H_ID</CTableHeaderCell>
+              <CTableHeaderCell>Patient File_ID</CTableHeaderCell>
               <CTableHeaderCell>Name</CTableHeaderCell>
-              <CTableHeaderCell>Service Name</CTableHeaderCell>
+              <CTableHeaderCell>Doctor Name</CTableHeaderCell>
               <CTableHeaderCell>Consultation Type</CTableHeaderCell>
               <CTableHeaderCell>Date</CTableHeaderCell>
               <CTableHeaderCell>Time</CTableHeaderCell>
@@ -291,9 +291,9 @@ const appointmentManagement = () => {
               paginatedData.map((item, index) => (
                 <CTableRow key={`${item.id}-${index}`}>
                   <CTableDataCell>{index + 1}</CTableDataCell>
-                  <CTableDataCell>{item.clinicId}</CTableDataCell>
+                  <CTableDataCell>{item.patientId}</CTableDataCell>
                   <CTableDataCell>{item.name}</CTableDataCell>
-                  <CTableDataCell>{item.subServiceName}</CTableDataCell>
+                  <CTableDataCell>{item.doctorName}</CTableDataCell>
                   <CTableDataCell>{item.consultationType}</CTableDataCell>
                   <CTableDataCell>
                     {item.sele ? `${item.sele} ` : ''}

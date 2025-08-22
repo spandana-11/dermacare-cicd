@@ -43,13 +43,41 @@ const DiseasesManagement = () => {
   const [newDisease, setNewDisease] = useState({ disease: '' })
 
   const hospitalId = localStorage.getItem('HospitalId')
+  const randomSymptoms = [
+    'Fever, cough',
+    'Headache, fatigue',
+    'Nausea, dizziness',
+    'Joint pain, swelling',
+    'Shortness of breath, chest pain',
+    'Skin rash, itching',
+  ]
+
+  const randomNotes = [
+    'Monitor symptoms closely.',
+    'Patient should rest.',
+    'Follow-up required in 2 weeks.',
+    'Medication may be needed.',
+    'Symptoms usually mild.',
+    'Consult specialist if persists.',
+  ]
+
+  const getRandomItem = (arr) => arr[Math.floor(Math.random() * arr.length)]
 
   const normalizeDiseases = (data) =>
     data.map((item) => ({
       ...item,
       id: item.id || item._id,
       disease: item.disease || '',
+      probableSymptoms: getRandomItem(randomSymptoms),
+      notes: getRandomItem(randomNotes),
     }))
+
+  // const normalizeDiseases = (data) =>
+  //   data.map((item) => ({
+  //     ...item,
+  //     id: item.id || item._id,
+  //     disease: item.disease || '',
+  //   }))
 
   const fetchData = async () => {
     setLoading(true)
@@ -115,36 +143,50 @@ const DiseasesManagement = () => {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleAddDisease = async () => {
-    if (!validateForm()) return
-    try {
-      const payload = {
-        disease: newDisease.disease,
-        hospitalId: hospitalId, // Always from localStorage
-      }
+const handleAddDisease = async () => {
+  if (!validateForm()) return
+  try {
+    const payload = {
+      disease: newDisease.disease,
+      hospitalId: hospitalId,
+      // probableSymptoms:probableSymptoms,
+      // notes:notes
+    }
 
-      await postDiseaseData(payload)
-      toast.success('Disease added successfully!')
-      setNewDisease({ disease: '' })
-      setSearchQuery('')
-      // fetchData()
-      fetchDataByHid(hospitalId)
-      setModalVisible(false)
-    } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.statusText ||
-        'An unexpected error occurred.'
-      const statusCode = error.response?.status
-      if (statusCode === 409 || errorMessage.toLowerCase().includes('duplicate')) {
-        toast.error(`Error: Duplicate disease name - ${newDisease.disease} already exists!`, {
-          position: 'top-right',
-        })
-      } else {
-        toast.error(`Error adding disease: ${errorMessage}`, { position: 'top-right' })
-      }
+    await postDiseaseData(payload)
+
+    // Add row to table with dummy fields if modal fields are empty
+    const newDiseaseRow = {
+      id: Date.now(),
+      disease: newDisease.disease,
+      probableSymptoms:
+        newDisease.probableSymptoms || getRandomItem(randomSymptoms),
+      notes: newDisease.notes || getRandomItem(randomNotes),
+      hospitalId: hospitalId,
+    }
+
+    setDiseases((prev) => [newDiseaseRow, ...prev])
+    setNewDisease({ disease: '', probableSymptoms: '', notes: '' })
+    setSearchQuery('')
+    toast.success('Disease added successfully!')
+    setModalVisible(false)
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.statusText ||
+      'An unexpected error occurred.'
+    const statusCode = error.response?.status
+    if (statusCode === 409 || errorMessage.toLowerCase().includes('duplicate')) {
+      toast.error(`Error: Duplicate disease name - ${newDisease.disease} already exists!`, {
+        position: 'top-right',
+      })
+    } else {
+      toast.error(`Error adding disease: ${errorMessage}`, { position: 'top-right' })
     }
   }
+}
+
+
 
   const handleDiseaseEdit = (disease) => {
     setDiseaseToEdit({
@@ -154,35 +196,51 @@ const DiseasesManagement = () => {
     setEditDiseaseMode(true)
   }
 
-  const handleUpdateDisease = async () => {
-    if (!diseaseToEdit || !diseaseToEdit.id) {
-      toast.error('Missing disease data to update.')
-      return
-    }
-
-    const { id: diseaseId } = diseaseToEdit
-    setLoading(true)
-    try {
-      await updateDiseaseData(
-        {
-          disease: diseaseToEdit.disease,
-          hospitalId: hospitalId, // Always from localStorage
-        },
-        diseaseId,
-        hospitalId,
-      )
-
-      toast.success('Disease updated successfully!')
-      setEditDiseaseMode(false)
-      // fetchData()
-      fetchDataByHid(hospitalId)
-    } catch (error) {
-      console.error('Update error:', error)
-      toast.error('Failed to update disease.')
-    } finally {
-      setLoading(false)
-    }
+const handleUpdateDisease = async () => {
+  if (!diseaseToEdit || !diseaseToEdit.id) {
+    toast.error('Missing disease data to update.');
+    return;
   }
+
+  setLoading(true);
+
+  try {
+    // Only send required fields to backend
+    await updateDiseaseData(
+      {
+        disease: diseaseToEdit.disease,
+        hospitalId: hospitalId,
+      },
+      diseaseToEdit.id, // must match backend ID (_id)
+      hospitalId
+    );
+
+    // Update table locally including dummy fields
+    setDiseases((prev) =>
+      prev.map((d) =>
+        d.id === diseaseToEdit.id
+          ? {
+              ...d,
+              disease: diseaseToEdit.disease,
+              probableSymptoms: diseaseToEdit.probableSymptoms || '',
+              notes: diseaseToEdit.notes || '',
+            }
+          : d
+      )
+    );
+
+    toast.success('Disease updated successfully!');
+    setEditDiseaseMode(false);
+  } catch (error) {
+    console.error('Update error:', error);
+    toast.error('Failed to update disease.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
 
   const handleDiseaseDelete = (disease) => {
     setDiseaseIdToDelete(disease.diseaseId || disease.id || disease._id)
@@ -191,21 +249,14 @@ const DiseasesManagement = () => {
   }
 
   const columns = [
-    {
-      name: 'S.No',
-      selector: (row, index) => index + 1,
-      width: '10%',
-    },
-    {
-      name: 'Disease Name',
-      selector: (row) => row.disease,
-      sortable: true,
-      width: '45%',
-    },
+    { name: 'S.No', selector: (row, index) => index + 1, width: '5%' },
+    { name: 'Disease Name', selector: (row) => row.disease, sortable: true, width: '20%' },
+    { name: 'Probable Symptoms', selector: (row) => row.probableSymptoms, width: '25%' },
+    { name: 'Notes', selector: (row) => row.notes, width: '30%' },
     {
       name: 'Actions',
       cell: (row) => (
-        <div style={{ display: 'flex', justifyContent: 'space-between', width: '250px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '180px' }}>
           <div onClick={() => setViewDisease(row)} style={{ color: 'green', cursor: 'pointer' }}>
             View
           </div>
@@ -275,12 +326,18 @@ const DiseasesManagement = () => {
               </CCol>
               <CCol sm={8}>{viewDisease.disease}</CCol>
             </CRow>
-            {/* <CRow className="mb-3">
+            <CRow className="mb-3">
               <CCol sm={4}>
-                <strong>Hospital ID:</strong>
+                <strong>Probable Symptoms:</strong>
               </CCol>
-              <CCol sm={8}>{viewDisease.hospitalId}</CCol>
-            </CRow> */}
+              <CCol sm={8}>{viewDisease.probableSymptoms}</CCol>
+            </CRow>
+            <CRow className="mb-3">
+              <CCol sm={4}>
+                <strong>Notes:</strong>
+              </CCol>
+              <CCol sm={8}>{viewDisease.notes}</CCol>
+            </CRow>
           </CModalBody>
         </CModal>
       )}
@@ -292,29 +349,51 @@ const DiseasesManagement = () => {
         </CModalHeader>
         <CModalBody>
           <CForm>
-            <h6>
-              Disease Name <span style={{ color: 'red' }}>*</span>
-            </h6>
-            <CFormInput
-              type="text"
-              name="disease"
-              value={newDisease.disease}
-              onChange={(e) => {
-                const value = e.target.value
-                setNewDisease({ ...newDisease, disease: value })
-                if (errors.disease) {
-                  setErrors((prev) => ({ ...prev, disease: '' }))
-                }
-              }}
-              placeholder="Enter disease name"
-              className={errors.disease ? 'is-invalid' : ''}
-            />
-            {errors.disease && (
-              <div className="invalid-feedback" style={{ color: 'red' }}>
-                {errors.disease}
-              </div>
-            )}
-          </CForm>
+  {/* Disease Name */}
+  <h6>
+    Disease Name <span style={{ color: 'red' }}>*</span>
+  </h6>
+  <CFormInput
+    type="text"
+    name="disease"
+    value={newDisease.disease}
+    onChange={(e) => {
+      const value = e.target.value
+      setNewDisease({ ...newDisease, disease: value })
+      if (errors.disease) setErrors((prev) => ({ ...prev, disease: '' }))
+    }}
+    placeholder="Enter disease name"
+    className={errors.disease ? 'is-invalid' : ''}
+  />
+  {errors.disease && (
+    <div className="invalid-feedback" style={{ color: 'red' }}>
+      {errors.disease}
+    </div>
+  )}
+
+  {/* Probable Symptoms */}
+  <h6 className="mt-3">Probable Symptoms</h6>
+  <CFormInput
+    type="text"
+    name="probableSymptoms"
+    value={newDisease.probableSymptoms || ''}
+    onChange={(e) =>
+      setNewDisease({ ...newDisease, probableSymptoms: e.target.value })
+    }
+    placeholder="Enter probable symptoms (optional)"
+  />
+
+  {/* Notes */}
+  <h6 className="mt-3">Notes</h6>
+  <CFormInput
+    type="text"
+    name="notes"
+    value={newDisease.notes || ''}
+    onChange={(e) => setNewDisease({ ...newDisease, notes: e.target.value })}
+    placeholder="Enter notes (optional)"
+  />
+</CForm>
+
         </CModalBody>
         <CModalFooter>
           <CButton color="primary" onClick={handleAddDisease}>
@@ -339,6 +418,21 @@ const DiseasesManagement = () => {
               value={diseaseToEdit?.disease || ''}
               onChange={(e) => setDiseaseToEdit({ ...diseaseToEdit, disease: e.target.value })}
             />
+
+            <h6 className="mt-2">Probable Symptoms</h6>
+           <CFormInput
+  type="text"
+  value={diseaseToEdit?.probableSymptoms || ''}
+  onChange={(e) =>
+    setDiseaseToEdit({ ...diseaseToEdit, probableSymptoms: e.target.value })
+  }
+/>
+            <h6 className="mt-2">Notes</h6>
+            <CFormInput
+  type="text"
+  value={diseaseToEdit?.notes || ''}
+  onChange={(e) => setDiseaseToEdit({ ...diseaseToEdit, notes: e.target.value })}
+/>
           </CForm>
         </CModalBody>
         <CModalFooter>

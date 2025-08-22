@@ -17,6 +17,7 @@ import {
 import { getVisitHistoryByPatientIdAndDoctorId } from '../Auth/Auth'
 import ReportDetails from '../components/Reports/Reports'
 import { Accordion } from 'react-bootstrap'
+import { COLORS } from '../Themes'
 
 // Accordion (lazy-mount children)
 const AccordionItem = ({ id, title, children, defaultOpen = false }) => {
@@ -251,7 +252,7 @@ const VisitHistory = ({ formData, patientData, patientId, doctorId }) => {
 
   return (
     <div className="visit-history">
-      <h4 className="visit-title">Visit History</h4>
+      <h4 className="visit-title" style={{color:COLORS.black}} >Visit History</h4>
 
       <div className="vh-accordion pb-5 mb-5">
         {visits.map((v, idx) => (

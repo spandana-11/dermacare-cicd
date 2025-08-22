@@ -124,7 +124,7 @@ const WidgetsDropdown = (props) => {
           setTodayBookings(filteredAppointments)
         } else {
           setTodayBookings([])
-          setAppointmentError('No completed appointments for today.')
+          setAppointmentError('No  appointments found.')
         }
       } catch (error) {
         console.error('Failed to fetch appointments:', error)
@@ -198,9 +198,9 @@ const WidgetsDropdown = (props) => {
     }
   }, [fetchAppointments, fetchDoctors]) // Depend on fetchAppointments
 
-  // completed appointments count for today
-  const completedTodayCount = todayBookings.filter(
-    (item) => item.status?.toLowerCase() === 'completed',
+  // confirmed appointments count for today
+  const confirmedTodayCount = todayBookings.filter(
+    (item) => item.status?.toLowerCase() === 'confirmed',
   ).length
 
   // Slider settings for react-slick
@@ -376,7 +376,7 @@ const WidgetsDropdown = (props) => {
             color="success"
             value={
               <>
-                300{' '}
+                10{' '}
                 {/* <span className="fs-6 fw-normal">
                 (+2.8%) <CIcon icon={cilArrowTop} />
               </span> */}
@@ -476,14 +476,14 @@ const WidgetsDropdown = (props) => {
 
       {/*to display today Appointments Table */}
       <div className="container mt-4">
-        <h5>Today's completed Appointments</h5>
+        <h5>Today Appointments</h5>
         <CTable striped hover responsive>
           <CTableHead>
             <CTableRow>
               <CTableHeaderCell>S.No</CTableHeaderCell>
-              <CTableHeaderCell>H_ID</CTableHeaderCell>
+              <CTableHeaderCell>Patient File_ID</CTableHeaderCell>
               <CTableHeaderCell>Name</CTableHeaderCell>
-              <CTableHeaderCell>Service Name</CTableHeaderCell>
+              <CTableHeaderCell>Doctor Name</CTableHeaderCell>
               <CTableHeaderCell>Consultation Type</CTableHeaderCell>
               <CTableHeaderCell>Date</CTableHeaderCell>
               <CTableHeaderCell>Time</CTableHeaderCell>
@@ -505,16 +505,16 @@ const WidgetsDropdown = (props) => {
                   {appointmentError}
                 </CTableDataCell>
               </CTableRow>
-            ) : todayBookings.filter((item) => item.status?.toLowerCase() === 'completed').length >
+            ) : todayBookings.filter((item) => item.status?.toLowerCase() === 'confirmed').length >
               0 ? (
               todayBookings
-                .filter((item) => item.status?.toLowerCase() === 'completed')
+                .filter((item) => item.status?.toLowerCase() === 'confirmed')
                 .map((item, index) => (
                   <CTableRow key={`${item.id}-${index}`}>
                     <CTableDataCell>{index + 1}</CTableDataCell>
-                    <CTableDataCell>{item.clinicId}</CTableDataCell>
+                    <CTableDataCell>{item.patientId}</CTableDataCell>
                     <CTableDataCell>{item.name}</CTableDataCell>
-                    <CTableDataCell>{item.subServiceName}</CTableDataCell>
+                    <CTableDataCell>{item.doctorName}</CTableDataCell>
                     <CTableDataCell>{item.consultationType}</CTableDataCell>
                     <CTableDataCell>{item.serviceDate}</CTableDataCell>
                     <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
@@ -538,7 +538,7 @@ const WidgetsDropdown = (props) => {
             ) : (
               <CTableRow>
                 <CTableDataCell colSpan="9" className="text-center text-info fw-bold">
-                  No completed appointments for today.
+                  No  appointments for today.
                 </CTableDataCell>
               </CTableRow>
             )}

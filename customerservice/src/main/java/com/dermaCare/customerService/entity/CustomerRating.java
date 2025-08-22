@@ -23,8 +23,13 @@ public class CustomerRating {
     private String doctorId; // Provider's mobile number
     private String customerMobileNumber;
     private String patientId;
+    private String patientName;
     private String appointmentId;
     private boolean rated;
     private String dateAndTimeAtRating;
+    
+    public boolean getRated() {
+    	return rated;
+    }
 }
 

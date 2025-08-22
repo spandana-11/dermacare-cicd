@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ProbableDiagnosisDTO {
 	private String id;
-	private String disease;
+	private String diseaseName;
 	private String hospitalId;
+	private String probableSymptoms;
+	private String notes;
 }

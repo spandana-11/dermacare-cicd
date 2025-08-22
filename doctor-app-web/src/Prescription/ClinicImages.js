@@ -36,7 +36,7 @@ export default function MultiImageUpload() {
 
   // drag & drop highlight
   const [isDragging, setIsDragging] = useState(false)
-
+  const [active, setActive] = useState(false);
   // file inputs
   const galleryRef = useRef(null)
   const cameraRef = useRef(null)
@@ -407,13 +407,20 @@ export default function MultiImageUpload() {
       setBusy(false);
     }
   };
+
+
+  const handleClick = () => {
+    setActive(true); // Change background color on click
+    galleryRef.current?.click();
+    setTimeout(() => setActive(false), 200); // Reset after a short delay if needed
+  };
   return (
     <CContainer fluid className="p-0 pb-4">
       <CRow className="g-3">
         <CCol xs={12}>
           <CCard className="shadow-sm">
             <CCardHeader className="d-flex align-items-center justify-content-between py-2">
-              <strong>Upload Images</strong>
+              <strong style={{ color: COLORS.black }}>Upload Images</strong>
               <div className="small text-body-secondary">
                 Gallery (multiple), Camera (hint), or Live Capture
               </div>
@@ -449,28 +456,19 @@ export default function MultiImageUpload() {
                 <Button
                   size="small"
                   variant="outline"
-                  onClick={() => galleryRef.current?.click()}
+                  onClick={handleClick}
                   disabled={busy}
+                  style={{
+                    backgroundColor: active ? '#d1e7dd' : 'white', // Change '#d1e7dd' to your desired color
+                    transition: 'background-color 0.3s',
+                  }}
                 >
                   <CIcon icon={cilFolderOpen} className="me-2" />
                   Choose from Gallery
                 </Button>
-
-                {/* File-input camera (optional) */}
-                {/* <Button
-                  customColor={COLORS.teal}
-                  size="small"
-                  onClick={() => cameraRef.current?.click()}
-                  disabled={busy}
-                  title="Uses file input with capture hint; some devices still show gallery chooser."
-                >
-                  <CIcon icon={cilCamera} className="me-2" />
-                  Camera (File Input)
-                </Button> */}
-
                 <Button
                   size="small"
-                  customColor={COLORS.success}
+                  variant="outline"
                   onClick={startCamera}
                   disabled={busy || !navigator.mediaDevices?.getUserMedia}
                   title="Opens live camera stream to capture"
@@ -481,7 +479,7 @@ export default function MultiImageUpload() {
 
                 {items.length > 0 && (
                   <Button
-                    customColor={COLORS.danger}
+
                     size="small"
                     variant="outline"
                     onClick={clearAll}
@@ -493,9 +491,8 @@ export default function MultiImageUpload() {
                 )}
 
                 <Button
-                  customColor={COLORS.gray}
                   size="small"
-                  variant="primary"
+                  variant="outline"
                   onClick={openCompare}
                   disabled={busy}
                 >
@@ -529,35 +526,35 @@ export default function MultiImageUpload() {
               </div>
 
               {/* Grid previews */}
-            {items.length === 0 ? (
-  <div className="text-body-secondary">No images selected yet.</div>
-) : (
-<div className="d-flex flex-wrap gap-2">
-  {items.map((it) => (
-    <div key={it.id} className="position-relative image-container">
-      <img
-        src={it.preview}
-        alt="uploaded"
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          borderRadius: 6,
-        }}
-      />
-      <CButton
-        color="danger"
-        size="sm"
-        className="position-absolute"
-        style={{ top: 6, right: 6, backgroundColor: "black", border: "none" }}
-        onClick={() => removeOne(it.id)}
-      >
-        <CIcon icon={cilTrash} />
-      </CButton>
-    </div>
-  ))}
+              {items.length === 0 ? (
+                <div className="text-body-secondary">No images selected yet.</div>
+              ) : (
+                <div className="d-flex flex-wrap gap-2">
+                  {items.map((it) => (
+                    <div key={it.id} className="position-relative image-container">
+                      <img
+                        src={it.preview}
+                        alt="uploaded"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          borderRadius: 6,
+                        }}
+                      />
+                      <CButton
+                        color="danger"
+                        size="sm"
+                        className="position-absolute"
+                        style={{ top: 6, right: 6, backgroundColor: "black", border: "none" }}
+                        onClick={() => removeOne(it.id)}
+                      >
+                        <CIcon icon={cilTrash} />
+                      </CButton>
+                    </div>
+                  ))}
 
-  <style jsx>{`
+                  <style jsx>{`
     .image-container {
       width: 100%; /* 1 image per row on extra-small screens */
       aspect-ratio: 1 / 1;
@@ -576,9 +573,9 @@ export default function MultiImageUpload() {
       }
     }
   `}</style>
-</div>
+                </div>
 
-)}
+              )}
 
 
             </CCardBody>
@@ -593,13 +590,12 @@ export default function MultiImageUpload() {
                 Save to Server
               </Button>
 
-              <Button customColor={COLORS.bgcolor} // background color of button
-                  color={COLORS.black} size="small" onClick={loadFromLocalStorage} disabled={busy}>
+              <Button variant="outline" size="small" onClick={loadFromLocalStorage} disabled={busy}>
                 Load Saved
               </Button>
 
               <Button
-                customColor={COLORS.danger}
+                // customColor={COLORS.danger}
                 size="small"
                 variant="outline"
                 onClick={clearSaved}
@@ -654,36 +650,59 @@ export default function MultiImageUpload() {
         alignment="center"
       >
         <CModalHeader>
-          <CModalTitle>Compare Images</CModalTitle>
+          <CModalTitle style={{ color: COLORS.black }}>Compare Images</CModalTitle>
         </CModalHeader>
 
         <CModalBody>
           {/* Compare preview */}
           <div className="border rounded p-2 mb-3">
-            <div className="d-flex flex-wrap gap-2 justify-content-between align-items-start">
+            <div className="d-flex flex-wrap gap-2 justify-content-between align-items-stretch">
+              {/* Before pane */}
               <div style={{ flex: 1, minWidth: 280 }}>
-                <div className="fw-semibold mb-1">Saved</div>
+                <div
+                  className="fw-semibold mb-1 text-center"
+                  style={{ color: COLORS.black }}
+                >
+                  Before
+                </div>
                 <div className="compare-pane">
                   {(() => {
-                    const sel = savedGrid.find((s) => s.id === selectedSavedId)
+                    const sel = savedGrid.find((s) => s.id === selectedSavedId);
                     return sel ? (
                       <img src={sel.dataUrl} alt="saved" className="compare-img" />
                     ) : (
                       <div className="text-body-secondary">No saved selected</div>
-                    )
+                    );
                   })()}
                 </div>
               </div>
+
+              {/* Separation line */}
+              <div
+                style={{
+                  width: '1px',
+                  backgroundColor: '#ccc',
+                  margin: '0 10px',
+                  alignSelf: 'stretch',
+                }}
+              />
+
+              {/* After pane */}
               <div style={{ flex: 1, minWidth: 280 }}>
-                <div className="fw-semibold mb-1">Current Upload</div>
+                <div
+                  className="fw-semibold mb-1 text-center"
+                  style={{ color: COLORS.black }}
+                >
+                  After
+                </div>
                 <div className="compare-pane">
                   {(() => {
-                    const sel = items.find((it) => it.id === selectedCurrentId)
+                    const sel = items.find((it) => it.id === selectedCurrentId);
                     return sel ? (
                       <img src={sel.preview} alt="current" className="compare-img" />
                     ) : (
                       <div className="text-body-secondary">No current selected</div>
-                    )
+                    );
                   })()}
                 </div>
               </div>
@@ -691,10 +710,12 @@ export default function MultiImageUpload() {
           </div>
 
           {/* Pickers: Saved grid + Current grid */}
-          <div className="d-flex flex-wrap gap-3">
+          <div className="d-flex flex-wrap gap-3 align-items-stretch" style={{ position: 'relative' }}>
             {/* Saved grid */}
             <div style={{ flex: 1, minWidth: 280 }}>
-              <div className="fw-semibold mb-2">Saved Images</div>
+              <div className="fw-semibold mb-2 text-center" style={{ color: COLORS.black }}>
+                Saved Images
+              </div>
               {savedGrid.length === 0 ? (
                 <div className="text-body-secondary small">No saved images.</div>
               ) : (
@@ -718,9 +739,19 @@ export default function MultiImageUpload() {
               )}
             </div>
 
+            {/* Full-height separation line */}
+            <div style={{
+              width: '1px',
+              backgroundColor: '#ccc',
+              margin: '0 15px',
+              alignSelf: 'stretch',
+            }} />
+
             {/* Current grid */}
             <div style={{ flex: 1, minWidth: 280 }}>
-              <div className="fw-semibold mb-2">Current Uploads</div>
+              <div className="fw-semibold mb-2 text-center" style={{ color: COLORS.black }}>
+                Current Uploads
+              </div>
               {items.length === 0 ? (
                 <div className="text-body-secondary small">No uploads.</div>
               ) : (
@@ -747,15 +778,21 @@ export default function MultiImageUpload() {
               )}
             </div>
           </div>
+
         </CModalBody>
 
         <CModalFooter className="d-flex justify-content-between">
-          <CButton color="secondary" variant="outline" onClick={() => setShowCompare(false)}>
+          <CButton
+            variant="outline"
+            onClick={() => setShowCompare(false)}
+            style={{ backgroundColor: COLORS.bgcolor, borderColor: COLORS.bgcolor, color: COLORS.black, fontWeight: 'bold' }}
+          >
             Close
           </CButton>
+
           <div>
             <CButton
-              color="primary"
+              style={{ backgroundColor: COLORS.bgcolor, color: COLORS.black, fontWeight: 'bold' }}
               disabled={!selectedSavedId || !selectedCurrentId}
               onClick={() => setInfo('Comparison ready.')}
             >

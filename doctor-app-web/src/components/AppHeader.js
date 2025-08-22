@@ -32,26 +32,26 @@ import TooltipButton from './CustomButton/TooltipButton'
 import { getClinicDetails, getTodayAppointments } from '../Auth/Auth'
 import { useDoctorContext } from '../Context/DoctorContext'
 import { capitalizeWords } from '../utils/CaptalZeWord'
-
+import './AppHeader.css'
 const AppHeader = () => {
-  const { patientData ,setTodayAppointments,todayAppointments} = useDoctorContext()
-    useEffect(() => {
-      // clear context + localStorage so sidebar shows doctor data
-      appointmentDetails();
-    }, [])
-  
-    const appointmentDetails = async () => {
-  
-      const response = await getTodayAppointments()
-      console.log(response)
-  
-      if (response.statusCode == 200) {
-        console.log(response.data)
-        setTodayAppointments(response.data)
-      }
-  
+  const { patientData, setTodayAppointments, todayAppointments } = useDoctorContext()
+  useEffect(() => {
+    // clear context + localStorage so sidebar shows doctor data
+    appointmentDetails();
+  }, [])
+
+  const appointmentDetails = async () => {
+
+    const response = await getTodayAppointments()
+    console.log(response)
+
+    if (response.statusCode == 200) {
+      console.log(response.data)
+      setTodayAppointments(response.data)
     }
- 
+
+  }
+
   const headerRef = useRef()
   const [clinic, setClinic] = useState(null)
   const dispatch = useDispatch()
@@ -102,7 +102,7 @@ const AppHeader = () => {
       position="sticky"
       className="mb-0 p-0 app-header"
       // ref={headerRef}
-      style={{ top: 0, insetInline: 0, zIndex: 1030, margin: -20, backgroundColor:COLORS.bgcolor}}
+      style={{ top: 0, insetInline: 0, zIndex: 1030, margin: -20, backgroundColor: COLORS.bgcolor }}
     >
       <CContainer className="border-bottom px-4 header-row " fluid>
         <CHeaderToggler
@@ -110,75 +110,71 @@ const AppHeader = () => {
           style={{ marginInlineStart: '-14px' }}
           aria-label="Toggle sidebar"
         >
-          <CIcon icon={cilMenu} size="lg" />
+          <CIcon icon={cilMenu} size="lg" style={{ color: COLORS.black }} />
         </CHeaderToggler>
-
         {/* Search */}
-        <div className="position-relative flex-grow-1 mx-3 search-wrap">
-          <div className="position-relative">
-            <CFormInput
-              type="text"
-              placeholder="Search patient by name..."
-              value={searchTerm}
-              onChange={handleSearch}
-            />
+      <div className="position-relative flex-grow-1 mx-3 search-wrap" style={{ maxWidth: "500px" }}>
+  <div className="position-relative">
+    <CFormInput
+      type="text"
+      placeholder="🔍 Search patient by name..."
+      value={searchTerm}
+      onChange={handleSearch}
+      className="custom-search"
+    />
 
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchTerm('')
-                  setSearchResults([])
-                }}
-                style={{
-                  position: 'absolute',
-                  right: 10,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  color:COLORS.logocolor,
-                }}
-              >
-                ×
-              </button>
-            )}
+    {searchTerm && (
+      <button
+        type="button"
+        onClick={() => {
+          setSearchTerm('')
+          setSearchResults([])
+        }}
+        style={{
+          position: 'absolute',
+          right: 10,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          fontSize: '1.2rem',
+          color: COLORS.black,
+        }}
+      >
+        ×
+      </button>
+    )}
+  </div>
+
+  {searchTerm && searchResults.length > 0 && (
+    <div
+      className="position-absolute w-100 mt-1 bg-white shadow rounded p-2 search-dropdown"
+      style={{ maxHeight: 300, overflowY: 'auto' }}
+    >
+      {searchResults.map((patient, idx) => (
+        <div
+          key={idx}
+          className="d-flex justify-content-between align-items-center border-bottom py-2 px-2"
+        >
+          <div>
+            <strong>{patient.name}</strong>
+            <div style={{ fontSize: '0.85rem', color: '#666' }}>{patient.mobileNumber}</div>
           </div>
 
-          {searchTerm && searchResults.length > 0 && (
-            <div
-              className="position-absolute w-100 mt-1 bg-white shadow rounded p-2 search-dropdown"
-              style={{ maxHeight: 300, overflowY: 'auto' }}
-            >
-              {searchResults.map((patient, idx) => (
-                <div
-                  key={idx}
-                  className="d-flex justify-content-between align-items-center border-bottom py-2 px-2"
-                >
-                  <div>
-                    <strong>{patient.name}</strong>
-                    <div style={{ fontSize: '0.85rem', color: '#666' }}>{patient.mobileNumber}</div>
-                  </div>
-
-                  <TooltipButton
-                    patient={patient}
-                    onSelect={() => {
-                      setSearchTerm('')
-                      setSearchResults([])
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-          {searchTerm && searchResults.length === 0 && (
-            <div className="position-absolute w-100 mt-1 bg-white shadow rounded p-2 text-center text-muted search-dropdown">
-              No patient found
-            </div>
-          )}
+          <TooltipButton
+            patient={patient}
+            onSelect={() => {
+              setSearchTerm('')
+              setSearchResults([])
+            }}
+          />
         </div>
+      ))}
+    </div>
+  )}
+</div>
+
 
         {/* <div className="d-flex flex-column text-end me-3 text-center px-2">
           <small style={{ fontWeight: 600, color: COLORS.gray }}>
@@ -189,7 +185,7 @@ const AppHeader = () => {
         <CHeaderNav className="ms-auto">
           <CNavItem>
             <CNavLink href="#">
-              <CIcon icon={cilBell} size="lg" style={{color:COLORS.black}}/>
+              <CIcon icon={cilBell} size="lg" style={{ color: COLORS.black }} />
             </CNavLink>
           </CNavItem>
         </CHeaderNav>
@@ -202,9 +198,9 @@ const AppHeader = () => {
           <div className="d-flex flex-column align-items-center justify-content-center text-center px-2">
             {clinic ? (
               <>
-                <h5 className="fw-bold " style={{ fontSize: SIZES.large ,color: COLORS.black}}>
+                <h5 className="fw-bold " style={{ fontSize: SIZES.large, color: COLORS.black }}>
                   {capitalizeWords(clinic.name) || 'Clinic Name'}
-             
+
                 </h5>
                 <h6 style={{ color: COLORS.black, fontSize: SIZES.small }}>
                   {clinic.city || 'No city'}

@@ -13,6 +13,15 @@
   max-height: 380px;
   object-fit: contain;
 }
+/* Common hover effect for all custom buttons */
+button:hover,
+.btn:hover,
+.cmp-btn:hover {
+  background-color: #a5c4d4ff;  /* light violet hover */
+  border-color: #7e3a93;      /* purple border */
+  color: #4f46e5;             /* text color changes */
+  transition: all 0.2s ease-in-out;
+}
 
 .preview-grid-3 {
   display: grid;
@@ -27,10 +36,11 @@
 }
 
 .preview-img {
-  display: block;          /* remove inline gap */
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center; /* center the image */
 }
 
 .remove-btn {
@@ -76,3 +86,38 @@
   outline: 2px solid #4f46e5;
   outline-offset: -2px;
 }
+
+
+.compare-grid {
+  display: flex;
+  justify-content: center; /* center the whole grid */
+}
+
+.preview-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px; /* space between items */
+  justify-content: center; /* center items inside the grid */
+}
+
+.preview-item {
+  display: flex;
+  flex-direction: column; /* stack image and button vertically */
+  align-items: center; /* center horizontally */
+  width: 120px; /* adjust size as needed */
+}
+
+.preview-img {
+  width: 100%;
+  height: 120px; /* adjust size */
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.remove-btn {
+  margin-top: 8px; /* space between image and button */
+  width: 80%; /* optional, make button fit nicely under image */
+  display: flex;
+
+}
+

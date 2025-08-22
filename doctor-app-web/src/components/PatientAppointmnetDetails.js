@@ -17,8 +17,8 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
   const navigate = useNavigate()
   const { success, info } = useToast()
 
-  // Use tabs passed from props, or fallback to default
-  const TABS = tabs || [
+  // Tabs (with default fallback)
+  const ALL_TABS = tabs || [
     'Symptoms',
     'Tests',
     'Medication',
@@ -30,10 +30,10 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
     'Reports',
   ]
 
-  const [activeTab, setActiveTab] = useState(defaultTab || TABS[0])
+  const [activeTab, setActiveTab] = useState(defaultTab || ALL_TABS[0])
   const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
 
-  // Fetch patient if needed
+  // Fetch patient if not in state/context
   useEffect(() => {
     if (!patient && id) {
       ;(async () => {
@@ -49,6 +49,7 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
     }
   }, [id, patient])
 
+  // Form Data
   const [formData, setFormData] = useState({
     symptoms: {},
     tests: {},
@@ -60,14 +61,16 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
     ClinicImages: {},
   })
 
+  // Go to next tab
   const goToNext = useCallback(
     (current) => {
-      const i = TABS.indexOf(current)
-      if (i > -1 && i < TABS.length - 1) setActiveTab(TABS[i + 1])
+      const i = ALL_TABS.indexOf(current)
+      if (i > -1 && i < ALL_TABS.length - 1) setActiveTab(ALL_TABS[i + 1])
     },
-    [TABS],
+    [ALL_TABS],
   )
 
+  // Tab-specific next actions
   const onNextMap = {
     Symptoms: (data) => {
       setFormData((prev) => ({ ...prev, symptoms: { ...prev.symptoms, ...data } }))
@@ -105,6 +108,18 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
     },
   }
 
+  // ✅ Filter tabs based on doctor mode
+  const TABS = useMemo(() => {
+    if (!fromDoctorTemplate) return ALL_TABS
+
+    const hasDisease =
+      formData?.symptoms?.diagnosis && formData.symptoms.diagnosis.trim() !== ''
+
+    if (hasDisease) return ALL_TABS
+    return ['Symptoms']
+  }, [ALL_TABS, fromDoctorTemplate, formData?.symptoms?.diagnosis])
+
+  // Badge counts
   const counts = useMemo(
     () => ({
       Tests: formData?.tests?.selectedTests?.length || 0,
@@ -115,6 +130,7 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
     [formData],
   )
 
+  // Save prescription template
   const savePrescriptionTemplate = async () => {
     try {
       const title = formData.symptoms.diagnosis || 'NA'
@@ -156,18 +172,16 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
           title: 'Info',
         })
       }
-
-      // const res = await SavePatientPrescription(template)
-      // if (res.status === 200) {
-      //   success(`${res.message || 'Prescription Template saved successfully!'}`, { title: 'Success' })
-      // } else {
-      //   info(`${res.message || 'Prescription Template updated successfully'}`, { title: 'Info' })
-      // }
     } catch (error) {
       console.error('❌ Error saving template:', error)
       alert('Failed to save prescription template. Please try again.')
     }
   }
+
+  // 🔹 Scroll to top when active tab changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' }) // or 'auto' for instant
+  }, [activeTab])
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -181,6 +195,8 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
               <CNav variant="tabs" role="tablist" style={{ whiteSpace: 'nowrap' }}>
                 {TABS.map((t) => {
                   const active = t === activeTab
+                  const label = fromDoctorTemplate && t === 'Symptoms' ? 'Diseases' : t
+
                   return (
                     <CNavItem key={t}>
                       <CNavLink
@@ -192,7 +208,6 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
                         style={{
                           padding: '.5rem .850rem',
                           cursor: 'pointer',
-                          // backgroundColor: active ? '#1976d2' : 'transparent',
                           borderRadius: '6px 6px 0 0',
                           transition: 'all 0.3s ease',
                         }}
@@ -200,28 +215,13 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
                         <span
                           style={{
                             fontSize: '16px',
-                            color: active ? COLORS.black : COLORS.logocolor,
+                            color: active ? COLORS.black : COLORS.black,
                             fontWeight: active ? '700' : '500',
-                            backgroundColor:"transparent"
+                            backgroundColor: 'transparent',
                           }}
                         >
-                          {t}
+                          {label}
                         </span>
-
-                        {/* Active underline effect */}
-                        {/* {active && (
-                          <span
-                            style={{
-                              position: 'absolute',
-                              left: 12,
-                              right: 12,
-                              bottom: 0,
-                              height: 3,
-                              borderRadius: 2,
-                              background: 'linear-gradient(90deg, #ffffffff, #ffffffff)',
-                            }}
-                          />
-                        )} */}
                       </CNavLink>
                     </CNavItem>
                   )
@@ -242,7 +242,7 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
           onSaveTemplate={savePrescriptionTemplate}
           patientData={patient}
           setFormData={setFormData}
-          fromDoctorTemplate={fromDoctorTemplate} // ✅ now correctly passed
+          fromDoctorTemplate={fromDoctorTemplate}
           setImage={true}
         />
       </div>

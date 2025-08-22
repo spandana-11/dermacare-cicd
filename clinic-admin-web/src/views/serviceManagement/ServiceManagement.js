@@ -179,8 +179,7 @@ const ServiceManagement = () => {
     const finalCost = discountedCost + taxAmount + consultationFee
 
     const payload = {
-      // ✅ dynamically pick from newService or selected hospital context
-      hospitalId: newService.hospitalId,
+       hospitalId: newService.hospitalId,
 
       serviceId: newService.serviceId,
       serviceName: newService.serviceName,
@@ -555,7 +554,7 @@ const ServiceManagement = () => {
       </CModal>
     )
   }
-
+const minTimeValue = parseFloat(newService.minTime)
   const validateForm = () => {
     const newErrors = {}
 
@@ -599,11 +598,13 @@ const ServiceManagement = () => {
     } else if (parseFloat(newService.taxPercentage) < 0) {
       newErrors.taxPercentage = 'taxPercentage cannot be a negative number.'
     }
-    if (!newService.minTime || isNaN(newService.minTime)) {
-      newErrors.minTime = 'Minimum time is required and must be a Minutes.'
-    } else if (parseFloat(newService.minTime) <= 0) {
-      newErrors.minTime = 'Minimum time must be greater than zero.'
-    }
+ // Validation
+if (!newService.minTimeValue || isNaN(newService.minTimeValue)) {
+  newErrors.minTime = 'Minimum time is required'
+} else if (parseFloat(newService.minTimeValue) <= 0) {
+  newErrors.minTime = 'Minimum time must be greater than zero.'
+}
+
 
     if (!newService.viewDescription) {
       newErrors.viewDescription = 'View description is Required.'
@@ -681,6 +682,7 @@ const ServiceManagement = () => {
     const platformFee = (discountedCost * (newService.platformFeePercentage || 0)) / 100
     const clinicPay = discountedCost + taxAmount - platformFee
     const finalCost = clinicPay + gst + (newService.consultationFee || 0)
+const formattedMinTime = `${newService.minTimeValue} ${newService.minTimeUnit}`
 
     console.log('Calculated values:', {
       discountAmount,
@@ -721,7 +723,7 @@ const ServiceManagement = () => {
       gst: newService.gst,
       consultationFee: newService.consultationFee,
 
-      minTime: newService.minTime,
+      minTime: formattedMinTime,
       status: newService.status,
       subServiceImage: base64ImageToSend,
       procedureQA: newService.procedureQA,
@@ -760,7 +762,8 @@ const ServiceManagement = () => {
       gst: 0,
       consultationFee: 0,
       taxPercentage: 0,
-      minTime: '',
+      minTimeValue,
+  minTimeUnit:'',
       status: '',
       serviceImage: '',
       viewDescription: '',
@@ -831,7 +834,10 @@ const ServiceManagement = () => {
         subServiceName: newService.subServiceName || '',
         viewDescription: newService.viewDescription || '',
         status: newService.status || '',
-        minTime: newService.minTime || '',
+      minTime: newService.minTimeValue
+  ? `${newService.minTimeValue} ${newService.minTimeUnit}`
+  : '',
+
         procedureQA: Array.isArray(newService.procedureQA) ? newService.procedureQA : [],
         preProcedureQA: Array.isArray(newService.preProcedureQA) ? newService.preProcedureQA : [],
         postProcedureQA: Array.isArray(newService.postProcedureQA)
@@ -853,7 +859,7 @@ const ServiceManagement = () => {
       // send cleaned payload
       const response = await updateServiceData(subServiceId, hospitalId, updatedService)
 
-      toast.success('SubService updated successfully!', { position: 'top-right' })
+      toast.success('Procedure updated successfully!', { position: 'top-right' })
       setEditServiceMode(false)
       setModalVisible(false)
       fetchData()
@@ -885,11 +891,11 @@ const ServiceManagement = () => {
     try {
       const result = await deleteServiceData(serviceIdToDelete, hospitalId)
       console.log('Service deleted:', result)
-      toast.success('SubService deleted successfully!', { position: 'top-right' })
+      toast.success('Procedure deleted successfully!', { position: 'top-right' })
 
       fetchData()
     } catch (error) {
-      console.error('Error deleting service:', error)
+      console.error('Error deleting Procedure:', error)
     }
     setIsModalVisible(false)
   }
@@ -949,7 +955,8 @@ const ServiceManagement = () => {
       price: '',
       discount: 0,
       taxPercentage: 0,
-      minTime: '',
+      minTime: '', minTimeValue: '',     //reset value
+  minTimeUnit: 'minutes', // reset unit
       status: '',
       serviceImage: '',
       viewImage: '',
@@ -1025,7 +1032,7 @@ const ServiceManagement = () => {
           <CInputGroup className="mb-3" style={{ marginRight: '20px', width: '400px' }}>
             <CFormInput
               type="text"
-              placeholder="Search by ServiceName, Category"
+              placeholder="Search by Procedure Name, Category"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ height: '40px' }}
@@ -1283,7 +1290,7 @@ const ServiceManagement = () => {
         <CModalBody>
           <CForm>
             <CRow className="mb-4">
-              <CCol md={6}>
+              <CCol md={4}>
                 <h6>
                   Category Name <span className="text-danger">*</span>
                 </h6>
@@ -1306,7 +1313,7 @@ const ServiceManagement = () => {
                   <CFormText className="text-danger">{errors.categoryName}</CFormText>
                 )}
               </CCol>
-              <CCol md={6}>
+              <CCol md={4}>
                 <h6>
                   Service Name <span className="text-danger">*</span>
                 </h6>
@@ -1328,9 +1335,7 @@ const ServiceManagement = () => {
                   <CFormText className="text-danger">{errors.serviceName}</CFormText>
                 )}
               </CCol>
-            </CRow>
-            <CRow className="mb-4">
-              <CCol md={6}>
+              <CCol md={4}>
                 <h6>
                   Procedure Name <span className="text-danger">*</span>
                 </h6>
@@ -1356,7 +1361,7 @@ const ServiceManagement = () => {
                     }))
                   }}
                 >
-                  <option value="">Select Sub Service</option>
+                  <option value="">Select Procedure</option>
                   {Array.isArray(subServiceOptions.subServices) &&
                     subServiceOptions.subServices.map((sub) => (
                       <option key={sub.subServiceId} value={sub.subServiceId}>
@@ -1369,8 +1374,45 @@ const ServiceManagement = () => {
                   <CFormText className="text-danger">{errors.subServiceName}</CFormText>
                 )}
               </CCol>
+            </CRow>
+            <CRow className="mb-4">
+              <CCol md={4}>
+                <h6>
+                  Procedure Image <span className="text-danger">*</span>
+                </h6>
+                <CFormInput
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0]
+                    if (file) {
+                      const reader = new FileReader()
+                      reader.onloadend = () => {
+                        const base64String = reader.result?.split(',')[1] || ''
+                        setNewService((prev) => ({
+                          ...prev,
+                          serviceImage: base64String,
+                          serviceImageFile: file,
+                        }))
+                      }
+                      reader.readAsDataURL(file)
+                    }
+                  }}
+                />
 
-              <CCol md={6}>
+                {newService?.serviceImage && (
+                  <img
+                    src={
+                      newService.serviceImage.startsWith('data:')
+                        ? newService.serviceImage
+                        : `data:image/jpeg;base64,${newService.serviceImage}`
+                    }
+                    alt="Preview"
+                    style={{ width: 100, height: 100, marginTop: 10 }}
+                  />
+                )}
+              </CCol>
+              <CCol md={4}>
                 <h6>
                   View Description <span className="text-danger">*</span>
                 </h6>
@@ -1386,10 +1428,7 @@ const ServiceManagement = () => {
                   <CFormText className="text-danger">{errors.viewDescription}</CFormText>
                 )}
               </CCol>
-            </CRow>
-
-            <CRow className="mb-4">
-              <CCol md={6}>
+              <CCol md={4}>
                 <h6>
                   Status <span className="text-danger">*</span>
                 </h6>
@@ -1400,7 +1439,10 @@ const ServiceManagement = () => {
                 </CFormSelect>
                 {errors.status && <CFormText className="text-danger">{errors.status}</CFormText>}
               </CCol>
-              <CCol md={6}>
+            </CRow>
+
+            <CRow className="mb-4">
+              <CCol md={4}>
                 <h6>
                   Price <span className="text-danger">*</span>
                 </h6>
@@ -1411,6 +1453,29 @@ const ServiceManagement = () => {
                 />
 
                 {errors.price && <CFormText className="text-danger">{errors.price}</CFormText>}
+              </CCol>
+               <CCol md={4}>
+                <CFormInput
+                  label="GST (%)"
+                  type="number"
+                  value={newService.gst || ''}
+                  onChange={(e) =>
+                    setNewService((prev) => ({ ...prev, gst: Number(e.target.value) }))
+                  }
+                />
+              </CCol>
+              <CCol md={4}>
+                <CFormInput
+                  label="Consultation Fee"
+                  type="number"
+                  value={newService.consultationFee || ''}
+                  onChange={(e) =>
+                    setNewService((prev) => ({
+                      ...prev,
+                      consultationFee: Number(e.target.value),
+                    }))
+                  }
+                />
               </CCol>
             </CRow>
             <CRow className="mb-4">
@@ -1456,82 +1521,41 @@ const ServiceManagement = () => {
                 <div className="mb-4">
                   <h6>
                     Min Time <span className="text-danger">*</span>
-                  </h6>{' '}
-                  <CFormInput
-                    type="number"
-                    name="minTime"
-                    value={newService.minTime || ''}
-                    onChange={(e) => setNewService({ ...newService, minTime: e.target.value })}
-                    placeholder="Must be in Minutes"
-                  />
+                  </h6>
+                  <div className="d-flex">
+                    {/* Number Input */}
+                    <CFormInput
+                      type="number"
+                      name="minTimeValue"
+                      value={newService.minTimeValue || ''}
+                      onChange={(e) =>
+                        setNewService({ ...newService, minTimeValue: e.target.value })
+                      }
+                      placeholder="Enter time"
+                    />
+
+                    {/* Dropdown for Unit */}
+                    <CFormSelect
+                      name="minTimeUnit"
+                      className="ms-2"
+                      value={newService.minTimeUnit || 'minutes'}
+                      onChange={(e) =>
+                        setNewService({ ...newService, minTimeUnit: e.target.value })
+                      }
+                    >
+                      <option value="minutes">Minutes</option>
+                      <option value="hours">Hours</option>
+                    </CFormSelect>
+                  </div>
+
+                  {/* Validation error */}
                   {errors.minTime && (
                     <CFormText className="text-danger">{errors.minTime}</CFormText>
                   )}
                 </div>
               </CCol>
             </CRow>
-            <CRow className="mt-3">
-              <CCol md={6}>
-                <CFormInput
-                  label="GST (%)"
-                  type="number"
-                  value={newService.gst || ''}
-                  onChange={(e) =>
-                    setNewService((prev) => ({ ...prev, gst: Number(e.target.value) }))
-                  }
-                />
-              </CCol>
-              <CCol md={6}>
-                <CFormInput
-                  label="Consultation Fee"
-                  type="number"
-                  value={newService.consultationFee || ''}
-                  onChange={(e) =>
-                    setNewService((prev) => ({
-                      ...prev,
-                      consultationFee: Number(e.target.value),
-                    }))
-                  }
-                />
-              </CCol>
-            </CRow>
-
-            <CCol md={12}>
-              <h6>
-                Service Image <span className="text-danger">*</span>
-              </h6>
-              <CFormInput
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files[0]
-                  if (file) {
-                    const reader = new FileReader()
-                    reader.onloadend = () => {
-                      const base64String = reader.result?.split(',')[1] || ''
-                      setNewService((prev) => ({
-                        ...prev,
-                        serviceImage: base64String,
-                        serviceImageFile: file,
-                      }))
-                    }
-                    reader.readAsDataURL(file)
-                  }
-                }}
-              />
-
-              {newService?.serviceImage && (
-                <img
-                  src={
-                    newService.serviceImage.startsWith('data:')
-                      ? newService.serviceImage
-                      : `data:image/jpeg;base64,${newService.serviceImage}`
-                  }
-                  alt="Preview"
-                  style={{ width: 100, height: 100, marginTop: 10 }}
-                />
-              )}
-            </CCol>
+  
 
             <h6 className="m-3">Procedure (Optional)</h6>
 

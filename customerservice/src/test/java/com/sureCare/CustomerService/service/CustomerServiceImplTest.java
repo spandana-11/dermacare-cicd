@@ -41,7 +41,6 @@ public class CustomerServiceImplTest {
 	@Mock
 	private ConsultationRep consultationRep;
 	    
-	
 	@InjectMocks
 	private CustomerServiceImpl service;	
 	

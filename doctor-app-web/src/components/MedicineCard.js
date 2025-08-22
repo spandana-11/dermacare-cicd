@@ -1,15 +1,13 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   CCard,
   CCardHeader,
   CCardBody,
   CRow,
   CCol,
-  CFormLabel,
   CFormInput,
   CFormSelect,
   CFormTextarea,
-  CButton,
   CBadge,
   CTooltip,
 } from '@coreui/react'
@@ -38,11 +36,12 @@ const MedicineCard = ({
   onAdd,
   isDuplicateName,
 }) => {
+  const [isSaveEnabled, setIsSaveEnabled] = useState(false) // ✅ inside component
+
   const handleChange = (field, value) => {
     updateMedicine({ ...medicine, [field]: value })
   }
 
-  // Reuse medicine.times but store slot ids instead of exact times
   const handleSlotChange = (i, value) => {
     const updated = Array.isArray(medicine.times) ? [...medicine.times] : []
     updated[i] = value
@@ -53,23 +52,8 @@ const MedicineCard = ({
     (medicine.remindWhen === 'Once A Day' && i > 0) ||
     (medicine.remindWhen === 'Twice A Day' && i > 1)
 
-  // Optional: prevent choosing the same slot twice
   const timesArray = Array.isArray(medicine.times) ? medicine.times : []
   const taken = new Set(timesArray.filter(Boolean))
-
-  // helper for a fresh editable medicine row
-  const createBlankMedicine = () => ({
-    name: '',
-    dose: '',
-    remindWhen: 'Once A Day',
-    food: '',
-    duration: '',
-    note: '',
-    times: ['', '', ''],
-  })
-
-  // const canAdd = (m) =>
-  //   (m?.name || '').trim() && (m?.dose || '').trim() && (m?.duration || '').trim()
 
   const canAdd = (m) =>
     (m?.name || '').trim() && (m?.dose || '').trim() && (m?.duration || '').trim()
@@ -77,11 +61,7 @@ const MedicineCard = ({
   const isDup = isDuplicateName?.(medicine?.name)
 
   return (
-    <CCard
-      className="w-100 mb-3 shadow-sm p-3"
-      // Use 70vh so it works without a fixed-height parent. If you truly want 70% of parent, change to '70%'.
-      style={{ marginInline: '5px' }} // outer side gap only (optional)
-    >
+    <CCard className="w-100 mb-3 shadow-sm p-3" style={{ marginInline: '5px' }}>
       <CCardHeader
         className="d-flex align-items-center justify-content-between"
         style={{ paddingInline: '5px', paddingBlock: '8px' }}
@@ -98,21 +78,28 @@ const MedicineCard = ({
           <CTooltip content="Add to table">
             <span>
               <Button
-               customColor={COLORS.primary}
+                customColor={COLORS.black}
                 variant="primary"
                 size="sm"
-                // disabled={!canAdd(medicine)}// TODO:vaildation
-                //  disabled={!canAdd(medicine) || isDup}
-                onClick={() => onAdd?.(medicine)}
+                onClick={() => {
+                  onAdd?.(medicine)
+                  setIsSaveEnabled(true)
+                }}
               >
-                <CIcon icon={cilPlus} />
+                <CIcon icon={cilPlus} style={{ color: COLORS.white, fontWeight: 'bold' }} />
               </Button>
+
             </span>
           </CTooltip>
 
           {/* Remove card */}
           <CTooltip content="Remove card">
-            <Button customColor={COLORS.danger} variant="primary" size="sm" onClick={removeMedicine}>
+            <Button
+              customColor={COLORS.danger}
+              variant="primary"
+              size="sm"
+              onClick={removeMedicine}
+            >
               <CIcon icon={cilTrash} />
             </Button>
           </CTooltip>
@@ -120,11 +107,10 @@ const MedicineCard = ({
       </CCardHeader>
 
       <CCardBody style={{ paddingTop: 5, paddingBottom: 0 }}>
-        <CRow className=" ">
+        <CRow>
           {/* Dose */}
           <CCol style={{ width: '25%' }}>
             <GradientTextCard text={'Dosage'} />
-
             <CFormInput
               value={medicine.dose || ''}
               placeholder="e.g. 1 tablet"
@@ -132,10 +118,9 @@ const MedicineCard = ({
             />
           </CCol>
 
-          {/* Remind When */}
+          {/* Frequency */}
           <CCol style={{ width: '25%' }}>
             <GradientTextCard text={'Frequency'} />
-
             <CFormSelect
               value={medicine.remindWhen || 'Once A Day'}
               onChange={(e) => handleChange('remindWhen', e.target.value)}
@@ -150,7 +135,6 @@ const MedicineCard = ({
           {/* Food */}
           <CCol style={{ width: '25%' }}>
             <GradientTextCard text={'Food'} />
-
             <CFormSelect
               value={medicine.food || ''}
               onChange={(e) => handleChange('food', e.target.value)}
@@ -166,8 +150,7 @@ const MedicineCard = ({
 
           {/* Duration */}
           <CCol style={{ width: '25%' }}>
-            <GradientTextCard text={'Duration '} />
-
+            <GradientTextCard text={'Duration'} />
             <CFormInput
               type="number"
               value={medicine.duration || ''}
@@ -177,12 +160,11 @@ const MedicineCard = ({
           </CCol>
         </CRow>
 
-        {/* Time-of-day slots */}
+        {/* Time slots */}
         <CRow className="gx-2 gy-2 mt-1">
           {[0, 1, 2].map((i) => (
             <CCol xs={12} md={3} key={i}>
               <GradientTextCard text={`Time ${i + 1}`} />
-
               <CFormSelect
                 value={(medicine.times && medicine.times[i]) || ''}
                 onChange={(e) => handleSlotChange(i, e.target.value)}
@@ -206,7 +188,6 @@ const MedicineCard = ({
         {/* Notes */}
         <div className="mt-3">
           <GradientTextCard text={`Notes`} />
-
           <CFormTextarea
             rows={2}
             placeholder="Add any special instructions…"

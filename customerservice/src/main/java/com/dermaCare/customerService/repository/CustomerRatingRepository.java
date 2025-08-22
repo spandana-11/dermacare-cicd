@@ -17,5 +17,6 @@ public interface CustomerRatingRepository extends MongoRepository<CustomerRating
 
 	List<CustomerRating> findByDoctorId(String doctorId); 
 	
+	CustomerRating findByHospitalIdAndDoctorIdAndCustomerMobileNumberAndPatientIdAndAppointmentId(String hid,String did,String cnum,String pid,String aid);
 	
 }

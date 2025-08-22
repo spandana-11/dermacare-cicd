@@ -185,7 +185,7 @@ const CompletedAppointmentsView = ({ defaultTab, tabs, fromDoctorTemplate = fals
                         <span
                           style={{
                             fontSize: '16px',
-                            color: active ? COLORS.primary : COLORS.gray,
+                            color: active ? COLORS.bgcolor : COLORS.black,
                             fontWeight: active ? '700' : '500',
                             backgroundColor: "transparent"
                           }}

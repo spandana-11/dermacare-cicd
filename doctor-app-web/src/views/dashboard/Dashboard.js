@@ -1,9 +1,19 @@
 import React, { useEffect, useState } from 'react'
+import classNames from 'classnames'
 import 'bootstrap/dist/css/bootstrap.min.css'
+
 import {
+  CAvatar,
+  CButton,
+  CButtonGroup,
   CCard,
   CCardBody,
+  CCardFooter,
+  CCardHeader,
   CCardImage,
+  CCol,
+  CProgress,
+  CRow,
   CTable,
   CTableBody,
   CTableDataCell,
@@ -11,88 +21,109 @@ import {
   CTableHeaderCell,
   CTableRow,
 } from '@coreui/react'
-import { Carousel } from 'react-bootstrap'
+import CIcon from '@coreui/icons-react'
+import {
+  cibCcAmex,
+  cibCcApplePay,
+  cibCcMastercard,
+  cibCcPaypal,
+  cibCcStripe,
+  cibCcVisa,
+  cibGoogle,
+  cibFacebook,
+  cibLinkedin,
+  cifBr,
+  cifEs,
+  cifFr,
+  cifIn,
+  cifPl,
+  cifUs,
+  cibTwitter,
+  cilCloudDownload,
+  cilPeople,
+  cilUser,
+  cilUserFemale,
+} from '@coreui/icons'
+
+import avatar1 from 'src/assets/images/avatars/1.jpg'
+import avatar2 from 'src/assets/images/avatars/2.jpg'
+import avatar3 from 'src/assets/images/avatars/3.jpg'
+import avatar4 from 'src/assets/images/avatars/4.jpg'
+import avatar5 from 'src/assets/images/avatars/5.jpg'
+import avatar6 from 'src/assets/images/avatars/6.jpg'
+
+import WidgetsBrand from '../widgets/WidgetsBrand'
+import WidgetsDropdown from '../widgets/WidgetsDropdown'
+import MainChart from './MainChart'
 import Button from '../../components/CustomButton/CustomButton'
-import TooltipButton from '../../components/CustomButton/TooltipButton'
 import { COLORS, SIZES } from '../../Themes'
+import TooltipButton from '../../components/CustomButton/TooltipButton'
+import avatar8 from './../../assets/images/12.png'
+// import { patientData } from '../../Prescription/patientData.json'
 import { useDoctorContext } from '../../Context/DoctorContext'
-import { getAdImages, getTodayAppointments } from '../../Auth/Auth'
-import { color } from 'framer-motion'
-
+import { getTodayAppointments } from '../../Auth/Auth'
+// import { patientData } from '../../Prescription/patientData.json'
 const Dashboard = () => {
-  const { setPatientData, setTodayAppointments, todayAppointments } = useDoctorContext()
+  const { setPatientData, doctorId, setTodayAppointments, todayAppointments } = useDoctorContext() // this calls the persisted helper if you set it up
 
-  const [selectedType, setSelectedType] = useState(null)
-  const [adMediaList, setAdMediaList] = useState([])
-
-  // ✅ Fetch ads once
-  useEffect(() => {
-    const fetchAds = async () => {
-      try {
-        const mediaUrls = await getAdImages()
-        setAdMediaList(mediaUrls || [])
-      } catch (error) {
-        console.error('Error fetching ads:', error)
-      }
-    }
-    fetchAds()
-  }, [])
-
-  // ✅ Clear patient data once
-  useEffect(() => {
-    setPatientData(null)
-  }, [setPatientData])
-
-  // ✅ Fetch appointments once
-
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      const response = await getTodayAppointments()
-      console.log("📡 Normalized Response:", response)
-
-      if (response.statusCode === 200) {
-        setTodayAppointments(response.data)
-      } else {
-        setTodayAppointments([])
-      }
-    }
-
-    fetchAppointments()
-  }, [])
-
-
-
-  // Count consultations
   const consultationCounts = todayAppointments.reduce((acc, item) => {
     const key = item.consultationType
     acc[key] = (acc[key] || 0) + 1
     return acc
   }, {})
 
-  // Filter by consultation type
+  const [selectedType, setSelectedType] = useState(null)
+
   const filteredPatients = selectedType
     ? todayAppointments.filter((item) => item.consultationType === selectedType)
     : todayAppointments
+  const [adImage, setAdImage] = useState(null) // null = not yet loaded
+
+  useEffect(() => {
+    // Simulate backend fetch delay
+    setTimeout(() => {
+      // Replace with actual fetch later
+      setAdImage(avatar8) // or set to a backend URL
+    }, 2000) // 2 seconds delay
+  }, [])
+
+  useEffect(() => {
+    // clear context + localStorage so sidebar shows doctor data
+    setPatientData(null)
+  }, [])
+
+  useEffect(() => {
+    // clear context + localStorage so sidebar shows doctor data
+    appointmentDetails()
+  }, [])
+
+  const appointmentDetails = async () => {
+    const response = await getTodayAppointments()
+    console.log(response)
+
+    if (response.statusCode == 200) {
+      console.log(response.data)
+      setTodayAppointments(response.data)
+    }
+  }
 
   return (
-    <div className="container-fluid" style={{ marginTop: '2%' }}>
-      <h5 className="mb-4" style={{ fontSize: SIZES.medium }}>
+    <div className="container-fluid " style={{ marginTop: '2%' }}>
+      <h5 className="mb-4" style={{ fontSize: SIZES.medium,color:COLORS.black }}>
         Today Appointments
       </h5>
 
       <div className="d-flex flex-wrap flex-md-nowrap gap-3">
-        {/* LEFT SIDE - Appointments */}
+        {/* LEFT SIDE - Appointments and Filters (60%) */}
         <div className="flex-grow-1" style={{ flexBasis: '60%' }}>
           {/* Filter Buttons */}
           <div className="mb-3 d-flex gap-2 flex-wrap">
             <Button
-
               variant={selectedType === null ? 'primary' : 'outline'}
               customColor={COLORS.bgcolor}
               color={COLORS.black}
               onClick={() => setSelectedType(null)}
               size="small"
-
             >
               All ({todayAppointments.length})
             </Button>
@@ -100,7 +131,7 @@ const Dashboard = () => {
               <Button
                 key={type}
                 variant={selectedType === type ? 'primary' : 'outline'}
-                customColor={selectedType === type ? COLORS.bgcolor : COLORS.logocolor}
+                customColor={selectedType === type ? COLORS.bgcolor : COLORS.black}
                 onClick={() => setSelectedType(type)}
                 size="small"
               >
@@ -109,28 +140,46 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* Table */}
+          {/* Table Section with Scroll */}
           <div
             style={{
               maxHeight: 'calc(100vh - 250px)',
               overflowY: 'auto',
               borderRadius: '8px',
+
+              overflow: 'hidden',
             }}
           >
-            <CTable className="border">
+            <CTable className=" border">
               <CTableHead>
-                <CTableRow style={{ fontSize: '0.875rem', backgroundColor: COLORS.bgcolor}}>
-                  {['S.No', 'Patient ID', 'Name', 'Mobile Number', 'Time', 'Consultation', 'Action'].map(
-                    (header, i) => (
-                      <CTableHeaderCell
-                        key={i}
-                        style={{ fontWeight: 'bold', color: COLORS.black, backgroundColor: COLORS.bgcolor }}
-                        className={header === 'Action' ? 'text-center' : ''}
-                      >
-                        {header}
-                      </CTableHeaderCell>
-                    )
-                  )}
+                <CTableRow
+                  style={{
+                    fontSize: '0.875rem',
+                    backgroundColor: '#d6d8db',
+                  }}
+                >
+                  {[
+                    'S.No',
+                    'Patient ID',
+                    'Name',
+                    'Mobile Number',
+                    'Time',
+                    'Consultation',
+                    'Action',
+                  ].map((header, i) => (
+                    <CTableHeaderCell
+                      key={i}
+                      style={{
+                          backgroundColor: COLORS.bgcolor,
+                          color: COLORS.black,
+                          fontWeight: 'bold',
+                        }}
+
+                      className={header === 'Action' ? 'text-center' : ''}
+                    >
+                      {header}
+                    </CTableHeaderCell>
+                  ))}
                 </CTableRow>
               </CTableHead>
 
@@ -150,6 +199,7 @@ const Dashboard = () => {
                       <CTableDataCell>{item.mobileNumber}</CTableDataCell>
                       <CTableDataCell>{item.servicetime}</CTableDataCell>
                       <CTableDataCell>{item.consultationType}</CTableDataCell>
+
                       <CTableDataCell className="text-center">
                         <TooltipButton patient={item} tab={item.status} />
                       </CTableDataCell>
@@ -161,42 +211,28 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* RIGHT SIDE - Ads */}
+        {/* RIGHT SIDE - Ads (40%) */}
         <div
           className="d-flex align-items-start justify-content-start bg-dark"
           style={{
             height: '60vh',
             width: '200px',
             overflow: 'hidden',
+            position: 'relative', // or 'fixed' if you want it to stay on screen always
             borderRadius: '10px',
           }}
         >
           <CCard style={{ width: '100%', height: '100%', overflow: 'hidden', backgroundColor: COLORS.bgcolor, display: "flex", justifyContent: "center", alignItems: 'center' }}>
-            {/* {adMediaList.length > 0 ? (
-              <Carousel controls indicators interval={3000} fade>
-                {adMediaList.map((media, index) => (
-                  <Carousel.Item
-                    key={index}
-                    interval={media.endsWith('.mp4') ? null : 3000}
-                  >
-                    {media.endsWith('.mp4') ? (
-                      <video
-                        src={media}
-                        controls
-                        autoPlay
-                        muted
-                        style={{ width: '100%', height: '60vh', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <CCardImage
-                        src={media}
-                        alt={`Ad ${index}`}
-                        style={{ width: '100%', height: '60vh', objectFit: 'contain' }}
-                      />
-                    )}
-                  </Carousel.Item>
-                ))}
-              </Carousel>
+            {/* {adImage ? (
+              <CCardImage
+                src={adImage}
+                alt="Profile Ad"
+                style={{
+                  objectFit: 'fit', // or 'contain' if you want full image inside without cropping
+                  height: '100%',
+                  width: '100%',
+                }}
+              />
             ) : (
               <div
                 style={{
@@ -209,12 +245,13 @@ const Dashboard = () => {
                   color: '#888',
                 }}
               >
-                Loading Ads...
+                Loading Ad...
               </div>
             )} */}
 
-            <span style={{ color: COLORS.black, textAlign: 'center', fontWeight: 'bold',
+             <span style={{ color: COLORS.black, textAlign: 'center', fontWeight: 'bold',
     fontSize: '1rem', }}>Ad Space</span>
+
           </CCard>
         </div>
       </div>

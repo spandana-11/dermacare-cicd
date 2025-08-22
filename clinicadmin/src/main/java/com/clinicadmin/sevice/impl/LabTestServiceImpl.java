@@ -47,9 +47,17 @@ public class LabTestServiceImpl implements LabTestService {
 	    LabTest test = new LabTest();
 	    test.setTestName(dto.getTestName());
 	    test.setHospitalId(dto.getHospitalId());
+	    test.setDescription(dto.getDescription());
+	    test.setPurpose(dto.getPurpose());
 	    LabTest saved = labTestRepository.save(test);
 
-	    LabTestDTO resDto = new LabTestDTO(saved.getId().toString(), saved.getTestName(), saved.getHospitalId());
+	    LabTestDTO resDto = new LabTestDTO();
+	    resDto.setId(saved.getId().toString());
+	    resDto.setHospitalId(saved.getHospitalId());
+	    resDto.setTestName(saved.getTestName());
+	    resDto.setDescription(saved.getDescription());
+	    resDto.setPurpose(saved.getPurpose());
+	    
 	    response.setSuccess(true);
 	    response.setData(resDto);
 	    response.setMessage("Lab Test added successfully");
@@ -64,7 +72,7 @@ public class LabTestServiceImpl implements LabTestService {
 			List<LabTest> tests = labTestRepository.findAll();
 			if (!tests.isEmpty()) {
 				List<LabTestDTO> dtoList = tests.stream()
-						.map(t -> new LabTestDTO(t.getId().toString(), t.getTestName(), t.getHospitalId()))
+						.map(t -> new LabTestDTO(t.getId().toString(), t.getTestName(), t.getHospitalId(),t.getDescription(),t.getPurpose()))
 						.collect(Collectors.toList());
 				response.setSuccess(true);
 				response.setData(dtoList);
@@ -91,7 +99,7 @@ public class LabTestServiceImpl implements LabTestService {
 			Optional<LabTest> labTest = labTestRepository.findByIdAndHospitalId(new ObjectId(id), hospitalId);
 			if (labTest.isPresent()) {
 				LabTest test = labTest.get();
-				LabTestDTO dto = new LabTestDTO(test.getId().toString(), test.getTestName(), test.getHospitalId());
+				LabTestDTO dto = new LabTestDTO(test.getId().toString(), test.getTestName(), test.getHospitalId(),test.getDescription(),test.getPurpose());
 				response.setSuccess(true);
 				response.setData(dto);
 				response.setMessage("Lab Test retrieved successfully");
@@ -144,7 +152,7 @@ public class LabTestServiceImpl implements LabTestService {
 				update.setTestName(dto.getTestName());
 				LabTest saved = labTestRepository.save(update);
 				LabTestDTO updatedDTO = new LabTestDTO(saved.getId().toString(), saved.getTestName(),
-						saved.getHospitalId());
+						saved.getHospitalId(),saved.getDescription(),saved.getPurpose());
 
 				response.setSuccess(true);
 				response.setData(updatedDTO);
@@ -170,7 +178,7 @@ public class LabTestServiceImpl implements LabTestService {
 	        List<LabTest> tests = labTestRepository.findByHospitalId(hospitalId);
 	        if (!tests.isEmpty()) {
 	            List<LabTestDTO> dtoList = tests.stream()
-	                    .map(t -> new LabTestDTO(t.getId().toString(), t.getTestName(), t.getHospitalId()))
+	                    .map(t -> new LabTestDTO(t.getId().toString(), t.getTestName(), t.getHospitalId(),t.getDescription(),t.getPurpose()))
 	                    .collect(Collectors.toList());
 
 	            response.setSuccess(true);

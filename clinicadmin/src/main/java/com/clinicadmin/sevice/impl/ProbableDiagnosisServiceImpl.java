@@ -44,13 +44,17 @@ public class ProbableDiagnosisServiceImpl implements ProbableDiagnosisService {
 
 	    // Proceed to save disease
 	    ProbableDiagnosis ds = new ProbableDiagnosis();
-	    ds.setDisease(dto.getDisease());
+	    ds.setDiseaseName(dto.getDiseaseName());
 	    ds.setHospitalId(dto.getHospitalId());
+	    ds.setProbableSymptoms(dto.getProbableSymptoms());
+	    ds.setNotes(dto.getNotes());
 	    ProbableDiagnosis savedDs = probableDiagnosisRepository.save(ds);
 
 	    ProbableDiagnosisDTO resDto = new ProbableDiagnosisDTO();
 	    resDto.setId(savedDs.getId().toString());
-	    resDto.setDisease(savedDs.getDisease());
+	    resDto.setDiseaseName(savedDs.getDiseaseName());
+	    resDto.setProbableSymptoms(savedDs.getProbableSymptoms());
+	    resDto.setNotes(savedDs.getNotes());
 	    resDto.setHospitalId(savedDs.getHospitalId());
 
 	    response.setSuccess(true);
@@ -68,7 +72,7 @@ public class ProbableDiagnosisServiceImpl implements ProbableDiagnosisService {
 			List<ProbableDiagnosis> diseases = probableDiagnosisRepository.findAll();
 			if (!diseases.isEmpty()) {
 				List<ProbableDiagnosisDTO> diseasesDTO = diseases.stream()
-						.map(a -> new ProbableDiagnosisDTO(a.getId().toString(), a.getDisease(),a.getHospitalId()))
+						.map(a -> new ProbableDiagnosisDTO(a.getId().toString(), a.getDiseaseName(),a.getHospitalId(),a.getProbableSymptoms(),a.getNotes()))
 						.collect(Collectors.toList());
 
 				response.setSuccess(true);
@@ -104,7 +108,9 @@ public class ProbableDiagnosisServiceImpl implements ProbableDiagnosisService {
 				ProbableDiagnosis ds = savedDisease.get();
 				ProbableDiagnosisDTO resDto = new ProbableDiagnosisDTO();
 				resDto.setId(ds.getId().toString());
-				resDto.setDisease(ds.getDisease());
+				resDto.setDiseaseName(ds.getDiseaseName());
+				resDto.setProbableSymptoms(ds.getProbableSymptoms());
+				resDto.setNotes(ds.getNotes());
 				resDto.setHospitalId(ds.getHospitalId());
 				response.setSuccess(true);
 				response.setData(resDto);
@@ -175,14 +181,16 @@ public class ProbableDiagnosisServiceImpl implements ProbableDiagnosisService {
 	            ProbableDiagnosis upDs = savedDs.get();
 	            
 	            // Null check for the Disease in DTO
-	            if (dto.getDisease() == null || dto.getDisease().isEmpty()) {
+	            if (dto.getDiseaseName() == null || dto.getDiseaseName().isEmpty()) {
 	                response.setSuccess(false);
 	                response.setMessage("Disease name cannot be null or empty");
 	                response.setStatus(HttpStatus.BAD_REQUEST.value());
 	                return response;
 	            }
 
-	            upDs.setDisease(dto.getDisease());
+	            upDs.setDiseaseName(dto.getDiseaseName());
+	            upDs.setProbableSymptoms(dto.getProbableSymptoms());
+	            upDs.setNotes(dto.getNotes());
 
 	            // Save the updated record
 	            ProbableDiagnosis savedUpDs = probableDiagnosisRepository.save(upDs);
@@ -190,7 +198,9 @@ public class ProbableDiagnosisServiceImpl implements ProbableDiagnosisService {
 	            // Mapping the response DTO
 	            ProbableDiagnosisDTO upDTO = new ProbableDiagnosisDTO();
 	            upDTO.setId(savedUpDs.getId().toString());
-	            upDTO.setDisease(savedUpDs.getDisease());
+	            upDTO.setDiseaseName(savedUpDs.getDiseaseName());
+	            upDTO.setProbableSymptoms(savedUpDs.getProbableSymptoms());
+	            upDTO.setNotes(savedUpDs.getNotes());
 	            upDTO.setHospitalId(savedUpDs.getHospitalId());
 
 	            // Set success response
@@ -224,7 +234,7 @@ public class ProbableDiagnosisServiceImpl implements ProbableDiagnosisService {
 	        List<ProbableDiagnosis> diseases = probableDiagnosisRepository.findByHospitalId(hospitalId);
 	        if (!diseases.isEmpty()) {
 	            List<ProbableDiagnosisDTO> diseasesDTO = diseases.stream()
-	                    .map(a -> new ProbableDiagnosisDTO(a.getId().toString(), a.getDisease(), a.getHospitalId()))
+	                    .map(a -> new ProbableDiagnosisDTO(a.getId().toString(), a.getDiseaseName(), a.getHospitalId(),a.getProbableSymptoms(),a.getNotes()))
 	                    .collect(Collectors.toList());
 
 	            response.setSuccess(true);

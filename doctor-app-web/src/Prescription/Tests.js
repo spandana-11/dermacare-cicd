@@ -20,7 +20,7 @@ import {
   CContainer,
 } from '@coreui/react'
 import GradientTextCard from '../components/GradintColorText'
-import {  getLabTests } from '../../src/Auth/Auth'
+import { getLabTests } from '../../src/Auth/Auth'
 import { useDoctorContext } from '../Context/DoctorContext'
 
 /**
@@ -245,11 +245,10 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
   <div class="page">
     <header>
       <div class="logo">
-        ${
-          clinicDetails?.hospitalLogo
-            ? `<img src="data:image/png;base64,${clinicDetails.hospitalLogo}" alt="Hospital Logo" />`
-            : ''
-        }
+        ${clinicDetails?.hospitalLogo
+        ? `<img src="data:image/png;base64,${clinicDetails.hospitalLogo}" alt="Hospital Logo" />`
+        : ''
+      }
       </div>
       <div class="clinic-block">
         <div class="clinic-name">${escapeHtml(clinicDetails.name)}</div>
@@ -284,14 +283,13 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
     </div>
 
     <!-- Reason (optional) -->
-    ${
-      reasonHtml
+    ${reasonHtml
         ? `<div class="section section-card">
             
             ${reasonHtml.replace('<div class="section">', '').replace('</div>', '')}
          </div>`
         : ''
-    }
+      }
 
     <div class="footer">
       <div>Generated on ${escapeHtml(dateStr)}</div>
@@ -543,11 +541,11 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
         }}
       >
         <div className="d-flex gap-3">
-          <Button customColor={COLORS.success} style={{ color: COLORS.white }}  onClick={handlePrint} disabled={isGenerating}>
+          <Button customColor={COLORS.bgcolor} style={{ color: COLORS.white }} onClick={handlePrint} disabled={isGenerating}>
             {isGenerating ? 'Printing…' : 'Print'}
           </Button>
           <Button customColor={COLORS.bgcolor} // background color of button
-              color={COLORS.black} onClick={handleNext}>
+            color={COLORS.black} onClick={handleNext}>
             Next
           </Button>
         </div>

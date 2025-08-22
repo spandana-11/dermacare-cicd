@@ -460,54 +460,54 @@ public class DoctorServiceImpl implements DoctorService {
 	// LOGIN-------------------------------------------------------------
 	@Override
 	public Response login(DoctorLoginDTO loginDTO) {
-	    Response responseDTO = new Response();
+		Response responseDTO = new Response();
 
-	    Optional<DoctorLoginCredentials> credentialsOptional = credentialsRepository
-	            .findByUsername(loginDTO.getUsername());
+		Optional<DoctorLoginCredentials> credentialsOptional = credentialsRepository
+				.findByUsername(loginDTO.getUsername());
 
-	    if (credentialsOptional.isPresent()) {
-	        DoctorLoginCredentials credentials = credentialsOptional.get();
-	        boolean matches = passwordEncoder.matches(loginDTO.getPassword(), credentials.getPassword());
+		if (credentialsOptional.isPresent()) {
+			DoctorLoginCredentials credentials = credentialsOptional.get();
+			boolean matches = passwordEncoder.matches(loginDTO.getPassword(), credentials.getPassword());
 
-	        if (matches) {
-	            Optional<Doctors> doctors = doctorsRepository.findByDoctorId(credentials.getDoctorId());
-	            if (doctors.isPresent()) {
-	                Doctors doctor = doctors.get();
-	                doctor.setDeviceId(loginDTO.getDeviceId());
-	                Doctors savedDoctor = doctorsRepository.save(doctor);
-	                DoctorsDTO savedDTO = DoctorMapper.mapDoctorEntityToDoctorDTO(savedDoctor);
-	            }
+			if (matches) {
+				Optional<Doctors> doctors = doctorsRepository.findByDoctorId(credentials.getDoctorId());
+				if (doctors.isPresent()) {
+					Doctors doctor = doctors.get();
+					doctor.setDeviceId(loginDTO.getDeviceId());
+					Doctors savedDoctor = doctorsRepository.save(doctor);
+					DoctorsDTO savedDTO = DoctorMapper.mapDoctorEntityToDoctorDTO(savedDoctor);
+				}
 
-	            DoctorLoginDTO dto = new DoctorLoginDTO();
-	            dto.setUsername(credentials.getUsername());
-	            dto.setPassword(credentials.getPassword());
-	            dto.setDeviceId(loginDTO.getDeviceId());
-	            dto.setDoctorId(credentials.getDoctorId());
-	            dto.setHospitalId(credentials.getHospitalId());
+				DoctorLoginDTO dto = new DoctorLoginDTO();
+				dto.setUsername(credentials.getUsername());
+				dto.setPassword(credentials.getPassword());
+				dto.setDeviceId(loginDTO.getDeviceId());
+				dto.setDoctorId(credentials.getDoctorId());
+				dto.setHospitalId(credentials.getHospitalId());
 
-	            responseDTO.setData(dto);
-	            responseDTO.setStatus(HttpStatus.OK.value());
-	            responseDTO.setMessage("Login successful");
-	            responseDTO.setSuccess(true);
-	        } else {
-	            responseDTO.setData(null);
-	            responseDTO.setStatus(HttpStatus.UNAUTHORIZED.value());
-	            responseDTO.setMessage("Invalid password");
-	            responseDTO.setSuccess(false);
-	        }
-	    } else {
-	        // Check if any user exists with the given password (to differentiate case 4)
-	        List<DoctorLoginCredentials> allCredentials = credentialsRepository.findAll();
-	        boolean passwordExists = allCredentials.stream()
-	                .anyMatch(cred -> passwordEncoder.matches(loginDTO.getPassword(), cred.getPassword()));
+				responseDTO.setData(dto);
+				responseDTO.setStatus(HttpStatus.OK.value());
+				responseDTO.setMessage("Login successful");
+				responseDTO.setSuccess(true);
+			} else {
+				responseDTO.setData(null);
+				responseDTO.setStatus(HttpStatus.UNAUTHORIZED.value());
+				responseDTO.setMessage("Invalid password");
+				responseDTO.setSuccess(false);
+			}
+		} else {
+			// Check if any user exists with the given password (to differentiate case 4)
+			List<DoctorLoginCredentials> allCredentials = credentialsRepository.findAll();
+			boolean passwordExists = allCredentials.stream()
+					.anyMatch(cred -> passwordEncoder.matches(loginDTO.getPassword(), cred.getPassword()));
 
-	        responseDTO.setData(null);
-	        responseDTO.setStatus(HttpStatus.NOT_FOUND.value());
-	        responseDTO.setMessage(passwordExists ? "Invalid username" : "Invalid username and password");
-	        responseDTO.setSuccess(false);
-	    }
+			responseDTO.setData(null);
+			responseDTO.setStatus(HttpStatus.NOT_FOUND.value());
+			responseDTO.setMessage(passwordExists ? "Invalid username" : "Invalid username and password");
+			responseDTO.setSuccess(false);
+		}
 
-	    return responseDTO;
+		return responseDTO;
 	}
 
 	// -------------------------------DOCTOR can Change
@@ -1011,26 +1011,25 @@ public class DoctorServiceImpl implements DoctorService {
 		dto.setContractorDocuments(clinic.getContractorDocuments());
 		dto.setRecommended(clinic.isRecommended());
 		List<DoctorsDTO> maptoDTO = doctorList.stream().map(doc -> {
-	        DoctorsDTO doctorDTO = DoctorMapper.mapDoctorEntityToDoctorDTO(doc);
+			DoctorsDTO doctorDTO = DoctorMapper.mapDoctorEntityToDoctorDTO(doc);
 
-	        if (doc.getConsultation() != null) {
-	            ConsultationType consultation = doc.getConsultation();
-	            ConsultationTypeDTO consultationDTO = new ConsultationTypeDTO();
-	            consultationDTO.setServiceAndTreatments(consultation.getServiceAndTreatments());
-	            consultationDTO.setInClinic(consultation.getInClinic());
-	            consultationDTO.setVideoOrOnline(consultation.getVideoOrOnline());
-	            doctorDTO.setConsultation(consultationDTO);
-	        } else {
-	            doctorDTO.setConsultation(null);
-	        }
+			if (doc.getConsultation() != null) {
+				ConsultationType consultation = doc.getConsultation();
+				ConsultationTypeDTO consultationDTO = new ConsultationTypeDTO();
+				consultationDTO.setServiceAndTreatments(consultation.getServiceAndTreatments());
+				consultationDTO.setInClinic(consultation.getInClinic());
+				consultationDTO.setVideoOrOnline(consultation.getVideoOrOnline());
+				doctorDTO.setConsultation(consultationDTO);
+			} else {
+				doctorDTO.setConsultation(null);
+			}
 
-	        return doctorDTO;
-	    }).collect(Collectors.toList());
+			return doctorDTO;
+		}).collect(Collectors.toList());
 
-	    dto.setDoctors(maptoDTO);
-	    return dto;
-	
-		
+		dto.setDoctors(maptoDTO);
+		return dto;
+
 //		List<DoctorsDTO> maptoDTO = doctorList.stream().map(DoctorMapper::mapDoctorEntityToDoctorDTO)
 //				.collect(Collectors.toList());
 //		dto.setDoctors(maptoDTO);
@@ -1145,7 +1144,7 @@ public class DoctorServiceImpl implements DoctorService {
 					dto.setDoctorAverageRating(doc.getDoctorAverageRating());
 //			                            if (dto.getDoctorFees() != null)
 					dto.setDoctorFees(DoctorMapper.mapDoctorFeeEntityToDTO(doc.getDoctorFees()));
-					dto.setDoctorSignature(Base64CompressionUtil.decompressBase64(doc.getDoctorSignature()));	
+					dto.setDoctorSignature(Base64CompressionUtil.decompressBase64(doc.getDoctorSignature()));
 					dto.setAssociatedWithIADVC(doc.isAssociatedWithIADVC());
 
 					return dto;
@@ -1436,4 +1435,11 @@ public class DoctorServiceImpl implements DoctorService {
 		return true;
 	}
 
+//---------------- get All doctors with respective their clinics --------------------------
+//	public Response getAllDoctorsWithRespectiveClinic() {
+//		ResponseEntity<Response> clinics = adminServiceClient.firstRecommendedTureClincs();
+//		Object clinicObj = clinics.getBody().getData();
+//		ClinicDTO clinicDTO = objectMapper.convertValue(clinicObj, ClinicDTO.class);
+//		doctorsRepository.findBy
+//	}
 }
