@@ -1,5 +1,8 @@
 package com.AdminService.util;
 
+import java.util.List;
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,6 +19,14 @@ public class Response {
 		private String message;
 		private int status;
 		private String hospitalName;
-		private String hospitalId;
-	}
+		private String hospitalId; 
+	    private String branchId;
+		private String Role;
+	    private Map<String, List<String>>  permissions;
+
+
+			
+			
+		}
+	
 

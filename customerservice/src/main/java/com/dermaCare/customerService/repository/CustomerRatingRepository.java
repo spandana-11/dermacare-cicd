@@ -11,12 +11,10 @@ import com.dermaCare.customerService.entity.CustomerRating;
 @Repository
 public interface CustomerRatingRepository extends MongoRepository<CustomerRating, ObjectId> {
 	
-	List<CustomerRating> findByHospitalIdAndDoctorId(String hospitalId, String doctorId);
-
+	List<CustomerRating> findByBranchIdAndDoctorId(String bId, String doctorId);
 	List<CustomerRating> findByHospitalId(String clinicId);
-
-	List<CustomerRating> findByDoctorId(String doctorId); 
-	
+	List<CustomerRating> findByBranchId(String bId);
+	List<CustomerRating> findByDoctorId(String doctorId); 	
 	CustomerRating findByHospitalIdAndDoctorIdAndCustomerMobileNumberAndPatientIdAndAppointmentId(String hid,String did,String cnum,String pid,String aid);
-	
+	CustomerRating findByBranchIdAndDoctorIdAndAppointmentId(String hid,String did,String aid);
 }

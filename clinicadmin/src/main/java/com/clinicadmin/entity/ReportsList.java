@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 public class ReportsList {
 	@Id
 	private String id;
+	private String customerId;
 	private List<Reports> reportsList;
 
 }

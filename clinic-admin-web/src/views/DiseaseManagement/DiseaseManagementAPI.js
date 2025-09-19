@@ -1,9 +1,10 @@
 import axios from 'axios'
 import { AddDisease, AllDiseases, BASE_URL, DeleteDisease, GetDiseasesByHId, UpdateDisease } from '../../baseUrl'
+import { http } from '../../Utils/Interceptors'
 
 export const DiseaseData = async () => {
   try {
-    const response = await axios.get(`${BASE_URL}/${AllDiseases}`)
+    const response = await http.get(`/${AllDiseases}`)
     console.log('Disease data:', response.data)
     return response.data
   } catch (error) {
@@ -18,7 +19,7 @@ export const DiseaseData = async () => {
 
 export const TestdDiseaseByHId = async (hospitalId) => {
   try {
-    const response = await axios.get(`${BASE_URL}/${GetDiseasesByHId}/${hospitalId}`)
+    const response = await http.get(`/${GetDiseasesByHId}/${hospitalId}`)
     console.log('test data:', response.data)
     return response.data
   } catch (error) {
@@ -31,19 +32,22 @@ export const TestdDiseaseByHId = async (hospitalId) => {
   }
 }
 // ✅ 2. Add a new disease
+// ✅ Add a new disease
 export const postDiseaseData = async (diseaseData) => {
   try {
     const requestData = {
-      disease: diseaseData.disease|| '', 
+      diseaseName: diseaseData.diseaseName || '', 
       hospitalId: diseaseData.hospitalId || '',
+      probableSymptoms: diseaseData.probableSymptoms || '',
+      notes: diseaseData.notes || '',
     }
 
-    const response = await axios.post(`${BASE_URL}/${AddDisease}`, requestData, {
+    const response = await http.post(`/${AddDisease}`, requestData, {
       headers: {
         'Content-Type': 'application/json',
       },
     })
-    console.log('Add Disease Response:', response)
+    console.log('Add Disease Response:', response.data)
     return response.data
   } catch (error) {
     console.error('Error adding disease:', error.response?.data || error)
@@ -51,45 +55,18 @@ export const postDiseaseData = async (diseaseData) => {
   }
 }
 
-// --- 2. Modified handleAddCategory function ---
-const handleAddDisease = async () => {
-  if (!validateForm()) return
-
+export const updateDiseaseData = async (updatedDisease, id, hospitalId) => {
   try {
-    const payload = {
-      disease: newDisease.disease,
+    const requestData = {
+      diseaseName: updatedDisease.diseaseName || '',
+      probableSymptoms: updatedDisease.probableSymptoms || '',
+      notes: updatedDisease.notes || '',
+      hospitalId: hospitalId,
     }
 
-    const response = await postDiseaseData(payload)
-
-    // Only show success toast if postCategoryData completes without throwing an error
-    toast.success('Disease added successfully!', { position: 'top-right' })
-    fetchData() // Assuming this refreshes your data
-    setModalVisible(false) // Assuming this closes a modal
-  } catch (error) {
-    console.error('Error adding disease:', error)
-
-    // Check for specific error messages or status codes for duplicates
-    const errorMessage =
-      error.response?.data?.message || error.response?.statusText || 'An unexpected error occurred.'
-    const statusCode = error.response?.status
-
-    if (statusCode === 409 || errorMessage.toLowerCase().includes('duplicate')) {
-      // Example: 409 Conflict for duplicates
-      toast.error(`Error: Duplicate disease name - ${newDisease.disease} already exists!`, {
-        position: 'top-right',
-      })
-    } else {
-      // For any other error
-      toast.error(`Error adding disease: ${errorMessage}`, { position: 'top-right' })
-    }
-  }
-}
-export const updateDiseaseData = async (updatedDisease, diseaseId, hospitalId) => {
-  try {
-    const response = await axios.put(
-      `${BASE_URL}/${UpdateDisease}/${diseaseId}/${hospitalId}`,
-      updatedDisease,
+    const response = await http.put(
+      `/${UpdateDisease}/${id}/${hospitalId}`,
+      requestData,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -103,11 +80,12 @@ export const updateDiseaseData = async (updatedDisease, diseaseId, hospitalId) =
   }
 }
 
+
 // ✅ 4. Delete disease
 export const deleteDiseaseData = async (diseaseId, hospitalId) => {
   try {
-    const response = await axios.delete(
-      `${BASE_URL}/${DeleteDisease}/${diseaseId}/${hospitalId}`,
+    const response = await http.delete(
+      `/${DeleteDisease}/${diseaseId}/${hospitalId}`,
       {
         headers: {
           'Content-Type': 'application/json',

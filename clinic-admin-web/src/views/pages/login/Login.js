@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   CButton,
+  CCard,
   CCardBody,
   CCol,
   CContainer,
@@ -10,187 +11,429 @@ import {
   CInputGroup,
   CInputGroupText,
   CRow,
+  CFormSelect,
   CModal,
   CModalHeader,
   CModalTitle,
   CModalBody,
   CModalFooter,
+  CSpinner,
+  CNav,
+  CNavItem,
+  CNavLink,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilLockLocked, cilUser, cilLockUnlocked } from '@coreui/icons'
-import dermalogo from '../../../components/header/dermalogo.png'
-import { BASE_URL } from '../../../baseUrl' // Ensure wifiUrl is defined correctly
+import { cilLockLocked, cilUser, cilLockUnlocked, cilShieldAlt } from '@coreui/icons'
 import axios from 'axios'
+import { BASE_URL, SBASE_URL } from '../../../baseUrl'
 import { useHospital } from '../../Usecontext/HospitalContext'
 import ResetPassword from '../../../views/Resetpassword'
+import { http, httpPublic } from '../../../Utils/Interceptors'
+import DermaLogo from 'src/assets/images/DermaCare.png' // adjust path if needed
+import { COLORS } from '../../../Constant/Themes'
+import { toast } from 'react-toastify'
+
 const Login = () => {
-  const [userName, setuserName] = useState('')
-  const [doctors, setDoctors] = useState([])
+  const [activeTab, setActiveTab] = useState('clinic') // clinic | doctor
+  const [userName, setUserName] = useState('')
   const [password, setPassword] = useState('')
-  const [errorMessage, setErrorMessage] = useState(null)
+  const [role, setRole] = useState('admin')
+  const [errorMessage, setErrorMessage] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
-  const [backenduserName, setBackenduserName] = useState('')
-  const [backendPassword, setBackendPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const { setDoctorData, fetchHospitalDetails } = useHospital()
   const [showResetModal, setShowResetModal] = useState(false)
+
+  // const { fetchHospitalDetails,selectedHospital } = useHospital()
+  const { selectedHospital, setUser, setHospitalId, setSelectedHospital } = useHospital()
   const navigate = useNavigate()
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const validateForm = () => {
+    const errors = {}
+    if (!userName.trim()) errors.userName = 'Username is required'
+    if (!password.trim()) errors.password = 'Password is required'
+    if (password && password.length < 6) errors.password = 'Password must be at least 6 characters'
+    setFieldErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  useEffect(() => {
+    // ✅ Clear storage when login page loads
+    localStorage.clear()
+  }, [])
+
+  const handleClinicLogin = async (e) => {
+    if (e && e.preventDefault) e.preventDefault()
+    if (!validateForm()) return
     setIsLoading(true)
-    setErrorMessage(null)
+    setErrorMessage('')
 
     try {
-      console.log('hi')
-      const response = await axios.post(
-        `${BASE_URL}/clinicLogin`,
-        {
-          userName: userName,
-          password: password,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
-      )
-      console.log(response)
+      let res
 
-      // If success
-      if (response.data.success) {
-        const HospitalId = response.data.hospitalId // or adjust to match your API structure
-        const HospitalName = response.data.hospitalName // or adjust to match your API structure
-        localStorage.setItem('HospitalId', HospitalId)
-        localStorage.setItem('HospitalName', HospitalName)
-        console.log(HospitalId)
-        console.log(HospitalName)
-
-        await fetchHospitalDetails(HospitalId)
-
-        if (
-          HospitalId == undefined ||
-          HospitalId == '' ||
-          HospitalName == undefined ||
-          HospitalName == ''
-        ) {
-          setErrorMessage('No hospital found.')
-        } else {
-          setErrorMessage(null)
-          navigate('/dashboard')
-        }
-      }
-    } catch (error) {
-      const backendMessage = error.response?.data?.message || 'An unexpected error occurred.'
-
-      if (backendMessage.toLowerCase().includes('username')) {
-        setErrorMessage('Invalid username.')
-      } else if (backendMessage.toLowerCase().includes('password')) {
-        setErrorMessage('Invalid password.')
+      // ✅ Call correct API based on role
+      if (role.toLowerCase() === 'admin') {
+        const resposnse = await http.post(
+          `/clinicLogin`,
+          { userName, password, role },
+          { headers: { 'Content-Type': 'application/json' } },
+        )
+        res = resposnse
       } else {
-        setErrorMessage(backendMessage)
+        const resposnse = await http.post(
+          `/loginUsingRoles`,
+          { userName, password, role },
+          { headers: { 'Content-Type': 'application/json' } },
+        )
+        res = resposnse.data
       }
 
-      console.error('Error details:', error.response || error.message)
-    } finally {
+      console.log('✅ Login API response:', res.data)
+
+      // ✅ Success check
+      if (res?.status === 200) {
+        const payload = res.data
+        if (!payload) {
+          toast.error(res?.message || 'Invalid login response')
+          return
+        }
+
+        const HospitalId = payload.hospitalId
+        const HospitalName = payload.hospitalName
+        const staffId = payload.staffId
+        const staffName = payload.staffName
+        const token = payload.accessToken
+        const permissions = payload.permissions
+        const branchId = payload.branchId
+        console.log(HospitalId, HospitalName, selectedHospital, role)
+
+        // ✅ Store in localStorage
+        if (HospitalId) {
+          localStorage.setItem('HospitalId', HospitalId)
+          setHospitalId(HospitalId)
+        }
+
+        if (HospitalName) {
+          localStorage.setItem('HospitalName', HospitalName)
+        }
+
+        if (token) {
+          localStorage.setItem('token', token)
+        }
+
+        if (role) {
+          localStorage.setItem('role', role)
+        }
+        if (branchId) {
+          localStorage.setItem('branchId', branchId)
+        }
+        if (staffId) {
+          localStorage.setItem('staffId', staffId)
+        }
+        if (staffName) {
+          localStorage.setItem('staffName', staffName)
+        }
+
+        if (payload.accessToken) {
+          localStorage.setItem('token', payload.accessToken)
+        }
+
+        // if (token) localStorage.setItem('token', token)
+        // localStorage.setItem('role', role)
+
+        await new Promise((resolve) => setTimeout(resolve, 100))
+
+        if (HospitalId) {
+          // setSelectedHospital({
+          //   hospitalId: HospitalId,
+          //   hospitalName: HospitalName,
+          // })
+
+          if (selectedHospital != null) {
+            const normalizePermissions = (permissions) => {
+              const fixed = {}
+              Object.keys(permissions).forEach((key) => {
+                fixed[key.trim()] = permissions[key]
+              })
+              return fixed
+            }
+
+            // when setting user
+            setUser({
+              name: HospitalName ? HospitalName : staffName,
+              role,
+              permissions,
+            })
+
+            // persist to localStorage
+            localStorage.setItem(
+              'hospitalUser',
+              JSON.stringify({
+                name: HospitalName ? HospitalName : staffName,
+                role,
+                permissions,
+              }),
+            )
+            // setUser({
+            //   name: HospitalName ? HospitalName : staffName,
+            //   role: role,
+            //   permissions: permissions || {},
+            // })
+            localStorage.setItem('permissions', JSON.stringify(permissions))
+            toast.success(res.data?.message || 'Login successful!')
+            navigate('/dashboard')
+          } else {
+            // toast.error('Clinic details missing')
+          }
+        } else {
+          toast.error('Clinic ID is missing')
+        }
+      } else {
+        toast.error(res.data?.message || 'Login failed')
+      }
+    }catch (err) {
+  console.error('Login error:', err)
+
+  const backendMessage = err?.response?.data?.message
+
+  if (backendMessage) {
+    if (backendMessage.toLowerCase().includes('username')) {
+      setErrorMessage('Invalid username. Please try again.')
+      toast.error('Invalid username. Please try again.')
+    } else if (backendMessage.toLowerCase().includes('password')) {
+      setErrorMessage('Invalid password. Please try again.')
+      toast.error('Invalid password. Please try again.')
+    } else {
+      setErrorMessage(backendMessage)
+      toast.error(backendMessage)
+    }
+  } else {
+    setErrorMessage('An unexpected error occurred. Please try again later.')
+    toast.error('An unexpected error occurred. Please try again later.')
+  }
+}
+ finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div
-      className="min-vh-100 d-flex flex-row align-items-center"
-      style={{
-        backgroundImage: `url("/assets/bg.jpg")`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-      }}
-    >
-      <CContainer>
-        <CRow className="justify-content-center">
-          <CCol md={6}>
-            <h1
-              className="position-absolute top-0 end-0 me-5 mt-3 text-center"
-              style={{ right: '10px' }}
+    // Outer container uses flex column and full viewport height to allow sticky footer without overflow
+    <div className="d-flex flex-column min-vh-100 derma-bg">
+      {/* Main content - will grow and keep footer at bottom */}
+      <div className="flex-grow-1 d-flex justify-content-center align-content-center align-items-center ">
+        <CContainer fluid className="p-0 h-100   align-content-center align-items-center">
+          {/* Use h-100 on the row so it occupies the available height (minus footer) */}
+          <CRow className="g-0 h-100">
+            {/* LEFT: Brand / Hero */}
+            <CCol
+              md={6}
+              className="d-none d-md-flex flex-column justify-content-center derma-hero px-5 py-4"
             >
-              <strong style={{ color: 'white', fontWeight: 'bold', display: 'block' }}>
-                Derma Care, Hyderabad
-              </strong>
-              <p
-                style={{ color: '#99C5F4', fontSize: '25px', marginTop: '8px', marginBottom: '0' }}
-              >
-                Powered By Chiselon Technologies
-              </p>
-            </h1>
-
-            <CCardBody>
-              <CForm onSubmit={handleSubmit}>
-                <h2 className="text-center mb-4" style={{ color: 'white', fontSize: '25px' }}>
-                  Admin Login
+              <div />
+              <div className="text-center px-3" style={{ color: COLORS.primary }}>
+                <img
+                  src={DermaLogo}
+                  alt="Derma Care"
+                  className="mb-4"
+                  style={{ width: 120, height: 'auto' }}
+                />
+                <h2 className="fw-bold mb-3" style={{ color: COLORS.primary }}>
+                  Welcome to Derma Care
                 </h2>
-                {errorMessage && <p className="text-danger text-center">{errorMessage}</p>}
+                <p className="lead mb-4" style={{ opacity: 0.95, color: COLORS.primary }}>
+                  Manage dermatology operations seamlessly — appointments, records, billing & more.
+                </p>
 
-                <CInputGroup className="mb-3 w-50 mx-auto">
-                  <CInputGroupText>
-                    <CIcon icon={cilUser} />
-                  </CInputGroupText>
-                  <CFormInput
-                    placeholder="Username"
-                    autoComplete="userName"
-                    value={userName}
-                    onChange={(e) => setuserName(e.target.value)}
-                  />
-                </CInputGroup>
+                <div className="d-flex justify-content-center gap-3 flex-wrap">
+                  <span className="badge" style={{ color: COLORS.primary }}>
+                    HIPAA-ready
+                  </span>
+                  <span className="badge" style={{ color: COLORS.primary }}>
+                    e-Prescriptions
+                  </span>
+                  <span className="badge" style={{ color: COLORS.primary }}>
+                    Smart Scheduling
+                  </span>
+                </div>
+              </div>
+            </CCol>
 
-                <CInputGroup className="mb-3 w-50 mx-auto">
-                  <CInputGroupText
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <CIcon icon={showPassword ? cilLockUnlocked : cilLockLocked} />
-                  </CInputGroupText>
-                  <CFormInput
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </CInputGroup>
+            {/* RIGHT: Card + Tabs + Form */}
+            <CCol md={6} className="d-flex align-items-center justify-content-center  md-5">
+              <CCard className="shadow-lg border-0 glass-card w-100" style={{ maxWidth: 460 }}>
+                <CCardBody className="p-4 p-md-5">
+                  <h3 className="text-center fw-bold mb-3" style={{ color: COLORS.primary }}>
+                    Derma Portal
+                  </h3>
+                  <p className="text-center mb-4" style={{ color: COLORS.primary }}>
+                    Please choose your workspace to continue
+                  </p>
 
-                <CRow className="mt-4 text-center">
-                  <CCol>
-                    <a
-                      href="#"
-                      className="text-decoration-none text-white"
-                      style={{ fontWeight: 'bold' }}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        setShowResetModal(true)
-                        // navigate('/reset-password') // Replace with your actual reset password route
-                      }}
-                    >
-                      Change password?
-                    </a>
-                  </CCol>
-                </CRow>
+                  {/* Tabs */}
+                  <CNav variant="pills" className="justify-content-center gap-2 mb-4">
+                    <CNavItem>
+                      <CNavLink
+                        active={activeTab === 'clinic'}
+                        onClick={() => setActiveTab('clinic')}
+                        style={{
+                          backgroundColor: activeTab === 'clinic' ? COLORS.primary : COLORS.white,
+                          color: activeTab === 'clinic' ? COLORS.white : COLORS.primary,
+                          border: `1px solid ${COLORS.primary}`,
+                          borderRadius: '8px',
+                          fontWeight: '500',
+                          padding: '8px 16px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Clinic
+                      </CNavLink>
+                    </CNavItem>
 
-                <CCol xs={12} className="text-center">
-                  <CButton
-                    style={{ backgroundColor: '#0A6FDBFF', fontWeight: 'bold' }}
-                    className="px-4 text-white mt-3"
-                    type="submit"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Logging in...' : 'Login'}
-                  </CButton>
-                </CCol>
-              </CForm>
-            </CCardBody>
-          </CCol>
-        </CRow>
-      </CContainer>
+                    <CNavItem>
+                      <CNavLink
+                        active={activeTab === 'doctor'}
+                        onClick={() => (window.location.href = 'https://doctorweb.aesthetech.life')}
+                        style={{
+                          backgroundColor: activeTab === 'doctor' ? COLORS.primary : COLORS.white,
+                          color: activeTab === 'doctor' ? COLORS.white : COLORS.primary,
+                          border: `1px solid ${COLORS.primary}`,
+                          borderRadius: '8px',
+                          fontWeight: '500',
+                          padding: '8px 16px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Doctor
+                      </CNavLink>
+                    </CNavItem>
+                  </CNav>
+
+                  {/* Error message */}
+                  {errorMessage && (
+                    <div className="alert alert-danger text-center py-2 mb-3">{errorMessage}</div>
+                  )}
+
+                  {/* CLINIC TAB */}
+                  {activeTab === 'clinic' && (
+                    <CForm onSubmit={handleClinicLogin} noValidate>
+                      {/* Role */}
+                      <CFormSelect
+                        className="mb-3"
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                      >
+                        <option value="admin">Admin</option>
+                        <option value="receptionist">Receptionist</option>
+                        <option value="nurse">Nurse</option>
+                        <option value="lab_technician">Lab Technician</option>
+                        <option value="pharmacist">Pharmacist</option>
+                        {/* <option value="wardBoy">Ward Boy / Attendant</option>
+                        <option value="security">Security Staff</option> */}
+                      </CFormSelect>
+
+                      {/* Username */}
+                      <CInputGroup className="mb-2">
+                        <CInputGroupText>
+                          <CIcon icon={cilUser} />
+                        </CInputGroupText>
+                        <CFormInput
+                          placeholder="Username"
+                          value={userName}
+                          onChange={(e) => {
+                            setUserName(e.target.value)
+                            if (fieldErrors.userName)
+                              setFieldErrors((p) => ({ ...p, userName: '' }))
+                          }}
+                          aria-invalid={!!fieldErrors.userName}
+                          autoComplete="username"
+                        />
+                      </CInputGroup>
+                      {fieldErrors.userName && (
+                        <small className="text-danger">{fieldErrors.userName}</small>
+                      )}
+
+                      {/* Password */}
+                      <CInputGroup className="mt-3 mb-2">
+                        <CInputGroupText
+                          onClick={() => setShowPassword((s) => !s)}
+                          style={{ cursor: 'pointer' }}
+                          title={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          <CIcon icon={showPassword ? cilLockUnlocked : cilLockLocked} />
+                        </CInputGroupText>
+                        <CFormInput
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Password"
+                          value={password}
+                          onChange={(e) => {
+                            setPassword(e.target.value)
+                            if (fieldErrors.password)
+                              setFieldErrors((p) => ({ ...p, password: '' }))
+                          }}
+                          aria-invalid={!!fieldErrors.password}
+                          autoComplete="current-password"
+                        />
+                      </CInputGroup>
+                      {fieldErrors.password && (
+                        <small className="text-danger">{fieldErrors.password}</small>
+                      )}
+
+                      <div
+                        className="d-flex justify-content-between mt-2"
+                        style={{ color: COLORS.primary }}
+                      >
+                        <a
+                          style={{ color: COLORS.primary }}
+                          href="#"
+                          className="text-decoration-none derma-link"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            setShowResetModal(true)
+                          }}
+                        >
+                          Forgot password?
+                        </a>
+                      </div>
+
+                      <CButton
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-100 mt-4 derma-btn"
+                        style={{ backgroundColor: COLORS.primary, color: 'white' }}
+                      >
+                        {isLoading ? <CSpinner size="sm" /> : 'Login'}
+                      </CButton>
+                    </CForm>
+                  )}
+                </CCardBody>
+              </CCard>
+            </CCol>
+          </CRow>
+        </CContainer>
+      </div>
+
+      {/* Sticky Footer */}
+      <footer
+        className="d-flex justify-content-around small py-2 opacity-75 mt-auto"
+        style={{ color: COLORS.primary, backgroundColor: '#f8f9fa' }}
+      >
+        <span className="d-inline-flex align-items-center gap-2" style={{ color: COLORS.primary }}>
+          <CIcon icon={cilShieldAlt} /> Secure by design
+        </span>
+        <span style={{ color: COLORS.primary }}>
+          © {new Date().getFullYear()} Chiselon Technologies
+        </span>
+        <a
+          href="https://chiselontechnologies.com"
+          target="_blank"
+          style={{ color: COLORS.primary }}
+        >
+          About Chiselon Technologies
+        </a>
+      </footer>
+
+      {/* Reset Modal */}
       <CModal visible={showResetModal} onClose={() => setShowResetModal(false)}>
         <CModalHeader>
           <CModalTitle>Reset Password</CModalTitle>

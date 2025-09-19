@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import com.AdminService.dto.QuestionAnswerDTO;
 import com.AdminService.dto.StoreUpdatedQAInClinicsDTO;
 import com.AdminService.entity.QuestionAnswer;
-import com.AdminService.entity.QuetionsAndAnswerForAddClinic;
 import com.AdminService.entity.StoreUpdatedQAInClinics;
 import com.AdminService.repository.QuetionsAndAnswerForAddClinicRepository;
 import com.AdminService.repository.StoreUpdatedQAInClinicsRepository;
@@ -26,26 +25,32 @@ public class StoreUpdatedQAInClinicsServiceImpl implements StoreUpdatedQAInClini
     private StoreUpdatedQAInClinicsRepository storeUpdatedQAInClinicsRepository;
 
     @Override
-    public Response saveQaAndAnswers(String id) {
+    public Response saveQaAndAnswers(StoreUpdatedQAInClinicsDTO StoreUpdatedQAInClinicsDTO) {
         Response response = new Response();
 
         try {
-            Optional<QuetionsAndAnswerForAddClinic> qaFromDb =
-                    quetionsAndAnswerForAddClinicRepository.findById(id);
-
-            if (qaFromDb.isEmpty()) {
-                response.setSuccess(false);
-                response.setData(null);
-                response.setMessage("No Q&A found for id: " + id);
-                response.setStatus(404);
-                return response;
-            }
-
-            QuetionsAndAnswerForAddClinic qa = qaFromDb.get();
-
-            // Create and save entity
+             // Create and save entity
             StoreUpdatedQAInClinics storeQA = new StoreUpdatedQAInClinics();
-            storeQA.setQuestionsAndAnswers(qa.getQuestionsAndAnswers());
+            List<QuestionAnswer> ansFromDTO = StoreUpdatedQAInClinicsDTO.getQuestionsAndAnswers().stream().map(a->new QuestionAnswer(a.getQuestion(),a.isAnswer())).collect(Collectors.toList());
+            storeQA.setQuestionsAndAnswers(ansFromDTO);
+         
+            // ✅ Calculate count and score
+            long trueCount = ansFromDTO.stream()
+                    .filter(QuestionAnswer::isAnswer)
+                    .count();
+
+            // If you want score = half of trueCount
+            double rawScore = (trueCount > 0) ? (trueCount / 2.0) : 0.0;
+
+            // Round off
+            long score = Math.round(rawScore);
+
+            // ✅ set count & score into storeQA (not existingQA)
+            storeQA.setCount((int) trueCount);
+            storeQA.setScore((int) score);
+            storeQA.setSubmitedQA(true);
+
+            // ✅ Save to DB
             StoreUpdatedQAInClinics savedQA = storeUpdatedQAInClinicsRepository.save(storeQA);
 
             // Convert to DTO
@@ -56,6 +61,9 @@ public class StoreUpdatedQAInClinicsServiceImpl implements StoreUpdatedQAInClini
                     .map(b -> new QuestionAnswerDTO(b.getQuestion(), b.isAnswer()))
                     .collect(Collectors.toList());
             dto.setQuestionsAndAnswers(qaDTO);
+            dto.setCount(savedQA.getCount());
+            dto.setScore(savedQA.getScore());
+            dto.setSubmitedQA(savedQA.isSubmitedQA());
 
             // Success response
             response.setSuccess(true);

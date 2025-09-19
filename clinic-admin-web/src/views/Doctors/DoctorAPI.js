@@ -1,16 +1,17 @@
 // doctorUtils.js
 
 import axios from 'axios'
-import { BASE_URL, getAllDoctors, getDoctorByClinicId, doctorAvailableUrl } from '../../baseUrl'
+import { BASE_URL, getAllDoctors, getDoctorByClinicId, doctorAvailableUrl, GetBranches_ByClinicId } from '../../baseUrl'
 import { toast } from 'react-toastify'
+import { http } from '../../Utils/Interceptors'
 
 // 🆕 Update Doctor Availability (true/false)
 export const updateDoctorAvailability = async (doctorId, isAvailable) => {
   try {
-    const url = `${BASE_URL}/${doctorAvailableUrl}/${doctorId}/availability`
+    const url = `/${doctorAvailableUrl}/${doctorId}/availability`
     console.log('Updating availability:', doctorId, isAvailable)
 
-    const response = await axios.post(
+    const response = await http.post(
       url,
       { doctorAvailabilityStatus: isAvailable },
       { headers: { 'Content-Type': 'application/json' } },
@@ -31,7 +32,7 @@ export const updateDoctorAvailability = async (doctorId, isAvailable) => {
 export const handleDeleteToggle = async (doctorID) => {
   console.log(doctorID)
   try {
-    const response = await axios.delete(`${BASE_URL}/delete-doctor/${doctorID}`)
+    const response = await http.delete(`/delete-doctor/${doctorID}`)
     console.log('Doctor deleted successfully:', response.data)
     // Optional: return true or response if needed
     return response
@@ -46,7 +47,7 @@ export const handleDeleteToggle = async (doctorID) => {
 export const DoctorData = async () => {
   console.log('appointdata calling')
   try {
-    const response = await axios.get(`${BASE_URL}/${getAllDoctors}`)
+    const response = await http.get(`/${getAllDoctors}`)
     console.log(`appointdata calling ${response.data}`)
 
     console.log(response.data)
@@ -61,10 +62,11 @@ export const DoctorData = async () => {
     throw error
   }
 }
-export const getDoctorByClinicIdData = async (clinicId) => {
+// getDoctorsByHospitalIdAndBranchId
+export const getDoctorByClinicIdData = async (clinicId,branchId) => {
   console.log('appointdata calling')
   try {
-    const response = await axios.get(`${BASE_URL}/${getDoctorByClinicId}/${clinicId}`)
+    const response = await http.get(`/${getDoctorByClinicId}/${clinicId}/${branchId}`)
     console.log(`appointdata calling ${response.data}`)
 
     console.log(response.data)
@@ -79,11 +81,47 @@ export const getDoctorByClinicIdData = async (clinicId) => {
     throw error
   }
 }
+// export const getDoctorByClinicIdData = async (clinicId) => {
+//   console.log('appointdata calling')
+//   try {
+//     const response = await http.get(`/${getDoctorByClinicId}/${clinicId}`)
+//     console.log(`appointdata calling ${response.data}`)
+
+//     console.log(response.data)
+
+//     return response.data
+//   } catch (error) {
+//     console.error('Error fetching service data:', error.message)
+//     if (error.response) {
+//       console.error('Error Response Data:', error.response.data)
+//       console.error('Error Response Status:', error.response.status)
+//     }
+//     throw error
+//   }
+// }
 export const getDoctorDetailsById = async (doctorId) => {
   console.log('doctorData calling')
   try {
-    const response = await axios.get(`${BASE_URL}/${GetBy_DoctorId}/${doctorId}`)
+    const response = await http.get(`/${GetBy_DoctorId}/${doctorId}`)
     console.log(`doctorData calling ${response.data}`)
+
+    console.log(response.data)
+
+    return response.data
+  } catch (error) {
+    console.error('Error fetching service data:', error.message)
+    if (error.response) {
+      console.error('Error Response Data:', error.response.data)
+      console.error('Error Response Status:', error.response.status)
+    }
+    throw error
+  }
+}
+export const GetClinicBranches = async (clinicId) => {
+  console.log('appointdata calling')
+  try {
+    const response = await http.get(`/${GetBranches_ByClinicId}/${clinicId}`)
+    console.log(`appointdata calling ${response.data}`)
 
     console.log(response.data)
 

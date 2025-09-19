@@ -4,8 +4,6 @@ import com.AdminService.dto.StoreUpdatedQAInClinicsDTO;
 import com.AdminService.util.Response;
 
 public interface StoreUpdatedQAInClinicsService {
-	
-	public Response saveQaAndAnswers(String id);
 
 	Response updateQaAndAnswers(String storeUpdatedQAInClinicsDTO, StoreUpdatedQAInClinicsDTO dto);
 
@@ -14,5 +12,7 @@ public interface StoreUpdatedQAInClinicsService {
 	Response getAll();
 
 	Response deleteById(String id);
+
+	Response saveQaAndAnswers(StoreUpdatedQAInClinicsDTO StoreUpdatedQAInClinicsDTO);
 
 }

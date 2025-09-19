@@ -15,37 +15,36 @@ public class DoctorVitalsServiceImpl implements DoctorVitalsService {
     @Autowired
     private ClinicAdminServiceClient clinicAdminServiceClient;
 
+    /**
+     * Add Vitals for a booking
+     */
     @Override
-    public ResponseEntity<Response> addVitals(String patientId, VitalsDTO dto) {
-        return extractErrorResponse(clinicAdminServiceClient.addVitals(patientId, dto));
-    }
-
-    @Override
-    public ResponseEntity<Response> getVitals(String patientId) {
-        return extractErrorResponse(clinicAdminServiceClient.getVitals(patientId));
-    }
-
-    @Override
-    public ResponseEntity<Response> deleteVitals(String patientId) {
-        return extractErrorResponse(clinicAdminServiceClient.delVitals(patientId));
-    }
-
-    @Override
-    public ResponseEntity<Response> updateVitals(String patientId, VitalsDTO dto) {
-        return extractErrorResponse(clinicAdminServiceClient.updateVitals(patientId, dto));
+    public ResponseEntity<Response> addVitals(String bookingId, VitalsDTO dto) {
+        // Directly forward Clinic Admin response
+        return clinicAdminServiceClient.addVitals(bookingId, dto);
     }
 
     /**
-     * Only return the response if it's an error (non-2xx status).
-     * Otherwise return null or your own success response.
+     * Get Vitals by bookingId and patientId
      */
-    private ResponseEntity<Response> extractErrorResponse(ResponseEntity<Response> responseEntity) {
-        if (!responseEntity.getStatusCode().is2xxSuccessful()) {
-            // Return only the error body & status
-            return ResponseEntity
-                    .status(responseEntity.getStatusCode())
-                    .body(responseEntity.getBody());
-        }
-        return null; // no error
+    @Override
+    public ResponseEntity<Response> getVitals(String bookingId, String patientId) {
+        return clinicAdminServiceClient.getVitals(bookingId, patientId);
+    }
+
+    /**
+     * Delete Vitals by bookingId and patientId
+     */
+    @Override
+    public ResponseEntity<Response> deleteVitals(String bookingId, String patientId) {
+        return clinicAdminServiceClient.delVitals(bookingId, patientId);
+    }
+
+    /**
+     * Update Vitals by bookingId and patientId
+     */
+    @Override
+    public ResponseEntity<Response> updateVitals(String bookingId, String patientId, VitalsDTO dto) {
+        return clinicAdminServiceClient.updateVitals(bookingId, patientId, dto);
     }
 }

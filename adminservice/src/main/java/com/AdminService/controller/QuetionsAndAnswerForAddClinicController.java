@@ -10,6 +10,7 @@ import com.AdminService.util.Response;
 
 @RestController
 @RequestMapping("/admin")
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class QuetionsAndAnswerForAddClinicController {
 
     @Autowired
@@ -23,26 +24,18 @@ public class QuetionsAndAnswerForAddClinicController {
     }
 
     // -----------------------Get all questions----------------------------------------------
-    @GetMapping("/clinicQuetions/getAll")
+    @GetMapping("/clinicQuestions/getAll")
     public ResponseEntity<Response> getAllQuestions() {
-        Response res = quetionsAndAnswerForAddClinicService.getAllQuestions();
+        Response res = quetionsAndAnswerForAddClinicService.getQuetions();
         return ResponseEntity.status(res.getStatus()).body(res);
     }
 
-    // ---------------------------Get questions by Id---------------------------------------------
-    @GetMapping("/clinicQuetions/getById/{id}")
-    public ResponseEntity<Response> getQuestionsById(@PathVariable String id) {
-        Response res = quetionsAndAnswerForAddClinicService.getQuestionsById(id);
-        return ResponseEntity.status(res.getStatus()).body(res);
-    }
 
     //------------------------- Update questions by Id ----------------------------------------------
-    @PutMapping("/clinicQuetions/update/{id}")
-    public ResponseEntity<Response> updateQuestions(
-            @PathVariable String id,
-            @RequestBody QuetionsAndAnswerForAddClinicDTO clinicQA) {
+    @PutMapping("/clinicQuestions/update")
+    public ResponseEntity<Response> updateQuestions(@RequestBody QuetionsAndAnswerForAddClinicDTO clinicQA) {
 
-        Response res = quetionsAndAnswerForAddClinicService.updateQuestion(id, clinicQA);
+        Response res = quetionsAndAnswerForAddClinicService.updateQuetions(clinicQA);
         return ResponseEntity.status(res.getStatus()).body(res);
     }
 }

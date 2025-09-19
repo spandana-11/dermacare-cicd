@@ -133,8 +133,7 @@ const DoctorSummary = ({
     legend: { fontSize: 10, color: '#6b7280', marginTop: 6 },
   })
   const {
-    doctorId,
-    hospitalId,
+
     doctorDetails,
     setDoctorDetails,
     setClinicDetails,
@@ -315,6 +314,7 @@ const DoctorSummary = ({
       const payload = {
         bookingId: patientData.bookingId,
         // doctorName: doctorDetails.doctorName,
+         customerId: patientData?.customerId,
         clinicName: clinicDetails.name,
         clinicId: clinicDetails.hospitalId,
         patientId: patientData.patientId,
@@ -324,6 +324,7 @@ const DoctorSummary = ({
         treatments: formData?.treatments,
         followUp: formData.followUp,
         prescription: formData.prescription,
+        visitType: patientData?.visitType || "OFFLINE",
       }
       console.log(payload)
       const response = await createDoctorSaveDetails(payload)
@@ -348,6 +349,7 @@ const DoctorSummary = ({
     const payload = {
       bookingId: patientData.bookingId,
       doctorName: doctorDetails.doctorName,
+      customerId: patientData?.customerId,
       clinicName: clinicDetails.name,
       clinicId: clinicDetails.hospitalId,
       patientId: patientData.patientId,
@@ -357,6 +359,7 @@ const DoctorSummary = ({
       treatments: formData?.treatments,
       followUp: formData.followUp,
       prescription: formData.prescription,
+
     }
     console.log(payload)
     const response = await createDoctorSaveDetails(payload)
@@ -398,26 +401,104 @@ const DoctorSummary = ({
               </CCard>
             )}
 
-            {/* Tests */}
-            {tests.length > 0 && (
+
+
+            {/* Medication Table */}
+            {medicines.length > 0 && (
               <CCard className="shadow-sm mb-3">
                 <CCardHeader className="py-2">
-                  <strong>
-                    Tests Recommended <span className="text-body-secondary">(with reasons)</span>
-                  </strong>
+                  <strong style={{ color: COLORS.black }}>Medication Details</strong>
                 </CCardHeader>
                 <CCardBody>
-                  <ul className="mb-0">
-                    {tests.map((t, i) => (
-                      <li key={`${t || 'test'}-${i}`}>
-                        <span className="fw-semibold">{t || '—'}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <CTable striped hover responsive className="align-middle">
+                    <CTableHead>
+                      <CTableRow className="bg-primary text-white">
+                        <CTableHeaderCell>S.No</CTableHeaderCell>
+                        <CTableHeaderCell>Medicine Type</CTableHeaderCell>
+                        <CTableHeaderCell>Medicine</CTableHeaderCell>
+                        <CTableHeaderCell>Dosage</CTableHeaderCell>
+                        <CTableHeaderCell>Duration</CTableHeaderCell>
+                        <CTableHeaderCell>Frequency</CTableHeaderCell>
+                        <CTableHeaderCell>Instructions</CTableHeaderCell>
+                        <CTableHeaderCell>Notes</CTableHeaderCell>
+                        <CTableHeaderCell>Timings</CTableHeaderCell>
+                      </CTableRow>
+                    </CTableHead>
+
+                    <CTableBody>
+                      {medicines.map((med, index) => {
+                        const durationValue = parseInt(med.duration, 10);
+                        const durationUnit =
+                          med.durationUnit && med.durationUnit !== "NA"
+                            ? med.durationUnit.trim()
+                            : "";
+
+                        const displayDuration =
+                          durationValue > 0 && durationUnit
+                            ? `${durationValue} ${durationUnit}${durationValue > 1 ? "s" : ""}`
+                            : durationValue > 0
+                              ? `${durationValue}`
+                              : "NA";
+
+
+                        const displayFrequency =
+                          med.remindWhen && med.remindWhen !== "NA"
+                            ? med.remindWhen === "Other" && med.others
+                              ? `Other (${med.others})`
+                              : med.remindWhen
+                            : med.others || "NA";
+
+                        const displayTimes =
+                          Array.isArray(med.times) && med.times.filter(Boolean).length > 0
+                            ? med.times.filter(Boolean).join(", ")
+                            : "NA";
+
+                        return (
+                          <CTableRow key={index}>
+                            <CTableDataCell>{index + 1}</CTableDataCell>
+                            <CTableDataCell>{med.medicineType || "NA"}</CTableDataCell>
+                            <CTableDataCell>{med.name || "NA"}</CTableDataCell>
+                            <CTableDataCell>{med.dose || "NA"}</CTableDataCell>
+                            <CTableDataCell>{displayDuration}</CTableDataCell>
+                            <CTableDataCell>{displayFrequency}</CTableDataCell>
+                            <CTableDataCell>{med.food || "NA"}</CTableDataCell>
+                            <CTableDataCell>{med.note || "NA"}</CTableDataCell>
+                            <CTableDataCell>{displayTimes}</CTableDataCell>
+                          </CTableRow>
+                        );
+                      })}
+                    </CTableBody>
+                  </CTable>
+                </CCardBody>
+              </CCard>
+            )}
+
+            {/* Tests */}
+            {(tests.length > 0 || testsReason) && (
+              <CCard className="shadow-sm mb-3">
+                <CCardHeader className="py-2">
+                  <strong style={{ color: COLORS.black }}>Tests</strong>
+                </CCardHeader>
+                <CCardBody>
+                  {tests.length > 0 ? (
+                    <ul className="mb-2">
+                      {tests.map((t, i) => (
+                        <li key={`test-${i}`}>
+                          <span className="fw-semibold">Recommended Test (Optional): </span>
+                          <span>{typeof t === 'string' ? t : t?.name || '—'}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mb-2">
+                      <span className="fw-semibold">Recommended Test (Optional):</span> NA
+                    </p>
+                  )}
+
                   {testsReason && (
-                    <div className="mt-2 mb-2">
-                      <strong>Reasons</strong>
-                      <p>{testsReason}</p>
+                    <div className="mt-2">
+                      <div className="text-muted fw-semibold">Reason:{testsReason}</div>
+
                     </div>
                   )}
                 </CCardBody>
@@ -428,20 +509,24 @@ const DoctorSummary = ({
             {treatments.length > 0 && (
               <CCard className="shadow-sm mb-3">
                 <CCardHeader className="py-2">
-                  <strong>Treatments</strong>
+                  <strong style={{ color: COLORS.black }}>Treatments</strong>
                 </CCardHeader>
                 <CCardBody>
                   <ul className="mb-2">
                     {treatments.map((t, i) => (
-                      <li key={`treat-${i}`}>{typeof t === 'string' ? t : t?.name || '—'}</li>
+                      <li key={`treat-${i}`}>
+                        <strong>Selected Treatments: </strong>
+                        {typeof t === "string" ? t : t?.name || "—"}
+                      </li>
                     ))}
                   </ul>
-                  {treatmentReason && (
+
+                  {treatmentReason ? (
                     <div className="mt-2">
                       <div className="text-muted">Reason</div>
                       <div>{treatmentReason}</div>
                     </div>
-                  )}
+                  ) : null}
                 </CCardBody>
               </CCard>
             )}
@@ -450,115 +535,80 @@ const DoctorSummary = ({
             {treatmentSchedules && Object.keys(treatmentSchedules).length > 0 && (
               <CCard className="shadow-sm mb-3">
                 <CCardHeader className="py-2">
-                  <strong>Treatment Schedule</strong>
+                  <strong style={{ color: COLORS.black }}>Treatment Schedule</strong>
                 </CCardHeader>
                 <CCardBody>
                   {Object.entries(treatmentSchedules).map(([name, meta]) => (
-                    <div key={name} className="mb-3">
+                    <CCard key={name} className="mb-3 p-2">
                       <div style={{ fontWeight: 'bold' }}>
                         {name} — {freqLabel(meta?.frequency)} ({meta?.sittings ?? 0} sittings from{' '}
                         {meta?.startDate ?? '—'})
                       </div>
+
                       <div className="mt-2 table-responsive">
                         <table className="table table-sm mb-0">
                           <thead className="table-light">
                             <tr>
-                              <th style={{ width: '8%' }}>#</th>
-                              <th style={{ width: '46%' }}>Date</th>
-                              <th style={{ width: '46%' }}>Sitting</th>
+                              <th style={{ width: "8%", textAlign: "center" }}>S.No</th>
+                              <th style={{ width: "46%", textAlign: "center" }}>Date</th>
+                              <th style={{ width: "46%", textAlign: "center" }}>Sitting</th>
                             </tr>
+
                           </thead>
                           <tbody>
                             {(meta?.dates || []).map((d, i) => (
-                              <tr key={`${name}-row-${i}`}>
+                              <tr key={`${name}-row-${i}`} className="text-center">
                                 <td>{i + 1}</td>
                                 <td>{d?.date ?? '—'}</td>
                                 <td>{d?.sitting ?? '—'}</td>
                               </tr>
                             ))}
                           </tbody>
+
                         </table>
                       </div>
-                      {meta?.reason && <div className="mt-2">Reason: {meta.reason}</div>}
-                    </div>
+
+                      {meta?.reason ? <div className="mt-2">Reason: {meta.reason}</div> : null}
+                    </CCard>
                   ))}
                 </CCardBody>
               </CCard>
             )}
 
-            {/* Prescription Table */}
-            {medicines.length > 0 && (
-              <CCard className="shadow-sm mb-3">
-                <CCardHeader className="py-2">
-                  <strong>Prescription Details</strong>
-                </CCardHeader>
-                <CCardBody>
-                  <CTable striped hover responsive className="align-middle">
-                    <CTableHead>
-                      <CTableRow className="bg-primary text-white">
-                        <CTableHeaderCell>S.No</CTableHeaderCell>
-                        <CTableHeaderCell>Medicine</CTableHeaderCell>
-                        <CTableHeaderCell>Dose</CTableHeaderCell>
-                        <CTableHeaderCell>Remind When</CTableHeaderCell>
-                        <CTableHeaderCell>Note</CTableHeaderCell>
-                        <CTableHeaderCell>Duration</CTableHeaderCell>
-                        <CTableHeaderCell>Time</CTableHeaderCell>
-                      </CTableRow>
-                    </CTableHead>
-                    <CTableBody>
-                      {medicines.map((item, idx) => {
-                        const timings = toInitials(item?.times, ', ')
-                        return (
-                          <CTableRow key={item.id ?? idx}>
-                            <CTableDataCell>{idx + 1}</CTableDataCell>
-                            <CTableDataCell>{item.name || '—'}</CTableDataCell>
-                            <CTableDataCell>{item.dose || '—'}</CTableDataCell>
-                            <CTableDataCell>{item.remindWhen || '—'}</CTableDataCell>
-                            <CTableDataCell>
-                              <div className="text-truncate" style={{ maxWidth: 220 }}>
-                                {item.note || '—'}
-                              </div>
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              {item.duration ? `${item.duration} Days` : '—'}
-                            </CTableDataCell>
-                            <CTableDataCell>{timings || '—'}</CTableDataCell>
-                          </CTableRow>
-                        )
-                      })}
-                    </CTableBody>
-                  </CTable>
-                </CCardBody>
-              </CCard>
-            )}
+
 
             {/* Follow-up Plan */}
             {followUp.durationValue !== 'NA' && (
               <CCard className="shadow-sm mb-4">
                 <CCardHeader className="py-2">
-                  <strong>Follow-up Plan</strong>
+                  <strong style={{ color: COLORS.black }}>Follow-up Plan</strong>
                 </CCardHeader>
                 <CCardBody>
                   <CCol xs={12} md={6}>
                     <div>
                       <span className="fw-semibold">Next Follow Up :</span>{' '}
-                      {followUp.durationValue !== 0 ? (
+                      {followUp.durationValue && followUp.durationValue !== 0 ? (
                         <>
                           After{' '}
                           <span>
-                            {followUp.durationValue} {followUp.durationUnit}
+                            {followUp.durationValue} {followUp.durationUnit || 'NA'}
                           </span>
+                          {followUp.date && followUp.date !== '—' && (
+                            <> ({followUp.date})</>
+                          )}
                         </>
                       ) : (
-                        '—'
+                        'NA'
                       )}
-                      {followUp.date !== '—' ? <> ({followUp.date})</> : null}
                     </div>
                   </CCol>
+
                   <CCol xs={12}>
                     <div>
                       <span className="fw-semibold">Follow Up Note:</span>{' '}
-                      <span style={{ whiteSpace: 'pre-wrap' }}>{followUp.note}</span>
+                      <span style={{ whiteSpace: 'pre-wrap' }}>
+                        {followUp.note && followUp.note.trim() !== '' ? followUp.note : 'NA'}
+                      </span>
                     </div>
                   </CCol>
                 </CCardBody>
@@ -579,7 +629,7 @@ const DoctorSummary = ({
 
       <div
         className="position-fixed bottom-0 end-0"
-        
+
         style={{
           backgroundColor: '#F3f3f7',
           padding: 12,
@@ -588,8 +638,8 @@ const DoctorSummary = ({
           alignItems: 'center',
         }}
       >
-        <Button customColor={COLORS.bgcolor} 
-            color={COLORS.black} onClick={handleClick}>
+        <Button customColor={COLORS.bgcolor}
+          color={COLORS.black} onClick={handleClick}>
           {!updateTemplate ? 'Update' : 'Save Prescription Template'}
         </Button>
       </div>

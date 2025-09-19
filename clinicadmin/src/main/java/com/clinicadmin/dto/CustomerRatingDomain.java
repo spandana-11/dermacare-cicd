@@ -10,9 +10,10 @@ import lombok.NoArgsConstructor;
 public class CustomerRatingDomain {
 	    
 	private double doctorRating;
-    private double hospitalRating;
+    private double branchRating;
     private String feedback;
     private String hospitalId;
+    private String branchId;
     private String doctorId; 
     private String customerMobileNumber;
     private String patientId;

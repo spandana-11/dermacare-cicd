@@ -31,7 +31,7 @@ import Button from './CustomButton/CustomButton'
 import TooltipButton from './CustomButton/TooltipButton'
 import { getClinicDetails, getTodayAppointments } from '../Auth/Auth'
 import { useDoctorContext } from '../Context/DoctorContext'
-import { capitalizeWords } from '../utils/CaptalZeWord'
+import { capitalizeFirst, capitalizeWords } from '../utils/CaptalZeWord'
 import './AppHeader.css'
 const AppHeader = () => {
   const { patientData, setTodayAppointments, todayAppointments } = useDoctorContext()
@@ -113,52 +113,53 @@ const AppHeader = () => {
           <CIcon icon={cilMenu} size="lg" style={{ color: COLORS.black }} />
         </CHeaderToggler>
         {/* Search */}
-      <div className="position-relative flex-grow-1 mx-3 search-wrap" style={{ maxWidth: "500px" }}>
-  <div className="position-relative">
-    <CFormInput
-      type="text"
-      placeholder="🔍 Search patient by name..."
-      value={searchTerm}
-      onChange={handleSearch}
-      className="custom-search"
-    />
+        <div className="position-relative flex-grow-1 mx-3 search-wrap" style={{ maxWidth: "500px" }}>
+          <div className="position-relative">
+            <CFormInput
+              type="text"
+              placeholder="🔍 Search patient by name..."
+              value={searchTerm}
+              onChange={handleSearch}
+              className="placeholder-[#7e3a93] placeholder:font-bold"
+            />
 
-    {searchTerm && (
-      <button
-        type="button"
-        onClick={() => {
-          setSearchTerm('')
-          setSearchResults([])
-        }}
-        style={{
-          position: 'absolute',
-          right: 10,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: '1.2rem',
-          color: COLORS.black,
-        }}
-      >
-        ×
-      </button>
-    )}
-  </div>
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm('')
+                  setSearchResults([])
+                }}
+                style={{
+                  position: 'absolute',
+                  right: 10,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '1.2rem',
+                  color: COLORS.black,
+                }}
+              >
+                ×
+              </button>
+            )}
+          </div>
 
-  {searchTerm && searchResults.length > 0 && (
-    <div
-      className="position-absolute w-100 mt-1 bg-white shadow rounded p-2 search-dropdown"
-      style={{ maxHeight: 300, overflowY: 'auto' }}
-    >
-      {searchResults.map((patient, idx) => (
+        {searchTerm && (
+  <div
+    className="position-absolute w-100 mt-1 bg-white shadow rounded p-2 search-dropdown"
+    style={{ maxHeight: 300, overflowY: 'auto' }}
+  >
+    {searchResults.length > 0 ? (
+      searchResults.map((patient, idx) => (
         <div
           key={idx}
           className="d-flex justify-content-between align-items-center border-bottom py-2 px-2"
         >
           <div>
-            <strong>{patient.name}</strong>
+            <strong>{capitalizeFirst(patient.name)}</strong>
             <div style={{ fontSize: '0.85rem', color: '#666' }}>{patient.mobileNumber}</div>
           </div>
 
@@ -170,24 +171,26 @@ const AppHeader = () => {
             }}
           />
         </div>
-      ))}
-    </div>
-  )}
-</div>
+      ))
+    ) : (
+      <div className="text-center py-2 text-muted">No data found</div>
+    )}
+  </div>
+)}
 
-
-        {/* <div className="d-flex flex-column text-end me-3 text-center px-2">
-          <small style={{ fontWeight: 600, color: COLORS.gray }}>
-            {date} ({day}), {time}
-          </small>
-        </div> */}
-
+        </div>
         <CHeaderNav className="ms-auto">
           <CNavItem>
-            <CNavLink href="#">
+            <CNavLink
+              onClick={(e) => {
+                e.preventDefault();
+              }}
+              style={{ cursor: 'pointer' }}
+            >
               <CIcon icon={cilBell} size="lg" style={{ color: COLORS.black }} />
             </CNavLink>
           </CNavItem>
+
         </CHeaderNav>
 
         {/* Theme switch + profile */}
@@ -227,7 +230,7 @@ const AppHeader = () => {
           {selectedPatient && (
             <div>
               <p>
-                <strong>Name:</strong> {selectedPatient.name}
+                <strong>Name:</strong>{capitalizeFirst(selectedPatient.name)} 
               </p>
               <p>
                 <strong>Mobile:</strong> {selectedPatient.mobileNumber}

@@ -12,11 +12,15 @@ import {
   CRow,
   CCol,
   CSpinner,
+  CButton,
 } from '@coreui/react'
 import { useParams } from 'react-router-dom'
 import { getCustomerByMobile } from './CustomerAPI'
+import { useNavigate } from 'react-router-dom'
 
 const CustomerViewDetails = () => {
+  const navigate = useNavigate()
+
   const { mobileNumber } = useParams()
   const [activeTab, setActiveTab] = useState(0)
   const [customerData, setCustomerData] = useState(null)
@@ -86,7 +90,14 @@ const CustomerViewDetails = () => {
   return (
     <CCard>
       <CCardHeader>
-        <h5>Customer Details: {customerData.fullName}</h5>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+            <CButton color="secondary" onClick={() => navigate(-1)}>
+    Back
+  </CButton>
+<h5>Customer Details: {customerData.fullName}</h5>
+
+</div>
+        
       </CCardHeader>
       <CCardBody>
         <CTabs activeTab={activeTab} onActiveTabChange={setActiveTab}>

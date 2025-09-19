@@ -8,22 +8,21 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.clinicadmin.dto.RatingsDTO;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.sevice.impl.RatingCalculationService;
 
 @RestController
 @RequestMapping("/clinic-admin")
-//Origin(origins = { "http://localhost:3000", "http://localhost:3001" })
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001" })
 public class RatingsController {
 
 	@Autowired
 	private RatingCalculationService ratingCalculationService;
 
-	@GetMapping("/averageRatings/{hospitalId}/{doctorId}")
-	public ResponseEntity<Response> getAverageRatings(@PathVariable String hospitalId, @PathVariable String doctorId) {
+	@GetMapping("/averageRatings/{branchId}/{doctorId}")
+	public ResponseEntity<Response> getAverageRatings(@PathVariable String branchId, @PathVariable String doctorId) {
 
-		Response response = ratingCalculationService.calculateAverageRating(hospitalId, doctorId);
+		Response response = ratingCalculationService.calculateAverageRating(branchId, doctorId);
 		if (response != null) {
 			return ResponseEntity.status(response.getStatus()).body(response);
 		}

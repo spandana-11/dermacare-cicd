@@ -1,10 +1,11 @@
 // reportsAPI.js
 import axios from 'axios'
 import { BASE_URL, AllReports, SavingReports, Get_ReportsByBookingId } from '../../baseUrl'
+import { http } from '../../Utils/Interceptors'
 
 export const ReportsData = async () => {
   try {
-    const response = await axios.get(`${BASE_URL}/${AllReports}`)
+    const response = await http.get(`/${AllReports}`)
     const reports = response.data.data
     console.log(reports)
     return reports
@@ -15,7 +16,7 @@ export const ReportsData = async () => {
 }
 export const Get_ReportsByBookingIdData = async (bookingId) => {
   try {
-    const response = await axios.get(`${BASE_URL}/${Get_ReportsByBookingId}/${bookingId}`)
+    const response = await http.get(`/${Get_ReportsByBookingId}/${bookingId}`)
     console.log(response)
     return response.data.data
   } catch (error) {
@@ -28,7 +29,7 @@ export const SaveReportsData = async (reportData) => {
   try {
     console.log('Sending data to API to add appointment...', reportData)
 
-    const response = await axios.post(`${BASE_URL}/${SavingReports}`, reportData, {
+    const response = await http.post(`/${SavingReports}`, reportData, {
       headers: {
         'Content-Type': 'application/json',
       },

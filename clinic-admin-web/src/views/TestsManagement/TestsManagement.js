@@ -12,33 +12,57 @@ import {
   CModalHeader,
   CModalTitle,
   CRow,
-  CHeader,
+  CTable,
+  CTableHead,
+  CTableHeaderCell,
+  CTableBody,
+  CTableRow,
+  CTableDataCell,
+  CSpinner,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilSearch } from '@coreui/icons'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import DataTable from 'react-data-table-component'
-import { deleteTestData, postTestData, TestData, TestDataById, updateTestData } from './TestsManagementAPI'
+import {
+  deleteTestData,
+  postTestData,
+  TestData,
+  TestDataById,
+  updateTestData,
+} from './TestsManagementAPI'
+import { Edit2, Eye, Trash2 } from 'lucide-react'
+import ConfirmationModal from '../../components/ConfirmationModal'
+import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
+import capitalizeWords from '../../Utils/capitalizeWords'
+import LoadingIndicator from '../../Utils/loader'
 
 const TestsManagement = () => {
-  const [searchQuery, setSearchQuery] = useState('')
+  // const [searchQuery, setSearchQuery] = useState('')
   const [test, setTest] = useState([])
-
-  const [filteredData, setFilteredData] = useState([])
+  // const [filteredData, setFilteredData] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [modalVisible, setModalVisible] = useState(false)
   const [viewTest, setViewTest] = useState(null)
   const [editTestMode, setEditTestMode] = useState(false)
   const [testToEdit, setTestToEdit] = useState(null)
- const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState({})
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [testIdToDelete, setTestIdToDelete] = useState(null)
-  const [newTest, setNewTest] = useState({ testName: '', hospitalId: '' })
-const [hospitalIdToDelete, setHospitalIdToDelete] = useState(null)
- const hospitalId = localStorage.getItem('HospitalId')
-     
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const { searchQuery, setSearchQuery } = useGlobalSearch()
+  const [newTest, setNewTest] = useState({
+    testName: '',
+    hospitalId: '',
+    description: '',
+    purpose: '',
+  })
+  const [hospitalIdToDelete, setHospitalIdToDelete] = useState(null)
+  const hospitalId = localStorage.getItem('HospitalId')
+
   const normalizeTests = (data) =>
     data.map((item) => ({
       ...item,
@@ -60,7 +84,9 @@ const [hospitalIdToDelete, setHospitalIdToDelete] = useState(null)
     setLoading(true)
     try {
       const response = await TestDataById(hospitalId)
-      setTest(normalizeTests(response.data))
+      setTest(normalizeTests(response.data).reverse())
+
+      // setTest(normalizeTests(response.data))
     } catch (error) {
       setError('Failed to fetch test data.')
     } finally {
@@ -68,48 +94,55 @@ const [hospitalIdToDelete, setHospitalIdToDelete] = useState(null)
     }
   }
 
-const handleConfirmDelete = async () => {
-  try {
-    await deleteTestData(testIdToDelete, hospitalIdToDelete)
-    toast.success('Test deleted successfully!', { position: 'top-right' })
-    // fetchData()
-    fetchDataById(hospitalId)
-  } catch (error) {
-    toast.error('Failed to delete test.')
-    console.error('Delete error:', error)
+  const handleConfirmDelete = async () => {
+    try {
+      await deleteTestData(testIdToDelete, hospitalIdToDelete)
+      toast.success('Test deleted successfully!', { position: 'top-right' })
+      // fetchData()
+      fetchDataById(hospitalId)
+    } catch (error) {
+      toast.error('Failed to delete test.')
+      console.error('Delete error:', error)
+    }
+    setIsModalVisible(false)
   }
-  setIsModalVisible(false)
-}
 
   const handleCancelDelete = () => {
-  setTestIdToDelete(null)
-  setHospitalIdToDelete(null)
-  setIsModalVisible(false)
-}
-
+    setTestIdToDelete(null)
+    setHospitalIdToDelete(null)
+    setIsModalVisible(false)
+  }
 
   useEffect(() => {
     // fetchData()
     fetchDataById(hospitalId)
   }, [hospitalId])
 
-  useEffect(() => {
-    const trimmedQuery = searchQuery.toLowerCase().trim()
-    if (!trimmedQuery) {
-      setFilteredData([])
-      return
-    }
-    const filtered = test.filter((t) => t.testName?.toLowerCase().includes(trimmedQuery))
-    setFilteredData(filtered)
+  // useEffect(() => {
+  //   const trimmedQuery = searchQuery.toLowerCase().trim()
+  //   if (!trimmedQuery) {
+  //     setFilteredData([])
+  //     return
+  //   }
+  //   const filtered = test.filter((t) => t.testName?.toLowerCase().includes(trimmedQuery))
+  //   setFilteredData(filtered)
+  // }, [searchQuery, test])
+
+  const filteredData = React.useMemo(() => {
+    const q = searchQuery.toLowerCase().trim()
+    if (!q) return test
+    return test.filter((item) =>
+      Object.values(item).some((val) => String(val).toLowerCase().includes(q)),
+    )
   }, [searchQuery, test])
 
- const validateForm = () => {
-  const newErrors = {}
-  if (!newTest.testName.trim()) newErrors.testName = 'Test name is required.'
-  if (!newTest.hospitalId.trim()) newErrors.hospitalId = 'Hospital ID is required.'
-  setErrors(newErrors)
-  return Object.keys(newErrors).length === 0
-}
+  const validateForm = () => {
+    const newErrors = {}
+    if (!newTest.testName.trim()) newErrors.testName = 'Test name is required.'
+    if (!newTest.hospitalId.trim()) newErrors.hospitalId = 'Hospital ID is required.'
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleEditClick = (test) => {
     setSelectedTest({
@@ -120,40 +153,49 @@ const handleConfirmDelete = async () => {
   }
   const isValidObjectId = (id) => /^[a-f\d]{24}$/i.test(id)
 
- const handleAddTest = async () => {
-  if (!newTest.testName.trim()) {
-    setErrors({ testName: 'Test name is required.' })
-    return
-  }
-
-  try {
-    const payload = {
-      testName: newTest.testName,
-      hospitalId: hospitalId, 
+  const nameRegex = /^[A-Za-z\s.]+$/
+  const handleAddTest = async () => {
+    if (!newTest.testName.trim()) {
+      setErrors({ testName: 'Test name is required.' })
+      return
+    }
+    if (!nameRegex.test(newTest.testName.trim())) {
+      setErrors({ testName: 'Only alphabets, spaces, and "." are allowed.' })
+      return
     }
 
-    await postTestData(payload)
-    toast.success('Test added successfully!')
-    // fetchData()
-    fetchDataById(hospitalId)
-    setModalVisible(false)
-    setNewTest({ testName: '' })
-  } catch (error) {
-    const errorMessage =
-      error.response?.data?.message ||
-      error.response?.statusText ||
-      'An unexpected error occurred.'
-    const statusCode = error.response?.status
-    if (statusCode === 409 || errorMessage.toLowerCase().includes('duplicate')) {
-      toast.error(`Error: Duplicate test name - ${newTest.testName} already exists!`, {
+    const duplicate = test.some(
+      (t) => t.testName.trim().toLowerCase() === newTest.testName.trim().toLowerCase(),
+    )
+    if (duplicate) {
+      toast.error(`Duplicate test name,Add another test - ${newTest.testName} already exists!`, {
         position: 'top-right',
       })
-    } else {
+      setModalVisible(false)
+      return
+    }
+
+    try {
+      const payload = {
+        testName: newTest.testName,
+        hospitalId: hospitalId,
+        description: newTest.description,
+        purpose: newTest.purpose,
+      }
+
+      await postTestData(payload)
+      toast.success('Test added successfully!')
+      fetchDataById(hospitalId)
+      setModalVisible(false)
+      setNewTest({ testName: '', description: '', purpose: '' })
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.statusText ||
+        'An unexpected error occurred.'
       toast.error(`Error adding test: ${errorMessage}`, { position: 'top-right' })
     }
   }
-}
-
 
   const handleTestEdit = (test) => {
     setTestToEdit(test) // test should have `id` and `hospitalId`
@@ -161,9 +203,31 @@ const handleConfirmDelete = async () => {
   }
 
   const handleUpdateTest = async () => {
-    const { id: testId, hospitalId } = testToEdit
+    if (!testToEdit?.testName?.trim()) {
+      setErrors({ testName: 'Test name is required.' })
+      // toast.error('Test name cannot be empty!', { position: 'top-right' })
+      return
+    }
+    if (!nameRegex.test(testToEdit.testName.trim())) {
+      setErrors({ testName: 'Only alphabets, spaces, and "." are allowed.' })
+      return
+    }
+
+    // ✅ Duplicate check before update
+    const duplicate = test.some(
+      (t) =>
+        t.testName.trim().toLowerCase() === testToEdit.testName.trim().toLowerCase() &&
+        t.id !== testToEdit.id,
+    )
+    if (duplicate) {
+      toast.error(`Duplicate test name - ${testToEdit.testName} already exists!`, {
+        position: 'top-right',
+      })
+      return
+    }
 
     try {
+      const { id: testId, hospitalId } = testToEdit
       await updateTestData(testToEdit, testId, hospitalId)
       toast.success('Test updated successfully!')
       setEditTestMode(false)
@@ -175,67 +239,41 @@ const handleConfirmDelete = async () => {
     }
   }
 
- const handleTestDelete = (test) => {
-  setTestIdToDelete(test.testId || test.id || test._id) // depending on your API structure
-  setHospitalIdToDelete(test.hospitalId)
-  setIsModalVisible(true)
-}
-
-
-  const columns = [
-    {
-      name: 'S.No',
-      selector: (row, index) => index + 1,
-      width: '10%',
-    },
-    {
-      name: 'Test Name',
-      selector: (row) => row.testName,
-      sortable: true,
-      width: '45%',
-    },
-    {
-      name: 'Actions',
-      cell: (row) => (
-        <div style={{ display: 'flex', justifyContent: 'space-between', width: '250px' }}>
-          <div onClick={() => setViewTest(row)} style={{ color: 'green', cursor: 'pointer' }}>
-            View
-          </div>
-          <div onClick={() => handleTestEdit(row)} style={{ color: 'blue', cursor: 'pointer' }}>
-            Edit
-          </div>
-          <div onClick={() => handleTestDelete(row)} style={{ color: 'red', cursor: 'pointer' }}>
-            Delete
-          </div>
-        </div>
-      ),
-    },
-  ]
-
-  const ConfirmationModal = ({ isVisible, message, onConfirm, onCancel }) => {
-    return (
-      <CModal visible={isVisible} onClose={onCancel} backdrop="static">
-        <CModalHeader>
-          <CModalTitle>Confirmation</CModalTitle>
-        </CModalHeader>
-        <CModalBody>{message}</CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" onClick={onCancel}>
-            Cancel
-          </CButton>
-          <CButton color="danger" onClick={onConfirm}>
-            Confirm
-          </CButton>
-        </CModalFooter>
-      </CModal>
-    )
+  const handleTestDelete = (test) => {
+    setTestIdToDelete(test.testId || test.id || test._id) // depending on your API structure
+    setHospitalIdToDelete(test.hospitalId)
+    setIsModalVisible(true)
   }
+
+  // const ConfirmationModal = ({ isVisible, message, onConfirm, onCancel }) => {
+  //   return (
+  //     <CModal visible={isVisible} onClose={onCancel} backdrop="static">
+  //       <CModalHeader>
+  //         <CModalTitle>Confirmation</CModalTitle>
+  //       </CModalHeader>
+  //       <CModalBody>{message}</CModalBody>
+  //       <CModalFooter>
+  //         <CButton color="secondary" onClick={onCancel}>
+  //           Cancel
+  //         </CButton>
+  //         <CButton color="danger" onClick={onConfirm}>
+  //           Confirm
+  //         </CButton>
+  //       </CModalFooter>
+  //     </CModal>
+  //   )
+  // }
+  const displayData = filteredData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+
+  // const displayData = filteredData.length
+  //   ? filteredData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+  //   : test.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
 
   return (
     <div>
       <ToastContainer />
       <CForm className="d-flex justify-content-between mb-3">
-        <CInputGroup className="mb-3" style={{ width: '300px', marginLeft: '40px' }}>
+        {/* <CInputGroup className="mb-3" style={{ width: '300px', marginLeft: '40px' }}>
           <CFormInput
             type="text"
             placeholder="Search by Test Name"
@@ -245,22 +283,38 @@ const handleConfirmDelete = async () => {
           <CInputGroupText>
             <CIcon icon={cilSearch} />
           </CInputGroupText>
-        </CInputGroup>
-        <CButton
-          color="primary"
+        </CInputGroup> */}
+
+        <div
+          className=" w-100"
+          style={{ display: 'flex', justifyContent: 'end', alignContent: 'end', alignItems: 'end' }}
+        >
+          <CButton
+            style={{
+              color: 'var(--color-black)',
+              backgroundColor: 'var(--color-bgcolor)',
+            }}
+            onClick={() => setModalVisible(true)}
+          >
+            Add Test
+          </CButton>
+        </div>
+        {/* <CButton
+          color="info"
+          className="text-white"
           style={{ marginRight: '100px' }}
           onClick={() => setModalVisible(true)}
         >
           Add Test
-        </CButton>
+        </CButton> */}
       </CForm>
 
       {viewTest && (
-        <CModal visible={!!viewTest} onClose={() => setViewTest(null)}backdrop="static">
+        <CModal visible={!!viewTest} onClose={() => setViewTest(null)} backdrop="static">
           <CModalHeader>
             <CModalTitle>Test Details</CModalTitle>
           </CModalHeader>
-          <CModalBody>
+          <CModalBody style={{ color: 'var(--color-black)' }}>
             <CRow className="mb-3">
               <CCol sm={4}>
                 <strong>Test Name:</strong>
@@ -269,9 +323,15 @@ const handleConfirmDelete = async () => {
             </CRow>
             <CRow className="mb-3">
               <CCol sm={4}>
-                <strong>Hospital ID:</strong>
+                <strong>Description:</strong>
               </CCol>
-              <CCol sm={8}>{viewTest.hospitalId}</CCol>
+              <CCol sm={8}>{viewTest.description}</CCol>
+            </CRow>
+            <CRow className="mb-3">
+              <CCol sm={4}>
+                <strong>Purpose:</strong>
+              </CCol>
+              <CCol sm={8}>{viewTest.purpose || 'NA'}</CCol>
             </CRow>
           </CModalBody>
         </CModal>
@@ -282,16 +342,15 @@ const handleConfirmDelete = async () => {
           <CModalTitle>Add New Test</CModalTitle>
         </CModalHeader>
         <CModalBody>
-       <CForm>
-  <h6>
-    Test Name <span style={{ color: 'red' }}>*</span>
-  </h6>
-  <CFormInput
-    type="text"
-    name="testName"
-    value={newTest.testName}
-  
-     onChange={(e) => {
+          <CForm>
+            <h6>
+              Test Name <span style={{ color: 'red' }}>*</span>
+            </h6>
+            <CFormInput
+              type="text"
+              name="testName"
+              value={newTest.testName}
+              onChange={(e) => {
                 const value = e.target.value
                 setNewTest({ ...newTest, testName: value })
 
@@ -308,42 +367,52 @@ const handleConfirmDelete = async () => {
                 {errors.testName}
               </div>
             )}
-
-  {/* <h6 className="mt-3">
-    Hospital ID <span style={{ color: 'red' }}>*</span>
-  </h6>
-  <CFormInput
-    type="text"
-    name="hospitalId"
-    value={newTest.hospitalId}
-  //   onChange={(e) => setNewTest({ ...newTest, hospitalId: e.target.value })}
-  // />
-  onChange={(e) => {
+            <h6>Description</h6>
+            <CFormInput
+              type="text"
+              name="description"
+              value={newTest.description}
+              onChange={(e) => {
                 const value = e.target.value
-                setNewTest({ ...newTest, hospitalId: value })
+                setNewTest({ ...newTest, description: value })
 
                 // Clear error for this field as the user types
-                if (errors.hospitalId) {
-                  setErrors((prev) => ({ ...prev, hospitalId: '' }))
+                if (errors.description) {
+                  setErrors((prev) => ({ ...prev, description: '' }))
                 }
               }}
-              placeholder="Enter Hospital Id"
-              className={errors.hospitalId ? 'is-invalid' : ''}
+              placeholder="Enter description"
+              className={errors.description ? 'is-invalid' : ''}
             />
-            {errors.hospitalId && (
-              <div className="invalid-feedback" style={{ color: 'red' }}>
-                {errors.hospitalId}
-              </div>
-            )} */}
-</CForm>
+            <h6>Purpose</h6>
+            <CFormInput
+              type="text"
+              name="purpose"
+              value={newTest.purpose}
+              onChange={(e) => {
+                const value = e.target.value
+                setNewTest({ ...newTest, purpose: value })
 
+                // Clear error for this field as the user types
+                if (errors.purpose) {
+                  setErrors((prev) => ({ ...prev, purpose: '' }))
+                }
+              }}
+              placeholder="Enter purpose"
+              className={errors.purpose ? 'is-invalid' : ''}
+            />
+          </CForm>
         </CModalBody>
         <CModalFooter>
-          <CButton color="primary" onClick={handleAddTest}>
-            Add
-          </CButton>
           <CButton color="secondary" onClick={() => setModalVisible(false)}>
             Cancel
+          </CButton>
+          <CButton
+            style={{ backgroundColor: 'var(--color-black)' }}
+            className="text-white"
+            onClick={handleAddTest}
+          >
+            Add
           </CButton>
         </CModalFooter>
       </CModal>
@@ -354,43 +423,195 @@ const handleConfirmDelete = async () => {
         </CModalHeader>
         <CModalBody>
           <CForm>
-            <h6>Test Name</h6>
+            <h6>
+              Test Name<span style={{ color: 'red' }}>*</span>
+            </h6>
             <CFormInput
               type="text"
               value={testToEdit?.testName || ''}
-              onChange={(e) => setTestToEdit({ ...testToEdit, testName: e.target.value })}
+              onChange={(e) => {
+                setTestToEdit({ ...testToEdit, testName: e.target.value })
+                if (errors.testName) {
+                  setErrors({ ...errors, testName: '' })
+                }
+              }}
             />
-            {/* <h6 className="mt-3">Hospital ID</h6>
+            {errors.testName && (
+              <p style={{ color: 'red', fontSize: '0.9rem', marginTop: '5px' }}>
+                {errors.testName}
+              </p>
+            )}
+            <h6>Description</h6>
             <CFormInput
-  type="text"
-  value={testToEdit?.hospitalId || ''}
-  onChange={(e) => setTestToEdit({ ...testToEdit, hospitalId: e.target.value })}
-/> */}
-   </CForm>
+              type="text"
+              value={testToEdit?.description || ''}
+              onChange={(e) => setTestToEdit({ ...testToEdit, description: e.target.value })}
+            />
+            <h6>purpose</h6>
+            <CFormInput
+              type="text"
+              value={testToEdit?.purpose || ''}
+              onChange={(e) => setTestToEdit({ ...testToEdit, purpose: e.target.value })}
+            />
+          </CForm>
         </CModalBody>
         <CModalFooter>
-          <CButton color="primary" onClick={handleUpdateTest}>
+          {/* <CButton color="info" className="text-white" onClick={handleUpdateTest}>
             Update
-          </CButton>
+          </CButton> */}
           <CButton color="secondary" onClick={() => setEditTestMode(false)}>
             Cancel
+          </CButton>
+          <CButton
+            style={{ backgroundColor: 'var(--color-black)' }}
+            className="text-white"
+            onClick={handleUpdateTest}
+          >
+            Update
           </CButton>
         </CModalFooter>
       </CModal>
 
       <ConfirmationModal
         isVisible={isModalVisible}
-        message="Are you sure you want to delete this test?"
+        title="Delete Doctor"
+        message="Are you sure you want to delete this test? This action cannot be undone."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        confirmColor="danger"
+        cancelColor="secondary"
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
       />
 
       {loading ? (
-        <div style={{ textAlign: 'center' }}>Loading...</div>
+        <div className="d-flex justify-content-center align-items-center">
+          <LoadingIndicator message="Loading Test..." />
+        </div>
       ) : error ? (
-        <div>{error}</div>
+        <div
+          className="d-flex justify-content-center align-items-center"
+          style={{
+            height: '50vh', // full screen height
+
+            color: 'var(--color-black)',
+          }}
+        >
+          {error}
+        </div>
       ) : (
-        <DataTable columns={columns} data={filteredData.length ? filteredData : test} pagination />
+        <CTable striped hover responsive>
+          <CTableHead className="pink-table">
+            <CTableRow>
+              <CTableHeaderCell style={{ paddingLeft: '40px' }}>S.No</CTableHeaderCell>
+              <CTableHeaderCell>Test Name</CTableHeaderCell>
+              <CTableHeaderCell>Description</CTableHeaderCell>
+              <CTableHeaderCell>Purpose</CTableHeaderCell>
+              <CTableHeaderCell className="text-end">Actions</CTableHeaderCell>
+            </CTableRow>
+          </CTableHead>
+          <CTableBody className="pink-table">
+            {displayData.length > 0 ? (
+              displayData.map((test, index) => (
+                <CTableRow key={test.id}>
+                  <CTableDataCell style={{ paddingLeft: '40px' }}>
+                    {(currentPage - 1) * rowsPerPage + index + 1}
+                  </CTableDataCell>
+                  <CTableDataCell>{capitalizeWords(test.testName)}</CTableDataCell>
+                  <CTableDataCell>{capitalizeWords(test.description || 'NA')}</CTableDataCell>
+                  <CTableDataCell>{capitalizeWords(test.purpose || 'NA')}</CTableDataCell>
+                  <CTableDataCell className="text-end">
+                    <div className="d-flex justify-content-end gap-2  ">
+                      <button className="actionBtn" onClick={() => setViewTest(test)} title="View">
+                        <Eye size={18} />
+                      </button>
+
+                      <button
+                        className="actionBtn"
+                        onClick={() => {
+                          setTestToEdit(test)
+                          setEditTestMode(true)
+                        }}
+                        title="Edit"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+
+                      <button
+                        className="actionBtn"
+                        onClick={() => handleTestDelete(test)}
+                        title="Delete"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </CTableDataCell>
+                  {/* <CTableDataCell>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '140px' }}>
+                    <div
+                      onClick={() => setViewTest(test)}
+                      style={{ color: 'green', cursor: 'pointer' }}
+                    >
+                      View
+                    </div>
+                    <div
+                      onClick={() => {
+                        setTestToEdit(test)
+                        setEditTestMode(true)
+                      }}
+                      style={{ color: 'blue', cursor: 'pointer' }}
+                    >
+                      Edit
+                    </div>
+                    <div
+                      onClick={() => handleTestDelete(test)}
+                      style={{ color: 'red', cursor: 'pointer' }}
+                    >
+                      Delete
+                    </div>
+                  </div>
+                </CTableDataCell> */}
+                </CTableRow>
+              ))
+            ) : (
+              <CTableRow>
+                <CTableDataCell colSpan={5} className="text-center text-muted">
+                  🔍 No tests found matching "<b>{searchQuery}</b>"
+                </CTableDataCell>
+              </CTableRow>
+            )}
+          </CTableBody>
+        </CTable>
+      )}
+      {/* Pagination Controls */}
+      {!loading && (
+        <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
+          {Array.from(
+            {
+              length: Math.ceil(
+                (filteredData.length ? filteredData.length : test.length) / rowsPerPage,
+              ),
+            },
+            (_, index) => (
+              <CButton
+                key={index}
+                style={{
+                  margin: '0 5px',
+                  padding: '5px 10px',
+                  backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
+                  color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
+                  border: '1px solid #ccc',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                }}
+                className="ms-2"
+                onClick={() => setCurrentPage(index + 1)}
+              >
+                {index + 1}
+              </CButton>
+            ),
+          )}
+        </div>
       )}
     </div>
   )

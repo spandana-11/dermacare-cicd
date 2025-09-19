@@ -79,16 +79,20 @@ public interface ClinicAdminServiceClient {
 		    ClinicInfoDTO getClinicInfoByDoctorId(@PathVariable String doctorId);
 		
 		// ------------------------------ Vitals ------------------------------
-		 @PostMapping("/clinic-admin/{patientId}/addingVitals")
-		 ResponseEntity<Response> addVitals(@PathVariable String patientId, @RequestBody VitalsDTO dto);
+		 @PostMapping("/clinic-admin/addingVitals/{bookingId}")
+		    ResponseEntity<Response> addVitals(@PathVariable("bookingId") String bookingId,
+		                                       @RequestBody VitalsDTO dto);
 
-		 @GetMapping("/clinic-admin/getVitals/{patientId}")
-		 ResponseEntity<Response> getVitals(@PathVariable String patientId);
+		    @GetMapping("/clinic-admin/getVitals/{bookingId}/{patientId}")
+		    ResponseEntity<Response> getVitals(@PathVariable("bookingId") String bookingId,
+		                                       @PathVariable("patientId") String patientId);
 
-		 @DeleteMapping("/clinic-admin/deleteVitals/{patientId}")
-		 ResponseEntity<Response> delVitals(@PathVariable String patientId);
+		    @DeleteMapping("/clinic-admin/deleteVitals/{bookingId}/{patientId}")
+		    ResponseEntity<Response> delVitals(@PathVariable("bookingId") String bookingId,
+		                                       @PathVariable("patientId") String patientId);
 
-		 @PutMapping("/clinic-admin/updateVitals/{patientId}")
-		 ResponseEntity<Response> updateVitals(@PathVariable String patientId, @RequestBody VitalsDTO dto);
-
-}
+		    @PutMapping("/clinic-admin/updateVitals/{bookingId}/{patientId}")
+		    ResponseEntity<Response> updateVitals(@PathVariable("bookingId") String bookingId,
+		                                          @PathVariable("patientId") String patientId,
+		                                          @RequestBody VitalsDTO dto);
+		}

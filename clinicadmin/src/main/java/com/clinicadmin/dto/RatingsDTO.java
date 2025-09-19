@@ -11,9 +11,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RatingsDTO {
 	private String doctorId;;
-	private String hospitalId;
+	private String branchId;
 	private double overallDoctorRating;
-	private double overallHospitalRating;
+	private double overallBranchRating;
 	private List<CustomerRatingDomain> comments;
 	private List<RatingCategoryStats> ratingCategoryStats;
 

@@ -1,99 +1,109 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import axios from 'axios'
-import { BASE_URL } from '../../baseUrl'
-import { GetSubServices_ByClinicId } from '../serviceManagement/ServiceManagementAPI'
+import { http } from '../../Utils/Interceptors'
+import { GetSubServices_ByClinicId } from '../ProcedureManagement/ProcedureManagementAPI'
+import { roleMenu } from '../../Constant/roleMenu'
+import { getDoctorByClinicId } from '../../baseUrl'
 
 const HospitalContext = createContext()
 
 export const HospitalProvider = ({ children }) => {
   const [selectedHospital, setSelectedHospital] = useState(null)
   const [doctorData, setDoctorData] = useState(null)
+  const [subServices, setSubServices] = useState([])
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [notificationCount, setNotificationCount] = useState('')
-const [subServices, setSubServices] = useState([]) // optional: store subservices
+  const [role, setRole] = useState(localStorage.getItem('role'))
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('hospitalUser')
+    return saved ? JSON.parse(saved) : null
+  })
+
+  const [hospitalId, setHospitalId] = useState(localStorage.getItem('HospitalId'))
+
+  // Set user permissions based on role
+  // useEffect(() => {
+  //   setUser({
+  //     name: 'John Doe',
+  //     role: role,
+  //     permissions: roleMenu[role] || [],
+  //   })
+  // }, [role])
 
   useEffect(() => {
-    const hospitalId = localStorage.getItem('HospitalId')
-
-    if (hospitalId) {
-      fetchHospitalDetails(hospitalId)
-      fetchDoctorDetails(hospitalId)
-    fetchSubServices(hospitalId)
-      }
-  }, [])
-
-  // Fetch Clinic Details
-  const fetchHospitalDetails = async (id) => {
-    setLoading(true)
-    try {
-      const url = `${BASE_URL}/getClinic/${id}`
-      const response = await axios.get(url)
-      console.log(url)
-      console.log(response)
-      if (response.status === 200 && response.data) {
-        setSelectedHospital(response.data)
-      } else {
-        setErrorMessage('Failed to fetch clinic details.')
-      }
-    } catch (err) {
-      console.error('Fetch clinic error:', err)
-      setErrorMessage('Error fetching clinic details.')
-    } finally {
-      setLoading(false)
+    if (user) {
+      localStorage.setItem('hospitalUser', JSON.stringify(user))
+    } else {
+      localStorage.removeItem('hospitalUser')
     }
-  }
+  }, [user])
 
-  // Fetch Doctor Details
-  const fetchDoctorDetails = async (clinicId) => {
-    setLoading(true)
-    try {
-      const url = `${BASE_URL}/doctors/hospitalById/${clinicId}`
-      const response = await axios.get(url)
-      console.log(response.data)
-      if (response.status === 200 && response.data) {
-        console.log(response.data)
-        setDoctorData(response.data)
-      } else {
-        setErrorMessage('Failed to fetch doctor details.')
-      }
-    } catch (err) {
-      console.error('Fetch doctor error:', err)
-      setErrorMessage('Error fetching doctor details.')
-    } finally {
-      setLoading(false)
+  // Fetch all data on mount
+
+  useEffect(() => {
+    const storedId = localStorage.getItem('HospitalId')
+    if (storedId && storedId !== hospitalId) {
+      setHospitalId(storedId)
     }
-  }
- const fetchSubServices = async (clinicId) => {
-  try {
-    const res = await GetSubServices_ByClinicId(clinicId)
-    const list = Array.isArray(res?.data) ? res.data : []
+  }, []) // run once
+  useEffect(() => {
+    console.log(hospitalId)
 
-    // ✅ Ensure only this hospital’s data is set
-    const filtered = list.filter((s) => s.hospitalId === clinicId)
+    if (!hospitalId) return
 
-    setSubServices(filtered)
-  } catch (err) {
-    console.error('Fetch subservices error:', err)
-    setSubServices([]) // clear previous data on error
-  }
-}
+    const fetchAllData = async () => {
+      setLoading(true)
+      try {
+        // Fetch hospital details
 
+        if (hospitalId != undefined) {
+          const hospitalRes = await http.get(`/getClinic/${hospitalId}`)
+          if (hospitalRes.status === 200 && hospitalRes.data) {
+            setSelectedHospital(hospitalRes.data)
+          } else {
+            setErrorMessage('Failed to fetch hospital details.')
+          }
+        }
+        const branchId = localStorage.getItem('branchId')
+        // Fetch doctor details
+        const doctorRes = await http.get(`${getDoctorByClinicId}/${hospitalId}/${branchId}`)
+        if (doctorRes.status === 200 && doctorRes.data) {
+          setDoctorData(doctorRes.data)
+        } else {
+          setErrorMessage('Failed to fetch doctor details.')
+        }
+
+        // Fetch subservices
+        const subRes = await GetSubServices_ByClinicId(hospitalId)
+        const list = Array.isArray(subRes?.data) ? subRes.data : []
+        setSubServices(list.filter((s) => s.hospitalId === hospitalId))
+      } catch (err) {
+        console.error(err)
+        setErrorMessage('Error fetching hospital data.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAllData()
+  }, [hospitalId]) // run once on mount
 
   return (
     <HospitalContext.Provider
       value={{
         selectedHospital,
         doctorData,
-         subServices, 
+        subServices,
         loading,
         errorMessage,
-        fetchHospitalDetails,
-        fetchDoctorDetails,
         setSelectedHospital,
         setDoctorData,
         notificationCount,
         setNotificationCount,
+        user,
+        setRole,
+        setUser,
+        setHospitalId,
       }}
     >
       {children}

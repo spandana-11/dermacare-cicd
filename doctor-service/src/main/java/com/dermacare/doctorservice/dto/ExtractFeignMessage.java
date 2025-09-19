@@ -11,7 +11,7 @@ public class ExtractFeignMessage {
 	
 	 String errorMessage = "An unexpected error occurred";
 	    try {
-	        String responseBody = e.contentUTF8();  // Get clean response body
+	        String responseBody = e.contentUTF8();  
 
 	        ObjectMapper mapper = new ObjectMapper();
 	        JsonNode root = mapper.readTree(responseBody);

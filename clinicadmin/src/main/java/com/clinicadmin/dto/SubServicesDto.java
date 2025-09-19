@@ -60,4 +60,5 @@ public class SubServicesDto {
 	private double clinicPay; // Price - platformFee
 
 	private double finalCost; // taxAmount + discounedCost
+	private String consentFormType; // Generic or procedureConsent (1,2)
 }

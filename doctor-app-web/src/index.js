@@ -26,4 +26,4 @@ createRoot(document.getElementById('root')).render(
     </ToastProvider>
   </Provider>,
 )
-serviceWorker.register()
+// serviceWorker.register()

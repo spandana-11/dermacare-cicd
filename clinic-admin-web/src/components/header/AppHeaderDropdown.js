@@ -53,7 +53,7 @@ const AppHeaderDropdown = () => {
                 style={{ width: '40px', height: '40px', marginBottom: '0px' }}
               />
             ) : (
-              <div class="spinner"></div>
+              <div className="spinner"></div>
             )}
           </div>
 

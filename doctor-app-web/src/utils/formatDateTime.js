@@ -38,3 +38,14 @@ export const getDateParts = () => {
     time: timeStr,
   }
 }
+
+
+
+
+export const formatDuration = (duration, unit) => {
+  const d = parseInt(duration, 10)
+  if (isNaN(d) || d <= 0 || !unit) return 'NA'
+
+  const pluralUnit = d > 1 ? `${unit}s` : unit
+  return `${d} ${pluralUnit}`
+}

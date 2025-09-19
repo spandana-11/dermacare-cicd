@@ -35,7 +35,7 @@ api.interceptors.response.use(
 
     if (err.response) {
       const { status } = err.response
-console.log(object)
+      console.log(object)
       switch (err.response) {
         case 401:
           localStorage.removeItem('token')
@@ -61,9 +61,9 @@ console.log(object)
     } else {
       // No response → Network/server issue
       if (err.code === 'ECONNABORTED') {
-        showInfo('Request timed out. Please check your internet connection.', { title: 'Timeout' })
+       // showInfo('Request timed out. Please check your internet connection.', { title: 'Timeout' })
       } else {
-        showInfo('Network error. Please check your connection.', { title: 'Network Error' })
+        //   showInfo('Network error. Please check your connection.', { title: 'Network Error' })
       }
     }
 

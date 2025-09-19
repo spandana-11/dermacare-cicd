@@ -22,5 +22,6 @@ public interface DoctorService {
 	public ResponseEntity<?> getDoctorsByHospitalById(String clinicId);
 	public ResponseEntity<?> getDoctorsBySubServiceId(String hsptlId,String subServiceId);
 	public ResponseEntity<?> getAllDoctorsBySubServiceId(String subServiceId);
+	public ResponseEntity<?> getDoctorFutureAppointments(String doctorId);
 
 }

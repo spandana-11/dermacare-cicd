@@ -1,11 +1,12 @@
 // export const BASE_URL = 'http://alb-dev-sc-197990416.ap-south-1.elb.amazonaws.com/api'
-export let wifiUrl = '13.235.239.208:9090'
+export let wifiUrl = '3.6.119.57'
 // export let wifiUrl = '192.168.1.5'
 
+export const SBASE_URL = `http://${wifiUrl}/clinicadminpublicapis`
 export const BASE_URL = `http://${wifiUrl}/clinic-admin`
 export const MainAdmin_URL = `http://${wifiUrl}/admin`
-export const subService_URL = `http://${wifiUrl}/api/v1`
-export const servr_Url = `http://${wifiUrl}`
+export const subService_URL = `${BASE_URL}/api/v1`
+
 // END POINTS
 // login
 export const endPoint = '/clinicLogin'
@@ -26,11 +27,12 @@ export const allBooking_sevices = `getAllBookedServices`
 export const getAllBookingDetails = 'admin/getAllBookingDetails'
 
 //Doctors
+export const GetBranches_ByClinicId = 'getBranchesByClinicId'
 export const PatientConsentForm = 'getpatientConsentForm'
 export const UpdateConsentForm = 'updatePatientConsentForm'
 
 export const doctorAvailableUrl = 'doctorId'
-export const getDoctorByClinicId = 'doctors/hospitalById'
+export const getDoctorByClinicId = 'getDoctorsByHospitalIdAndBranchId'
 
 export const getAllBookedServices = `customer/getAllBookedServices`
 export const Booking_service_Url = `http://${wifiUrl}/api`
@@ -60,7 +62,7 @@ export const DeleteTreatment = 'treatment/deleteTreatmentById'
 //Diseases
 export const AllDiseases = 'get-all-diseases'
 export const GetDiseasesByHId = 'diseases'
-export const AddDisease = 'addDisease'
+export const AddDisease = 'addDiseases'
 export const UpdateDisease = 'updateDisease'
 export const DeleteDisease = 'deleteDisease'
 
@@ -99,24 +101,6 @@ export const addCustomerAdvertisement = 'categoryAdvertisement/add'
 export const AllCustomerAdvertisements = 'categoryAdvertisement/getAll'
 
 export const getAllDoctors = `doctors`
-
-// Customer Management
-export const CustomerAllData = 'admin/getAllCustomerDetails'
-export const CustomerDataByID = 'customer/getBasicDetails'
-
-export const updateCustomer = 'admin/updateCustomerBasicDetails'
-
-export const CustomerAddress = 'admin/getCustomerAddresses'
-
-export const AddAddress = 'customers/save-address'
-
-export const UpdateAddress = 'admin/updateAddresses'
-
-export const DeleteAddress = 'admin/deleteAddresses'
-
-export const bookServices = 'customers/bookServices'
-
-export const deleteAppointments = 'customers/deleteService'
 
 // Provider Management
 
@@ -200,3 +184,25 @@ export const clinicPost = 'v1/clinic/addClinic'
 export const Customer_Url = `http://${wifiUrl}/api`
 export const getAllPayouts = 'payments/getallpayments'
 export const addPayouts = 'payments/addpayment'
+//customer
+//** Customer Management- main **
+export const AddCustomer = 'customers/onboard'
+export const GetAllCustomers = 'customers/getAllCustomers'
+
+export const GetCustomerByMobileNo = 'customer/getBasicDetails'
+export const UpdateCustomer = 'customer/updateCustomerBasicDetails'
+export const DeleteCustomer = 'customer/deleteCustomerBasicDetails'
+
+//ConsentForm
+export const AddConsent = '/consent-form'
+export const EditConsent = '/consent-form'
+export const DeleteConsent = '/deleteConsentFormById'
+export const GetGenericConsent = '/consent-form'
+export const AddProcedureConsent = '/consent-form'
+export const GetProcedureConsent = 'consent-form'
+
+//Vitals
+export const GetVitalsByPatientId = '/getVitals'
+export const AddVitals = 'addingVitals'
+export const UpdateVitals = '/updateVitals'
+export const DeleteVitals = '/deleteVitals'

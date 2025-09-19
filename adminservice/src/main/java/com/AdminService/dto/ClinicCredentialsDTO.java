@@ -1,4 +1,6 @@
 package com.AdminService.dto;
+import java.util.List;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -17,4 +19,7 @@ public class ClinicCredentialsDTO {
 	@NotBlank(message = " Password should not be blank")
 	@Size(min = 3,max = 20, message = "Password must be minimum 4 characters and maximum 20 characters")
     private String password;
+	
+	private String role;
+	private List<String>permissions;
 }

@@ -18,6 +18,7 @@ import com.dermaCare.customerService.dto.BookingRequset;
 import com.dermaCare.customerService.dto.BookingResponse;
 import com.dermaCare.customerService.dto.ConsultationDTO;
 import com.dermaCare.customerService.dto.CustomerDTO;
+import com.dermaCare.customerService.dto.CustomerLoginDTO;
 import com.dermaCare.customerService.dto.CustomerRatingDomain;
 import com.dermaCare.customerService.dto.FavouriteDoctorsDTO;
 import com.dermaCare.customerService.dto.LoginDTO;
@@ -34,7 +35,7 @@ import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/customer")
-// @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class CustomerController {
 
 	@Autowired(required = true)
@@ -213,14 +214,24 @@ public class CustomerController {
    	
    }
    
-   @GetMapping("/getDoctorSlots/{hospitalId}/{doctorId}")
-   public ResponseEntity<Response> getDoctorSlots(@PathVariable String hospitalId,@PathVariable String doctorId){
-   	Response response = customerService.getDoctorsSlots(hospitalId,doctorId);
+   @GetMapping("/getDoctorSlots/{hospitalId}/{branchId}/{doctorId}")
+   public ResponseEntity<Response> getDoctorSlots(@PathVariable String hospitalId,@PathVariable String branchId,@PathVariable String doctorId){
+   	Response response = customerService.getDoctorsSlots(hospitalId,branchId,doctorId);
    	if(response != null && response.getStatus() != 0) {
   		 return ResponseEntity.status(response.getStatus()).body(response);
   	 }else {
   			return null;
-		}}
+	}}
+   
+   
+   @GetMapping("/getReports/{customerId}")
+   public ResponseEntity<Response> getReports(@PathVariable String customerId){
+   	Response response = customerService.getReports(customerId);
+   	if(response != null && response.getStatus() != 0) {
+  		 return ResponseEntity.status(response.getStatus()).body(response);
+  	 }else {
+  			return null;
+	}}
    	
    	
     
@@ -334,9 +345,9 @@ public ResponseEntity<Response> submitCustomerRating(@RequestBody CustomerRating
 }
 }
 
-@GetMapping("/getRatingInfo/{hospitalId}/{doctorId}")
-public ResponseEntity<Response> getRatingInfo(@PathVariable String hospitalId, @PathVariable String doctorId) {
-	 Response response = customerService.getRatingForService( hospitalId,doctorId);
+@GetMapping("/getRatingInfo/{branchlId}/{doctorId}")
+public ResponseEntity<Response> getRatingInfo(@PathVariable String branchlId, @PathVariable String doctorId) {
+	 Response response = customerService.getRatingForService( branchlId,doctorId);
 	 if(response != null && response.getStatus() != 0) {
 		 return ResponseEntity.status(response.getStatus()).body(response);
 	 }else {
@@ -345,9 +356,9 @@ public ResponseEntity<Response> getRatingInfo(@PathVariable String hospitalId, @
 }
 
 
-@GetMapping("/getAverageRating/{hospitalId}/{doctorId}")
-public ResponseEntity<Response> getRatingAverageRating(@PathVariable String hospitalId, @PathVariable String doctorId) {
-	 Response response = customerService.getAverageRating( hospitalId,doctorId);
+@GetMapping("/getAverageRating/{branchId}/{doctorId}")
+public ResponseEntity<Response> getRatingAverageRating(@PathVariable String branchId, @PathVariable String doctorId) {
+	 Response response = customerService.getAverageRating(branchId,doctorId);
 	 if(response != null && response.getStatus() != 0) {
 		 return ResponseEntity.status(response.getStatus()).body(response);
 	 }else {
@@ -362,6 +373,18 @@ public ResponseEntity<Response> getRatingAverageRating(@PathVariable String hosp
    public ResponseEntity<Object> getDoctorsAndClinicDetails(@PathVariable String hospitalId,
                                                                  @PathVariable String subServiceId)throws JsonProcessingException{
 	  Response response= customerService.getDoctorsandHospitalDetails(hospitalId, subServiceId);
+	  if(response != null) {
+			 return ResponseEntity.status(response.getStatus()).body(response.getData());}
+			 else {
+				 return null;
+			 }
+	   
+   }
+   
+   @GetMapping("/getDoctorsAndClinicDetailsByBranchId/{hospitalId}/{branchId}/{subServiceId}")
+   public ResponseEntity<Object> getDoctorsByHospitalBranchAndSubService(@PathVariable String hospitalId,@PathVariable String branchId,
+                                                                 @PathVariable String subServiceId)throws JsonProcessingException{
+	  Response response= customerService.getDoctorsByHospitalBranchAndSubService(hospitalId, branchId, subServiceId);
 	  if(response != null) {
 			 return ResponseEntity.status(response.getStatus()).body(response.getData());}
 			 else {
@@ -418,6 +441,19 @@ public ResponseEntity<Response> getRatingAverageRating(@PathVariable String hosp
 			 }
    }
    
+    
+   
+   @GetMapping("/getBranchesInfoBySubServiceId/{clinicId}/{subServiceId}/{latitude}/{longtitude}")
+   public ResponseEntity<Object> getBranchesInfoBySubServiceId(@PathVariable String clinicId,@PathVariable String subServiceId,@PathVariable String latitude,@PathVariable String longtitude)throws JsonProcessingException{
+	   Response response = customerService.getBranchesInfoBySubServiceId(clinicId, subServiceId,latitude,longtitude);
+		if(response != null) {
+			 return ResponseEntity.status(response.getStatus()).body(response);
+			 }else{
+				 return null;
+			 }
+   }
+   
+   
    @GetMapping("/getAllCategories")
   	public ResponseEntity<?> getAllCategory() {
       	Response response = customerService.getAllCategory();
@@ -444,5 +480,10 @@ public ResponseEntity<Response> getRatingAverageRating(@PathVariable String hosp
 			 @PathVariable String mobileNumber){
 	   return customerService.getInProgressAppointments(mobileNumber);
  }
+   
+   @PostMapping("/customerHospitalLogin")
+   public ResponseEntity<?> customerLogin(@RequestBody CustomerLoginDTO dto){
+	   return customerService.customerLogin(dto);
+   }
  
 }

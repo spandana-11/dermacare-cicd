@@ -15,11 +15,12 @@ public class Vitals {
 	@Id
 	private ObjectId id;
 	private String patientId;
-//	private String patientName;
+	private String patientName;
 	private String height;
 	private double weight;
 	private String bloodPressure;
 	private String temperature;
 	private String bmi;
+	private String bookingId;
 
 }

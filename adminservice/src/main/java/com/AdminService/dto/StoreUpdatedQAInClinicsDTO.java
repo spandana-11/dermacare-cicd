@@ -14,4 +14,5 @@ public class StoreUpdatedQAInClinicsDTO {
 	    private List<QuestionAnswerDTO> questionsAndAnswers;
 	    private int count;
 	    private int score;
+	    private boolean submitedQA;
 }

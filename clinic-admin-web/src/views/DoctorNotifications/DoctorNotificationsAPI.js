@@ -1,11 +1,18 @@
 import axios from 'axios'
-import { BASE_URL, Doctor_Url, getAllDCtrNotifications, getDoctorIdAndNotifications, NoficationResponse } from '../../baseUrl'
+import {
+  BASE_URL,
+  Doctor_Url,
+  getAllDCtrNotifications,
+  getDoctorIdAndNotifications,
+  NoficationResponse,
+} from '../../baseUrl'
+import { http } from '../../Utils/Interceptors'
 
 export const DoctorNotifyData = async (hospitalId, doctorId) => {
   console.log('DoctorNotifyData calling...')
   try {
     const response = await axios.get(
-      `${Doctor_Url}/${getAllDCtrNotifications}/${hospitalId}/${doctorId}`,
+      `${Doctor_Url}/${getAllDCtrNotifications}/${hospitalId}/${doctorId}`, //TODO:chnage when apigetway call axios to http
     )
     console.log('DoctorNotifyData response:', response.data)
 
@@ -30,6 +37,7 @@ export const postNotifyData = async (requestData) => {
   try {
     console.log('Sending data to API')
     const response = await axios.post(`${Doctor_Url}/${NoficationResponse}`, requestData, {
+      //TODO:chnage when apigetway call axios to http
       headers: {
         'Content-Type': 'application/json',
       },
@@ -47,13 +55,10 @@ export const postNotifyData = async (requestData) => {
 
 export const DoctorId_NotificationsData = async (hospitalId) => {
   try {
-    const res = await axios.get(
-      `${BASE_URL}/doctors/hospitalById/${hospitalId}`
-    )
+    const res = await http.get(`/doctors/hospitalById/${hospitalId}`)
     return res
   } catch (error) {
     console.error('Error fetching doctor notifications:', error)
     throw error
   }
 }
-

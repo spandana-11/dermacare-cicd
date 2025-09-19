@@ -24,12 +24,12 @@ public class RatingCalculationService {
     @Autowired
     private CustomerServiceFeignClient customerServiceFeignClient;
 
-    public Response calculateAverageRating(String hospitalId, String doctorId) {
+    public Response calculateAverageRating(String branchId, String doctorId) {
         Response response = new Response();
 
         try {
             ResponseEntity<Response> responseEntity =
-                    customerServiceFeignClient.getRatingInfo(hospitalId, doctorId);
+                    customerServiceFeignClient.getRatingInfo(branchId, doctorId);
 
             Object ratings = responseEntity.getBody().getData();
             List<CustomerRatingDomain> allRatings = new ArrayList<>();
@@ -53,7 +53,7 @@ public class RatingCalculationService {
 
             // Validate hospitalId and doctorId separately
             boolean hospitalExists = allRatings.stream()
-                    .anyMatch(r -> r.getHospitalId().equals(hospitalId));
+                    .anyMatch(r -> r.getBranchId().equals(branchId));
             boolean doctorExists = allRatings.stream()
                     .anyMatch(r -> r.getDoctorId().equals(doctorId));
 
@@ -75,7 +75,7 @@ public class RatingCalculationService {
             }
 
             List<CustomerRatingDomain> matchedRatings = allRatings.stream()
-                    .filter(r -> r.getHospitalId().equals(hospitalId) && r.getDoctorId().equals(doctorId))
+                    .filter(r -> r.getBranchId().equals(branchId) && r.getDoctorId().equals(doctorId))
                     .toList();
 
             if (matchedRatings.isEmpty()) {
@@ -88,7 +88,7 @@ public class RatingCalculationService {
             double totalDoctorRating = matchedRatings.stream()
                     .mapToDouble(CustomerRatingDomain::getDoctorRating).sum();
             double totalHospitalRating = matchedRatings.stream()
-                    .mapToDouble(CustomerRatingDomain::getHospitalRating).sum();
+                    .mapToDouble(CustomerRatingDomain::getBranchRating).sum();
             double avgDoctorRating = totalDoctorRating / matchedRatings.size();
             double avgHospitalRating = totalHospitalRating / matchedRatings.size();
 
@@ -109,9 +109,9 @@ public class RatingCalculationService {
             // Set data in DTO
             RatingsDTO data = new RatingsDTO();
             data.setDoctorId(doctorId);
-            data.setHospitalId(hospitalId);
+            data.setBranchId(branchId);
             data.setOverallDoctorRating(avgDoctorRating);
-            data.setOverallHospitalRating(avgHospitalRating);
+            data.setOverallBranchRating(avgHospitalRating);
             data.setComments(matchedRatings);
             data.setRatingCategoryStats(categoryStats); // Include categorized stats
 
@@ -126,6 +126,6 @@ public class RatingCalculationService {
             response.setMessage(ExtractFeignMessage.clearMessage(e));
             response.setStatus(e.status());
             return response;
-        }
-    }
+		}
+	}
 }

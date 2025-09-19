@@ -1,4 +1,7 @@
 package com.clinicadmin.dto;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 
 import lombok.AllArgsConstructor;
@@ -17,8 +20,12 @@ public class ResponseStructure<T> {
 	private HttpStatus httpStatus;
 	private int statusCode;
 
+
 	public static <T> ResponseStructure<T> buildResponse(T data, String message, HttpStatus httpStatus,
-			int statusCode) {
+			int statusCode
+)
+	{
 		return new ResponseStructure<>(data, message, httpStatus, statusCode);
 	}
+	
 }

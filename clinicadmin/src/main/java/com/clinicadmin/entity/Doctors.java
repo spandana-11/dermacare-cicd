@@ -1,11 +1,13 @@
 package com.clinicadmin.entity;
 
 import java.util.List;
+import java.util.Map;
 
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.clinicadmin.dto.DoctorBranches;
 import com.clinicadmin.dto.DoctorCategoryDTO;
 import com.clinicadmin.dto.DoctorServicesDTO;
 import com.clinicadmin.dto.DoctorSubServiceDTO;
@@ -25,8 +27,11 @@ public class Doctors {
 	@JsonSerialize(using = ObjectIdSerializer.class)
 	private ObjectId id;
 	private String doctorId;
+	private String role;
 	private String deviceId;
 	private String hospitalId;
+	private String hospitalName;
+	private String branchId;
 	private String doctorEmail;
 	private String doctorPicture;
 	private String doctorLicence;
@@ -34,7 +39,7 @@ public class Doctors {
 	private String doctorName;
 	private List<DoctorCategoryDTO> category;
 	private List<DoctorServicesDTO> service;
-	private List<DoctorSubServiceDTO> subServices; // ✅ fix the typo here
+	private List<DoctorSubServiceDTO> subServices;
 	private String specialization;
 	private String gender;
 	private String experience;
@@ -51,6 +56,9 @@ public class Doctors {
 	private boolean recommendation;
 	private String doctorSignature;
 	private boolean associatedWithIADVC;
+	private String associationsOrMemberships;
+	private List<DoctorBranches> branches;
 	private ConsultationType Consultation;
-	
+	private Map<String, List<String>> permissions;
+
 }

@@ -14,6 +14,7 @@ import {
 
 import { AppointmentData } from '../AppointmentManagement/appointmentAPI'
 import { useNavigate } from 'react-router-dom'
+import LoadingIndicator from '../../Utils/loader'
 const ReportsManagement = () => {
   // const [viewService, setViewService] = useState(null)
   const [filteredData, setFilteredData] = useState([])
@@ -30,7 +31,7 @@ const ReportsManagement = () => {
   const [selectedServiceTypes, setSelectedServiceTypes] = useState([])
   const [selectedConsultationTypes, setSelectedConsultationTypes] = useState([])
   const [clinicId, setClinicId] = useState(null)
-
+  const [error, setError] = useState(null)
   const consultationTypeMap = {
     'Service & Treatment': 'services & treatments',
     'Tele Consultation': 'tele consultation',
@@ -70,60 +71,64 @@ const ReportsManagement = () => {
   }, [])
 
 const handleStatusChange = (e) => {
-  const value = e.target.value;
-  // Only allow 'Completed' or 'Active'
-  if (!['Completed', 'Active'].includes(value)) return;
+  const value = e.target.value // "Completed" or "Active"
 
   if (statusFilters.includes(value)) {
-    setStatusFilters(statusFilters.filter((s) => s !== value)); // remove if selected again
+    setStatusFilters([]) // remove if clicked again
   } else {
-    setStatusFilters([...statusFilters, value]); // add new one
+    setStatusFilters([value]) // only one selection at a time
   }
-};
+}
 
 
 useEffect(() => {
-  let currentFiltered = bookings;
+  let currentFiltered = bookings
 
-  // Only include Completed or Active
-  currentFiltered = currentFiltered.filter(
-    (booking) =>
-      ['completed', 'active'].includes(normalize(booking.status))
-  );
+  // Only include Completed + Active(In-Progress) from backend
+  currentFiltered = currentFiltered.filter((booking) =>
+    ['completed', 'in-progress', 'active'].includes(normalize(booking.status)),
+  )
 
   // Apply user-selected status filters
   if (statusFilters.length > 0) {
-    currentFiltered = currentFiltered.filter((booking) =>
-      statusFilters.some(
-        (status) => normalize(booking.status) === normalize(status)
-      )
-    );
+    currentFiltered = currentFiltered.filter((booking) => {
+      const status = normalize(booking.status)
+
+      if (statusFilters.includes('Completed')) {
+        return status === 'completed'
+      }
+
+      if (statusFilters.includes('Active')) {
+        // Treat both active + in-progress as Active
+        return status === 'active' || status === 'in-progress'
+      }
+
+      return true
+    })
   }
 
   // Consultation type filter
   if (filterTypes.length === 1) {
-    const selectedType = filterTypes[0];
+    const selectedType = filterTypes[0]
 
-    if (selectedType === "Tele Consultation") {
+    if (selectedType === 'Tele Consultation') {
       currentFiltered = currentFiltered.filter(
         (item) =>
-          normalize(item.consultationType) === "tele consultation" ||
-          normalize(item.consultationType) === "online consultation"
-      );
+          normalize(item.consultationType) === 'tele consultation' ||
+          normalize(item.consultationType) === 'online consultation',
+      )
     } else {
-      const mappedType = consultationTypeMap[selectedType];
+      const mappedType = consultationTypeMap[selectedType]
       if (mappedType) {
         currentFiltered = currentFiltered.filter(
-          (item) => normalize(item.consultationType) === mappedType
-        );
+          (item) => normalize(item.consultationType) === mappedType,
+        )
       }
     }
   }
 
-  setFilteredData(currentFiltered);
-}, [bookings, filterTypes, statusFilters]);
-
-
+  setFilteredData(currentFiltered)
+}, [bookings, filterTypes, statusFilters])
 
 
   useEffect(() => {
@@ -196,111 +201,125 @@ useEffect(() => {
 
   return (
     <div style={{ overflowX: 'auto' }}>
-      <div className="container mt-4">
-        <h5 className="mb-3">Appointments</h5>
+      <div className="container  ">
+        <h5 className="mb-3">Completed Appointments</h5>
         <div className="d-flex gap-2 mb-3">
           {['Service & Treatment', 'In-clinic', 'Tele Consultation'].map((label) => (
             <button
               key={label}
               onClick={() => toggleFilter(label)}
-              className={`btn ${filterTypes.includes(label) ? 'btn-dark' : 'btn-outline-dark'}`}
+              className={`btn ${filterTypes.includes(label) ? 'btn-selected' : 'btn-unselected'}`}
             >
               {label}
             </button>
           ))}
         </div>
 
-        <div className="mb-3">
-          <CButton color="secondary" onClick={() => {
-  setFilterTypes([])
-  setStatusFilters([])
-}}>
-  Reset Filters
-</CButton>
-
+        <div className="mb-3 d-flex justify-content-between">
+          <div className="d-flex gap-3 mb-3" style={{ color: 'var(--color-black)' }}>
+            <CFormCheck
+              label="Completed"
+              value="Completed"
+              onChange={handleStatusChange}
+              checked={statusFilters.includes('Completed')}
+            />
+            <CFormCheck
+              label="Active"
+              value="Active"
+              onChange={handleStatusChange}
+              checked={statusFilters.includes('Active')}
+            />
+          </div>
+          <CButton
+            style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+            onClick={() => {
+              setFilterTypes([])
+              setStatusFilters([])
+            }}
+          >
+            Reset Filters
+          </CButton>
         </div>
-        <div className="d-flex gap-3 mb-3">
-          <CFormCheck
-            label="Completed"
-            value="Completed"
-            onChange={handleStatusChange}
-            checked={statusFilters.includes('Completed')}
-          />
-          <CFormCheck
-            label="Active"
-            value="Active"
-            onChange={handleStatusChange}
-            checked={statusFilters.includes('Active')}
-          />
-        </div>
 
-        <CTable striped hover responsive>
-          <CTableHead>
-            <CTableRow>
-              <CTableHeaderCell>S.No</CTableHeaderCell>
-              <CTableHeaderCell>Name</CTableHeaderCell>
-              {/* <CTableHeaderCell>Service</CTableHeaderCell> */}
-              <CTableHeaderCell>Consultation Type</CTableHeaderCell>
-              <CTableHeaderCell>Date</CTableHeaderCell>
-              <CTableHeaderCell>Time</CTableHeaderCell>
-              <CTableHeaderCell>Status</CTableHeaderCell>
-              <CTableHeaderCell>Action</CTableHeaderCell>
-            </CTableRow>
-          </CTableHead>
+        {loading ? (
+          // ✅ Show loading while data is being fetched
 
-          <CTableBody>
-            {loading ? (
-              // ✅ Show loading while data is being fetched
+          <div className="d-flex justify-content-center align-items-center">
+            <LoadingIndicator message="Loading reports..." />
+          </div>
+        ) : error ? (
+          <div>{error}</div>
+        ) : (
+          <CTable striped hover responsive>
+            <CTableHead className="pink-table">
               <CTableRow>
-                <CTableDataCell colSpan="8" className="text-center text-info fw-bold">
-                  Loading reports...
-                </CTableDataCell>
+                <CTableHeaderCell>S.No</CTableHeaderCell>
+                <CTableHeaderCell>Name</CTableHeaderCell>
+                {/* <CTableHeaderCell>Service</CTableHeaderCell> */}
+                <CTableHeaderCell>Consultation Type</CTableHeaderCell>
+                <CTableHeaderCell>Date</CTableHeaderCell>
+                <CTableHeaderCell>Time</CTableHeaderCell>
+                <CTableHeaderCell>Status</CTableHeaderCell>
+                <CTableHeaderCell>Action</CTableHeaderCell>
               </CTableRow>
-            ) : filteredData.length > 0 ? (
-              filteredData.map((item, index) => (
-                <CTableRow key={`${item.bookingId}-${index}`}>
-                  <CTableDataCell>{index + 1}</CTableDataCell>
-                  <CTableDataCell>{item.name}</CTableDataCell>
-                  <CTableDataCell>{item.consultationType}</CTableDataCell>
-                  <CTableDataCell>{item.serviceDate}</CTableDataCell>
-                  <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
-                  <CTableDataCell>{item.status}</CTableDataCell>
-                  <CTableDataCell>
-                    <CButton
-                      color="info"
-                      size="sm"
-                      onClick={() =>
+            </CTableHead>
+
+            <CTableBody>
+              {filteredData.length > 0 ? (
+                filteredData.map((item, index) => (
+                  <CTableRow key={`${item.bookingId}-${index}`} className="pink-table">
+                    <CTableDataCell>{index + 1}</CTableDataCell>
+                    <CTableDataCell>{item.name}</CTableDataCell>
+                    <CTableDataCell>{item.consultationType}</CTableDataCell>
+                    <CTableDataCell>{item.serviceDate}</CTableDataCell>
+                    <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
+                    <CTableDataCell>
+  {normalize(item.status) === 'in-progress' ? 'Active' : item.status}
+</CTableDataCell>
+    <CTableDataCell>
+                      <CButton
+                       style={{backgroundColor:'var(--color-black)',color:'white'}}
+                        className="text-white"
+                        size="sm"
+                        onClick={() =>
                         navigate(`/reportDetails/${item.bookingId}`, {
-                          state: {
-                            report: item,
-                            appointmentInfo: {
-                              name: item.name,
-                              age: item.age,
-                              gender: item.gender,
-                              problem: item.problem,
-                              bookingId: item.bookingId,
-                              item: item,
-                            },
-                          },
-                        })
-                      }
-                    >
-                      View
-                    </CButton>
+  state: {
+    report: item,
+    appointmentInfo: {
+      name: item.name,
+      age: item.age,
+      gender: item.gender,
+      problem: item.problem,
+      bookingId: item.bookingId,
+      patientId: item.patientId || selectedAppointment?.patientId, // ✅ Use correct path
+      item: item,
+      selectedAppointment: selectedAppointment
+    },
+  },
+})
+
+                        }
+                      >
+                        View
+                      </CButton>
+                    </CTableDataCell>
+                  </CTableRow>
+                ))
+              ) : (
+                // ✅ Show only after loading is done and no data
+                <CTableRow>
+                  <CTableDataCell
+                    colSpan="8"
+                    className="text-center "
+                    style={{ color: 'var(--color-black)' }}
+                  >
+                    No appointments found.
                   </CTableDataCell>
                 </CTableRow>
-              ))
-            ) : (
-              // ✅ Show only after loading is done and no data
-              <CTableRow>
-               <CTableDataCell colSpan="8" className="text-center text-danger fw-bold">
-  No appointments found.
-</CTableDataCell>
-
-              </CTableRow>
-            )}
-          </CTableBody>
-        </CTable>
+              )}
+            </CTableBody>
+          </CTable>
+        )}
       </div>
       {/* {viewService && (
        

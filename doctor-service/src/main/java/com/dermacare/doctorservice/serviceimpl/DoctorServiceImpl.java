@@ -7,10 +7,11 @@ import org.springframework.stereotype.Service;
 import com.dermacare.doctorservice.dto.ChangeDoctorPasswordDTO;
 import com.dermacare.doctorservice.dto.DoctorAvailabilityStatusDTO;
 import com.dermacare.doctorservice.dto.DoctorLoginDTO;
-import com.dermacare.doctorservice.dto.ExtractFeignMessage;
 import com.dermacare.doctorservice.dto.Response;
+import com.dermacare.doctorservice.feignclient.BookingFeignClient;
 import com.dermacare.doctorservice.feignclient.ClinicAdminServiceClient;
 import com.dermacare.doctorservice.service.DoctorService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,11 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Autowired
     private final ClinicAdminServiceClient clinicAdminServiceClient;
+    
+    @Autowired
+    private BookingFeignClient bookingFeignClient;
+    
+    private ObjectMapper objectMapper;
 
     private Response validateChangePasswordRequest(String username, ChangeDoctorPasswordDTO updateDTO) {
         if (username == null || username.isBlank()) {
@@ -72,19 +78,31 @@ public class DoctorServiceImpl implements DoctorService {
     }
 
 
-       @Override
+    @Override
     public Response login(DoctorLoginDTO loginDTO) {
     	try {
     	Response response=clinicAdminServiceClient.login(loginDTO);
     	return response;
-    	}catch(FeignException e) {
-    	Response res = new Response();
-    	res.setStatus(e.status());
-    	res.setMessage(ExtractFeignMessage.clearMessage(e));
-    	res.setSuccess(false);
-       return res;}
+    	}catch (FeignException fe) {
+		    try {
+		        String errorJson = fe.contentUTF8(); 
+		        Response errorResponse = objectMapper.readValue(errorJson, Response.class);
+                Response response = new Response();
+		        response.setSuccess(false);
+		        response.setData(null);
+		        response.setMessage(errorResponse.getMessage()); 
+		        response.setStatus(errorResponse.getStatus());   
+		        return response;
+		    } catch (Exception ex) {
+		    	Response response = new Response();
+		        response.setSuccess(false);
+		        response.setData(null);
+		        response.setMessage("Admin Service error: " + fe.getMessage());
+		        response.setStatus(fe.status());
+		        return response;
+		        }
+    	}
     }
-
 	@Override
 	public Response updateDoctorAvailability(String doctorId, DoctorAvailabilityStatusDTO availabilityDTO) {
 	    if(doctorId==null || doctorId.isBlank()) {
@@ -158,5 +176,18 @@ public class DoctorServiceImpl implements DoctorService {
 					return ResponseEntity.status(500).body(e.getMessage());
 				}
 			}
+			
+			 public ResponseEntity<?> getDoctorFutureAppointments(String doctorId) {
+			        try {
+			          
+			            return bookingFeignClient.getDoctorFutureAppointments(doctorId);
+			        } catch (Exception ex) {
+			            
+			            if (ex instanceof feign.FeignException feignEx) {
+			                return ResponseEntity.status(feignEx.status()).body(feignEx.contentUTF8());
+			            }
+			            return ResponseEntity.status(500).body(ex.getMessage());
+			        }
+			    }
 }
 

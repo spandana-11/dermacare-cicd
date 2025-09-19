@@ -26,88 +26,96 @@ import {
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 import appointmentIcon from './assets/images/avatars/calendar.png'
+import { roleMenu } from './Constant/roleMenu'
+import { NavLink } from 'react-router-dom'
 
-const _nav = [
+const allNav = [
   {
     component: CNavItem,
     name: 'Dashboard',
     to: '/dashboard',
+    as: NavLink,
     icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
     name: 'Appointments',
-    to: '/appointment-management',
+    to: '/Appointment-Management',
+    as: NavLink,
     icon: <CIcon icon={cilCalendar} customClassName="nav-icon" />,
   },
 
   {
     component: CNavItem,
-    to: '/Employee management',
+    to: '/Employee-management',
     name: 'Employee management',
+    as: NavLink,
     icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
   },
-  // {
-  //   component: CNavItem,
-  //   to: '/doctor',
-  //   name: 'Doctors',
-  //   icon: <CIcon icon={cilMedicalCross} customClassName="nav-icon" />,
-  // },
-  // {
-  //   component: CNavItem,
-  //   to: '/doctor-notifications',
-  //   name: 'Doctor Notifications',
-  //   icon: <CIcon icon={cilBell} customClassName="nav-icon" />,
-  // },
+
   {
     component: CNavItem,
-    to: '/disease',
+    to: '/Disease',
     name: 'Disease-Management',
+    as: NavLink,
     icon: <CIcon icon={cilWarning} customClassName="nav-icon" />,
   },
-  // {
-  //   component: CNavItem,
-  //   to: '/forms',
-  //   name: 'Forms',
-  //   icon: <CIcon icon={cilNoteAdd} customClassName="nav-icon" />,
-  // },
+
   {
     component: CNavItem,
-    to: '/tests',
+    to: '/Tests',
     name: 'Tests',
+    as: NavLink,
     icon: <CIcon icon={cilClipboard} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
-    to: '/treatments',
+    to: '/Treatments',
     name: 'Treatments',
+    as: NavLink,
     icon: <CIcon icon={cilHealing} customClassName="nav-icon" />,
   },
-
   {
-    // {
     component: CNavItem,
-    to: '/service-Management',
+    to: '/Procedure-Management',
     name: 'Procedure Management',
+    as: NavLink,
     icon: <CIcon icon={cilSettings} customClassName="nav-icon" />,
   },
-  // {
-  //   component: CNavItem,
-  //   to: '/patients',
-  //   name: 'Patients',
-  //   // icon: <CIcon icon={cilNotes} customClassName="nav-icon" />,
-
-  // },
   {
     component: CNavItem,
     to: '/reportManagement',
     name: 'Reports',
+    as: NavLink,
     icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    name: 'Customer Management',
+    to: '/customer-management',
+    as: NavLink,
+    icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    to: '/consentForms',
+    name: 'ConsentForms',
+    as: NavLink,
+    icon: <CIcon icon={cilNoteAdd} customClassName="nav-icon" />,
+  },
+
+  {
+    component: CNavItem,
+    to: '/refDoctor',
+    name: 'Reffer Doctor',
+    as: NavLink,
+    icon: <CIcon icon={cilNotes} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
     to: '/payouts',
     name: 'Payouts',
+    as: NavLink,
     icon: <CIcon icon={cilWallet} customClassName="nav-icon" />,
   },
 
@@ -115,6 +123,7 @@ const _nav = [
     component: CNavItem,
     to: '/help',
     name: 'Help',
+    as: NavLink,
     icon: <CIcon icon={cilLightbulb} customClassName="nav-icon" />,
   },
   // {
@@ -125,5 +134,15 @@ const _nav = [
 
   // },
 ]
+// Get role from login
+const role = localStorage.getItem('role')
+const permissions = JSON.parse(localStorage.getItem('permissions') || '{}')
+
+// const role = user?.role || 'receptionist'
+
+// Only keep menus that exist in roleMenu for that role
+const _nav = allNav.filter((item) => {
+  return permissions[item.name] !== undefined
+})
 
 export default _nav

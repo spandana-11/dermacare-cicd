@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class DoctorSlotDTO {
 	private String doctorId;   
 	private String hospitalId ; 
+	private String branchId;
 	private String date;
 	private List<DoctorAvailableSlotDTO> availableSlots;
 	

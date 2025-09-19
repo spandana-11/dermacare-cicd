@@ -11,4 +11,5 @@ public interface AdminRepository extends MongoRepository<Admin, String> {
 	Optional<Admin> findByUserName(String userName);
 	Optional<Admin> findByPassword(String password);
 	Admin findByMobileNumber(String mnumber);
+	
 }

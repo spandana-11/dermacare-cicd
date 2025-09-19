@@ -16,18 +16,20 @@ import {
   CDropdownMenu,
   CDropdownItem,
 } from '@coreui/react'
-import Button from '../../components/CustomButton/CustomButton'
 import { COLORS, SIZES } from '../../Themes'
 import TooltipButton from '../../components/CustomButton/TooltipButton'
+import Button from '../../components/CustomButton/CustomButton'
 import { getAppointments, getAppointmentsCount } from '../../Auth/Auth'
 
 const tabLabels = {
   upcoming: 'Upcoming',
+  inprogress: 'Active',
   completed: 'Completed',
 }
 
 const tabToNumberMap = {
   upcoming: 1,
+  inprogress: 4,
   completed: 3,
 }
 
@@ -37,6 +39,24 @@ const Appointments = ({ searchTerm = '' }) => {
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState('All')
   const [patientCount, setPatientCount] = useState(0)
+  const [selectedDate, setSelectedDate] = useState('')
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(10) // Change this number to set rows per page
+  const toISODate = (val) => {
+    if (!val) return ''
+    const parsed = new Date(val)
+    if (!isNaN(parsed)) return parsed.toISOString().slice(0, 10) // YYYY-MM-DD
+
+    // fallback: try dd-mm-yyyy or dd/mm/yyyy
+    const parts = String(val).split(/[-/]/)
+    if (parts.length === 3) {
+      const [d, m, y] = parts
+      const tryDate = new Date(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`)
+      if (!isNaN(tryDate)) return tryDate.toISOString().slice(0, 10)
+    }
+    return ''
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,35 +72,52 @@ const Appointments = ({ searchTerm = '' }) => {
       const totalCount = countData?.completedAppointmentsCount ?? 0
       setPatientCount(totalCount)
       setLoading(false)
+      setCurrentPage(1) // reset page when tab changes
     }
 
     fetchData()
   }, [activeTab])
 
+  // Filtering + Sorting
   const safeSearch = searchTerm.toLowerCase()
+
   const filteredPatients = Array.isArray(appointments)
-    ? appointments.filter((p) => {
+    ? appointments
+      .filter((p) => {
         const matchesSearch = p.name?.toLowerCase().includes(safeSearch)
         const matchesFilter = filter === 'All' || p.consultationType === filter
-        return matchesSearch && matchesFilter
+
+        // compare normalized ISO dates (input gives YYYY-MM-DD)
+        const serviceISO = toISODate(p.serviceDate)
+        const matchesDate = !selectedDate || serviceISO === selectedDate
+
+        return matchesSearch && matchesFilter && matchesDate
       })
+      .sort((a, b) => new Date(toISODate(b.serviceDate)) - new Date(toISODate(a.serviceDate)))
     : []
+
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentPatients = filteredPatients.slice(indexOfFirstItem, indexOfLastItem)
+  const totalPages = Math.ceil(filteredPatients.length / itemsPerPage)
 
   return (
     <CContainer>
       <CRow>
         <CCol>
+          {/* Sticky Header */}
           <div
             className="position-sticky z-3 w-100 pt-4"
             style={{ top: 105, backgroundColor: `${COLORS.theme}` }}
           >
-            <h5 style={{ fontSize: SIZES.medium ,color:COLORS.black}} className="pb-3">
+            <h5 style={{ fontSize: SIZES.medium, color: COLORS.black }} className="pb-3">
               Appointments
             </h5>
             <CRow className="w-100 d-flex justify-content-between align-items-center mb-2">
               <CCol xs={12} md={8}>
                 <div className="d-flex align-items-center gap-2 flex-wrap pb-2">
-                  {/* Dropdown for Upcoming / Completed */}
+                  {/* Dropdown for Tabs */}
                   <CDropdown style={{ cursor: 'pointer' }}>
                     <CDropdownToggle
                       size="sm"
@@ -97,8 +134,6 @@ const Appointments = ({ searchTerm = '' }) => {
                         ({filteredPatients.length})
                       </span>
                     </CDropdownToggle>
-
-                    {/* Align dropdown menu to the right */}
                     <CDropdownMenu placement="end">
                       {Object.keys(tabLabels).map((key) => (
                         <CDropdownItem
@@ -106,7 +141,7 @@ const Appointments = ({ searchTerm = '' }) => {
                           active={activeTab === key}
                           onClick={() => {
                             setActiveTab(key)
-                            setFilter('All') // reset filter when tab changes
+                            setFilter('All') // reset filter
                           }}
                         >
                           {tabLabels[key]}
@@ -116,51 +151,40 @@ const Appointments = ({ searchTerm = '' }) => {
                   </CDropdown>
 
                   {/* Consultation Filters */}
-                  <>
-                    <Button
-                      variant={filter === 'Services & Treatments' ? 'primary' : 'outline'}
-                      onClick={() => setFilter('Services & Treatments')}
-                      customColor={
-                        filter === 'Services & Treatments' ? COLORS.bgcolor : COLORS.black
-                      }
-                      size="small"
-                    >
-                      Services & Treatments
-                    </Button>
+                  <Button
+                    variant={filter === 'Services & Treatments' ? 'primary' : 'outline'}
+                    onClick={() => setFilter('Services & Treatments')}
+                    customColor={filter === 'Services & Treatments' ? COLORS.bgcolor : COLORS.black}
+                    size="small"
+                  >
+                    Services & Treatments
+                  </Button>
 
-                    <Button
-                      variant={filter === 'In-Clinic Consultation' ? 'primary' : 'outline'}
-                      onClick={() => setFilter('In-Clinic Consultation')}
-                      customColor={
-                        filter === 'In-Clinic Consultation' ? COLORS.bgcolor : COLORS.black
-                      }
-                      size="small"
-                    >
-                      In-Clinic Consultation
-                    </Button>
+                  <Button
+                    variant={filter === 'In-Clinic Consultation' ? 'primary' : 'outline'}
+                    onClick={() => setFilter('In-Clinic Consultation')}
+                    customColor={filter === 'In-Clinic Consultation' ? COLORS.bgcolor : COLORS.black}
+                    size="small"
+                  >
+                    In-Clinic Consultation
+                  </Button>
 
-                    {/* ✅ Online Consultation only for Upcoming & Completed */}
-                    {(activeTab === 'upcoming' || activeTab === 'completed') && (
-                      <Button
-                        variant={filter === 'Online Consultation' ? 'primary' : 'outline'}
-                        onClick={() => setFilter('Online Consultation')}
-                        customColor={
-                          filter === 'Online Consultation' ? COLORS.bgcolor : COLORS.black
-                        }
-                        size="small"
-                      >
-                        Online Consultation
-                      </Button>
-                    )}
-                  </>
+                  <Button
+                    variant={filter === 'Online Consultation' ? 'primary' : 'outline'}
+                    onClick={() => setFilter('Online Consultation')}
+                    customColor={filter === 'Online Consultation' ? COLORS.bgcolor : COLORS.black}
+                    size="small"
+                  >
+                    Online Consultation
+                  </Button>
                 </div>
               </CCol>
             </CRow>
           </div>
 
-          {/* Table */}
+          {/* Appointments Table */}
           <CCard
-            className="mb-5 border"
+            className="mb-2 border"
             style={{
               border: '2px solid #0d6efd',
               borderRadius: '8px',
@@ -202,7 +226,7 @@ const Appointments = ({ searchTerm = '' }) => {
                         Loading...
                       </CTableDataCell>
                     </CTableRow>
-                  ) : filteredPatients.length === 0 ? (
+                  ) : currentPatients.length === 0 ? (
                     <CTableRow>
                       <CTableDataCell
                         colSpan={9}
@@ -213,14 +237,13 @@ const Appointments = ({ searchTerm = '' }) => {
                       </CTableDataCell>
                     </CTableRow>
                   ) : (
-                    filteredPatients.map((p, i) => (
-                      <CTableRow
-                        key={p.id || `${p.patientId}-${i}`}
-                        style={{ fontSize: '0.85rem' }}
-                      >
-                        <CTableDataCell>{i + 1}</CTableDataCell>
+                    currentPatients.map((p, i) => (
+                      <CTableRow key={p.id || `${p.patientId}-${i}`} style={{ fontSize: '0.85rem' }}>
+                        <CTableDataCell>{indexOfFirstItem + i + 1}</CTableDataCell>
                         <CTableDataCell>{p.patientId}</CTableDataCell>
-                        <CTableDataCell>{p.name}</CTableDataCell>
+                        <CTableDataCell>
+                          {p.name ? p.name.charAt(0).toUpperCase() + p.name.slice(1) : 'NA'}
+                        </CTableDataCell>
                         <CTableDataCell>{p.mobileNumber}</CTableDataCell>
                         <CTableDataCell>{p.serviceDate}</CTableDataCell>
                         <CTableDataCell>{p.servicetime}</CTableDataCell>
@@ -235,17 +258,46 @@ const Appointments = ({ searchTerm = '' }) => {
                               fontSize: '0.8rem',
                             }}
                           >
-                            {p.status}
+                            {p.status === 'In-Progress' ? 'Active' : p.status}
                           </span>
                         </CTableDataCell>
                         <CTableDataCell>
-                          <TooltipButton patient={p} tab={p.status} />
+                          <TooltipButton
+                            patient={p}
+                            tab={p.status}
+                          // disabled={activeTab === 'completed' || p.status === 'Completed'}
+                          />
                         </CTableDataCell>
                       </CTableRow>
                     ))
                   )}
                 </CTableBody>
               </CTable>
+
+              {/* Pagination Controls */}
+              {filteredPatients.length > itemsPerPage && (
+                <div className="d-flex justify-content-end align-items-center gap-2 p-2">
+                  <Button
+                    size="small"
+                    variant="outline"
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Prev
+                  </Button>
+                  <span>
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    size="small"
+                    variant="outline"
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
             </CCardBody>
           </CCard>
         </CCol>

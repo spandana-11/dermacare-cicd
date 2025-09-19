@@ -19,7 +19,7 @@ import { COLORS } from '../Themes'
 import { getAllTreatments, getAllTreatmentsByHospital } from '../../src/Auth/Auth'
 import CIcon from '@coreui/icons-react'
 import { cilTrash } from '@coreui/icons'
-import  './TestsTreatments.css'
+import './TestsTreatments.css'
 const DEFAULT_CFG = { frequency: 'day', sittings: 1, startDate: '', reason: '' }
 
 const TestTreatments = ({ seed = {}, onNext }) => {
@@ -29,6 +29,7 @@ const TestTreatments = ({ seed = {}, onNext }) => {
   const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
   // at the top of the component, before any return
   const [activeIdx, setActiveIdx] = React.useState(0) // open first by default
+  const [selectedTreatmentOption, setSelectedTreatmentOption] = useState(null)
 
   // Per-treatment inputs (now includes reason)
   const [treatmentConfigs, setTreatmentConfigs] = useState(
@@ -132,7 +133,9 @@ const TestTreatments = ({ seed = {}, onNext }) => {
       delete next[t]
       return next
     })
+    setSelectedTreatmentOption(null) // 🔑 clear the dropdown
   }
+
 
   const updateCfg = (t, field, value) => {
     setTreatmentConfigs((prev) => ({
@@ -260,10 +263,19 @@ const TestTreatments = ({ seed = {}, onNext }) => {
             <Select
               options={optionsToShow.map((name) => ({ label: name, value: name }))}
               placeholder="Select Treatments..."
-              onChange={(selected) => handleAddTreatment({ target: { value: selected?.value } })}
+              value={selectedTreatmentOption}
+              onChange={(selected) => {
+                if (selected) {
+                  handleAddTreatment({ target: { value: selected.value } })
+                  setSelectedTreatmentOption(null) // reset after adding
+                } else {
+                  setSelectedTreatmentOption(null)
+                }
+              }}
               isClearable
               isSearchable
             />
+
           </CCol>
 
           {/* Selected Treatments + Per-treatment inputs (hide card if table exists) */}
@@ -327,9 +339,11 @@ const TestTreatments = ({ seed = {}, onNext }) => {
                             type="date"
                             className="form-control"
                             value={cfg.startDate}
-                            onChange={(e) => updateCfg(t, 'startDate', e.target.value)}
+                            min={new Date().toISOString().split("T")[0]}   // ✅ disables past dates
+                            onChange={(e) => updateCfg(t, "startDate", e.target.value)}
                           />
                         </div>
+
 
                         <div className="col-md-12">
                           <GradientTextCard text="Reason (for this treatment)" />
@@ -344,11 +358,20 @@ const TestTreatments = ({ seed = {}, onNext }) => {
 
                       <div className="mt-2">
                         <Button
-                          customColor={COLORS.primary}
                           onClick={() => generateForTreatment(t)}
+                          type="button"
+                          size="small"
+                          variant="outline"
+                          sx={{
+                            backgroundColor: COLORS.bgcolor,
+                            color: COLORS.black,
+                            border: "2px solid #000", // add border here
+
+                          }}
                         >
                           Generate Table for {t}
                         </Button>
+
                       </div>
                     </div>
                   )
@@ -440,7 +463,7 @@ const TestTreatments = ({ seed = {}, onNext }) => {
                       <table className="table table-bordered">
                         <thead>
                           <tr>
-                            <th>#</th>
+                            <th>S.No</th>
                             <th>Date</th>
                             <th>Sitting</th>
                           </tr>
@@ -485,7 +508,7 @@ const TestTreatments = ({ seed = {}, onNext }) => {
 
         <Button
           customColor={COLORS.bgcolor} // background color of button
-              color={COLORS.black}
+          color={COLORS.black}
           disabled={hasPendingCards /* or use: nextDisabled for stricter gating */}
           onClick={handleNext}
         >

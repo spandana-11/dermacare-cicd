@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DoctorLoginDTO {
 	
-    private String username;
+    private String userName;
     private String password;
     private String hospitalId;
 //    private String fcmToken;
@@ -18,7 +18,7 @@ public class DoctorLoginDTO {
 
 
     public void setusername(String username) {
-        this.username = username != null ? username.trim() : null;
+        this.userName = username != null ? username.trim() : null;
     }
 
     public void setPassword(String password) {

@@ -15,11 +15,13 @@ const Page500 = React.lazy(() => import('./views/pages/page500/Page500'))
 
 // Protected Route
 import ProtectedRoute from './components/ProtectedRoute'
-
+import { injectTheme } from './Constant/Themes'
 const App = () => {
   const { isColorModeSet, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
   const storedTheme = useSelector((state) => state.theme)
-
+  useEffect(() => {
+    injectTheme()
+  }, [])
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const theme = urlParams.get('theme')?.match(/^[A-Za-z0-9\s]+/)?.[0]
@@ -50,7 +52,7 @@ const App = () => {
           />
         </Routes>
       </Suspense>
-      <ToastContainer />
+      {/* <ToastContainer /> */}
     </BrowserRouter>
   )
 }

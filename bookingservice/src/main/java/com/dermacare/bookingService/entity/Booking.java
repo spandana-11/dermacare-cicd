@@ -31,11 +31,14 @@ public class Booking  {
 	private String age;
 	private String gender;
 	private String mobileNumber;
+	private String customerId;
 	private String customerDeviceId;
 	private String problem;
 	private String symptomsDuration;
 	private String clinicId;
 	private String clinicName;
+	private String branchId;
+	private String branchname;
 	private String clinicDeviceId;
 	private String doctorId;
 	private String doctorName;
@@ -49,13 +52,15 @@ public class Booking  {
 	private double consultationFee;
 	private String reasonForCancel;
 	private String notes;
-	private ReportsList reports;
+	private List<ReportsList> reports;
 	private String channelId;
 	private String BookedAt;
 	private String status;
 	private Integer visitCount;
 	private List<byte[]> attachments;
 	private byte[] consentFormPdf;
+	private List<byte[]> prescriptionPdf;
 	private double totalFee;
+	private String doctorRefCode;
 	private String consultationExpiration;
 }

@@ -16,7 +16,7 @@ public class BookingServiceImpl implements BookingService {
     private BookingFeignClient bookingFeignClient;
 
     @Override
-    public final ResponseEntity<?> getAppointmentsByPatientId(String patientId) {
+    public  ResponseEntity<?> getAppointmentsByPatientId(String patientId) {
         try {
             return bookingFeignClient.getAppointmentByPatientId(patientId);
         } catch (FeignException ex) {
@@ -25,7 +25,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public final ResponseEntity<?> searchAppointmentsByInput(String input) {
+    public  ResponseEntity<?> searchAppointmentsByInput(String input) {
         try {
             return bookingFeignClient.getAppointsByInput(input);
         } catch (FeignException ex) {
@@ -34,7 +34,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public final ResponseEntity<?> getTodaysAppointments(String clinicId, String doctorId) {
+    public  ResponseEntity<?> getTodaysAppointments(String clinicId, String doctorId) {
         try {
             return bookingFeignClient.getTodayDoctorAppointmentsByDoctorId(clinicId, doctorId);
         } catch (FeignException ex) {
@@ -43,7 +43,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public final ResponseEntity<?> getFilteredAppointments(String clinicId, String doctorId, String number) {
+    public  ResponseEntity<?> getFilteredAppointments(String clinicId, String doctorId, String number) {
         try {
             return bookingFeignClient.filterDoctorAppointmentsByDoctorId(clinicId, doctorId, number);
         } catch (FeignException ex) {
@@ -52,7 +52,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public final ResponseEntity<?> getCompletedAppointments(String clinicId, String doctorId) {
+    public  ResponseEntity<?> getCompletedAppointments(String clinicId, String doctorId) {
         try {
             return bookingFeignClient.filterDoctorAppointmentsByDoctorId(clinicId, doctorId);
         } catch (FeignException ex) {
@@ -61,12 +61,21 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public final ResponseEntity<?> getConsultationTypeCounts(String clinicId, String doctorId) {
+    public  ResponseEntity<?> getConsultationTypeCounts(String clinicId, String doctorId) {
         try {
             return bookingFeignClient.getSizeOfConsultationTypesByDoctorId(clinicId, doctorId);
         } catch (FeignException ex) {
             return ResponseEntity.status(ex.status()).body(ex.contentUTF8());
         }
     }
+    @Override
+    public ResponseEntity<?> getInProgressAppointments(String mobileNumber) {
+        try {
+            return bookingFeignClient.inProgressAppointments(mobileNumber);
+        } catch (FeignException ex) {
+            return ResponseEntity.status(ex.status()).body(ex.contentUTF8());
+        }
+    }
+
 }
 

@@ -25,6 +25,7 @@ import { createDoctorSaveDetails, getClinicDetails, getDoctorDetails } from '../
 import { useDoctorContext } from '../Context/DoctorContext'
 import PrescriptionPDF from '../utils/PdfGenerator'
 import { pdf } from '@react-pdf/renderer'
+import { capitalizeFirst } from '../utils/CaptalZeWord'
 
 /**
  * Props:
@@ -65,6 +66,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
 
   const tests = Array.isArray(formData?.tests?.selectedTests) ? formData.tests.selectedTests : []
   const testsReason = formData?.tests?.testReason ? formData.tests.testReason : ''
+
 
   const treatmentReason = formData?.treatments?.treatmentReason
     ? formData.treatments.treatmentReason
@@ -120,11 +122,15 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
       .join(sep)
   }
 
+  // Inside useEffect (after fetching doctor & clinic details)
   useEffect(() => {
     const fetchDetails = async () => {
       try {
         const doctor = await getDoctorDetails()
         const clinic = await getClinicDetails()
+        console.log("Fetched Doctor Details:", doctor)
+        console.log("Fetched Clinic Details:", clinic)
+
         if (doctor) setDoctorDetails(doctor)
         if (clinic) setClinicDetails(clinic)
       } catch (e) {
@@ -132,11 +138,12 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
       }
     }
     fetchDetails()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ---------------- PDF helpers ----------------
+  // PDF Render
   const renderPrescriptionPdfBlob = async () => {
+    console.log("Rendering Prescription PDF with:", { doctorDetails, clinicDetails, formData, patientData })
     return await pdf(
       <PrescriptionPDF
         doctorData={doctorDetails}
@@ -146,6 +153,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
       />,
     ).toBlob()
   }
+
 
   const blobToBase64 = (blob) =>
     new Promise((resolve, reject) => {
@@ -171,16 +179,30 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
   }
 
   // Package all data + pdf (base64) and send it
+  // Upload prescription
   const uploadPrescription = async ({ downloadAfter = false } = {}) => {
     try {
+      // ✅ Check diagnosis first
+      const diagnosis = formData?.symptoms?.diagnosis?.trim() || ''
+      if (!diagnosis) {
+        //  alert('Diagnosis is missing. Cannot save or upload the prescription.')
+        return false
+      }
+
+      console.log("Preparing to upload prescription...")
       const blob = await renderPrescriptionPdfBlob()
+      console.log("PDF Blob Generated:", blob)
+
       const base64 = await blobToBase64(blob)
+      console.log("Base64 PDF length:", base64.length)
+
       const safeName = (patientData?.name || 'Prescription').replace(/[^\w\-]+/g, '_')
       const filename = `${safeName}.pdf`
 
       const payload = {
         bookingId: patientData?.bookingId,
         clinicName: clinicDetails?.name,
+        customerId: patientData?.customerId,
         clinicId: clinicDetails?.hospitalId,
         patientId: patientData?.patientId,
         doctorId: doctorDetails?.doctorId,
@@ -189,12 +211,14 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         treatments: formData?.treatments,
         followUp: formData?.followUp,
         prescription: formData?.prescription,
-        prescriptionPdf: [base64], // base64 string only
-        // pdfFilename: filename,
-        // pdfMimeType: 'application/pdf',
+        prescriptionPdf: [base64],
+        visitType: patientData?.visitType || "OFFLINE",
       }
-      console.log(payload)
+      console.log("Final Payload to Upload:", payload)
+
       const resp = await createDoctorSaveDetails(payload)
+      console.log("API Response:", resp)
+
       if (resp) {
         success('Prescription saved successfully!', { title: 'Success' })
       } else {
@@ -202,49 +226,64 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
       }
 
       if (downloadAfter) {
+        console.log("Downloading PDF file:", filename)
         downloadBlob(blob, filename)
       }
 
       return true
     } catch (e) {
-      console.error(e)
+      console.error("Upload Prescription Error:", e)
       error('Failed to generate or send the PDF.', { title: 'Error' })
       return false
     }
   }
 
+
   // ---------------- Actions ----------------
+  // Actions
   const onClickSave = () => {
+    console.log("Save button clicked")
     setPendingAction(ACTIONS.SAVE)
     setShowTemplateModal(true)
   }
 
   const onClickSavePrint = () => {
+    console.log("Save & Print button clicked")
     setPendingAction(ACTIONS.SAVE_PRINT)
     setShowTemplateModal(true)
   }
 
   const confirmSaveAsTemplate = async () => {
     const action = pendingAction
+    console.log("Confirm Save As Template Action:", action)
     setShowTemplateModal(false)
     try {
       await onSaveTemplate?.()
+      console.log("Template Saved Successfully")
       const ok = await uploadPrescription({ downloadAfter: action === ACTIONS.SAVE_PRINT })
-      if (ok) navigate('/dashboard', { replace: true })
+      if (ok) {
+        console.log("Navigation to Dashboard")
+        navigate('/dashboard', { replace: true })
+      }
     } finally {
       setPendingAction(null)
     }
   }
 
   const skipTemplate = async () => {
+    console.log("Skipped saving as template. Pending Action:", pendingAction)
     setShowTemplateModal(false)
     try {
       const ok = await uploadPrescription({ downloadAfter: pendingAction === ACTIONS.SAVE_PRINT })
-      if (ok) navigate('/dashboard', { replace: true })
+      if (ok) {
+        console.log("Navigation to Dashboard after skipping template")
+        navigate('/dashboard', { replace: true })
+      }
     } finally {
       setPendingAction(null)
     }
   }
+
 
   // ---------------- Render ----------------
   return (
@@ -253,13 +292,14 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {/* Patient Info */}
         <CCard className="shadow-sm mb-3">
           <CCardHeader className="py-2">
-            <strong style={{color:COLORS.black}}>Patient Information</strong>
+            <strong style={{ color: COLORS.black }}>Patient Information</strong>
           </CCardHeader>
           <CCardBody>
             <CRow className="g-3">
               <CCol xs={12} md={4}>
                 <div>
-                  <span className="fw-semibold">Name:</span> {patientData?.name || '—'}
+                  <span className="fw-semibold">Name:</span> {capitalizeFirst(patientData?.name || '—')}
+
                 </div>
               </CCol>
               <CCol xs={12} md={3}>
@@ -283,7 +323,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {(symptomsDetails !== '—' || symptomsDuration !== '—') && (
           <CCard className="shadow-sm mb-4">
             <CCardHeader className="py-2">
-              <strong style={{color:COLORS.black}}>Symptoms & Duration</strong>
+              <strong style={{ color: COLORS.black }}>Symptoms & Duration</strong>
             </CCardHeader>
             <CCardBody>
               <CRow className="g-3">
@@ -317,7 +357,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {diagnosis && (
           <CCard className="shadow-sm mb-3">
             <CCardHeader className="py-2">
-              <strong style={{color:COLORS.black}}>Probable Diagnosis / Disease</strong>
+              <strong style={{ color: COLORS.black }}>Probable Diagnosis / Disease</strong>
             </CCardHeader>
             <CCardBody>
               <div className="fs-6">{diagnosis}</div>
@@ -325,28 +365,105 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
           </CCard>
         )}
 
-        {/* Tests */}
-        {tests.length > 0 && (
+        {/* Medication Table */}
+        {medicines.length > 0 && (
           <CCard className="shadow-sm mb-3">
             <CCardHeader className="py-2">
-              <strong style={{color:COLORS.black}}>
-                Tests Recommended <span className="text-body-secondary">(with reasons)</span>
-              </strong>
+              <strong style={{ color: COLORS.black }}>Medication Details</strong>
             </CCardHeader>
             <CCardBody>
-              <ul className="mb-0">
-                {tests.map((t, i) => (
-                  <li key={`${t || 'test'}-${i}`}>
-                    <span className="fw-semibold">{t || '—'}</span>
-                  </li>
-                ))}
-              </ul>
-              {testsReason ? (
-                <div className="mt-2 mb-2">
-                  <strong style={{color:COLORS.black}}>Reasons</strong>
-                  <p className="mb-0">{testsReason}</p>
+              <CTable striped hover responsive className="align-middle">
+                <CTableHead>
+                  <CTableRow className="bg-primary text-white">
+                    <CTableHeaderCell>S.No</CTableHeaderCell>
+                    <CTableHeaderCell>Medicine Type</CTableHeaderCell>
+                    <CTableHeaderCell>Medicine</CTableHeaderCell>
+                    <CTableHeaderCell>Dosage</CTableHeaderCell>
+                    <CTableHeaderCell>Duration</CTableHeaderCell>
+                    <CTableHeaderCell>Frequency</CTableHeaderCell>
+                    <CTableHeaderCell>Instructions</CTableHeaderCell>
+                    <CTableHeaderCell>Notes</CTableHeaderCell>
+                    <CTableHeaderCell>Timings</CTableHeaderCell>
+                  </CTableRow>
+                </CTableHead>
+
+                <CTableBody>
+                  {medicines.map((med, index) => {
+                    const durationValue = parseInt(med.duration, 10);
+                    const durationUnit =
+                      med.durationUnit && med.durationUnit !== "NA"
+                        ? med.durationUnit.trim()
+                        : "";
+
+                    const displayDuration =
+                      durationValue > 0 && durationUnit
+                        ? `${durationValue} ${durationUnit}${durationValue > 1 ? "s" : ""}`
+                        : durationValue > 0
+                          ? `${durationValue}`
+                          : "NA";
+
+
+                    const displayFrequency =
+                      med.remindWhen && med.remindWhen !== "NA"
+                        ? med.remindWhen === "Other" && med.others
+                          ? `Other (${med.others})`
+                          : med.remindWhen
+                        : med.others || "NA";
+
+                    const displayTimes =
+                      Array.isArray(med.times) && med.times.filter(Boolean).length > 0
+                        ? med.times.filter(Boolean).join(", ")
+                        : "NA";
+
+                    return (
+                      <CTableRow key={index}>
+                        <CTableDataCell>{index + 1}</CTableDataCell>
+                        <CTableDataCell>{med.medicineType || "NA"}</CTableDataCell>
+                        <CTableDataCell>{med.name || "NA"}</CTableDataCell>
+                        <CTableDataCell>{med.dose || "NA"}</CTableDataCell>
+                        <CTableDataCell>{displayDuration}</CTableDataCell>
+                        <CTableDataCell>{displayFrequency}</CTableDataCell>
+                        <CTableDataCell>{med.food || "NA"}</CTableDataCell>
+                        <CTableDataCell>{med.note || "NA"}</CTableDataCell>
+                        <CTableDataCell>{displayTimes}</CTableDataCell>
+                      </CTableRow>
+                    );
+                  })}
+                </CTableBody>
+              </CTable>
+            </CCardBody>
+          </CCard>
+        )}
+
+
+        {/* Tests */}
+        {(tests.length > 0 || testsReason) && (
+          <CCard className="shadow-sm mb-3">
+            <CCardHeader className="py-2">
+              <strong style={{ color: COLORS.black }}>Tests</strong>
+            </CCardHeader>
+            <CCardBody>
+              {tests.length > 0 ? (
+                <ul className="mb-2">
+                  {tests.map((t, i) => (
+                    <li key={`test-${i}`}>
+                      <span className="fw-semibold">Recommended Test (Optional): </span>
+                      <span>{typeof t === 'string' ? t : t?.name || '—'}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mb-2">
+                  <span className="fw-semibold">Recommended Test (Optional):</span> NA
+                </p>
+              )}
+
+              {testsReason && (
+                <div className="mt-2">
+                  <div className="text-muted fw-semibold">Reason:{testsReason}</div>
+
                 </div>
-              ) : null}
+              )}
             </CCardBody>
           </CCard>
         )}
@@ -355,14 +472,18 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {treatments.length > 0 && (
           <CCard className="shadow-sm mb-3">
             <CCardHeader className="py-2">
-              <strong style={{color:COLORS.black}}>Treatments</strong>
+              <strong style={{ color: COLORS.black }}>Treatments</strong>
             </CCardHeader>
             <CCardBody>
               <ul className="mb-2">
                 {treatments.map((t, i) => (
-                  <li key={`treat-${i}`}>{typeof t === 'string' ? t : t?.name || '—'}</li>
+                  <li key={`treat-${i}`}>
+                    <strong>Selected Treatments: </strong>
+                    {typeof t === "string" ? t : t?.name || "—"}
+                  </li>
                 ))}
               </ul>
+
               {treatmentReason ? (
                 <div className="mt-2">
                   <div className="text-muted">Reason</div>
@@ -377,7 +498,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {treatmentSchedules && Object.keys(treatmentSchedules).length > 0 && (
           <CCard className="shadow-sm mb-3">
             <CCardHeader className="py-2">
-              <strong style={{color:COLORS.black}}>Treatment Schedule</strong>
+              <strong style={{ color: COLORS.black }}>Treatment Schedule</strong>
             </CCardHeader>
             <CCardBody>
               {Object.entries(treatmentSchedules).map(([name, meta]) => (
@@ -391,20 +512,22 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
                     <table className="table table-sm mb-0">
                       <thead className="table-light">
                         <tr>
-                          <th style={{ width: '8%' }}>#</th>
-                          <th style={{ width: '46%' }}>Date</th>
-                          <th style={{ width: '46%' }}>Sitting</th>
+                          <th style={{ width: "8%", textAlign: "center" }}>S.No</th>
+                          <th style={{ width: "46%", textAlign: "center" }}>Date</th>
+                          <th style={{ width: "46%", textAlign: "center" }}>Sitting</th>
                         </tr>
+
                       </thead>
                       <tbody>
                         {(meta?.dates || []).map((d, i) => (
-                          <tr key={`${name}-row-${i}`}>
+                          <tr key={`${name}-row-${i}`} className="text-center">
                             <td>{i + 1}</td>
                             <td>{d?.date ?? '—'}</td>
                             <td>{d?.sitting ?? '—'}</td>
                           </tr>
                         ))}
                       </tbody>
+
                     </table>
                   </div>
 
@@ -415,84 +538,44 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
           </CCard>
         )}
 
-        {/* Prescription Table */}
-        {medicines.length > 0 && (
-          <CCard className="shadow-sm mb-3">
-            <CCardHeader className="py-2">
-              <strong style={{color:COLORS.black}}>Prescription Details</strong>
-            </CCardHeader>
-            <CCardBody>
-              <CTable striped hover responsive className="align-middle">
-                <CTableHead>
-                  <CTableRow className="bg-primary text-white">
-                    <CTableHeaderCell>S.No</CTableHeaderCell>
-                    <CTableHeaderCell>Medicine</CTableHeaderCell>
-                    <CTableHeaderCell>Dose</CTableHeaderCell>
-                    <CTableHeaderCell>Remind When</CTableHeaderCell>
-                    <CTableHeaderCell>Note</CTableHeaderCell>
-                    <CTableHeaderCell>Duration</CTableHeaderCell>
-                    <CTableHeaderCell>Time</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  {medicines.map((item, idx) => {
-                    const timings = toInitials(item?.times, ', ')
-                    return (
-                      <CTableRow key={item.id ?? idx}>
-                        <CTableDataCell>{idx + 1}</CTableDataCell>
-                        <CTableDataCell>{item.name || '—'}</CTableDataCell>
-                        <CTableDataCell>{item.dose || '—'}</CTableDataCell>
-                        <CTableDataCell>{item.remindWhen || '—'}</CTableDataCell>
-                        <CTableDataCell>
-                          <div className="text-truncate" style={{ maxWidth: 220 }}>
-                            {item.note || '—'}
-                          </div>
-                        </CTableDataCell>
-                        <CTableDataCell>
-                          {item.duration ? `${item.duration} Days` : '—'}
-                        </CTableDataCell>
-                        <CTableDataCell>{timings || '—'}</CTableDataCell>
-                      </CTableRow>
-                    )
-                  })}
-                </CTableBody>
-              </CTable>
-            </CCardBody>
-          </CCard>
-        )}
-
         {/* Follow-up Plan */}
         {followUp.durationValue !== 'NA' && (
           <CCard className="shadow-sm mb-4">
             <CCardHeader className="py-2">
-              <strong style={{color:COLORS.black}}>Follow-up Plan</strong>
+              <strong style={{ color: COLORS.black }}>Follow-up Plan</strong>
             </CCardHeader>
             <CCardBody>
               <CCol xs={12} md={6}>
                 <div>
                   <span className="fw-semibold">Next Follow Up :</span>{' '}
-                  {followUp.durationValue !== 0 ? (
+                  {followUp.durationValue && followUp.durationValue !== 0 ? (
                     <>
                       After{' '}
                       <span>
-                        {followUp.durationValue} {followUp.durationUnit}
+                        {followUp.durationValue} {followUp.durationUnit || 'NA'}
                       </span>
+                      {followUp.date && followUp.date !== '—' && (
+                        <> ({followUp.date})</>
+                      )}
                     </>
                   ) : (
-                    '—'
+                    'NA'
                   )}
-                  {followUp.date !== '—' ? <> ({followUp.date})</> : null}
                 </div>
               </CCol>
+
               <CCol xs={12}>
                 <div>
                   <span className="fw-semibold">Follow Up Note:</span>{' '}
-                  <span style={{ whiteSpace: 'pre-wrap' }}>{followUp.note}</span>
+                  <span style={{ whiteSpace: 'pre-wrap' }}>
+                    {followUp.note && followUp.note.trim() !== '' ? followUp.note : 'NA'}
+                  </span>
                 </div>
               </CCol>
             </CCardBody>
           </CCard>
         )}
+
       </CContainer>
 
       {/* Sticky Bottom Bar */}
@@ -529,7 +612,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
                   : setShowTemplateModal(true)
               }}
               customColor={COLORS.bgcolor} // background color of button
-                  color={COLORS.black}
+              color={COLORS.black}
             >
               Save
             </Button>
@@ -561,8 +644,8 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
                   You can reuse this prescription layout later for faster entry.
                 </p>
                 <div className="d-flex gap-2 justify-content-end">
-                  <Button onClick={skipTemplate}>No, just continue</Button>
-                  <Button customColor={COLORS.secondary} onClick={confirmSaveAsTemplate}>
+                  <Button onClick={skipTemplate} customColor={COLORS.bgcolor}>No, just continue</Button>
+                  <Button customColor={COLORS.bgcolor} onClick={confirmSaveAsTemplate}>
                     Yes, save as template
                   </Button>
                 </div>

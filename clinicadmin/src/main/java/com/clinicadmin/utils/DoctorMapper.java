@@ -17,9 +17,18 @@ public class DoctorMapper {
 		if (dto.getId() != null) {
 			doctor.setId(new ObjectId(dto.getId()));
 		}
-		doctor.setDoctorPicture(Base64CompressionUtil.compressBase64(dto.getDoctorPicture()));
+
+		// 🔹 Fix: check DTO instead of doctor
+		if (dto.getDoctorPicture() != null && !dto.getDoctorPicture().isBlank()) {
+			doctor.setDoctorPicture(Base64CompressionUtil.compressBase64(dto.getDoctorPicture()));
+		}
+
 		doctor.setDoctorId(dto.getDoctorId());
 		doctor.setHospitalId(dto.getHospitalId());
+		doctor.setHospitalName(dto.getHospitalName());
+		doctor.setBranchId(dto.getBranchId());
+		doctor.setPermissions(dto.getPermissions());
+		doctor.setRole(dto.getRole());
 		doctor.setDoctorAverageRating(dto.getDoctorAverageRating());
 		doctor.setDoctorEmail(dto.getDoctorEmail());
 		doctor.setDoctorLicence(dto.getDoctorLicence());
@@ -27,7 +36,7 @@ public class DoctorMapper {
 		doctor.setDoctorName(dto.getDoctorName());
 		doctor.setCategory(dto.getCategory());
 		doctor.setService(dto.getService());
-		doctor.setSubServices(dto.getSubServices());;
+		doctor.setSubServices(dto.getSubServices());
 		doctor.setSpecialization(dto.getSpecialization());
 		doctor.setGender(dto.getGender());
 		doctor.setExperience(dto.getExperience());
@@ -40,9 +49,17 @@ public class DoctorMapper {
 		doctor.setHighlights(dto.getHighlights());
 		doctor.setDoctorAvailabilityStatus(dto.isDoctorAvailabilityStatus());
 		doctor.setRecommendation(dto.isRecommendation());
-		doctor.setDoctorSignature(Base64CompressionUtil.compressBase64(dto.getDoctorSignature()));
+
+		// 🔹 Check null before compress
+		if (dto.getDoctorSignature() != null && !dto.getDoctorSignature().isBlank()) {
+			doctor.setDoctorSignature(Base64CompressionUtil.compressBase64(dto.getDoctorSignature()));
+		}
+
 		doctor.setAssociatedWithIADVC(dto.isAssociatedWithIADVC());
-		
+		doctor.setAssociationsOrMemberships(dto.getAssociationsOrMemberships());
+		doctor.setBranches(dto.getBranches());
+		doctor.setPermissions(dto.getPermissions());
+
 		if (dto.getDoctorFees() != null) {
 			doctor.setDoctorFees(mapDoctorFeeDTOtoEntity(dto.getDoctorFees()));
 		}
@@ -56,18 +73,26 @@ public class DoctorMapper {
 
 		return doctor;
 	}
-	
 
-	
 	public static DoctorsDTO mapDoctorEntityToDoctorDTO(Doctors doctor) {
 		DoctorsDTO dto = new DoctorsDTO();
 
 		if (doctor.getId() != null) {
 			dto.setId(doctor.getId().toHexString());
 		}
+
 		dto.setDoctorId(doctor.getDoctorId());
-		dto.setHospitalId(doctor.getHospitalId());;
-		dto.setDoctorPicture(Base64CompressionUtil.decompressBase64(doctor.getDoctorPicture()));
+		dto.setBranchId(doctor.getBranchId());
+		dto.setHospitalId(doctor.getHospitalName());
+		dto.setPermissions(dto.getPermissions());
+		dto.setRole(doctor.getRole());
+		dto.setHospitalId(doctor.getHospitalId());
+
+		// 🔹 Null checks before decompress
+		if (doctor.getDoctorPicture() != null && !doctor.getDoctorPicture().isBlank()) {
+			dto.setDoctorPicture(Base64CompressionUtil.decompressBase64(doctor.getDoctorPicture()));
+		}
+
 		dto.setDoctorLicence(doctor.getDoctorLicence());
 		dto.setDoctorAverageRating(doctor.getDoctorAverageRating());
 		dto.setDeviceId(doctor.getDeviceId());
@@ -76,7 +101,7 @@ public class DoctorMapper {
 		dto.setDoctorEmail(doctor.getDoctorEmail());
 		dto.setCategory(doctor.getCategory());
 		dto.setService(doctor.getService());
-		dto.setSubServices(doctor.getSubServices());;
+		dto.setSubServices(doctor.getSubServices());
 		dto.setSpecialization(doctor.getSpecialization());
 		dto.setGender(doctor.getGender());
 		dto.setExperience(doctor.getExperience());
@@ -89,10 +114,16 @@ public class DoctorMapper {
 		dto.setHighlights(doctor.getHighlights());
 		dto.setDoctorAvailabilityStatus(doctor.isDoctorAvailabilityStatus());
 		dto.setRecommendation(doctor.isRecommendation());
-		dto.setDoctorSignature(Base64CompressionUtil.decompressBase64(doctor.getDoctorSignature()));
+
+
+		if (doctor.getDoctorSignature() != null && !doctor.getDoctorSignature().isBlank()) {
+			dto.setDoctorSignature(Base64CompressionUtil.decompressBase64(doctor.getDoctorSignature()));
+		}
+
 		dto.setAssociatedWithIADVC(doctor.isAssociatedWithIADVC());
-		
-		// Map DoctorFee
+		dto.setAssociationsOrMemberships(doctor.getAssociationsOrMemberships());
+		dto.setBranches(doctor.getBranches());
+
 		if (doctor.getDoctorFees() != null) {
 			dto.setDoctorFees(mapDoctorFeeEntityToDTO(doctor.getDoctorFees()));
 		}

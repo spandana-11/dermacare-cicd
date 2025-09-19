@@ -1,4 +1,4 @@
-package com.AdminService.controller;
+                                                                                   package com.AdminService.controller;
 
 import java.util.Optional;
 
@@ -12,6 +12,7 @@ import com.AdminService.service.DoctorWebAdsServiceImpl;
 
 @RestController
 @RequestMapping("/admin")
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class DoctorWebAdsController {
 
     @Autowired

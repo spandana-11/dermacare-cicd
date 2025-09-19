@@ -17,14 +17,23 @@ import {
   CCol,
   CCard,
   CCardBody,
+  CInputGroup,
+  CFormInput,
+  CInputGroupText,
+  CSpinner,
 } from '@coreui/react'
 import { CBadge } from '@coreui/react'
+import { cilSearch } from '@coreui/icons'
+import CIcon from '@coreui/icons-react'
 import { AppointmentData } from './appointmentAPI'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { GetBookingByClinicIdData } from './appointmentAPI'
 import { GetBookingBy_ClinicId } from '../../baseUrl'
 
+import { COLORS } from '../../Constant/Themes'
+import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
+import LoadingIndicator from '../../Utils/loader'
 const appointmentManagement = () => {
   const [viewService, setViewService] = useState(null)
   const [selectedServiceTypes, setSelectedServiceTypes] = useState([])
@@ -32,6 +41,7 @@ const appointmentManagement = () => {
   const [filteredData, setFilteredData] = useState([])
   const [availableServiceTypes, setAvailableServiceTypes] = useState([])
   const [availableConsultationTypes, setAvailableConsultationTypes] = useState([])
+  const { searchQuery } = useGlobalSearch()
   const consultationTypeLabels = {
     'In-clinic': 'In-clinic',
     Online: 'Tele Consultation',
@@ -41,8 +51,10 @@ const appointmentManagement = () => {
   const [statusFilters, setStatusFilters] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const [loading, setLoading] = useState(true)
+
   const itemsPerPage = 7
   const navigate = useNavigate()
+  const [sortOrder, setSortOrder] = useState('asc')
 
   const fetchAppointments = async () => {
     try {
@@ -54,12 +66,13 @@ const appointmentManagement = () => {
         setLoading(false) //stop loading even if no hospitalId
         return
       }
+      console.log('Appointments for this Hospital:', hospitalId)
 
       const filteredDataResponse = await GetBookingByClinicIdData(hospitalId)
       console.log('Appointments for this Hospital:', filteredDataResponse)
 
+      setBookings(filteredDataResponse.data || [])
       if (filteredDataResponse?.data) {
-        setBookings(filteredDataResponse.data)
       } else {
         console.warn('No data returned for Hospital ID:', hospitalId)
         setBookings([])
@@ -93,21 +106,24 @@ const appointmentManagement = () => {
   // }
 
   useEffect(() => {
-    fetchAppointments()
-  }, [])
+    const hospitalId = localStorage.getItem('HospitalId')
+    if (hospitalId) {
+      fetchAppointments()
+    }
+  }, [localStorage.getItem('HospitalId')])
 
   //filtering
   useEffect(() => {
     let filtered = [...bookings]
     console.log('Initial bookings:', filtered)
-
     const normalize = (val) => val?.toLowerCase().trim()
 
-    // Map your filter buttons to actual data values:
-    const consultationTypeMap = {
-      'Service & Treatment': 'services & treatments',
-      'Tele Consultation': 'Tele consultation',
-      'In-clinic': 'in-clinic consultation',
+    if (searchQuery.trim() !== '') {
+      filtered = filtered.filter((item) =>
+        Object.values(item).some((val) =>
+          normalize(String(val || '')).includes(normalize(searchQuery)),
+        ),
+      )
     }
 
     // Filter by status (use 'status', not 'bookedStatus')
@@ -116,6 +132,11 @@ const appointmentManagement = () => {
         statusFilters.some((status) => normalize(status) === normalize(item.status)),
       )
       console.log('After status filter:', filtered)
+    }
+    const consultationTypeMap = {
+      'Service & Treatment': 'services & treatments',
+      'Tele Consultation': 'Tele consultation',
+      'In-clinic': 'in-clinic consultation',
     }
 
     // Filter by consultation type (only one at a time)
@@ -137,10 +158,25 @@ const appointmentManagement = () => {
         }
       }
     }
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(
+        (item) =>
+          item.name?.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
+          item.patientId?.toLowerCase().includes(searchQuery.toLowerCase().trim()),
+      )
+    }
 
     setFilteredData(filtered)
     setCurrentPage(1)
-  }, [bookings, filterTypes, statusFilters])
+  }, [bookings, filterTypes, statusFilters, searchQuery])
+
+  const statusLabelMap = {
+    'In-Progress': 'Active',
+    Completed: 'Completed',
+    Pending: 'Pending',
+    Rejected: 'Rejected',
+    Confirmed: 'Confirmed',
+  }
 
   useEffect(() => {
     const serviceTypes = [...new Set(bookings.map((item) => item.subServiceName).filter(Boolean))]
@@ -155,7 +191,13 @@ const appointmentManagement = () => {
     window.scrollTo(0, 0)
   }, [currentPage])
 
-  const paginatedData = filteredData.slice(
+  const sortedData = [...filteredData].sort((a, b) => {
+    const dateA = new Date(a.serviceDate)
+    const dateB = new Date(b.serviceDate)
+    return sortOrder === 'asc' ? dateA - dateB : dateB - dateA
+  })
+
+  const paginatedData = sortedData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   )
@@ -177,7 +219,7 @@ const appointmentManagement = () => {
     }
   }
 
-  //filtering for pending,completed ,Active - one selection at a time
+  //filtering for pending,completed ,In-Progress - one selection at a time
   const handleStatusChange = (e) => {
     const value = e.target.value
 
@@ -187,30 +229,82 @@ const appointmentManagement = () => {
       setStatusFilters([value]) // Allow only one selection
     }
   }
+  // const sortedAppointments = [...appointments].sort((a, b) => {
+  //   const dateA = new Date(a.date)
+  //   const dateB = new Date(b.date)
+
+  //   if (sortOrder === 'asc') {
+  //     return dateA - dateB
+  //   } else {
+  //     return dateB - dateA
+  //   }
+  // })
+  useEffect(() => {
+    let filtered = [...bookings]
+    console.log('Initial bookings:', filtered)
+    const normalize = (val) => val?.toLowerCase().trim()
+
+    if (searchQuery.trim() !== '') {
+      const q = normalize(searchQuery)
+
+      filtered = filtered.filter((item) =>
+        Object.values(item).some((val) => normalize(String(val)).includes(q)),
+      )
+    }
+
+    // if (searchQuery.trim() !== '') {
+    //   result = result.filter(
+    //     (doc) =>
+    //       doc.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    //       doc.patientId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    //       doc.doctorName?.toLowerCase().includes(searchQuery.toLowerCase()),
+    //   )
+    // }
+
+    setFilteredData(filtered)
+  }, [searchQuery])
 
   return (
     <div style={{ overflow: 'hidden' }}>
-      <div className="container mt-4">
+      <div className="container ">
         <h5>Appointments</h5>
+        <div className="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          {/* <CInputGroup style={{ width: '300px' }}>
+            <CFormInput
+              type="text"
+              placeholder="Search by Patient Name or ID"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <CInputGroupText>
+              <CIcon icon={cilSearch} />
+            </CInputGroupText>
+          </CInputGroup> */}
+        </div>
+
         <div className="d-flex gap-2 mb-3">
           <button
             onClick={() => toggleFilter('Service & Treatment')}
             className={`btn ${
-              filterTypes.includes('Service & Treatment') ? 'btn-dark' : 'btn-outline-dark'
+              filterTypes.includes('Service & Treatment') ? 'btn-selected' : 'btn-unselected'
             }`}
           >
             Service & Treatment
           </button>
+
           <button
             onClick={() => toggleFilter('In-clinic')}
-            className={`btn ${filterTypes.includes('In-clinic') ? 'btn-dark' : 'btn-outline-dark'}`}
+            className={`btn ${
+              filterTypes.includes('In-clinic') ? 'btn-selected' : 'btn-unselected'
+            }`}
           >
             In-Clinic Consultation
           </button>
+
           <button
             onClick={() => toggleFilter('Tele Consultation')}
             className={`btn ${
-              filterTypes.includes('Tele Consultation') ? 'btn-dark' : 'btn-outline-dark'
+              filterTypes.includes('Tele Consultation') ? 'btn-selected' : 'btn-unselected'
             }`}
           >
             Tele Consultation
@@ -218,7 +312,7 @@ const appointmentManagement = () => {
         </div>
 
         <div className="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <div className="d-flex gap-2 flex-wrap">
+          <div className="d-flex gap-2 flex-wrap" style={{ color: 'var(--color-black)' }}>
             {/* <CFormCheck
               label="Pending"
               value="Pending"
@@ -226,19 +320,22 @@ const appointmentManagement = () => {
               checked={statusFilters.includes('Pending')}
             /> */}
             <CFormCheck
-              label="Active"
-              value="Active"
+              style={{ color: 'var(--color-black)' }}
+              label="Active" // UI
+              value="In-Progress" //Backend value
               onChange={handleStatusChange}
-              checked={statusFilters.includes('Active')}
+              checked={statusFilters.includes('In-Progress')}
             />
 
             <CFormCheck
+              style={{ color: 'var(--color-black)' }}
               label="Completed"
               value="Completed"
               onChange={handleStatusChange}
               checked={statusFilters.includes('Completed')}
             />
             <CFormCheck
+              style={{ color: 'var(--color-black)' }}
               label="Confirmed"
               value="Confirmed"
               onChange={handleStatusChange}
@@ -252,7 +349,7 @@ const appointmentManagement = () => {
             /> */}
           </div>
           <CButton
-            color="secondary"
+            style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
             onClick={() => {
               setSelectedServiceTypes([])
               setSelectedConsultationTypes([])
@@ -265,14 +362,20 @@ const appointmentManagement = () => {
         </div>
 
         <CTable striped hover responsive>
-          <CTableHead>
+          <CTableHead className="pink-table  w-auto">
             <CTableRow>
               <CTableHeaderCell>S.No</CTableHeaderCell>
               <CTableHeaderCell>Patient File_ID</CTableHeaderCell>
               <CTableHeaderCell>Name</CTableHeaderCell>
               <CTableHeaderCell>Doctor Name</CTableHeaderCell>
               <CTableHeaderCell>Consultation Type</CTableHeaderCell>
-              <CTableHeaderCell>Date</CTableHeaderCell>
+              <CTableHeaderCell
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                style={{ cursor: 'pointer' }}
+              >
+                Date {sortOrder === 'asc' ? '▲' : '▼'}
+              </CTableHeaderCell>
+
               <CTableHeaderCell>Time</CTableHeaderCell>
               <CTableHeaderCell>Status</CTableHeaderCell>
               <CTableHeaderCell>Action</CTableHeaderCell>
@@ -281,16 +384,22 @@ const appointmentManagement = () => {
 
           <CTableBody>
             {loading ? (
-              // ✅ Show loading row while fetching
+              // Show loading row while fetching
               <CTableRow>
-                <CTableDataCell colSpan="9" className="text-center text-primary fw-bold">
-                  Loading appointments...
+                <CTableDataCell
+                  colSpan="9"
+                  className="text-center  "
+                  style={{ color: 'var(--color-black)' }}
+                >
+                  <div className="d-flex justify-content-center align-items-center">
+                    <LoadingIndicator message="Loading appointments..." />
+                  </div>
                 </CTableDataCell>
               </CTableRow>
-            ) : Array.isArray(filteredData) && filteredData.length > 0 ? (
+            ) : paginatedData.length > 0 ? (
               paginatedData.map((item, index) => (
-                <CTableRow key={`${item.id}-${index}`}>
-                  <CTableDataCell>{index + 1}</CTableDataCell>
+                <CTableRow key={`${item.id}-${index}`} className="pink-table">
+                  <CTableDataCell> {(currentPage - 1) * itemsPerPage + index + 1}</CTableDataCell>
                   <CTableDataCell>{item.patientId}</CTableDataCell>
                   <CTableDataCell>{item.name}</CTableDataCell>
                   <CTableDataCell>{item.doctorName}</CTableDataCell>
@@ -301,16 +410,15 @@ const appointmentManagement = () => {
                   </CTableDataCell>
                   <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
                   <CTableDataCell>
-                    <CBadge color="info">
-                      {item.status
-                        ?.split(' ')
-                        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                        .join(' ')}
+                    <CBadge style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}>
+                      {statusLabelMap[item.status] || item.status}
                     </CBadge>
                   </CTableDataCell>
+
                   <CTableDataCell>
                     <CButton
-                      color="info"
+                      style={{ backgroundColor: 'var(--color-black)' }}
+                      className="text-white"
                       size="sm"
                       onClick={() =>
                         navigate(`/appointmentDetails/${item.bookingId}`, {
@@ -326,7 +434,11 @@ const appointmentManagement = () => {
             ) : (
               // ✅ Show only when loading is false and no data
               <CTableRow>
-                <CTableDataCell colSpan="9" className="text-center text-danger fw-bold">
+                <CTableDataCell
+                  colSpan="9"
+                  className="text-center"
+                  style={{ color: 'var(--color-black)' }}
+                >
                   No appointments found.
                 </CTableDataCell>
               </CTableRow>
@@ -334,24 +446,27 @@ const appointmentManagement = () => {
           </CTableBody>
         </CTable>
 
-        <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
-          {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }, (_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentPage(index + 1)}
-              style={{
-                margin: '0 5px',
-                padding: '5px 10px',
-                backgroundColor: currentPage === index + 1 ? '#007bff' : '#fff',
-                color: currentPage === index + 1 ? '#fff' : '#000',
-                border: '1px solid #ccc',
-                borderRadius: '5px',
-              }}
-            >
-              {index + 1}
-            </button>
-          ))}
-        </div>
+        {filteredData.length > itemsPerPage && (
+          <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+            {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }, (_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentPage(index + 1)}
+                style={{
+                  margin: '0 5px',
+                  padding: '5px 10px',
+                  backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
+                  color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
+                  border: '1px solid #ccc',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                }}
+              >
+                {index + 1}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

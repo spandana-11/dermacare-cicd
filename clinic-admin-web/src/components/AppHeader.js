@@ -15,6 +15,7 @@ import {
   useColorModes,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
+import ThemeSelector from '../Constant/ThemeSelector'
 import {
   cilBell,
   cilContrast,
@@ -29,6 +30,8 @@ import { AppBreadcrumb } from './index'
 import { AppHeaderDropdown } from './header/index'
 import { HospitalProvider } from '../views/Usecontext/HospitalContext'
 import { useHospital } from '../views/Usecontext/HospitalContext'
+import { COLORS } from '../Constant/Themes'
+import { useGlobalSearch } from '../views/Usecontext/GlobalSearchContext'
 
 const AppHeader = () => {
   const headerRef = useRef()
@@ -37,6 +40,9 @@ const AppHeader = () => {
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.sidebarShow)
   const navigate = useNavigate()
+  const username = localStorage.getItem('staffName')
+    ? localStorage.getItem('staffName')
+    : localStorage.getItem('HospitalName')?.split(' ')[0] || 'Hospital'
 
   useEffect(() => {
     document.addEventListener('scroll', () => {
@@ -44,9 +50,15 @@ const AppHeader = () => {
         headerRef.current.classList.toggle('shadow-sm', document.documentElement.scrollTop > 0)
     })
   }, [])
+  const { searchQuery, setSearchQuery } = useGlobalSearch()
 
   return (
-    <CHeader position="sticky" className="mb-4 p-0" ref={headerRef}>
+    <CHeader
+      position="sticky"
+      className="mb-4 p-0"
+      ref={headerRef}
+      style={{ backgroundColor: 'var(--color-bgcolor)' }}
+    >
       <CContainer className="border-bottom px-4" fluid>
         <CHeaderToggler
           onClick={() => dispatch({ type: 'set', sidebarShow: !sidebarShow })}
@@ -55,19 +67,23 @@ const AppHeader = () => {
           <CIcon icon={cilMenu} size="lg" />
         </CHeaderToggler>
         {/* Search Bar */}
-        <div className="d-none d-md-block me-4">
+        <div className="d-none d-md-block me-4" style={{ color: 'var(--color-black)' }}>
           <input
             type="text"
             placeholder="Search..."
             className="form-control"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             style={{
-              borderRadius: '25px', // Rounded corners
+              color: 'var(--color-black)',
+              borderRadius: '10px', // Rounded corners
               padding: '10px 15px', // Inner spacing
-              border: '1px solid #ccc', // Light gray border
+              border: `1px solid ${'var(--color-black)'}`, // Light gray border
               outline: 'none', // Removes focus border
-              width: '250px', // Adjust width as needed
+              width: '350px', // Adjust width as needed
               boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)', // Subtle shadow
               height: '40px',
+              backgroundColor: 'transparent',
             }}
           />
         </div>
@@ -75,6 +91,11 @@ const AppHeader = () => {
         {/* Notification Icons */}
         <div className="d-flex align-items-center ms-auto">
           {/* Bell icon with badge */}
+
+          {/* Welcome text */}
+          <span className="fw-bold  mx-5" style={{ color: 'var(--color-black)' }}>
+            Welcome, {username}
+          </span>
           <div
             className="position-relative me-3 cursor-pointer"
             style={{ cursor: 'pointer' }}
@@ -82,7 +103,12 @@ const AppHeader = () => {
               navigate('/doctor-notifications')
             }}
           >
-            <CIcon icon={cilBell} size="lg" />
+            <CIcon
+              icon={cilBell}
+              size="lg"
+              className="mx-2"
+              style={{ color: 'var(--color-black)' }}
+            />
             {notificationCount > 0 && (
               <span
                 className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
@@ -92,15 +118,8 @@ const AppHeader = () => {
               </span>
             )}
           </div>
-
-          {/* Welcome text */}
-          <span className="fw-bold  ">
-            Welcome, {localStorage.getItem('HospitalName')?.split(' ')[0] || 'Hospital'}
-          </span>
-        </div>
-
-        <CHeaderNav>
-          <li className="nav-item py-1">
+          <CHeaderNav>
+            {/* <li className="nav-item py-1">
             <div className="vr h-100 mx-2 text-body text-opacity-75"></div>
           </li>
           <CDropdown variant="nav-item" placement="bottom-end">
@@ -145,9 +164,11 @@ const AppHeader = () => {
           </CDropdown>
           <li className="nav-item py-1">
             <div className="vr h-100 mx-2 text-body text-opacity-75"></div>
-          </li>
-          <AppHeaderDropdown />
-        </CHeaderNav>
+          </li> */}
+            <ThemeSelector />
+            <AppHeaderDropdown />
+          </CHeaderNav>
+        </div>
       </CContainer>
       <CContainer className="px-4" fluid>
         <AppBreadcrumb />

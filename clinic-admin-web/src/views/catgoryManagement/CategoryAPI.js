@@ -6,10 +6,11 @@ import {
   UpdateCategory,
   deleteCategory,
 } from '../../baseUrl'
+import { http } from '../../Utils/Interceptors'
 
 export const CategoryData = async () => {
   try {
-    const response = await axios.get(`${BASE_URL}/${CategoryAllData}`)
+    const response = await http.get(`/${CategoryAllData}`)
 
     return response.data
   } catch (error) {
@@ -34,7 +35,7 @@ export const postCategoryData = async (categoryData) => {
 
     console.log('Data being sent:', requestData)
 
-    const response = await axios.post(`${BASE_URL}/${AddCategory}`, requestData, {
+    const response = await http.post(`/${AddCategory}`, requestData, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -55,8 +56,8 @@ export const updateCategoryData = async (categoryId, updatedCategory) => {
   console.log('Updated Category Data:', updatedCategory)
 
   try {
-    const response = await axios.put(
-      `${BASE_URL}/${UpdateCategory}/${categoryId}`,updatedCategory,
+    const response = await http.put(
+      `/${UpdateCategory}/${categoryId}`,updatedCategory,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -74,7 +75,7 @@ export const updateCategoryData = async (categoryId, updatedCategory) => {
 
 export const deleteCategoryData = async (categoryId) => {
   try {
-    const response = await axios.delete(`${BASE_URL}/${deleteCategory}/${categoryId}`, {
+    const response = await http.delete(`/${deleteCategory}/${categoryId}`, {
       headers: {
         'Content-Type': 'application/json',
       },

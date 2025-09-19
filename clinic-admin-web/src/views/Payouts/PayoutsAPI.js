@@ -1,9 +1,10 @@
 import axios from 'axios'
 import { Customer_Url, Booking_sevice, getAllPayouts, addPayouts } from '../../baseUrl'
+import { http } from '../../Utils/Interceptors'
 
 export const Get_AllPayoutsData = async () => {
   try {
-    const response = await axios.get(`${Booking_sevice}/${getAllPayouts}`, {
+    const response = await axios.get(`${Booking_sevice}/${getAllPayouts}`, { //TODO:chnage when apigetway call axios to http
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
@@ -18,7 +19,7 @@ export const Get_AllPayoutsData = async () => {
 
 export const postPayoutsData = async (serviceData) => {
   try {
-    const response = await axios.post(`${Booking_sevice}/${addPayouts}`, serviceData, {
+    const response = await axios.post(`${Booking_sevice}/${addPayouts}`, serviceData, {//TODO:chnage when apigetway call axios to http
       headers: { 'Content-Type': 'application/json' },
     })
     return response

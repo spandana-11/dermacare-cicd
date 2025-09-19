@@ -155,6 +155,7 @@ const CategoryManagement = () => {
           justifyContent: 'center',
           alignItems: 'center',
           marginLeft: '500px',
+          color: 'var(--color-black)',
         }}
       >
         <div
@@ -165,7 +166,7 @@ const CategoryManagement = () => {
             textAlign: 'center',
           }}
         >
-          <CHeader style={{ marginBottom: '10px' }}>!Alert</CHeader>
+          <CHeader style={{ marginBottom: '10px', color: 'var(--color-black)' }}>!Alert</CHeader>
           <CModalBody>{message}</CModalBody>
           <CModalFooter>
             <CButton color="secondary" onClick={onCancel}>
@@ -412,7 +413,11 @@ const CategoryManagement = () => {
         </CModalFooter>
       </CModal>
 
-      <CModal visible={editCategoryMode} onClose={() => setEditCategoryMode(false)} backdrop="static">
+      <CModal
+        visible={editCategoryMode}
+        onClose={() => setEditCategoryMode(false)}
+        backdrop="static"
+      >
         <CModalHeader>
           <CModalTitle>Edit Category</CModalTitle>
         </CModalHeader>

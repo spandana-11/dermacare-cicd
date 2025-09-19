@@ -21,8 +21,8 @@ import doctor from '../assets/images/doctor.jpg'
 import male from '../assets/images/male.png'
 import female from '../assets/images/female.png'
 import { useDoctorContext } from '../Context/DoctorContext'
-import { getClinicDetails, getDoctorDetails, averageRatings } from '../Auth/Auth'
-import { capitalizeWords } from '../utils/CaptalZeWord'
+import { getClinicDetails, getDoctorDetails, averageRatings, getPatientVitals } from '../Auth/Auth'
+import { capitalizeFirst, capitalizeWords } from '../utils/CaptalZeWord'
 
 const AppSidebar = () => {
   const dispatch = useDispatch()
@@ -34,6 +34,7 @@ const AppSidebar = () => {
   const hasPatient = !!patientData
   const [ratings, setRatings] = useState([])
   const [showModal, setShowModal] = useState(false)
+  const [vitals, setVitals] = useState({ height: '—', weight: '—', bloodPressure: '—', temperature: '—', bmi: '—' });
   useEffect(() => {
     const fetchData = async () => {
       const doctor = await getDoctorDetails()
@@ -43,64 +44,57 @@ const AppSidebar = () => {
 
       if (doctor?.doctorId && clinic?.hospitalId) {
         const ratingData = await averageRatings(clinic.hospitalId, doctor.doctorId)
-        if (ratingData?.ratingStats) {
+
+        if (ratingData?.ratingStats?.length > 0) {
           setRatings(ratingData.ratingStats)
+        } else {
+          // store a "no ratings" message when data is empty
+          setRatings([{ category: ratingData.message || 'No reviews found', percentage: 0 }])
         }
       }
     }
     fetchData()
   }, [])
+
+  // Load patient vitals whenever patientData changes
+  useEffect(() => {
+    let isMounted = true; // flag to prevent state update if unmounted
+
+    const fetchVitals = async () => {
+      if (hasPatient && patientData?.bookingId && patientData?.patientId) {
+        const data = await getPatientVitals(patientData.bookingId, patientData.patientId);
+        if (data && isMounted) setVitals(data);
+      }
+    };
+
+    fetchVitals();
+
+    return () => {
+      isMounted = false; // cleanup to prevent memory leaks
+    };
+  }, [hasPatient, patientData]);
+
   const genderImg = (patientData?.gender || '').toString().toLowerCase() === 'male' ? male : female
 
   const display = {
-    // existing
     name: patientData?.name || '—',
     age: patientData?.age || '—',
     gender: patientData?.gender || '—',
     mobile: patientData?.mobileNumber || '—',
     visitType: patientData?.consultationType || '—',
-    visitCount: patientData ? '2' : '—',
+    visitCount: patientData?.visitCount || '—',
+    followUp: patientData?.freeFollowUps || '—',
     symptom: patientData?.problem || '—',
-
-    // new: patient/meta
-    patientDataFor: patientData?.patientDataFor || '—',
     patientId: patientData?.patientId || '—',
-
-    // new: service/category
-    categoryName: patientData?.categoryName || '—',
-    categoryId: patientData?.categoryId || '—',
-    serviceName: patientData?.servicename || patientData?.serviceName || '—',
-    serviceId: patientData?.serviceId || '—',
-    subServiceName: patientData?.subServiceName || '—',
-    subServiceId: patientData?.subServiceId || '—',
-
-    // new: appointment
+    clinicName: patientData?.clinicName || '—',
+    doctorName: patientData?.doctorName || '—',
+    consultationFee: patientData?.consultationFee ?? '—',
+    totalFee: patientData?.totalFee ?? '—',
     serviceDate: patientData?.serviceDate || '—',
     serviceTime: patientData?.serviceTime || patientData?.servicetime || '—',
     duration: patientData?.duration || '—',
-
-    // new: clinic
-    clinicId: patientData?.clinicId || '—',
-    clinicName: patientData?.clinicName || '—',
-    clinicAddress: patientData?.clinicAddress || '—',
-
-    // new: doctor
-    doctorId: patientData?.doctorId || '—',
-    doctorName: patientData?.doctorName || '—',
-
-    // new: fees
-    consultationFee: patientData?.consultationFee ?? '—',
-    totalFee: patientData?.totalFee ?? '—',
-
-    // keep vitals for now (unknowns)
-    vitals: {
-      height: '153 CM',
-      weight: '62 Kgs',
-      bp: '80/120',
-      temperature: '—',
-      bmi: '—',
-    },
-  }
+    vitals,
+  };
   // helpers (place above your return)
   const fmt = (n) => (n !== '—' && !isNaN(+n) ? `₹ ${Number(n).toFixed(2)}` : '—')
 
@@ -121,11 +115,11 @@ const AppSidebar = () => {
         position="fixed"
         unfoldable={unfoldable}
         visible={sidebarShow}
-        style={{backgroundColor:COLORS.bgcolor}}
+        style={{ backgroundColor: COLORS.bgcolor }}
         onVisibleChange={(visible) => {
           dispatch({ type: 'set', sidebarShow: visible })
         }}
-        
+
       >
         <CSidebarHeader className="border-bottom ">
           <div
@@ -165,7 +159,7 @@ const AppSidebar = () => {
                   className=" mb-2 mt-2"
                   style={{ color: COLORS.black, fontWeight: 'bold', fontSize: SIZES.large }}
                 >
-                  {display.name}
+                  {capitalizeFirst(display.name)}
                 </h4>
                 <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
                   {display.age} Years / {display.gender}
@@ -179,6 +173,9 @@ const AppSidebar = () => {
                 <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
                   Visit Count: {display.visitCount}
                 </h6>
+                <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
+                  FollowUp Count: {display.followUp}
+                </h6>
 
                 <hr className="w-100 my-2" />
 
@@ -190,20 +187,21 @@ const AppSidebar = () => {
                     Vitals
                   </h4>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Height : {display.vitals.height}
+                    Height: {display.vitals.height} cm
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Weight : {display.vitals.weight}
+                    Weight: {display.vitals.weight} kg
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Blood Pressure: {display.vitals.bp}
+                    Blood Pressure: {display.vitals.bloodPressure} mmHg
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Temperature: {display.vitals.temperature}
+                    Temperature: {display.vitals.temperature} °C
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    BMI: {display.vitals.bmi}
+                    BMI: {display.vitals.bmi} kg/m²
                   </h6>
+
                 </div>
               </>
             ) : (
@@ -268,27 +266,52 @@ const AppSidebar = () => {
 
         {!isPatientLoading && !hasPatient && (
           <CSidebarFooter className="border-top d-none d-lg-flex flex-column mt-2">
-            <h6  style={{color:COLORS.black}}>Patient Reviews</h6>
+            <h6 style={{ color: COLORS.black, fontWeight: 600, marginBottom: '0.5rem' }}>
+              Patient Reviews
+            </h6>
+
             {ratings.length > 0 ? (
               ratings.map((item, index) => (
-                <div key={index} className="d-flex align-items-center mb-2 w-100">
-                  <div style={{ minWidth: 70 }}>
-                    <small>{item.category}</small>
+                <div
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    marginBottom: 8,
+                    width: '100%',
+                  }}
+                >
+                  {/* Fixed label width */}
+                  <div
+                    style={{
+                      width: 100, // fixed width
+                      flexShrink: 0, // prevent shrinking
+                      textAlign: 'right',
+                      marginRight: 10,
+                    }}
+                  >
+                    <small style={{ color: COLORS.black, fontSize: SIZES.small }}>
+                      {item.category}
+                    </small>
                   </div>
-                  <div className="flex-grow-1 mx-2">
-                    <div className="progress" style={{ height: 8 }}>
+
+                  {/* Progress bar fills remaining space */}
+                  <div style={{ flexGrow: 1 }}>
+                    <div
+                      className="progress"
+                      style={{ height: 8, borderRadius: 4, backgroundColor: '#e9ecef' }}
+                    >
                       <div
-                        className={`progress-bar ${
-                          item.category.toLowerCase().includes('excellent')
-                            ? 'bg-success'
-                            : item.category.toLowerCase().includes('good')
-                              ? 'bg-primary'
-                              : item.category.toLowerCase().includes('average')
-                                ? 'bg-warning'
-                                : 'bg-secondary'
-                        }`}
+                        className={`progress-bar ${item.category.toLowerCase().includes('excellent')
+                          ? 'bg-success'
+                          : item.category.toLowerCase().includes('good')
+                            ? 'bg-primary'
+                            : item.category.toLowerCase().includes('average')
+                              ? 'bg-warning'
+                              : 'bg-secondary'
+                          }`}
                         role="progressbar"
-                        style={{ width: `${item.percentage}%` }}
+                        style={{ width: `${item.percentage}%`, borderRadius: 4 }}
                         aria-valuenow={item.percentage}
                         aria-valuemin="0"
                         aria-valuemax="100"
@@ -298,7 +321,12 @@ const AppSidebar = () => {
                 </div>
               ))
             ) : (
-              <small  style={{color:COLORS.black}}>No reviews yet</small>
+              <div
+                className="w-100 text-center py-2"
+                style={{ color: COLORS.gray, fontSize: SIZES.small }}
+              >
+                No reviews yet
+              </div>
             )}
           </CSidebarFooter>
         )}
@@ -334,6 +362,7 @@ const AppSidebar = () => {
                     <div>Patient ID: {display.patientId}</div>
                     <div>Visit Type: {display.visitType}</div>
                     <div>Visit Count: {display.visitCount}</div>
+                    <div>FollowUp Count: {display.followUp}</div>
                   </div>
                 </div>
               </div>

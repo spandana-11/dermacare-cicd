@@ -148,3 +148,11 @@ select {
 .symptoms-wrapper input[type='text'] {
   border-radius: 10px;
 }
+
+
+.btn-reset.custom {
+  background-color: #ff9800; /* orange */
+  color: #000;
+  border: none;
+}
+

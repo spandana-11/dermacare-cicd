@@ -19,8 +19,12 @@ import {
   CTableRow,
   CTableHeaderCell,
   CTableDataCell,
+  CPagination,
+  CPaginationItem,
+  CFormSelect,
 } from '@coreui/react'
 import { CategoryData } from '../categoryManagement/CategoryAPI'
+
 const ClinicManagement = ({ service, onBack }) => {
   const navigate = useNavigate()
   const [clinics, setClinics] = useState([])
@@ -31,6 +35,10 @@ const ClinicManagement = ({ service, onBack }) => {
   const [categories, setCategories] = useState([])
   const location = useLocation()
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+
   const handleAddClinic = () => {
     navigate('/add-clinic', {
       state: {
@@ -39,6 +47,7 @@ const ClinicManagement = ({ service, onBack }) => {
       },
     })
   }
+
   useEffect(() => {
     const fetchCategories = async () => {
       const res = await CategoryData()
@@ -73,11 +82,13 @@ const ClinicManagement = ({ service, onBack }) => {
       setClinics(filteredClinics)
     } catch (error) {
       console.error('Error fetching clinics:', error)
+      setError('Failed to load clinics')
     } finally {
       setLoading(false)
     }
   }
 
+  // Search filter
   const filteredClinics = clinics.filter(
     (clinic) =>
       clinic.name?.toLowerCase().startsWith(searchTerm.toLowerCase()) ||
@@ -85,13 +96,21 @@ const ClinicManagement = ({ service, onBack }) => {
       clinic.emailAddress?.toLowerCase().startsWith(searchTerm.toLowerCase()),
   )
 
+  // Reset to page 1 when filters/search changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, filterCategory])
+
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentItems = filteredClinics.slice(indexOfFirstItem, indexOfLastItem)
+  const totalPages = Math.ceil(filteredClinics.length / itemsPerPage)
+
   return (
     <CCard className="mt-4">
       <CCardHeader>
         <div className="d-flex justify-content-between align-items-center">
-          {/* <CButton color="secondary" onClick={onBack}>
-            Back
-          </CButton> */}
           <h2 className="mb-0">{service?.categoryName} Clinics</h2>
           <CButton color="primary" onClick={handleAddClinic}>
             Add Clinic
@@ -142,10 +161,10 @@ const ClinicManagement = ({ service, onBack }) => {
           </CTableHead>
 
           <CTableBody>
-            {filteredClinics?.length > 0
-              ? filteredClinics.map((clinic, index) => (
+            {currentItems?.length > 0
+              ? currentItems.map((clinic, index) => (
                   <CTableRow key={clinic?.id || index}>
-                    <CTableDataCell>{index + 1}</CTableDataCell>
+                    <CTableDataCell>{indexOfFirstItem + index + 1}</CTableDataCell>
                     <CTableDataCell>{clinic?.name}</CTableDataCell>
                     <CTableDataCell>{clinic?.contactNumber}</CTableDataCell>
                     <CTableDataCell>{clinic?.emailAddress}</CTableDataCell>
@@ -170,6 +189,59 @@ const ClinicManagement = ({ service, onBack }) => {
                 )}
           </CTableBody>
         </CTable>
+
+        {/* Pagination Controls */}
+        {filteredClinics.length > 0 && (
+          <div className="d-flex justify-content-between align-items-center mt-3">
+            <div>
+              <label className="me-2">Rows per page:</label>
+              <CFormSelect
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
+                style={{ width: '80px', display: 'inline-block' }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </CFormSelect>
+            </div>
+
+            <div>
+              Showing {indexOfFirstItem + 1} to{' '}
+              {Math.min(indexOfLastItem, filteredClinics.length)} of {filteredClinics.length} entries
+            </div>
+
+            <CPagination align="end" aria-label="Page navigation">
+              <CPaginationItem
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              >
+                Previous
+              </CPaginationItem>
+
+              {[...Array(totalPages)].map((_, idx) => (
+                <CPaginationItem
+                  key={idx + 1}
+                  active={currentPage === idx + 1}
+                  onClick={() => setCurrentPage(idx + 1)}
+                >
+                  {idx + 1}
+                </CPaginationItem>
+              ))}
+
+              <CPaginationItem
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              >
+                Next
+              </CPaginationItem>
+            </CPagination>
+          </div>
+        )}
       </CCardBody>
 
       {loading && (

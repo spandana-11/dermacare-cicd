@@ -1,5 +1,4 @@
 package com.dermacare.doctorservice.serviceimpl;
-
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Base64;
@@ -11,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.dermacare.doctorservice.dermacaredoctorutils.VisitTypeUtil;
@@ -21,6 +21,7 @@ import com.dermacare.doctorservice.dto.FollowUpDetailsDTO;
 import com.dermacare.doctorservice.dto.MedicinesDTO;
 import com.dermacare.doctorservice.dto.PrescriptionDetailsDTO;
 import com.dermacare.doctorservice.dto.Response;
+import com.dermacare.doctorservice.dto.ResponseStructure;
 import com.dermacare.doctorservice.dto.SymptomDetailsDTO;
 import com.dermacare.doctorservice.dto.TestDetailsDTO;
 import com.dermacare.doctorservice.dto.TreatmentDetailsDTO;
@@ -39,6 +40,8 @@ import com.dermacare.doctorservice.model.TreatmentResponse;
 import com.dermacare.doctorservice.repository.DoctorSaveDetailsRepository;
 import com.dermacare.doctorservice.service.DoctorSaveDetailsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import feign.FeignException;
 
@@ -53,7 +56,6 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
 
     @Autowired
     private ObjectMapper objectMapper;
-   
 
     @Autowired
     private BookingFeignClient bookingFeignClient;
@@ -65,59 +67,77 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             Response doctorResponse = clinicAdminClient.getDoctorById(dto.getDoctorId()).getBody();
 
             if (doctorResponse == null || !doctorResponse.isSuccess() || doctorResponse.getData() == null) {
-                return buildResponse(false, null, "Doctor not found with ID: " + dto.getDoctorId(), HttpStatus.NOT_FOUND.value());
+                return buildResponse(false, null,
+                        "Doctor not found with ID: " + dto.getDoctorId(),
+                        HttpStatus.NOT_FOUND.value());
             }
 
+            // Extract doctor name
             Map<String, Object> doctorData = objectMapper.convertValue(doctorResponse.getData(), Map.class);
             dto.setDoctorName((String) doctorData.get("doctorName"));
 
+            // Ensure clinic details are not null
             String clinicId = dto.getClinicId() != null ? dto.getClinicId() : "";
             String clinicName = dto.getClinicName() != null ? dto.getClinicName() : "";
-
             dto.setClinicId(clinicId);
             dto.setClinicName(clinicName);
 
+           
             List<DoctorSaveDetails> previousVisits = repository.findByPatientId(dto.getPatientId());
 
-            boolean isRevisit = previousVisits.stream()
-                .anyMatch(existing -> dto.getBookingId().equals(existing.getBookingId()));
-
-            long uniqueBookingCount = previousVisits.stream()
-                .map(DoctorSaveDetails::getBookingId)
-                .filter(bid -> bid != null && !bid.isEmpty())
-                .distinct()
-                .count();
-
-            int visitNumber = (int) uniqueBookingCount + (isRevisit ? 0 : 1);
+            // visit number = total previous visits + 1 (continuous count)
+            int visitNumber = previousVisits.size() + 1;
 
             dto.setVisitDateTime(LocalDateTime.now());
-            int visitTypeCount = (int) uniqueBookingCount + (isRevisit ? 0 : 1);
-            dto.setVisitType(VisitTypeUtil.getVisitTypeFromCount(visitTypeCount));
 
-            // Step 2: Save doctor details
+            // Set visit type using VisitTypeUtil
+            String visitType = VisitTypeUtil.getVisitTypeFromCount(visitNumber);
+            dto.setVisitType(visitType);
+
+            // Step 3: Save doctor details
             DoctorSaveDetails entity = convertToEntity(dto);
             DoctorSaveDetails saved = repository.save(entity);
 
-            // Step 3: Update booking status to "In-Progress" via Feign
-            BookingResponse bookingUpdate = new BookingResponse();
-            bookingUpdate.setBookingId(dto.getBookingId());
-            bookingUpdate.setStatus("In-Progress");
+            // Step 4: Update booking status to "In-Progress" via Feign
+            BookingResponse bookres = bookingFeignClient
+                    .getBookedService(saved.getBookingId())
+                    .getBody()
+                    .getData();
 
-            bookingFeignClient.updateAppointment(bookingUpdate);
+            bookres.setBookingId(dto.getBookingId());
+            bookres.setStatus("In-Progress");
+
+                if (!"FIRST_VISIT".equalsIgnoreCase(saved.getVisitType()) && bookres.getFreeFollowUpsLeft() != null) {
+                Integer value = bookres.getFreeFollowUpsLeft();
+                if (value != null && value > 0) {
+                    value = value - 1;
+                    bookres.setFreeFollowUpsLeft(value);
+                }
+                if (value != null && value == 0) {
+                    bookres.setStatus("Completed");
+                }
+            }
+
+            bookingFeignClient.updateAppointment(bookres);
 
             DoctorSaveDetailsDTO savedDto = convertToDto(saved);
 
-            return buildResponse(true, Map.of(
-                    "savedDetails", savedDto,
-                    "visitNumber", visitNumber
-            ), "Doctor details saved successfully", HttpStatus.CREATED.value());
+            return buildResponse(true,
+                    Map.of("savedDetails", savedDto, "visitNumber", visitNumber),
+                    "Doctor details saved successfully",
+                    HttpStatus.CREATED.value());
 
         } catch (FeignException e) {
-            return buildResponse(false, null, "Error fetching doctor/booking details: " + e.getMessage(), HttpStatus.BAD_GATEWAY.value());
+            return buildResponse(false, null,
+                    "Error fetching doctor/booking details: " + e.getMessage(),
+                    HttpStatus.BAD_GATEWAY.value());
         } catch (Exception e) {
-            return buildResponse(false, null, "Unexpected error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return buildResponse(false, null,
+                    "Unexpected error: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+
     @Override
     public Response getDoctorDetailsById(String id) {
         Optional<DoctorSaveDetails> optional = repository.findById(id);
@@ -217,6 +237,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                 .doctorName(dto.getDoctorName())
                 .clinicId(dto.getClinicId())
                 .clinicName(dto.getClinicName())
+                .customerId(dto.getCustomerId())
                 .bookingId(dto.getBookingId())
                 .symptoms(dto.getSymptoms() != null ?
                         SymptomDetails.builder()
@@ -237,7 +258,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                 .prescriptionPdf(dto.getPrescriptionPdf() != null
                 ? dto.getPrescriptionPdf()
                       .stream()
-                      .map(this::decodeIfBase64) // same as attachments
+                      .map(this::decodeIfBase64) 
                       .collect(Collectors.toList())
                 : null
             )
@@ -293,19 +314,23 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                                                         .name(med.getName())
                                                         .dose(med.getDose())
                                                         .duration(med.getDuration())
-                                                        .food(med.getFood())
+                                                        .durationUnit(med.getDurationUnit())                                                        .food(med.getFood())
+                                                        .medicineType(med.getMedicineType()) 
                                                         .note(med.getNote())
                                                         .remindWhen(med.getRemindWhen())
                                                         .times(med.getTimes())
+                                                        .others(med.getOthers())
                                                         .build())
                                                 .collect(Collectors.toList())
                                         : null)
                                 .build()
                         : null
                 )
+
                 .visitType(dto.getVisitType())
                 .visitDateTime(dto.getVisitDateTime())
-                .build();
+                .prescriptionPdf(dto.getPrescriptionPdf())
+                                .build();
     }
 
     private String decodeIfBase64(String base64String) {
@@ -317,7 +342,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             Base64.getDecoder().decode(base64String);
             return base64String; // It's valid Base64, return as is without converting to text
         } catch (IllegalArgumentException e) {
-            // Not valid Base64, return original
+            // Not valid Base64, return origina
             return base64String;
         }
     }
@@ -333,6 +358,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                 .doctorName(entity.getDoctorName())
                 .clinicId(entity.getClinicId())
                 .clinicName(entity.getClinicName())
+                .customerId(entity.getCustomerId())
                 .bookingId(entity.getBookingId())
                 .symptoms(entity.getSymptoms() != null ?
                         SymptomDetailsDTO.builder()
@@ -407,10 +433,13 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                                                         .name(med.getName())
                                                         .dose(med.getDose())
                                                         .duration(med.getDuration())
+                                                        .durationUnit(med.getDurationUnit())
                                                         .food(med.getFood())
+                                                        .medicineType(med.getMedicineType())
                                                         .note(med.getNote())
                                                         .remindWhen(med.getRemindWhen())
                                                         .times(med.getTimes())
+                                                        .others(med.getOthers())
                                                         .build())
                                                 .collect(Collectors.toList())
                                         : null)
@@ -424,10 +453,10 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
 
     private String encodeIfNotBase64(String input) {
         if (input == null || input.isBlank()) {
-            return input; // Null or empty, return as-is
+            return input; 
         }
 
-        // Base64 pattern: length multiple of 4, only A-Z a-z 0-9 + /, with optional padding "="
+       
         String base64Pattern = "^[A-Za-z0-9+/]*={0,2}$";
 
         if (input.matches(base64Pattern) && (input.length() % 4 == 0)) {
@@ -461,7 +490,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             List<DoctorSaveDetails> visits = repository.findByPatientId(patientId);
 
             if (visits.isEmpty()) {
-                return buildResponse(false, null, "No visit history found for the patient ID", HttpStatus.NOT_FOUND.value());
+                return buildResponse(true, null, "No visit history found for the patient ID", HttpStatus.OK.value());
             }
 
             if (doctorId != null && !doctorId.isBlank()) {
@@ -470,7 +499,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                         .collect(Collectors.toList());
 
                 if (visits.isEmpty()) {
-                    return buildResponse(false, null, "No visit history found for the patient with the specified doctor ID", HttpStatus.NOT_FOUND.value());
+                    return buildResponse(true, null, "No visit history found for the patient with the specified doctor ID", HttpStatus.OK.value());
                 }
             }
 
@@ -496,38 +525,70 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             return buildResponse(false, null, "Error fetching visit history: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
-    
-    private String decodeAndSavePdf(String base64Pdf, String bookingId) {
+    @Override
+    public Response getInProgressDetails(String patientId, String bookingId) {
         try {
-            // Decode Base64
-            byte[] pdfBytes = Base64.getDecoder().decode(base64Pdf);
+            // 1. Fetch booking from Booking Service
+            ResponseEntity<ResponseStructure<BookingResponse>> bookingResponseEntity =
+                    bookingFeignClient.getBookedService(bookingId);
 
-            // Define file storage path (can be configured)
-            String fileName = "prescription_" + bookingId + "_" + System.currentTimeMillis() + ".pdf";
-            String storageDir = "/path/to/prescriptions"; // Change to your actual folder
-            java.nio.file.Path dirPath = java.nio.file.Paths.get(storageDir);
-            if (!java.nio.file.Files.exists(dirPath)) {
-                java.nio.file.Files.createDirectories(dirPath);
+            if (bookingResponseEntity == null || bookingResponseEntity.getBody() == null) {
+                return buildResponse(false, null,
+                        "Booking not found for ID " + bookingId,
+                        HttpStatus.NOT_FOUND.value());
             }
 
-            // Save file
-            java.nio.file.Path filePath = dirPath.resolve(fileName);
-            java.nio.file.Files.write(filePath, pdfBytes);
+            BookingResponse booking = bookingResponseEntity.getBody().getData();
 
-            // Return stored file path (or a URL if serving via API)
-            return filePath.toString();
+            // 2. Validate status
+            if (!"In-Progress".equalsIgnoreCase(booking.getStatus())) {
+                return buildResponse(false, null,
+                        "Booking is not In-Progress. Current status: " + booking.getStatus(),
+                        HttpStatus.BAD_REQUEST.value());
+            }
+
+            // 3. Fetch doctor details saved in your DB
+            List<DoctorSaveDetails> visits = repository.findByPatientIdAndBookingId(patientId, bookingId);
+
+            if (visits.isEmpty()) {
+                return buildResponse(false, null,
+                        "No doctor details found for patient " + patientId + " and booking " + bookingId,
+                        HttpStatus.NOT_FOUND.value());
+            }
+
+            List<DoctorSaveDetailsDTO> dtos = visits.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+
+            // 4. Build success response
+            return buildResponse(true, Map.of(
+                    "patientId", patientId,
+                    "bookingId", bookingId,
+                    "status", booking.getStatus(),
+                    "savedDetails", dtos
+            ), "In-Progress doctor details fetched successfully", HttpStatus.OK.value());
+
         } catch (Exception e) {
-            throw new RuntimeException("Failed to decode and save PDF", e);
+            return buildResponse(false, null,
+                    "Error fetching in-progress details: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
-    private String encodePdfToBase64(String filePath) {
-        try {
-            byte[] pdfBytes = java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(filePath));
-            return Base64.getEncoder().encodeToString(pdfBytes);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to encode PDF to Base64", e);
+    
+    
+    @Override
+    public Response getDoctorDetailsByBookingId(String bookingId) {
+    	try {
+        DoctorSaveDetails optional = repository.findByBookingId(bookingId);
+        if(optional != null) {
+        	ObjectMapper mapper = new ObjectMapper();
+	        mapper.registerModule(new JavaTimeModule());
+	        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return new Response(true,mapper.convertValue(optional,DoctorSaveDetailsDTO.class ), "prescription details found", HttpStatus.OK.value());
+        }else {
+        return new Response(false, null, "prescription details Not found", HttpStatus.NOT_FOUND.value());
+        }}catch(Exception e) {
+        	 return new Response(false, null,e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
-
-
 }

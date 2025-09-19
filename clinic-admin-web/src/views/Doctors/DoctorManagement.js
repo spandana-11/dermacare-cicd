@@ -32,15 +32,26 @@ import {
   getservice,
 } from '../../baseUrl'
 import {
-  serviceData,
+  serviceDataH,
   CategoryData,
   subServiceData,
   getSubServiceById,
-} from '../../views/serviceManagement/ServiceManagementAPI'
-
+} from '../ProcedureManagement/ProcedureManagementAPI'
+import LoadingIndicator from '../../Utils/loader'
+import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faUserDoctor } from '@fortawesome/free-solid-svg-icons'
+import { http } from '../../Utils/Interceptors'
+import { GetClinicBranches } from './DoctorAPI'
 const DoctorManagement = () => {
-  const { doctorData, errorMessage, setDoctorData, fetchHospitalDetails, fetchDoctorDetails } =
-    useHospital()
+  const {
+    doctorData,
+    errorMessage,
+    setDoctorData,
+    setSelectedHospital,
+    fetchHospitalDetails,
+    fetchDoctorDetails,
+  } = useHospital()
 
   // const [doctors, setDoctors] = useState([]);
 
@@ -57,6 +68,7 @@ const DoctorManagement = () => {
       return updated
     })
   }
+  const [isSaving, setIsSaving] = useState(false)
   const [enabledTypes, setEnabledTypes] = useState({
     inClinic: false,
     online: false,
@@ -93,9 +105,11 @@ const DoctorManagement = () => {
     service: [],
     subServices: [], // Note: 'subSerives' in Java, but 'subServices' is more consistent in JS
     specialization: '',
-    gender: 'Female',
+    gender: '',
     experience: '',
     qualification: '',
+    associationsOrMemberships: '',
+    branch: [],
     availableDays: '', // array of selected days
     availableTimes: '', // array of selected time slots
     profileDescription: '',
@@ -201,7 +215,7 @@ const DoctorManagement = () => {
       try {
         const allServices = await Promise.all(
           value.map(async (catId) => {
-            const res = await axios.get(`${BASE_URL}/${getservice}/${catId}`)
+            const res = await http.get(`/${getservice}/${catId}`)
             return res.data?.data || []
           }),
         )
@@ -226,7 +240,7 @@ const DoctorManagement = () => {
     }
   }
 
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   const times = [
     '07:00 AM',
     '08:00 AM',
@@ -255,50 +269,77 @@ const DoctorManagement = () => {
         throw new Error('Invalid category data format')
       }
 
-      const serviceResponse = await serviceData()
+      const serviceResponse = await serviceDataH()
       console.log(serviceResponse.data)
       setService(serviceResponse.data)
     } catch (error) {
       console.error('Error fetching data:', error)
-      setError('Failed to fetch data. Please try again later.')
+      setErrors('Failed to fetch data. Please try again later.')
     } finally {
     }
   }
-  const hospitalId = localStorage.getItem('HospitalId')
+
+  //branchOptions
+  // const branchOptions = [
+  //   { value: 'Banjara Hills', label: 'Banjara Hills' },
+  //   { value: 'Jubilee Hills', label: 'Jubilee Hills' },
+  //   { value: 'Madhapur', label: 'Madhapur' },
+  //   { value: 'Gachibowli', label: 'Gachibowli' },
+  //   { value: 'Hitech City', label: 'Hitech City' },
+  //   { value: 'Secunderabad', label: 'Secunderabad' },
+  //   { value: 'Kukatpally', label: 'Kukatpally' },
+  // ]
+  const [branchOptions, setBranchOptions] = useState([])
+  const [branchLoading, setBranchLoading] = useState(false)
 
   useEffect(() => {
     const fetchAllData = async () => {
+      const clinicId = localStorage.getItem('HospitalId')
       try {
-        setLoading(true) // ✅ set loading true before fetch
+        setLoading(true)
 
         await fetchData()
-        await serviceData()
+        await serviceDataH()
 
-        const data = await fetchHospitalDetails(hospitalId)
-
+        // fetch hospital details
+        const data = await http.get(`/doctors/hospitalById/${clinicId}`)
         if (data) {
-          setDoctorData(data)
           setShowErrorMessage('')
         } else {
           setShowErrorMessage('Hospital data not found')
         }
+
+        // ✅ fetch branches
+        setBranchLoading(true)
+        const response = await GetClinicBranches(clinicId)
+        const branches = response.data || [] // ✅ get the array safely
+        console.log('Branch API response:', response)
+
+        // 🟢 assume API returns array of { branchId, branchName }
+        const formatted = branches.map((b) => ({
+          value: b.branchId || b.id || b.name, // adjust based on actual API
+          label: b.branchName || b.name,
+        }))
+
+        setBranchOptions(formatted)
       } catch (err) {
         console.error(err)
         setShowErrorMessage('Failed to fetch hospital details')
       } finally {
-        setLoading(false) // ✅ always set to false at the end
+        setLoading(false)
+        setBranchLoading(false)
       }
     }
 
     fetchAllData()
   }, [])
 
-  useEffect(() => {
-    const clnicId = localStorage.getItem('HospitalId')
-    // fetchHospitalDetails(clnicId)
+  // useEffect(() => {
+  //   const clnicId = localStorage.getItem('HospitalId')
+  //   // fetchHospitalDetails(clnicId)
 
-    fetchDoctorDetails(clnicId)
-  }, [])
+  //   http.get(`/doctors/hospitalById/${clnicId}`)
+  // }, [])
 
   const validateDoctorForm = () => {
     const errors = {}
@@ -395,10 +436,10 @@ const DoctorManagement = () => {
       isValid = false
     }
 
-    if (!form.languages || form.languages.length === 0) {
-      errors.languages = 'Please add at least one language.'
-      isValid = false
-    }
+    // if (!form.languages || form.languages.length === 0) {
+    //   errors.languages = 'Please add at least one language.'
+    //   isValid = false
+    // }
 
     if (!startDay || !endDay) {
       errors.availableDays = 'Start and end days are required'
@@ -436,9 +477,25 @@ const DoctorManagement = () => {
   //select
 
   const handleSubmit = async () => {
-    const isValid = validateDoctorForm()
-    if (!isValid) return
+    const isDuplicate = doctorData?.data?.some(
+      (doctor) => doctor.doctorLicence === form.doctorLicence.trim(),
+    )
 
+    if (isDuplicate) {
+      setFormErrors((prev) => ({
+        ...prev,
+        doctorLicence: 'This License Number already exists',
+      }))
+      return // ❌ Stop submission
+    }
+    if (isSaving) return // ❌ Prevent multiple submissions
+    setIsSaving(true)
+
+    const isValid = validateDoctorForm()
+    if (!isValid) {
+      setIsSaving(false)
+      return
+    }
     try {
       const hospitalId = localStorage.getItem('HospitalId')
       const hospitalName = localStorage.getItem('HospitalName')
@@ -472,6 +529,7 @@ const DoctorManagement = () => {
       }
 
       const payload = {
+        branchId: localStorage.getItem('branchId'),
         hospitalId,
         doctorPicture: form.doctorPicture,
         doctorSignature: form.doctorSignature,
@@ -493,6 +551,8 @@ const DoctorManagement = () => {
         gender: form.gender,
         experience: form.experience,
         qualification: form.qualification,
+        associationsOrMemberships: form.associationsOrMemberships,
+        branches: form.branch,
         specialization: form.specialization,
         availableDays: form.availableDays,
         availableTimes: form.availableTimes,
@@ -506,76 +566,75 @@ const DoctorManagement = () => {
           vedioConsultationFee: form.doctorFees.vedioConsultationFee,
         },
       }
-
-      const response = await axios.post(`${BASE_URL}/addDoctor`, payload, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      console.log(payload)
+      const response = await http.post(`/addDoctor`, payload, {
+        headers: { 'Content-Type': 'application/json' },
       })
-      console.log(response)
 
-      if (!response?.data?.success) {
-        throw new Error(response?.data?.message || 'Failed to add doctor')
-      } else if (response.data.status === 400 && errorMessage.includes('mobile number')) {
-        toast.error(errorMessage, {
+      if (response.data?.status === 201) {
+        // const newDoctor = response.data.doctor ?? payload
+        const newDoctor = response.data.data?.doctor ?? payload
+
+        // Update doctorData immediately so UI reflects new doctor
+        setDoctorData((prev) => ({
+          ...prev,
+          data: [...(prev?.data || []), newDoctor],
+        }))
+
+        // ✅ Send onboarding email
+        await sendDermaCareOnboardingEmail({
+          name: form.doctorName,
+          email: form.doctorEmail,
+          password: response.data.data?.temporaryPassword,
+          userID: response.data.data?.username,
+          clinicName: hospitalName,
+        })
+
+        toast.success(response.data.message || 'Doctor added successfully', {
           position: 'top-right',
         })
+        //  ✅ Reset form
+        // Reset doctor form
+        setForm({
+          doctorPicture: null,
+          doctorSignature: null,
+          doctorLicence: '',
+          doctorMobileNumber: '',
+          doctorEmail: '',
+          doctorName: '',
+          gender: '',
+          experience: '',
+          qualification: '',
+          associationsOrMemberships: '',
+          branch: '',
+          specialization: '',
+          availableDays: '',
+          availableTimes: '',
+          profileDescription: '',
+          focusAreas: [],
+          languages: [],
+          highlights: [],
+          doctorFees: { inClinicFee: '', vedioConsultationFee: '' },
+        })
+
+        // Reset services & subservices
+        setNewService({ serviceId: '', serviceName: '', categoryId: '', categoryName: '' })
+        setSelectedServices([]) // ✅ clear main services
+        setSelectedSubServices([]) // ✅ clear subservices
+        setServiceOptions([])
+        setSubServiceOptions([])
+
+        // Reset availability inputs
+        setStartDay('')
+        setEndDay('')
+        setStartTime('')
+        setEndTime('')
+
+        // Close modal
+        setModalVisible(false)
+      } else {
+        throw new Error(response.data?.message || 'Failed to add doctor')
       }
-      const newDoctor = response.data.doctor ?? payload
-
-      await fetchDoctorDetails(hospitalId)
-      // ✅ Send onboarding email
-      await sendDermaCareOnboardingEmail({
-        name: form.doctorName,
-        email: form.doctorEmail,
-        password: response.data.data.temporaryPassword,
-        userID: response.data.data.username,
-        clinicName: hospitalName,
-      })
-
-      toast.success(response.data.message || 'Doctor added successfully', {
-        position: 'top-right',
-      })
-
-      // ✅ Reset form
-      setForm({
-        doctorPicture: null,
-        doctorSignature: null,
-        doctorLicence: '',
-        doctorMobileNumber: '',
-        doctorEmail: '',
-        doctorName: '',
-        gender: '',
-        experience: '',
-        qualification: '',
-        specialization: '',
-        availableDays: '',
-        availableTimes: '',
-        profileDescription: '',
-        focusAreas: [],
-        languages: [],
-        highlights: [],
-        doctorFees: {
-          inClinicFee: '',
-          vedioConsultationFee: '',
-        },
-      })
-
-      setNewService({
-        serviceId: '',
-        serviceName: '',
-        categoryId: '',
-        categoryName: '',
-      })
-
-      setSelectedSubServices([])
-      setServiceOptions([])
-      setSubServiceOptions([])
-      setStartDay('')
-      setEndDay('')
-      setStartTime('')
-      setEndTime('')
-      setModalVisible(false)
     } catch (error) {
       const status = error?.response?.status
       const errorMessage = error?.response?.data?.message || 'Something went wrong'
@@ -604,6 +663,8 @@ const DoctorManagement = () => {
         })
         setModalVisible(false) // ✅ Optional: Close modal on other errors
       }
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -623,6 +684,10 @@ const DoctorManagement = () => {
       onAdd(updated)
     }
 
+    const normalize = (str) => str?.toString().toLowerCase() || ''
+
+    // Filter doctors using global search
+
     return (
       <div className="mb-3">
         <label className="form-label fw-semibold">{label}</label>
@@ -635,7 +700,7 @@ const DoctorManagement = () => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           />
-          <button className="btn btn-primary" onClick={handleAdd}>
+          <button className="btn btn-info text-white" onClick={handleAdd}>
             Add
           </button>
         </div>
@@ -673,37 +738,53 @@ const DoctorManagement = () => {
 
     setIsSubServiceComplete(!incomplete)
   }
+  const { searchQuery } = useGlobalSearch()
+
+  const normalize = (str) => str?.toString().toLowerCase() || ''
 
   const [enableFees, setEnableFees] = useState({
     inClinic: true,
     videoConsultation: true,
   })
 
+  const filteredDoctors = (Array.isArray(doctorData?.data) ? doctorData.data : []).filter(
+    (doctor) => {
+      if (!searchQuery.trim()) return true
+      return (
+        normalize(doctor.doctorName).includes(normalize(searchQuery)) ||
+        normalize(doctor.qualification).includes(normalize(searchQuery)) ||
+        normalize(doctor.doctorId).includes(normalize(searchQuery)) ||
+        normalize(doctor.specialization).includes(normalize(searchQuery)) ||
+        normalize(doctor.doctorMobileNumber).includes(normalize(searchQuery))
+      )
+    },
+  )
+
   return (
     <div>
       <ToastContainer />
       <div className="d-flex justify-content-end mb-3">
         <button
-          className="btn btn-primary d-flex align-items-center gap-2 shadow-sm rounded-pill px-4 py-2"
+          className="btn btn-info text-white d-flex align-items-center gap-2 shadow-sm rounded-pill px-4 py-2"
           onClick={() => {
             setFormErrors({})
             setModalVisible(true)
           }}
           style={{
-            background: 'linear-gradient(90deg, #0072CE 0%, #00AEEF 100%)',
+            background: 'linear-gradient(to right, var(--color-black),var(--color-black)',
             border: 'none',
             fontWeight: '600',
             fontSize: '16px',
           }}
         >
-          <CIcon icon={cilUser} size="lg" />
-          <span>Add Doctor</span>
+          <FontAwesomeIcon icon={faUserDoctor} />
+          <span style={{ color: 'white' }}>Add Doctor</span>
         </button>
       </div>
 
       {loading ? (
         <div className="centered-message">
-          <p>Loading doctors...</p>
+          <LoadingIndicator message="Loading doctors..." />
         </div>
       ) : errorMessage ? (
         <div className="centered-message">
@@ -723,7 +804,15 @@ const DoctorManagement = () => {
           </span>
         </div>
       ) : (
-        doctorData.data.map((doctor, index) => <DoctorCard key={index} doctor={doctor} />)
+        <div className="row">
+          {filteredDoctors.length > 0 ? (
+            filteredDoctors.map((doctor, index) => <DoctorCard key={index} doctor={doctor} />)
+          ) : (
+            <div className="text-center w-100 py-5">
+              <p>No doctors match your search.</p>
+            </div>
+          )}
+        </div>
       )}
 
       <CModal
@@ -836,7 +925,7 @@ const DoctorManagement = () => {
                 <div className="text-danger mt-2">
                   Some selected Procedures are missing details like price or final cost.
                   <br />
-                  <a href="/service-Management" className="text-primary">
+                  <a href="/procedure-Management" className="text-primary">
                     Please add Procedure details
                   </a>
                 </div>
@@ -890,14 +979,26 @@ const DoctorManagement = () => {
                   setForm((prev) => ({ ...prev, doctorLicence: value }))
 
                   if (value.trim()) {
-                    setFormErrors((prev) => {
-                      const updated = { ...prev }
-                      delete updated.doctorLicence
-                      return updated
-                    })
+                    // ✅ Check duplicate
+                    const isDuplicate = doctorData?.data?.some(
+                      (doctor) => doctor.doctorLicence === value.trim(),
+                    )
+
+                    if (isDuplicate) {
+                      setFormErrors((prev) => ({
+                        ...prev,
+                        doctorLicence: 'This License Number already exists',
+                      }))
+                    } else {
+                      setFormErrors((prev) => {
+                        const updated = { ...prev }
+                        delete updated.doctorLicence
+                        return updated
+                      })
+                    }
                   }
                 }}
-                invalid={!!formErrors?.doctorLicence} // CoreUI validation styling
+                invalid={!!formErrors?.doctorLicence}
               />
               {formErrors?.doctorLicence && (
                 <small className="text-danger">{formErrors.doctorLicence}</small>
@@ -1305,6 +1406,39 @@ const DoctorManagement = () => {
           <hr />
 
           <h5 className="mb-3">Additional Details</h5>
+          <CRow>
+            <CCol md={6}>
+              <CFormLabel>Association/Membership</CFormLabel>
+              <CFormInput
+                value={form.associationsOrMemberships}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[0-9]/g, '')
+                  setForm((p) => ({ ...p, associationsOrMemberships: value }))
+                }}
+              />
+            </CCol>
+            <CCol md={6}>
+              <CFormLabel>Branch</CFormLabel>
+              <Select
+                isMulti
+                options={branchOptions} // [{ value: 'H_1-B_1', label: 'punjagutta' }, ...]
+                value={branchOptions.filter(
+                  (opt) =>
+                    Array.isArray(form.branch) && form.branch.some((b) => b.branchId === opt.value),
+                )}
+                onChange={(selected) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    branch: selected.map((opt) => ({
+                      branchId: opt.value,
+                      branchName: opt.label,
+                    })),
+                  }))
+                }
+                placeholder="Select branches..."
+              />
+            </CCol>
+          </CRow>
           <ChipSection
             label="Area of Expertise"
             items={form.focusAreas}
@@ -1323,7 +1457,7 @@ const DoctorManagement = () => {
               }}
             />
 
-            {formErrors.languages && <div className="text-danger mt-1">{formErrors.languages}</div>}
+            {/* {formErrors.languages && <div className="text-danger mt-1">{formErrors.languages}</div>} */}
           </div>
 
           <ChipSection
@@ -1443,7 +1577,7 @@ const DoctorManagement = () => {
           <CButton color="secondary" onClick={() => setModalVisible(false)}>
             Cancel
           </CButton>
-          <CButton color="primary" onClick={handleSubmit}>
+          <CButton color="info" className="text-white" onClick={handleSubmit}>
             Submit
           </CButton>
         </CModalFooter>

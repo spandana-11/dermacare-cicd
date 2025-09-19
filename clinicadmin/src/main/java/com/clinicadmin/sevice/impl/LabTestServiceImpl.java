@@ -150,6 +150,8 @@ public class LabTestServiceImpl implements LabTestService {
 			if (test.isPresent()) {
 				LabTest update = test.get();
 				update.setTestName(dto.getTestName());
+				update.setDescription(dto.getDescription());
+				update.setPurpose(dto.getPurpose());
 				LabTest saved = labTestRepository.save(update);
 				LabTestDTO updatedDTO = new LabTestDTO(saved.getId().toString(), saved.getTestName(),
 						saved.getHospitalId(),saved.getDescription(),saved.getPurpose());

@@ -1,9 +1,10 @@
 import axios from 'axios'
 import { AddTest, AllTest, BASE_URL, DeleteTest, GetTestByHId, UpdateTest } from '../../baseUrl'
+import { http } from '../../Utils/Interceptors'
 
 export const TestData = async () => {
   try {
-    const response = await axios.get(`${BASE_URL}/${AllTest}`)
+    const response = await http.get(`/${AllTest}`)
     console.log('test data:', response.data)
 
     return response.data
@@ -19,7 +20,7 @@ export const TestData = async () => {
 }
 export const TestDataById = async (hospitalId) => {
   try {
-    const response = await axios.get(`${BASE_URL}/${GetTestByHId}/${hospitalId}`)
+    const response = await http.get(`/${GetTestByHId}/${hospitalId}`)
     console.log('test data:', response.data)
     return response.data
   } catch (error) {
@@ -38,9 +39,11 @@ export const postTestData = async (testData) => {
     const requestData = {
       testName: testData.testName || '',
       hospitalId: testData.hospitalId || '',
+      description: testData.description || '',
+      purpose: testData.purpose || '',
     }
 
-    const response = await axios.post(`${BASE_URL}/${AddTest}`, requestData, {
+    const response = await http.post(`/${AddTest}`, requestData, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -53,17 +56,13 @@ export const postTestData = async (testData) => {
   }
 }
 
-export const updateTestData = async (updatedTest, testId, hospitalId) => {
+export const updateTestData = async (updatedTest, id, hospitalId) => {
   try {
-    const response = await axios.put(
-      `${BASE_URL}/${UpdateTest}/${testId}/${hospitalId}`,
-      updatedTest,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+    const response = await http.put(`/${UpdateTest}/${id}/${hospitalId}`, updatedTest, {
+      headers: {
+        'Content-Type': 'application/json',
       },
-    )
+    })
     return response.data
   } catch (error) {
     console.error('Error updating tet:', error)
@@ -71,9 +70,9 @@ export const updateTestData = async (updatedTest, testId, hospitalId) => {
   }
 }
 
-export const deleteTestData = async (testId, hospitalId) => {
+export const deleteTestData = async (id, hospitalId) => {
   try {
-    const response = await axios.delete(`${BASE_URL}/${DeleteTest}/${testId}/${hospitalId}`, {
+    const response = await http.delete(`/${DeleteTest}/${id}/${hospitalId}`, {
       headers: {
         'Content-Type': 'application/json',
       },

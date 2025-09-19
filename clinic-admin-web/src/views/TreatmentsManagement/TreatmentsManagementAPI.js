@@ -1,9 +1,17 @@
 import axios from 'axios'
-import { AddTreatment, AllTreatment, BASE_URL, DeleteTreatment, GetTreatmentsByHId, UpdateTreatment } from '../../baseUrl'
+import {
+  AddTreatment,
+  AllTreatment,
+  BASE_URL,
+  DeleteTreatment,
+  GetTreatmentsByHId,
+  UpdateTreatment,
+} from '../../baseUrl'
+import { http } from '../../Utils/Interceptors'
 
 export const TreatmentData = async () => {
   try {
-    const response = await axios.get(`${BASE_URL}/${AllTreatment}`)
+    const response = await http.get(`/${AllTreatment}`)
     console.log('treatment data:', response.data)
     return response.data
   } catch (error) {
@@ -17,7 +25,7 @@ export const TreatmentData = async () => {
 }
 export const TreatmentDataById = async (hospitalId) => {
   try {
-    const response = await axios.get(`${BASE_URL}/${GetTreatmentsByHId}/${hospitalId}`)
+    const response = await http.get(`/${GetTreatmentsByHId}/${hospitalId}`)
     console.log('treatment data:', response.data)
     return response.data
   } catch (error) {
@@ -32,11 +40,11 @@ export const TreatmentDataById = async (hospitalId) => {
 export const postTreatmentData = async (treatmentData) => {
   try {
     const requestData = {
-      treatmentName: treatmentData.treatmentName || '',  // Consider renaming this to treatmentName in the backend
+      treatmentName: treatmentData.treatmentName || '', // Consider renaming this to treatmentName in the backend
       hospitalId: treatmentData.hospitalId || '',
     }
 
-    const response = await axios.post(`${BASE_URL}/${AddTreatment}`, requestData, {
+    const response = await http.post(`/${AddTreatment}`, requestData, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -54,18 +62,14 @@ export const updateTreatmentData = async (updatedTreatment, treatmentId, hospita
   try {
     // Map frontend fields to backend expected format
     const payload = {
-      testName: updatedTreatment.treatmentName, // Match backend field name
+      treatmentName: updatedTreatment.treatmentName, // Match backend field name
     }
 
-    const response = await axios.put(
-      `${BASE_URL}/labtest/updateLabTest/${treatmentId}/${hospitalId}`,
-      payload,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+    const response = await http.put(`/${UpdateTreatment}/${treatmentId}/${hospitalId}`, payload, {
+      headers: {
+        'Content-Type': 'application/json',
       },
-    )
+    })
 
     return response.data
   } catch (error) {
@@ -74,10 +78,9 @@ export const updateTreatmentData = async (updatedTreatment, treatmentId, hospita
   }
 }
 
-
 export const deleteTreatmentData = async (treatmentId, hospitalId) => {
   try {
-    const response = await axios.delete(`${BASE_URL}/${DeleteTreatment}/${treatmentId}/${hospitalId}`, {
+    const response = await http.delete(`/${DeleteTreatment}/${treatmentId}/${hospitalId}`, {
       headers: {
         'Content-Type': 'application/json',
       },

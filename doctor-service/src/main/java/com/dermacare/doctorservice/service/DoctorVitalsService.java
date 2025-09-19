@@ -6,12 +6,23 @@ import com.dermacare.doctorservice.dto.VitalsDTO;
 
 public interface DoctorVitalsService {
 
-    ResponseEntity<Response> addVitals(String patientId, VitalsDTO dto);
+    /**
+     * Add new vitals for a booking
+     */
+    ResponseEntity<Response> addVitals(String bookingId, VitalsDTO dto);
 
-    ResponseEntity<Response> getVitals(String patientId);
+    /**
+     * Get vitals by bookingId and patientId
+     */
+    ResponseEntity<Response> getVitals(String bookingId, String patientId);
 
-    ResponseEntity<Response> deleteVitals(String patientId);
+    /**
+     * Delete vitals by bookingId and patientId
+     */
+    ResponseEntity<Response> deleteVitals(String bookingId, String patientId);
 
-    ResponseEntity<Response> updateVitals(String patientId, VitalsDTO dto);
+    /**
+     * Update vitals by bookingId and patientId
+     */
+    ResponseEntity<Response> updateVitals(String bookingId, String patientId, VitalsDTO dto);
 }
-

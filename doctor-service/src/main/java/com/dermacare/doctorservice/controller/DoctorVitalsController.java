@@ -16,25 +16,40 @@ public class DoctorVitalsController {
     @Autowired
     private DoctorVitalsService doctorVitalsService;
 
-    @PostMapping("/addVitals/{patientId}")
-    public ResponseEntity<Response> addVitals(@PathVariable String patientId,
+    /**
+     * Add new vitals for a booking
+     */
+    @PostMapping("/addVitals/{bookingId}")
+    public ResponseEntity<Response> addVitals(@PathVariable String bookingId,
                                               @RequestBody VitalsDTO dto) {
-        return doctorVitalsService.addVitals(patientId, dto);
+        return doctorVitalsService.addVitals(bookingId, dto);
     }
 
-    @GetMapping("getVitalsBypatientId/{patientId}")
-    public ResponseEntity<Response> getVitals(@PathVariable String patientId) {
-        return doctorVitalsService.getVitals(patientId);
+    /**
+     * Get vitals by bookingId and patientId
+     */
+    @GetMapping("/getVitals/{bookingId}/{patientId}")
+    public ResponseEntity<Response> getVitals(@PathVariable String bookingId,
+                                              @PathVariable String patientId) {
+        return doctorVitalsService.getVitals(bookingId, patientId);
     }
 
-    @DeleteMapping("deleteVitalsBypatientId/{patientId}")
-    public ResponseEntity<Response> deleteVitals(@PathVariable String patientId) {
-        return doctorVitalsService.deleteVitals(patientId);
+    /**
+     * Delete vitals by bookingId and patientId
+     */
+    @DeleteMapping("/deleteVitals/{bookingId}/{patientId}")
+    public ResponseEntity<Response> deleteVitals(@PathVariable String bookingId,
+                                                 @PathVariable String patientId) {
+        return doctorVitalsService.deleteVitals(bookingId, patientId);
     }
 
-    @PutMapping("updateVitalsBypatientId/{patientId}")
-    public ResponseEntity<Response> updateVitals(@PathVariable String patientId,
+    /**
+     * Update vitals by bookingId and patientId
+     */
+    @PutMapping("/updateVitals/{bookingId}/{patientId}")
+    public ResponseEntity<Response> updateVitals(@PathVariable String bookingId,
+                                                 @PathVariable String patientId,
                                                  @RequestBody VitalsDTO dto) {
-        return doctorVitalsService.updateVitals(patientId, dto);
+        return doctorVitalsService.updateVitals(bookingId, patientId, dto);
     }
 }

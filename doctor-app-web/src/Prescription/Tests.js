@@ -56,17 +56,23 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
     doctorDetails,
   } = useDoctorContext()
 
-  const handleAddTest = (e) => {
-    const value = e.target.value
-    if (!value) return
+const handleAddTest = (e) => {
+  const value = e.target.value
+  if (!value) return
 
-    if (selectedTests.includes(value)) {
-      showSnackbar('Test already added', 'warning')
-    } else {
-      setSelectedTests((prev) => [...prev, value])
-      setSelectedTestOption(value) // reset dropdown to "NA"
-    }
+  if (selectedTests.includes(value)) {
+    showSnackbar('Test already added', 'warning')
+  } else {
+    setSelectedTests((prev) => [...prev, value])
+    setSelectedTestOption(null) // reset after add
   }
+}
+
+const clearAllTests = () => {
+  setSelectedTests([])
+  setSelectedTestOption(null) // reset dropdown
+}
+
 
   useEffect(() => {
     const fetchTests = async () => {
@@ -332,9 +338,7 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;')
   }
-  const clearAllTests = () => {
-    setSelectedTests([])
-  }
+
 
   // in Tests.jsx
   useEffect(() => {
@@ -372,27 +376,28 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                       </CFormLabel>
 
                       <Select
-                        options={
-                          availableTests
-                            .filter((t) => !selectedTests.includes(t.testName)) // remove already selected
-                            .map((t) => ({ label: t.testName, value: t.testName })) // format for react-select
-                        }
-                        placeholder="Select Tests..."
-                        value={
-                          selectedTestOption
-                            ? { label: selectedTestOption, value: selectedTestOption }
-                            : null
-                        }
-                        onChange={(selected) =>
-                          handleAddTest({ target: { value: selected?.value } })
-                        }
-                        isClearable
-                        isSearchable
-                      />
+  options={availableTests
+    .filter((t) => !selectedTests.includes(t.testName))
+    .map((t) => ({ label: t.testName, value: t.testName }))
+  }
+  placeholder="Select Tests..."
+  value={
+    selectedTestOption
+      ? { label: selectedTestOption, value: selectedTestOption }
+      : null
+  }
+  onChange={(selected) => {
+    if (selected) {
+      handleAddTest({ target: { value: selected.value } })
+    } else {
+      // Clear case
+      setSelectedTestOption(null)   // 👈 reset state
+    }
+  }}
+  isClearable
+  isSearchable
+/>
 
-                      {/* <div className="text-body-secondary small mt-1">
-                        Choose from common tests; duplicates are ignored.
-                      </div> */}
                     </CCol>
 
                     {/* Selected tests chips */}

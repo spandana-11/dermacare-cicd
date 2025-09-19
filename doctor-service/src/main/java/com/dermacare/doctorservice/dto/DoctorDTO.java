@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class DoctorDTO {
-    private String username;
+    private String userName;
     
     private String password;
     
@@ -23,7 +23,7 @@ public class DoctorDTO {
     
   
     public void setDoctorMobileNumber(String username) {
-        this.username = username != null ? username.trim() : null;
+        this.userName = username != null ? username.trim() : null;
     }
 
     public void setPassword(String password) {
