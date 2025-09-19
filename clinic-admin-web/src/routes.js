@@ -35,7 +35,7 @@ const ReportsDetails = React.lazy(() => import('./views/Reports/ReportDetails'))
 const CustomerViewDetails = React.lazy(
   () => import('./views/customerManagement/CustomerViewDetails'),
 )
-const CustomerManagement = React.lazy(() => import('./views/CustomerManagement/CustomerManagement'))
+const CustomerManagement = React.lazy(() => import('./views/customerManagement/CustomerManagement'))
 const LabTechnicianManagement = React.lazy(
   () => import('./views/EmployeeManagement/LabTechnicians/LabTechniciansManagement'),
 )
