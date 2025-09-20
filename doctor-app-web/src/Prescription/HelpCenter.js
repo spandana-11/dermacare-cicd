@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react"
 import {
   CCard,
   CCardBody,
@@ -9,150 +9,299 @@ import {
   CListGroupItem,
   CButton,
   CBadge,
-} from '@coreui/react'
+} from "@coreui/react"
+import { cilPhone, cilEnvelopeClosed, cilMap, cilChatBubble, cilInfo } from "@coreui/icons"
+import CIcon from "@coreui/icons-react"
+import { useDoctorContext } from "../Context/DoctorContext"
 
-// Dummy data export (can be imported elsewhere)
-export const helpCenterData = {
-  clinicName: 'Dermacare Clinic',
-  support: {
-    whatsapp: '+919876543210',
-    email: 'support@dermacareclinic.com',
-    phone: '+91-98765-43210',
-    hours: 'Mon - Sat, 9:00 AM - 6:00 PM (IST)',
-  },
-  dermaCareSupport: {
-    page: 'https://www.dermacareclinic.com/support',
-    faqs: 'https://www.dermacareclinic.com/faqs',
-  },
-  branches: [
-    {
-      id: 1,
-      name: 'Dermacare - Jubilee Hills',
-      address: '12/A Road, Jubilee Hills, Hyderabad, Telangana',
-      phone: '+91-98765-43211',
-      mapLink: 'https://maps.google.com/?q=Jubilee+Hills+Hyderabad',
-    },
-    {
-      id: 2,
-      name: 'Dermacare - Banjara Hills',
-      address: '45/2 Street, Banjara Hills, Hyderabad, Telangana',
-      phone: '+91-98765-43212',
-      mapLink: 'https://maps.google.com/?q=Banjara+Hills+Hyderabad',
-    },
-    {
-      id: 3,
-      name: 'Dermacare - Secunderabad',
-      address: '88 Green Lane, Secunderabad, Telangana',
-      phone: '+91-98765-43213',
-      mapLink: 'https://maps.google.com/?q=Secunderabad',
-    },
-  ],
-}
-
-const makeWhatsAppLink = (number, text = '') => {
-  const cleaned = number.replace(/[^+0-9]/g, '')
+// WhatsApp link generator
+const makeWhatsAppLink = (number, text = "") => {
+  if (!number) return "#"
+  const cleaned = number.replace(/[^+0-9]/g, "")
   const encoded = encodeURIComponent(text)
-  // wa.me requires phone in international format without +
-  const pure = cleaned.replace(/^\+/, '')
-  return `https://wa.me/${pure}${text ? `?text=${encoded}` : ''}`
+  const pure = cleaned.replace(/^\+/, "")
+  return `https://wa.me/${pure}${text ? `?text=${encoded}` : ""}`
 }
 
-export default function HelpCenter() {
-  const data = helpCenterData
+export default function DoctorHelpCenter() {
+  const { doctorDetails, clinicDetails, isPatientLoading } = useDoctorContext()
+
+  if (isPatientLoading) return <div>Loading...</div>
+  if (!doctorDetails || !clinicDetails) return <div>No doctor or clinic data found.</div>
+
+  const helpCenterData = {
+    clinicName: clinicDetails.name || "Clinic",
+    logo: clinicDetails.logo || "https://via.placeholder.com/80",
+    doctorName: doctorDetails.name || "Dr. John Doe",
+    doctorPhoto: doctorDetails.photo || "https://via.placeholder.com/80",
+    support: {
+      whatsapp: clinicDetails.contactNumber || "",
+      email: doctorDetails.doctorEmail || "",
+      phone: clinicDetails.contactNumber || "",
+      emergency: clinicDetails.emergencyNumber || "",
+      hours: `${clinicDetails.openingTime || ""} - ${clinicDetails.closingTime || ""}`,
+    },
+    customerService: {
+      name: "Derma Care",
+      phone: "8919914783",
+      email: "DermaCare@gmail.com",
+      whatsapp: "8919914783",
+      hours: "Mon-Fri 9AM - 6PM",
+      address: "Jubilee Hills",
+    },
+    social: {
+      facebook: clinicDetails.facebook || "",
+      instagram: clinicDetails.instagram || "",
+      linkedin: clinicDetails.linkedin || "",
+    },
+    services: clinicDetails.services || ["Dermatology", "Cosmetic Care", "Skin Treatments"],
+    dermaCareSupport: { page: "#", faqs: "#" },
+    branches: clinicDetails.branches || [],
+  }
+
+  const hasSocialLinks = Object.values(helpCenterData.social).some((link) => link)
 
   return (
-    <div className="p-4 max-w-4xl mx-auto">
-      <CCard className="mb-4">
-        <CCardHeader className="d-flex justify-content-between align-items-center">
-          <h4 className="mb-0">{data.clinicName} — Help Center</h4>
-          <CBadge color="info">Support</CBadge>
+    <div className="p-4 max-w-6xl mx-auto">
+      <CCard className="shadow-lg border-0 rounded-4 overflow-hidden">
+        {/* Header */}
+        <CCardHeader className="bg-gradient-info d-flex justify-content-between align-items-center py-3">
+          <div className="d-flex align-items-center gap-3">
+            <img
+              src={helpCenterData.logo}
+              alt="Clinic Logo"
+              className="rounded-circle"
+              width={60}
+              height={60}
+            />
+            <div>
+              <h4 className="mb-0 text-dark">
+                {helpCenterData.clinicName} 
+              </h4>
+              <small className="text-muted">Doctor: {helpCenterData.doctorName}</small>
+            </div>
+          </div>
+          <CBadge color="light" className="px-3 py-2 text-dark">
+            24/7 Support
+          </CBadge>
         </CCardHeader>
-        <CCardBody>
-          <p className="mb-3">Need help? Choose a contact method below — WhatsApp, phone, or email. For dermatology-specific questions see Derma Care Support.</p>
 
-          <CRow className="g-3">
-            <CCol sm={12} md={6} lg={4}>
-              <CCard className="h-100">
-                <CCardHeader>WhatsApp</CCardHeader>
-                <CCardBody>
-                  <p className="mb-2">Chat with our support team on WhatsApp for quick assistance.</p>
-                  <div className="d-flex gap-2">
-                    <a
-                      href={makeWhatsAppLink(data.support.whatsapp, 'Hello%20Dermacare%20Support')}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <CButton color="success">Open WhatsApp</CButton>
-                    </a>
-                    <a href={`tel:${data.support.phone}`}>
-                      <CButton color="secondary" variant="outline">Call</CButton>
-                    </a>
-                  </div>
-                </CCardBody>
-              </CCard>
-            </CCol>
+        <CCardBody className="p-4">
+          {/* Support Section */}
+          <p className="mb-4 text-muted text-center">
+            Need help? Choose a contact method below — WhatsApp, phone, email, or social media.
+          </p>
 
-            <CCol sm={12} md={6} lg={4}>
-              <CCard className="h-100">
-                <CCardHeader>Email</CCardHeader>
-                <CCardBody>
-                  <p className="mb-2">Send us an email with your query and attachments (if any).</p>
-                  <a href={`mailto:${data.support.email}`}>
-                    <CButton color="primary">Email Support</CButton>
-                  </a>
-                  <div className="mt-2 small text-muted">Typical response: within 24-48 hours</div>
-                </CCardBody>
-              </CCard>
-            </CCol>
+          <CRow className="g-4 mb-4 text-center">
+            {["whatsapp", "email", "phone"].map((type) => {
+              const value = helpCenterData.support[type]
+              if (!value) return null
 
-            <CCol sm={12} md={12} lg={4}>
-              <CCard className="h-100">
-                <CCardHeader>Phone</CCardHeader>
-                <CCardBody>
-                  <p className="mb-2">Call us for appointment bookings and urgent consultations.</p>
-                  <a href={`tel:${data.support.phone}`}>
-                    <CButton color="danger">{data.support.phone}</CButton>
-                  </a>
-                  <div className="mt-2 small text-muted">Hours: {data.support.hours}</div>
-                </CCardBody>
-              </CCard>
-            </CCol>
+              let buttonColor, icon, text, href
+              switch (type) {
+                case "whatsapp":
+                  buttonColor = "success"
+                  icon = cilChatBubble
+                  text = "Chat Now"
+                  href = makeWhatsAppLink(value, "Hello Support")
+                  break
+                case "email":
+                  buttonColor = "primary"
+                  icon = cilEnvelopeClosed
+                  text = "Email Support"
+                  href = `mailto:${value}`
+                  break
+                case "phone":
+                  buttonColor = "danger"
+                  icon = cilPhone
+                  text = "Call"
+                  href = `tel:${value}`
+                  break
+              }
+
+              return (
+                <CCol key={type} style={{ width: "33%" }}>
+                  <CCard className="h-100 shadow-sm border-0 rounded-3 d-flex flex-column">
+                    <CCardHeader className="fw-bold text-center text-md-start">{type.charAt(0).toUpperCase() + type.slice(1)}</CCardHeader>
+                    <CCardBody className="d-flex flex-column">
+                      <p className="small text-muted text-center text-md-start" style={{height:"40px"}}>
+                        {type === "whatsapp" && "Chat with our support team on WhatsApp for quick assistance."}
+                        {type === "email" && "Send us an email with your query and attachments."}
+                        {type === "phone" && "Call us for appointment bookings and urgent consultations."}
+                      </p>
+                      <a href={href} target={type === "whatsapp" ? "_blank" : undefined} rel="noreferrer" style={{ textDecoration: "none" }}>
+                        <CButton color={buttonColor} className="w-100 d-flex align-items-center justify-content-center">
+                          <CIcon icon={icon} className="me-2" />
+                          {text}
+                        </CButton>
+                      </a>
+                      {type === "email" && (
+                        <div className="mt-2 small text-muted text-center text-md-start">
+                          Response: within 24-48 hours
+                        </div>
+                      )}
+                      {type === "phone" && helpCenterData.support.hours && (
+                        <div className="mt-2 small text-muted text-center text-md-start">
+                          Hours: {helpCenterData.support.hours}
+                        </div>
+                      )}
+                    </CCardBody>
+                  </CCard>
+                </CCol>
+              )
+            })}
           </CRow>
 
-          <hr />
 
-          <h5>Derma Care Support</h5>
-          <p>If you have dermatology-specific questions (treatments, postop care, product recommendations), visit our Derma Care Support pages:</p>
-          <div className="d-flex gap-2 mb-3">
-            <a href={data.dermaCareSupport.page} target="_blank" rel="noreferrer">
-              <CButton color="dark">Derma Care Support Page</CButton>
-            </a>
-            <a href={data.dermaCareSupport.faqs} target="_blank" rel="noreferrer">
-              <CButton color="outline">FAQs</CButton>
-            </a>
+          {/* Customer Service Section */}
+          <div className="mb-5">
+            <h5 className="fw-bold mb-3">Customer Service</h5>
+            <CRow className="g-4">
+              <CCol xs={12} md={6} lg={4}>
+                <CCard className="h-100 shadow-sm border-0 rounded-4 overflow-hidden hover-shadow">
+                  <CCardHeader className="bg-light fw-bold">
+                    {helpCenterData.customerService.name}
+                  </CCardHeader>
+                  <CCardBody className="p-3 d-flex flex-column justify-content-between">
+                    {helpCenterData.customerService.address && (
+                      <div className="mb-3">
+                        <CIcon icon={cilInfo} className="me-2 text-primary" />
+                        <span className="fw-semibold">Address:</span> {helpCenterData.customerService.address}
+                      </div>
+                    )}
+                    <p className="small text-muted mb-3">
+                      Reach our Customer Service team for general inquiries or support.
+                    </p>
+                    <div className="d-flex flex-column gap-2">
+                      {helpCenterData.customerService.phone && (
+                        <a href={`tel:${helpCenterData.customerService.phone}`} style={{ textDecoration: "none" }}>
+                          <CButton
+                            color="warning"
+                            className="w-100 d-flex align-items-center justify-content-center"
+                          >
+                            <CIcon icon={cilPhone} className="me-2" />
+                            Call
+                          </CButton>
+                        </a>
+                      )}
+
+                      {helpCenterData.customerService.whatsapp && (
+                        <a
+                          href={makeWhatsAppLink(helpCenterData.customerService.whatsapp, "Hello Customer Service")}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ textDecoration: "none" }}
+                        >
+                          <CButton color="success" className="w-100 d-flex align-items-center justify-content-center">
+                            <CIcon icon={cilChatBubble} className="me-2" />
+                            WhatsApp
+                          </CButton>
+                        </a>
+                      )}
+                      {helpCenterData.customerService.email && (
+                        <a href={`mailto:${helpCenterData.customerService.email}`} style={{ textDecoration: "none" }}>
+                          <CButton color="primary" className="w-100 d-flex align-items-center justify-content-center" >
+                            <CIcon icon={cilEnvelopeClosed} className="me-2" />
+                            Email
+                          </CButton>
+                        </a>
+                      )}
+                    </div>
+                    {helpCenterData.customerService.hours && (
+                      <div className="mt-3 small text-muted text-center">
+                        Hours: {helpCenterData.customerService.hours}
+                      </div>
+                    )}
+                  </CCardBody>
+                </CCard>
+              </CCol>
+            </CRow>
           </div>
 
-          <h5>Branches</h5>
-          <CListGroup flush>
-            {data.branches.map((b) => (
-              <CListGroupItem key={b.id} className="d-flex justify-content-between align-items-start">
-                <div>
-                  <div className="fw-bold">{b.name}</div>
-                  <div className="small">{b.address}</div>
-                  <div className="small">Phone: <a href={`tel:${b.phone}`}>{b.phone}</a></div>
-                </div>
-                <div className="d-flex flex-column align-items-end">
-                  <a href={b.mapLink} target="_blank" rel="noreferrer">Open on map</a>
-                  <a className="mt-2" href={makeWhatsAppLink(b.phone, 'Hello%20from%20branch') } target="_blank" rel="noreferrer">WhatsApp branch</a>
-                </div>
-              </CListGroupItem>
-            ))}
-          </CListGroup>
+          {/* Social Media */}
+          {hasSocialLinks && (
+            <div className="mb-4">
+              <h5 className="fw-bold">Follow Us</h5>
+              <div className="d-flex gap-3 flex-wrap">
+                {Object.entries(helpCenterData.social)
+                  .filter(([_, link]) => link)
+                  .map(([key, link]) => (
+                    <a
+                      key={key}
+                      href={link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-outline-primary btn-sm"
+                    >
+                      {key.charAt(0).toUpperCase() + key.slice(1)}
+                    </a>
+                  ))}
+              </div>
+            </div>
+          )}
+
+
+          {/* Branches Section */}
+          {helpCenterData.branches.length > 0 && (
+            <div>
+              <h5 className="fw-bold">Our Branches</h5>
+              <CListGroup flush>
+                {helpCenterData.branches.map((b, index) => {
+                  const phone = b.phone || b.contactNumber || ""
+                  const mapLink = b.mapLink || b.map || ""
+                  return (
+                    <CListGroupItem
+                      key={b.id || index}
+                      className="d-flex justify-content-between align-items-start border rounded-3 mb-2 shadow-sm p-3 flex-wrap"
+                    >
+                      <div>
+                        <div className="fw-bold">{b.branchName}</div>
+                        <div className="fw-bold">{b.branchId}</div>
+                        <div className="small text-muted">{b.address}</div>
+                      </div>
+                      <div className="d-flex gap-2 mt-2 mt-md-0">
+                        {mapLink && (
+                          <a
+                            href={mapLink}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn btn-sm btn-outline-dark"
+                          >
+                            <CIcon icon={cilMap} className="me-1" />
+                            Map
+                          </a>
+                        )}
+                        {phone && (
+                          <>
+                            <a
+                              href={`tel:${phone}`}
+                              className="btn btn-sm btn-danger d-flex align-items-center"
+                            >
+                              <CIcon icon={cilPhone} className="me-1" />
+                              Call
+                            </a>
+                            <a
+                              href={makeWhatsAppLink(phone, "Hello from branch")}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="btn btn-sm btn-success d-flex align-items-center"
+                            >
+                              <CIcon icon={cilChatBubble} className="me-1" />
+                              WhatsApp
+                            </a>
+                          </>
+                        )}
+                      </div>
+                    </CListGroupItem>
+                  )
+                })}
+              </CListGroup>
+            </div>
+          )}
+
 
         </CCardBody>
       </CCard>
-
-      <div className="text-center small text-muted">This is dummy data for UI/demo purposes. Replace <code>helpCenterData</code> with your real support info.</div>
     </div>
   )
 }

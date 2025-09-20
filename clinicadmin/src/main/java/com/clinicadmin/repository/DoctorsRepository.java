@@ -28,5 +28,9 @@ public interface DoctorsRepository extends MongoRepository<Doctors, ObjectId> {
 			String subServiceId);
 
 	List<Doctors> findByHospitalIdAndBranchId(String hospitalId, String branchId);
+	
+	@Query("{ 'hospitalId': ?0, $or: [ { 'branchId': ?1 }, { 'branches.branchId': ?1 } ] }")
+
+	List<Doctors> findByHospitalIdAndBranchIdIncludingBranches(String hospitalId, String branchId);
 
 }

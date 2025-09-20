@@ -1,5 +1,5 @@
 // export const BASE_URL = 'http://alb-dev-sc-197990416.ap-south-1.elb.amazonaws.com/api'
-export let wifiUrl = '3.6.119.57'
+export let wifiUrl = '3.6.119.57:9090'
 // export let wifiUrl = '192.168.1.5'
 
 export const SBASE_URL = `http://${wifiUrl}/clinicadminpublicapis`
@@ -184,14 +184,18 @@ export const clinicPost = 'v1/clinic/addClinic'
 export const Customer_Url = `http://${wifiUrl}/api`
 export const getAllPayouts = 'payments/getallpayments'
 export const addPayouts = 'payments/addpayment'
-//customer
+
 //** Customer Management- main **
 export const AddCustomer = 'customers/onboard'
 export const GetAllCustomers = 'customers/getAllCustomers'
+// export const UpdateCustomer = 'customers'
+// export const DeleteCustomer = 'customers'
+// export const GetCustomerByCustomerId = 'customers'
+export const Customer = 'customers'
 
-export const GetCustomerByMobileNo = 'customer/getBasicDetails'
-export const UpdateCustomer = 'customer/updateCustomerBasicDetails'
-export const DeleteCustomer = 'customer/deleteCustomerBasicDetails'
+export const GetCustomersByHospitalId = 'customers/hospital'
+export const GetCustomersByBranchId = 'customers/branch'
+export const GetCustomersByHospitalIdAndBranchId = 'customers/hospital'
 
 //ConsentForm
 export const AddConsent = '/consent-form'

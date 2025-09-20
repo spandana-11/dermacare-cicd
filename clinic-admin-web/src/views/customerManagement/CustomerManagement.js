@@ -30,7 +30,7 @@ import {
   CustomerData,
   deleteCustomerData,
   addCustomer,
-  getCustomerByMobile,
+  CustomerByCustomerId,
   updateCustomerData,
 } from './CustomerManagementAPI'
 
@@ -59,6 +59,7 @@ const CustomerManagement = () => {
   const [formErrors, setFormErrors] = useState({})
   const { searchQuery, setSearchQuery } = useGlobalSearch()
   const [formData, setFormData] = useState({
+    customerId: '',
     title: '',
     firstName: '',
     lastName: '',
@@ -69,10 +70,11 @@ const CustomerManagement = () => {
     dateOfBirth: '',
     referCode: '',
     age: '',
-    hospitalId: localStorage.getItem('HospitalId'),
-    hospitalName: localStorage.getItem('HospitalName'),
-    branchId: localStorage.getItem('branchId'),
+    hospitalId: localStorage.getItem('HospitalId') || '',
+    hospitalName: localStorage.getItem('HospitalName') || '',
+    branchId: localStorage.getItem('branchId') || '',
     address: {
+      // ✅ Always keep this object ready
       houseNo: '',
       street: '',
       landmark: '',
@@ -82,6 +84,7 @@ const CustomerManagement = () => {
       postalCode: '',
     },
   })
+
   // ======= state for states + helper refs =======
   const [states, setStates] = useState([])
   const [statesLoading, setStatesLoading] = useState(false)
@@ -194,23 +197,11 @@ const CustomerManagement = () => {
             data[0].PostOffice.length
           ) {
             const po = data[0].PostOffice[0]
-            // Map API fields -> local address fields
-            // street <- PostOffice.Name  (post office name)
-            // city   <- District
-            // state  <- State
-            // landmark <- Block (optional)
+
             handleNestedChange('address', 'street', po.Name || '')
             handleNestedChange('address', 'city', po.Region || '')
             handleNestedChange('address', 'landmark', po.Block || '')
             handleNestedChange('address', 'state', po.State || '')
-            // choose state from available list if it matches; else set raw value
-            // const apiState = po.State || ''
-            // if (states.includes(apiState)) {
-            //   handleNestedChange('address', 'state', apiState)
-            // } else {
-            //   handleNestedChange('address', 'state', apiState)
-            //   // Note: apiState may slightly differ from your dropdown labels; consider normalizing if needed
-            // }
           } else {
             console.warn('No PostOffice data returned for pincode', value, data)
           }
@@ -265,19 +256,19 @@ const CustomerManagement = () => {
     if (!str) return ''
     return str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
   }
-  const handleCustomerViewDetails = (mobileNumber) => {
-    navigate(`/customer-management/${mobileNumber}`)
+  const handleCustomerViewDetails = (customerId) => {
+    navigate(`/customer-management/${customerId}`)
   }
 
-  const handleDeleteCustomer = async (mobileNumber) => {
+  const handleDeleteCustomer = async (customerId) => {
     // const confirmed = window.confirm('Are you sure you want to delete this customer?')
-    setCustomerIdToDelete(mobileNumber)
+    setCustomerIdToDelete(customerId)
     setIsModalVisible(true)
 
     try {
-      await deleteCustomerData(mobileNumber)
+      await deleteCustomerData(customerId)
       toast.success('Customer deleted successfully')
-      const updatedData = customerData.filter((customer) => customer?.mobileNumber !== mobileNumber)
+      const updatedData = customerData.filter((customer) => customer?.customerId !== customerId)
       setCustomerData(updatedData)
     } catch (error) {
       console.error('Delete failed:', error)
@@ -285,25 +276,22 @@ const CustomerManagement = () => {
     }
   }
 
-  const handleEditCustomer = async (mobileNumber) => {
+  const handleEditCustomer = async (customerId) => {
     try {
       setLoading(true)
-      const response = await getCustomerByMobile(mobileNumber)
+      const response = await CustomerByCustomerId(customerId)
       const customer = response.data || response
 
-      console.log('Customer data:', customer)
-
       let formattedDate = ''
+      const dobStr = customer.dateOfBirth
 
-      if (customer.dateOfBirth) {
-        const dobStr = customer.dateOfBirth.trim()
-
+      if (dobStr) {
         if (/^\d{2}-\d{2}-\d{4}$/.test(dobStr)) {
-          // Format: DD-MM-YYYY — safely parse manually
+          // Manual parsing for DD-MM-YYYY
           const [day, month, year] = dobStr.split('-')
-          formattedDate = `${year}-${month}-${day}` // convert to input-friendly format
+          formattedDate = `${year}-${month}-${day}`
         } else {
-          // Try parsing YYYY-MM-DD or ISO string
+          // Fallback for YYYY-MM-DD or ISO string
           const parsedDate = new Date(dobStr)
           if (!isNaN(parsedDate)) {
             const year = parsedDate.getFullYear().toString().padStart(4, '0')
@@ -315,15 +303,32 @@ const CustomerManagement = () => {
       }
 
       setFormData({
+        customerId: customer.customerId || '',
+        title: customer.title || '',
+        firstName: customer.firstName || '',
+        lastName: customer.lastName || '',
         fullName: customer.fullName || '',
         mobileNumber: customer.mobileNumber || '',
         gender: customer.gender || '',
         emailId: customer.emailId || '',
-        dateOfBirth: formattedDate,
+        dateOfBirth: formattedDate, // ✅ Use the correctly formatted date
         referCode: customer.referCode || '',
+        age: customer.age || '',
+        hospitalId: localStorage.getItem('HospitalId'),
+        hospitalName: localStorage.getItem('HospitalName'),
+        branchId: localStorage.getItem('branchId'),
+        address: {
+          houseNo: customer.address?.houseNo || '',
+          street: customer.address?.street || '',
+          landmark: customer.address?.landmark || '',
+          city: customer.address?.city || '',
+          state: customer.address?.state || '',
+          country: customer.address?.country || 'India',
+          postalCode: customer.address?.postalCode || '',
+        },
       })
 
-      setCurrentMobile(mobileNumber)
+      setCurrentMobile(customerId)
       setIsEditing(true)
       setIsAdding(true)
     } catch (error) {
@@ -344,10 +349,17 @@ const CustomerManagement = () => {
       setFormErrors(errors)
     }
   }
+  useEffect(() => {
+    if (isEditing && formData.address.postalCode) {
+      handlePincodeChange(formData.address.postalCode)
+    }
+  }, [isEditing])
+
   const handleFormSubmit = async (e) => {
     e.preventDefault()
-
-    // if (!validateForm()) return
+    console.log('Submitting form', formData)
+    // ✅ Validate the form first
+    if (!validateForm()) return
 
     try {
       const updatedFormData = { ...formData }
@@ -368,12 +380,10 @@ const CustomerManagement = () => {
       }
 
       if (isEditing) {
-        const res = await updateCustomerData(updatedFormData.mobileNumber, updatedFormData)
-        console.log('Update response:', res)
+        await updateCustomerData(formData.customerId, updatedFormData)
         toast.success('Customer updated successfully')
       } else {
-        const res = await addCustomer(updatedFormData)
-        console.log('Add response:', res)
+        await addCustomer(updatedFormData)
         toast.success('Customer added successfully')
       }
 
@@ -400,6 +410,14 @@ const CustomerManagement = () => {
       emailId: '',
       dateOfBirth: '',
       referCode: '',
+      address: {
+        houseNo: '',
+        street: '',
+        city: '',
+        state: '',
+        landmark: '',
+        pincode: '',
+      },
     })
   }
   const filteredData = React.useMemo(() => {
@@ -444,7 +462,7 @@ const CustomerManagement = () => {
       toast.success('Customer deleted successfully')
 
       const updatedData = customerData.filter(
-        (customer) => customer?.mobileNumber !== customerIdToDelete,
+        (customer) => customer?.customerId !== customerIdToDelete,
       )
 
       setCustomerData(updatedData)
@@ -460,34 +478,35 @@ const CustomerManagement = () => {
   const validateForm = () => {
     const errors = {}
 
-    // Full Name Validation
+    // Title
     if (!formData.title.trim()) {
       errors.title = 'Title is required'
     } else if (/\d/.test(formData.title)) {
       errors.title = 'Title should not contain numbers'
     }
 
+    // First Name
     if (!formData.firstName.trim()) {
-      errors.firstName = 'firstName is required'
+      errors.firstName = 'First Name is required'
     } else if (/\d/.test(formData.firstName)) {
-      errors.firstName = 'firstName should not contain numbers'
+      errors.firstName = 'First Name should not contain numbers'
     }
 
-    // Mobile Number Validation
+    // Mobile Number
     if (!formData.mobileNumber.trim()) {
       errors.mobileNumber = 'Mobile number is required'
     } else if (!/^[1-9]\d{9}$/.test(formData.mobileNumber)) {
       errors.mobileNumber = 'Mobile number must be 10 digits (starting from 1-9)'
     }
 
-    // ✅ Email ID Validation
+    // ✅ Email validation — make it required
     if (!formData.emailId.trim()) {
       errors.emailId = 'Email is required'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailId)) {
-      errors.emailId = 'Email must contain @ and be valid'
+      errors.emailId = 'Email must be valid and contain @'
     }
 
-    // ✅ Date of Birth Validation
+    // Date of Birth
     if (!formData.dateOfBirth.trim()) {
       errors.dateOfBirth = 'Date of Birth is required'
     } else {
@@ -503,22 +522,21 @@ const CustomerManagement = () => {
         errors.dateOfBirth = 'Date of Birth cannot be in the future'
       } else {
         const oldestAllowedDate = new Date()
-        oldestAllowedDate.setFullYear(today.getFullYear() - 100)
-
+        oldestAllowedDate.setFullYear(today.getFullYear() - 120)
         if (date < oldestAllowedDate) {
           errors.dateOfBirth = 'Date of Birth must not be more than 120 years ago'
         }
       }
     }
 
-    // ✅ Refer Code Validation (Optional but validate if entered)
-    if (formData.referCode && /[^a-zA-Z0-9]/.test(formData.referCode)) {
-      errors.referCode = 'Refer code must contain only letters and numbers'
-    }
-
     // Gender
     if (!formData.gender) {
       errors.gender = 'Gender is required'
+    }
+
+    // Referral Code (optional)
+    if (formData.referCode && /[^a-zA-Z0-9]/.test(formData.referCode)) {
+      errors.referCode = 'Refer code must contain only letters and numbers'
     }
 
     setFormErrors(errors)
@@ -608,7 +626,7 @@ const CustomerManagement = () => {
                     <CTableHeaderCell>Full Name</CTableHeaderCell>
                     <CTableHeaderCell>Mobile Number</CTableHeaderCell>
                     <CTableHeaderCell>Gender</CTableHeaderCell>
-                    <CTableHeaderCell className='text-end'>Actions</CTableHeaderCell>
+                    <CTableHeaderCell className="text-end">Actions</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
                 <CTableBody className="pink-table">
@@ -627,7 +645,7 @@ const CustomerManagement = () => {
                           <div className="d-flex justify-content-end gap-2  ">
                             <button
                               className="actionBtn"
-                              onClick={() => handleCustomerViewDetails(customer?.mobileNumber)}
+                              onClick={() => handleCustomerViewDetails(customer?.customerId)}
                               title="View"
                             >
                               <Eye size={18} />
@@ -635,7 +653,7 @@ const CustomerManagement = () => {
 
                             <button
                               className="actionBtn"
-                              onClick={() => handleEditCustomer(customer?.mobileNumber)}
+                              onClick={() => handleEditCustomer(customer?.customerId)}
                               title="Edit"
                             >
                               <Edit2 size={18} />
@@ -644,7 +662,7 @@ const CustomerManagement = () => {
                             <button
                               className="actionBtn"
                               onClick={() => {
-                                setCustomerIdToDelete(customer?.mobileNumber)
+                                setCustomerIdToDelete(customer?.customerId)
                                 setIsModalVisible(true)
                               }}
                               title="Delete"
@@ -835,6 +853,21 @@ const CustomerManagement = () => {
               </CCol>
               <CCol md={4}>
                 <CFormLabel>
+                  Email <span className="text-danger">*</span>
+                </CFormLabel>
+                <CFormInput
+                  type="email"
+                  name="emailId"
+                  value={formData.emailId}
+                  onChange={handleInputChange}
+                  invalid={!!formErrors.emailId}
+                />
+                {formErrors.emailId && (
+                  <div className="text-danger small">{formErrors.emailId}</div>
+                )}
+              </CCol>
+              <CCol md={3}>
+                <CFormLabel>
                   Mobile Number
                   <span className="text-danger">*</span>
                 </CFormLabel>
@@ -872,19 +905,9 @@ const CustomerManagement = () => {
                   <option value="">Select</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
+                  <option value="Others">Others</option>
                 </CFormSelect>
                 {formErrors.gender && <div className="text-danger small">{formErrors.gender}</div>}
-              </CCol>
-
-              {/* Referral Code */}
-              <CCol md={3}>
-                <CFormLabel>Referral Code</CFormLabel>
-                <CFormInput
-                  name="referCode"
-                  value={formData.referCode}
-                  onChange={handleInputChange}
-                />
-                {formErrors.referCode && <div className="text-danger">{formErrors.referCode}</div>}
               </CCol>
             </CRow>
 
@@ -897,7 +920,7 @@ const CustomerManagement = () => {
                 </CFormLabel>
                 <CFormInput
                   type="text"
-                  value={formData.address.houseNo}
+                  value={formData.address?.houseNo || ''}
                   onChange={(e) => handleNestedChange('address', 'houseNo', e.target.value)}
                 />
               </CCol>
@@ -908,7 +931,7 @@ const CustomerManagement = () => {
                 <CFormInput
                   type="text"
                   maxLength={6}
-                  value={formData.address.postalCode}
+                  value={formData.address?.postalCode || ''}
                   onChange={(e) => handlePincodeChange(e.target.value)}
                   placeholder="6-digit PIN"
                 />
@@ -983,8 +1006,18 @@ const CustomerManagement = () => {
                 />
               </CCol>
 
-              {/* Postal Code */}
+              {/* Referral Code */}
+              <CCol md={3}>
+                <CFormLabel>Referral Code</CFormLabel>
+                <CFormInput
+                  name="referCode"
+                  value={formData.referCode}
+                  onChange={handleInputChange}
+                />
+                {formErrors.referCode && <div className="text-danger">{formErrors.referCode}</div>}
+              </CCol>
             </CRow>
+            <br />
             <div className="d-flex justify-content-end">
               <CButton color="secondary" className="me-2" onClick={handleCancel}>
                 Cancel

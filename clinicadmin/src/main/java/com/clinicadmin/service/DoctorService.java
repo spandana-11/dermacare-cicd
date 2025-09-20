@@ -88,5 +88,7 @@ public interface DoctorService {
 
 	Response getRecommendedClinicsAndOneDoctors(List<String> keyPointsFromUser);
 
+	Response getDoctorsByHospitalIdAndBranchId(String hospitalId, String branchId);
+
 }
 

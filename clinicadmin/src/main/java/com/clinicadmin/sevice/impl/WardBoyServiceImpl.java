@@ -160,6 +160,8 @@ public class WardBoyServiceImpl implements WardBoyService {
 		if (dto.getBasicHealthFirstAidTrainingCertificate() != null)
 			existing.setBasicHealthFirstAidTrainingCertificate(
 					WardBoyMapper.toEntity(dto).getBasicHealthFirstAidTrainingCertificate());
+		if (dto.getPoliceVerificationCertificate() != null)
+			existing.setPoliceVerificationCertificate(WardBoyMapper.toEntity(dto).getPoliceVerificationCertificate());
 
 		if (dto.getBasicHealthFirstAidTrainingCertificate() != null)
 			existing.setProfilePicture(WardBoyMapper.toEntity(dto).getProfilePicture());

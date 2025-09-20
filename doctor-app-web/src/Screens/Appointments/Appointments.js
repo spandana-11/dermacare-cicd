@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useContext } from 'react'
 import {
   CCard,
   CCardBody,
@@ -20,6 +20,7 @@ import { COLORS, SIZES } from '../../Themes'
 import TooltipButton from '../../components/CustomButton/TooltipButton'
 import Button from '../../components/CustomButton/CustomButton'
 import { getAppointments, getAppointmentsCount } from '../../Auth/Auth'
+import { useDoctorContext } from '../../Context/DoctorContext'
 
 const tabLabels = {
   upcoming: 'Upcoming',
@@ -34,21 +35,22 @@ const tabToNumberMap = {
 }
 
 const Appointments = ({ searchTerm = '' }) => {
+  const { doctorDetails } = useDoctorContext() // get branches from doctorDetails
+  const branches = doctorDetails?.branches || []
+
   const [activeTab, setActiveTab] = useState('upcoming')
   const [appointments, setAppointments] = useState([])
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState('All')
-  const [patientCount, setPatientCount] = useState(0)
+  const [selectedBranch, setSelectedBranch] = useState(null)
   const [selectedDate, setSelectedDate] = useState('')
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(10) // Change this number to set rows per page
+  const [itemsPerPage] = useState(10)
+
   const toISODate = (val) => {
     if (!val) return ''
     const parsed = new Date(val)
-    if (!isNaN(parsed)) return parsed.toISOString().slice(0, 10) // YYYY-MM-DD
-
-    // fallback: try dd-mm-yyyy or dd/mm/yyyy
+    if (!isNaN(parsed)) return parsed.toISOString().slice(0, 10)
     const parts = String(val).split(/[-/]/)
     if (parts.length === 3) {
       const [d, m, y] = parts
@@ -69,8 +71,6 @@ const Appointments = ({ searchTerm = '' }) => {
       ])
 
       setAppointments(appointmentsData || [])
-      const totalCount = countData?.completedAppointmentsCount ?? 0
-      setPatientCount(totalCount)
       setLoading(false)
       setCurrentPage(1) // reset page when tab changes
     }
@@ -86,12 +86,15 @@ const Appointments = ({ searchTerm = '' }) => {
       .filter((p) => {
         const matchesSearch = p.name?.toLowerCase().includes(safeSearch)
         const matchesFilter = filter === 'All' || p.consultationType === filter
+        const matchesBranch =
+          !selectedBranch ||
+          p.branchId === selectedBranch.branchId ||
+          p.branchName === selectedBranch.branchName
 
-        // compare normalized ISO dates (input gives YYYY-MM-DD)
         const serviceISO = toISODate(p.serviceDate)
         const matchesDate = !selectedDate || serviceISO === selectedDate
 
-        return matchesSearch && matchesFilter && matchesDate
+        return matchesSearch && matchesFilter && matchesDate && matchesBranch
       })
       .sort((a, b) => new Date(toISODate(b.serviceDate)) - new Date(toISODate(a.serviceDate)))
     : []
@@ -114,72 +117,113 @@ const Appointments = ({ searchTerm = '' }) => {
             <h5 style={{ fontSize: SIZES.medium, color: COLORS.black }} className="pb-3">
               Appointments
             </h5>
-            <CRow className="w-100 d-flex justify-content-between align-items-center mb-2">
-              <CCol xs={12} md={8}>
-                <div className="d-flex align-items-center gap-2 flex-wrap pb-2">
-                  {/* Dropdown for Tabs */}
-                  <CDropdown style={{ cursor: 'pointer' }}>
-                    <CDropdownToggle
-                      size="sm"
-                      className="d-flex align-items-center gap-2"
-                      style={{
-                        border: `1px solid ${COLORS.bgcolor}`,
-                        borderRadius: '6px',
-                        color: COLORS.black,
-                        fontWeight: '600',
-                      }}
+
+            <CRow className="w-100 d-flex align-items-center mb-2">
+              <CCol xs={12}>
+                <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                  {/* LEFT: Tabs + Consultation Filters */}
+                  <div className="d-flex align-items-center gap-2 flex-wrap">
+                    {/* Tabs Dropdown */}
+                    <CDropdown style={{ cursor: 'pointer' }}>
+                      <CDropdownToggle
+                        size="sm"
+                        className="d-flex align-items-center gap-2"
+                        style={{
+                          border: `1px solid ${COLORS.bgcolor}`,
+                          borderRadius: '6px',
+                          color: COLORS.black,
+                          fontWeight: '600',
+                          backgroundColor: COLORS.bgcolor,
+                        }}
+                      >
+                        <span>{tabLabels[activeTab]}</span>
+                        <span style={{ color: COLORS.black, fontWeight: '600' }}>
+                          ({filteredPatients.length})
+                        </span>
+                      </CDropdownToggle>
+                      <CDropdownMenu placement="end">
+                        {Object.keys(tabLabels).map((key) => (
+                          <CDropdownItem
+                            key={key}
+                            active={activeTab === key}
+                            onClick={() => {
+                              setActiveTab(key)
+                              setFilter('All')
+                              setSelectedBranch(null)
+                            }}
+                          >
+                            {tabLabels[key]}
+                          </CDropdownItem>
+                        ))}
+                      </CDropdownMenu>
+                    </CDropdown>
+
+                    {/* Consultation Filters */}
+                    <Button
+                      variant={filter === 'Services & Treatments' ? 'primary' : 'outline'}
+                      onClick={() => setFilter('Services & Treatments')}
+                      customColor={filter === 'Services & Treatments' ? COLORS.bgcolor : COLORS.black}
+                      size="small"
                     >
-                      <span>{tabLabels[activeTab]}</span>
-                      <span style={{ color: COLORS.black, fontWeight: '600' }}>
-                        ({filteredPatients.length})
-                      </span>
-                    </CDropdownToggle>
-                    <CDropdownMenu placement="end">
-                      {Object.keys(tabLabels).map((key) => (
-                        <CDropdownItem
-                          key={key}
-                          active={activeTab === key}
-                          onClick={() => {
-                            setActiveTab(key)
-                            setFilter('All') // reset filter
-                          }}
-                        >
-                          {tabLabels[key]}
-                        </CDropdownItem>
-                      ))}
-                    </CDropdownMenu>
-                  </CDropdown>
+                      Services & Treatments
+                    </Button>
 
-                  {/* Consultation Filters */}
-                  <Button
-                    variant={filter === 'Services & Treatments' ? 'primary' : 'outline'}
-                    onClick={() => setFilter('Services & Treatments')}
-                    customColor={filter === 'Services & Treatments' ? COLORS.bgcolor : COLORS.black}
-                    size="small"
-                  >
-                    Services & Treatments
-                  </Button>
+                    <Button
+                      variant={filter === 'In-Clinic Consultation' ? 'primary' : 'outline'}
+                      onClick={() => setFilter('In-Clinic Consultation')}
+                      customColor={filter === 'In-Clinic Consultation' ? COLORS.bgcolor : COLORS.black}
+                      size="small"
+                    >
+                      In-Clinic Consultation
+                    </Button>
 
-                  <Button
-                    variant={filter === 'In-Clinic Consultation' ? 'primary' : 'outline'}
-                    onClick={() => setFilter('In-Clinic Consultation')}
-                    customColor={filter === 'In-Clinic Consultation' ? COLORS.bgcolor : COLORS.black}
-                    size="small"
-                  >
-                    In-Clinic Consultation
-                  </Button>
+                    <Button
+                      variant={filter === 'Online Consultation' ? 'primary' : 'outline'}
+                      onClick={() => setFilter('Online Consultation')}
+                      customColor={filter === 'Online Consultation' ? COLORS.bgcolor : COLORS.black}
+                      size="small"
+                    >
+                      Online Consultation
+                    </Button>
+                  </div>
 
-                  <Button
-                    variant={filter === 'Online Consultation' ? 'primary' : 'outline'}
-                    onClick={() => setFilter('Online Consultation')}
-                    customColor={filter === 'Online Consultation' ? COLORS.bgcolor : COLORS.black}
-                    size="small"
-                  >
-                    Online Consultation
-                  </Button>
+                  {/* RIGHT: Branch Dropdown */}
+                  <div>
+                    <CDropdown style={{ cursor: 'pointer' }}>
+                      <CDropdownToggle
+                        size="sm"
+                        className="d-flex align-items-center gap-2"
+                        style={{
+                          border: `1px solid ${COLORS.bgcolor}`,
+                          borderRadius: '6px',
+                          fontWeight: '600',
+                          backgroundColor: COLORS.bgcolor,
+                          color: COLORS.black,
+                        }}
+                      >
+                        {selectedBranch ? selectedBranch.branchName : 'Select Branch'}
+                      </CDropdownToggle>
+                      <CDropdownMenu>
+                        {branches.length > 0 ? (
+                          branches.map((branch) => (
+                            <CDropdownItem
+                              key={branch.branchId}
+                              onClick={() => setSelectedBranch(branch)}
+                            >
+                              {branch.branchName} ({branch.branchId})
+                            </CDropdownItem>
+                          ))
+                        ) : (
+                          <CDropdownItem disabled>No branches available</CDropdownItem>
+                        )}
+                      </CDropdownMenu>
+                    </CDropdown>
+                  </div>
                 </div>
               </CCol>
             </CRow>
+
+
           </div>
 
           {/* Appointments Table */}
@@ -262,11 +306,7 @@ const Appointments = ({ searchTerm = '' }) => {
                           </span>
                         </CTableDataCell>
                         <CTableDataCell>
-                          <TooltipButton
-                            patient={p}
-                            tab={p.status}
-                          // disabled={activeTab === 'completed' || p.status === 'Completed'}
-                          />
+                          <TooltipButton patient={p} tab={p.status} />
                         </CTableDataCell>
                       </CTableRow>
                     ))

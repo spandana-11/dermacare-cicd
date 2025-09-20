@@ -302,6 +302,7 @@ public class BranchServiceImpl implements BranchService {
         if (dto == null) return null;
         Branch branch = new Branch();
         branch.setClinicId(dto.getClinicId());
+        branch.setHospitalName(dto.getHospitalName());
         branch.setBranchId(generatedBranchId); // Always numeric branch ID
         branch.setBranchName(dto.getBranchName());
         branch.setAddress(dto.getAddress());
@@ -320,6 +321,7 @@ public class BranchServiceImpl implements BranchService {
         if (branch == null) return null;
         BranchDTO dto = new BranchDTO();
         dto.setClinicId(branch.getClinicId());
+        dto.setHospitalName(branch.getHospitalName());
         dto.setBranchId(branch.getBranchId());
         dto.setBranchName(branch.getBranchName());
         dto.setAddress(branch.getAddress());

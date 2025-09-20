@@ -49,7 +49,7 @@ public class WardBoy {
 	private String basicHealthFirstAidTrainingCertificate;
 	private String previousEmploymentHistory;
 	private String policeVerification;
-
+	private String policeVerificationCertificate;
 	private String role;
 
 	private Map<String, List<String>> permissions;

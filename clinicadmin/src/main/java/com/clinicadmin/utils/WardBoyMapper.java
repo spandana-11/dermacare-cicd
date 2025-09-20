@@ -79,7 +79,7 @@ public class WardBoyMapper {
 //        wardBoy.setPassword(dto.getPassword());
 
 		// ✅ Encode before saving to DB
-	
+		wardBoy.setPoliceVerificationCertificate(encodeIfNotBase64(dto.getPoliceVerificationCertificate()));
 		wardBoy.setMedicalFitnessCertificate(encodeIfNotBase64(dto.getMedicalFitnessCertificate()));
 		wardBoy.setBasicHealthFirstAidTrainingCertificate(
 				encodeIfNotBase64(dto.getBasicHealthFirstAidTrainingCertificate()));
@@ -123,6 +123,7 @@ public class WardBoyMapper {
 		dto.setBasicHealthFirstAidTrainingCertificate(
 				safeReturnAsBase64(entity.getBasicHealthFirstAidTrainingCertificate()));
 		dto.setPoliceVerification(safeReturnAsBase64(entity.getPoliceVerification()));
+		dto.setPoliceVerificationCertificate(safeReturnAsBase64(entity.getPoliceVerificationCertificate()));
 
 		dto.setEmailId(entity.getEmailId());
 		dto.setPreviousEmploymentHistory(entity.getPreviousEmploymentHistory());

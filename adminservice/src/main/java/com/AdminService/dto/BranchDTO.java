@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 public class BranchDTO {
 
 	private String clinicId;
+	private String hospitalName;
 	private String branchId;	
 	private String branchName;
 	private String address;

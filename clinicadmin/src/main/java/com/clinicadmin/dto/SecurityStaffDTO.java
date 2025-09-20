@@ -53,6 +53,8 @@ public class SecurityStaffDTO {
 
 	@NotBlank(message = "Police Verification is mandatory")
 	private String policeVerification;
+	
+	private String policeVerificationCertificate;
 
 	@NotBlank(message = "Medical Fitness Certificate is mandatory")
 	private String medicalFitnessCertificate;

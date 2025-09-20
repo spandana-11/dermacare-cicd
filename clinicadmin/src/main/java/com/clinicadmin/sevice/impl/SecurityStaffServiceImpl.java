@@ -98,7 +98,7 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 		existing.setAddress(staff.getAddress());
 		existing.setBankAccountDetails(staff.getBankAccountDetails());
 		existing.setPoliceVerification(staff.getPoliceVerification());
-		existing.setMedicalFitnessCertificate(staff.getMedicalFitnessCertificate());
+		existing.setPoliceVerificationCertificate(staff.getPoliceVerificationCertificate());		existing.setMedicalFitnessCertificate(staff.getMedicalFitnessCertificate());
 		existing.setEmailId(staff.getEmailId());
 		existing.setTraningOrGuardLicense(staff.getTraningOrGuardLicense());
 		existing.setPreviousEmployeeHistory(staff.getPreviousEmployeeHistory());

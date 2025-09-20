@@ -205,9 +205,9 @@ const AppHeader = () => {
                   {capitalizeWords(clinic.name) || 'Clinic Name'}
 
                 </h5>
-                <h6 style={{ color: COLORS.black, fontSize: SIZES.small }}>
+                {/* <h6 style={{ color: COLORS.black, fontSize: SIZES.small }}>
                   {clinic.city || 'No city'}
-                </h6>
+                </h6> */}
               </>
             ) : (
               <h6 className="text-muted">Loading...</h6>

@@ -22,6 +22,7 @@ public class Branch {
 	@Id	
 	private String id;
 	private String clinicId;
+	private String hospitalName;
 	private String branchId;
 	private String branchName;
 	private String address;

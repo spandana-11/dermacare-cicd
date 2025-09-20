@@ -61,6 +61,7 @@ public class SecurityStaffMapper {
 
         // Encode certificates
         staff.setPoliceVerification(encodeIfNotBase64(dto.getPoliceVerification()));
+        staff.setPoliceVerificationCertificate(encodeIfNotBase64(dto.getPoliceVerificationCertificate()));
         staff.setMedicalFitnessCertificate(encodeIfNotBase64(dto.getMedicalFitnessCertificate()));
         staff.setProfilePicture(encodeIfNotBase64(dto.getProfilePicture()));
 
@@ -91,7 +92,7 @@ public class SecurityStaffMapper {
         dto.setDepartment(staff.getDepartment());
         dto.setAddress(staff.getAddress());
         dto.setBankAccountDetails(staff.getBankAccountDetails());
-
+        dto.setPoliceVerificationCertificate(safeReturnAsBase64(staff.getPoliceVerificationCertificate()));
         dto.setPoliceVerification(safeReturnAsBase64(staff.getPoliceVerification()));
         dto.setMedicalFitnessCertificate(safeReturnAsBase64(staff.getMedicalFitnessCertificate()));
         dto.setProfilePicture(safeReturnAsBase64(staff.getProfilePicture()));

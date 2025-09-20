@@ -1866,6 +1866,38 @@ public class DoctorServiceImpl implements DoctorService {
 
 	    return score;
 	}
+	@Override
+	public Response getDoctorsByHospitalIdAndBranchId(String hospitalId, String branchId) {
+	    Response response = new Response();
+	    try {
+	        List<Doctors> doctorList = doctorsRepository
+	            .findByHospitalIdAndBranchIdIncludingBranches(hospitalId, branchId);
+
+	        if (!doctorList.isEmpty()) {
+	            List<DoctorsDTO> dtos = doctorList.stream()
+	                    .map(DoctorMapper::mapDoctorEntityToDoctorDTO)
+	                    .collect(Collectors.toList());
+
+	            response.setSuccess(true);
+	            response.setData(dtos);
+	            response.setMessage("Doctors fetched successfully for hospitalId: " 
+	                                 + hospitalId + " and branchId: " + branchId);
+	            response.setStatus(HttpStatus.OK.value());
+	        } else {
+	            response.setSuccess(true);
+	            response.setData(Collections.emptyList());
+	            response.setMessage("No doctors found for hospitalId: "
+	                                 + hospitalId + " and branchId: " + branchId);
+	            response.setStatus(HttpStatus.OK.value());
+	        }
+	    } catch (Exception e) {
+	        response.setSuccess(false);
+	        response.setMessage("Error fetching doctors: " + e.getMessage());
+	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	    }
+	    return response;
+	}
+
 	
 
 }

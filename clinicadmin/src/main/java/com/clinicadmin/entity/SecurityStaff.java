@@ -37,6 +37,7 @@ public class SecurityStaff {
 	private Address address;
 	private BankAccountDetails bankAccountDetails;
 	private String policeVerification;
+	private String policeVerificationCertificate;
 	private String medicalFitnessCertificate;
 	private String emailId;
 	private String traningOrGuardLicense;

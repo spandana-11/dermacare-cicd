@@ -2,11 +2,11 @@ import axios from 'axios'
 import {
   BASE_URL,
   AddCustomer,
-  UpdateCustomer,
-  DeleteCustomer,
-  GetCustomerByMobileNo,
   GetAllCustomers,
-  Booking_sevice,
+  GetCustomersByHospitalId,
+  GetCustomersByBranchId,
+  GetCustomersByHospitalIdAndBranchId,
+  Customer,
 } from '../../baseUrl'
 import { http } from '../../Utils/Interceptors'
 
@@ -37,34 +37,12 @@ export const addCustomer = async (customerDTO) => {
   }
 }
 
-// Get one customer by mobile number
-export const getCustomerByMobile = async (mobileNumber) => {
-  try {
-    // Using the endpoint from your baseUrl configuration
-    const url = `${Booking_sevice}/${GetCustomerByMobileNo}/${mobileNumber}`
-    const response = await axios.get(url) //TODO:chnage when apigetway call axios to http
-    return response.data
-  } catch (error) {
-    if (error.response) {
-      // Server responded with a status code outside 2xx
-      console.error('Server responded with error:', error.response.status)
-      console.error('Response data:', error.response.data)
-    } else if (error.request) {
-      // Request was made but no response received
-      console.error('No response received:', error.request)
-    } else {
-      // Something happened in setting up the request
-      console.error('Request setup error:', error.message)
-    }
-    throw error
-  }
-}
-
 // Update existing customer
-export const updateCustomerData = async (mobileNumber, customerDTO) => {
+export const updateCustomerData = async (customerId, customerDTO) => {
   try {
-    const url = `${Booking_sevice}/${UpdateCustomer}/${mobileNumber}`
-    const response = await axios.put(url, customerDTO, { //TODO:chnage when apigetway call axios to http
+    const url = `${BASE_URL}/${Customer}/${customerId}`
+    const response = await axios.put(url, customerDTO, {
+      //TODO:chnage when apigetway call axios to http
       headers: { 'Content-Type': 'application/json' },
     })
     return response.data
@@ -75,13 +53,62 @@ export const updateCustomerData = async (mobileNumber, customerDTO) => {
 }
 
 // Delete a customer
-export const deleteCustomerData = async (mobileNumber) => {
+export const deleteCustomerData = async (customerId) => {
   try {
-    const url = `${Booking_sevice}/${DeleteCustomer}/${mobileNumber}`
+    const url = `${BASE_URL}/${Customer}/${customerId}`
     const response = await axios.delete(url) //TODO:chnage when apigetway call axios to http
     return response.data
   } catch (error) {
     console.error('Failed to delete customer:', error)
     throw error
   }
+}
+
+export const CustomerByCustomerId = async (customerId) => {
+  try {
+    const url = `${BASE_URL}/${Customer}/${customerId}`
+    const response = await axios.get(url) //TODO:chnage when apigetway call axios to http
+    // Assuming backend wraps list in response.data.data
+    return Array.isArray(response.data.data) ? response.data.data : [response.data.data]
+  } catch (error) {
+    console.error('Failed to fetch customers:', error)
+    throw error
+  }
+}
+
+export const CustomerDataByHsptlId = async (hospitalId) => {
+  try {
+    const url = `${BASE_URL}/${GetCustomersByHospitalId}/${hospitalId}`
+    const response = await axios.get(url) //TODO:chnage when apigetway call axios to http
+    // Assuming backend wraps list in response.data.data
+    return Array.isArray(response.data.data) ? response.data.data : [response.data.data]
+  } catch (error) {
+    console.error('Failed to fetch customers:', error)
+    throw error
+  }
+}
+
+export const CustomerDataByBranchId = async (branchId) => {
+  try {
+    const url = `${BASE_URL}/${GetCustomersByBranchId}/${branchId}`
+    const response = await axios.get(url) //TODO:chnage when apigetway call axios to http
+    // Assuming backend wraps list in response.data.data
+    return Array.isArray(response.data.data) ? response.data.data : [response.data.data]
+  } catch (error) {
+    console.error('Failed to fetch customers:', error)
+    throw error
+  }
+}
+export const CustomerByClinicNdBranchId = async (hospitalId,branchId) => {
+  try {
+    const url = `${BASE_URL}/${GetCustomersByHospitalIdAndBranchId}/${hospitalId}/branch/${branchId}`
+    const response = await axios.get(url) //TODO:chnage when apigetway call axios to http
+    // Assuming backend wraps list in response.data.data
+    return Array.isArray(response.data.data) ? response.data.data : [response.data.data]
+  } catch (error) {
+    console.error('Failed to fetch customers:', error)
+    throw error
+  }
+}
+export const getCustomerByMobile = async (mobileNumber) => {
 }

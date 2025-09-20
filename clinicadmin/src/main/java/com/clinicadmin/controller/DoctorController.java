@@ -194,15 +194,15 @@ public class DoctorController {
 	
 	
 	
-	
-	@GetMapping("/getDoctorsByHospitalIdAndBranchId/{hospitalId}/{branchId}")
-	public ResponseEntity<Response> getDoctorsByHospitalAndBranch(
-	        @PathVariable String hospitalId,
-	        @PathVariable String branchId) {
-
-	    Response response = doctorService.getDoctorsByClinicIdAndBranchId(hospitalId, branchId);
-	    return ResponseEntity.status(response.getStatus()).body(response);
-	}
+//	
+//	@GetMapping("/getDoctorsByHospitalIdAndBranchId/{hospitalId}/{branchId}")
+//	public ResponseEntity<Response> getDoctorsByHospitalAndBranch(
+//	        @PathVariable String hospitalId,
+//	        @PathVariable String branchId) {
+//
+//	    Response response = doctorService.getDoctorsByClinicIdAndBranchId(hospitalId, branchId);
+//	    return ResponseEntity.status(response.getStatus()).body(response);
+//	}
 	
 
 //		------------------Doctor Availability----------------------------------------------------------------------------------------
@@ -412,4 +412,13 @@ public class DoctorController {
 		        Response response = doctorService.getRecommendedClinicsAndDoctors(keyPointList);
 		        return ResponseEntity.status(response.getStatus()).body(response);
 		    }
+		 @GetMapping("/getDoctorsByHospitalIdAndBranchId/{hospitalId}/{branchId}")
+		 public ResponseEntity<Response> getDoctorsByHospitalIdAndBranchId(
+		         @PathVariable String hospitalId,
+		         @PathVariable String branchId) {
+
+		     Response response = doctorService.getDoctorsByHospitalIdAndBranchId(hospitalId, branchId);
+		     return ResponseEntity.status(response.getStatus()).body(response);
+		 }
+
 }

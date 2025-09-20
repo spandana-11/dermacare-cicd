@@ -387,16 +387,15 @@ export const averageRatings = async (hospitalId, doctorId) => {
         hospitalRating: overallHospitalRating,
         comments,
         ratingStats: ratingCategoryStats,
-        message: response.data?.message || "",
+        message: response.data?.message || "No patient reviews available",
       };
     } else {
-      // ✅ gracefully return instead of throw
       return {
         doctorRating: 0,
         hospitalRating: 0,
         comments: [],
         ratingStats: [],
-        message: response.data?.message || "No ratings found",
+        message: response.data?.message || "No patient reviews available",
       };
     }
   } catch (error) {
@@ -407,7 +406,7 @@ export const averageRatings = async (hospitalId, doctorId) => {
       hospitalRating: 0,
       comments: [],
       ratingStats: [],
-      message: "Failed to fetch ratings",
+      message: "No patient reviews available",
     };
   }
 };

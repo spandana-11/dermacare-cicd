@@ -62,6 +62,7 @@ public class WardBoyDTO {
     private String basicHealthFirstAidTrainingCertificate;
     private String previousEmploymentHistory;
     private String policeVerification;
+    private String policeVerificationCertificate;
     
     private String gender;
     private String workExprience;
