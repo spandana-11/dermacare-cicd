@@ -400,4 +400,16 @@ public class DoctorController {
 		    Response response = doctorService.getDoctorSlots(hospitalId, branchId, doctorId);
 		    return ResponseEntity.status(response.getStatus()).body(response);
 		}
+		
+// ----------------give best one doctor using key words-----------------------------------------------------------------
+		 @GetMapping("/getBestDoctorByKeyWords/{keyPoints}")
+		    public ResponseEntity<Response> getRecommendedClinicsAndOnDoctors(@PathVariable String keyPoints) {
+		        // Convert comma-separated values into List<String>
+		        List<String> keyPointList = Arrays.stream(keyPoints.split(","))
+		                .map(String::trim)
+		                .collect(Collectors.toList());
+
+		        Response response = doctorService.getRecommendedClinicsAndDoctors(keyPointList);
+		        return ResponseEntity.status(response.getStatus()).body(response);
+		    }
 }

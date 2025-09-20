@@ -39,6 +39,7 @@ import com.dermacare.doctorservice.model.TreatmentDetails;
 import com.dermacare.doctorservice.model.TreatmentResponse;
 import com.dermacare.doctorservice.repository.DoctorSaveDetailsRepository;
 import com.dermacare.doctorservice.service.DoctorSaveDetailsService;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -585,6 +586,22 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
 	        mapper.registerModule(new JavaTimeModule());
 	        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         return new Response(true,mapper.convertValue(optional,DoctorSaveDetailsDTO.class ), "prescription details found", HttpStatus.OK.value());
+        }else {
+        return new Response(false, null, "prescription details Not found", HttpStatus.NOT_FOUND.value());
+        }}catch(Exception e) {
+        	 return new Response(false, null,e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+    
+    @Override
+    public Response getDoctorDetailsByCustomerId(String customerId) {
+    	try {
+       List<DoctorSaveDetails> optional = repository.findByCustomerId(customerId);
+        if(optional != null && !optional.isEmpty()) {
+        	ObjectMapper mapper = new ObjectMapper();
+	        mapper.registerModule(new JavaTimeModule());
+	        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return new Response(true,mapper.convertValue(optional,new TypeReference<List<DoctorSaveDetailsDTO>>(){}), "prescription details found", HttpStatus.OK.value());
         }else {
         return new Response(false, null, "prescription details Not found", HttpStatus.NOT_FOUND.value());
         }}catch(Exception e) {

@@ -106,10 +106,13 @@ public interface CustomerService {
 	
 	public Response getBranchesInfoBySubServiceId(String clinicId,String subServiceId,String latitude,String longtitude) throws JsonProcessingException;
 	
-	public Response getReports(String customerId);
+	public Response getReportsAndDoctorSaveDetails(String customerId);
 	
 	public ResponseEntity<?> customerLogin(CustomerLoginDTO dto);
 
 	public Response getDoctorsByHospitalBranchAndSubService( String hospitalId,
 			String branchId,  String subServiceId)throws JsonProcessingException;
+
+	public ResponseEntity<Response> getRecommendedClinicsAndOnDoctors(String keyPoints);
+
 }

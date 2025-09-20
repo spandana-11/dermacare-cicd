@@ -84,5 +84,9 @@ public class DoctorSaveDetailsController {
         Response response = service.getDoctorDetailsByBookingId(bookingId);
         return ResponseEntity.status(response.getStatus()).body(response);
     }      
-
+    @GetMapping("/getDoctorSaveDetailsByCustomerId/{customerId}")
+    public ResponseEntity<Response> getDoctorSaveDetailsByCustomerId(@PathVariable String customerId) {
+        Response response = service.getDoctorDetailsByCustomerId(customerId);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
 }

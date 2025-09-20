@@ -59,16 +59,21 @@ public class ReportsServiceImpl implements ReportsService {
 			BookingResponseDTO res = r.getBody().getData();
 			if (res != null) {
 				List<ReportsDtoList> rep = res.getReports();
+				if(rep == null ) {
+				List<ReportsDtoList> nw = new ArrayList<>();
+				nw.add(dto);
+				res.setReports(nw);
+				bookingFeign.updateAppointment(res);
+				}else{
 				rep.add(dto);
 				res.setReports(rep);
-				bookingFeign.updateAppointment(res);
-			}
+				bookingFeign.updateAppointment(res);}}
 			reportsList.setCustomerId(dto.getCustomerId());
 			reportsList.setReportsList(reports);
 			ReportsList saved = reportsRepository.save(reportsList);
 			return Response.builder().success(true).data(saved).message("Report uploaded successfully")
 					.status(HttpStatus.CREATED.value()).build();
-		} catch (FeignException e) {
+		 }catch (FeignException e) {
 			return Response.builder().success(false).data(null).message(e.getMessage())
 					.status(HttpStatus.INTERNAL_SERVER_ERROR.value()).build();
 		}

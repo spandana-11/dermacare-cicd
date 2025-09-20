@@ -24,4 +24,6 @@ public interface DoctorSaveDetailsService {
 
 	Response getInProgressDetails(String patientId, String bookingId);
     Response getDoctorDetailsByBookingId(String bookingId);
+
+	Response getDoctorDetailsByCustomerId(String customerId);
 	}

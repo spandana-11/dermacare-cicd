@@ -226,7 +226,7 @@ public class CustomerController {
    
    @GetMapping("/getReports/{customerId}")
    public ResponseEntity<Response> getReports(@PathVariable String customerId){
-   	Response response = customerService.getReports(customerId);
+   	Response response = customerService.getReportsAndDoctorSaveDetails(customerId);
    	if(response != null && response.getStatus() != 0) {
   		 return ResponseEntity.status(response.getStatus()).body(response);
   	 }else {
@@ -485,5 +485,12 @@ public ResponseEntity<Response> getRatingAverageRating(@PathVariable String bran
    public ResponseEntity<?> customerLogin(@RequestBody CustomerLoginDTO dto){
 	   return customerService.customerLogin(dto);
    }
+   
+   @GetMapping("/getRecommendedClinicsAndOnDoctors/{keyPoints}")
+   public ResponseEntity<?> getRecommendedClinicsAndOnDoctors(
+			 @PathVariable String keyPoints){
+	   return customerService.getRecommendedClinicsAndOnDoctors(keyPoints);
+ }
+
  
 }
