@@ -66,7 +66,6 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
         try {
             // Step 1: Fetch doctor details from Clinic Admin service
             Response doctorResponse = clinicAdminClient.getDoctorById(dto.getDoctorId()).getBody();
-
             if (doctorResponse == null || !doctorResponse.isSuccess() || doctorResponse.getData() == null) {
                 return buildResponse(false, null,
                         "Doctor not found with ID: " + dto.getDoctorId(),
@@ -78,25 +77,20 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             dto.setDoctorName((String) doctorData.get("doctorName"));
 
             // Ensure clinic details are not null
-            String clinicId = dto.getClinicId() != null ? dto.getClinicId() : "";
-            String clinicName = dto.getClinicName() != null ? dto.getClinicName() : "";
-            dto.setClinicId(clinicId);
-            dto.setClinicName(clinicName);
+            dto.setClinicId(dto.getClinicId() != null ? dto.getClinicId() : "");
+            dto.setClinicName(dto.getClinicName() != null ? dto.getClinicName() : "");
 
-           
-            List<DoctorSaveDetails> previousVisits = repository.findByPatientId(dto.getPatientId());
-
-            // visit number = total previous visits + 1 (continuous count)
-            int visitNumber = previousVisits.size() + 1;
+            // Step 2: Calculate visit count based on doctorId + patientId
+            List<DoctorSaveDetails> previousVisits = repository.findByDoctorIdAndPatientId(dto.getDoctorId(), dto.getPatientId());
+            int visitCount = previousVisits != null ? previousVisits.size() + 1 : 1;
 
             dto.setVisitDateTime(LocalDateTime.now());
+            dto.setVisitType(VisitTypeUtil.getVisitTypeFromCount(visitCount));
+            dto.setVisitCount(visitCount); // ← set in DTO
 
-            // Set visit type using VisitTypeUtil
-            String visitType = VisitTypeUtil.getVisitTypeFromCount(visitNumber);
-            dto.setVisitType(visitType);
-
-            // Step 3: Save doctor details
+            // Step 3: Convert DTO to entity and set visitCount
             DoctorSaveDetails entity = convertToEntity(dto);
+            entity.setVisitCount(visitCount); // ← crucial for DB
             DoctorSaveDetails saved = repository.save(entity);
 
             // Step 4: Update booking status to "In-Progress" via Feign
@@ -104,11 +98,11 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                     .getBookedService(saved.getBookingId())
                     .getBody()
                     .getData();
-
             bookres.setBookingId(dto.getBookingId());
             bookres.setStatus("In-Progress");
 
-                if (!"FIRST_VISIT".equalsIgnoreCase(saved.getVisitType()) && bookres.getFreeFollowUpsLeft() != null) {
+            // Handle free follow-ups
+            if (!"FIRST_VISIT".equalsIgnoreCase(saved.getVisitType()) && bookres.getFreeFollowUpsLeft() != null) {
                 Integer value = bookres.getFreeFollowUpsLeft();
                 if (value != null && value > 0) {
                     value = value - 1;
@@ -124,7 +118,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             DoctorSaveDetailsDTO savedDto = convertToDto(saved);
 
             return buildResponse(true,
-                    Map.of("savedDetails", savedDto, "visitNumber", visitNumber),
+                    Map.of("savedDetails", savedDto, "visitNumber", visitCount),
                     "Doctor details saved successfully",
                     HttpStatus.CREATED.value());
 
@@ -138,6 +132,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                     HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+
 
     @Override
     public Response getDoctorDetailsById(String id) {
@@ -330,6 +325,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
 
                 .visitType(dto.getVisitType())
                 .visitDateTime(dto.getVisitDateTime())
+                .visitCount(dto.getVisitCount())
                 .prescriptionPdf(dto.getPrescriptionPdf())
                                 .build();
     }
@@ -449,6 +445,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
 
                 .visitType(entity.getVisitType())
                 .visitDateTime(entity.getVisitDateTime())
+                .visitCount(entity.getVisitCount())
                 .build();
     }
 

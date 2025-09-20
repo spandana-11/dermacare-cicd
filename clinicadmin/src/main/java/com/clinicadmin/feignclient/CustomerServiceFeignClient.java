@@ -17,7 +17,6 @@ public interface CustomerServiceFeignClient {
 	@DeleteMapping("/api/customer/deleteService/{id}")
 	public ResponseEntity<Response> deleteBookedService(@PathVariable String id);
 
-	@GetMapping("/getRatingInfo/{branchId}/{doctorId}")
-	public ResponseEntity<Response> getRatingInfo(@PathVariable String branchId, @PathVariable String doctorId);
-
+	@GetMapping("/api/customer/getRatingInfo/{branchlId}/{doctorId}")
+	public ResponseEntity<Response> getRatingInfo(@PathVariable String branchlId, @PathVariable String doctorId);
 }

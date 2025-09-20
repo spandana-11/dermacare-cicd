@@ -2,6 +2,7 @@ package com.AdminService.service;
 
 import java.nio.charset.StandardCharsets;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -18,84 +19,115 @@ import lombok.RequiredArgsConstructor;
 public class DoctorServiceImpl implements DoctorService {
 
     private final ClinicAdminFeign clinicAdminFeign;
-    private final ObjectMapper objectMapper = new ObjectMapper(); 
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    //--------------------------------- Add Doctor --------------------------------------------
     @Override
     public ResponseEntity<Response> addDoctor(DoctorsDTO dto) {
         try {
             return clinicAdminFeign.addDoctor(dto);
         } catch (FeignException ex) {
-            return handleFeignException(ex);
+            return handleFeignException(ex, "Failed to add doctor");
         }
     }
 
-    // ---------------- Get All Doctors ----------------
     @Override
     public ResponseEntity<Response> getAllDoctors() {
         try {
             return clinicAdminFeign.getAllDoctors();
         } catch (FeignException ex) {
-            return handleFeignException(ex);
+            return handleFeignException(ex, "Failed to fetch doctors list");
         }
     }
 
-    // ---------------- Get Doctor By Id ----------------
     @Override
-    public ResponseEntity<Response> getDoctorById(String id) {
+    public ResponseEntity<Response> getDoctorById(String doctorId) {
         try {
-            return clinicAdminFeign.getDoctorById(id);
+            return clinicAdminFeign.getDoctorById(doctorId);
         } catch (FeignException ex) {
-            return handleFeignException(ex);
+            return handleFeignException(ex, "Failed to fetch doctor details");
         }
     }
 
-    // ---------------- Update Doctor By Id ----------------
     @Override
     public ResponseEntity<Response> updateDoctorById(String doctorId, DoctorsDTO dto) {
         try {
             return clinicAdminFeign.updateDoctorById(doctorId, dto);
         } catch (FeignException ex) {
-            return handleFeignException(ex);
+            return handleFeignException(ex, "Failed to update doctor");
         }
     }
 
-    // ---------------- Delete Doctor By Id ----------------
     @Override
     public ResponseEntity<Response> deleteDoctorById(String doctorId) {
         try {
             return clinicAdminFeign.deleteDoctorById(doctorId);
         } catch (FeignException ex) {
-            return handleFeignException(ex);
+            return handleFeignException(ex, "Failed to delete doctor");
         }
     }
 
-    // ---------------- Delete Doctors By Clinic ----------------
     @Override
     public ResponseEntity<Response> deleteDoctorsByClinic(String clinicId) {
         try {
             return clinicAdminFeign.deleteDoctorsByClinic(clinicId);
         } catch (FeignException ex) {
-            return handleFeignException(ex);
+            return handleFeignException(ex, "Failed to delete doctors by clinic");
         }
     }
 
-    // ---------------- Common Feign Exception Handler ----------------
-    private ResponseEntity<Response> handleFeignException(FeignException ex) {
+    @Override
+    public ResponseEntity<Response> getDoctorByClinicAndDoctorId(String clinicId, String doctorId) {
+        try {
+            return clinicAdminFeign.getDoctorByClinicAndDoctorId(clinicId, doctorId);
+        } catch (FeignException ex) {
+            return handleFeignException(ex, "Failed to fetch doctor for clinic");
+        }
+    }
+
+    @Override
+    public ResponseEntity<Response> getDoctorsByHospitalId(String hospitalId) {
+        try {
+            return clinicAdminFeign.getDoctorsByHospitalId(hospitalId);
+        } catch (FeignException ex) {
+            return handleFeignException(ex, "Failed to fetch doctors by hospital");
+        }
+    }
+
+    @Override
+    public ResponseEntity<Response> getDoctorsByHospitalIdAndBranchId(String hospitalId, String branchId) {
+        try {
+            return clinicAdminFeign.getDoctorsByHospitalIdAndBranchId(hospitalId, branchId);
+        } catch (FeignException ex) {
+            return handleFeignException(ex, "Failed to fetch doctors by branch");
+        }
+    }
+
+    private ResponseEntity<Response> handleFeignException(FeignException ex, String adminMessage) {
+        HttpStatus status = HttpStatus.resolve(ex.status()) != null
+                ? HttpStatus.valueOf(ex.status())
+                : HttpStatus.INTERNAL_SERVER_ERROR;
+
         try {
             if (ex.responseBody().isPresent()) {
-                byte[] bodyBytes = ex.responseBody().get().array();
-                String body = new String(bodyBytes, StandardCharsets.UTF_8);
+                String body = new String(ex.responseBody().get().array(), StandardCharsets.UTF_8);
+                Response clinicResponse = objectMapper.readValue(body, Response.class);
 
-                Response response = objectMapper.readValue(body, Response.class);
-                return ResponseEntity.status(ex.status()).body(response);
+                // Use Clinic Admin message if available, otherwise fallback to Admin message
+                String finalMessage = (clinicResponse.getMessage() != null && !clinicResponse.getMessage().isEmpty())
+                        ? clinicResponse.getMessage()
+                        : adminMessage;
+
+                clinicResponse.setMessage(finalMessage);
+                clinicResponse.setSuccess(false);
+                return ResponseEntity.status(status).body(clinicResponse);
             }
-        } catch (Exception innerEx) {
-            innerEx.printStackTrace();
-        }
+        } catch (Exception ignored) {}
 
-        
-        Response fallback = new Response(false, null, ex.getMessage(), ex.status(), null, null, null, null, null);
-        return ResponseEntity.status(ex.status()).body(fallback);
+        Response fallback = new Response();
+        fallback.setSuccess(false);
+        fallback.setMessage(adminMessage);
+        fallback.setStatus(status.value());
+        fallback.setData(null);
+        return ResponseEntity.status(status).body(fallback);
     }
 }

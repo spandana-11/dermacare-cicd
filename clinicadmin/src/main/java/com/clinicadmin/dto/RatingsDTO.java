@@ -14,6 +14,7 @@ public class RatingsDTO {
 	private String branchId;
 	private double overallDoctorRating;
 	private double overallBranchRating;
+	private long count;
 	private List<CustomerRatingDomain> comments;
 	private List<RatingCategoryStats> ratingCategoryStats;
 

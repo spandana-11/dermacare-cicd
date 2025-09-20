@@ -27,29 +27,40 @@ public interface ClinicAdminFeign {
 	 // ---------------------- Sub-Service APIs ----------------------
 	@GetMapping("/clinic-admin/subService/getAllSubServies")
     public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getAllSubServices();
-		
-	 // ---------------------- Doctor APIs ----------------------
+	
+	
+	// ---------------- Doctor CRUD ---------------- //
     @PostMapping("/clinic-admin/addDoctor")
     ResponseEntity<Response> addDoctor(@RequestBody DoctorsDTO dto);
 
     @GetMapping("/clinic-admin/doctors")
     ResponseEntity<Response> getAllDoctors();
-		
+
     @GetMapping("/clinic-admin/doctor/{id}")
     ResponseEntity<Response> getDoctorById(@PathVariable("id") String id);
 
     @PutMapping("/clinic-admin/updateDoctor/{doctorId}")
-    ResponseEntity<Response> updateDoctorById(@PathVariable String doctorId,
-                                              @Validated @RequestBody DoctorsDTO dto);
-		
+    ResponseEntity<Response> updateDoctorById(@PathVariable("doctorId") String doctorId,
+                                              @RequestBody DoctorsDTO dto);
+
     @DeleteMapping("/clinic-admin/delete-doctor/{doctorId}")
-    ResponseEntity<Response> deleteDoctorById(@PathVariable String doctorId);
-		
+    ResponseEntity<Response> deleteDoctorById(@PathVariable("doctorId") String doctorId);
+
     @DeleteMapping("/clinic-admin/delete-doctors-by-clinic/{clinicId}")
-    ResponseEntity<Response> deleteDoctorsByClinic(@PathVariable String clinicId); 
-    
-    
-    
+    ResponseEntity<Response> deleteDoctorsByClinic(@PathVariable("clinicId") String clinicId);
+
+    // ---------------- Additional Filters ---------------- //
+    @GetMapping("/clinic-admin/clinic/{clinicId}/doctor/{doctorId}")
+    ResponseEntity<Response> getDoctorByClinicAndDoctorId(@PathVariable("clinicId") String clinicId,
+                                                          @PathVariable("doctorId") String doctorId);
+
+    @GetMapping("/clinic-admin/doctors/hospitalById/{hospitalId}")
+    ResponseEntity<Response> getDoctorsByHospitalId(@PathVariable("hospitalId") String hospitalId);
+
+    @GetMapping("/clinic-admin/getDoctorsByHospitalIdAndBranchId/{hospitalId}/{branchId}")
+    ResponseEntity<Response> getDoctorsByHospitalIdAndBranchId(@PathVariable("hospitalId") String hospitalId,
+                                                               @PathVariable("branchId") String branchId);
+
 
 	
 	///FALLBACK METHODS

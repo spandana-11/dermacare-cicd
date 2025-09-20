@@ -112,6 +112,7 @@ public class RatingCalculationService {
             data.setBranchId(branchId);
             data.setOverallDoctorRating(avgDoctorRating);
             data.setOverallBranchRating(avgHospitalRating);
+            data.setCount(total);
             data.setComments(matchedRatings);
             data.setRatingCategoryStats(categoryStats); // Include categorized stats
 

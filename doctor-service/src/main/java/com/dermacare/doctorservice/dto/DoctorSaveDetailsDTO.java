@@ -30,6 +30,7 @@ public class DoctorSaveDetailsDTO {
 	private String bookingId;
 	private LocalDateTime visitDateTime;
 	private String visitType;
+	private int visitCount; 
 	private SymptomDetailsDTO symptoms;
 	private TestDetailsDTO tests;
 	private TreatmentResponseDTO treatments;

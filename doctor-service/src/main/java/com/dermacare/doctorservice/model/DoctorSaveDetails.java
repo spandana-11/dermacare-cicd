@@ -33,7 +33,8 @@ public class DoctorSaveDetails {
 
     private LocalDateTime visitDateTime;
     private String visitType; 
-//    private int visitNumber;
+    private int visitCount; 
+
 
     private SymptomDetails symptoms;
     private TestDetails tests;
