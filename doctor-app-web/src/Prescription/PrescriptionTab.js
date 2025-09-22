@@ -635,17 +635,20 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
 
 
 
-                  <CTableDataCell>
-                    {editingIndex === index ? (
-                      <CFormInput
-                        size="sm"
-                        value={med.food || ""} // 👈 fallback to empty string
-                        onChange={(e) => handleUpdate(index, 'food', e.target.value)}
-                      />
-                    ) : (
-                      med.food || 'NA'
-                    )}
-                  </CTableDataCell>
+              
+<CTableDataCell>
+  {editingIndex === index ? (
+    <CFormInput
+      size="sm"
+      value={med.food || ""} // 👈 fallback to empty string
+      onChange={(e) => handleUpdate(index, 'food', e.target.value)}
+    />
+  ) : (
+    med.food || 'NA'
+  )}
+</CTableDataCell>
+
+
 
                   {/* Note */}
                   <CTableDataCell style={{ maxWidth: 200 }}>

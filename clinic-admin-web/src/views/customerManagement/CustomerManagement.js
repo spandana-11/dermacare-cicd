@@ -50,14 +50,17 @@ const CustomerManagement = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
   const [rowsPerPage, setRowsPerPage] = useState(10)
-  const [isAdding, setIsAdding] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
   const [currentMobile, setCurrentMobile] = useState(null)
   const [formattedDisplayDate, setFormattedDisplayDate] = useState('')
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [customerIdToDelete, setCustomerIdToDelete] = useState(null)
   const [formErrors, setFormErrors] = useState({})
   const { searchQuery, setSearchQuery } = useGlobalSearch()
+  const [isAdding, setIsAdding] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [isViewModalVisible, setIsViewModalVisible] = useState(false)
+const [viewCustomerData, setViewCustomerData] = useState(null)
+
   const [formData, setFormData] = useState({
     customerId: '',
     title: '',
@@ -66,9 +69,9 @@ const CustomerManagement = () => {
     fullName: '',
     mobileNumber: '',
     gender: '',
-    emailId: '',
+    email: '',
     dateOfBirth: '',
-    referCode: '',
+    referralCode: '',
     age: '',
     hospitalId: localStorage.getItem('HospitalId') || '',
     hospitalName: localStorage.getItem('HospitalName') || '',
@@ -256,8 +259,20 @@ const CustomerManagement = () => {
     if (!str) return ''
     return str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
   }
-  const handleCustomerViewDetails = (customerId) => {
-    navigate(`/customer-management/${customerId}`)
+  const handleCustomerViewDetails = async (customerId) => {
+    try {
+      setLoading(true)
+      const response = await CustomerByCustomerId(customerId)
+      const customer = Array.isArray(response) ? response[0] : response
+
+      setViewCustomerData(customer)
+      setIsViewModalVisible(true)
+    } catch (error) {
+      console.error('Failed to fetch customer:', error)
+      toast.error('Failed to load customer data')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleDeleteCustomer = async (customerId) => {
@@ -280,57 +295,77 @@ const CustomerManagement = () => {
     try {
       setLoading(true)
       const response = await CustomerByCustomerId(customerId)
-      const customer = response.data || response
+      const customer = Array.isArray(response) ? response[0] : response
 
+      // Format date to YYYY-MM-DD for <input type="date">
       let formattedDate = ''
-      const dobStr = customer.dateOfBirth
-
-      if (dobStr) {
-        if (/^\d{2}-\d{2}-\d{4}$/.test(dobStr)) {
-          // Manual parsing for DD-MM-YYYY
-          const [day, month, year] = dobStr.split('-')
+      if (customer.dateOfBirth) {
+        const dob = customer.dateOfBirth
+        if (/^\d{2}-\d{2}-\d{4}$/.test(dob)) {
+          const [day, month, year] = dob.split('-')
           formattedDate = `${year}-${month}-${day}`
         } else {
-          // Fallback for YYYY-MM-DD or ISO string
-          const parsedDate = new Date(dobStr)
-          if (!isNaN(parsedDate)) {
-            const year = parsedDate.getFullYear().toString().padStart(4, '0')
-            const month = String(parsedDate.getMonth() + 1).padStart(2, '0')
-            const day = String(parsedDate.getDate()).padStart(2, '0')
-            formattedDate = `${year}-${month}-${day}`
+          const dateObj = new Date(dob)
+          if (!isNaN(dateObj)) {
+            const y = dateObj.getFullYear()
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0')
+            const d = String(dateObj.getDate()).padStart(2, '0')
+            formattedDate = `${y}-${m}-${d}`
           }
         }
       }
 
-      setFormData({
-        customerId: customer.customerId || '',
-        title: customer.title || '',
-        firstName: customer.firstName || '',
-        lastName: customer.lastName || '',
-        fullName: customer.fullName || '',
-        mobileNumber: customer.mobileNumber || '',
-        gender: customer.gender || '',
-        emailId: customer.emailId || '',
-        dateOfBirth: formattedDate, // ✅ Use the correctly formatted date
-        referCode: customer.referCode || '',
-        age: customer.age || '',
-        hospitalId: localStorage.getItem('HospitalId'),
-        hospitalName: localStorage.getItem('HospitalName'),
-        branchId: localStorage.getItem('branchId'),
-        address: {
-          houseNo: customer.address?.houseNo || '',
-          street: customer.address?.street || '',
-          landmark: customer.address?.landmark || '',
-          city: customer.address?.city || '',
-          state: customer.address?.state || '',
-          country: customer.address?.country || 'India',
-          postalCode: customer.address?.postalCode || '',
-        },
-      })
+ let title = ''
+    let firstName = ''
+    let lastName = ''
 
-      setCurrentMobile(customerId)
-      setIsEditing(true)
+    if (customer.fullName) {
+      const parts = customer.fullName.trim().split(' ')
+      if (parts.length >= 3) {
+        title = parts[0]
+        firstName = parts[1]
+        lastName = parts.slice(2).join(' ') // handles middle/last names
+      } else if (parts.length === 2) {
+        title = parts[0]
+        firstName = parts[1]
+      } else if (parts.length === 1) {
+        firstName = parts[0]
+      }
+    }
+
+    setFormData({
+      customerId: customer.customerId || '',
+      title,
+      firstName,
+      lastName,
+      fullName: customer.fullName || '',
+      mobileNumber: customer.mobileNumber || '',
+      gender: customer.gender || '',
+      email: customer.email || '',
+      dateOfBirth: formattedDate,
+      referralCode: customer.referralCode || '',
+      age: customer.age || '',
+      hospitalId: localStorage.getItem('HospitalId') || '',
+      hospitalName: localStorage.getItem('HospitalName') || '',
+      branchId: localStorage.getItem('branchId') || '',
+      address: {
+        houseNo: customer.address?.houseNo || '',
+        street: customer.address?.street || '',
+        landmark: customer.address?.landmark || '',
+        city: customer.address?.city || '',
+        state: customer.address?.state || '',
+        country: customer.address?.country || 'India',
+        postalCode: customer.address?.postalCode || '',
+      },
+    })
+
+
       setIsAdding(true)
+      setIsEditing(true)
+      setCurrentMobile(customer.mobileNumber)
+      setViewCustomerData(customer)
+// setIsViewModalVisible(true)
+
     } catch (error) {
       console.error('Failed to fetch customer:', error)
       toast.error('Failed to load customer data')
@@ -399,27 +434,47 @@ const CustomerManagement = () => {
     }
   }
 
-  const handleCancel = () => {
-    setIsAdding(false)
-    setIsEditing(false)
-    setCurrentMobile(null)
-    setFormData({
-      fullName: '',
-      mobileNumber: '',
-      gender: '',
-      emailId: '',
-      dateOfBirth: '',
-      referCode: '',
-      address: {
-        houseNo: '',
-        street: '',
-        city: '',
-        state: '',
-        landmark: '',
-        pincode: '',
-      },
-    })
+const handleCancel = () => {
+  // Reset editing and adding state
+  setIsAdding(false)
+  setIsEditing(false)
+  setCurrentMobile(null)
+
+  // Close view modal only if we are canceling from "view" mode, 
+  // not when canceling from "edit"
+  if (!isEditing) {
+    setIsViewing(false)
   }
+
+  // Reset form
+  setFormData({
+    customerId: '',
+    title: '',
+    firstName: '',
+    lastName: '',
+    fullName: '',
+    mobileNumber: '',
+    gender: '',
+    email: '',
+    dateOfBirth: '',
+    referralCode: '',
+    age: '',
+    hospitalId: localStorage.getItem('HospitalId') || '',
+    hospitalName: localStorage.getItem('HospitalName') || '',
+    branchId: localStorage.getItem('branchId') || '',
+    address: {
+      houseNo: '',
+      street: '',
+      landmark: '',
+      city: '',
+      state: '',
+      country: 'India',
+      postalCode: '',
+    },
+  })
+}
+
+
   const filteredData = React.useMemo(() => {
     const q = searchQuery.toLowerCase().trim()
     if (!q) return customerData
@@ -500,10 +555,10 @@ const CustomerManagement = () => {
     }
 
     // ✅ Email validation — make it required
-    if (!formData.emailId.trim()) {
-      errors.emailId = 'Email is required'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailId)) {
-      errors.emailId = 'Email must be valid and contain @'
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Email must be valid and contain @'
     }
 
     // Date of Birth
@@ -535,8 +590,8 @@ const CustomerManagement = () => {
     }
 
     // Referral Code (optional)
-    if (formData.referCode && /[^a-zA-Z0-9]/.test(formData.referCode)) {
-      errors.referCode = 'Refer code must contain only letters and numbers'
+    if (formData.referralCode && /[^a-zA-Z0-9]/.test(formData.referralCode)) {
+      errors.referralCode = 'Refer code must contain only letters and numbers'
     }
 
     setFormErrors(errors)
@@ -545,6 +600,7 @@ const CustomerManagement = () => {
 
   return (
     <>
+    
       {!isAdding ? (
         <>
           <CRow className="d-flex align-items-center mb-3">
@@ -721,6 +777,60 @@ const CustomerManagement = () => {
                   )}
                 </CTableBody>
               </CTable>
+<CModal
+  visible={isViewModalVisible}
+  onClose={() => setIsViewModalVisible(false)}
+  size="lg"
+>
+  <CModalHeader>
+    <CModalTitle>Customer Details</CModalTitle>
+  </CModalHeader>
+  <CModalBody>
+    {loading ? (
+      <div className="text-center">Loading...</div>
+    ) : viewCustomerData ? (
+      <CRow className="mb-2">
+        <CCol md={6}>
+          <strong>Full Name:</strong> {viewCustomerData.fullName || "-"}
+        </CCol>
+        <CCol md={6}>
+          <strong>Mobile:</strong> {viewCustomerData.mobileNumber || "-"}
+        </CCol>
+        <CCol md={6}>
+          <strong>Email:</strong> {viewCustomerData.email || "-"}
+        </CCol>
+        <CCol md={6}>
+          <strong>Gender:</strong> {viewCustomerData.gender || "-"}
+        </CCol>
+        <CCol md={6}>
+          <strong>DOB:</strong> {viewCustomerData.dateOfBirth || "-"}
+        </CCol>
+        <CCol md={6}>
+          <strong>Age:</strong> {viewCustomerData.age || "-"}
+        </CCol>
+        <CCol md={12} className="mt-3">
+          <h6>Address</h6>
+          <p>
+            {viewCustomerData.address?.houseNo || ""},{" "}
+            {viewCustomerData.address?.street || ""},{" "}
+            {viewCustomerData.address?.landmark || ""},{" "}
+            {viewCustomerData.address?.city || ""},{" "}
+            {viewCustomerData.address?.state || ""},{" "}
+            {viewCustomerData.address?.postalCode || ""},{" "}
+            {viewCustomerData.address?.country || ""}
+          </p>
+        </CCol>
+      </CRow>
+    ) : (
+      <p>No customer data available.</p>
+    )}
+  </CModalBody>
+  <CModalFooter>
+    <CButton color="secondary" onClick={() => setIsViewModalVisible(false)}>
+      Close
+    </CButton>
+  </CModalFooter>
+</CModal>
 
               {!loading && (
                 <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
@@ -857,13 +967,13 @@ const CustomerManagement = () => {
                 </CFormLabel>
                 <CFormInput
                   type="email"
-                  name="emailId"
-                  value={formData.emailId}
+                  name="email"
+                  value={formData.email}
                   onChange={handleInputChange}
-                  invalid={!!formErrors.emailId}
+                  invalid={!!formErrors.email}
                 />
-                {formErrors.emailId && (
-                  <div className="text-danger small">{formErrors.emailId}</div>
+                {formErrors.email && (
+                  <div className="text-danger small">{formErrors.email}</div>
                 )}
               </CCol>
               <CCol md={3}>
@@ -1010,11 +1120,11 @@ const CustomerManagement = () => {
               <CCol md={3}>
                 <CFormLabel>Referral Code</CFormLabel>
                 <CFormInput
-                  name="referCode"
-                  value={formData.referCode}
+                  name="referralCode"
+                  value={formData.referralCode}
                   onChange={handleInputChange}
                 />
-                {formErrors.referCode && <div className="text-danger">{formErrors.referCode}</div>}
+                {formErrors.referralCode && <div className="text-danger">{formErrors.referralCode}</div>}
               </CCol>
             </CRow>
             <br />
@@ -1031,7 +1141,10 @@ const CustomerManagement = () => {
               </CButton>
             </div>
           </CForm>
+       {/* ====== VIEW CUSTOMER MODAL ====== */}
+
         </>
+        
       )}
     </>
   )

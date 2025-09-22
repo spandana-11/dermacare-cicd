@@ -105,7 +105,7 @@ const routes = [
   { path: '/reportManagement', name: 'Reports', element: Reports },
   { path: '/reportDetails/:id', name: 'Report Details', element: ReportsDetails }, // { path: '/logout', name: 'Logout', element: Logout },
   {
-    path: '/customer-management/:mobileNumber',
+    path: '/customer-management/:customerId',
     name: 'Customer View Details',
     element: CustomerViewDetails,
   },

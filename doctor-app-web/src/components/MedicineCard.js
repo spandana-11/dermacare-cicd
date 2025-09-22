@@ -32,13 +32,21 @@ const foodOptions = ["Before Food", "After Food", "With Food", "NA"];
 const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine, onAdd, isDuplicateName }) => {
   const [medicineTypes, setMedicineTypes] = useState([]);
 
+  // Fetch medicine types
   useEffect(() => {
     const fetchTypes = async () => {
-      const types = await getMedicineTypes(); // Fetch from API
+      const types = await getMedicineTypes(); 
       setMedicineTypes(types || []);
     };
     fetchTypes();
   }, []);
+
+  // Ensure current medicineType is included in options
+  useEffect(() => {
+    if (medicine?.medicineType && !medicineTypes.includes(medicine.medicineType)) {
+      setMedicineTypes((prev) => [...prev, medicine.medicineType]);
+    }
+  }, [medicine?.medicineType, medicineTypes]);
 
   const handleChange = (field, value) => {
     if (value === null || value === undefined) value = "";
@@ -128,7 +136,7 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine, onAdd, 
 
       <CCardBody style={{ paddingTop: 5, paddingBottom: 0 }}>
         <CRow>
-          {/* Dose */}
+          {/* Dosage */}
           <CCol xs={12} sm={6} md={4} lg={3}>
             <GradientTextCard text="Dosage" />
             <CFormInput value={medicine.dose || ""} placeholder="e.g. 1 tablet" onChange={(e) => handleChange("dose", e.target.value)} />
@@ -165,10 +173,9 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine, onAdd, 
           {/* Frequency */}
           <CCol xs={12} sm={6} md={4} lg={3}>
             <GradientTextCard text="Frequency" />
-            <CFormSelect value={medicine.remindWhen || ""} onChange={(e) => handleChange("remindWhen", e.target.value)} disabled={medicine.durationUnit === "Hour"}>
-              <option value="">Select frequency</option>
-              {getFrequencyOptions().map((f) => <option key={f} value={f}>{f}</option>)}
+            <CFormSelect value={medicine.remindWhen || "NA"} onChange={(e) => handleChange("remindWhen", e.target.value)} disabled={medicine.durationUnit === "Hour"}>
               <option value="NA">NA</option>
+              {getFrequencyOptions().map((f) => <option key={f} value={f}>{f}</option>)}
             </CFormSelect>
           </CCol>
 
@@ -181,8 +188,7 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine, onAdd, 
           {/* Food / Instructions */}
           <CCol xs={12} sm={6} md={4} lg={3}>
             <GradientTextCard text="Instructions" />
-            <CFormSelect value={medicine.food || ""} onChange={(e) => handleChange("food", e.target.value)}>
-              <option value="">Select…</option>
+            <CFormSelect value={medicine.food || "NA"} onChange={(e) => handleChange("food", e.target.value)}>
               {foodOptions.map((f) => <option key={f} value={f}>{f}</option>)}
             </CFormSelect>
           </CCol>

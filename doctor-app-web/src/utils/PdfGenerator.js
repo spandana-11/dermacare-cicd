@@ -9,7 +9,7 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import { capitalizeFirst } from "./CaptalZeWord";
-import { FaPhone, FaMapMarkerAlt, FaBuilding, FaGlobe } from "react-icons/fa";
+
 
 const styles = StyleSheet.create({
   // Page
@@ -202,25 +202,10 @@ const PrescriptionPDF = ({
               {clicniData?.name ?? "—"}
             </Text>
 
-            <Text style={styles.hospitalDetail}>
-              <Icon name="map-marker" size={14} color="#555" />{" "}
-              {clicniData?.address ?? "—"}
-            </Text>
-
-            <Text style={styles.hospitalDetail}>
-              <Icon name="building" size={14} color="#555" />{" "}
-              Branch: {clicniData?.branch ?? "—"}
-            </Text>
-
-            <Text style={styles.hospitalDetail}>
-              <Icon name="phone" size={14} color="#555" />{" "}
-              Contact: {clicniData?.contactNumber ?? "—"}
-            </Text>
-
-            <Text style={styles.hospitalDetail}>
-              <Icon name="globe" size={14} color="#555" />{" "}
-              Website: {clicniData?.website ?? "—"}
-            </Text>
+            <Text>📍 {clicniData?.address ?? "—"}</Text>
+            <Text>🏢 Branch: {clicniData?.branch ?? "—"}</Text>
+            <Text>📞 Contact: {clicniData?.contactNumber ?? "—"}</Text>
+            <Text>🌐 Website: {clicniData?.website ?? "—"}</Text>
           </View>
 
         </View>

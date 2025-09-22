@@ -60,23 +60,32 @@ const Appointments = ({ searchTerm = '' }) => {
     return ''
   }
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      const tabNumber = tabToNumberMap[activeTab]
+useEffect(() => {
+  let isMounted = true;
 
-      const [appointmentsData, countData] = await Promise.all([
-        getAppointments(tabNumber),
-        getAppointmentsCount(tabNumber),
-      ])
-
-      setAppointments(appointmentsData || [])
-      setLoading(false)
-      setCurrentPage(1) // reset page when tab changes
+  const fetchData = async () => {
+    const tabNumber = tabToNumberMap[activeTab];
+    try {
+      // Add cache-buster to ensure fresh data
+      const appointmentsData = await getAppointments(`${tabNumber}?_=${new Date().getTime()}`);
+      if (isMounted) setAppointments(appointmentsData || []);
+    } catch (err) {
+      console.error('Error fetching appointments:', err);
     }
+  };
 
-    fetchData()
-  }, [activeTab])
+  fetchData(); // initial fetch
+
+  const interval = setInterval(() => {
+    fetchData(); // auto-fetch every 10 seconds
+  }, 10000); // adjust interval as needed
+
+  return () => {
+    isMounted = false;
+    clearInterval(interval); // clean up interval on unmount
+  };
+}, [activeTab]);
+
 
   // Filtering + Sorting
   const safeSearch = searchTerm.toLowerCase()

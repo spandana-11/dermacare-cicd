@@ -54,7 +54,6 @@ const OtherStaffForm = ({
     postalCode: '',
     country: 'India',
   },
-  // emergencyContact: '',
   bankAccountDetails: {
     accountNumber: '',
     accountHolderName: '',
