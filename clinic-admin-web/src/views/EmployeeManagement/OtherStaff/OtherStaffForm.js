@@ -11,11 +11,11 @@ import {
   CModalFooter,
   CFormTextarea,
   CFormSelect,
-  
 } from '@coreui/react'
 import { toast } from 'react-toastify'
 import { actions, features } from '../../../Constant/Features'
 import capitalizeWords from '../../../Utils/capitalizeWords'
+import UserPermissionModal from '../UserPermissionModal'
 
 const OtherStaffForm = ({
   visible,
@@ -29,48 +29,49 @@ const OtherStaffForm = ({
   const emptyPermissions = {} // ✅ no feature is selected by default
 
   const emptyForm = {
-  wardBoyId: '',
-  clinicId: localStorage.getItem('HospitalId'),
-  branchId: localStorage.getItem('branchId'),
-  hospitalName: localStorage.getItem('HospitalName'),
-  fullName: '',
-  gender: 'male',
-  dateOfBirth: '',
-  contactNumber: '',
-  emailId: '',
-  governmentId: '',
-  dateOfJoining: '',
-  department: '',
-  workExprience: '',
-  shiftTimingOrAvailability: '',
-  emergencyContact:'',
-  role: 'other staff',
-  address: {
-    houseNo: '',
-    street: '',
-    landmark: '',
-    city: '',
-    state: '',
-    postalCode: '',
-    country: 'India',
-  },
-  bankAccountDetails: {
-    accountNumber: '',
-    accountHolderName: '',
-    ifscCode: '',
-    bankName: '',
-    branchName: '',
-    panCardNumber: '',
-  },
-  medicalFitnessCertificate: '',
-  profilePicture: '',
-  basicHealthFirstAidTrainingCertificate: '',
-  previousEmploymentHistory: '',
-  policeVerification: '',
-  userName: '',
-  password: '',
-  permissions: {}, // empty Map equivalent
-};
+    wardBoyId: '',
+    clinicId: localStorage.getItem('HospitalId'),
+    branchId: localStorage.getItem('branchId'),
+    hospitalName: localStorage.getItem('HospitalName'),
+    fullName: '',
+    gender: 'male',
+    dateOfBirth: '',
+    contactNumber: '',
+    emailId: '',
+    governmentId: '',
+    dateOfJoining: '',
+    department: '',
+    workExprience: '',
+    shiftTimingOrAvailability: '',
+    emergencyContact: '',
+    role: 'other staff',
+    address: {
+      houseNo: '',
+      street: '',
+      landmark: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: 'India',
+    },
+    // emergencyContact: '',
+    bankAccountDetails: {
+      accountNumber: '',
+      accountHolderName: '',
+      ifscCode: '',
+      bankName: '',
+      branchName: '',
+      panCardNumber: '',
+    },
+    medicalFitnessCertificate: '',
+    profilePicture: '',
+    basicHealthFirstAidTrainingCertificate: '',
+    previousEmploymentHistory: '',
+    policeVerification: '',
+    userName: '',
+    password: '',
+    permissions: {}, // empty Map equivalent
+  }
 
   // 🔹 State
   const [formData, setFormData] = useState(emptyForm)
@@ -82,34 +83,34 @@ const OtherStaffForm = ({
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
 
   // Mandatory fields
- const mandatoryFields = [
-  // WardBoyDTO top-level fields
-  'fullName',
-  'dateOfBirth',
-  'contactNumber',
-  'governmentId',
-  'dateOfJoining',
-  'department',
-  'clinicId',
-  'medicalFitnessCertificate', // also mandatory
-  'role', // if you want to enforce role as mandatory in UI
+  const mandatoryFields = [
+    // WardBoyDTO top-level fields
+    'fullName',
+    'dateOfBirth',
+    'contactNumber',
+    'governmentId',
+    'dateOfJoining',
+    'department',
+    'clinicId',
+    'medicalFitnessCertificate', // also mandatory
+    'role', // if you want to enforce role as mandatory in UI
 
-  // Address nested fields (if Address has @NotBlank on these)
-  'address.houseNo',
-  'address.street',
-  'address.city',
-  'address.state',
-  'address.postalCode',
-  'address.country',
+    // Address nested fields (if Address has @NotBlank on these)
+    'address.houseNo',
+    'address.street',
+    'address.city',
+    'address.state',
+    'address.postalCode',
+    'address.country',
 
-  // BankAccountDetails nested fields (if @NotBlank on these)
-  'bankAccountDetails.accountNumber',
-  'bankAccountDetails.accountHolderName',
-  'bankAccountDetails.bankName',
-  'bankAccountDetails.branchName',
-  'bankAccountDetails.ifscCode',
-  'bankAccountDetails.panCardNumber'
-];
+    // BankAccountDetails nested fields (if @NotBlank on these)
+    'bankAccountDetails.accountNumber',
+    'bankAccountDetails.accountHolderName',
+    'bankAccountDetails.bankName',
+    'bankAccountDetails.branchName',
+    'bankAccountDetails.ifscCode',
+    'bankAccountDetails.panCardNumber',
+  ]
 
   function validateMandatoryFields(formData, mandatoryFields) {
     const missingFields = []
@@ -450,9 +451,7 @@ const OtherStaffForm = ({
         backdrop="static"
       >
         <CModalHeader>
-          <CModalTitle>
-            {viewMode ? 'Personal Information' : 'Add / Edit Other Staff'}
-          </CModalTitle>
+          <CModalTitle>{viewMode ? 'Personal Information' : 'Add / Edit Other Staff'}</CModalTitle>
         </CModalHeader>
         <CModalBody>
           {viewMode ? (
@@ -698,9 +697,7 @@ const OtherStaffForm = ({
                   />
                 </div>
                 <div className="col-md-4">
-                  <CFormLabel>
-                    Gender 
-                  </CFormLabel>
+                  <CFormLabel>Gender</CFormLabel>
                   <CFormSelect
                     value={formData.gender}
                     onChange={(e) => handleChange('gender', e.target.value)}
@@ -748,9 +745,7 @@ const OtherStaffForm = ({
                   />
                 </div>
                 <div className="col-md-4">
-                  <CFormLabel>
-                    Email 
-                  </CFormLabel>
+                  <CFormLabel>Email</CFormLabel>
                   <CFormInput
                     type="email"
                     value={formData.emailId}
@@ -794,10 +789,10 @@ const OtherStaffForm = ({
                     onChange={(e) => handleChange('dateOfJoining', e.target.value)}
                   />
                 </div>
-                 <div className="col-md-4">
+                <div className="col-md-4">
                   {' '}
-                  <CFormLabel>Department <span style={{ color: 'red' }}>*</span>
-
+                  <CFormLabel>
+                    Department <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
                     value={capitalizeWords(formData.department)}
@@ -807,19 +802,16 @@ const OtherStaffForm = ({
               </div>
 
               <div className="row mb-3">
-               
                 <div className="col-md-4">
                   {' '}
-                  <CFormLabel>
-                    Years of Experience 
-                  </CFormLabel>
+                  <CFormLabel>Years of Experience</CFormLabel>
                   <CFormInput
                     type="number"
                     value={formData.yearOfExperience}
                     onChange={(e) => handleChange('yearOfExperience', e.target.value)}
                   />
                 </div>
-                 <div className="col-md-4">
+                <div className="col-md-4">
                   <CFormLabel>
                     Shift Timings / Availability <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
@@ -845,7 +837,7 @@ const OtherStaffForm = ({
                     <option value="18:00-06:00">Long Night (06:00 PM – 06:00 AM) – 12 hrs</option>
                   </CFormSelect>
                 </div>
-                 <div className="col-md-4">
+                <div className="col-md-4">
                   <CFormLabel>Emergency Contact</CFormLabel>
 
                   <CFormInput
@@ -872,9 +864,6 @@ const OtherStaffForm = ({
               </div>
 
               <div className="row mb-3">
-               
-
-               
                 {/* <div className="col-md-4">
                   <CFormLabel>
                     Vaccination Status <span style={{ color: 'red' }}>*</span>
@@ -1067,8 +1056,8 @@ const OtherStaffForm = ({
                   />
                 </div>
                 <div className="col-md-4">
-                  <CFormLabel>Medical Fitness Certificate  <span style={{ color: 'red' }}>*</span>
-
+                  <CFormLabel>
+                    Medical Fitness Certificate <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
                     type="file"
@@ -1113,95 +1102,20 @@ const OtherStaffForm = ({
                 </CButton>
               </div>
 
-              {showPModal && (
-                <div className="modal fade show d-block" tabIndex="-1">
-                  <div className="modal-dialog modal-lg">
-                    <div className="modal-content">
-                      <div className="modal-header">
-                        <h5 className="modal-title">Set User Permissions</h5>
-                        <button
-                          type="button"
-                          className="btn-close"
-                          onClick={() => setShowPModal(false)}
-                        ></button>
-                      </div>
-                      <div className="modal-body">
-                        <div className="row">
-                          {features.map((feature) => {
-                            const isFeatureChecked = !!formData.permissions[feature]
-                            const allSelected =
-                              isFeatureChecked &&
-                              formData.permissions[feature].length === actions.length
-
-                            return (
-                              <div key={feature} className="col-md-5 mb-3 border p-2 rounded mx-4">
-                                {/* Feature Checkbox */}
-                                <div className="d-flex justify-content-between align-items-center">
-                                  <label className="fw-bold">
-                                    <input
-                                      type="checkbox"
-                                      checked={isFeatureChecked}
-                                      onChange={() => toggleFeature(feature)}
-                                    />{' '}
-                                    {feature}
-                                  </label>
-
-                                  {/* Select All */}
-                                  <label>
-                                    <input
-                                      type="checkbox"
-                                      disabled={!isFeatureChecked}
-                                      checked={allSelected}
-                                      onChange={() => toggleAllActions(feature)}
-                                    />{' '}
-                                    Select All
-                                  </label>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="d-flex flex-wrap gap-3 mt-2">
-                                  {actions.map((action) => (
-                                    <label key={action} className="d-flex align-items-center gap-1">
-                                      <input
-                                        type="checkbox"
-                                        disabled={!isFeatureChecked}
-                                        checked={
-                                          formData.permissions[feature]?.includes(action) || false
-                                        }
-                                        onChange={() => togglePermission(feature, action)}
-                                      />
-                                      {action}
-                                    </label>
-                                  ))}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                      <div className="modal-footer">
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={() => setShowPModal(false)}
-                        >
-                          Close
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          onClick={() => setShowPModal(false)}
-                        >
-                          Save Permissions
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* backdrop */}
-              {showPModal && <div className="modal-backdrop fade show"></div>}
+            <UserPermissionModal
+                show={showPModal}
+                onClose={() => setShowPModal(false)}
+                features={features}
+                actions={actions}
+                permissions={formData.permissions}
+                toggleFeature={toggleFeature}
+                toggleAllActions={toggleAllActions}
+                togglePermission={togglePermission}
+                onSave={() => {
+                  console.log('Saved Permissions', formData.permissions)
+                  setShowPModal(false)
+                }}
+              />
             </CForm>
           )}
         </CModalBody>

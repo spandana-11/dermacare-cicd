@@ -90,7 +90,17 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
   const [hasTemplate, setHasTemplate] = useState(false)
 
   const handleNext = () => {
-    const payload = { symptomDetails, doctorObs, diagnosis, duration, }
+    const payload = {
+      symptomDetails,
+      doctorObs,
+      diagnosis,
+      duration,
+      attachments,
+      prescription: templateData.prescription, // include current template medicines
+      tests: templateData.tests,
+      treatments: templateData.treatments,
+      followUp: templateData.followUp,
+    }
     console.log('🚀 Submitting payload:', payload)
     onNext?.(payload)
   }
@@ -119,7 +129,6 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
         diseaseName: d.diseaseName || '',
         probableSymptoms: d.probableSymptoms || '',
         notes: d.notes || '',
-
         hospitalId: d.hospitalId,
 
       }))
@@ -210,7 +219,7 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
       diagnosis: dx,
       duration,
       attachments,
-      prescription: merged.prescription,   // 👈 now medicineType, duration, food, note will come
+      prescription: merged.prescription,
       tests: merged.tests,
       treatments: merged.treatments,
       followUp: merged.followUp,
@@ -300,25 +309,35 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
     const testReason = t?.tests?.testReason ?? ''
 
     // ---- Prescription (map 'food' -> remindWhen)
-  const medicines = Array.isArray(t?.prescription?.medicines)
-  ? t.prescription.medicines.map((m) => ({
-    id: m?.id ?? `tmp-${Date.now()}-${Math.random()}`,
-    name: m?.name ?? '',
-    medicineType: m?.medicineType ?? 'NA',
-    dose: m?.dose ?? '',
-    duration: m?.duration && m?.durationUnit
-      ? `${m.duration} ${m.durationUnit}`
-      : m?.duration ?? '',
-    frequency: m?.remindWhen ?? 'NA',        // use remindWhen for table
-    remindWhen: m?.remindWhen ?? '',
-    note: m?.note?.trim() || 'NA',
-    instruction: m?.instruction?.trim() || 'NA',  // show NA if empty
-    others: m?.others ?? '',
-    times: typeof m?.times === 'string' ? m.times : Array.isArray(m?.times) ? m.times.filter(Boolean).join(', ') : '',
-  }))
-  : []
+    const medicines = Array.isArray(t?.prescription?.medicines)
+      ? t.prescription.medicines.map((m) => {
+        const dur = m?.duration ? `${m.duration}`.trim() : "NA";
+        const unit = m?.durationUnit ? m.durationUnit.trim() : "";
 
+        // Pluralize if duration > 1
+        const durationDisplay =
+          dur !== "NA" && unit
+            ? `${dur} ${Number(dur) > 1 ? `${unit}s` : unit}`
+            : dur;
 
+        return {
+          id: m?.id ?? `tmp-${Date.now()}-${Math.random()}`,
+          medicineType: m?.medicineType?.trim() ||"NA",
+          name: m?.name || "",
+          dose: m?.dose || "",
+          remindWhen: m?.remindWhen || "Once A Day",
+          others: m?.others || "",
+          duration: durationDisplay,
+          food: m?.food || "",
+          note: m?.note || "",
+          times: Array.isArray(m?.times)
+            ? m.times.map((t) => `${t}`.trim()).filter(Boolean)
+            : m?.times && typeof m.times === "string"
+              ? m.times.split(",").map((t) => t.trim()).filter(Boolean)
+              : [],
+        };
+      })
+      : [];
 
 
 

@@ -27,6 +27,7 @@ const ReportsManagement = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 7
   const [availableServiceTypes, setAvailableServiceTypes] = useState([])
+  const [selectedAppointment , setSelectedAppointment ] = useState([])
   const [availableConsultationTypes, setAvailableConsultationTypes] = useState([])
   const [selectedServiceTypes, setSelectedServiceTypes] = useState([])
   const [selectedConsultationTypes, setSelectedConsultationTypes] = useState([])

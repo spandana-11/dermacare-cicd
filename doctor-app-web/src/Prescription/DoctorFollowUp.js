@@ -117,6 +117,7 @@ const DoctorFollowUp = ({ seed = {}, onNext, sidebarWidth = 0, patientData }) =>
                                             value={durationValue}
                                             onChange={(e) => setDurationValue(Number(e.target.value))}
                                             placeholder="Select Duration in Days"
+                                            min={0}
                                         />
                                         <CFormSelect
                                             value={durationUnit}

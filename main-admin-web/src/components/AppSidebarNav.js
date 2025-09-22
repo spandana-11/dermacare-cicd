@@ -6,13 +6,14 @@ import SimpleBar from 'simplebar-react'
 import 'simplebar-react/dist/simplebar.min.css'
 
 import { CBadge, CNavLink, CSidebarNav } from '@coreui/react'
+import { COLORS } from '../Constant/Themes'
 
 export const AppSidebarNav = ({ items }) => {
   const navLink = (name, icon, badge, indent = false) => {
     return (
       <>
         {icon
-          ? icon
+          ? React.cloneElement(icon, { style: { color: 'var(--color-black)' } })
           : indent && (
               <span className="nav-icon">
                 <span className="nav-icon-bullet"></span>

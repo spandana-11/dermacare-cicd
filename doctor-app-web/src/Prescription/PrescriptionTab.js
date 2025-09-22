@@ -29,32 +29,71 @@ import CIcon from '@coreui/icons-react'
 import { cilCheck, cilPencil, cilTrash } from '@coreui/icons'
 import GradientTextCard from '../components/GradintColorText'
 import { useToast } from '../utils/Toaster'
-import { medicineTemplate, SavePrescription } from '../Auth/Auth'
+import { addOrSearchMedicine, getAllMedicines, getMedicineTypes, medicineTemplate, SavePrescription } from '../Auth/Auth'
 import Select from 'react-select'
 import api from '../Auth/axiosInterceptor'
 import AsyncSelect from 'react-select/async'
 import { formatDuration } from '../utils/formatDateTime'
+import CreatableSelect from 'react-select/creatable'; // ✅ Add this import
 
 const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
   const [search, setSearch] = useState('')
   const [localsearch, setLocalsearch] = useState('')
-
   const [searchResults, setSearchResults] = useState([])
-
+  const [isSaving, setIsSaving] = useState(false);
   const [templates, setTemplates] = useState([])
   const [recentSearches, setRecentSearches] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [showTemplateModal, setShowTemplateModal] = useState(false)
-
   const [activeMedicine, setActiveMedicine] = useState(null) // ← ADD THIS
-
   const [editingIndex, setEditingIndex] = useState(null)
   const [prescriptions, setPrescriptions] = useState([])
-
   const [filteredPrescriptions, setFilteredPrescriptions] = useState([])
   const [selectedPrescriptionMedicines, setSelectedPrescriptionMedicines] = useState([])
   const [isSelectLoading, setIsSelectLoading] = useState(false)
+  const [medicineTypes, setMedicineTypes] = useState([]);
+  const [globalMedicines, setGlobalMedicines] = useState([]);
+
+
+  useEffect(() => {
+    const fetchGlobalMedicines = async () => {
+      setIsLoading(true);
+      try {
+        const meds = await getAllMedicines();
+        setGlobalMedicines(meds || []);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchGlobalMedicines();
+  }, []);
+  const foodOptions = ["Before Food", "After Food", "With Food", "NA"];
+  const slotOptions = [
+    { value: "morning", label: "Morning (8–9 AM)" },
+    { value: "afternoon", label: "Afternoon (1–2 PM)" },
+    { value: "evening", label: "Evening (6–7 PM)" },
+    { value: "night", label: "Night (9–10 PM)" },
+    { value: "NA", label: "NA" },
+  ];
+
+  const slotLegendMap = {
+    morning: "M",
+    afternoon: "A",
+    evening: "E",
+    night: "N",
+    NA: "NA",
+  };
+
+  useEffect(() => {
+    const fetchTypes = async () => {
+      const types = await getMedicineTypes(); // API call
+      setMedicineTypes(types || []);
+    };
+    fetchTypes();
+  }, []);
+
   const [medicines, setMedicines] = useState(
     Array.isArray(seed.medicines)
       ? seed.medicines.map((m) => ({
@@ -64,7 +103,7 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
         remindWhen: m.remindWhen || "Once A Day",
         others: m.others || "",
         duration: m.duration || "",
-        durationUnit: m.durationUnit || "",
+        durationUnit: m.durationUnit?.trim() || "",
         food: m.food || "",
         note: m.note || "",
         times: Array.isArray(m.times) ? m.times : ["", "", ""],
@@ -76,7 +115,7 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
   //Toaster
   const { success, error, info, warning } = useToast()
   // --- add near other state/derived values ---
-  const hasPendingCards = Boolean(activeMedicine) || selectedPrescriptionMedicines.length > 0
+  const hasPendingCards = Boolean(activeMedicine);
 
   const debounce = useRef(null)
   // optional: sanitize before sending (fill blanks with 'NA')
@@ -88,7 +127,7 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
       food: m.food?.trim() || "NA",
       medicineType: m.medicineType?.trim() || "NA",
       duration: m.duration?.toString().trim() || "NA",
-      durationUnit: m.durationUnit?.trim() || "",   // 👈 keep empty string if missing
+      durationUnit: m.durationUnit?.trim() || "",
       others: m.others?.trim() || "NA",
       remindWhen: m.remindWhen?.trim() || "NA",
       times: Array.isArray(m.times)
@@ -100,9 +139,6 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
             .filter(Boolean)
           : [],
     }));
-
-
-
 
   useEffect(() => {
     const storedTemplates = JSON.parse(localStorage.getItem('templates') || '[]')
@@ -175,37 +211,45 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
   }
 
   const addMedicine = (name) => {
-    const lower = name.toLowerCase()
+    if (hasPendingCards) {
+      warning("Please add or remove the current medicine card before adding a new one.", {
+        title: "Pending Medicine",
+      });
+      return;
+    }
+
+    const lower = name.toLowerCase();
 
     const exists =
       medicines.some((med) => med.name?.toLowerCase() === lower) ||
       selectedPrescriptionMedicines.some((med) => med.name?.toLowerCase() === lower) ||
-      (activeMedicine?.name?.toLowerCase() === lower)
+      (activeMedicine?.name?.toLowerCase() === lower);
 
     if (exists) {
-      info('Medicine already added',)
-      return
+      info("Medicine already added");
+      return;
     }
 
     setActiveMedicine({
       name,
-      dose: '',
-      medicineType: '',
-      remindWhen: 'NA',
-      note: '',
-      duration: '',
-      food: '',
-      others: '',
-      times: ['', '', ''],
-    })
+      dose: "",
+      medicineType: "",
+      remindWhen: "NA",
+      note: "",
+      duration: "",
+      food: "",
+      others: "",
+      times: ["", "", ""],
+    });
 
-    setSearch('')
-    setSearchResults([])
+    setSearch("");
+    setSearchResults([]);
 
-    const updatedRecent = [name, ...recentSearches.filter((item) => item !== name)].slice(0, 10)
-    setRecentSearches(updatedRecent)
-    localStorage.setItem('recent_searches', JSON.stringify(updatedRecent))
-  }
+    const updatedRecent = [name, ...recentSearches.filter((item) => item !== name)].slice(0, 10);
+    setRecentSearches(updatedRecent);
+    localStorage.setItem("recent_searches", JSON.stringify(updatedRecent));
+  };
+
 
   // ✅ FIXED SAVE TEMPLATE FUNCTION
   const saveTemplate = async () => {
@@ -222,7 +266,7 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
       food: m.food || "",                // Instructions
       remindWhen: m.remindWhen || "Once A Day",
       duration: m.duration || "",
-      durationUnit: m.durationUnit || "",
+      durationUnit: m.durationUnit?.trim() || "",
       note: m.note || "",
       others: m.others || "",
       times: Array.isArray(m.times) ? m.times : ["", "", ""]
@@ -264,7 +308,7 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
         food: m.food || "",                 // Instructions fallback
         remindWhen: m.remindWhen || "Once A Day",
         duration: m.duration || "",
-        durationUnit: m.durationUnit || "",
+        durationUnit: m.durationUnit?.trim() || "",
         note: m.note || "",
         others: m.others || "",
         times: Array.isArray(m.times) ? m.times : ["", "", ""]
@@ -351,6 +395,25 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
       (activeMedicine && activeMedicine.name?.toLowerCase() === lower)
     );
   };
+  const handleCreateOption = (inputValue) => {
+    if (!inputValue) return;
+
+    // Check if it already exists
+    if (medicineTypes.includes(inputValue)) {
+      info('Medicine type already exists');
+      return;
+    }
+
+    // Add to medicineTypes state
+    setMedicineTypes((prev) => [...prev, inputValue]);
+
+    // Optionally, update the medicine in the table immediately
+    if (editingIndex !== null) {
+      handleUpdate(editingIndex, "medicineType", inputValue);
+    }
+
+    success(`Medicine type "${inputValue}" added`);
+  };
 
   return (
     <div className="container pb-5">
@@ -383,15 +446,21 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                 defaultOptions={false}
                 placeholder="Search prescription medicine..."
                 onChange={(selectedOption) => {
+                  if (hasPendingCards) {
+                    warning("Please add the current medicine before selecting another.", { title: "Pending Medicine" });
+                    return;
+                  }
+
                   const selectedMed = selectedOption?.data;
                   if (selectedMed) {
                     if (isAlreadySelected(selectedMed.name)) {
-                      info('Medicine already added');
+                      info("Medicine already added");
                       return;
                     }
                     setSelectedPrescriptionMedicines((prev) => [...prev, selectedMed]);
                   }
                 }}
+
 
                 value={null}   // 👈 clears selection so caret never shows before "ASPIRIN"
                 noOptionsMessage={() => 'Start typing to search...'}
@@ -414,66 +483,88 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
 
         {/* 🌐 Global Medicine Finder */}
         <CCol xs={12} md={6}>
-          <GradientTextCard text={'🌐 Global Medicine Finder'} />
+          <GradientTextCard text={"🌐 Global Medicine Finder"} />
 
-          <div className="input-group position-relative">
-            {/* Search input */}
-            <CFormInput
-              type="text"
-              className="form-control pe-5"
-              placeholder="Search global medicines..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+          <div className="mb-4" style={{ width: "100%" }}>
+            <AsyncSelect
+              cacheOptions
+              defaultOptions={globalMedicines.map((m) => ({
+                label: m.name,
+                value: m.name,
+              }))}
+              loadOptions={(inputValue, callback) => {
+                if (!inputValue) {
+                  callback(globalMedicines.map((m) => ({ label: m.name, value: m.name })));
+                  return;
+                }
+
+                const filtered = globalMedicines
+                  .filter((m) => m.name.toLowerCase().includes(inputValue.toLowerCase()))
+                  .map((m) => ({
+                    label: m.name,
+                    value: m.name,
+                  }));
+
+                if (filtered.length === 0) {
+                  filtered.push({
+                    label: `➕ Add "${inputValue}"`,
+                    value: inputValue,
+                    __isNew__: true,
+                  });
+                }
+
+                callback(filtered);
+              }}
+              placeholder={
+                hasPendingCards
+                  ? "✅ Please finish adding the current medicine"
+                  : "Search or add a medicine..."
+              }
+              isLoading={isLoading}
+              noOptionsMessage={() => "No medicines found"}
+              isClearable
+              isDisabled={hasPendingCards}   // 🚫 disabled until medicine is saved
+              onChange={async (selectedOption) => {
+                if (!selectedOption) return;
+                const selectedName = selectedOption.value;
+
+                if (isAlreadySelected(selectedName)) {
+                  info("Medicine already added");
+                  return;
+                }
+
+                if (selectedOption.__isNew__) {
+                  const added = await addOrSearchMedicine(selectedName);
+                  if (added) {
+                    success(`✅ Medicine "${selectedName}" added`);
+                    addMedicine(selectedName);
+
+                    const meds = await getAllMedicines();
+                    setGlobalMedicines(meds || []);
+                  }
+                } else {
+                  addMedicine(selectedName);
+                }
+              }}
+              styles={{
+                container: (base) => ({
+                  ...base,
+                  width: "100%",
+                }),
+                menu: (base) => ({
+                  ...base,
+                  zIndex: 9999,
+                }),
+              }}
             />
 
-            {/* Clear (×) button */}
-            {search && (
-              <button
-                type="button"
-                className="btn position-absolute end-0 top-50 translate-middle-y me-5 p-0 text-muted"
-                style={{ zIndex: 5 }}
-                onClick={() => setSearch('')}
-                aria-label="Clear"
-                customColor={COLORS.bgcolor} // background color of button
-                color={COLORS.black}
-              >
-                &times;
-              </button>
-            )}
 
-            {/* Add Button (hide while loading) */}
-            {!isLoading && (
-              <Button
-                // className="btn btn-primary"
-                onClick={() => addMedicine(search)}
-                style={{ zIndex: 1 }}
-                customColor={COLORS.bgcolor} // background color of button
-                color={COLORS.black}
-              >
-                Add
-              </Button>
-            )}
-
-            {/* Loading spinner */}
-            {isLoading && (
-              <div
-                className="spinner-border text-primary position-absolute end-0 top-50 translate-middle-y me-2"
-                role="status"
-                style={{ width: '1.2rem', height: '1.2rem', zIndex: 10 }}
-              >
-                <span className="visually-hidden">Loading...</span>
-              </div>
-            )}
           </div>
-
-          {/* Optional: show loader text below */}
-          {isLoading && (
-            <div className="mt-2 text-muted small d-flex align-items-center gap-2">
-              <div className="spinner-border spinner-border-sm text-primary" role="status" />
-              <span>Searching global medicines...</span>
-            </div>
-          )}
         </CCol>
+
+
+
+
       </CRow>
 
       {/* {isLoading && <div>Loading...</div>} */}
@@ -512,18 +603,17 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
 
           <CTable striped hover responsive className="align-middle">
             <CTableHead>
-              <CTableRow className="bg-info  fst-normal">
-                <CTableHeaderCell scope="col">S.NO</CTableHeaderCell>
-                <CTableHeaderCell scope="col">Medicine Type</CTableHeaderCell>
-                <CTableHeaderCell scope="col">Medicine</CTableHeaderCell>
-                <CTableHeaderCell scope="col">Dosage</CTableHeaderCell>
-
-                <CTableHeaderCell scope="col">Frequency</CTableHeaderCell>
-                <CTableHeaderCell scope="col">Duration</CTableHeaderCell>
-                <CTableHeaderCell scope="col">Instructions</CTableHeaderCell>
-                <CTableHeaderCell scope="col">Note</CTableHeaderCell>
-                <CTableHeaderCell scope="col">Timings</CTableHeaderCell>
-                <CTableHeaderCell scope="col" className="text-end">
+              <CTableRow className="bg-info  fst-normal" >
+                <CTableHeaderCell scope="col" style={{ color: COLORS.black }}>S.NO</CTableHeaderCell>
+                <CTableHeaderCell scope="col" style={{ color: COLORS.black }}>Medicine Type</CTableHeaderCell>
+                <CTableHeaderCell scope="col" style={{ color: COLORS.black }}>Medicine</CTableHeaderCell>
+                <CTableHeaderCell scope="col" style={{ color: COLORS.black }}>Dosage</CTableHeaderCell>
+                <CTableHeaderCell scope="col" style={{ color: COLORS.black }}>Frequency</CTableHeaderCell>
+                <CTableHeaderCell scope="col" style={{ color: COLORS.black }}>Duration</CTableHeaderCell>
+                <CTableHeaderCell scope="col" style={{ color: COLORS.black }}>Instructions</CTableHeaderCell>
+                <CTableHeaderCell scope="col" style={{ color: COLORS.black }}>Note</CTableHeaderCell>
+                <CTableHeaderCell scope="col" style={{ color: COLORS.black }}>Timings</CTableHeaderCell>
+                <CTableHeaderCell scope="col" className="text-end" style={{ color: COLORS.black }}>
                   Action
                 </CTableHeaderCell>
               </CTableRow>
@@ -534,29 +624,107 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                 <CTableRow key={index}>
                   <CTableHeaderCell scope="row">{index + 1}</CTableHeaderCell>
 
-                  {/* Medicine */}
-                  <CTableDataCell>
+                  {/* Medicine Type */}
+                  <CTableDataCell style={{ minHeight: '30px', padding: '4px' }}>
                     {editingIndex === index ? (
-                      <CFormInput
-                        size="sm"
-                        value={med.medicineType || ""} // 👈 fallback to empty string
-                        onChange={(e) => handleUpdate(index, "medicineType", e.target.value)}
+                      <CreatableSelect
+                        isClearable
+                        options={medicineTypes.map((t) => ({ label: t, value: t }))}
+                        value={med.medicineType ? { label: med.medicineType, value: med.medicineType } : null}
+                        onChange={(selected) =>
+                          handleUpdate(index, "medicineType", selected ? selected.value : "")
+                        }
+                        onCreateOption={handleCreateOption}
+                        placeholder="Select or create medicine type..."
+                        menuPlacement="auto"
+                        menuPortalTarget={document.body}   // ✅ render dropdown outside table
+                        styles={{
+                          container: (provided) => ({
+                            ...provided,
+                            width: '100%',
+                            minWidth: '120px',
+                          }),
+                          control: (provided) => ({
+                            ...provided,
+                            minHeight: '35px',
+                            fontSize: '0.9rem',
+                            padding: '2px 6px',
+                          }),
+                          valueContainer: (provided) => ({
+                            ...provided,
+                            padding: '0 6px',
+                            overflow: 'visible',
+                          }),
+                          input: (provided) => ({
+                            ...provided,
+                            margin: 0,
+                            padding: 0,
+                          }),
+                          indicatorsContainer: (provided) => ({
+                            ...provided,
+                            height: '35px',
+                          }),
+                          menuPortal: (base) => ({ ...base, zIndex: 9999 }), // ✅ always on top
+                        }}
                       />
                     ) : (
-                      med.medicineType || 'NA'
+                      <span style={{ color: med.medicineType ? '#000' : '#000' }}>
+                        {med.medicineType || 'NA'}
+                      </span>
                     )}
                   </CTableDataCell>
-                  <CTableDataCell>
+
+                  {/* Medicine Name */}
+                  <CTableDataCell style={{ minHeight: '30px', padding: '4px' }}>
                     {editingIndex === index ? (
-                      <CFormInput
-                        size="sm"
-                        value={med.name}
-                        onChange={(e) => handleUpdate(index, 'name', e.target.value)}
+                      <Select
+                        isClearable
+                        className="w-100"
+                        value={med.name ? { label: med.name, value: med.name } : null}
+                        onChange={(option) => handleUpdate(index, 'name', option ? option.value : '')}
+                        options={globalMedicines.map((m) => ({
+                          label: m.name,
+                          value: m.name,
+                        }))}
+                        placeholder="Select medicine..."
+                        menuPlacement="auto"
+                        menuPortalTarget={document.body}   // ✅ render dropdown outside table
+                        styles={{
+                          container: (provided) => ({
+                            ...provided,
+                            width: '100%',
+                            minWidth: '120px',
+                          }),
+                          control: (provided) => ({
+                            ...provided,
+                            minHeight: '35px',
+                            fontSize: '0.9rem',
+                            padding: '2px 6px',
+                          }),
+                          valueContainer: (provided) => ({
+                            ...provided,
+                            padding: '0 6px',
+                            overflow: 'visible',
+                          }),
+                          input: (provided) => ({
+                            ...provided,
+                            margin: 0,
+                            padding: 0,
+                          }),
+                          indicatorsContainer: (provided) => ({
+                            ...provided,
+                            height: '35px',
+                          }),
+                          menuPortal: (base) => ({ ...base, zIndex: 9999 }), // ✅ always on top
+                        }}
                       />
                     ) : (
                       med.name || 'NA'
                     )}
                   </CTableDataCell>
+
+
+
 
                   {/* Dose */}
                   <CTableDataCell>
@@ -570,7 +738,6 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                       med.dose || 'NA'
                     )}
                   </CTableDataCell>
-
 
                   <CTableDataCell>
                     {editingIndex === index ? (
@@ -595,23 +762,20 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                     )}
                   </CTableDataCell>
 
-                  {/* Duration */}
                   <CTableDataCell>
                     {editingIndex === index ? (
-                      <>
-                        {/* Duration number input */}
+                      <div className="d-flex gap-2 align-items-center">
                         <CFormInput
                           size="sm"
                           type="number"
-                          value={med.duration}
+                          min={0}
+                          value={med.duration || ""}
                           onChange={(e) => handleUpdate(index, "duration", e.target.value)}
-                          style={{ width: "70px", display: "inline-block", marginRight: "8px" }}
+                          style={{ width: "70px" }}
                         />
-
-                        {/* Duration unit dropdown */}
                         <CFormSelect
                           size="sm"
-                          value={med.durationUnit || ""} // 👈 fallback to empty string
+                          value={med.durationUnit || ""} // empty string fallback
                           onChange={(e) => handleUpdate(index, "durationUnit", e.target.value)}
                         >
                           <option value="">Unit</option>
@@ -620,35 +784,31 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                           <option value="Week">Week</option>
                           <option value="Month">Month</option>
                         </CFormSelect>
-                      </>
+                      </div>
                     ) : (
                       med.duration
-                        ? (() => {
-                          const value = parseInt(med.duration, 10);
-                          const unit = med.durationUnit || "";
-                          if (!unit) return value; // show only number if unit missing
-                          return `${value} ${value > 1 ? unit + "s" : unit}`;
-                        })()
+                        ? `${med.duration} ${med.durationUnit ? (med.duration > 1 ? med.durationUnit + "s" : med.durationUnit) : ""}`
                         : "NA"
                     )}
                   </CTableDataCell>
 
-
-
-              
-<CTableDataCell>
-  {editingIndex === index ? (
-    <CFormInput
-      size="sm"
-      value={med.food || ""} // 👈 fallback to empty string
-      onChange={(e) => handleUpdate(index, 'food', e.target.value)}
-    />
-  ) : (
-    med.food || 'NA'
-  )}
-</CTableDataCell>
-
-
+                  <CTableDataCell>
+                    {editingIndex === index ? (
+                      <CFormSelect
+                        size="sm"
+                        value={med.food || "NA"} // fallback to NA
+                        onChange={(e) => handleUpdate(index, "food", e.target.value)}
+                      >
+                        {foodOptions.map((f) => (
+                          <option key={f} value={f}>
+                            {f}
+                          </option>
+                        ))}
+                      </CFormSelect>
+                    ) : (
+                      med.food || "NA"
+                    )}
+                  </CTableDataCell>
 
                   {/* Note */}
                   <CTableDataCell style={{ maxWidth: 200 }}>
@@ -679,45 +839,47 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                   {/* Timings */}
                   <CTableDataCell style={{ minWidth: 180 }}>
                     {editingIndex === index ? (
-                      // Editing mode
                       <div className="d-flex flex-column gap-1">
-                        {Array.isArray(med.times)
-                          ? med.times.map((time, i) => (
-                            <CFormInput
+                        {(Array.isArray(med.times) ? med.times : ["", "", ""]).map((time, i) => {
+                          const taken = new Set(
+                            (Array.isArray(med.times) ? med.times : ["", "", ""])
+                              .filter((_, idx) => idx !== i)
+                              .filter(Boolean)
+                          );
+
+                          return (
+                            <CFormSelect
                               key={i}
                               size="sm"
-                              value={time}
+                              value={time || ""}
                               onChange={(e) => {
-                                const updated = [...med.times]
-                                updated[i] = e.target.value
-                                handleUpdate(index, 'times', updated)
+                                const updated = Array.isArray(med.times) ? [...med.times] : ["", "", ""];
+                                updated[i] = e.target.value;
+                                handleUpdate(index, 'times', updated);
                               }}
-                            />
-                          ))
-                          : null}
+                            >
+                              <option value="">Select Time…</option>
+                              {slotOptions.map((opt) => (
+                                <option
+                                  key={opt.value}
+                                  value={opt.value}
+                                  disabled={taken.has(opt.value)}
+                                >
+                                  {opt.label} {/* Show full label in dropdown */}
+                                </option>
+                              ))}
+                            </CFormSelect>
+                          );
+                        })}
                       </div>
-                    ) : Array.isArray(med.times) ? (
-                      // View mode: Array
-                      med.times
-                        .filter((t) => t && t.trim())
-                        .map(
-                          (t) =>
-                            t.trim().charAt(0).toUpperCase() + t.trim().slice(1).toLowerCase()
-                        ) // Capitalize full word: Morning, Evening
-                        .join(', ')
-                    ) : typeof med.times === 'string' ? (
-                      // View mode: String
-                      med.times
-                        .split(',')
-                        .map(
-                          (t) =>
-                            t.trim().charAt(0).toUpperCase() + t.trim().slice(1).toLowerCase()
-                        )
-                        .join(', ')
                     ) : (
-                      'NA'
+                      (Array.isArray(med.times) ? med.times : [])
+                        .filter((t) => t && t.trim())
+                        .map((t) => slotLegendMap[t] || t) // Show legend in view mode
+                        .join(", ") || "NA"
                     )}
                   </CTableDataCell>
+
 
 
                   {/* Action */}

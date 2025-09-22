@@ -26,8 +26,10 @@ import {
   CInputGroup,
   CFormSelect,
   CInputGroupText,
-  CFormTextarea
+  CFormTextarea,
 } from '@coreui/react';
+import { useNavigate, useParams } from 'react-router-dom'
+
 import {
   fetchAllBranches,
   
@@ -39,13 +41,14 @@ import {
 } from './AddBranchAPI'; // Import the API function
 import DataTable from 'react-data-table-component';0
 const AddBranchForm = ({ clinicId }) => {
+  const navigate = useNavigate()
+
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [viewModalVisible, setViewModalVisible] = useState(false);
   const [editingBranch, setEditingBranch] = useState(null);
   const [deletingBranch, setDeletingBranch] = useState(null);
   const [viewingBranch, setViewingBranch] = useState(null);
@@ -340,7 +343,15 @@ const endIndex = Math.min(indexOfLastItem, filteredBranches.length)
         <CTableDataCell><CBadge color="secondary">{branch.city}</CBadge></CTableDataCell>
         <CTableDataCell>{branch.contactNumber}</CTableDataCell>
         <CTableDataCell>
-          <CButton color="info" size="sm" className="me-2" onClick={() => handleView(branch.branchId)}>View</CButton>
+          <CButton
+  color="primary"
+  size="sm"
+  className="me-2"
+  onClick={() => navigate(`/branch-details/${branch.branchId}`)}
+>
+  View
+</CButton>
+
           <CButton color="warning" size="sm" className="me-2" onClick={() => handleEdit(branch)}>Edit</CButton>
           <CButton color="danger" size="sm" onClick={() => { setDeletingBranch(branch); setDeleteModalVisible(true); }}>Delete</CButton>
         </CTableDataCell>
@@ -645,7 +656,7 @@ const endIndex = Math.min(indexOfLastItem, filteredBranches.length)
       </CModal>
 
       {/* View Branch Details Modal */}
-      <CModal visible={viewModalVisible} onClose={() => setViewModalVisible(false)} size="lg">
+      {/* <CModal visible={viewModalVisible} onClose={() => setViewModalVisible(false)} size="lg">
         <CModalHeader closeButton>
           <CModalTitle>Branch Details</CModalTitle>
         </CModalHeader>
@@ -674,7 +685,7 @@ const endIndex = Math.min(indexOfLastItem, filteredBranches.length)
             Close
           </CButton>
         </CModalFooter>
-      </CModal>
+      </CModal> */}
     </div>
   );
 };

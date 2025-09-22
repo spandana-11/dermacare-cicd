@@ -110,17 +110,35 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
       const selectedTests = Array.isArray(t?.tests?.selectedTests) ? t.tests.selectedTests : []
       const testReason = t?.tests?.testReason ?? ''
 
-      const medicines = Array.isArray(t?.prescription?.medicines)
-        ? t.prescription.medicines.map((m) => ({
+     const medicines = Array.isArray(t?.prescription?.medicines)
+      ? t.prescription.medicines.map((m) => {
+        const dur = m?.duration ? `${m.duration}`.trim() : "NA";
+        const unit = m?.durationUnit ? m.durationUnit.trim() : "";
+
+        // Pluralize if duration > 1
+        const durationDisplay =
+          dur !== "NA" && unit
+            ? `${dur} ${Number(dur) > 1 ? `${unit}s` : unit}`
+            : dur;
+
+        return {
           id: m?.id ?? `tmp-${Date.now()}-${Math.random()}`,
-          name: m?.name ?? '',
-          dose: m?.dose ?? '',
-          duration: m?.duration ?? '',
-          remindWhen: m?.food ?? m?.remindWhen ?? '',
-          note: m?.note ?? '',
-          times: m?.times ?? m?.time ?? '',
-        }))
-        : []
+          medicineType: m?.medicineType?.trim() ||"NA",
+          name: m?.name || "",
+          dose: m?.dose || "",
+          remindWhen: m?.remindWhen || "Once A Day",
+          others: m?.others || "",
+          duration: durationDisplay,
+          food: m?.food || "",
+          note: m?.note || "",
+          times: Array.isArray(m?.times)
+            ? m.times.map((t) => `${t}`.trim()).filter(Boolean)
+            : m?.times && typeof m.times === "string"
+              ? m.times.split(",").map((t) => t.trim()).filter(Boolean)
+              : [],
+        };
+      })
+      : [];
 
       const generatedData = t?.treatments?.generatedData ?? {}
       const selectedTestTreatments =
@@ -218,7 +236,11 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
     setUpdateTemplate(true)
     success('Template applied successfully!', { title: 'Success' })
 
-    const payload = { symptomDetails, doctorObs, diagnosis: dx, duration, attachments }
+    const payload = { symptomDetails, doctorObs, diagnosis: dx, duration, attachments, prescription: merged.prescription,
+      tests: merged.tests,
+      treatments: merged.treatments,
+      followUp: merged.followUp, }
+       console.log("🚀 Final Payload:", payload) // debug log
     onNext?.(payload)
   }
 
@@ -284,7 +306,17 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
   }
 
   const handleNext = () => {
-    const payload = { symptomDetails, doctorObs, diagnosis, duration, attachments }
+    const payload = {
+      symptomDetails,
+      doctorObs,
+      diagnosis,
+      duration,
+      attachments,
+      prescription: templateData.prescription, // include current template medicines
+      tests: templateData.tests,
+      treatments: templateData.treatments,
+      followUp: templateData.followUp,
+    }
     console.log('🚀 Submitting payload:', payload)
     onNext?.(payload)
   }

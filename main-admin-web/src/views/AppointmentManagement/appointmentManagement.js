@@ -23,6 +23,8 @@ import { AppointmentData, getBookingBy_ClinicId } from './appointmentAPI'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { getBookingBy_DoctorId } from './appointmentAPI'
+import { COLORS } from '../../Constant/Themes'
+import LoadingIndicator from '../../Utils/loader'
 
 const appointmentManagement = () => {
   const [viewService, setViewService] = useState(null)
@@ -46,6 +48,7 @@ const appointmentManagement = () => {
   const [statusFilters, setStatusFilters] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 7
+  const [sortOrder, setSortOrder] = useState('asc')
 
   const navigate = useNavigate()
 
@@ -204,21 +207,22 @@ const appointmentManagement = () => {
           <button
             onClick={() => toggleFilter('Service & Treatment')}
             className={`btn ${
-              filterTypes.includes('Service & Treatment') ? 'btn-dark' : 'btn-outline-dark'
+              filterTypes.includes('Service & Treatment') ? 'btn-selected' : 'btn-unselected'
             }`}
           >
             Service & Treatment
           </button>
           <button
+          
             onClick={() => toggleFilter('In-clinic')}
-            className={`btn ${filterTypes.includes('In-clinic') ? 'btn-dark' : 'btn-outline-dark'}`}
+            className={`btn ${filterTypes.includes('In-clinic') ? 'btn-selected' : 'btn-unselected'}`}
           >
             In-Clinic
           </button>
           <button
             onClick={() => toggleFilter('Video Consultation')}
             className={`btn ${
-              filterTypes.includes('Video Consultation') ? 'btn-dark' : 'btn-outline-dark'
+              filterTypes.includes('Video Consultation') ? 'btn-selected' : 'btn-unselected'
             }`}
           >
             Video Consultation
@@ -236,15 +240,8 @@ const appointmentManagement = () => {
           }}
         >
           {/* Left: checkboxes container */}
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '0.5rem 1rem',
-              gridColumn: '1 / 2',
-              gridRow: '1 / 2',
-            }}
-          >
+          <div className="d-flex gap-2 flex-wrap" style={{ color: 'var(--color-black)' }}>
+
             {/* <CFormCheck
               label="Pending"
               value="Pending"
@@ -252,18 +249,21 @@ const appointmentManagement = () => {
               checked={statusFilters.includes('Pending')}
             /> */}
                <CFormCheck
+               style={{ color: 'var(--color-black)' }}  
               label="Confirmed"
               value="Confirmed"
               onChange={handleStatusChange}
               checked={statusFilters.includes('Confirmed')}
             />
             <CFormCheck
+            style={{ color: 'var(--color-black)' }}
               label="Active"
               value="In-Progress"
               onChange={handleStatusChange}
               checked={statusFilters.includes('In-Progress')}
             />
             <CFormCheck
+            style={{ color: 'var(--color-black)' }}
               label="Completed"
               value="Completed"
               onChange={handleStatusChange}
@@ -316,7 +316,7 @@ const appointmentManagement = () => {
 
             <CButton
               color="secondary"
-              style={{ flexShrink: 0 }}
+              style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
               onClick={() => {
                 setSelectedServiceTypes([])
                 setSelectedConsultationTypes([])
@@ -362,8 +362,14 @@ const appointmentManagement = () => {
           <CTableBody>
             {loading ? (
               <CTableRow>
-                <CTableDataCell colSpan="8" className="text-center fw-bold text-primary">
-                  Loading appointments...
+                 <CTableDataCell
+                  colSpan="9"
+                  className="text-center  "
+                  style={{ color: 'var(--color-black)' }}
+                >
+                  <div className="d-flex justify-content-center align-items-center">
+                    <LoadingIndicator message="Loading appointments..." />
+                  </div>
                 </CTableDataCell>
               </CTableRow>
             ) : Array.isArray(filteredData) && filteredData.length > 0 ? (
@@ -379,8 +385,15 @@ const appointmentManagement = () => {
                   </CTableDataCell>
                   <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
                   <CTableDataCell>{item.status}</CTableDataCell>
+                   <CTableDataCell>
+                    <CBadge style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}>
+                      {statusLabelMap[item.status] || item.status}
+                    </CBadge>
+                  </CTableDataCell>
+
                   <CTableDataCell>
                     <CButton
+                    style={{ backgroundColor: 'var(--color-black)' }}
                       color="primary"
                       size="sm"
                       onClick={() =>
@@ -396,7 +409,11 @@ const appointmentManagement = () => {
               ))
             ) : (
               <CTableRow>
-                <CTableDataCell colSpan="8" className="text-center fw-bold">
+                 <CTableDataCell
+                  colSpan="9"
+                  className="text-center"
+                  style={{ color: 'var(--color-black)' }}
+                >
                   No appointments found.
                 </CTableDataCell>
               </CTableRow>
@@ -412,8 +429,8 @@ const appointmentManagement = () => {
               style={{
                 margin: '0 5px',
                 padding: '5px 10px',
-                backgroundColor: currentPage === index + 1 ? '#007bff' : '#fff',
-                color: currentPage === index + 1 ? '#fff' : '#000',
+                backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
+                color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
                 border: '1px solid #ccc',
                 borderRadius: '5px',
               }}

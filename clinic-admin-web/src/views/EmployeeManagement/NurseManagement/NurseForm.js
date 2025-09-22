@@ -16,6 +16,7 @@ import { toast } from 'react-toastify'
 import { actions, features } from '../../../Constant/Features'
 import capitalizeWords from '../../../Utils/capitalizeWords'
 import { useHospital } from '../../Usecontext/HospitalContext'
+import UserPermissionModal from '../UserPermissionModal'
 
 const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fetchNurses }) => {
   const emptyPermissions = {} // ✅ no feature is selected by default
@@ -1127,97 +1128,37 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                   User Permissions
                 </CButton>
               </div>
+                 <UserPermissionModal
+                              show={showPModal}
+                              onClose={() => setShowPModal(false)}
+                              features={features}
+                              actions={actions}
+                              permissions={formData.permissions}
+                              toggleFeature={toggleFeature}
+                              toggleAllActions={toggleAllActions}
+                              togglePermission={togglePermission}
+                              onSave={() => {
+                                console.log('Saved Permissions', formData.permissions)
+                                setShowPModal(false)
+                              }}
+                            />
 
-              {showPModal && (
-                <div className="modal fade show d-block" tabIndex="-1">
-                  <div className="modal-dialog modal-lg">
-                    <div className="modal-content">
-                      <div className="modal-header">
-                        <h5 className="modal-title">Set User Permissions</h5>
-                        <button
-                          type="button"
-                          className="btn-close"
-                          onClick={() => setShowPModal(false)}
-                        ></button>
-                      </div>
-                      <div className="modal-body">
-                        <div className="row">
-                          {features.map((feature) => {
-                            const isFeatureChecked = !!formData.permissions[feature]
-                            const allSelected =
-                              isFeatureChecked &&
-                              formData.permissions[feature].length === actions.length
+          <UserPermissionModal
+                show={showPModal}
+                onClose={() => setShowPModal(false)}
+                features={features}
+                actions={actions}
+                permissions={formData.permissions}
+                toggleFeature={toggleFeature}
+                toggleAllActions={toggleAllActions}
+                togglePermission={togglePermission}
+                onSave={() => {
+                  console.log('Saved Permissions', formData.permissions)
+                  setShowPModal(false)
+                }}
+              />
 
-                            return (
-                              <div key={feature} className="col-md-5 mb-3 border p-2 rounded mx-4">
-                                {/* Feature Checkbox */}
-                                <div className="d-flex justify-content-between align-items-center">
-                                  <label className="fw-bold">
-                                    <input
-                                      type="checkbox"
-                                      checked={isFeatureChecked}
-                                      onChange={() => toggleFeature(feature)}
-                                    />{' '}
-                                    {feature}
-                                  </label>
-
-                                  {/* Select All */}
-                                  <label>
-                                    <input
-                                      type="checkbox"
-                                      disabled={!isFeatureChecked}
-                                      checked={allSelected}
-                                      onChange={() => toggleAllActions(feature)}
-                                    />{' '}
-                                    Select All
-                                  </label>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="d-flex flex-wrap gap-3 mt-2">
-                                  {actions.map((action) => (
-                                    <label key={action} className="d-flex align-items-center gap-1">
-                                      <input
-                                        type="checkbox"
-                                        disabled={!isFeatureChecked}
-                                        checked={
-                                          formData.permissions[feature]?.includes(action) || false
-                                        }
-                                        onChange={() => togglePermission(feature, action)}
-                                      />
-                                      {action}
-                                    </label>
-                                  ))}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                      <div className="modal-footer">
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={() => setShowPModal(false)}
-                        >
-                          Close
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          onClick={() => setShowPModal(false)}
-                        >
-                          Save Permissions
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* backdrop */}
-              {showPModal && <div className="modal-backdrop fade show"></div>}
-            </CForm>
+          </CForm>
           )}
         </CModalBody>
         <CModalFooter>

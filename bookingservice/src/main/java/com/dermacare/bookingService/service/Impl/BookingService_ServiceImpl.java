@@ -189,9 +189,18 @@ public class BookingService_ServiceImpl implements BookingService_Service {
     }
 
 	private List<BookingResponse> toResponses(List<Booking> bookings) {
-		return  new ObjectMapper().convertValue(bookings,new TypeReference<List<BookingResponse>>(){});
-	}
-	
+		
+		
+		
+		List<BookingResponse> res = new ObjectMapper().convertValue(bookings,new TypeReference<List<BookingResponse>>(){});
+		for(BookingResponse bres : res) {
+			//System.out.println(bres.getBookingId());
+			DoctorSaveDetailsDTO dto = getPrescriptionpdf(bres.getBookingId());
+			//System.out.println(dto);
+			if(dto != null ) {
+			bres.setPrescriptionPdf(dto.getPrescriptionPdf());}}
+		return res;
+	}	
 	
 	public ResponseEntity<?> getAppointsByPatientId(String patientId) {
 		ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();

@@ -30,6 +30,15 @@ const ConsentTabs = () => {
               Procedure Consent Form
             </CNavLink>
           </CNavItem>
+          <CNavItem>
+            <CNavLink
+              active={activeKey === 3}
+              onClick={() => setActiveKey(2)}
+              style={{ color: 'var(--color-black)' }}
+            >
+              Privacy and policy
+            </CNavLink>
+          </CNavItem>
         </CNav>
 
         {/* Tab Content */}
@@ -39,6 +48,9 @@ const ConsentTabs = () => {
           </CTabPane>
           <CTabPane visible={activeKey === 2}>
             <ProcedureConsentForm />
+          </CTabPane>
+          <CTabPane visible={activeKey === 3}>
+           
           </CTabPane>
         </CTabContent>
       </CCardBody>

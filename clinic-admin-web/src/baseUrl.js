@@ -21,6 +21,7 @@ export const GetBookingBy_ClinicId = `customer/getAllBookedServicesByClinicId`
 export const GetBookingBy_DoctorId = `customer/getBookingByDoctorId`
 //appointments
 export const Booking_sevice = `http://${wifiUrl}/api`
+
 export const allBooking_sevices = `getAllBookedServices`
 
 // Appointment Management

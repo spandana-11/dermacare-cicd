@@ -12,6 +12,8 @@ import {
   CModalFooter,
   CRow,
   CCol,
+  CCard,
+  CCardHeader,
   CFormSelect,
   CTable,
   CTableHead,
@@ -26,7 +28,7 @@ import CIcon from '@coreui/icons-react'
 import { cilSearch } from '@coreui/icons'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import { getAllServices, postServiceData, updateServiceData, deleteServiceData } from './ServiceAPI'
+import { getAllServices, postServiceData, updateServiceData, deleteServiceData, getServiceByServiceId } from './ServiceAPI'
 import { CategoryData } from '../categoryManagement/CategoryAPI'
 import Select from 'react-select'
 
@@ -44,7 +46,9 @@ const ServiceManagement = () => {
   const [serviceIdToDelete, setServiceIdToDelete] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
-  
+    const [selectedService, setSelectedService] = useState(null)
+  const [viewModalVisible, setViewModalVisible] = useState(false)
+
   const [errors, setErrors] = useState({
     serviceName: '',
     categoryId: '',
@@ -93,6 +97,11 @@ const ServiceManagement = () => {
       setLoading(false)
     }
   }
+  const handleViewService=async(serviceId)=>{
+    const data=await getServiceByServiceId(serviceId);
+    setSelectedService(data);
+    setViewModalVisible(true);
+  };
 
   useEffect(() => {
     fetchData()
@@ -276,7 +285,11 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
       toast.error('Failed to add service')
     }
   }
-
+  const handleServiceView = (service) => {
+    console.log("Clicked Service", service)
+    setSelectedService(service)
+    setViewModalVisible(true)
+  }
   const handleServiceEdit = (service) => {
     setUpdatedService({
       ServiceId: service.serviceId,
@@ -380,23 +393,27 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
   return (
     <div className="container-fluid p-4">
       <ToastContainer />
+      <CCard>
 
-      <CForm className="d-flex justify-content-between mb-3">
-        <CInputGroup style={{ width: '50%' }}>
-          <CFormInput
-            placeholder="Search by Service Name and Category Name...."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <CInputGroupText>
-            <CIcon icon={cilSearch} />
-          </CInputGroupText>
-        </CInputGroup>
+      <CCardHeader className="d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Service Management</h5>
+          <div className="d-flex" style={{ gap: '1rem' }}>
+            <CInputGroup style={{ width: '300px' }}>
+              <CFormInput
+                placeholder="Search Service / Category..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <CInputGroupText>
+                <CIcon icon={cilSearch} />
+              </CInputGroupText>
+            </CInputGroup>
 
-        <CButton color="primary" onClick={() => setModalVisible(true)}>
-          Add Service
-        </CButton>
-      </CForm>
+            <CButton color="primary" onClick={() => setModalVisible(true)}>
+              + Add Service
+            </CButton>
+          </div>
+        </CCardHeader>
 
       {loading ? (
         <div>Loading...</div>
@@ -407,11 +424,11 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
           <CTable striped hover responsive>
             <CTableHead>
               <CTableRow>
-                <CTableHeaderCell style={{width:'120px'}}>S.No</CTableHeaderCell>
+                <CTableHeaderCell style={{width:'80px'}}>S.No</CTableHeaderCell>
                 <CTableHeaderCell>Service Name</CTableHeaderCell>
                 <CTableHeaderCell>Category Name</CTableHeaderCell>
                 <CTableHeaderCell>Description</CTableHeaderCell>
-                <CTableHeaderCell>Actions</CTableHeaderCell>
+                <CTableHeaderCell  style={{width:'80px'}}>Actions</CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
@@ -431,19 +448,30 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
                           width:'230px',
                         }}
                       >
+                           <CButton
+                          color="primary"
+                          className="ms-2"
+                          size="sm"
+                          onClick={() => handleViewService(row.serviceId)}
+                          style={{width:'80px'}}
+                        >
+                          View
+                        </CButton>
                         <CButton
-                          color='link'
-                          className="text-success p-0"
+                          color='warning'
+                          className="ms-2"
+                          size="sm"
                           onClick={() => handleServiceEdit(row)}
                           style={{marginRight:'10px', width:'80px'}}
                         >
                           Edit
                         </CButton>
                         <CButton
-                          color="link"
-                          className="text-danger p-0"
+                          color="danger"
+                          className="ms-2"
+                          size="sm"
                           onClick={() => handleServiceDelete(row.serviceId)}
-                          style={{width:'80px'}}
+                          style={{width:'80px', color:'white'}}
                         >
                           Delete
                         </CButton>
@@ -465,7 +493,7 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
 {filteredData.length > 0 && (
   <div className="d-flex justify-content-between align-items-center mt-3">
     <div>
-      <span className="me-2">Rows per page:</span>
+      <span className="me-2 ms-2">Rows per page:</span>
       <CFormSelect
         value={itemsPerPage}
         onChange={(e) => {
@@ -629,6 +657,38 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
     </CButton>
   </CModalFooter>
 </CModal>
+
+        {/* View Service Modal */}
+      <CModal visible={viewModalVisible} onClose={()=>setViewModalVisible(false)}>
+        <CModalHeader closeButton>
+            <CModalTitle>Service Details</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          {selectedService ? (
+            <>
+              <p><strong>Service Name : </strong>{selectedService.serviceName}</p>
+              <p><strong>Category Name : </strong>{selectedService.categoryName}</p>
+              <p><strong>Description : </strong>{selectedService.description || 'N/A'}</p>
+              {selectedService.serviceImage &&(
+                <div className="text-center my-3">
+                  <img
+                    src={`data:image/jpeg;base64,${selectedService.serviceImage}`}
+                    alt={selectedService.serviceName}
+                    style={{maxWidth:"100%", borderRadius:"8px"}}
+                    />
+                </div>
+              )}
+            </>
+          ):(
+            <p>No details available</p>
+          )}
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="secondary" onClick={()=>setViewModalVisible(false)}>
+            Close
+          </CButton>
+        </CModalFooter>
+        </CModal>
 
       {/* Edit Service Modal */}
       <CModal
@@ -795,6 +855,7 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
           </CButton>
         </CModalFooter>
       </CModal>
+      </CCard>
     </div>
   )
 }

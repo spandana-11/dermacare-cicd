@@ -15,6 +15,8 @@ import {
   useColorModes,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
+import ThemeSelector from '../Constant/ThemeSelector'
+
 import {
   cilBell,
   cilContrast,
@@ -27,6 +29,7 @@ import {
 
 import { AppBreadcrumb } from './index'
 import { AppHeaderDropdown } from './header/index'
+import { COLORS } from '../Constant/Themes'
 
 const AppHeader = () => {
   const headerRef = useRef()
@@ -43,7 +46,7 @@ const AppHeader = () => {
   }, [])
 
   return (
-    <CHeader position="sticky" className="mb-4 p-0" ref={headerRef}>
+    <CHeader position="sticky" className="mb-4 p-0" ref={headerRef}   style={{ backgroundColor: 'var(--color-bgcolor)' }}>
       <CContainer className="border-bottom px-4" fluid>
         <CHeaderToggler
           onClick={() => dispatch({ type: 'set', sidebarShow: !sidebarShow })}
@@ -128,6 +131,7 @@ const AppHeader = () => {
           <li className="nav-item py-1">
             <div className="vr h-100 mx-2 text-body text-opacity-75"></div>
           </li>
+          <ThemeSelector />
           <AppHeaderDropdown />
         </CHeaderNav>
       </CContainer>

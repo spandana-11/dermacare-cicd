@@ -16,7 +16,8 @@ import {
   getSubservices, 
   addSubservices, 
   deleteSubservices,
-  getSubService
+  getSubService,
+  getSubServiceBySubServiceId
 } from '../../baseUrl'
 import { toast } from 'react-toastify'
 // export default postSubService
@@ -245,6 +246,21 @@ export const getSubservicesData = async () => {
       console.error('Unexpected error fetching subservices:', error.message || error)
       throw error
     }
+  }
+}
+export const getSubServiceId = async (subServiceId) => {
+  try {
+    const url = `${BASE_URL}/${getSubServiceBySubServiceId}/${subServiceId}`
+    console.log(`${BASE_URL}/${getSubServiceBySubServiceId}/${subServiceId}`)
+
+    const response = await axios.get(url)
+
+    console.log('🔎 Full API Response:', response.data?.data)
+
+    return response.data
+  } catch (error) {
+    console.error('❌ Error fetching sub-service data:', error)
+    throw error
   }
 }
 

@@ -782,3 +782,72 @@ export const getBookedSlots = async (doctorId) => {
 
 
 
+export const getAllMedicines = async () => {
+  const clinicId = localStorage.getItem("hospitalId");
+
+  if (!clinicId) {
+    console.warn("⚠️ No hospitalId found in localStorage");
+    return [];
+  }
+
+  try {
+    const url = `${baseUrl}/getListOfMedicinesByClinicId/${clinicId}`;
+    console.log("📡 Fetching medicines from:", url);
+
+    const response = await api.get(url);
+    console.log("✅ Raw Medicines Response:", response.data);
+
+    if (response?.data?.success && Array.isArray(response.data.data)) {
+      const medicines = response.data.data[0]?.listOfMedicines || [];
+
+      // Convert array of strings → array of objects with id + name
+      const normalized = medicines.map((name, index) => ({
+        id: index, // you can replace with a UUID if needed
+        name,
+      }));
+
+      console.log("📋 Extracted Medicines:", normalized);
+      return normalized;
+    } else {
+      console.error("❌ Failed to fetch medicines:", response?.data?.message);
+      return [];
+    }
+  } catch (error) {
+    console.error("❌ Error fetching medicines:", error.response?.data || error.message);
+    return [];
+  }
+};
+
+// ✅ Add or Search Medicine
+export const addOrSearchMedicine = async (medicineName) => {
+  const clinicId = localStorage.getItem("hospitalId");
+
+  if (!clinicId) {
+    console.warn("⚠️ No hospitalId found in localStorage");
+    return null;
+  }
+
+  try {
+    const url = `${baseUrl}/addOrSearchListOfMedicine`;
+    const payload = {
+      clinicId,
+      listOfMedicines: [medicineName], // 👈 always send as array
+    };
+
+    console.log("📡 Adding medicine:", payload);
+
+    const response = await api.post(url, payload);
+
+    if (response?.data?.success) {
+      console.log("✅ Medicine added:", response.data);
+      return true;
+    } else {
+      console.error("❌ Failed to add medicine:", response?.data?.message);
+      return false;
+    }
+  } catch (error) {
+    console.error("❌ Error adding medicine:", error.response?.data || error.message);
+    return false;
+  }
+};
+

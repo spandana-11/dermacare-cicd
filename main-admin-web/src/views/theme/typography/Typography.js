@@ -108,7 +108,7 @@
 //       </CCard>
 //       <CCard className="mb-4">
 //         <div className="card-header">Display headings</div>
-//         <div className="card-body">
+<div className="card-body">
 //           <p>
 //             Traditional heading elements are designed to work best in the meat of your page content.
 //             When you need a heading to stand out, consider using a <strong>display heading</strong>

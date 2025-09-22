@@ -596,6 +596,7 @@ const CustomerManagement = () => {
                   value={formData.fullName}
                   onChange={handleInputChange}
                   invalid={!!formErrors.fullName}
+                  style={{textTransform:"capitalize"}}
                 />
                 {formErrors.fullName && (
                   <div className="text-danger small">{formErrors.fullName}</div>
@@ -701,7 +702,11 @@ const CustomerManagement = () => {
             </CRow>
 
             <div className="d-flex justify-content-end">
-              <CButton type="submit" color="success" className="me-2" style={{ color: 'white' }}>
+               <CButton
+                type="submit"
+                color="success"
+                style={{ backgroundColor: 'var(--color-black)', color: 'white', border: 'none', marginRight:'5px'}}
+              >
                 {isEditing ? 'Update' : 'Submit'}
               </CButton>
               <CButton color="secondary" onClick={handleCancel}>

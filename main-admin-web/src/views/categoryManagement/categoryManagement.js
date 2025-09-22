@@ -12,10 +12,8 @@ import {
   CModalTitle,
   CModalBody,
   CModalFooter,
-  CHeader,
   CRow,
   CCol,
-  CFormTextarea,
   CTable,
   CTableHead,
   CTableRow,
@@ -25,8 +23,10 @@ import {
   CPagination,
   CPaginationItem,
   CFormSelect,
+  CCard,
+  CCardHeader,
+  CCardBody,
 } from '@coreui/react'
-import DataTable from 'react-data-table-component'
 import CIcon from '@coreui/icons-react'
 import { cilSearch } from '@coreui/icons'
 import { ToastContainer, toast } from 'react-toastify'
@@ -49,7 +49,7 @@ const CategoryManagement = () => {
   const [viewCategory, setViewCategory] = useState(null)
   const [editCategoryMode, setEditCategoryMode] = useState(false)
   const [categoryToEdit, setCategoryToEdit] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
+
   const [errors, setErrors] = useState({
     categoryName: '',
     categoryImage: '',
@@ -74,9 +74,9 @@ const CategoryManagement = () => {
 
   const fetchData = async () => {
     setLoading(true)
-    setError(null)
+    setError(null)  
     try {
-      console.log('CategoryData calling')
+       console.log('CategoryData calling')
       const data = await CategoryData()
       console.log('API success:', data.data)
       setCategory(data.data)
@@ -332,121 +332,173 @@ const CategoryManagement = () => {
     setIsModalVisible(false)
   }
 
-  // Table columns
-  const columns = [
-    {
-      name: 'S.No',
-      selector: (row, index) => (currentPage - 1) * itemsPerPage + index + 1,
-      sortable: true,
-      width: '10%',
-      headerStyle: { textAlign: 'center' },
-    },
-    {
-      name: 'Category Name',
-      selector: (row) => row.categoryName,
-      sortable: true,
-      width: '50%',
-      cell: (row) => (
-        <div style={{ textAlign: 'center', fontSize: '20px' }}>{row.categoryName}</div>
-      ),
-      headerStyle: { textAlign: 'center' },
-    },
-    {
-      name: 'Actions',
-      cell: (row) => (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            width: '230px',
-          }}
-        >
-          <CButton
-            className="text-primary p-0"
-            onClick={() => setViewCategory(row)}
-            style={{ marginRight: '10px', width: '80px' }}
-          >
-            View
-          </CButton>
-
-          <CButton
-            color="link"
-            className="text-success p-0"
-            onClick={() => handleCategoryEdit(row)}
-            style={{ marginRight: '10px', width: '80px' }}
-          >
-            Edit
-          </CButton>
-
-          <CButton
-            color="link"
-            className="text-danger p-0"
-            onClick={() => handleCategoryDelete(row.categoryId)}
-            style={{ width: '80px' }}
-          >
-            Delete
-          </CButton>
-        </div>
-      ),
-      width: '150px',
-      headerStyle: { textAlign: 'center' },
-    },
-  ]
-
   return (
-    <div style={{ overflow: 'hidden' }}>
+       <CCard className="mt-4">
       <ToastContainer />
-      <div>
-        <CForm className="d-flex justify-content-between mb-3">
-          <div style={{ display: 'flex', justifyContent: 'flex-start', marginLeft: '40px' }}>
-            <CInputGroup className="mb-3" style={{ width: '300px' }}>
-              <CFormInput
-                type="text"
-                placeholder="Search by CategoryName"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ height: '40px' }}
-              />
-              <CInputGroupText style={{ height: '40px' }}>
-                <CIcon icon={cilSearch} />
-              </CInputGroupText>
-            </CInputGroup>
-          </div>
-
-          <CButton
-            color="primary"
-            style={{ height: '40px', marginRight: '100px' }}
-            onClick={(e) => {
-              e.preventDefault()
-              setModalVisible(true)
-            }}
-          >
-            Add Category
-          </CButton>
-        </CForm>
+        <CCardHeader>
+      <div className="d-flex justify-content-between align-items-center">
+        <h5 className="mb-0">Categories</h5>
+        <CButton color="primary" onClick={() => setModalVisible(true)}>
+          Add Category
+        </CButton>
       </div>
+      </CCardHeader>
 
+      <CCardBody>
+        <CForm className="d-flex justify-content-between align-items-center mb-4">
+                    <div className="col-4 mx-2">
+
+          <CInputGroup style={{ width: '300px' }}>
+            <CFormInput
+              type="text"
+              placeholder="Search by Category Name"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+           
+            <CInputGroupText>
+              <CIcon icon={cilSearch} />
+            </CInputGroupText>
+          </CInputGroup>
+           </div>
+        </CForm>
+
+        <CTable striped hover responsive>
+          <CTableHead>
+            <CTableRow>
+              <CTableHeaderCell>S.No</CTableHeaderCell>
+              <CTableHeaderCell>Category Name</CTableHeaderCell>
+              <CTableHeaderCell className="text-center">
+                Actions
+              </CTableHeaderCell>
+            </CTableRow>
+          </CTableHead>
+          <CTableBody>
+            {currentItems.length > 0 ? (
+              currentItems.map((row, index) => (
+                <CTableRow key={row.categoryId}>
+                  <CTableDataCell>
+                    {(currentPage - 1) * itemsPerPage + index + 1}
+                  </CTableDataCell>
+                  <CTableDataCell>{row.categoryName}</CTableDataCell>
+                  <CTableDataCell className="text-center">
+                  <CButton
+  color="primary"
+  size="sm"
+  onClick={() => setViewCategory(row)}
+>
+  View
+</CButton>
+<CButton
+  color="warning"
+  className="ms-2"
+  size="sm"
+  onClick={() => handleCategoryEdit(row)}
+>
+  Edit
+</CButton>
+<CButton
+  color="danger"
+  className="ms-2"
+  size="sm"
+  onClick={() => handleCategoryDelete(row.categoryId)}
+>
+  Delete
+</CButton>
+                  </CTableDataCell>
+                </CTableRow>
+              ))
+            ) : (
+              <CTableRow>
+                <CTableDataCell colSpan={3} className="text-center text-muted">
+                  {searchQuery
+                    ? 'No matching categories found.'
+                    : 'No categories available.'}
+                </CTableDataCell>
+              </CTableRow>
+            )}
+          </CTableBody>
+        </CTable>
+
+        {/* Pagination */}
+        {filteredData.length > itemsPerPage && (
+          <div className="d-flex justify-content-between align-items-center mt-3">
+            <div>
+              <span className="me-2">Rows per page:</span>
+              <CFormSelect
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
+                style={{ width: '80px', display: 'inline-block' }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </CFormSelect>
+            </div>
+            <div>
+              <span className="me-3">
+                Showing {indexOfFirstItem + 1} to{' '}
+                {Math.min(indexOfLastItem, filteredData.length)} of{' '}
+                {filteredData.length} entries
+              </span>
+              <CPagination>
+                <CPaginationItem
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </CPaginationItem>
+                {[...Array(totalPages)].map((_, i) => (
+                  <CPaginationItem
+                    key={i + 1}
+                    active={i + 1 === currentPage}
+                    onClick={() => setCurrentPage(i + 1)}
+                  >
+                    {i + 1}
+                  </CPaginationItem>
+                ))}
+                <CPaginationItem
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(p + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </CPaginationItem>
+              </CPagination>
+            </div>
+          </div>
+        )}
+      </CCardBody>
+
+      {/* View Category Modal */}
       {viewCategory && (
-        <CModal visible={!!viewCategory} onClose={() => setViewCategory(null)} size="md">
+        <CModal
+          visible={!!viewCategory}
+          onClose={() => setViewCategory(null)}
+          size="md"
+        >
           <CModalHeader>
             <CModalTitle>Category Details</CModalTitle>
           </CModalHeader>
           <CModalBody>
-            <CRow className="mb-4">
+            <CRow className="mb-3">
               <CCol sm={4}>
                 <strong>Category ID :</strong>
               </CCol>
               <CCol sm={8}>{viewCategory.categoryId}</CCol>
             </CRow>
-            <CRow className="mb-4">
+            <CRow className="mb-3">
               <CCol sm={4}>
                 <strong>Category Name :</strong>
               </CCol>
               <CCol sm={8}>{viewCategory.categoryName}</CCol>
             </CRow>
-
-            <CRow className="mb-4">
+            <CRow>
               <CCol sm={4}>
                 <strong>Category Image :</strong>
               </CCol>
@@ -461,11 +513,11 @@ const CategoryManagement = () => {
                   <span>No image available</span>
                 )}
               </CCol>
-            </CRow> 
+            </CRow>
           </CModalBody>
-          <CModalFooter></CModalFooter>
         </CModal>
       )}
+      
 
       <CModal visible={modalVisible} onClose={handleCancelAdd} backdrop="static">
         <CModalHeader>
@@ -641,141 +693,7 @@ const CategoryManagement = () => {
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
       />
-
-      {loading ? (
-        <div
-          style={{ display: 'flex', justifyContent: 'center', height: '300px', fontSize: '22px' }}
-        >
-          <span>Loading...</span>
-        </div>
-      ) : error ? (
-        <div>{error}</div>
-      ) : (
-        <div>
-          {filteredData.length > 0 ? (
-            <>
-              <DataTable 
-                columns={columns} 
-                data={currentItems} 
-                pagination={false}
-              />
-              
-              {/* Pagination Controls */}
-              {filteredData.length > itemsPerPage && (
-                <div className="d-flex justify-content-between align-items-center mt-3">
-                  <div>
-                    <span className="me-2">Rows per page:</span>
-                    <CFormSelect
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value))
-                        setCurrentPage(1)
-                      }}
-                      style={{width:'80px', display:'inline-block'}}
-                    >
-                      <option value={5}>5</option>
-                      <option value={10}>10</option>
-                      <option value={25}>25</option>
-                      <option value={50}>50</option>
-                    </CFormSelect>
-                  </div>
-                  <div>
-                    <span className="me-3">
-                      Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredData.length)} of {filteredData.length} entries
-                    </span>
-                    <CPagination>
-                      <CPaginationItem
-                        onClick={() => setCurrentPage(prev => Math.max(prev-1, 1))}
-                        disabled={currentPage === 1}
-                      >
-                        Previous
-                      </CPaginationItem>
-                      {[...Array(totalPages)].map((_, i) => (
-                        <CPaginationItem
-                          key={i+1}
-                          active={i+1 === currentPage}
-                          onClick={() => setCurrentPage(i+1)}
-                        >
-                          {i+1}
-                        </CPaginationItem>
-                      ))}
-                      <CPaginationItem
-                        onClick={() => setCurrentPage(prev => Math.min(prev+1, totalPages))}
-                        disabled={currentPage === totalPages}
-                      >
-                        Next
-                      </CPaginationItem>
-                    </CPagination>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : searchQuery ? (
-            <div style={{ textAlign: 'center', fontSize: '20px', color: 'gray' }}>
-              No data found
-            </div>
-          ) : (
-            <>
-              <DataTable 
-                columns={columns} 
-                data={currentItems} 
-                pagination={false}
-              />
-              
-              {/* Pagination Controls */}
-              {category.length > itemsPerPage && (
-                <div className="d-flex justify-content-between align-items-center mt-3">
-                  <div>
-                    <span className="me-2">Rows per page:</span>
-                    <CFormSelect
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value))
-                        setCurrentPage(1)
-                      }}
-                      style={{width:'80px', display:'inline-block'}}
-                    >
-                      <option value={5}>5</option>
-                      <option value={10}>10</option>
-                      <option value={25}>25</option>
-                      <option value={50}>50</option>
-                    </CFormSelect>
-                  </div>
-                  <div>
-                    <span className="me-3">
-                      Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, category.length)} of {category.length} entries
-                    </span>
-                    <CPagination>
-                      <CPaginationItem
-                        onClick={() => setCurrentPage(prev => Math.max(prev-1, 1))}
-                        disabled={currentPage === 1}
-                      >
-                        Previous
-                      </CPaginationItem>
-                      {[...Array(Math.ceil(category.length / itemsPerPage))].map((_, i) => (
-                        <CPaginationItem
-                          key={i+1}
-                          active={i+1 === currentPage}
-                          onClick={() => setCurrentPage(i+1)}
-                        >
-                          {i+1}
-                        </CPaginationItem>
-                      ))}
-                      <CPaginationItem
-                        onClick={() => setCurrentPage(prev => Math.min(prev+1, Math.ceil(category.length / itemsPerPage)))}
-                        disabled={currentPage === Math.ceil(category.length / itemsPerPage)}
-                      >
-                        Next
-                      </CPaginationItem>
-                    </CPagination>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
-    </div>
+    </CCard>
   ) 
 }
 

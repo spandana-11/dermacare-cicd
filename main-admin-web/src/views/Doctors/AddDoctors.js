@@ -3,7 +3,7 @@
   import CIcon from '@coreui/icons-react'
   import { cilUser } from '@coreui/icons'
   import axios from 'axios'
-  import {AddDoctorByAdmin} from './DoctorAPI'
+  import {AddDoctorByAdmin, GetClinicBranches } from './DoctorAPI'
   import { useHospital } from "../../Usecontext/HospitalContext"
 
   import { ToastContainer, toast } from 'react-toastify'
@@ -126,7 +126,7 @@
       experience: '',
       qualification: '',
       associationsOrMemberships: '',
-      branch: '',
+      branch: [],
       availableDays: '', // array of selected days
       availableTimes: '', // array of selected time slots
       profileDescription: '',
@@ -166,7 +166,8 @@
     const [errors, setErrors] = useState({})
     const [currentPage, setCurrentPage]=useState(1);
     const [itemsPerPage, setItemsPerPage]=useState(5);
-
+const [branchOptions, setBranchOptions] = useState([])
+const [branchLoading, setBranchLoading] = useState(false)
     const availableDays = (value, type) => {
       if (type === 'start') {
         setStartDay(value)
@@ -299,33 +300,44 @@
       }
     }
     const hospitalId = localStorage.getItem('HospitalId')
+useEffect(() => {
+  const fetchAllData = async () => {
+    setLoading(true)
+    setBranchLoading(true)
 
-    useEffect(() => {
-      const fetchAllData = async () => {
-        try {
-          setLoading(true) // ✅ set loading true before fetch
-
-          await fetchData()
-          // await serviceData()
-
-          const data = await fetchHospitalDetails(hospitalId)
-
-          if (data) {
-            // setDoctorData(data)
-            setShowErrorMessage('')
-          } else {
-            setShowErrorMessage('Hospital data not found')
-          }
-        } catch (err) {
-          console.error(err)
-          setShowErrorMessage('Failed to fetch hospital details')
-        } finally {
-          setLoading(false) // ✅ always set to false at the end
-        }
+    try {
+      // 1️⃣ Fetch main hospital data
+      const data = await fetchHospitalDetails(hospitalId)
+      if (data) {
+        // setDoctorData(data) // uncomment if needed
+        setShowErrorMessage('')
+      } else {
+        setShowErrorMessage('Hospital data not found')
       }
 
-      fetchAllData()
-    }, [])
+      // 2️⃣ Fetch clinic branches
+      const response = await GetClinicBranches(clinicId)
+      console.log('Branch API response:', response)
+
+      const branches = response.data || [] // safely extract array
+
+      const formatted = branches.map((b) => ({
+        value: b.branchId || b.id || b.name, // adjust per API
+        label: b.branchName || b.name,
+      }))
+      console.log('i am formatted', formatted)
+      setBranchOptions(formatted)
+    } catch (err) {
+      console.error('❌ Error fetching data:', err)
+      setShowErrorMessage('Failed to fetch hospital details')
+    } finally {
+      setLoading(false)
+      setBranchLoading(false)
+    }
+  }
+
+  fetchAllData()
+}, [hospitalId, clinicId]) // add dependencies if these values can change
 
     useEffect(() => {
       const clnicId = localStorage.getItem('HospitalId')
@@ -540,7 +552,7 @@
           experience: form.experience,
           qualification: form.qualification,
           associationsOrMemberships: form.associationsOrMemberships,
-          branch: form.branch,
+        branches: form.branch,
           specialization: form.specialization,
           availableDays: form.availableDays,
           availableTimes: form.availableTimes,
@@ -1381,16 +1393,27 @@
                   }}
                 />
               </CCol>
-              <CCol md={6}>
-                <CFormLabel>Branch</CFormLabel>
-                <CFormInput
-                  value={form.branch}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/[0-9]/g, '')
-                    setForm((p) => ({ ...p, branch: value }))
-                  }}
-                />
-              </CCol>
+             <CCol md={6}>
+  <CFormLabel>Branch</CFormLabel>
+  <Select
+    isMulti
+    options={branchOptions} // [{ value: 'H_1-B_1', label: 'punjagutta' }, ...]
+   value={branchOptions.filter((opt) =>
+  Array.isArray(form.branch) && form.branch.some((b) => b.branchId === opt.value)
+)}
+
+    onChange={(selected) =>
+      setForm((prev) => ({
+        ...prev,
+        branch: selected.map((opt) => ({
+          branchId: opt.value,
+          branchName: opt.label,
+        })),
+      }))
+    }
+    placeholder="Select branches..."
+  />
+</CCol>
             </CRow>
             <ChipSection
               label="Area of Expertise"

@@ -84,7 +84,11 @@ const routes = [
     name: 'Appointment Details',
     element: AppointmentDetails,
   },
-  
+  {
+  path: '/branch-details/:branchId',
+  name: 'Branch Details',
+  element: React.lazy(() => import('./views/clinicManagement/BranchDetails')),
+},
   // AppointmentDetails
   { path: '/reassign-Appointment', name: 'Reassign Appointment', element: ReassignAppointment },
 

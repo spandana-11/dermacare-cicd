@@ -23,6 +23,7 @@ export const DELETE_SERVICE_URL = `deleteService`
 export const updateService = 'updateByServiceId'
 
 export const getService = 'getServiceById'
+// export const getServiceByServiceId='getServiceByServiceId'
 export const Category = 'category/getServices'
  
 // login
@@ -53,9 +54,12 @@ export const postAllQuestionsAndAnswers='admin/clinicQA/postQuestionsAndAnswer'
 export const DoctorAllData = '/clinic-admin/doctors/hospitalById'
 export const AddDoctor = 'clinic-admin/addDoctor'
 
-export const UpdateDoctor = 'clinic-admin/updateClinic'
+export const UpdateDoctor = 'admin/updateDoctor'
 
 export const deleteDoctor = 'clinic-admin/deleteClinic'
+export const GetBranches_ByClinicId = 'admin/getBranchByClinicId'
+
+export const getDoctorsByHospitalIdAndBranchId='admin/getDoctorsByHospitalIdAndBranchId'
 
 // Customer Management
 export const CustomerAllData = 'admin/getAllCustomers'
@@ -163,7 +167,7 @@ export const getDoctorByClinicId = 'doctors/hospitalById'
 export const subservice = 'getSubServicesByServiceId'
 export const getSubServicesbyserviceId = 'serviceId'
 export const getadminSubServicesbyserviceId = `admin/getSubServicesByServiceId`
-export const getSubServiceDetailsBySubServiceId = `admin/getSubServiceDetailsBySubServiceId`
+export const getSubServiceBySubServiceId = `admin/getSubServiceBySubServiceId`
 export const getservice = 'admin/getServiceById'
 
 export const addDoctorUrl=`admin/addDoctor`
@@ -189,6 +193,8 @@ export const getBranchById='admin/getBranchById'
 export const getAllBranches='admin/getAllBranches'
 
 export const updateBranches='admin/updateBranch'
+
+// export const getBranchByClinicAndBranchId='admin/getBranchByClinicAndBranchId'
 
 //Procedure CRUD
 

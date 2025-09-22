@@ -35,7 +35,7 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine, onAdd, 
   // Fetch medicine types
   useEffect(() => {
     const fetchTypes = async () => {
-      const types = await getMedicineTypes(); 
+      const types = await getMedicineTypes();
       setMedicineTypes(types || []);
     };
     fetchTypes();
@@ -139,8 +139,21 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine, onAdd, 
           {/* Dosage */}
           <CCol xs={12} sm={6} md={4} lg={3}>
             <GradientTextCard text="Dosage" />
-            <CFormInput value={medicine.dose || ""} placeholder="e.g. 1 tablet" onChange={(e) => handleChange("dose", e.target.value)} />
+            <CFormInput
+              type="number"
+              min={0} // prevents typing negative numbers in most browsers
+              value={medicine.dose || ""}
+              placeholder="e.g. 1 tablet"
+              onChange={(e) => {
+                const value = e.target.value;
+                // Allow empty string to let user delete input
+                if (value === "" || Number(value) >= 0) {
+                  handleChange("dose", value);
+                }
+              }}
+            />
           </CCol>
+
 
           {/* Medicine Type */}
           <CCol xs={12} sm={6} md={4} lg={3}>
@@ -151,7 +164,22 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine, onAdd, 
               value={medicine.medicineType ? { label: medicine.medicineType, value: medicine.medicineType } : null}
               onChange={(selected) => handleChange("medicineType", selected ? selected.value : "")}
               onCreateOption={handleCreateMedicineType}
-              placeholder="Select or create medicine type..."
+              placeholder="Choose Medicine Type"
+              styles={{
+                control: (provided) => ({
+                  ...provided,
+                  minHeight: '30px',   // adjust height if needed
+                  width: '250px',      // set the desired width
+                }),
+                valueContainer: (provided) => ({
+                  ...provided,
+                  padding: '0 6px',
+                }),
+                input: (provided) => ({
+                  ...provided,
+                  margin: '0px',
+                }),
+              }}
             />
           </CCol>
 

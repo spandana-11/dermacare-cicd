@@ -47,7 +47,7 @@ public class RatingCalculationService {
             if (allRatings.isEmpty()) {
                 response.setSuccess(true);
                 response.setStatus(200);
-                response.setMessage("No ratings found for the given hospitalId and doctorId.");
+                response.setMessage("No ratings found");
                 return response;
             }
 

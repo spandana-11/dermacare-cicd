@@ -44,9 +44,7 @@ const styles = StyleSheet.create({
   patientName: {
     fontWeight: "bold",
   },
-  hospitalInfo: {
-    marginVertical: 10,
-  },
+
 
   hospitalName: {
     fontSize: 16,
@@ -202,10 +200,10 @@ const PrescriptionPDF = ({
               {clicniData?.name ?? "—"}
             </Text>
 
-            <Text>📍 {clicniData?.address ?? "—"}</Text>
-            <Text>🏢 Branch: {clicniData?.branch ?? "—"}</Text>
-            <Text>📞 Contact: {clicniData?.contactNumber ?? "—"}</Text>
-            <Text>🌐 Website: {clicniData?.website ?? "—"}</Text>
+            <Text>Address: {clicniData?.address ?? "—"}</Text>
+            <Text>Branch: {clicniData?.branch ?? "—"}</Text>
+            <Text>Contact: {clicniData?.contactNumber ?? "—"}</Text>
+            <Text>Website: {clicniData?.website ?? "—"}</Text>
           </View>
 
         </View>
@@ -326,10 +324,10 @@ const PrescriptionPDF = ({
             ))}
 
             {/* Legend */}
-            <Text style={{ marginTop: 6 }}>
-              Legend:
-              <Text style={{ fontWeight: "normal" }}>
-                {" "}M – Morning, A – Afternoon, E – Evening, N – Night
+            <Text style={{ marginTop: 6, color: '#777' }}>
+              Legend:{" "}
+              <Text style={{ fontWeight: "normal", color: '#777' }}>
+                M – Morning, A – Afternoon, E – Evening, N – Night
               </Text>
             </Text>
 
@@ -457,13 +455,12 @@ const PrescriptionPDF = ({
         {/* Signature */}
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           {/* Doctor Info - Left */}
-          <View style={styles.patientInfoBlock}>
+          <View style={styles.DoctorInfoBlock}>
             <Text style={styles.patientName}> Doctor Name: {doctorData?.doctorName ?? "—"}
             </Text>
             <Text style={styles.patientInfo}> Specialization: {doctorData?.qualification ?? ""}{" "}
               {doctorData?.specialization ?? ""} </Text>
-            <Text style={[styles.patientInfo, { flexWrap: "wrap" }]}>
-              Address: {patientData?.patientAddress ?? "—"} </Text>
+            <Text style={[styles.patientInfo, { flexWrap: "wrap" }]}> Address: {patientData?.patientAddress ?? "—"} </Text>
             <Text style={styles.patientInfo}> Licence: {doctorData?.doctorLicence ?? "—"} </Text>
           </View> {/* Doctor Signature - Right */}
           <View style={styles.signatureSection}>

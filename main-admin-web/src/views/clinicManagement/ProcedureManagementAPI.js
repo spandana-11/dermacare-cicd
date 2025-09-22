@@ -17,7 +17,7 @@ import {
   addProcedureDetails,
   updateProcedureDetails,
   deleteProcedureDetails,
-  getSubServiceDetailsBySubServiceId
+  getSubServiceBySubServiceId
 } from '../../baseUrl'
 import { toast } from 'react-toastify'
 
@@ -63,7 +63,7 @@ export const getSubServiceById = async (hospitalId, subServiceId) => {
     console.log('Serviceid response:', subServiceId)
 
   try {
-    const response = await axios.get(`${BASE_URL}/${getSubServiceDetailsBySubServiceId}/${subServiceId}`)
+    const response = await axios.get(`${BASE_URL}/${getSubServiceBySubServiceId}/${subServiceId}`)
     return response.data?.data // return only the useful data part
   } catch (error) {
     console.error('Error fetching sub-service data:', error)

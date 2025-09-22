@@ -15,6 +15,7 @@ import {
 import { toast } from 'react-toastify'
 import { actions, features } from '../../../Constant/Features'
 import capitalizeWords from '../../../Utils/capitalizeWords'
+import UserPermissionModal from '../UserPermissionModal'
 
 const PharmacistForm = ({
   visible,
@@ -34,8 +35,8 @@ const PharmacistForm = ({
 
   const emptyForm = {
     hospitalId: localStorage.getItem('HospitalId'),
-    branchId:localStorage.getItem('branchId'),
-    hospitalName:localStorage.getItem('HospitalName'),
+    branchId: localStorage.getItem('branchId'),
+    hospitalName: localStorage.getItem('HospitalName'),
     fullName: '',
     gender: 'male',
     dateOfBirth: '',
@@ -96,7 +97,7 @@ const PharmacistForm = ({
     'hospitalId',
     'profilePicture',
     'role',
-   
+
     // address fields
     'address.houseNo',
     'address.street',
@@ -188,20 +189,19 @@ const PharmacistForm = ({
       reader.onload = () => resolve(reader.result)
       reader.onerror = (error) => reject(error)
     })
-useEffect(() => {
-  if (initialData) {
-    setFormData({
-      ...emptyForm,
-      ...initialData,
-      address: { ...emptyForm.address, ...initialData.address },
-      bankAccountDetails: { ...emptyForm.bankAccountDetails, ...initialData.bankAccountDetails },
-      permissions: { ...emptyForm.permissions, ...initialData.permissions },
-    })
-  } else {
-    setFormData(emptyForm)
-  }
-}, [initialData])
-
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        ...emptyForm,
+        ...initialData,
+        address: { ...emptyForm.address, ...initialData.address },
+        bankAccountDetails: { ...emptyForm.bankAccountDetails, ...initialData.bankAccountDetails },
+        permissions: { ...emptyForm.permissions, ...initialData.permissions },
+      })
+    } else {
+      setFormData(emptyForm)
+    }
+  }, [initialData])
 
   // 🔹 Handle text inputs (top-level fields)
   const handleChange = (field, value) => {
@@ -217,7 +217,7 @@ useEffect(() => {
   }
 
   // 🔹 File upload → Base64
- const handleFileUpload = (e, field) => {
+  const handleFileUpload = (e, field) => {
     const file = e.target.files[0]
     if (!file) return
 
@@ -375,13 +375,13 @@ useEffect(() => {
     setIsPreviewPdf(type?.includes('pdf'))
     setShowModal(true)
   }
-const previewPdf = (base64String) => {
-  if (!base64String) return
-  const pdfData = `data:application/pdf;base64,${base64String.split(',')[1] || base64String}`
-  setPreviewFileUrl(pdfData)
-  setIsPreviewPdf(true)
-  setShowModal(true)
-}
+  const previewPdf = (base64String) => {
+    if (!base64String) return
+    const pdfData = `data:application/pdf;base64,${base64String.split(',')[1] || base64String}`
+    setPreviewFileUrl(pdfData)
+    setIsPreviewPdf(true)
+    setShowModal(true)
+  }
 
   //decode image
   const decodeImage = (data) => {
@@ -415,7 +415,7 @@ const previewPdf = (base64String) => {
     </div>
   )
 
- const FilePreview = ({ label, type, data }) => {
+  const FilePreview = ({ label, type, data }) => {
     if (!data) return <p>{label} </p>
 
     const isImage = type?.startsWith('image/')
@@ -465,9 +465,7 @@ const previewPdf = (base64String) => {
         backdrop="static"
       >
         <CModalHeader>
-          <CModalTitle>
-            {viewMode ? 'Personal Information' : 'Add / Edit Pharmacist '}
-          </CModalTitle>
+          <CModalTitle>{viewMode ? 'Personal Information' : 'Add / Edit Pharmacist '}</CModalTitle>
         </CModalHeader>
         <CModalBody>
           {viewMode ? (
@@ -485,7 +483,7 @@ const previewPdf = (base64String) => {
                     <span className="fw-bold ">Email : </span>
                     <span>{formData.emailID}</span>
                   </div>
-             
+
                   <div>
                     <span className="fw-bold">Contact : </span>
                     <span>{formData.contactNumber}</span>
@@ -495,14 +493,17 @@ const previewPdf = (base64String) => {
                 {/* Right Side: Image + ID */}
                 <div className="text-center">
                   {formData.profilePicture ? (
-                   <img
-  src={formData.profilePicture || "/assets/images/default-avatar.png"}
-  alt={formData.fullName}
-  width="80"
-  height="80"
-  style={{ borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--color-black)' }}
-/>
-
+                    <img
+                      src={formData.profilePicture || '/assets/images/default-avatar.png'}
+                      alt={formData.fullName}
+                      width="80"
+                      height="80"
+                      style={{
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: '1px solid var(--color-black)',
+                      }}
+                    />
                   ) : (
                     <img
                       src="/assets/images/default-avatar.png"
@@ -563,11 +564,11 @@ const previewPdf = (base64String) => {
                     <div className="col-md-4">
                       <Row label="Department" value={formData.department} />
                     </div>
-       
+
                     <div className="col-md-4">
                       <Row label="Specialization" value={formData.qualification} />
                     </div>
-                  
+
                     <div className="col-md-4">
                       <Row label="Emergency Contact" value={formData.emergencyContactNumber} />
                     </div>
@@ -596,7 +597,7 @@ const previewPdf = (base64String) => {
                         value={formData.bankAccountDetails.accountHolderName}
                       />
                     </div>
-                    
+
                     <div className="col-md-4">
                       <Row label="Bank Name" value={formData.bankAccountDetails.bankName} />
                     </div>
@@ -610,16 +611,15 @@ const previewPdf = (base64String) => {
                 </Section>
 
                 {/* Documents */}
-                 <Section title="Documents">
+                <Section title="Documents">
                   <div className="row">
                     {formData.dPharmaOrBPharmaCertificate != '' ? (
                       <div className="col-md-6">
-                       <FilePreview
-  label="dPharmaOrBPharmaCertificate"
-  type={formData.dPharmaOrBPharmaCertificateType || 'application/pdf'}
-  data={formData.dPharmaOrBPharmaCertificate}
-/>
-
+                        <FilePreview
+                          label="dPharmaOrBPharmaCertificate"
+                          type={formData.dPharmaOrBPharmaCertificateType || 'application/pdf'}
+                          data={formData.dPharmaOrBPharmaCertificate}
+                        />
                       </div>
                     ) : (
                       <p className="col-md-6">Not Provided dPharmaOrBPharmaCertificate</p>
@@ -653,8 +653,8 @@ const previewPdf = (base64String) => {
                 <Section title="Other Information ">
                   <div className="row mb-2">
                     <div className="col-md-4">
-                    <Row label="Pharmacy License" value={formData.pharmacyLicense} />
-                  </div>
+                      <Row label="Pharmacy License" value={formData.pharmacyLicense} />
+                    </div>
                     <div className="col-md-12">
                       <RowFull
                         label="Previous Employment"
@@ -784,16 +784,15 @@ const previewPdf = (base64String) => {
                     }}
                   />
                 </div>
-      <div className="col-md-4">
-  <CFormLabel>Pharmacy License</CFormLabel>
-  <CFormInput
-    type="text"
-    placeholder="Enter Pharmacy License"
-    value={formData.pharmacyLicense}
-    onChange={(e) => handleChange('pharmacyLicense', e.target.value)}
-  />
-</div>
-
+                <div className="col-md-4">
+                  <CFormLabel>Pharmacy License</CFormLabel>
+                  <CFormInput
+                    type="text"
+                    placeholder="Enter Pharmacy License"
+                    value={formData.pharmacyLicense}
+                    onChange={(e) => handleChange('pharmacyLicense', e.target.value)}
+                  />
+                </div>
 
                 <div className="col-md-4">
                   <CFormLabel>
@@ -816,7 +815,7 @@ const previewPdf = (base64String) => {
                     onChange={(e) => handleChange('department', e.target.value)}
                   />{' '}
                 </div>
-        
+
                 <div className="col-md-4">
                   {' '}
                   <CFormLabel>Specialization</CFormLabel>
@@ -827,7 +826,7 @@ const previewPdf = (base64String) => {
                 </div>
               </div>
 
-              <div className="row mb-3">            
+              <div className="row mb-3">
                 <div className="col-md-4">
                   <CFormLabel>Emergency Contact</CFormLabel>
 
@@ -844,7 +843,6 @@ const previewPdf = (base64String) => {
                     }}
                   />
                 </div>
-                
               </div>
 
               {/* 🔹 Address */}
@@ -1003,75 +1001,74 @@ const previewPdf = (base64String) => {
                 ))}
 
               {/* 🔹 Documents */}
-             <h5 className="mt-3">Documents</h5>
+              <h5 className="mt-3">Documents</h5>
 
-<div className="row mb-3">
-  {/* Profile Picture */}
-  <div className="col-md-4">
-    <CFormLabel>Profile Picture</CFormLabel>
-    {formData.profilePicture && (
-      <div className="mb-2">
-        <img
-          src={formData.profilePicture}
-          alt="Profile"
-          width="80"
-          height="80"
-          style={{
-            borderRadius: '50%',
-            objectFit: 'cover',
-            border: '1px solid var(--color-black)',
-          }}
-        />
-        <br />
-        <a
-          href={formData.profilePicture}
-          download="profile-picture"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Download
-        </a>
-      </div>
-    )}
-    <CFormInput
-      type="file"
-      accept="image/*"
-      onChange={async (e) => {
-        const file = e.target.files[0]
-        if (file) {
-          const base64 = await toBase64(file)
-          handleChange('profilePicture', base64) // update state
-        }
-      }}
-    />
-  </div>
+              <div className="row mb-3">
+                {/* Profile Picture */}
+                <div className="col-md-4">
+                  <CFormLabel>Profile Picture</CFormLabel>
+                  {formData.profilePicture && (
+                    <div className="mb-2">
+                      <img
+                        src={formData.profilePicture}
+                        alt="Profile"
+                        width="80"
+                        height="80"
+                        style={{
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '1px solid var(--color-black)',
+                        }}
+                      />
+                      <br />
+                      <a
+                        href={formData.profilePicture}
+                        download="profile-picture"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Download
+                      </a>
+                    </div>
+                  )}
+                  <CFormInput
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files[0]
+                      if (file) {
+                        const base64 = await toBase64(file)
+                        handleChange('profilePicture', base64) // update state
+                      }
+                    }}
+                  />
+                </div>
 
-  {/* State Pharmacy Council Registration */}
-  <div className="col-md-4">
-                    <CFormLabel>dPharma/BPharma Certificate</CFormLabel>
-                    <CFormInput
-                      type="file"
-                      onChange={(e) => handleFileUpload(e, 'dPharmaOrBPharmaCertificate')}
-                    />
-                  </div>
-  <div className="col-md-4">
-                    <CFormLabel>statePharmacyCouncilRegistration</CFormLabel>
-                    <CFormInput
-                      type="file"
-                      onChange={(e) => handleFileUpload(e, 'statePharmacyCouncilRegistration')}
-                    />
-                  </div>
-  <div className="col-md-4">
-                    <CFormLabel>experience Certificate</CFormLabel>
-                    <CFormInput
-                      type="file"
-                      onChange={(e) => handleFileUpload(e, 'experienceCertificates')}
-                    />
-                  </div>
+                {/* State Pharmacy Council Registration */}
+                <div className="col-md-4">
+                  <CFormLabel>dPharma/BPharma Certificate</CFormLabel>
+                  <CFormInput
+                    type="file"
+                    onChange={(e) => handleFileUpload(e, 'dPharmaOrBPharmaCertificate')}
+                  />
+                </div>
+                <div className="col-md-4">
+                  <CFormLabel>statePharmacyCouncilRegistration</CFormLabel>
+                  <CFormInput
+                    type="file"
+                    onChange={(e) => handleFileUpload(e, 'statePharmacyCouncilRegistration')}
+                  />
+                </div>
+                <div className="col-md-4">
+                  <CFormLabel>experience Certificate</CFormLabel>
+                  <CFormInput
+                    type="file"
+                    onChange={(e) => handleFileUpload(e, 'experienceCertificates')}
+                  />
+                </div>
 
-  {/* D Pharma / B Pharma Certificate */}
-  
-</div>
+                {/* D Pharma / B Pharma Certificate */}
+              </div>
 
               <CFormLabel>Previous Employment History</CFormLabel>
               <CFormTextarea
@@ -1100,100 +1097,20 @@ const previewPdf = (base64String) => {
                   User Permissions
                 </CButton>
               </div>
-
-              {showPModal && (
-                <div className="modal fade show d-block" tabIndex="-1">
-                  <div className="modal-dialog modal-lg">
-                    <div className="modal-content">
-                      <div className="modal-header">
-                        <h5 className="modal-title">Set User Permissions</h5>
-                        <button
-                          type="button"
-                          className="btn-close"
-                          onClick={() => setShowPModal(false)}
-                        ></button>
-                      </div>
-                      <div className="modal-body">
-                        <div className="row">
-                          {features.map((feature) => {
-                            const isFeatureChecked = !!formData.permissions[feature]
-                            const allSelected =
-                              isFeatureChecked &&
-                              formData.permissions[feature].length === actions.length
-
-                            return (
-                              <div key={feature} className="col-md-5 mb-3 border p-2 rounded mx-4">
-                                {/* Feature Checkbox */}
-                                <div className="d-flex justify-content-between align-items-center">
-                                  <label className="fw-bold">
-                                    <input
-                                      type="checkbox"
-                                      checked={isFeatureChecked}
-                                      onChange={() => toggleFeature(feature)}
-                                    />{' '}
-                                    {feature}
-                                  </label>
-
-                                  {/* Select All */}
-                                  <label>
-                                    <input
-                                      type="checkbox"
-                                      disabled={!isFeatureChecked}
-                                      checked={allSelected}
-                                      onChange={() => toggleAllActions(feature)}
-                                    />{' '}
-                                    Select All
-                                  </label>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="d-flex flex-wrap gap-3 mt-2">
-                                  {actions.map((action) => (
-                                    <label key={action} className="d-flex align-items-center gap-1">
-                                      <input
-                                        type="checkbox"
-                                        disabled={!isFeatureChecked}
-                                        checked={
-                                          formData.permissions[feature]?.includes(action) || false
-                                        }
-                                        onChange={() => togglePermission(feature, action)}
-                                      />
-                                      {action}
-                                    </label>
-                                  ))}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                      <div className="modal-footer">
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={() => setShowPModal(false)}
-                        >
-                          Close
-                        </button>
-                        <button
-  type="button"
-  className="btn btn-primary"
-  onClick={() => {
-    toast.success("Permissions saved");
-    setShowPModal(false);
-  }}
->
-  Save Permissions
-</button>
-
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* backdrop */}
-              {showPModal && <div className="modal-backdrop fade show"></div>}
+              <UserPermissionModal
+                show={showPModal}
+                onClose={() => setShowPModal(false)}
+                features={features}
+                actions={actions}
+                permissions={formData.permissions}
+                toggleFeature={toggleFeature}
+                toggleAllActions={toggleAllActions}
+                togglePermission={togglePermission}
+                onSave={() => {
+                  console.log('Saved Permissions', formData.permissions)
+                  setShowPModal(false)
+                }}
+              />
             </CForm>
           )}
         </CModalBody>

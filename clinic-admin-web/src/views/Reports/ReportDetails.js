@@ -58,7 +58,9 @@ const patientId =
   ''
 
   // Initial state for new report, with reportDate not prefilled
-  const [newReport, setNewReport] = useState({
+  const [newReport, setNewReport] = useState(
+    {
+      customerId:appointmentInfo?.customerId,
     reportName: '',
     reportDate: '', // No prefill for date
     reportStatus: '',
@@ -67,6 +69,7 @@ const patientId =
     bookingId: appointmentInfo?.bookingId || '', // Ensure bookingId is safe to access
     patientId: appointmentInfo?.patientId || '',
   })
+  console.info(appointmentInfo?.customerId)
 
   // ✅ This correctly sets the PDF worker for Vite
   pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -180,14 +183,31 @@ const patientId =
 
     try {
       const payload = {
+          customerId: newReport.customerId,
         reportsList: [
           {
             ...newReport,
              patientId: patientId,
+           
             reportFile: [newReport.reportFile], // API expects an array of base64 strings
           },
         ],
       }
+      
+    // const payload = {
+    //   customerId: newReport.customerId,  // Moved outside reportsList
+    //   reportsList: [
+    //     {
+    //       bookingId: newReport.bookingId,
+    //       patientId: newReport.patientId,
+    //       reportName: newReport.reportName,
+    //       reportDate: newReport.reportDate,
+    //       reportStatus: newReport.reportStatus,
+    //       reportType: newReport.reportType,
+    //       reportFile: [newReport.reportFile], // API expects array
+    //     },
+    //   ],
+    // };
 
       const response = await SaveReportsData(payload)
       console.log('Report uploaded:', response)

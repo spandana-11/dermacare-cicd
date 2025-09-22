@@ -161,21 +161,24 @@ const AppSidebar = () => {
                 >
                   {capitalizeFirst(display.name)}
                 </h4>
-                <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                  {display.age} Years / {display.gender}
-                </h6>
-                <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                  {display.mobile}
-                </h6>
-                <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                  Visit Type: {display.visitType}
-                </h6>
-                <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                  Visit Count: {display.visitCount}
-                </h6>
-                <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                  FollowUp Count: {display.followUp}
-                </h6>
+                <div style={{ textAlign: "left", width: "100%", marginLeft: "15px",lineHeight:"2px" }}>
+                  <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
+                   Age/Gender: {display.age} Years / {display.gender}
+                  </h6>
+                  <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
+                    Mobile: {display.mobile}
+                  </h6>
+                  <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
+                    Visit Type: {display.visitType}
+                  </h6>
+                  <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
+                    Visit Count: {display.visitCount}
+                  </h6>
+                  <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
+                    FollowUp Count: {display.followUp}
+                  </h6>
+                </div>
+
 
                 <hr className="w-100 my-2" />
 
@@ -262,70 +265,69 @@ const AppSidebar = () => {
         </CSidebarHeader>
 
         {/* Show navigation/footer only when NOT loading and no patient selected */}
-  {/* Show navigation only when NOT loading and no patient selected */}
+        {/* Show navigation only when NOT loading and no patient selected */}
         {!isPatientLoading && !hasPatient && <AppSidebarNav items={navigation} />}
 
         {/* Show Patient Reviews only if ratings exist */}
-{!isPatientLoading && !hasPatient && ratings.length > 0 && (
-  <CSidebarFooter className="border-top d-none d-lg-flex flex-column mt-2">
-    <h6 style={{ color: COLORS.black, fontWeight: 600, marginBottom: '0.5rem' }}>
-      Patient Reviews
-    </h6>
+        {!isPatientLoading && !hasPatient && ratings.length > 0 && (
+          <CSidebarFooter className="border-top d-none d-lg-flex flex-column mt-2">
+            <h6 style={{ color: COLORS.black, fontWeight: 600, marginBottom: '0.5rem' }}>
+              Patient Reviews
+            </h6>
 
-    {ratings.map((item, index) => (
-      <div
-        key={index}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          marginBottom: 8,
-          width: '100%',
-        }}
-      >
-        {/* Fixed label width */}
-        <div
-          style={{
-            width: 100,
-            flexShrink: 0,
-            textAlign: 'right',
-            marginRight: 10,
-          }}
-        >
-          <small style={{ color: COLORS.black, fontSize: SIZES.small }}>
-            {item.category}
-          </small>
-        </div>
-
-        {/* Only show progress bar if percentage > 0 */}
-        {item.percentage > 0 && (
-          <div style={{ flexGrow: 1 }}>
-            <div
-              className="progress"
-              style={{ height: 8, borderRadius: 4, backgroundColor: '#e9ecef' }}
-            >
+            {ratings.map((item, index) => (
               <div
-                className={`progress-bar ${
-                  item.category.toLowerCase().includes('excellent')
-                    ? 'bg-success'
-                    : item.category.toLowerCase().includes('good')
-                    ? 'bg-primary'
-                    : item.category.toLowerCase().includes('average')
-                    ? 'bg-warning'
-                    : 'bg-secondary'
-                }`}
-                role="progressbar"
-                style={{ width: `${item.percentage}%`, borderRadius: 4 }}
-                aria-valuenow={item.percentage}
-                aria-valuemin="0"
-                aria-valuemax="100"
-              />
-            </div>
-          </div>
+                key={index}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  marginBottom: 8,
+                  width: '100%',
+                }}
+              >
+                {/* Fixed label width */}
+                <div
+                  style={{
+                    width: 100,
+                    flexShrink: 0,
+                    textAlign: 'right',
+                    marginRight: 10,
+                  }}
+                >
+                  <small style={{ color: COLORS.black, fontSize: SIZES.small }}>
+                    {item.category}
+                  </small>
+                </div>
+
+                {/* Only show progress bar if percentage > 0 */}
+                {item.percentage > 0 && (
+                  <div style={{ flexGrow: 1 }}>
+                    <div
+                      className="progress"
+                      style={{ height: 8, borderRadius: 4, backgroundColor: '#e9ecef' }}
+                    >
+                      <div
+                        className={`progress-bar ${item.category.toLowerCase().includes('excellent')
+                            ? 'bg-success'
+                            : item.category.toLowerCase().includes('good')
+                              ? 'bg-primary'
+                              : item.category.toLowerCase().includes('average')
+                                ? 'bg-warning'
+                                : 'bg-secondary'
+                          }`}
+                        role="progressbar"
+                        style={{ width: `${item.percentage}%`, borderRadius: 4 }}
+                        aria-valuenow={item.percentage}
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </CSidebarFooter>
         )}
-      </div>
-    ))}
-  </CSidebarFooter>
-)}
 
       </CSidebar>
 

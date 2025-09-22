@@ -11,7 +11,12 @@ import {
   CModalBody,
   CForm,
   CFormInput,
+  CAccordionItem,
+  CAccordion,
+  CAccordionHeader,
+  CAccordionBody,
 } from '@coreui/react'
+
 import jsPDF from 'jspdf'
 import { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
@@ -81,31 +86,11 @@ const AppointmentDetails = () => {
       fetchVitals()
     }
   }, [appointment?.bookingId, appointment?.patientId, normalizedStatus])
-  // useEffect(() => {
-  //   const fetchDoctorDetails = async () => {
-  //     if (
-  //       ['confirmed', 'completed', 'active'].includes(appointment?.status?.toLowerCase()) &&
-  //       appointment?.doctorId
-  //     ) {
-  //       try {
-  //         const res = await GetdoctorsByClinicIdData(appointment.doctorId)
-  //         setDoctor(res.data.data)
-  //       } catch (error) {
-  //         console.error('Failed to fetch doctor details:', error)
-  //       }
-  //     }
-  //   }
-  //   fetchDoctorDetails()
-  // }, [appointment])
 
   const getDoctorImage = (picture) => {
     if (!picture) return '/default-doctor.png'
     return picture.startsWith('data:image') ? picture : `data:image/jpeg;base64,${picture}`
   }
-
-  // const showConfirmedOrCompleted = ['confirmed', 'completed', 'active'].includes(
-  //   appointment?.status?.toLowerCase(),
-  // )
 
   useEffect(() => {
     if (
@@ -130,47 +115,46 @@ const AppointmentDetails = () => {
   }
 
   // Handle vitals form input
-const handleChange = (e) => {
-  const { name, value } = e.target
+  const handleChange = (e) => {
+    const { name, value } = e.target
 
-  // update form data
-  setFormData((prev) => ({
-    ...prev,
-    [name]: value,
-  }))
+    // update form data
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
 
-  // validate this specific field immediately
-  let error = ''
+    // validate this specific field immediately
+    let error = ''
 
-  if (!regexRules[name].test(value)) {
-    switch (name) {
-      case 'height':
-        error = 'Height must be a number between 10 and 999 cm'
-        break
-      case 'weight':
-        error = 'Weight must be a number between 1 and 999 kg'
-        break
-      case 'bloodPressure':
-        error = 'Blood Pressure must be in format: 120/80'
-        break
-      case 'temperature':
-        error = 'Temperature must be a valid number (e.g., 98.6)'
-        break
-      case 'bmi':
-        error = 'BMI must be a valid number (e.g., 24.5)'
-        break
-      default:
-        error = ''
+    if (!regexRules[name].test(value)) {
+      switch (name) {
+        case 'height':
+          error = 'Height must be a number between 10 and 999 cm'
+          break
+        case 'weight':
+          error = 'Weight must be a number between 1 and 999 kg'
+          break
+        case 'bloodPressure':
+          error = 'Blood Pressure must be in format: 120/80'
+          break
+        case 'temperature':
+          error = 'Temperature must be a valid number (e.g., 98.6)'
+          break
+        case 'bmi':
+          error = 'BMI must be a valid number (e.g., 24.5)'
+          break
+        default:
+          error = ''
+      }
     }
+
+    // update validation errors state dynamically
+    setValidationErrors((prev) => ({
+      ...prev,
+      [name]: error,
+    }))
   }
-
-  // update validation errors state dynamically
-  setValidationErrors((prev) => ({
-    ...prev,
-    [name]: error,
-  }))
-}
-
 
   const handleSubmitVitals = async () => {
     if (!validateVitals()) {
@@ -214,35 +198,107 @@ const handleChange = (e) => {
     temperature: /^(?:\d{2,3})(?:\.\d{1,2})?$/, // 2-3 digits with optional decimals
     bmi: /^\d{1,2}(?:\.\d{1,2})?$/, // 0-99 with optional decimals
   }
-const validateVitals = () => {
-  let errors = {}
-  Object.keys(formData).forEach((field) => {
-    if (!regexRules[field].test(formData[field])) {
-      switch (field) {
-        case 'height':
-          errors.height = 'Height must be a number between 10 and 999 cm'
-          break
-        case 'weight':
-          errors.weight = 'Weight must be a number between 1 and 999 kg'
-          break
-        case 'bloodPressure':
-          errors.bloodPressure = 'Blood Pressure must be in format: 120/80'
-          break
-        case 'temperature':
-          errors.temperature = 'Temperature must be a valid number (e.g., 98.6)'
-          break
-        case 'bmi':
-          errors.bmi = 'BMI must be a valid number (e.g., 24.5)'
-          break
-        default:
-          break
+  const validateVitals = () => {
+    let errors = {}
+    Object.keys(formData).forEach((field) => {
+      if (!regexRules[field].test(formData[field])) {
+        switch (field) {
+          case 'height':
+            errors.height = 'Height must be a number between 10 and 999 cm'
+            break
+          case 'weight':
+            errors.weight = 'Weight must be a number between 1 and 999 kg'
+            break
+          case 'bloodPressure':
+            errors.bloodPressure = 'Blood Pressure must be in format: 120/80'
+            break
+          case 'temperature':
+            errors.temperature = 'Temperature must be a valid number (e.g., 98.6)'
+            break
+          case 'bmi':
+            errors.bmi = 'BMI must be a valid number (e.g., 24.5)'
+            break
+          default:
+            break
+        }
       }
-    }
-  })
+    })
 
-  setValidationErrors(errors)
-  return Object.keys(errors).length === 0
-}
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const base64toBlob = (base64, mimeType) => {
+    try {
+      const byteCharacters = atob(base64)
+      const byteNumbers = new Array(byteCharacters.length)
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i)
+      }
+      const byteArray = new Uint8Array(byteNumbers)
+      return new Blob([byteArray], { type: mimeType })
+    } catch (e) {
+      console.error('Base64 decoding failed:', e)
+      // You can use a more user-friendly alert here
+      alert('Failed to decode file data. It may be corrupted or in an invalid format.')
+      return null
+    }
+  }
+  const getMimeTypeFromBase64 = (base64String) => {
+    if (base64String.startsWith('JVBERi0')) {
+      return 'application/pdf' // PDF
+    }
+    if (base64String.startsWith('/9j/')) {
+      return 'image/jpeg' // JPEG
+    }
+    if (base64String.startsWith('iVBORw0KGgo')) {
+      return 'image/png' // PNG
+    }
+    if (base64String.startsWith('data:')) {
+      // If it's already a data URL, extract the MIME type
+      const mimeMatch = base64String.match(/^data:(.*?);base64/)
+      return mimeMatch ? mimeMatch[1] : 'application/octet-stream'
+    }
+    // Default to a generic binary type if the type cannot be determined
+    return 'application/octet-stream'
+  }
+  const handlePreview = (base64String) => {
+    if (!base64String) {
+      alert('No file data available for preview.')
+      return
+    }
+
+    const mimeType = getMimeTypeFromBase64(base64String)
+    const blob = base64toBlob(base64String, mimeType)
+
+    if (blob) {
+      const url = URL.createObjectURL(blob)
+      window.open(url, '_blank')
+    }
+  }
+
+  const handleDownload = (base64String, fileName) => {
+    if (!base64String) {
+      alert('No file data available for download.')
+      return
+    }
+
+    const mimeType = getMimeTypeFromBase64(base64String)
+    const blob = base64toBlob(base64String, mimeType)
+
+    if (blob) {
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    }
+  }
+  const showAccordion = ['confirmed', 'in-progress', 'completed'].includes(normalizedStatus)
+  const showPrescription = ['in-progress', 'completed'].includes(normalizedStatus)
 
   return (
     <div className="container mt-4">
@@ -290,19 +346,6 @@ const validateVitals = () => {
             >
               {normalizedStatus}
             </span>
-
-            {/* Show Add Vitals for Confirmed, Vitals for Completed/Active */}
-
-            {/* {showCompletedOrActive && (
-              <CButton
-                color="info"
-                size="sm"
-                className="text-white"
-                onClick={() => setShowModal(true)}
-              >
-                Vitals
-              </CButton>
-            )} */}
           </div>
         </div>
 
@@ -491,11 +534,93 @@ const validateVitals = () => {
           </div>
         )}
 
-        {/*  Doctor Details only if confirmed/completed */}
         {showConfirmedOrCompleted && doctor && (
           <>
-            <h6 className="fw-bold mt-4">Doctor Details</h6>
+            <div className="mt-4">
+              <CAccordion activeItemKey={1}>
+                {/* Consent Form Accordion */}
+                <CAccordionItem itemKey={1}>
+                  <CAccordionHeader>Consent Form</CAccordionHeader>
+                  <CAccordionBody>
+                    <div className="d-flex gap-2">
+                      <CButton
+                        color="primary"
+                        onClick={() =>
+                          handlePreview(appointment?.consentFormPdf, 'consent_form.pdf')
+                        }
+                      >
+                        Preview
+                      </CButton>
+                      <CButton
+                        color="success"
+                        onClick={() =>
+                          handleDownload(appointment?.consentFormPdf, 'consent_form.pdf')
+                        }
+                      >
+                        Download
+                      </CButton>
+                    </div>
+                  </CAccordionBody>
+                </CAccordionItem>
+
+                {/* Past Reports Accordion */}
+                <CAccordionItem itemKey={2}>
+                  <CAccordionHeader>Past Reports</CAccordionHeader>
+                  <CAccordionBody>
+                    {appointment?.attachments && appointment.attachments.length > 0 ? (
+                      appointment.attachments.map((attachment, index) => (
+                        <div key={index} className="d-flex gap-2 mb-2">
+                          <span>Attachment {index + 1}</span>
+                          <CButton
+                            color="primary"
+                            onClick={() => handlePreview(attachment, `attachment_${index + 1}.pdf`)}
+                          >
+                            Preview
+                          </CButton>
+                          <CButton
+                            color="success"
+                            onClick={() =>
+                              handleDownload(attachment, `attachment_${index + 1}.pdf`)
+                            }
+                          >
+                            Download
+                          </CButton>
+                        </div>
+                      ))
+                    ) : (
+                      <p>No past reports available.</p>
+                    )}
+                  </CAccordionBody>
+                </CAccordionItem>
+
+                <CAccordionItem itemKey={3}>
+                  <CAccordionHeader>Prescription</CAccordionHeader>
+                  <CAccordionBody>
+                    <div className="d-flex gap-2">
+                      <CButton
+                        color="primary"
+                        onClick={() =>
+                          handlePreview(appointment?.prescriptionPdf, 'prescription.pdf')
+                        }
+                      >
+                        Preview
+                      </CButton>
+                      <CButton
+                        color="success"
+                        onClick={() =>
+                          handleDownload(appointment?.prescriptionPdf, 'prescription.pdf')
+                        }
+                      >
+                        Download
+                      </CButton>
+                    </div>
+                  </CAccordionBody>
+                </CAccordionItem>
+              </CAccordion>
+            </div>
+            <h6 className="fw-bold mt-4">Doctor Details</h6>{' '}
             <div className="d-flex align-items-center gap-3 border rounded p-3 shadow-sm">
+              {' '}
               <img
                 src={getDoctorImage(doctor.doctorPicture)}
                 alt={doctor.doctorName}
@@ -503,22 +628,29 @@ const validateVitals = () => {
                 height={80}
                 className="rounded-circle border"
               />
+                     {' '}
               <div>
-                <h6 className="  fw-bold mb-1">{doctor.doctorName}</h6>
+                          <h6 className="  fw-bold mb-1">{doctor.doctorName}</h6>         {' '}
                 <p className="mb-1">
-                  <strong>Specialization:</strong> {doctor.specialization}
+                              <strong>Specialization:</strong> {doctor.specialization}         {' '}
                 </p>
+                         {' '}
                 <p className="mb-1">
-                  <strong>Experience:</strong> {doctor.experience} years
+                              <strong>Experience:</strong> {doctor.experience} years          {' '}
                 </p>
+                         {' '}
                 <p className="mb-1">
-                  <strong>Qualification:</strong> {doctor.qualification}
+                              <strong>Qualification:</strong> {doctor.qualification}         {' '}
                 </p>
+                         {' '}
                 <p className="mb-0">
-                  <strong>Languages:</strong> {doctor.languages?.join(', ')}
+                              <strong>Languages:</strong> {doctor.languages?.join(', ')}         {' '}
                 </p>
+                       {' '}
               </div>
+                     {' '}
               <div className="ms-auto">
+                         {' '}
                 <CButton
                   style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
                   size="sm"
@@ -529,10 +661,13 @@ const validateVitals = () => {
                     })
                   }
                 >
-                  View Details
+                              View Details          {' '}
                 </CButton>
+                       {' '}
               </div>
+                   {' '}
             </div>
+                   {' '}
           </>
         )}
       </div>

@@ -13,6 +13,8 @@ import {
 import CIcon from '@coreui/icons-react'
 
 import { AppSidebarNav } from './AppSidebarNav'
+import './sidebar.css'
+import { COLORS } from '../Constant/Themes'
 
 // sidebar nav config
 import navigation from '../_nav'
@@ -25,7 +27,8 @@ const AppSidebar = () => {
   return (
     <CSidebar
       className="border-end"
-      colorScheme="dark"
+     style={{ background: 'var(--color-bgcolor)' }}
+      color={COLORS.teal}
       position="fixed"
       unfoldable={unfoldable}
       visible={sidebarShow}
