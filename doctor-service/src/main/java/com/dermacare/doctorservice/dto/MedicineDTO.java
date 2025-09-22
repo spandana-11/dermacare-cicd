@@ -2,6 +2,8 @@ package com.dermacare.doctorservice.dto;
 
 import java.util.List;
 
+
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,8 +16,13 @@ public class MedicineDTO {
     private String name;
     private String dose;
     private String duration;
+    private String durationUnit;
+
     private String note;
     private String food;
+    private String medicineType;
     private String remindWhen;
     private List<String> times;
+    private String others;
+
 }

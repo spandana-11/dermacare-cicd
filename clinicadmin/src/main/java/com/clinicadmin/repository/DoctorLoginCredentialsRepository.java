@@ -1,12 +1,14 @@
 package com.clinicadmin.repository;
 
-import com.clinicadmin.entity.DoctorLoginCredentials;
+import java.util.Optional;
+
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-import java.util.Optional;
+import com.clinicadmin.entity.DoctorLoginCredentials;
 
 public interface DoctorLoginCredentialsRepository extends MongoRepository<DoctorLoginCredentials, String> {
     Optional<DoctorLoginCredentials> findByUsername(String username);
-    boolean existsByUsername(String username);
-	Optional<DoctorLoginCredentials> findByDoctorId(String doctorId);
+    boolean existsByUsername(String username);  // fixed
+    Optional<DoctorLoginCredentials> findByStaffId(String staffId);
 }
+

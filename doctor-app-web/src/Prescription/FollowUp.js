@@ -18,6 +18,7 @@ import {
   CButton,
 } from '@coreui/react'
 import GradientTextCard from '../components/GradintColorText'
+import { capitalizeFirst } from '../utils/CaptalZeWord'
 
 /**
  * Props:
@@ -111,14 +112,15 @@ const FollowUp = ({ seed = {}, onNext, sidebarWidth = 0, patientData }) => {
                   <GradientTextCard text="Patient Name" />
 
                   <CFormInput
-                    className="mt-2 "
+                    className="mt-2"
                     style={{ backgroundColor: COLORS.theme }}
                     type="text"
-                    value={patientData?.name}
+                    value={capitalizeFirst(patientData?.name || "")}
                     onChange={(e) => setPatientName(e.target.value)}
                     placeholder="Enter patient name"
                     disabled
                   />
+
                 </CCol>
 
                 <CCol xs={12} md={5}>
@@ -183,7 +185,7 @@ const FollowUp = ({ seed = {}, onNext, sidebarWidth = 0, patientData }) => {
       >
         <div className="d-flex gap-3">
           <Button customColor={COLORS.bgcolor} // background color of button
-              color={COLORS.black} onClick={handleNext}>
+            color={COLORS.black} onClick={handleNext}>
             Next
           </Button>
         </div>

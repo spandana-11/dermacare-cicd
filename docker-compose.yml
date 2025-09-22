@@ -38,10 +38,12 @@ services:
       - mongodb_data:/data/db
 
   eureka-server:
-    build: ./euraka-server
+    build: ./eureka-server
     container_name: eureka_service
     ports:
       - "8761:8761"
+    environment:
+      - JAVA_TOOL_OPTIONS=-XX:-UseContainerSupport
     networks:
       - app-network
 
@@ -51,8 +53,9 @@ services:
     ports:
       - "9090:9090"
     environment:
-      SPRING_APPLICATION_NAME: apigateway
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      - JAVA_TOOL_OPTIONS=-XX:-UseContainerSupport
+      - SPRING_APPLICATION_NAME=apigateway
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     depends_on:
       - eureka-server
     networks:
@@ -64,9 +67,10 @@ services:
     ports:
       - "8081:8081"
     environment:
-      SPRING_APPLICATION_NAME: adminservice
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/AdminService
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      - JAVA_TOOL_OPTIONS=-XX:-UseContainerSupport
+      - SPRING_APPLICATION_NAME=adminservice
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/AdminService
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     depends_on:
       - mongodb
       - eureka-server
@@ -79,9 +83,10 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_APPLICATION_NAME: clinicadmin
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/clinicadminservice
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      - JAVA_TOOL_OPTIONS=-XX:-UseContainerSupport
+      - SPRING_APPLICATION_NAME=clinicadmin
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/clinicadminservice
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     depends_on:
       - mongodb
       - eureka-server
@@ -94,9 +99,10 @@ services:
     ports:
       - "8800:8800"
     environment:
-      SPRING_APPLICATION_NAME: category-services
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/category-services
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      - JAVA_TOOL_OPTIONS=-XX:-UseContainerSupport
+      - SPRING_APPLICATION_NAME=category-services
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/category-services
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     depends_on:
       - mongodb
       - eureka-server
@@ -109,9 +115,10 @@ services:
     ports:
       - "8082:8082"
     environment:
-      SPRING_APPLICATION_NAME: doctor-service
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/dermacaredoctor-db
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      - JAVA_TOOL_OPTIONS=-XX:-UseContainerSupport
+      - SPRING_APPLICATION_NAME=doctor-service
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/dermacaredoctor-db
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     depends_on:
       - mongodb
       - eureka-server
@@ -124,9 +131,10 @@ services:
     ports:
       - "8083:8083"
     environment:
-      SPRING_APPLICATION_NAME: customerservice
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/customerService
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      - JAVA_TOOL_OPTIONS=-XX:-UseContainerSupport
+      - SPRING_APPLICATION_NAME=customerservice
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/customerService
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     depends_on:
       - mongodb
       - eureka-server
@@ -139,9 +147,10 @@ services:
     ports:
       - "9900:9900"
     environment:
-      SPRING_APPLICATION_NAME: bookingservice
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/customerAppointments
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      - JAVA_TOOL_OPTIONS=-XX:-UseContainerSupport
+      - SPRING_APPLICATION_NAME=bookingservice
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/customerAppointments
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     depends_on:
       - mongodb
       - eureka-server
@@ -154,9 +163,10 @@ services:
     ports:
       - "8089:8089"
     environment:
-      SPRING_APPLICATION_NAME: notification-service
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/DermaCareNotifications
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      - JAVA_TOOL_OPTIONS=-XX:-UseContainerSupport
+      - SPRING_APPLICATION_NAME=notification-service
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/DermaCareNotifications
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     depends_on:
       - mongodb
       - eureka-server
@@ -169,8 +179,9 @@ services:
     ports:
       - "3000:80"
     environment:
-      - HOST=13.235.239.208
+      - HOST=3.6.119.57
       - PORT=3000
+      - JAVA_TOOL_OPTIONS=-XX:-UseContainerSupport
     networks:
       - app-network
     depends_on:
@@ -183,8 +194,9 @@ services:
     ports:
       - "4000:80"
     environment:
-      - HOST=13.235.239.208
+      - HOST=3.6.119.57
       - PORT=4000
+      - JAVA_TOOL_OPTIONS=-XX:-UseContainerSupport
     networks:
       - app-network
     depends_on:
@@ -197,16 +209,14 @@ services:
     ports:
       - "5000:80"
     environment:
-      - HOST=13.235.239.208
+      - HOST=3.6.119.57
       - PORT=5000
+      - JAVA_TOOL_OPTIONS=-XX:-UseContainerSupport
     networks:
       - app-network
     depends_on:
       - apigateway
     restart: always
-
-
-
 
 networks:
   app-network:

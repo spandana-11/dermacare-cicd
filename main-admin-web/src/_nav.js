@@ -34,6 +34,7 @@ import {
   // cilWalletva,
   cilWallet,
   cilChartLine,
+  cibGoogleAds,
 } from '@coreui/icons'
 
 const _nav = [
@@ -78,9 +79,15 @@ const _nav = [
   },
   {
     component: CNavItem,
-    name: 'Sub Service Management',
-    to: '/sub-service-management',
+    name: 'Procedure Management',
+    to: '/procedure-management',
     icon: <CIcon icon={cilList} customClassName="nav-icon" />,
+  },
+    {
+    component:CNavItem,
+    name:'Ads Management',
+    to:'/ads-management',
+    icon: <CIcon icon={cibGoogleAds} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,

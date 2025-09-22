@@ -3,64 +3,39 @@ package com.AdminService.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.http.HttpStatus;
-
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.web.bind.annotation.CrossOrigin;
-
 import org.springframework.web.bind.annotation.DeleteMapping;
-
 import org.springframework.web.bind.annotation.GetMapping;
-
 import org.springframework.web.bind.annotation.PathVariable;
-
 import org.springframework.web.bind.annotation.PostMapping;
-
 import org.springframework.web.bind.annotation.PutMapping;
-
 import org.springframework.web.bind.annotation.RequestBody;
-
 import org.springframework.web.bind.annotation.RequestMapping;
-
 import org.springframework.web.bind.annotation.RestController;
 
 import com.AdminService.dto.AdminHelper;
-
 import com.AdminService.dto.BookingResponse;
-
 import com.AdminService.dto.CategoryDto;
-
 import com.AdminService.dto.ClinicCredentialsDTO;
-
 import com.AdminService.dto.ClinicDTO;
-
 import com.AdminService.dto.CustomerDTO;
-
 import com.AdminService.dto.ServicesDto;
-
+import com.AdminService.dto.SubServicesDto;
 import com.AdminService.dto.SubServicesInfoDto;
-
 import com.AdminService.dto.UpdateClinicCredentials;
-
 import com.AdminService.service.AdminService;
-
 import com.AdminService.util.Response;
-
 import com.AdminService.util.ResponseStructure;
 
-
-
 import jakarta.validation.Valid;
-
-
 
 @RestController
 
 @RequestMapping("/admin")
 
-// @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 
 public class AdminController {
 	@Autowired
@@ -948,7 +923,46 @@ public ResponseEntity<Object> getDoctorInfoByDoctorId(@PathVariable String docto
 		 return ResponseEntity.status(response.getStatus()).body(response);
 
 	}
+	
+	@GetMapping("/clinics/firstRecommendedTureClincs")
 
+	public ResponseEntity<Response>firstRecommendedTureClincs(){
+
+		Response response = serviceImpl.getAllRecommendClinicThenAnotherClincs();
+
+		 return ResponseEntity.status(response.getStatus()).body(response);
+
+	}
+
+	
+	//PROCEDURE CRUD
+	
+	@PostMapping("/addSubService/{subServiceId}")
+    public ResponseEntity<ResponseStructure<SubServicesDto>> addSubService(@PathVariable String subServiceId, @RequestBody SubServicesDto dto) {
+        return serviceImpl.addService(subServiceId,dto);
+    }
+
+
+    @DeleteMapping("/deleteSubService/{hospitalId}/{subServiceId}")
+    public ResponseEntity<ResponseStructure<SubServicesDto>> deleteSubService(@PathVariable String hospitalId,@PathVariable String subServiceId) {
+        return serviceImpl.deleteSubService(hospitalId,subServiceId);
+    }
+
+    @PutMapping("/updateSubService/{hospitalId}/{subServiceId}")
+    public ResponseEntity<ResponseStructure<SubServicesDto>> updateSubService(@PathVariable String hospitalId,@PathVariable String subServiceId, @RequestBody SubServicesDto dto) {
+        return serviceImpl.updateBySubServiceId(hospitalId,subServiceId, dto);
+        
+    }
+    @GetMapping("/getSubService/{hospitalId}/{subServiceId}")
+	public ResponseEntity<ResponseStructure<SubServicesDto>> getSubServiceByServiceId(@PathVariable String hospitalId, @PathVariable String subServiceId){
+    	 return serviceImpl.getSubServiceByServiceId(hospitalId, subServiceId);
+    }
+    @GetMapping("/getSubServiceByHospitalId/{hospitalId}")
+   	public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getSubServiceByHospitalId(@PathVariable String hospitalId){
+       	 return serviceImpl.getSubServiceByHospitalId(hospitalId);
+       }
+
+	
 }
 
 

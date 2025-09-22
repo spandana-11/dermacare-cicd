@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 public class ReportsDtoList {
 	
 	private String id;
+	private String customerId;
 	private List<ReportsDTO> reportsList;
 	
 

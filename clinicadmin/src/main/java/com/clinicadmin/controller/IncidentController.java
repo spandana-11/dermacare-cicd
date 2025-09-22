@@ -20,7 +20,7 @@ import com.clinicadmin.service.IncidentService;
 
 @RestController
 @RequestMapping("/clinic-admin")
-//Origin(origins = { "http://localhost:3000", "http://localhost:3001" })
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class IncidentController {
 	@Autowired
 	private IncidentService incidentService;

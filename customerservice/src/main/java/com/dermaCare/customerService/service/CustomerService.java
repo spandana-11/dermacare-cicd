@@ -1,11 +1,14 @@
 package com.dermaCare.customerService.service;
 
 import java.util.List;
+
 import org.springframework.http.ResponseEntity;
+
 import com.dermaCare.customerService.dto.BookingRequset;
 import com.dermaCare.customerService.dto.BookingResponse;
 import com.dermaCare.customerService.dto.ConsultationDTO;
 import com.dermaCare.customerService.dto.CustomerDTO;
+import com.dermaCare.customerService.dto.CustomerLoginDTO;
 import com.dermaCare.customerService.dto.CustomerRatingDomain;
 import com.dermaCare.customerService.dto.FavouriteDoctorsDTO;
 import com.dermaCare.customerService.dto.LoginDTO;
@@ -14,10 +17,6 @@ import com.dermaCare.customerService.util.ResBody;
 import com.dermaCare.customerService.util.Response;
 import com.dermaCare.customerService.util.ResponseStructure;
 import com.fasterxml.jackson.core.JsonProcessingException;
-
-import jakarta.servlet.http.HttpSession;
-
-import com.dermaCare.customerService.dto.ResponseDTO;
 
 
 public interface CustomerService {
@@ -73,7 +72,7 @@ public interface CustomerService {
     
     public ResponseEntity<Response> saveFavouriteDoctors(FavouriteDoctorsDTO favouriteDoctorsDTO);
     
-    public Response getDoctorsSlots(String hospitalId,String doctorId);
+    public Response getDoctorsSlots(String hid,String hospitalId,String doctorId);
     
     public Response getAllSavedFavouriteDoctors();
    
@@ -83,7 +82,7 @@ public interface CustomerService {
     
     public Response getRatingForService(String hospitalId,String doctorId);
     
-    public Response getAverageRating(String hospitalId, String doctorId);
+    public Response getAverageRating(String branchId, String doctorId);
     
     // SUBSERVICE
     public Response getSubServiceInfoBySubServiceId(String subServiceId) throws JsonProcessingException ;
@@ -104,4 +103,16 @@ public interface CustomerService {
 			 String customerMobileNumber);
 
 	public ResponseEntity<?> getInProgressAppointments( String mnumber);
+	
+	public Response getBranchesInfoBySubServiceId(String clinicId,String subServiceId,String latitude,String longtitude) throws JsonProcessingException;
+	
+	public Response getReportsAndDoctorSaveDetails(String customerId);
+	
+	public ResponseEntity<?> customerLogin(CustomerLoginDTO dto);
+
+	public Response getDoctorsByHospitalBranchAndSubService( String hospitalId,
+			String branchId,  String subServiceId)throws JsonProcessingException;
+
+	public ResponseEntity<Response> getRecommendedClinicsAndOnDoctors(String keyPoints);
+
 }

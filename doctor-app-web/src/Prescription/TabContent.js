@@ -4,20 +4,19 @@ import SymptomsDiseases from './SymptomsDiseases'
 import DoctorSymptoms from './DoctorSymptoms'
 import TestsTreatments from './TestsTreatments'
 import FollowUp from './FollowUp'
-import DoctorFollowUp from './DoctorFollowUp' // <-- NEW
+import DoctorFollowUp from './DoctorFollowUp'
 import VisitHistory from './VisitHistory'
 import Summary from './Summary'
-import DoctorSummary from './DoctorSummary' // <-- NEW
+import DoctorSummary from './DoctorSummary'
 import Tests from './Tests'
 import MultiImageUpload from './ClinicImages'
 import { COLORS } from '../Themes'
-import ReportsManagement from '../components/Reports/Reports'
 import ReportDetails from '../components/Reports/Reports'
 import ImageGallery from './RetiveImages'
 
 const TabContent = ({
   activeTab,
-  formData,
+  formData = {},
   onSaveTemplate,
   onNext,
   setActiveTab,
@@ -31,68 +30,40 @@ const TabContent = ({
   switch (activeTab) {
     case 'Symptoms':
       content = fromDoctorTemplate ? (
-        <DoctorSymptoms
-          seed={formData.symptoms}
-          onNext={onNext}
-          sidebarWidth={260}
-          patientData={patientData}
-          setFormData={setFormData}
-          formData={formData}
-        />
+        <DoctorSymptoms seed={formData.symptoms || {}} onNext={onNext} sidebarWidth={260} patientData={patientData} setFormData={setFormData} formData={formData} />
       ) : (
-        <SymptomsDiseases
-          seed={formData.symptoms}
-          onNext={onNext}
-          sidebarWidth={260}
-          patientData={patientData}
-          setFormData={setFormData}
-          formData={formData}
-        />
+        <SymptomsDiseases seed={formData.symptoms || {}} onNext={onNext} sidebarWidth={260} patientData={patientData} setFormData={setFormData} formData={formData} />
       )
       break
 
     case 'Tests':
-      content = (
-        <Tests seed={formData.tests} onNext={onNext} sidebarWidth={260} formData={formData} />
-      )
+      content = <Tests seed={formData.tests || {}} onNext={onNext} sidebarWidth={260} formData={formData} />
       break
 
     case 'Medication':
-      content = <PrescriptionTab seed={formData.prescription} onNext={onNext} formData={formData} />
+      content = <PrescriptionTab seed={formData.prescription || {}} onNext={onNext} formData={formData} />
       break
 
     case 'Treatments':
-      content = <TestsTreatments seed={formData.treatments} onNext={onNext} formData={formData} />
+      content = <TestsTreatments seed={formData.treatments || {}} onNext={onNext} formData={formData} />
       break
 
     case 'Follow-up':
       content = fromDoctorTemplate ? (
-        <DoctorFollowUp
-          seed={formData.followUp}
-          onNext={onNext}
-          patientData={patientData}
-          formData={formData}
-          setFormData={setFormData}
-        />
+        <DoctorFollowUp seed={formData.followUp || {}} onNext={onNext} patientData={patientData} formData={formData} setFormData={setFormData} />
       ) : (
-        <FollowUp
-          seed={formData.followUp}
-          onNext={onNext}
-          patientData={patientData}
-          formData={formData}
-          setFormData={setFormData}
-        />
+        <FollowUp seed={formData.followUp || {}} onNext={onNext} patientData={patientData} formData={formData} setFormData={setFormData} />
       )
       break
 
     case 'History':
       content = (
         <VisitHistory
-          seed={formData.history}
+          seed={formData.history || {}}
           onNext={onNext}
           patientId={patientData?.patientId || formData.patientId}
           doctorId={patientData?.doctorId || formData.doctorId}
-          patientData={patientData} // expects patientData.bookingId
+          patientData={patientData}
           formData={formData}
         />
       )
@@ -100,22 +71,9 @@ const TabContent = ({
 
     case 'Prescription':
       content = fromDoctorTemplate ? (
-        <DoctorSummary
-          onNext={onNext}
-          onSaveTemplate={onSaveTemplate}
-          patientData={patientData}
-          formData={formData}
-          setFormData={setFormData}
-          sidebarWidth={260}
-        />
+        <DoctorSummary onNext={onNext} onSaveTemplate={onSaveTemplate} patientData={patientData} formData={formData} setFormData={setFormData} sidebarWidth={260} />
       ) : (
-        <Summary
-          onNext={onNext}
-          onSaveTemplate={onSaveTemplate}
-          patientData={patientData}
-          formData={formData}
-          sidebarWidth={260}
-        />
+        <Summary onNext={onNext} onSaveTemplate={onSaveTemplate} patientData={patientData} formData={formData} sidebarWidth={260} />
       )
       break
 
@@ -127,16 +85,8 @@ const TabContent = ({
       )
       break
 
-    // in TabContent.jsx (Reports case)
     case 'Reports':
-      content = (
-        <ReportDetails
-          patientData={patientData} // expects patientData.bookingId
-          formData={formData} // or formData.bookingId
-          show={true}
-        />
-      )
-
+      content = <ReportDetails patientData={patientData} formData={formData} show={true} />
       break
 
     default:

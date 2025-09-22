@@ -7,10 +7,10 @@ public interface QuetionsAndAnswerForAddClinicService {
 
 	Response saveQuetions(QuetionsAndAnswerForAddClinicDTO dto);
 
-	Response getQuestionsById(String id);
+	Response updateQuetions(QuetionsAndAnswerForAddClinicDTO dto);
 
-	Response updateQuestion(String id, QuetionsAndAnswerForAddClinicDTO dto);
+	Response getQuetions();
 
-	Response getAllQuestions();
+
 
 }

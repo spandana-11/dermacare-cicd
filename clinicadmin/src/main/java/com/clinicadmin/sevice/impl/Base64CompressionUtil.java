@@ -7,6 +7,9 @@ import java.util.zip.Inflater;
 public class Base64CompressionUtil {
 
     public static String compressBase64(String data) {
+        if (data == null || data.isBlank()) {
+            return data; // nothing to compress
+        }
         try {
             byte[] input = Base64.getDecoder().decode(data);
             Deflater deflater = new Deflater();
@@ -27,12 +30,15 @@ public class Base64CompressionUtil {
     }
 
     public static String decompressBase64(String data) {
+        if (data == null || data.isBlank()) {
+            return data; // nothing to decompress
+        }
         try {
             byte[] compressedData = Base64.getDecoder().decode(data);
             Inflater inflater = new Inflater();
             inflater.setInput(compressedData);
 
-            byte[] buffer = new byte[4096]; // larger buffer for decompression
+            byte[] buffer = new byte[4096]; // large buffer
             int decompressedDataLength = inflater.inflate(buffer);
 
             byte[] decompressedBytes = new byte[decompressedDataLength];

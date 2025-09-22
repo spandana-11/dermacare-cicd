@@ -1,6 +1,5 @@
 package com.dermacare.doctorservice.dto;
 
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -19,21 +18,24 @@ import lombok.NoArgsConstructor;
 
 public class DoctorSaveDetailsDTO {
 
-    private String id;
+	private String id;
 
-    private String patientId;
-    private String doctorId;
-    private String doctorName;
-    private String clinicId;
-    private String clinicName;
-    private String bookingId;
-    private LocalDateTime visitDateTime;
-    private String visitType; 
-    private SymptomDetailsDTO symptoms;
-    private TestDetailsDTO tests;
-    private TreatmentResponseDTO treatments;
-    private FollowUpDetailsDTO followUp;
-    private PrescriptionDetailsDTO prescription;
-    private List<String> prescriptionPdf;
+	private String patientId;
+	private String doctorId;
+	private String doctorName;
+	private String clinicId;
+
+	private String clinicName;
+	private String customerId;
+	private String bookingId;
+	private LocalDateTime visitDateTime;
+	private String visitType;
+	private int visitCount; 
+	private SymptomDetailsDTO symptoms;
+	private TestDetailsDTO tests;
+	private TreatmentResponseDTO treatments;
+	private FollowUpDetailsDTO followUp;
+	private PrescriptionDetailsDTO prescription;
+	private List<String> prescriptionPdf;
+//    private int visitNumber;
 }
-

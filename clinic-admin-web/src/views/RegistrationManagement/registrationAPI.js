@@ -1,14 +1,11 @@
 import axios from 'axios'
 
-import {
-  BASE_URL,
-  ClinicAllData,
-  clinicPost
-} from '../../baseUrl'
+import { BASE_URL, ClinicAllData, clinicPost } from '../../baseUrl'
+import { http } from '../../Utils/Interceptors'
 
 export const clinicData = async () => {
   try {
-    const response = await axios.get(`${BASE_URL}/${ClinicAllData}`)
+    const response = await http.get(`${ClinicAllData}`)
     return response.data
   } catch (error) {
     console.error('Error fetching service data:', error.message)
@@ -41,7 +38,7 @@ export const postClinicData = async (serviceData) => {
   try {
     console.log('Sending data to API:', serviceData)
 
-    const response = await axios.post(`${BASE_URL}/${clinicPost}`, serviceData, {
+    const response = await http.post(`/${clinicPost}`, serviceData, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -57,27 +54,21 @@ export const postClinicData = async (serviceData) => {
 }
 
 export const updateServiceData = async (serviceId, serviceData) => {
-  console.log(serviceId,serviceData)
+  console.log(serviceId, serviceData)
   try {
-    const response = await axios.put(
-      `${BASE_URL}/updateClinic/${serviceId}`, 
-      serviceData, 
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-    
-    console.log('Service updated successfully:', response.data);
-    return response.data;  
+    const response = await http.put(`/updateClinic/${serviceId}`, serviceData, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    console.log('Service updated successfully:', response.data)
+    return response.data
   } catch (error) {
-    console.error('Error updating service:', error);
-    throw error; 
+    console.error('Error updating service:', error)
+    throw error
   }
-};
-
-
+}
 
 // export const deleteServiceData = async (serviceId) => {
 //   try {

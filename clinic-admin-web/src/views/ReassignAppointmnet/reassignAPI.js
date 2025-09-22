@@ -1,9 +1,10 @@
 import axios from 'axios'
 import { BASE_URL ,getData,postData} from '../../baseUrl'
+import { http } from '../../Utils/Interceptors'
 
 export const getReassign = async () => {
   try {
-    const response = await axios.get(`${BASE_URL}/${getData}`)
+    const response = await http.get(`/${getData}`)
     console.log(response.data)
     return response.data
   } catch (error) {
@@ -17,7 +18,7 @@ export const getReassign = async () => {
 
 export const postReassign = async (data) => {
   try {
-    const response = await axios.post(`${BASE_URL}/${postData}`,data)
+    const response = await http.post(`/${postData}`,data)
     console.log(response.data)
     return response.data
   } catch (error) {

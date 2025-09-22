@@ -19,5 +19,6 @@ public class StoreUpdatedQAInClinics {
     private List<QuestionAnswer> questionsAndAnswers;
     private int count;
     private int score;
+    private boolean submitedQA;
 }
 

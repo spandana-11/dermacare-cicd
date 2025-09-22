@@ -26,7 +26,7 @@ import com.dermacare.category_services.util.ResponseStructure;
 
 @RestController
 @RequestMapping("/v1/subServices")
-//Origin(origins = {"http://localhost:3000", "http://localhost:3001"})
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class SubServiceController {
 
 	@Autowired
@@ -201,5 +201,11 @@ public class SubServiceController {
 	    return new ResponseEntity<>(
 	            ResponseStructure.buildResponse(groupedList, "SubServices Grouped Successfully",HttpStatus.OK, HttpStatus.OK.value()),HttpStatus.OK);
 	}
+	
+	@GetMapping("/retrieveSubServicesBySubServiceId/{subServiceId}")
+	 public ResponseEntity<ResponseStructure<List<SubServicesDto>>> retrieveSubServicesBySubServiceId(@PathVariable String subServiceId){
+		//System.out.println("invke");
+       return subServiceService.retrieveSubServicesBySubServiceId(subServiceId);
+}
 		
 }

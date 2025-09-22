@@ -60,5 +60,12 @@ public class BookingController {
             @PathVariable String doctorId) {
         return bookingService.getConsultationTypeCounts(clinicId, doctorId);
     }
+    
+ // 7. Get in-progress appointments by patient mobile number
+    @GetMapping("/appointments/in-progress/{mobileNumber}")
+    public ResponseEntity<?> getInProgressAppointments(@PathVariable String mobileNumber) {
+        return bookingService.getInProgressAppointments(mobileNumber);
+    }
+
 }
 

@@ -1,6 +1,5 @@
 package com.dermacare.doctorservice.dto;
 
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -18,8 +17,13 @@ public class MedicinesDTO {
     private String name;
     private String dose;
     private String duration;
+    private String durationUnit;
+
     private String food;
+    private String medicineType;
     private String note;
     private String remindWhen;
     private List<String> times;
+    private String others;
+
 }

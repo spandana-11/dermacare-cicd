@@ -12,7 +12,13 @@ import {
   CModalHeader,
   CModalTitle,
   CRow,
-  CHeader,
+  CTable,
+  CTableHead,
+  CTableHeaderCell,
+  CTableBody,
+  CTableRow,
+  CTableDataCell,
+  CSpinner,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilSearch } from '@coreui/icons'
@@ -23,16 +29,20 @@ import {
   deleteTreatmentData,
   postTreatmentData,
   TreatmentData,
-
   TreatmentDataById,
-
   updateTreatmentData,
 } from './TreatmentsManagementAPI'
+import capitalizeWords from '../../Utils/capitalizeWords'
+import { Edit2, Eye, Trash2 } from 'lucide-react'
+import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
+import ConfirmationModal from '../../components/ConfirmationModal'
+import LoadingIndicator from '../../Utils/loader'
+import { useHospital } from '../Usecontext/HospitalContext'
 
 const TreatmentsManagement = () => {
-  const [searchQuery, setSearchQuery] = useState('')
+  // const [searchQuery, setSearchQuery] = useState('')
   const [treatment, setTreatment] = useState([])
-  const [filteredData, setFilteredData] = useState([])
+  // const [filteredData, setFilteredData] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -47,8 +57,11 @@ const TreatmentsManagement = () => {
   const [hospitalIdToDelete, setHospitalIdToDelete] = useState(null)
 
   const [newTreatment, setNewTreatment] = useState({ treatmentName: '' })
-
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
   const hospitalId = localStorage.getItem('HospitalId')
+  const { user } = useHospital()
+  const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
 
   // Normalize API data to have consistent IDs
   const normalizeTreatments = (data) =>
@@ -80,6 +93,9 @@ const TreatmentsManagement = () => {
       setLoading(false)
     }
   }
+  const { searchQuery, setSearchQuery } = useGlobalSearch()
+
+  // ✅ Apply global search filtering
 
   useEffect(() => {
     // fetchData()
@@ -87,17 +103,17 @@ const TreatmentsManagement = () => {
   }, [])
 
   // Search filter
-  useEffect(() => {
-    const trimmedQuery = searchQuery.toLowerCase().trim()
-    if (!trimmedQuery) {
-      setFilteredData([])
-      return
-    }
-    const filtered = treatment.filter((t) =>
-      t.treatmentName?.toLowerCase().includes(trimmedQuery),
-    )
-    setFilteredData(filtered)
-  }, [searchQuery, treatment])
+  // useEffect(() => {
+  //   const trimmedQuery = searchQuery.toLowerCase().trim()
+  //   if (!trimmedQuery) {
+  //     setFilteredData([])
+  //     return
+  //   }
+  //   const filtered = treatment.filter((t) =>
+  //     t.treatmentName?.toLowerCase().startsWith(trimmedQuery),
+  //   )
+  //   setFilteredData(filtered)
+  // }, [searchQuery, treatment])
 
   // Delete confirm
   const handleConfirmDelete = async () => {
@@ -118,24 +134,49 @@ const TreatmentsManagement = () => {
     setHospitalIdToDelete(null)
     setIsModalVisible(false)
   }
-
+  const nameRegex = /^[A-Za-z\s.]+$/
   // Add treatment
   const handleAddTreatment = async () => {
-    if (!newTreatment.treatmentName.trim()) {
+    const trimmedName = newTreatment.treatmentName.trim()
+
+    // 🔹 Validation
+    if (!trimmedName) {
       setErrors({ treatmentName: 'Treatment name is required.' })
+      return
+    }
+    if (!nameRegex.test(trimmedName)) {
+      setErrors({ treatmentName: 'Only alphabets, spaces, and "." are allowed.' })
+      return
+    }
+
+    // 🔹 Duplicate check (case-insensitive)
+    const duplicate = treatment.some(
+      (t) => t.treatmentName.trim().toLowerCase() === trimmedName.toLowerCase(),
+    )
+    if (duplicate) {
+      toast.error(`Duplicate treatment name - "${trimmedName}" already exists!`, {
+        position: 'top-right',
+      })
       return
     }
 
     try {
       const payload = {
-        treatmentName: newTreatment.treatmentName,
+        treatmentName: trimmedName,
         hospitalId: hospitalId,
       }
 
-      await postTreatmentData(payload)
+      const response = await postTreatmentData(payload)
+
+      // 🔹 Add new treatment at top
+      const newTreatmentRow = {
+        id: response.data.id || response.id,
+        treatmentName: response.data.treatmentName || trimmedName,
+        hospitalId: response.data.hospitalId || hospitalId,
+      }
+      setTreatment((prev) => [newTreatmentRow, ...prev]) // new first
+
       toast.success('Treatment added successfully!')
-      // fetchData()
-      fetchDataBy_HId(hospitalId)
       setModalVisible(false)
       setNewTreatment({ treatmentName: '' })
     } catch (error) {
@@ -143,15 +184,53 @@ const TreatmentsManagement = () => {
         error.response?.data?.message ||
         error.response?.statusText ||
         'An unexpected error occurred.'
-      const statusCode = error.response?.status
-      if (statusCode === 409 || errorMessage.toLowerCase().includes('duplicate')) {
-        toast.error(
-          `Error: Duplicate treatment name - ${newTreatment.treatmentName} already exists!`,
-          { position: 'top-right' },
-        )
-      } else {
-        toast.error(`Error adding treatment: ${errorMessage}`, { position: 'top-right' })
-      }
+      toast.error(`Error adding treatment: ${errorMessage}`, { position: 'top-right' })
+    }
+  }
+  const handleUpdateTreatment = async () => {
+    const { id: treatmentId, hospitalId, treatmentName } = treatmentToEdit
+    const trimmedName = treatmentName?.trim()
+
+    // 🔹 Validation
+    if (!trimmedName) {
+      setErrors({ treatmentName: 'Treatment name is required.' })
+      return
+    }
+    if (!nameRegex.test(trimmedName)) {
+      setErrors({ treatmentName: 'Only alphabets, spaces, and "." are allowed.' })
+      return
+    }
+
+    // 🔹 Duplicate check (ignore the one being edited)
+    const duplicate = treatment.some(
+      (t) =>
+        t.id !== treatmentId && t.treatmentName.trim().toLowerCase() === trimmedName.toLowerCase(),
+    )
+    if (duplicate) {
+      toast.error(`Duplicate treatment name - "${trimmedName}" already exists!`, {
+        position: 'top-right',
+      })
+      return
+    }
+
+    try {
+      await updateTreatmentData(
+        { treatmentName: trimmedName, hospitalId: hospitalId },
+        treatmentId,
+        hospitalId,
+      )
+
+      toast.success('Treatment updated successfully!')
+
+      // 🔹 Update state immediately (no need to refetch)
+      setTreatment((prev) =>
+        prev.map((t) => (t.id === treatmentId ? { ...t, treatmentName: trimmedName } : t)),
+      )
+
+      setEditTreatmentMode(false)
+    } catch (error) {
+      console.error('Update error:', error)
+      toast.error('Failed to update treatment.')
     }
   }
 
@@ -161,31 +240,6 @@ const TreatmentsManagement = () => {
     setEditTreatmentMode(true)
   }
 
-  const handleUpdateTreatment = async () => {
-    const { id: treatmentId, hospitalId, treatmentName } = treatmentToEdit
-
-    if (!treatmentName.trim()) {
-      toast.error('Treatment name is required.')
-      return
-    }
-
-    try {
-      await updateTreatmentData(
-        { treatmentName: treatmentName.trim(), hospitalId: hospitalId.trim() },
-        treatmentId,
-        hospitalId,
-      )
-
-      toast.success('Treatment updated successfully!')
-      setEditTreatmentMode(false)
-      // fetchData()
-      fetchDataBy_HId(hospitalId)
-    } catch (error) {
-      console.error('Update error:', error)
-      toast.error('Failed to update treatment.')
-    }
-  }
-
   // Delete handler
   const handleTreatmentDelete = (treatment) => {
     setTreatmentIdToDelete(treatment.treatmentId || treatment.id || treatment._id)
@@ -193,64 +247,93 @@ const TreatmentsManagement = () => {
     setIsModalVisible(true)
   }
 
-  // Table columns
-  const columns = [
-    {
-      name: 'S.No',
-      selector: (row, index) => index + 1,
-      width: '10%',
-    },
-    {
-      name: 'Treatment Name',
-      selector: (row) => row.treatmentName,
-      sortable: true,
-      width: '45%',
-    },
-    {
-      name: 'Actions',
-      cell: (row) => (
-        <div style={{ display: 'flex', justifyContent: 'space-between', width: '250px' }}>
-          <div onClick={() => setViewTreatment(row)} style={{ color: 'green', cursor: 'pointer' }}>
-            View
-          </div>
-          <div onClick={() => handleTreatmentEdit(row)} style={{ color: 'blue', cursor: 'pointer' }}>
-            Edit
-          </div>
-          <div
-            onClick={() => handleTreatmentDelete(row)}
-            style={{ color: 'red', cursor: 'pointer' }}
-          >
-            Delete
-          </div>
-        </div>
-      ),
-    },
-  ]
+  //   const columns = [
+  //   {
+  //     name: 'S.No',
+  //     selector: (row, index) => (currentPage - 1) * rowsPerPage + index + 1,
+  //     width: '25%',
+  //     center: true,
+  //     style: { paddingLeft: '12px', paddingRight: '12px' }, // neat spacing
+  //   },
+  //   {
+  //     name: 'Treatment Name',
+  //     selector: (row) => row.treatmentName,
+  //     width: '25%',
+  //     style: { paddingLeft: '25px', paddingRight: '12px' },
+  //   },
+  //   {
+  //     name: 'Actions',
+  //     cell: (row) => (
+  //       <div
+  //         style={{
+  //           display: 'flex',
+  //           justifyContent: 'center',
+  //           gap: '30px', // 👈 evenly spaced buttons
+  //           width: '100%',
+  //         }}
+  //       >
+  //         <span
+  //           onClick={() => setViewTreatment(row)}
+  //           style={{ color: 'green', cursor: 'pointer', fontWeight: 500 }}
+  //         >
+  //           View
+  //         </span>
+  //         <span
+  //           onClick={() => handleTreatmentEdit(row)}
+  //           style={{ color: 'blue', cursor: 'pointer', fontWeight: 500 }}
+  //         >
+  //           Edit
+  //         </span>
+  //         <span
+  //           onClick={() => handleTreatmentDelete(row)}
+  //           style={{ color: 'red', cursor: 'pointer', fontWeight: 500 }}
+  //         >
+  //           Delete
+  //         </span>
+  //       </div>
+  //     ),
+  //     width: '22%',
+  //     center: true,
+  //   },
+  // ]
 
-  const ConfirmationModal = ({ isVisible, message, onConfirm, onCancel }) => {
-    return (
-      <CModal visible={isVisible} onClose={onCancel} backdrop="static">
-        <CModalHeader>
-          <CModalTitle>Confirmation</CModalTitle>
-        </CModalHeader>
-        <CModalBody>{message}</CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" onClick={onCancel}>
-            Cancel
-          </CButton>
-          <CButton color="danger" onClick={onConfirm}>
-            Confirm
-          </CButton>
-        </CModalFooter>
-      </CModal>
+  // const ConfirmationModal = ({ isVisible, message, onConfirm, onCancel }) => {
+  //   return (
+  //     <CModal visible={isVisible} onClose={onCancel} backdrop="static">
+  //       <CModalHeader>
+  //         <CModalTitle>Confirmation</CModalTitle>
+  //       </CModalHeader>
+  //       <CModalBody>{message}</CModalBody>
+  //       <CModalFooter>
+  //         <CButton color="secondary" onClick={onCancel}>
+  //           Cancel
+  //         </CButton>
+  //         <CButton color="danger" onClick={onConfirm}>
+  //           Confirm
+  //         </CButton>
+  //       </CModalFooter>
+  //     </CModal>
+  //   )
+  // }
+  const filteredData = React.useMemo(() => {
+    const q = searchQuery.toLowerCase().trim()
+    if (!q) return treatment
+    return treatment.filter((item) =>
+      Object.values(item).some((val) => String(val).toLowerCase().includes(q)),
     )
-  }
+  }, [searchQuery, treatment])
+
+  const displayData = filteredData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+
+  // const displayData = filteredData.length
+  //   ? filteredData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+  //   : treatment.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
 
   return (
     <div>
       <ToastContainer />
       <CForm className="d-flex justify-content-between mb-3">
-        <CInputGroup className="mb-3" style={{ width: '300px', marginLeft: '40px' }}>
+        {/* <CInputGroup className="mb-3" style={{ width: '300px', marginLeft: '40px' }}>
           <CFormInput
             type="text"
             placeholder="Search by Treatment Name"
@@ -260,14 +343,32 @@ const TreatmentsManagement = () => {
           <CInputGroupText>
             <CIcon icon={cilSearch} />
           </CInputGroupText>
-        </CInputGroup>
-        <CButton
-          color="primary"
+        </CInputGroup> */}
+ {can('Treatments', 'create') && (
+        <div
+          className=" w-100"
+          style={{ display: 'flex', justifyContent: 'end', alignContent: 'end', alignItems: 'end' }}
+        >
+          <CButton
+            style={{
+              color: 'var(--color-black)',
+              backgroundColor: 'var(--color-bgcolor)',
+            }}
+            onClick={() => setModalVisible(true)}
+          >
+            Add Treatment
+          </CButton>
+        </div>
+ )}
+
+        {/* <CButton
+          color="info"
+          className="text-white"
           style={{ marginRight: '100px' }}
           onClick={() => setModalVisible(true)}
         >
           Add Treatment
-        </CButton>
+        </CButton> */}
       </CForm>
 
       {viewTreatment && (
@@ -275,7 +376,7 @@ const TreatmentsManagement = () => {
           <CModalHeader>
             <CModalTitle>Treatment Details</CModalTitle>
           </CModalHeader>
-          <CModalBody>
+          <CModalBody style={{ color: 'var(--color-black)' }}>
             <CRow className="mb-3">
               <CCol sm={4}>
                 <strong>Treatment Name:</strong>
@@ -324,60 +425,221 @@ const TreatmentsManagement = () => {
           </CForm>
         </CModalBody>
         <CModalFooter>
-          <CButton color="primary" onClick={handleAddTreatment}>
-            Add
-          </CButton>
           <CButton color="secondary" onClick={() => setModalVisible(false)}>
             Cancel
           </CButton>
+          <CButton
+            style={{ backgroundColor: 'var(--color-black)' }}
+            className="text-white"
+            onClick={handleAddTreatment}
+          >
+            Add
+          </CButton>
+          {/* <CButton color="info" className="text-white" onClick={handleAddTreatment}>
+            Add
+          </CButton> */}
         </CModalFooter>
       </CModal>
 
       {/* Edit Modal */}
-      <CModal visible={editTreatmentMode} onClose={() => setEditTreatmentMode(false)} backdrop="static">
+      <CModal
+        visible={editTreatmentMode}
+        onClose={() => setEditTreatmentMode(false)}
+        backdrop="static"
+      >
         <CModalHeader>
           <CModalTitle>Edit Treatment</CModalTitle>
         </CModalHeader>
         <CModalBody>
           <CForm>
-            <h6>Treatment Name</h6>
+            <h6>
+              Treatment Name <span style={{ color: 'red' }}>*</span>
+            </h6>
             <CFormInput
               type="text"
               value={treatmentToEdit?.treatmentName || ''}
-              onChange={(e) =>
+              onChange={(e) => {
                 setTreatmentToEdit({ ...treatmentToEdit, treatmentName: e.target.value })
-              }
+                if (errors.treatmentName) {
+                  setErrors((prev) => ({ ...prev, treatmentName: '' }))
+                }
+              }}
+              className={errors.treatmentName ? 'is-invalid' : ''}
             />
+            {errors.treatmentName && (
+              <div className="invalid-feedback" style={{ color: 'red' }}>
+                {errors.treatmentName}
+              </div>
+            )}
           </CForm>
         </CModalBody>
         <CModalFooter>
-          <CButton color="primary" onClick={handleUpdateTreatment}>
+          {/* <CButton color="info" className="text-white" onClick={handleUpdateTreatment}>
             Update
-          </CButton>
+          </CButton> */}
           <CButton color="secondary" onClick={() => setEditTreatmentMode(false)}>
             Cancel
+          </CButton>
+          <CButton
+            style={{ backgroundColor: 'var(--color-black)' }}
+            className="text-white"
+            onClick={handleUpdateTreatment}
+          >
+            Update
           </CButton>
         </CModalFooter>
       </CModal>
 
       {/* Delete Confirmation */}
-      <ConfirmationModal
+      {/* <ConfirmationModal
         isVisible={isModalVisible}
         message="Are you sure you want to delete this treatment?"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      /> */}
+
+      <ConfirmationModal
+        isVisible={isModalVisible}
+        title="Delete Doctor"
+        message="Are you sure you want to delete this treatment? This action cannot be undone."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        confirmColor="danger"
+        cancelColor="secondary"
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
       />
 
       {loading ? (
-        <div style={{ textAlign: 'center' }}>Loading...</div>
+        <div className="d-flex justify-content-center align-items-center">
+          <LoadingIndicator message="Loading treatments..." />
+        </div>
       ) : error ? (
-        <div>{error}</div>
+        <div
+          className="d-flex justify-content-center align-items-center"
+          style={{
+            height: '50vh', // full screen height
+
+            color: 'var(--color-black)',
+          }}
+        >
+          {error}
+        </div>
       ) : (
-        <DataTable
-          columns={columns}
-          data={filteredData.length ? filteredData : treatment}
-          pagination
-        />
+        <CTable striped hover responsive>
+          <CTableHead className="pink-table">
+            <CTableRow>
+              <CTableHeaderCell style={{ paddingLeft: '40px' }}>S.No</CTableHeaderCell>
+              <CTableHeaderCell>Treatment Name</CTableHeaderCell>
+              <CTableHeaderCell className="text-end">Actions</CTableHeaderCell>
+            </CTableRow>
+          </CTableHead>
+          <CTableBody className="pink-table">
+            {displayData.length > 0 ? (
+              displayData.map((treatment, index) => (
+                <CTableRow key={treatment.id}>
+                  <CTableDataCell style={{ paddingLeft: '40px' }}>
+                    {(currentPage - 1) * rowsPerPage + index + 1}
+                  </CTableDataCell>
+                  <CTableDataCell>{capitalizeWords(treatment.treatmentName)}</CTableDataCell>
+                  <CTableDataCell className="text-end">
+                    <div className="d-flex justify-content-end gap-2  ">
+                      {can('Treatments', 'read') && (
+                        <button
+                          className="actionBtn"
+                          onClick={() => setViewTreatment(treatment)}
+                          title="View"
+                        >
+                          <Eye size={18} />
+                        </button>
+                      )}
+
+ {can('Treatments', 'update') && (
+                      <button
+                        className="actionBtn"
+                        onClick={() => {
+                          setTreatmentToEdit(treatment)
+                          setEditTreatmentMode(true)
+                        }}
+                        title="Edit"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+ )}
+  {can('Treatments', 'delete') && (
+                      <button
+                        className="actionBtn"
+                        onClick={() => handleTreatmentDelete(treatment)}
+                        title="Delete"
+                      >
+                        <Trash2 size={18} />
+                      </button>)}
+                    </div>
+                  </CTableDataCell>
+                  {/* <CTableDataCell>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '140px' }}>
+                    <div
+                      onClick={() => setViewTreatment(treatment)}
+                      style={{ color: 'green', cursor: 'pointer' }}
+                    >
+                      View
+                    </div>
+                    <div
+                      onClick={() => {
+                        setTreatmentToEdit(treatment)
+                        setEditTreatmentMode(true)
+                      }}
+                      style={{ color: 'blue', cursor: 'pointer' }}
+                    >
+                      Edit
+                    </div>
+                    <div
+                      onClick={() => handleTreatmentDelete(treatment)}
+                      style={{ color: 'red', cursor: 'pointer' }}
+                    >
+                      Delete
+                    </div>
+                  </div>
+                </CTableDataCell> */}
+                </CTableRow>
+              ))
+            ) : (
+              <CTableRow>
+                <CTableDataCell colSpan={5} className="text-center text-muted">
+                  🔍 No diseases found treatment "<b>{searchQuery}</b>"
+                </CTableDataCell>
+              </CTableRow>
+            )}
+          </CTableBody>
+        </CTable>
+      )}
+      {/* Pagination Controls */}
+      {!loading && (
+        <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
+          {Array.from(
+            {
+              length: Math.ceil(
+                (filteredData.length ? filteredData.length : treatment.length) / rowsPerPage,
+              ),
+            },
+            (_, index) => (
+              <CButton
+                key={index}
+                style={{
+                  backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
+                  color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
+                  border: '1px solid #ccc',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                }}
+                className="ms-2"
+                onClick={() => setCurrentPage(index + 1)}
+              >
+                {index + 1}
+              </CButton>
+            ),
+          )}
+        </div>
       )}
     </div>
   )

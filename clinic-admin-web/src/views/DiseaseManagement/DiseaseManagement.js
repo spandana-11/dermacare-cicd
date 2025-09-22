@@ -12,12 +12,19 @@ import {
   CModalHeader,
   CModalTitle,
   CRow,
+  CSpinner,
+  CTable,
+  CTableBody,
+  CTableDataCell,
+  CTableHead,
+  CTableHeaderCell,
+  CTableRow,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilSearch } from '@coreui/icons'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import DataTable from 'react-data-table-component'
+// import '../widgets/Widget.css'
 import {
   deleteDiseaseData,
   postDiseaseData,
@@ -25,11 +32,16 @@ import {
   updateDiseaseData,
   TestdDiseaseByHId,
 } from './DiseaseManagementAPI'
-
+import ConfirmationModal from '../../components/ConfirmationModal'
+import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
+import capitalizeWords from '../../Utils/capitalizeWords'
+import { Eye, Edit2, Trash2 } from 'lucide-react' // modern icons
+import { Button } from 'bootstrap'
+import LoadingIndicator from '../../Utils/loader'
 const DiseasesManagement = () => {
-  const [searchQuery, setSearchQuery] = useState('')
+  // const [searchQuery, setSearchQuery] = useState('')
   const [diseases, setDiseases] = useState([])
-  const [filteredData, setFilteredData] = useState([])
+  // const [filteredData, setFilteredData] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [modalVisible, setModalVisible] = useState(false)
@@ -40,44 +52,23 @@ const DiseasesManagement = () => {
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [diseaseIdToDelete, setDiseaseIdToDelete] = useState(null)
   const [hospitalIdToDelete, setHospitalIdToDelete] = useState(null)
-  const [newDisease, setNewDisease] = useState({ disease: '' })
-
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [newDisease, setNewDisease] = useState({
+    diseaseName: '',
+    probableSymptoms: '',
+    notes: '',
+  })
+  const { searchQuery, setSearchQuery } = useGlobalSearch()
   const hospitalId = localStorage.getItem('HospitalId')
-  const randomSymptoms = [
-    'Fever, cough',
-    'Headache, fatigue',
-    'Nausea, dizziness',
-    'Joint pain, swelling',
-    'Shortness of breath, chest pain',
-    'Skin rash, itching',
-  ]
-
-  const randomNotes = [
-    'Monitor symptoms closely.',
-    'Patient should rest.',
-    'Follow-up required in 2 weeks.',
-    'Medication may be needed.',
-    'Symptoms usually mild.',
-    'Consult specialist if persists.',
-  ]
-
-  const getRandomItem = (arr) => arr[Math.floor(Math.random() * arr.length)]
-
   const normalizeDiseases = (data) =>
     data.map((item) => ({
-      ...item,
       id: item.id || item._id,
-      disease: item.disease || '',
-      probableSymptoms: getRandomItem(randomSymptoms),
-      notes: getRandomItem(randomNotes),
+      diseaseName: item.diseaseName || '',
+      probableSymptoms: item.probableSymptoms || '',
+      notes: item.notes || '',
+      hospitalId: item.hospitalId,
     }))
-
-  // const normalizeDiseases = (data) =>
-  //   data.map((item) => ({
-  //     ...item,
-  //     id: item.id || item._id,
-  //     disease: item.disease || '',
-  //   }))
 
   const fetchData = async () => {
     setLoading(true)
@@ -126,205 +117,175 @@ const DiseasesManagement = () => {
     fetchDataByHid(hospitalId)
   }, [])
 
-  useEffect(() => {
-    const trimmedQuery = searchQuery.toLowerCase().trim()
-    if (!trimmedQuery) {
-      setFilteredData([])
-      return
-    }
-    const filtered = diseases.filter((d) => d.disease?.toLowerCase().includes(trimmedQuery))
-    setFilteredData(filtered)
+  // ✅ Apply global search filtering
+  const filteredData = React.useMemo(() => {
+    const q = searchQuery.toLowerCase().trim()
+    if (!q) return diseases
+    return diseases.filter((item) =>
+      Object.values(item).some((val) => String(val).toLowerCase().includes(q)),
+    )
   }, [searchQuery, diseases])
 
   const validateForm = () => {
     const newErrors = {}
-    if (!newDisease.disease.trim()) newErrors.disease = 'Disease name is required.'
+    if (!newDisease.diseaseName.trim()) newErrors.disease = 'Disease name is required.'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-const handleAddDisease = async () => {
-  if (!validateForm()) return
-  try {
-    const payload = {
-      disease: newDisease.disease,
-      hospitalId: hospitalId,
-      // probableSymptoms:probableSymptoms,
-      // notes:notes
+  const nameRegex = /^[A-Za-z\s.]+$/
+
+  const handleAddDisease = async () => {
+    const trimmedName = newDisease.diseaseName.trim()
+
+    // Empty check
+    if (!trimmedName) {
+      setErrors({ diseaseName: 'Disease name is required.' })
+      return
     }
 
-    await postDiseaseData(payload)
-
-    // Add row to table with dummy fields if modal fields are empty
-    const newDiseaseRow = {
-      id: Date.now(),
-      disease: newDisease.disease,
-      probableSymptoms:
-        newDisease.probableSymptoms || getRandomItem(randomSymptoms),
-      notes: newDisease.notes || getRandomItem(randomNotes),
-      hospitalId: hospitalId,
+    // Regex validation
+    if (!nameRegex.test(trimmedName)) {
+      setErrors({ diseaseName: 'Only alphabets, spaces, and "." are allowed.' })
+      return
     }
 
-    setDiseases((prev) => [newDiseaseRow, ...prev])
-    setNewDisease({ disease: '', probableSymptoms: '', notes: '' })
-    setSearchQuery('')
-    toast.success('Disease added successfully!')
-    setModalVisible(false)
-  } catch (error) {
-    const errorMessage =
-      error.response?.data?.message ||
-      error.response?.statusText ||
-      'An unexpected error occurred.'
-    const statusCode = error.response?.status
-    if (statusCode === 409 || errorMessage.toLowerCase().includes('duplicate')) {
-      toast.error(`Error: Duplicate disease name - ${newDisease.disease} already exists!`, {
+    // ✅ Duplicate check before API call
+    const duplicate = diseases.some(
+      (t) => t.diseaseName.trim().toLowerCase() === trimmedName.toLowerCase(),
+    )
+    if (duplicate) {
+      toast.error(`Duplicate disease name - ${trimmedName} already exists!`, {
         position: 'top-right',
       })
-    } else {
-      toast.error(`Error adding disease: ${errorMessage}`, { position: 'top-right' })
+      setModalVisible(false)
+      return
+    }
+
+    try {
+      const payload = {
+        diseaseName: trimmedName,
+        hospitalId,
+        probableSymptoms: newDisease.probableSymptoms,
+        notes: newDisease.notes,
+      }
+
+      const response = await postDiseaseData(payload)
+
+      const newDiseaseRow = {
+        id: response.data.id || response.id,
+        diseaseName: response.data.diseaseName,
+        probableSymptoms: response.data.probableSymptoms,
+        notes: response.data.notes,
+        hospitalId: response.data.hospitalId,
+      }
+
+      setDiseases((prev) => [newDiseaseRow, ...prev])
+      setNewDisease({ diseaseName: '', probableSymptoms: '', notes: '' })
+      fetchDataByHid(hospitalId)
+      toast.success('Disease added successfully!')
+      setModalVisible(false)
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.statusText ||
+        'An unexpected error occurred.'
+      toast.error(`Error adding disease: ${errorMessage}`)
     }
   }
-}
 
+  const handleUpdateDisease = async () => {
+    if (!diseaseToEdit?.diseaseName?.trim()) {
+      setErrors({ diseaseName: 'Disease name is required.' })
+      // toast.error('Disease name cannot be empty!', { position: 'top-right' })
+      return
+    }
+    if (!nameRegex.test(diseaseToEdit.diseaseName.trim())) {
+      setErrors({ diseaseName: 'Only alphabets, spaces, and "." are allowed.' })
+      return
+    }
 
+    const duplicate = diseases.some(
+      (d) =>
+        d.diseaseName.trim().toLowerCase() === diseaseToEdit.diseaseName.trim().toLowerCase() &&
+        d.id !== diseaseToEdit.id,
+    )
+    if (duplicate) {
+      toast.error(`Duplicate disease name - ${diseaseToEdit.diseaseName} already exists!`, {
+        position: 'top-right',
+      })
+      return
+    }
+
+    try {
+      await updateDiseaseData(
+        {
+          diseaseName: diseaseToEdit.diseaseName,
+          probableSymptoms: diseaseToEdit.probableSymptoms,
+          notes: diseaseToEdit.notes,
+          hospitalId: diseaseToEdit.hospitalId,
+        },
+        diseaseToEdit.id,
+        diseaseToEdit.hospitalId,
+      )
+
+      setDiseases((prev) =>
+        prev.map((d) => (d.id === diseaseToEdit.id ? { ...d, ...diseaseToEdit } : d)),
+      )
+
+      toast.success('Disease updated successfully!')
+      setEditDiseaseMode(false)
+    } catch (error) {
+      console.error('Update error:', error)
+      toast.error('Failed to update disease.')
+    }
+  }
 
   const handleDiseaseEdit = (disease) => {
-    setDiseaseToEdit({
-      ...disease,
-      hospitalId, // Always from localStorage
-    })
+    setDiseaseToEdit({ ...disease, hospitalId })
     setEditDiseaseMode(true)
   }
-
-const handleUpdateDisease = async () => {
-  if (!diseaseToEdit || !diseaseToEdit.id) {
-    toast.error('Missing disease data to update.');
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    // Only send required fields to backend
-    await updateDiseaseData(
-      {
-        disease: diseaseToEdit.disease,
-        hospitalId: hospitalId,
-      },
-      diseaseToEdit.id, // must match backend ID (_id)
-      hospitalId
-    );
-
-    // Update table locally including dummy fields
-    setDiseases((prev) =>
-      prev.map((d) =>
-        d.id === diseaseToEdit.id
-          ? {
-              ...d,
-              disease: diseaseToEdit.disease,
-              probableSymptoms: diseaseToEdit.probableSymptoms || '',
-              notes: diseaseToEdit.notes || '',
-            }
-          : d
-      )
-    );
-
-    toast.success('Disease updated successfully!');
-    setEditDiseaseMode(false);
-  } catch (error) {
-    console.error('Update error:', error);
-    toast.error('Failed to update disease.');
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-
 
   const handleDiseaseDelete = (disease) => {
     setDiseaseIdToDelete(disease.diseaseId || disease.id || disease._id)
     setHospitalIdToDelete(disease.hospitalId)
     setIsModalVisible(true)
   }
-
-  const columns = [
-    { name: 'S.No', selector: (row, index) => index + 1, width: '5%' },
-    { name: 'Disease Name', selector: (row) => row.disease, sortable: true, width: '20%' },
-    { name: 'Probable Symptoms', selector: (row) => row.probableSymptoms, width: '25%' },
-    { name: 'Notes', selector: (row) => row.notes, width: '30%' },
-    {
-      name: 'Actions',
-      cell: (row) => (
-        <div style={{ display: 'flex', justifyContent: 'space-between', width: '180px' }}>
-          <div onClick={() => setViewDisease(row)} style={{ color: 'green', cursor: 'pointer' }}>
-            View
-          </div>
-          <div onClick={() => handleDiseaseEdit(row)} style={{ color: 'blue', cursor: 'pointer' }}>
-            Edit
-          </div>
-          <div onClick={() => handleDiseaseDelete(row)} style={{ color: 'red', cursor: 'pointer' }}>
-            Delete
-          </div>
-        </div>
-      ),
-    },
-  ]
-
-  const ConfirmationModal = ({ isVisible, message, onConfirm, onCancel }) => {
-    return (
-      <CModal visible={isVisible} onClose={onCancel} backdrop="static">
-        <CModalHeader>
-          <CModalTitle>Confirmation</CModalTitle>
-        </CModalHeader>
-        <CModalBody>{message}</CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" onClick={onCancel}>
-            Cancel
-          </CButton>
-          <CButton color="danger" onClick={onConfirm}>
-            Confirm
-          </CButton>
-        </CModalFooter>
-      </CModal>
-    )
-  }
+  // Always show filteredData
+  const displayData = filteredData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
 
   return (
     <div>
       <ToastContainer />
-      <CForm className="d-flex justify-content-between mb-3">
-        <CInputGroup className="mb-3" style={{ width: '300px', marginLeft: '40px' }}>
-          <CFormInput
-            type="text"
-            placeholder="Search by Disease Name"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <CInputGroupText>
-            <CIcon icon={cilSearch} />
-          </CInputGroupText>
-        </CInputGroup>
+      <div
+        className="mb-3 w-100"
+        style={{ display: 'flex', justifyContent: 'end', alignContent: 'end', alignItems: 'end' }}
+      >
         <CButton
-          color="primary"
-          style={{ marginRight: '100px' }}
-          onClick={() => setModalVisible(true)}
+          style={{
+            color: 'var(--color-black)',
+            backgroundColor: 'var(--color-bgcolor)',
+          }}
+          onClick={() => {
+            setErrors({})
+            setModalVisible(true)
+          }}
         >
           Add Disease
         </CButton>
-      </CForm>
+      </div>
 
       {viewDisease && (
-        <CModal visible={!!viewDisease} onClose={() => setViewDisease(null)}>
+        <CModal visible={!!viewDisease} onClose={() => setViewDisease(null)} backdrop="static">
           <CModalHeader>
             <CModalTitle>Disease Details</CModalTitle>
           </CModalHeader>
-          <CModalBody>
+          <CModalBody style={{ color: 'var(--color-black)' }}>
             <CRow className="mb-3">
               <CCol sm={4}>
                 <strong>Disease Name:</strong>
               </CCol>
-              <CCol sm={8}>{viewDisease.disease}</CCol>
+              <CCol sm={8}>{viewDisease.diseaseName}</CCol>
             </CRow>
             <CRow className="mb-3">
               <CCol sm={4}>
@@ -349,58 +310,49 @@ const handleUpdateDisease = async () => {
         </CModalHeader>
         <CModalBody>
           <CForm>
-  {/* Disease Name */}
-  <h6>
-    Disease Name <span style={{ color: 'red' }}>*</span>
-  </h6>
-  <CFormInput
-    type="text"
-    name="disease"
-    value={newDisease.disease}
-    onChange={(e) => {
-      const value = e.target.value
-      setNewDisease({ ...newDisease, disease: value })
-      if (errors.disease) setErrors((prev) => ({ ...prev, disease: '' }))
-    }}
-    placeholder="Enter disease name"
-    className={errors.disease ? 'is-invalid' : ''}
-  />
-  {errors.disease && (
-    <div className="invalid-feedback" style={{ color: 'red' }}>
-      {errors.disease}
-    </div>
-  )}
+            <h6>
+              Disease Name <span style={{ color: 'red' }}>*</span>
+            </h6>
+            <CFormInput
+              type="text"
+              value={newDisease.diseaseName}
+              onChange={(e) => {
+                setNewDisease({ ...newDisease, diseaseName: e.target.value })
+                if (errors.diseaseName) {
+                  setErrors({ ...errors, diseaseName: '' }) // clear error when typing
+                }
+              }}
+            />
+            {errors.diseaseName && (
+              <p style={{ color: 'red', fontSize: '0.9rem', marginTop: '5px' }}>
+                {errors.diseaseName}
+              </p>
+            )}
 
-  {/* Probable Symptoms */}
-  <h6 className="mt-3">Probable Symptoms</h6>
-  <CFormInput
-    type="text"
-    name="probableSymptoms"
-    value={newDisease.probableSymptoms || ''}
-    onChange={(e) =>
-      setNewDisease({ ...newDisease, probableSymptoms: e.target.value })
-    }
-    placeholder="Enter probable symptoms (optional)"
-  />
-
-  {/* Notes */}
-  <h6 className="mt-3">Notes</h6>
-  <CFormInput
-    type="text"
-    name="notes"
-    value={newDisease.notes || ''}
-    onChange={(e) => setNewDisease({ ...newDisease, notes: e.target.value })}
-    placeholder="Enter notes (optional)"
-  />
-</CForm>
-
+            <h6 className="mt-3">Probable Symptoms</h6>
+            <CFormInput
+              type="text"
+              value={newDisease.probableSymptoms}
+              onChange={(e) => setNewDisease({ ...newDisease, probableSymptoms: e.target.value })}
+            />
+            <h6 className="mt-3">Notes</h6>
+            <CFormInput
+              type="text"
+              value={newDisease.notes}
+              onChange={(e) => setNewDisease({ ...newDisease, notes: e.target.value })}
+            />
+          </CForm>
         </CModalBody>
         <CModalFooter>
-          <CButton color="primary" onClick={handleAddDisease}>
-            Add
-          </CButton>
           <CButton color="secondary" onClick={() => setModalVisible(false)}>
             Cancel
+          </CButton>
+          <CButton
+            style={{ backgroundColor: 'var(--color-black)' }}
+            className="text-white"
+            onClick={handleAddDisease}
+          >
+            Add
           </CButton>
         </CModalFooter>
       </CModal>
@@ -412,56 +364,169 @@ const handleUpdateDisease = async () => {
         </CModalHeader>
         <CModalBody>
           <CForm>
-            <h6>Disease Name</h6>
+            <h6>
+              Disease Name <span style={{ color: 'red' }}>*</span>
+            </h6>
             <CFormInput
               type="text"
-              value={diseaseToEdit?.disease || ''}
-              onChange={(e) => setDiseaseToEdit({ ...diseaseToEdit, disease: e.target.value })}
+              value={diseaseToEdit?.diseaseName || ''}
+              onChange={(e) => {
+                setDiseaseToEdit({ ...diseaseToEdit, diseaseName: e.target.value })
+                if (errors.diseaseName) {
+                  setErrors({ ...errors, diseaseName: '' }) // clear error when typing
+                }
+              }}
             />
+            {errors.diseaseName && (
+              <p style={{ color: 'red', fontSize: '0.9rem', marginTop: '5px' }}>
+                {errors.diseaseName}
+              </p>
+            )}
 
             <h6 className="mt-2">Probable Symptoms</h6>
-           <CFormInput
-  type="text"
-  value={diseaseToEdit?.probableSymptoms || ''}
-  onChange={(e) =>
-    setDiseaseToEdit({ ...diseaseToEdit, probableSymptoms: e.target.value })
-  }
-/>
+            <CFormInput
+              type="text"
+              value={diseaseToEdit?.probableSymptoms || ''}
+              onChange={(e) =>
+                setDiseaseToEdit({ ...diseaseToEdit, probableSymptoms: e.target.value })
+              }
+            />
+
             <h6 className="mt-2">Notes</h6>
             <CFormInput
-  type="text"
-  value={diseaseToEdit?.notes || ''}
-  onChange={(e) => setDiseaseToEdit({ ...diseaseToEdit, notes: e.target.value })}
-/>
+              type="text"
+              value={diseaseToEdit?.notes || ''}
+              onChange={(e) => setDiseaseToEdit({ ...diseaseToEdit, notes: e.target.value })}
+            />
           </CForm>
         </CModalBody>
         <CModalFooter>
-          <CButton color="primary" onClick={handleUpdateDisease}>
+          {/* <CButton color="info" className="text-white" onClick={handleUpdateDisease}>
             Update
-          </CButton>
+          </CButton> */}
           <CButton color="secondary" onClick={() => setEditDiseaseMode(false)}>
             Cancel
+          </CButton>
+          <CButton
+            style={{ backgroundColor: 'var(--color-black)' }}
+            className="text-white"
+            onClick={handleUpdateDisease}
+          >
+            Update
           </CButton>
         </CModalFooter>
       </CModal>
 
       <ConfirmationModal
         isVisible={isModalVisible}
-        message="Are you sure you want to delete this disease?"
+        title="Delete Doctor"
+        message="Are you sure you want to delete this disease? This action cannot be undone."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        confirmColor="danger"
+        cancelColor="secondary"
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
       />
 
       {loading ? (
-        <div style={{ textAlign: 'center' }}>Loading...</div>
+        <div className="d-flex justify-content-center align-items-center">
+          <LoadingIndicator message="Loading Disease..." />
+        </div>
       ) : error ? (
-        <div>{error}</div>
+        <div
+          className="d-flex justify-content-center align-items-center"
+          style={{
+            height: '50vh', // full screen height
+
+            color: 'var(--color-black)',
+          }}
+        >
+          {error}
+        </div>
       ) : (
-        <DataTable
-          columns={columns}
-          data={filteredData.length ? filteredData : diseases}
-          pagination
-        />
+        <CTable striped hover responsive>
+          <CTableHead className="pink-table  w-auto">
+            <CTableRow>
+              <CTableHeaderCell>S.No</CTableHeaderCell>
+              <CTableHeaderCell>Name</CTableHeaderCell>
+              <CTableHeaderCell>Probable Symptoms</CTableHeaderCell>
+              <CTableHeaderCell>Notes</CTableHeaderCell>
+              <CTableHeaderCell className="text-end">Action</CTableHeaderCell>
+            </CTableRow>
+          </CTableHead>
+
+          <CTableBody className="pink-table">
+            {displayData.length > 0 ? (
+              displayData.map((disease, index) => (
+                <CTableRow key={disease.id}>
+                  <CTableDataCell>{(currentPage - 1) * rowsPerPage + index + 1}</CTableDataCell>
+                  <CTableDataCell>{capitalizeWords(disease.diseaseName)}</CTableDataCell>
+                  <CTableDataCell>
+                    {capitalizeWords(disease.probableSymptoms || 'NA')}
+                  </CTableDataCell>
+                  <CTableDataCell>{capitalizeWords(disease.notes || 'NA')}</CTableDataCell>
+
+                  {/* Actions */}
+                  <CTableDataCell className="text-end">
+                    <div className="d-flex justify-content-end gap-2  ">
+                      <button
+                        className="actionBtn"
+                        onClick={() => setViewDisease(disease)}
+                        title="View"
+                      >
+                        <Eye size={18} />
+                      </button>
+
+                      <button
+                        className="actionBtn"
+                        onClick={() => handleDiseaseEdit(disease)}
+                        title="Edit"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+
+                      <button
+                        className="actionBtn"
+                        onClick={() => handleDiseaseDelete(disease)}
+                        title="Delete"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </CTableDataCell>
+                </CTableRow>
+              ))
+            ) : (
+              <CTableRow>
+                <CTableDataCell colSpan={5} className="text-center text-muted">
+                  🔍 No diseases found matching "<b>{searchQuery}</b>"
+                </CTableDataCell>
+              </CTableRow>
+            )}
+          </CTableBody>
+        </CTable>
+      )}
+      {/* Pagination */}
+      {!loading && (
+        <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
+          {Array.from({ length: Math.ceil(filteredData.length / rowsPerPage) }, (_, index) => (
+            <CButton
+              key={index}
+              style={{
+                backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
+                color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
+                border: '1px solid #ccc',
+                borderRadius: '5px',
+                cursor: 'pointer',
+              }}
+              className="ms-2"
+              onClick={() => setCurrentPage(index + 1)}
+            >
+              {index + 1}
+            </CButton>
+          ))}
+        </div>
       )}
     </div>
   )

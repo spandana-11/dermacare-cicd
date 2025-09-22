@@ -71,7 +71,9 @@ const ServiceManagement = () => {
   })
 
   const [editErrors, setEditErrors] = useState({})
-
+  const indexOfLastItem=currentPage * itemsPerPage;
+  const indexOfFirstItem=indexOfLastItem - itemsPerPage;
+  const currentItems=CustomerData.slice(indexOfFirstItem, indexOfLastItem);
   const fetchData = async () => {
     setLoading(true)
     setError(null)

@@ -97,4 +97,9 @@ public class DoctorController {
     public ResponseEntity<?> getAllDoctorsBySubServiceId(@PathVariable String subServiceId){
     	return doctorService.getAllDoctorsBySubServiceId(subServiceId);
     }
+    
+    @GetMapping("/getDoctorFutureAppointments/{doctorId}")
+    public ResponseEntity<?> getDoctorFutureAppointments(@PathVariable String doctorId) {
+        return doctorService.getDoctorFutureAppointments(doctorId);
+    }
 }

@@ -45,7 +45,7 @@ public class BookingResponseDTO {
 	private String channelId;
 	private String reasonForCancel;
 	private String notes;
-	private ReportsDtoList reports;
+	private List<ReportsDtoList> reports;
 	private String BookedAt;
 	private String status;
 	private double totalFee;

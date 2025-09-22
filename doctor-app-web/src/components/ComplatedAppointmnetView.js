@@ -105,53 +105,42 @@ const CompletedAppointmentsView = ({ defaultTab, tabs, fromDoctorTemplate = fals
     [formData],
   )
 
-  const savePrescriptionTemplate = async () => {
-    try {
-      const title = formData.symptoms.diagnosis || 'NA'
-      if (!title) {
-        alert('Diagnosis is missing. Cannot save template.')
-        return
-      }
-      const clinicId = localStorage.getItem('hospitalId')
-      const template = {
-        clinicId,
-        title,
-        symptoms: formData.symptoms.diagnosis,
-        tests: formData.tests,
-        prescription: formData.prescription,
-        treatments: formData.treatments,
-        followUp: formData.followUp,
-      }
-      if (template.symptoms != '') {
-        const res = await SavePatientPrescription(template)
-        console.log('✅ Saved template response:', res)
-
-        if (res.status == 200) {
-          success(`${res.message || 'Prescription Template saved successfully to server!'}`, {
-            title: 'Success',
-          })
-        } else {
-          info(`${res.message || 'A prescription template updated successfully'}`, {
-            title: 'Info',
-          })
-        }
-      } else {
-        info('Provide the probable diagnosis/disease before creating the template.', {
-          title: 'Info',
-        })
-      }
-
-      // const res = await SavePatientPrescription(template)
-      // if (res.status === 200) {
-      //   success(`${res.message || 'Prescription Template saved successfully!'}`, { title: 'Success' })
-      // } else {
-      //   info(`${res.message || 'Prescription Template updated successfully'}`, { title: 'Info' })
-      // }
-    } catch (error) {
-      console.error('❌ Error saving template:', error)
-      alert('Failed to save prescription template. Please try again.')
+const savePrescriptionTemplate = async () => {
+  try {
+    const diagnosis = formData.symptoms?.diagnosis?.trim() || ''
+    
+    if (!diagnosis) {
+      alert('Diagnosis is missing. Cannot save template.')
+      return
     }
+
+    const clinicId = localStorage.getItem('hospitalId')
+    const template = {
+      clinicId,
+      title: diagnosis,
+      symptoms: diagnosis,
+      tests: formData.tests || [],
+      prescription: formData.prescription || [],
+      treatments: formData.treatments || [],
+      followUp: formData.followUp || '',
+    }
+
+    const res = await SavePatientPrescription(template)
+    console.log('✅ Saved template response:', res)
+
+    if (res.status === 200) {
+      success(`${res.message || 'Prescription Template saved successfully to server!'}`, {
+        title: 'Success',
+      })
+    } else {
+      info(`${res.message || 'A prescription template updated successfully'}`, { title: 'Info' })
+    }
+  } catch (error) {
+    console.error('❌ Error saving template:', error)
+    alert('Failed to save prescription template. Please try again.')
   }
+}
+
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>

@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom'
 import routes from '../routes'
 
 import { CBreadcrumb, CBreadcrumbItem } from '@coreui/react'
+import { COLORS } from '../Constant/Themes'
 
 const AppBreadcrumb = () => {
   const currentLocation = useLocation().pathname
@@ -32,11 +33,12 @@ const AppBreadcrumb = () => {
   const breadcrumbs = getBreadcrumbs(currentLocation)
 
   return (
-    <CBreadcrumb className="my-0">
+    <CBreadcrumb className="my-0 custom-breadcrumb">
       <CBreadcrumbItem href="/">Home</CBreadcrumbItem>
       {breadcrumbs.map((breadcrumb, index) => {
         return (
           <CBreadcrumbItem
+            style={{ color: 'var(--color-black)' }}
             {...(breadcrumb.active ? { active: true } : { href: breadcrumb.pathname })}
             key={index}
           >

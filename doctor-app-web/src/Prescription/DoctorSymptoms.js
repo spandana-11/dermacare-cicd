@@ -13,8 +13,9 @@ import { COLORS } from '../Themes'
 import GradientTextCard from '../components/GradintColorText'
 import { useToast } from '../utils/Toaster'
 import { getDoctorSaveDetails, getAllDiseases, addDisease } from '../Auth/Auth'
-import Select from 'react-select'
+import Select, { components } from 'react-select'
 import { useDoctorContext } from '../Context/DoctorContext'
+import SymptomsModal from '../components/DisaesModal'
 
 const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setFormData }) => {
   const [symptomDetails, setSymptomDetails] = useState(
@@ -36,6 +37,11 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
   const [diseases, setDiseases] = useState([])
   const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
   const [tplLoading, setTplLoading] = useState(false)
+
+  const [probableSymptoms, setProbableSymptoms] = useState('')
+  const [keyNotes, setKeyNotes] = useState('')
+  const [modalOpen, setModalOpen] = useState(false)
+
   const [templateData, setTemplateData] = useState({
     symptoms: '',
     tests: {},
@@ -50,6 +56,52 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
   const [hasTemplate, setHasTemplate] = useState(false)
 
   const { success, error, info } = useToast()
+
+  // ✅ Fetch diseases once
+  const fetchDiseases = async () => {
+    try {
+      const data = await getAllDiseases() || []
+      const normalized = data.map(d => ({
+        diseaseName: d.diseaseName || '',
+        probableSymptoms: d.probableSymptoms || '',
+        notes: d.notes || '',
+        hospitalId: d.hospitalId,
+      }))
+      setDiseases(normalized)
+    } catch (err) {
+      console.error('❌ Failed to fetch diseases:', err)
+    }
+  }
+
+  useEffect(() => {
+    fetchDiseases()
+  }, [])
+
+  // ✅ Open Modal
+  const openModal = () => {
+    setModalOpen(true)
+  }
+
+  // Update probableSymptoms and keyNotes whenever diagnosis changes
+  useEffect(() => {
+    if (!diagnosis) {
+      setProbableSymptoms('')
+      setKeyNotes('')
+      return
+    }
+
+    const matched = diseases.find(
+      (d) => d.diseaseName && d.diseaseName.toLowerCase() === diagnosis.toLowerCase()
+    )
+
+    if (matched) {
+      setProbableSymptoms(matched.probableSymptoms || '')
+      setKeyNotes(matched.notes || '')
+    } else {
+      setProbableSymptoms('')
+      setKeyNotes('')
+    }
+  }, [diagnosis, diseases])
 
   const mapTemplateToFormData = useMemo(
     () => (t = {}, dx) => {
@@ -109,14 +161,6 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
     [doctorObs, duration, attachments]
   )
 
-  useEffect(() => {
-    const fetchDiseases = async () => {
-      const data = await getAllDiseases()
-      setDiseases(data || [])
-    }
-    fetchDiseases()
-  }, [])
-
   const fetchTemplate = useCallback(async (dx) => {
     if (!dx) return
     setTplLoading(true)
@@ -150,8 +194,22 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
     await fetchTemplate(selectedValue)
   }
 
+  useEffect(() => {
+    const dx = (seed?.diagnosis ?? diagnosis ?? '').trim()
+    if (dx && !hasTemplate) {
+      fetchTemplate(dx)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seed?.diagnosis])
+
+  const showSnackbar = (message, type) => {
+    setSnackbar({ show: true, message, type })
+    setTimeout(() => setSnackbar({ show: false, message: '', type: '' }), 3000)
+  }
+
   const applyTemplate = (dx) => {
     const merged = mapTemplateToFormData(templateData, dx)
+
     setFormData((prev) => ({
       ...prev,
       ...merged,
@@ -159,35 +217,50 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
     }))
     setUpdateTemplate(true)
     success('Template applied successfully!', { title: 'Success' })
+
+    const payload = { symptomDetails, doctorObs, diagnosis: dx, duration, attachments }
+    onNext?.(payload)
   }
 
   const options = useMemo(
     () =>
-      Array.isArray(diseases)
-        ? diseases.map((d) => ({ label: d.diseaseName, value: d.diseaseName }))
-        : [],
-    [diseases]
+      Array.isArray(diseases) ? diseases.map((d) => ({ label: d.diseaseName, value: d.diseaseName })) : [],
+    [diseases],
   )
 
   const canShowAdd =
     inputValue.trim() &&
-    !options.some((opt) => opt.value.toLowerCase() === inputValue.trim().toLowerCase())
+    !options.some(
+      (opt) =>
+        (opt?.value || '').toLowerCase() === inputValue.trim().toLowerCase()
+    )
 
   const handleAddClick = async () => {
     const name = inputValue.trim()
+    const symptoms = probableSymptoms.trim()
+    const notesText = keyNotes.trim()
+
     if (!name || adding) return
+
     try {
       setAdding(true)
-      const created = await addDisease(name)
+
+      const created = await addDisease({
+        diseaseName: name,
+        probableSymptoms: symptoms,
+        notes: notesText,
+      })
+
       if (created) {
-        setDiseases((prev) => [
-          ...prev,
-          { id: created?.id ?? `tmp-${Date.now()}`, disease: name },
-        ])
-        setInputValue('')
         success?.(`Saved "${name}" to diagnoses`, { title: 'Success' })
+        setInputValue('')
+        setProbableSymptoms('')
+        setKeyNotes('')
+
+        await fetchDiseases()
+        setDiagnosis(name)
       } else {
-        info?.(`${created.message}`, { title: 'Info' })
+        info?.(created?.message || "Could not add disease", { title: 'Info' })
       }
     } catch (e) {
       console.error(e)
@@ -197,12 +270,25 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
     }
   }
 
+  const ClearInput = (props) => {
+    return (
+      <components.ClearIndicator {...props}>
+        <span
+          style={{ cursor: 'pointer', color: '#7e3a93', fontWeight: 'bold' }}
+          onClick={() => props.clearValue()}
+        >
+          ✕
+        </span>
+      </components.ClearIndicator>
+    )
+  }
+
   const handleNext = () => {
     const payload = { symptomDetails, doctorObs, diagnosis, duration, attachments }
+    console.log('🚀 Submitting payload:', payload)
     onNext?.(payload)
   }
 
-  // ✅ Disable Next until disease selected
   const canProceed = !!diagnosis && diagnosis.trim() !== ''
 
   return (
@@ -211,7 +297,7 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
         <CRow className="gx-0">
           <CCol lg={6}>
             <CCardBody>
-              <div className="mb-0" style={{ color: COLORS.black }}>
+              <div className="mb-0">
                 <GradientTextCard text="Probable Diagnosis / Disease" />
 
                 <div className="mt-2 d-flex align-items-start gap-2">
@@ -223,14 +309,9 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
                       onInputChange={(val, meta) => {
                         if (meta.action === 'input-change') setInputValue(val)
                       }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && canShowAdd && !adding) {
-                          e.preventDefault()
-                          handleAddClick()
-                        }
-                      }}
                       options={options}
-                      isSearchable
+                      isClearable
+                      components={{ ClearIndicator: ClearInput }}
                       placeholder="Select diagnosis..."
                       menuPlacement="bottom"
                       noOptionsMessage={() =>
@@ -239,18 +320,9 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
                           : 'Type to search...'
                       }
                       styles={{
-                        input: (provided) => ({
-                          ...provided,
-                          color: 'black', // input text color
-                        }),
-                        singleValue: (provided) => ({
-                          ...provided,
-                          color: 'black', // selected value text color
-                        }),
-                        placeholder: (provided) => ({
-                          ...provided,
-                          color: '#000', // placeholder text color
-                        }),
+                        input: (provided) => ({ ...provided, color: 'black' }),
+                        singleValue: (provided) => ({ ...provided, color: 'black' }),
+                        placeholder: (provided) => ({ ...provided, color: '#000' }),
                       }}
                     />
                   </div>
@@ -259,7 +331,7 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
                     <button
                       type="button"
                       disabled={!canShowAdd || adding}
-                      onClick={handleAddClick}
+                      onClick={openModal}
                       style={{
                         backgroundColor: !canShowAdd || adding ? "#a5c4d4ff" : "#7e3a93",
                         color: !canShowAdd || adding ? "#7e3a93" : "#fff",
@@ -275,14 +347,36 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
                       {adding ? "Adding…" : "Add"}
                     </button>
                   </div>
+
+                  <SymptomsModal
+                    visible={modalOpen}
+                    onClose={() => setModalOpen(false)}
+                    addDisease={addDisease}
+                    fetchDiseases={fetchDiseases}
+                    setDiagnosis={setDiagnosis}
+                    success={success}
+                    info={info}
+                    error={error}
+                    defaultDiseaseName={inputValue}
+                  />
                 </div>
               </div>
+
+              {diagnosis && probableSymptoms && (
+                <div className="mt-3">
+                  <div>
+                    <strong>Category : </strong> <span>{probableSymptoms}</span>
+                  </div>
+                  <div className="mt-2">
+                    <strong>Key Notes : </strong> <p>{keyNotes}</p>
+                  </div>
+                </div>
+              )}
             </CCardBody>
           </CCol>
         </CRow>
       </CForm>
 
-      {/* Fixed bottom-right action */}
       <div
         className="position-fixed bottom-0 p-2"
         style={{

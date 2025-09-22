@@ -1,6 +1,7 @@
 // availabilityService.js
 import axios from 'axios';
 import { doctorAvailableUrl } from './BaseUrl'; // same style as your Dart version
+import { http } from '../../Utils/Interceptors';
 
 const availabilityService = {
   updateAvailability: async (doctorId, isAvailable) => {
@@ -8,7 +9,7 @@ const availabilityService = {
       const url = `${doctorAvailableUrl}/${doctorId}`;
       console.log("updateAvailability:", doctorId, isAvailable);
 
-      const response = await axios.put(
+      const response = await http.put(
         url,
         { doctorAvailabilityStatus: isAvailable },
         { headers: { "Content-Type": "application/json" } }

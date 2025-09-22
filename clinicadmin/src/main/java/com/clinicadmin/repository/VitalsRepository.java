@@ -12,4 +12,10 @@ public interface VitalsRepository extends MongoRepository<Vitals, ObjectId>{
 	
 	Optional<Vitals> findByPatientId(String patientId);
 
+	void deleteByBookingIdAndPatientId(String bookingId, String patientId);
+
+	Optional<Vitals> findByBookingIdAndPatientId(String bookingId, String patientId);
+
+	Optional<Vitals> findByBookingId(String bookingId);
+
 }

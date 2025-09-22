@@ -1,9 +1,12 @@
 package com.AdminService.entity;
 import java.util.List;
+import java.util.Map;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.FieldType;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,7 +35,7 @@ public class Clinic {
     private String website;
     private String licenseNumber;
     private String issuingAuthority;
-
+ 
     @Field(targetType = FieldType.BINARY)
     private byte[] contractorDocuments;
 
@@ -92,19 +95,20 @@ public class Clinic {
     private List<byte[]> others;
     
     private int freeFollowUps;
-    
     private double latitude;
     private double longitude;
     private String walkthrough;
     private int nabhScore;
     private String branch;
     
-    private int score;
-    private int questionCount;
+    private List<Branch> branches;
+    private String role;    
+    private Map<String, List<String>> permissions;
 
-    private QuetionsAndAnswerForAddClinic onboardingQA;
-    
-    // Social Media Handles
+
+
+ 
+
     private String instagramHandle;
     private String twitterHandle;
     private String facebookHandle;

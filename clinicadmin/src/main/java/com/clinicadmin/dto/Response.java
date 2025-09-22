@@ -1,5 +1,8 @@
 package com.clinicadmin.dto;
 
+import java.util.List;
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.AllArgsConstructor;
@@ -10,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL) // Only include non-null fields in JSON response
+@JsonInclude(JsonInclude.Include.NON_NULL) 
 @Builder
 public class Response {
 	private boolean success;
@@ -19,4 +22,8 @@ public class Response {
 	private int status;
 	private String hospitalName;
 	private String hospitalId;
+	private String branchId;
+	private String role;
+	private Map<String, List<String>> permissions;
+
 }

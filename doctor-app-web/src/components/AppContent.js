@@ -30,6 +30,7 @@ const AppContent = () => {
           <Route path="/" element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="/tab-content/:id" element={<PatientAppointmentDetails />} />
+           <Route path="/tab-inProgress/:id" element={<PatientAppointmentDetails />} /> 
           <Route path="/tab-completed-content/:id" element={<CompletedAppointmentsView />} />
           <Route path="doctorprofile" element={<DoctorProfile />} />
           {/* <Route path="/reportDetails/:id" element={<ReportDetails />} /> */}

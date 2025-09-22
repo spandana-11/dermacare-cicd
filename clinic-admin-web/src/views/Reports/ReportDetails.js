@@ -51,6 +51,11 @@ const ReportDetails = () => {
   const [pageNumber, setPageNumber] = useState(1)
 
   const [uploadModal, setUploadModal] = useState(false)
+const patientId =
+  appointmentInfo?.patientId ||
+  appointmentInfo?.item?.patientId ||
+  appointmentInfo?.selectedAppointment?.patientId ||
+  ''
 
   // Initial state for new report, with reportDate not prefilled
   const [newReport, setNewReport] = useState({
@@ -60,6 +65,7 @@ const ReportDetails = () => {
     reportType: '',
     reportFile: null,
     bookingId: appointmentInfo?.bookingId || '', // Ensure bookingId is safe to access
+    patientId: appointmentInfo?.patientId || '',
   })
 
   // ✅ This correctly sets the PDF worker for Vite
@@ -126,17 +132,16 @@ const ReportDetails = () => {
       setReport([])
     }
   }
- const handlePreview = (base64File) => {
-  if (!base64File) return;
-  const mimeType = getMimeType(base64File);
-  const isPdfFile = mimeType === 'application/pdf';
-  const fileUrl = `data:${mimeType};base64,${base64File}`;
+  const handlePreview = (base64File) => {
+    if (!base64File) return
+    const mimeType = getMimeType(base64File)
+    const isPdfFile = mimeType === 'application/pdf'
+    const fileUrl = `data:${mimeType};base64,${base64File}`
 
-  setIsPreviewPdf(isPdfFile);
-  setPreviewFileUrl(fileUrl);
-  setShowModal(true);
-};
-
+    setIsPreviewPdf(isPdfFile)
+    setPreviewFileUrl(fileUrl)
+    setShowModal(true)
+  }
 
   // Effect hook to fetch reports when appointmentInfo.bookingId changes
   useEffect(() => {
@@ -178,6 +183,7 @@ const ReportDetails = () => {
         reportsList: [
           {
             ...newReport,
+             patientId: patientId,
             reportFile: [newReport.reportFile], // API expects an array of base64 strings
           },
         ],
@@ -206,7 +212,7 @@ const ReportDetails = () => {
   }
 
   return (
-    <div className="container mt-4">
+    <div className="container  ">
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -220,7 +226,7 @@ const ReportDetails = () => {
       />
 
       {/* Appointment Info Section */}
-      <div className="container bg-light p-4 rounded shadow-sm mb-4">
+      <div className="container p-3 bg-light  rounded shadow-sm mb-4">
         <div className="row">
           <div className="col-md-6 border-end">
             <p>
@@ -248,7 +254,10 @@ const ReportDetails = () => {
       </div>
 
       {/* Header and Upload Button */}
-      <div className="bg-info text-white p-3 d-flex justify-content-between align-items-center rounded">
+      <div
+        className=" text-white p-3 d-flex justify-content-between align-items-center rounded"
+        style={{ backgroundColor: 'var(--color-bgcolor)' }}
+      >
         <h5 className="mb-0">Report Details</h5>
         <div className="d-flex gap-2">
           <CButton color="secondary" size="sm" onClick={() => navigate(-1)}>
@@ -258,7 +267,7 @@ const ReportDetails = () => {
             color="success"
             size="sm"
             onClick={() => setUploadModal(true)}
-            style={{ color: 'white' }}
+            style={{ backgroundColor: 'var(--color-black)', color: 'white', border: 'none' }}
           >
             Upload Report
           </CButton>
@@ -268,7 +277,7 @@ const ReportDetails = () => {
       {/* Reports Table */}
       <div className="mt-4">
         <CTable bordered responsive>
-          <CTableHead color="light">
+          <CTableHead color="light" className="pink-table">
             <CTableRow>
               <CTableHeaderCell>S.No</CTableHeaderCell>
               <CTableHeaderCell>Booking ID</CTableHeaderCell>
@@ -297,7 +306,7 @@ const ReportDetails = () => {
                 const fileUrl = `data:${mimeType};base64,${base64File}`
 
                 return (
-                  <CTableRow key={index}>
+                  <CTableRow key={index} className="pink-table">
                     <CTableDataCell>{index + 1}</CTableDataCell>
                     <CTableDataCell>{reportItem.bookingId}</CTableDataCell>
                     <CTableDataCell>{reportItem.reportName}</CTableDataCell>
@@ -396,10 +405,10 @@ const ReportDetails = () => {
               />
             </div>
             <div className="mb-2">
-              <CFormLabel>Booking Id</CFormLabel>
+              <CFormLabel>File No.</CFormLabel>
               <CFormInput
-                value={newReport.bookingId}
-                onChange={(e) => setNewReport({ ...newReport, bookingId: e.target.value })}
+                value={patientId}
+                onChange={(e) => setNewReport({ ...newReport, patientId: e.target.value })}
                 disabled
               />
             </div>

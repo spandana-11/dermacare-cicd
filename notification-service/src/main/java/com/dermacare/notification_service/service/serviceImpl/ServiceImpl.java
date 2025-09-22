@@ -3,36 +3,43 @@ package com.dermacare.notification_service.service.serviceImpl;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
-import java.util.TimeZone;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import com.dermacare.notification_service.dto.BookingResponse;
+import com.dermacare.notification_service.dto.DoctorSaveDetails;
+import com.dermacare.notification_service.dto.Medicines;
 import com.dermacare.notification_service.dto.NotificationDTO;
 import com.dermacare.notification_service.dto.NotificationResponse;
 import com.dermacare.notification_service.dto.NotificationToCustomer;
 import com.dermacare.notification_service.dto.ResBody;
+import com.dermacare.notification_service.dto.Response;
 import com.dermacare.notification_service.dto.ResponseStructure;
 import com.dermacare.notification_service.entity.Booking;
 import com.dermacare.notification_service.entity.NotificationEntity;
 import com.dermacare.notification_service.feign.BookServiceFeign;
 import com.dermacare.notification_service.feign.CllinicFeign;
+import com.dermacare.notification_service.feign.DoctorFeign;
 import com.dermacare.notification_service.notificationFactory.SendAppNotification;
 import com.dermacare.notification_service.repository.NotificationRepository;
 import com.dermacare.notification_service.service.ServiceInterface;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import feign.FeignException;
 
 
@@ -50,12 +57,18 @@ public class ServiceImpl implements ServiceInterface{
 	
 	@Autowired
 	private CllinicFeign cllinicFeign;
-	
+		  
+    @Autowired
+    private DoctorFeign doctorFeign;
 	
 	public String jwtToken;
 	public String tokenExpireTime;
 
 	Set<String> bookings = new LinkedHashSet<>();
+	
+	 BookingResponse bookingResponse;
+	 
+	 private boolean isCalledAlready;
 	
 	@Override
 	public void createNotification(BookingResponse bookingDTO) {
@@ -453,5 +466,321 @@ public class ServiceImpl implements ServiceInterface{
 	}
 		return ResponseEntity.status(res.getStatus()).body(res);
 		}	
+	
+
+	@Scheduled(cron = "0 30 8 * * ?")
+	public void remindMorningMedicines() {
+		 try {
+		        // Fetch doctor details
+		        Response obj = doctorFeign.getAllDoctorSaveDetails().getBody();     
+		        ObjectMapper mapper = new ObjectMapper();
+		        mapper.registerModule(new JavaTimeModule());
+		        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+		        List<DoctorSaveDetails> doctorSaveDetailsDTOs =
+		        		mapper.convertValue(obj.getData(), new TypeReference<List<DoctorSaveDetails>>() {});
+
+		       // System.out.println("Fetched doctors: " + doctorSaveDetailsDTOs.size());
+
+		        for (DoctorSaveDetails doctorSaveDetailsDTO : doctorSaveDetailsDTOs) {
+
+		            LocalDateTime visitedDate = doctorSaveDetailsDTO.getVisitDateTime();
+
+		            // Fetch booking details
+		            // Iterate over prescribed medicines
+		            for (Medicines m : doctorSaveDetailsDTO.getPrescription().getMedicines()) {
+		                long duration = convertDurationToDays(m.getDuration()); // already long?
+		                LocalDateTime plusDays = visitedDate.plusDays(duration);
+	                   // System.out.println(plusDays);
+		                LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Kolkata"));
+	                    ///System.out.println(now);
+		                // Check if today is within duration
+		                if (!now.isBefore(visitedDate) && !now.isAfter(plusDays)) {
+		                    boolean isMorning = Arrays.stream(m.getRemindWhen().split(" "))
+		                            .anyMatch(time -> time.equalsIgnoreCase("Morning"));
+		                    	 if(isMorning){
+		     	                    if(bookingResponse == null) {
+		     	                    	isCalledAlready = true;
+		     	                    }else{
+		     	                    if(!bookingResponse.getBookingId().equalsIgnoreCase(doctorSaveDetailsDTO.getBookingId())) {
+		     	                    	isCalledAlready = true;
+		     	                    }else {
+		     	                    	isCalledAlready = false;	
+		     	                    }}
+		     	                    if(isCalledAlready){
+		                    try{
+		    		            ResponseEntity<ResponseStructure<BookingResponse>> res =
+		    		                    bookServiceFeign.getBookedService(doctorSaveDetailsDTO.getBookingId());
+		    		            bookingResponse = res.getBody().getData();
+
+		    		            if (bookingResponse == null) {
+		    		                //System.out.println("No booking found for ID: " + doctorSaveDetailsDTO.getBookingId());
+		    		                continue;
+		    		            }
+
+		    		            //System.out.println("Booking: " + bookingResponse);
+		    		            }catch(Exception e) {
+		    		            	 System.out.println(e.getMessage());
+		    		            }}
+		                    // System.out.println(isAfternoon);
+		                    if (bookingResponse != null && bookingResponse.getCustomerDeviceId() != null) {
+		appNotification.sendPushNotification(
+				bookingResponse.getCustomerDeviceId(),
+	            "🌞 Good morning!",
+	           "Time to take your prescribed "+m.getName()+","+m.getDose()+" with water.",
+	            "MEDICINE REMINDER",
+			    "reminderScreen","default"
+	        );	
+		    }}}}}}catch (Exception e) {e.printStackTrace();}}
+
+
+
+
+	@Scheduled(cron = "0 30 13 * * ?")
+	public void remindAfternoonMedicines() {
+	   // System.out.println("invoke");
+	    try {
+	        // Fetch doctor details
+	        Response obj = doctorFeign.getAllDoctorSaveDetails().getBody();     
+	        ObjectMapper mapper = new ObjectMapper();
+	        mapper.registerModule(new JavaTimeModule());
+	        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+	        List<DoctorSaveDetails> doctorSaveDetailsDTOs =
+	        		mapper.convertValue(obj.getData(), new TypeReference<List<DoctorSaveDetails>>() {});
+
+	      // System.out.println("Fetched doctors: " + doctorSaveDetailsDTOs.size());
+
+	        for (DoctorSaveDetails doctorSaveDetailsDTO : doctorSaveDetailsDTOs) {
+
+	            LocalDateTime visitedDate = doctorSaveDetailsDTO.getVisitDateTime();
+
+	            // Fetch booking details
+	            // Iterate over prescribed medicines
+	            for (Medicines m : doctorSaveDetailsDTO.getPrescription().getMedicines()) {
+	                long duration = convertDurationToDays(m.getDuration()); // already long?
+	                LocalDateTime plusDays = visitedDate.plusDays(duration);
+                   // System.out.println(plusDays);
+	                LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Kolkata"));
+                   // System.out.println(now);
+	                // Check if today is within duration
+	                if (!now.isBefore(visitedDate) && !now.isAfter(plusDays)) {
+	                    boolean isAfternoon = Arrays.stream(m.getRemindWhen().split(" "))
+	                            .anyMatch(time -> time.equalsIgnoreCase("Afternoon"));
+	                    if(isAfternoon){
+	                    if(bookingResponse == null) {
+	                    	isCalledAlready = true;
+	                    }else{
+	                    if(!bookingResponse.getBookingId().equalsIgnoreCase(doctorSaveDetailsDTO.getBookingId())) {
+	                    	isCalledAlready = true;
+	                    }else {
+	                    	isCalledAlready = false;	
+	                    }}
+	                    if(isCalledAlready){
+	                    try{
+	        	            ResponseEntity<ResponseStructure<BookingResponse>> res =
+	        	                    bookServiceFeign.getBookedService(doctorSaveDetailsDTO.getBookingId());
+	        	            bookingResponse = res.getBody().getData();
+
+	        	            if (bookingResponse == null) {
+	        	               // System.out.println("No booking found for ID: " + doctorSaveDetailsDTO.getBookingId());
+	        	                continue;
+	        	            }
+
+	        	          //  System.out.println("Booking: " + bookingResponse);
+	        	            }catch(Exception e) {
+	        	            	 System.out.println(e.getMessage());
+	        	            }}
+	                    // System.out.println(isAfternoon);
+	                    if (bookingResponse != null && bookingResponse.getCustomerDeviceId() != null) {
+	                    //System.out.println(bookingResponse.getCustomerDeviceId());	
+	                  //  System.out.println("not invoke");
+	                        appNotification.sendPushNotification(
+	                                bookingResponse.getCustomerDeviceId(),
+	                                "🌤️ Good afternoon!",
+	                                "Time to take your prescribed " + m.getName() + ", " + m.getDose() + " with water.",
+	                                "MEDICINE REMINDER",
+	                                "reminderScreen",
+	                                "default"
+	                        );
+	                       // System.out.println("Notification sent for " + m.getName());
+	                    } 
+	                }
+	            }
+	        }
+	        }} catch (Exception e) {
+	        e.printStackTrace(); // log properly instead of hiding errors
+	    }
+	}
+
+
+	@Scheduled(cron = "0 01 17 * * ?")
+	public void remindEveningMedicines() {
+		     try {
+		        // Fetch doctor details
+		        Response obj = doctorFeign.getAllDoctorSaveDetails().getBody();     
+		        ObjectMapper mapper = new ObjectMapper();
+		        mapper.registerModule(new JavaTimeModule());
+		        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+		        List<DoctorSaveDetails> doctorSaveDetailsDTOs =
+		        		mapper.convertValue(obj.getData(), new TypeReference<List<DoctorSaveDetails>>() {});
+
+		       // System.out.println("Fetched doctors: " + doctorSaveDetailsDTOs.size());
+
+		        for (DoctorSaveDetails doctorSaveDetailsDTO : doctorSaveDetailsDTOs) {
+
+		            LocalDateTime visitedDate = doctorSaveDetailsDTO.getVisitDateTime();
+
+		            // Fetch booking details
+		            // Iterate over prescribed medicines
+		            for (Medicines m : doctorSaveDetailsDTO.getPrescription().getMedicines()) {
+		                long duration = convertDurationToDays(m.getDuration()); // already long?
+		               // System.out.println(duration);
+		                LocalDateTime plusDays = visitedDate.plusDays(duration);
+	                   // System.out.println(plusDays);
+		                LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Kolkata"));
+	                    //System.out.println(now);
+	                    //System.out.println(visitedDate);
+		                // Check if today is within duration
+		                if (!now.isBefore(visitedDate) && !now.isAfter(plusDays)) {
+		                	//System.out.println("invoked for times");
+		                    boolean isEvening = Arrays.stream(m.getRemindWhen().split(" "))
+		                            .anyMatch(time -> time.equalsIgnoreCase("Evening"));
+		                    if(isEvening){
+			                    if(bookingResponse == null) {
+			                    	isCalledAlready = true;
+			                    }else{
+			                    if(!bookingResponse.getBookingId().equalsIgnoreCase(doctorSaveDetailsDTO.getBookingId())) {
+			                    	isCalledAlready = true;
+			                    }else {
+			                    	isCalledAlready = false;	
+			                    }}
+			                    if(isCalledAlready){
+		                    try{
+		    		            ResponseEntity<ResponseStructure<BookingResponse>> res =
+		    		                    bookServiceFeign.getBookedService(doctorSaveDetailsDTO.getBookingId());
+		    		            bookingResponse = res.getBody().getData();
+
+		    		            if (bookingResponse == null) {
+		    		                //System.out.println("No booking found for ID: " + doctorSaveDetailsDTO.getBookingId());
+		    		                continue;
+		    		            }
+
+		    		            //System.out.println("Booking: " + bookingResponse);
+		    		            }catch(Exception e) {
+		    		            	 System.out.println(e.getMessage());
+		    		            }}
+		                    //System.out.println(isAfternoon);
+		                    if (bookingResponse != null && bookingResponse.getCustomerDeviceId() != null) {
+		                   // System.out.println(bookingResponse.getCustomerDeviceId());	
+		                   // System.out.println("not invoke");
+			 
+			 	appNotification.sendPushNotification(
+			 			bookingResponse.getCustomerDeviceId(),
+			             "🌆 Good evening!",
+			            "Time to take your prescribed "+m.getName()+","+m.getDose()+" with water.",
+			             "MEDICINE REMINDER",
+			 		    "reminderScreen","default"
+			         );	
+		             }}}}}}catch (Exception e) {e.printStackTrace();}}
+
+
+	@Scheduled(cron = "0 01 20 * * ?")
+	public void remindNightMedicines() {
+		      try {
+		        // Fetch doctor details
+		        Response obj = doctorFeign.getAllDoctorSaveDetails().getBody();     
+		        ObjectMapper mapper = new ObjectMapper();
+		        mapper.registerModule(new JavaTimeModule());
+		        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+		        List<DoctorSaveDetails> doctorSaveDetailsDTOs =
+		        		mapper.convertValue(obj.getData(), new TypeReference<List<DoctorSaveDetails>>() {});
+
+		       // System.out.println("Fetched doctors: " + doctorSaveDetailsDTOs.size());
+
+		        for (DoctorSaveDetails doctorSaveDetailsDTO : doctorSaveDetailsDTOs) {
+
+		            LocalDateTime visitedDate = doctorSaveDetailsDTO.getVisitDateTime();
+
+		            // Fetch booking details
+		            // Iterate over prescribed medicines
+		            for (Medicines m : doctorSaveDetailsDTO.getPrescription().getMedicines()) {
+		                long duration = convertDurationToDays(m.getDuration()); // already long?
+		                LocalDateTime plusDays = visitedDate.plusDays(duration);
+	                   // System.out.println(plusDays);
+		                LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Kolkata"));
+	                    ///System.out.println(now);
+		                // Check if today is within duration
+		                if (!now.isBefore(visitedDate) && !now.isAfter(plusDays)) {
+		                    boolean isNight = Arrays.stream(m.getRemindWhen().split(" "))
+		                            .anyMatch(time -> time.equalsIgnoreCase("Night"));
+		                    if(isNight){
+			                    if(bookingResponse == null) {
+			                    	isCalledAlready = true;
+			                    }else{
+			                    if(!bookingResponse.getBookingId().equalsIgnoreCase(doctorSaveDetailsDTO.getBookingId())) {
+			                    	isCalledAlready = true;
+			                    }else {
+			                    	isCalledAlready = false;	
+			                    }}
+			                    if(isCalledAlready){
+		                        try{
+		    		            ResponseEntity<ResponseStructure<BookingResponse>> res =
+		    		                    bookServiceFeign.getBookedService(doctorSaveDetailsDTO.getBookingId());
+		    		            bookingResponse = res.getBody().getData();
+
+		    		            if (bookingResponse == null) {
+		    		                //System.out.println("No booking found for ID: " + doctorSaveDetailsDTO.getBookingId());
+		    		                continue;
+		    		            }
+
+		    		            //System.out.println("Booking: " + bookingResponse);
+		    		            }catch(Exception e) {
+		    		            	 System.out.println(e.getMessage());
+		    		            }}
+		                   // System.out.println(isAfternoon);
+			                
+		                    if(bookingResponse != null && bookingResponse.getCustomerDeviceId() != null) {
+		                   // System.out.println(bookingResponse.getCustomerDeviceId());	
+		                   // System.out.println("not invoke");
+			 	        appNotification.sendPushNotification(
+			 			bookingResponse.getCustomerDeviceId(),
+			             "🌃 Good evening!",
+			            "Time to take your prescribed "+m.getName()+","+m.getDose()+" with water.",
+			             "MEDICINE REMINDER",
+			 		    "reminderScreen","default"
+			         );	
+		             }}}}}}catch (Exception e) {e.printStackTrace();}}
+
+	
+	
+	 private int convertDurationToDays(String duration) {
+	        if (duration == null || duration.isEmpty()) {
+	            throw new IllegalArgumentException("Duration cannot be null or empty");
+	        }
+
+	        duration = duration.toLowerCase().trim();
+
+	        // Split into number and unit
+	        String[] parts = duration.split(" ");
+	        if (parts.length < 2) {
+	            throw new IllegalArgumentException("Invalid duration format: " + duration);
+	        }
+
+	        int number = Integer.parseInt(parts[0]); 
+	        String unit = parts[1];
+
+	        switch (unit) {
+	            case "day":
+	            case "days":
+	                return number;
+	            case "week":
+	            case "weeks":
+	                return number * 7;
+	            case "month":
+	            case "months":
+	                return number * 30; // Approximation
+	            default:
+	                throw new IllegalArgumentException("Unsupported duration unit: " + unit);
+	        }
+	    }
 		
 }

@@ -12,6 +12,7 @@ import {
   CInputGroupText,
 } from '@coreui/react'
 import { BASE_URL } from '../baseUrl'
+import { http } from '../Utils/Interceptors'
 
 const ResetPassword = ({ onClose }) => {
   const [form, setForm] = useState({
@@ -61,8 +62,8 @@ const ResetPassword = ({ onClose }) => {
     setMessage('')
 
     try {
-      const response = await axios.put(
-        `${BASE_URL}/updatePassword/${form.username}`,
+      const response = await http.put(
+        `/updatePassword/${form.username}`,
         {
           password: currentPassword,
           newPassword: newPassword,

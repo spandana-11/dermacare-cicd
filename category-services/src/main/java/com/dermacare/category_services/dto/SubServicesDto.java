@@ -3,6 +3,8 @@ package com.dermacare.category_services.dto;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SubServicesDto {
 
 	private String hospitalId;
@@ -52,11 +54,11 @@ public class SubServicesDto {
 	private double taxAmount;
 
 	private double platformFee;
-	
+
 	private byte gst;
-	
+
 	private double gstAmount;
-	
+
 	private double consultationFee;
 
 	private double discountedCost; // price - discount Amount
@@ -64,5 +66,7 @@ public class SubServicesDto {
 	private double clinicPay; // Price - platformFee
 
 	private double finalCost; // taxAmount + discounedCost
+
+	private String consentFormType; // Generic or procedureConsent (1,2)
 
 }

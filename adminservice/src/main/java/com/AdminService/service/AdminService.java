@@ -11,12 +11,11 @@ import com.AdminService.dto.ClinicCredentialsDTO;
 import com.AdminService.dto.ClinicDTO;
 import com.AdminService.dto.CustomerDTO;
 import com.AdminService.dto.ServicesDto;
+import com.AdminService.dto.SubServicesDto;
 import com.AdminService.dto.SubServicesInfoDto;
 import com.AdminService.dto.UpdateClinicCredentials;
 import com.AdminService.util.Response;
 import com.AdminService.util.ResponseStructure;
-
-
 
 public interface AdminService {
 
@@ -93,4 +92,24 @@ public Response getBookingByDoctorId(String doctorId);
 public Response getDoctorInfoByDoctorId(String doctorId);
 
 public Response getClinicsByRecommondation();
+
+Response getAllRecommendClinicThenAnotherClincs();
+
+//SUBSERVICES DETAILS
+
+ResponseEntity<ResponseStructure<SubServicesDto>> addService(String subServiceId, SubServicesDto dto);
+
+
+ResponseEntity<ResponseStructure<SubServicesDto>> getSubServiceByServiceId(String subServiceId);
+
+ResponseEntity<ResponseStructure<SubServicesDto>> deleteSubService(String hospitalId, String subServiceId);
+
+ResponseEntity<ResponseStructure<SubServicesDto>> updateBySubServiceId(String hospitalId, String serviceId,
+		SubServicesDto domainServices);
+ResponseEntity<ResponseStructure<SubServicesDto>> getSubServiceByServiceId( String hospitalId, String subServiceId);
+
+ResponseEntity<ResponseStructure<List<SubServicesDto>>> getSubServiceByHospitalId(String hospitalId);
 }
+
+
+

@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import axios from 'axios'
 import { Modal, Button } from 'react-bootstrap'
 import './Doctor.css'
+import Select from 'react-select'
 import {
   CCard,
   CCardBody,
@@ -39,21 +40,39 @@ import { BASE_URL } from '../../baseUrl'
 import capitalizeWords from '../../Utils/capitalizeWords'
 import { useNavigate } from 'react-router-dom'
 import { useHospital } from '../Usecontext/HospitalContext'
-import { handleDeleteToggle } from '../Doctors/DoctorAPI'
+import { GetClinicBranches, handleDeleteToggle } from '../Doctors/DoctorAPI'
 import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import { getCustomerDataByID } from '../customerManagement/CustomerAPI'
+
+import { getCustomerByMobile } from '../customerManagement/CustomerManagementAPI'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import { COLORS } from '../../Constant/Themes'
+import LoadingIndicator from '../../Utils/loader'
+import ConfirmationModal from '../../components/ConfirmationModal'
+import { http } from '../../Utils/Interceptors'
+import {
+  CategoryData,
+  serviceDataH,
+  subServiceData,
+} from '../ProcedureManagement/ProcedureManagementAPI'
 
 const DoctorDetailsPage = () => {
+  const [categoryOptions, setCategoryOptions] = useState([])
+  const [serviceOptions, setServiceOptions] = useState([])
+  const [subServiceOptions, setSubServiceOptions] = useState([])
+
+  const [selectedCategory, setSelectedCategory] = useState(null)
+  const [selectedServices, setSelectedServices] = useState([])
+  const [selectedSubServices, setSelectedSubServices] = useState([])
+
   const { state } = useLocation()
   const [doctorData, setDoctorData] = useState(state?.doctor || {})
   const { fetchHospitalDetails } = useHospital()
   const navigate = useNavigate()
   const [activeKey, setActiveKey] = useState(1)
   const minDate = format(startOfToday(), 'yyyy-MM-dd')
-  const maxDate = format(addDays(startOfToday(), 6), 'yyyy-MM-dd')
+  const maxDate = format(addDays(startOfToday(), 14), 'yyyy-MM-dd')
   const handleClose = () => setShowModal(false)
   const handleShow = () => setShowModal(true)
   const [selectedDateIndex, setSelectedDateIndex] = useState(0)
@@ -69,11 +88,13 @@ const DoctorDetailsPage = () => {
   const [timeSlots, setTimeSlots] = useState([])
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState(state?.doctor || {})
+  const [interval, setInterval] = useState(30) // default 30 min
+  const [slots, setSlots] = useState([])
   // const []
   const [customerDetails, setCustomerDetails] = useState({})
   const [days, setDays] = useState([]) // Array of { date, dayLabel, dateLabel }
   const [ratings, setRatings] = useState(null)
-
+  const [branchOptions, setBranchOptions] = useState([])
   const [error, setError] = useState(null)
   const [errors, setErrors] = useState({})
   const handleDateClick = (dateObj, index) => {
@@ -111,7 +132,7 @@ const DoctorDetailsPage = () => {
   useEffect(() => {
     const fetchDoctor = async () => {
       try {
-        const res = await axios.get(`${BASE_URL}/getDoctorById/${doctorId}`)
+        const res = await http.get(`/getDoctorById/${doctorId}`)
         setDoctorData(res.data)
         setFormData(res.data)
       } catch (err) {
@@ -126,13 +147,13 @@ const DoctorDetailsPage = () => {
 
   const [showModal, setShowModal] = useState(false)
   const isToday = selectedDate === new Date().toISOString().split('T')[0]
-  const generateTimeSlots = (isToday = false) => {
+
+  const generateTimeSlots = (interval = 30, isToday = false) => {
     const slots = []
     const start = new Date()
     const now = new Date()
 
     start.setHours(7, 0, 0, 0)
-
     const end = new Date()
     end.setHours(20, 0, 0, 0)
 
@@ -147,37 +168,59 @@ const DoctorDetailsPage = () => {
         slots.push(formatted)
       }
 
-      start.setMinutes(start.getMinutes() + 30)
+      start.setMinutes(start.getMinutes() + interval)
     }
-
     return slots
+  }
+
+  const handleGenerate = () => {
+    const newSlots = generateTimeSlots(interval, isToday)
+    setTimeSlots(newSlots) // temporary for modal
+    setSlots(newSlots) // if you want in main grid
+    setSelectedSlots([]) // reset selected
+    toast.success(`Generated ${newSlots.length} slots of ${interval} minutes`)
   }
 
   const [availableSlots, setAvailableSlots] = useState(generateTimeSlots())
 
   const [selectedToDelete, setSelectedToDelete] = useState([])
   const openModal = () => {
-    const generated = generateTimeSlots(isToday)
-    setTimeSlots(generated)
-    setSelectedSlots([])
+    // const generated = generateTimeSlots(isToday)
+    // setTimeSlots(generated)
+    // setSelectedSlots([])
     setVisibleSlot(true)
   }
   const handleUpdate = async () => {
     try {
-      //  const hospitalId = localStorage.getItem('HospitalId');
-      const res = await axios.put(`${BASE_URL}/updateDoctor/${doctorData.doctorId}`, formData)
-      console.log(res.data.message)
-      console.log(res.data.success)
+      const payload = {
+        ...formData,
+        branch:
+          formData.branch?.map((b) => ({
+            branchId: b.branchId,
+            branchName: b.branchName,
+          })) || [],
+        category: formData.category || [], // already an array from useEffect
+
+        subCategory: formData.subCategory
+          ? {
+              subCategoryId: formData.subCategory.subCategoryId,
+              subCategoryName: formData.subCategory.subCategoryName,
+            }
+          : null,
+        services:
+          formData.services?.map((s) => ({
+            serviceId: s.serviceId,
+            serviceName: s.serviceName,
+          })) || [],
+      }
+
+      const res = await http.put(`/updateDoctor/${doctorData.doctorId}`, payload)
+
       if (res.data.success) {
-        toast.success(`${res.data.message}` || 'Doctor updated successfully')
-
-        // Update both doctorData and formData state
+        toast.success(res.data.message || 'Doctor updated successfully')
         setDoctorData(res.data.updatedDoctor)
-        console.log(res.data)
-
         setFormData(res.data.updatedDoctor)
         setIsEditing(false)
-        // await fetchHospitalDetails(doctorData.doctorId)
         navigate(`/doctor`)
       } else {
         toast.error('Failed to update doctor')
@@ -201,7 +244,7 @@ const DoctorDetailsPage = () => {
 
       const fullDayList = []
 
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < 15; i++) {
         const date = new Date(localToday)
         date.setDate(localToday.getDate() + i)
 
@@ -284,8 +327,9 @@ const DoctorDetailsPage = () => {
 
     try {
       const hospitalId = localStorage.getItem('HospitalId')
-      const res = await axios.post(
-        `${BASE_URL}/addDoctorSlots/${hospitalId}/${doctorData.doctorId}`,
+      const branchId = localStorage.getItem('branchId')
+      const res = await http.post(
+        `/addDoctorSlots/${hospitalId}/${branchId}/${doctorData.doctorId}`,
         payload,
       )
 
@@ -316,9 +360,8 @@ const DoctorDetailsPage = () => {
   const fetchSlots = async () => {
     try {
       const hospitalId = localStorage.getItem('HospitalId')
-      const response = await axios.get(
-        `${BASE_URL}/getDoctorslots/${hospitalId}/${doctorData.doctorId}`,
-      )
+      const branchId = localStorage.getItem('branchId')
+      const response = await http.get(`/getDoctorSlots/${hospitalId}/${branchId}/${doctorData.doctorId}`)
 
       if (response.data.success) {
         console.log('Fetched Slots Data:', response.data.data)
@@ -335,9 +378,7 @@ const DoctorDetailsPage = () => {
     const fetchDoctorRatings = async () => {
       try {
         const hospitalId = localStorage.getItem('HospitalId')
-        const response = await axios.get(
-          `${BASE_URL}/averageRatings/${hospitalId}/${doctorData.doctorId}`,
-        )
+        const response = await http.get(`/averageRatings/${hospitalId}/${doctorData.doctorId}`)
 
         if (!response.data.success) {
           setError('Failed to fetch ratings')
@@ -357,7 +398,7 @@ const DoctorDetailsPage = () => {
         await Promise.all(
           mobileNumbers.map(async (number) => {
             try {
-              const res = await getCustomerDataByID(number)
+              const res = await getCustomerByMobile(number)
               console.log('Mobile numbers to fetch:', res)
 
               customers[number] = res?.data?.fullName || number
@@ -376,6 +417,30 @@ const DoctorDetailsPage = () => {
 
     fetchDoctorRatings()
   }, [])
+
+  const toggleSlot = (slot) => {
+    if (selectedSlots.includes(slot)) {
+      setSelectedSlots((prev) => prev.filter((s) => s !== slot))
+    } else {
+      setSelectedSlots((prev) => [...prev, slot])
+    }
+  }
+
+  // 🔹 Save slots via API
+  const handleSaveSlots = async (doctorId, branchId) => {
+    if (selectedSlots.length === 0) {
+      toast.error('Please select at least one slot')
+      return
+    }
+    try {
+      await addDoctorSlots(doctorId, branchId, selectedSlots)
+      toast.success('Slots saved successfully')
+      setSelectedSlots([])
+    } catch (err) {
+      toast.error('Failed to save slots')
+      console.error(err)
+    }
+  }
 
   console.log(customerDetails)
 
@@ -427,6 +492,12 @@ const DoctorDetailsPage = () => {
     if (!/^[A-Za-z\s]+$/.test(formData.qualification.trim())) {
       newErrors.qualification = 'Qualification should contain only letters.'
     }
+    // if (!/^[A-Za-z\s]+$/.test(formData.qualification.trim())) {
+    //   newErrors.qualification = 'Qualification should contain only letters.'
+    // }
+    // if (!/^[A-Za-z\s]+$/.test(formData.qualification.trim())) {
+    //   newErrors.qualification = 'Qualification should contain only letters.'
+    // }
 
     // Specialization
     if (!/^[A-Za-z\s]+$/.test(formData.specialization.trim())) {
@@ -492,10 +563,280 @@ const DoctorDetailsPage = () => {
     }
   }
 
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const clinicId = localStorage.getItem('HospitalId')
+        const response = await GetClinicBranches(clinicId)
+
+        const branches = response?.data || [] // API gives array?
+        const formatted = branches.map((b) => ({
+          value: b.branchId || b.id,
+          label: b.branchName || b.name,
+        }))
+
+        setBranchOptions(formatted)
+      } catch (err) {
+        console.error('Error fetching branches:', err)
+        setBranchOptions([])
+      }
+    }
+
+    fetchBranches()
+  }, [])
+  // Sync category into formData
+  // Category → formData
+  useEffect(() => {
+    if (selectedCategory) {
+      setFormData((prev) => ({
+        ...prev,
+        category: [
+          {
+            categoryId: selectedCategory.value,
+            categoryName: selectedCategory.label,
+          },
+        ],
+      }))
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        category: [],
+      }))
+    }
+  }, [selectedCategory])
+
+  // Services → formData
+  useEffect(() => {
+    if (selectedServices.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        services: selectedServices.map((s) => ({
+          serviceId: s.value,
+          serviceName: s.label,
+        })),
+      }))
+    }
+  }, [selectedServices])
+
+  // SubServices → formData
+  useEffect(() => {
+    if (selectedSubServices.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        subServices: selectedSubServices.map((ss) => ({
+          subServiceId: ss.value,
+          subServiceName: ss.label,
+        })),
+      }))
+    }
+  }, [selectedSubServices])
+
+  // ✅ Prefill when editing doctor
+  useEffect(() => {
+    const prefillData = async () => {
+      if (!doctorData) return
+
+      // Category
+      if (doctorData.category?.length > 0) {
+        const cat = doctorData.category[0]
+        setSelectedCategory({ value: cat.categoryId, label: cat.categoryName })
+
+        // fetch services for category
+        const servicesRes = await serviceDataH()
+        const filteredServices = (servicesRes?.data || []).filter(
+          (s) => s.categoryId === cat.categoryId,
+        )
+        setServiceOptions(
+          filteredServices.map((s) => ({ value: s.serviceId, label: s.serviceName })),
+        )
+
+        // Prefill services
+        if (doctorData.services?.length > 0) {
+          const serviceObjs = doctorData.services.map((s) => ({
+            value: s.serviceId,
+            label: s.serviceName,
+          }))
+          setSelectedServices(serviceObjs)
+
+          // Prefill subServices
+          const allSubServices = []
+          for (let s of doctorData.services) {
+            const subRes = await subServiceData(s.serviceId)
+            ;(subRes?.data || []).forEach((ss) => {
+              allSubServices.push({ value: ss.subServiceId, label: ss.subServiceName })
+            })
+          }
+          const uniqueSubServices = Array.from(
+            new Map(allSubServices.map((ss) => [ss.value, ss])).values(),
+          )
+          setSubServiceOptions(uniqueSubServices)
+
+          if (doctorData.subServices?.length > 0) {
+            setSelectedSubServices(
+              doctorData.subServices.map((ss) => ({
+                value: ss.subServiceId,
+                label: ss.subServiceName,
+              })),
+            )
+          }
+        }
+      }
+    }
+
+    prefillData()
+  }, [doctorData])
+
+  // 🔹 Fetch subServices when services change
+  useEffect(() => {
+    if (!selectedServices || selectedServices.length === 0) {
+      setSubServiceOptions([])
+      setSelectedSubServices([])
+      return
+    }
+
+    const fetchSubServices = async () => {
+      try {
+        const responses = await Promise.all(selectedServices.map((s) => subServiceData(s.value)))
+
+        // API may return array or object with `subServices`
+        const all = responses.flatMap((res) => {
+          const subList = res?.data || []
+          if (Array.isArray(subList)) {
+            return subList.flatMap((item) => item.subServices || [])
+          } else if (subList?.subServices) {
+            return subList.subServices
+          }
+          return []
+        })
+
+        // Remove duplicates
+        const unique = Array.from(new Map(all.map((ss) => [ss.subServiceId, ss])).values())
+
+        setSubServiceOptions(
+          unique.map((ss) => ({
+            value: ss.subServiceId,
+            label: ss.subServiceName,
+          })),
+        )
+      } catch (err) {
+        console.error('Error fetching subservices:', err)
+        setSubServiceOptions([])
+      }
+    }
+
+    fetchSubServices()
+  }, [selectedServices])
+
+  // 🔹 Fetch Categories on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await CategoryData()
+        const categories = res?.data || []
+        setCategoryOptions(
+          categories.map((c) => ({
+            value: c.categoryId,
+            label: c.categoryName,
+          })),
+        )
+      } catch (err) {
+        console.error('Error fetching categories:', err)
+        setCategoryOptions([])
+      }
+    }
+
+    fetchCategories()
+  }, [])
+
+  const handleCategoryChange = async (selectedCategory) => {
+    setSelectedCategory(selectedCategory)
+    setFormData((prev) => ({
+      ...prev,
+      category: selectedCategory
+        ? { categoryId: selectedCategory.value, categoryName: selectedCategory.label }
+        : null,
+      services: [],
+      subServices: [],
+    }))
+
+    if (!selectedCategory) {
+      setServiceOptions([])
+      setSubServiceOptions([])
+      return
+    }
+
+    try {
+      const res = await serviceDataH() // fetch all services
+      const services = res?.data || []
+
+      // ✅ filter by category
+      const filtered = services.filter((s) => s.categoryId === selectedCategory.value)
+
+      // ✅ deduplicate services
+      const uniqueServices = Array.from(new Map(filtered.map((s) => [s.serviceId, s])).values())
+
+      setServiceOptions(
+        uniqueServices.map((s) => ({
+          value: s.serviceId,
+          label: s.serviceName,
+        })),
+      )
+      setSubServiceOptions([])
+    } catch (err) {
+      console.error('Error fetching services:', err)
+      setServiceOptions([])
+    }
+  }
+
+  const handleServiceChange = async (selectedServices) => {
+    // ✅ remove duplicates from user selections
+    const uniqueServices = Array.from(
+      new Map((selectedServices || []).map((s) => [s.value, s])).values(),
+    )
+
+    setSelectedServices(uniqueServices)
+    setFormData((prev) => ({
+      ...prev,
+      services: uniqueServices.map((s) => ({
+        serviceId: s.value,
+        serviceName: s.label,
+      })),
+      subServices: [],
+    }))
+
+    if (uniqueServices.length === 0) {
+      setSubServiceOptions([])
+      return
+    }
+
+    try {
+      const allSubservicesMap = new Map()
+
+      for (let svc of uniqueServices) {
+        const res = await subServiceData(svc.value)
+        const subs = res?.data || []
+
+        subs.forEach((ss) => {
+          if (!allSubservicesMap.has(ss.subServiceId)) {
+            allSubservicesMap.set(ss.subServiceId, {
+              value: ss.subServiceId,
+              label: ss.subServiceName,
+            })
+          }
+        })
+      }
+
+      setSubServiceOptions(Array.from(allSubservicesMap.values()))
+    } catch (err) {
+      console.error('Error fetching subservices:', err)
+      setSubServiceOptions([])
+    }
+  }
+
   return (
     <div className="doctor-details-page" style={{ padding: '1rem' }}>
       <ToastContainer />
-      <h3 style={{ color: '#1086EEFF' }}>Doctor Details & Slots Management</h3>
+      <h3 style={{ color: 'var(--color-black)' }}>Doctor Details & Slots Management</h3>
 
       <CCard className="mb-3">
         <CCardBody>
@@ -503,12 +844,14 @@ const DoctorDetailsPage = () => {
             {/* Doctor ID and Availability */}
             <div>
               <p className="mb-1">
-                <strong style={{ color: 'blue', fontWeight: 'bold', fontSize: '24px' }}>
+                <strong
+                  style={{ color: 'var(--color-black)', fontWeight: 'bold', fontSize: '24px' }}
+                >
                   {' '}
                   {capitalizeWords(doctorData.doctorName)}
                 </strong>
               </p>
-              <p className="mb-1 text-center">
+              <p className="mb-1 text-center" style={{ color: 'var(--color-black)' }}>
                 ID:
                 <strong> {doctorData.doctorId} </strong>
               </p>
@@ -526,22 +869,38 @@ const DoctorDetailsPage = () => {
 
           <CNav variant="tabs" className="mt-3 navhover" role="tablist">
             <CNavItem>
-              <CNavLink active={activeKey === 1} onClick={() => setActiveKey(1)}>
+              <CNavLink
+                active={activeKey === 1}
+                onClick={() => setActiveKey(1)}
+                style={{ color: 'var(--color-black)' }}
+              >
                 Doctor Profile
               </CNavLink>
             </CNavItem>
             <CNavItem>
-              <CNavLink active={activeKey === 2} onClick={() => setActiveKey(2)}>
+              <CNavLink
+                active={activeKey === 2}
+                onClick={() => setActiveKey(2)}
+                style={{ color: 'var(--color-black)' }}
+              >
                 Doctor Slots
               </CNavLink>
             </CNavItem>
             <CNavItem>
-              <CNavLink active={activeKey === 3} onClick={() => setActiveKey(3)}>
+              <CNavLink
+                active={activeKey === 3}
+                onClick={() => setActiveKey(3)}
+                style={{ color: 'var(--color-black)' }}
+              >
                 Rating & Comments
               </CNavLink>
             </CNavItem>
             <CNavItem>
-              <CNavLink active={activeKey === 4} onClick={() => setActiveKey(4)}>
+              <CNavLink
+                active={activeKey === 4}
+                onClick={() => setActiveKey(4)}
+                style={{ color: 'var(--color-black)' }}
+              >
                 Services
               </CNavLink>
             </CNavItem>
@@ -552,7 +911,59 @@ const DoctorDetailsPage = () => {
               <CTabPane visible={activeKey === 1} className="pt-3">
                 <CCard className="mb-4 shadow-sm">
                   <CCardBody>
-                    <h5 className="mb-3">👨‍⚕️ Doctor Information</h5>
+                    <h5 className="mb-3" style={{ color: 'var(--color-black)' }}>
+                      👨‍⚕️ Doctor Information
+                    </h5>
+                    {isEditing && (
+                      <>
+                        <CRow className="mb-3">
+                          {/* Category */}
+                          <CCol md={6}>
+                            <strong>Category:</strong>
+                            <Select
+                              options={categoryOptions}
+                              value={selectedCategory}
+                              onChange={handleCategoryChange}
+                              placeholder="Select Category"
+                            />
+                          </CCol>
+
+                          {/* Services */}
+                          <CCol md={6}>
+                            <strong>Services:</strong>
+                            <Select
+                              isMulti
+                              options={serviceOptions}
+                              value={selectedServices}
+                              onChange={handleServiceChange}
+                              placeholder="Select Service(s)"
+                            />
+                          </CCol>
+                        </CRow>
+
+                        <CRow className="mb-3">
+                          <CCol md={12}>
+                            <strong>Sub Services:</strong>
+                            <Select
+                              isMulti
+                              options={subServiceOptions}
+                              value={selectedSubServices}
+                              onChange={(ss) => {
+                                setSelectedSubServices(ss)
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  subServices: ss.map((s) => ({
+                                    subServiceId: s.value,
+                                    subServiceName: s.label,
+                                  })),
+                                }))
+                              }}
+                              placeholder="Select SubService(s)"
+                            />
+                          </CCol>
+                        </CRow>
+                      </>
+                    )}
 
                     {isEditing && (
                       <div className="mb-3">
@@ -589,7 +1000,7 @@ const DoctorDetailsPage = () => {
                       </div>
                     )}
 
-                    <CRow className="mb-4">
+                    <CRow className="mb-4" style={{ color: 'var(--color-black)' }}>
                       <CCol md={6}>
                         <p>
                           <strong>License No:</strong>
@@ -865,170 +1276,191 @@ const DoctorDetailsPage = () => {
 
                         {/* DOCTOR SIGNATURE UPLOAD FIELD */}
                         <p>
-                          <strong>Doctor Signature:</strong>
+                          <strong>Branch:</strong>
                         </p>
                         {isEditing ? (
-                          <CFormInput
-                            type="file"
-                            accept="image/jpeg, image/png"
-                            onChange={(e) => {
-                              const file = e.target.files[0]
-                              if (file) {
-                                const validTypes = ['image/jpeg', 'image/png']
-                                if (!validTypes.includes(file.type)) {
-                                  setErrors((prev) => ({
-                                    ...prev,
-                                    doctorSignature: 'Only JPG and PNG images are allowed',
-                                  }))
-                                  return
-                                }
-                                const reader = new FileReader()
-                                reader.onloadend = () => {
-                                  setFormData((p) => ({ ...p, doctorSignature: reader.result }))
-                                  setErrors((prev) => ({
-                                    ...prev,
-                                    doctorSignature: '',
-                                  }))
-                                }
-                                reader.readAsDataURL(file)
-                              } else {
-                                setErrors((prev) => ({
+                          <>
+                            {/* Multi-select for editing */}
+                            <Select
+                              isMulti
+                              options={branchOptions}
+                              value={branchOptions.filter(
+                                (opt) =>
+                                  Array.isArray(formData.branch) &&
+                                  formData.branch.some((b) => b.branchId === opt.value),
+                              )}
+                              onChange={(selected) =>
+                                setFormData((prev) => ({
                                   ...prev,
-                                  doctorSignature: 'Signature is required',
+                                  branch: selected.map((opt) => ({
+                                    branchId: opt.value,
+                                    branchName: opt.label,
+                                  })),
                                 }))
                               }
-                            }}
-                            invalid={!!errors.doctorSignature}
-                          />
+                              placeholder="Select branches..."
+                            />
+
+                            {/* Show selected branch list while editing */}
+                            {Array.isArray(formData.branch) && formData.branch.length > 0 && (
+                              <div className="mt-2">
+                                <strong>Selected Branches:</strong>
+                                <ul className="mb-0">
+                                  {formData.branch.map((b, idx) => (
+                                    <li key={idx}>{b.branchName}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </>
                         ) : (
-                          <div style={{ width: '150px', height: 'auto' }}>
-                            {doctorData.doctorSignature ? (
-                              <img
-                                src={doctorData.doctorSignature}
-                                alt="Doctor Signature"
-                                style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
-                              />
+                          // View-only mode
+                          <div>
+                            {Array.isArray(doctorData.branches) &&
+                            doctorData.branches.length > 0 ? (
+                              doctorData.branches.map((b, idx) => <p key={idx}>{b.branchName}</p>)
                             ) : (
-                              <p className="text-muted">No signature uploaded</p>
+                              <p>No branches assigned</p>
                             )}
                           </div>
                         )}
-                        {errors.doctorSignature && (
-                          <small className="text-danger">{errors.doctorSignature}</small>
+                      </CCol>
+                    </CRow>
+                    <CRow className="mb-3" style={{ color: 'var(--color-black)' }}>
+                      <CCol>
+                        <p>
+                          <strong>Association/Membership:</strong>
+                        </p>
+                        {isEditing ? (
+                          <CFormInput
+                            name="associationsOrMemberships"
+                            value={formData.associationsOrMemberships}
+                            onChange={(e) => {
+                              const cleaned = e.target.value.replace(/[^A-Za-z\s]/g, '')
+                              setFormData((prev) => ({
+                                ...prev,
+                                associationsOrMemberships: cleaned,
+                              }))
+                            }}
+                          />
+                        ) : (
+                          <p>{doctorData.associationsOrMemberships}</p>
+                        )}
+                      </CCol>
+
+                      <CCol style={{ color: 'var(--color-black)' }}>
+                        <p>
+                          <strong>📝 Profile Description:</strong>
+                        </p>
+                        {isEditing ? (
+                          <CFormInput
+                            name="profileDescription"
+                            value={formData.profileDescription}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                profileDescription: e.target.value,
+                              }))
+                            }
+                          />
+                        ) : (
+                          <p>{doctorData.profileDescription}</p>
                         )}
                       </CCol>
                     </CRow>
 
-                    <h6 className="mt-4 mb-2">
-                      <strong>📝 Profile Description</strong>
-                    </h6>
-                    {isEditing ? (
-                      <>
-                        <CFormTextarea
-                          name="profileDescription"
-                          rows={3}
-                          value={formData.profileDescription}
-                          onChange={(e) => {
-                            const cleaned = e.target.value.replace(/[^A-Za-z\s]/g, '')
-                            setFormData((prev) => ({
-                              ...prev,
-                              profileDescription: cleaned,
-                            }))
-                            setErrors((prev) => ({ ...prev, profileDescription: '' }))
-                          }}
-                        />
-                        {errors.profileDescription && (
-                          <small className="text-danger">{errors.profileDescription}</small>
-                        )}
-                      </>
-                    ) : (
-                      <p>{doctorData.profileDescription}</p>
-                    )}
-
-                    <h6 className="mt-4 mb-2">
-                      <strong>🏅 Achievements</strong>
-                    </h6>
-                    {isEditing ? (
-                      <>
-                        <CFormTextarea
-                          name="highlights"
-                          rows={5}
-                          placeholder="• Enter your first achievement"
-                          value={formData.highlights?.join('\n') || ''}
-                          style={{ resize: 'vertical' }}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              highlights: e.target.value
-                                .split('\n') // line-by-line
-                                .map((line) =>
-                                  line.trimStart().startsWith('•')
-                                    ? line.trim()
-                                    : `• ${line.trim()}`,
-                                )
-                                .filter(Boolean),
-                            }))
-                          }
-                        />
-                        <small className="text-muted">
-                          Press <strong>Enter</strong> to add each point on a new line.
-                        </small>
-                      </>
-                    ) : (
-                      <ul>
-                        {Array.isArray(formData?.highlights) && formData.highlights.length > 0 ? (
-                          formData.highlights.map((item, idx) => (
-                            <li key={idx}>{item.replace(/^•\s*/, '')}</li>
-                          ))
+                    <CRow style={{ color: 'var(--color-black)' }}>
+                      <CCol>
+                        {' '}
+                        <h6 className="mt-4 mb-2">
+                          <strong>🔍 Area of Expertise</strong>
+                        </h6>
+                        {isEditing ? (
+                          <>
+                            <CFormTextarea
+                              name="focusAreas"
+                              rows={5}
+                              style={{ resize: 'vertical' }}
+                              placeholder="• Enter area of focus..."
+                              value={formData.focusAreas?.join('\n') || ''}
+                              onChange={(e) => {
+                                const inputValue = e.target.value
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  focusAreas: inputValue
+                                    .split('\n')
+                                    .map((line) =>
+                                      line.trimStart().startsWith('•')
+                                        ? line.trim()
+                                        : `• ${line.trim()}`,
+                                    )
+                                    .filter((line) => line !== '•'),
+                                }))
+                              }}
+                            />
+                            <small>
+                              Type each point on a new line. Bullets will be added automatically.
+                            </small>
+                          </>
                         ) : (
-                          <p className="text-muted">No achievements added</p>
+                          <ul>
+                            {Array.isArray(formData?.focusAreas) &&
+                            formData.focusAreas.length > 0 ? (
+                              formData.focusAreas.map((area, idx) => (
+                                <li key={idx}>{area.replace(/^•\s*/, '')}</li>
+                              ))
+                            ) : (
+                              <p>No focus areas listed</p>
+                            )}
+                          </ul>
                         )}
-                      </ul>
-                    )}
-
-                    <h6 className="mt-4 mb-2">
-                      <strong>🔍 Area of Expertise</strong>
-                    </h6>
-                    {isEditing ? (
-                      <>
-                        <CFormTextarea
-                          name="focusAreas"
-                          rows={5}
-                          style={{ resize: 'vertical' }}
-                          placeholder="• Enter area of focus..."
-                          value={formData.focusAreas?.join('\n') || ''}
-                          onChange={(e) => {
-                            const inputValue = e.target.value
-                            setFormData((prev) => ({
-                              ...prev,
-                              focusAreas: inputValue
-                                .split('\n')
-                                .map((line) =>
-                                  line.trimStart().startsWith('•')
-                                    ? line.trim()
-                                    : `• ${line.trim()}`,
-                                )
-                                .filter((line) => line !== '•'),
-                            }))
-                          }}
-                        />
-                        <small className="text-muted">
-                          Type each point on a new line. Bullets will be added automatically.
-                        </small>
-                      </>
-                    ) : (
-                      <ul>
-                        {Array.isArray(formData?.focusAreas) && formData.focusAreas.length > 0 ? (
-                          formData.focusAreas.map((area, idx) => (
-                            <li key={idx}>{area.replace(/^•\s*/, '')}</li>
-                          ))
+                      </CCol>
+                      <CCol>
+                        <h6 className="mt-4 mb-2">
+                          <strong>🏅 Achievements</strong>
+                        </h6>
+                        {isEditing ? (
+                          <>
+                            <CFormTextarea
+                              name="highlights"
+                              rows={5}
+                              placeholder="• Enter your first achievement"
+                              value={formData.highlights?.join('\n') || ''}
+                              style={{ resize: 'vertical' }}
+                              onChange={(e) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  highlights: e.target.value
+                                    .split('\n') // line-by-line
+                                    .map((line) =>
+                                      line.trimStart().startsWith('•')
+                                        ? line.trim()
+                                        : `• ${line.trim()}`,
+                                    )
+                                    .filter(Boolean),
+                                }))
+                              }
+                            />
+                            <small>
+                              Press <strong>Enter</strong> to add each point on a new line.
+                            </small>
+                          </>
                         ) : (
-                          <p className="text-muted">No focus areas listed</p>
+                          <ul>
+                            {Array.isArray(formData?.highlights) &&
+                            formData.highlights.length > 0 ? (
+                              formData.highlights.map((item, idx) => (
+                                <li key={idx}>{item.replace(/^•\s*/, '')}</li>
+                              ))
+                            ) : (
+                              <p>No achievements added</p>
+                            )}
+                          </ul>
                         )}
-                      </ul>
-                    )}
+                      </CCol>
+                    </CRow>
 
-                    <CRow>
+                    <CRow style={{ color: 'var(--color-black)' }}>
                       <CCol md={6}>
                         <p>
                           <strong>In-Clinic Fee:</strong>
@@ -1083,6 +1515,62 @@ const DoctorDetailsPage = () => {
                         )}
                       </CCol>
                     </CRow>
+                    <CRow style={{ color: 'var(--color-black)' }}>
+                      <CCol>
+                        <p>
+                          <strong>Doctor Signature:</strong>
+                        </p>
+                        {isEditing ? (
+                          <CFormInput
+                            type="file"
+                            accept="image/jpeg, image/png"
+                            onChange={(e) => {
+                              const file = e.target.files[0]
+                              if (file) {
+                                const validTypes = ['image/jpeg', 'image/png']
+                                if (!validTypes.includes(file.type)) {
+                                  setErrors((prev) => ({
+                                    ...prev,
+                                    doctorSignature: 'Only JPG and PNG images are allowed',
+                                  }))
+                                  return
+                                }
+                                const reader = new FileReader()
+                                reader.onloadend = () => {
+                                  setFormData((p) => ({ ...p, doctorSignature: reader.result }))
+                                  setErrors((prev) => ({
+                                    ...prev,
+                                    doctorSignature: '',
+                                  }))
+                                }
+                                reader.readAsDataURL(file)
+                              } else {
+                                setErrors((prev) => ({
+                                  ...prev,
+                                  doctorSignature: 'Signature is required',
+                                }))
+                              }
+                            }}
+                            invalid={!!errors.doctorSignature}
+                          />
+                        ) : (
+                          <div style={{ width: '150px', height: 'auto' }}>
+                            {doctorData.doctorSignature ? (
+                              <img
+                                src={doctorData.doctorSignature}
+                                alt="Doctor Signature"
+                                style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
+                              />
+                            ) : (
+                              <p>No signature uploaded</p>
+                            )}
+                          </div>
+                        )}
+                        {errors.doctorSignature && (
+                          <small className="text-danger">{errors.doctorSignature}</small>
+                        )}
+                      </CCol>
+                    </CRow>
 
                     <div className="text-end mt-4">
                       {isEditing ? (
@@ -1094,14 +1582,13 @@ const DoctorDetailsPage = () => {
                             color="success"
                             className="text-white"
                             onClick={handleUpdateWithValidation}
-                            // disabled={Object.values(errors).some((err) => err)}
                           >
                             Update
                           </CButton>
                         </>
                       ) : (
                         <div>
-                          <CButton color="primary" onClick={handleEditToggle}>
+                          <CButton color="info" className="text-white" onClick={handleEditToggle}>
                             Edit
                           </CButton>
                           <CButton color="danger ms-2" className="text-white" onClick={handleShow}>
@@ -1110,44 +1597,60 @@ const DoctorDetailsPage = () => {
                         </div>
                       )}
                     </div>
-                    <Modal show={showModal} onHide={handleClose}>
-                      <Modal.Header closeButton>
-                        <Modal.Title>Confirm Delete</Modal.Title>
-                      </Modal.Header>
-                      <Modal.Body>Are you sure you want to delete this doctor?</Modal.Body>
-                      <Modal.Footer>
-                        <Button variant="secondary" onClick={handleClose}>
-                          Cancel
-                        </Button>
-                        <Button
-                          variant="danger"
-                          onClick={() => handleDeleteToggleE(doctorData.doctorId)}
-                        >
-                          Delete
-                        </Button>
-                      </Modal.Footer>
-                    </Modal>
+
+                    <ConfirmationModal
+                      isVisible={showModal}
+                      title="Delete Doctor"
+                      message="Are you sure you want to delete this doctor? This action cannot be undone."
+                      confirmText="Yes, Delete"
+                      cancelText="Cancel"
+                      confirmColor="danger"
+                      cancelColor="secondary"
+                      onConfirm={() => handleDeleteToggleE(doctorData.doctorId)}
+                      onCancel={handleClose}
+                    />
                   </CCardBody>
                 </CCard>
               </CTabPane>
             </CTabContent>
+            {/* <ConfirmationModal
+              isVisible={showModal}
+              title="Delete Procedure Details"
+              message="Are you sure you want to delete this doctor? This action cannot be undone."
+              confirmText="Yes, Delete"
+              cancelText="Cancel"
+              onConfirm={handleDeleteToggleE(doctorData.doctorId)}
+              onCancel={handleClose}
+            /> */}
 
-            <CTabPane visible={activeKey === 2} className="pt-3">
+            <CTabPane
+              visible={activeKey === 2}
+              className="pt-3"
+              style={{ color: 'var(--color-black)' }}
+            >
               <h5>
                 <strong>Slot Management</strong>
               </h5>
 
               <div className="d-flex gap-2 flex-wrap mb-3">
-                {days.map((dayObj, idx) => (
-                  <CButton
-                    key={idx}
-                    color={selectedDate === format(dayObj.date, 'yyyy-MM-dd') ? 'primary' : 'light'}
-                    onClick={() => handleDateClick(dayObj, idx)}
-                  >
-                    <div style={{ fontSize: '14px' }}>{dayObj.dayLabel}</div>
-                    <div style={{ fontSize: '12px' }}>{dayObj.dateLabel}</div>
-                  </CButton>
-                ))}
+                {days.map((dayObj, idx) => {
+                  const isSelected = selectedDate === format(dayObj.date, 'yyyy-MM-dd')
+
+                  return (
+                    <CButton
+                      key={idx}
+                      onClick={() => handleDateClick(dayObj, idx)}
+                      style={{
+                        backgroundColor: isSelected ? 'var(--color-black)' : COLORS.white, // ✅ pink when selected
+                        color: isSelected ? COLORS.white : 'var(--color-black)', // ✅ text turns white when pink bg
+                        border: `1px solid ${'var(--color-black)'}`,
+                      }}
+                    >
+                      <div style={{ fontSize: '14px' }}>{dayObj.dayLabel}</div>
+                      <div style={{ fontSize: '12px' }}>{dayObj.dateLabel}</div>
+                    </CButton>
+                  )
+                })}
               </div>
 
               <div className="slot-grid mt-3">
@@ -1155,19 +1658,20 @@ const DoctorDetailsPage = () => {
                   {/* <CCardHeader className="fw-bold">{selectedDate}</CCardHeader> */}
                   <CCardBody>
                     {loading ? (
-                      <p>Loading slots...</p>
+                      <LoadingIndicator message="Loading slots..." />
                     ) : (
                       <div className="d-flex flex-wrap gap-3">
                         {slotsForSelectedDate.map((slotObj, i) => {
                           const isSelected = selectedSlots.includes(slotObj.slot)
+
                           return (
                             <div
                               key={i}
                               className={`slot-item px-3 py-2 border rounded ${
                                 slotObj?.slotbooked
-                                  ? 'bg-danger text-white'
+                                  ? 'bg-danger text-white' // booked = red
                                   : isSelected
-                                    ? 'bg-primary text-white'
+                                    ? 'text-white' // selected = black background, white text
                                     : 'bg-light'
                               }`}
                               onClick={() => {
@@ -1177,7 +1681,15 @@ const DoctorDetailsPage = () => {
                                   setSelectedSlots((prev) => [...prev, slotObj.slot])
                                 }
                               }}
-                              style={{ cursor: 'pointer' }}
+                              style={{
+                                cursor: 'pointer',
+                                color: 'var(--color-black)',
+                                backgroundColor: slotObj?.slotbooked
+                                  ? undefined
+                                  : isSelected
+                                    ? 'var(--color-black)'
+                                    : undefined,
+                              }}
                             >
                               {slotObj?.slot}
                             </div>
@@ -1185,7 +1697,9 @@ const DoctorDetailsPage = () => {
                         })}
 
                         {slotsForSelectedDate.length === 0 && (
-                          <p className="text-muted">No available slots for this date</p>
+                          <p style={{ color: 'var(--color-black)' }}>
+                            No available slots for this date
+                          </p>
                         )}
                       </div>
                     )}
@@ -1194,12 +1708,22 @@ const DoctorDetailsPage = () => {
               </div>
 
               <div className="mt-3 d-flex gap-2">
-                <CButton color="primary" variant="outline" onClick={() => setVisible(true)}>
+                <CButton
+                  style={{
+                    color: 'var(--color-black)',
+                    border: `1px solid ${'var(--color-black)'}`,
+                  }}
+                  variant="outline"
+                  onClick={() => setVisible(true)}
+                >
                   Add Slot
                 </CButton>
 
                 <CButton
-                  color="danger"
+                  style={{
+                    color: 'var(--color-black)',
+                    border: `1px solid ${'var(--color-black)'}`,
+                  }}
                   variant="outline"
                   disabled={selectedSlots.length === 0}
                   onClick={() => {
@@ -1215,10 +1739,10 @@ const DoctorDetailsPage = () => {
                 </CButton>
 
                 <CButton
-                  color="warning"
+                  style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
                   variant="outline"
                   onClick={() => {
-                    setDeleteMode('all') // mark which action we are confirming
+                    setDeleteMode('all')
                     setShowDeleteConfirmModal(true)
                   }}
                 >
@@ -1230,7 +1754,7 @@ const DoctorDetailsPage = () => {
             <CTabPane visible={activeKey === 3} className="pt-3">
               {ratings ? (
                 <div className="px-3">
-                  <CRow>
+                  <CRow style={{ color: 'var(--color-black)' }}>
                     <CCol md={6}>
                       <h5 className="mb-4">
                         <strong>Doctor Feedback:</strong>
@@ -1255,17 +1779,17 @@ const DoctorDetailsPage = () => {
                       <div
                         key={index}
                         className="bg-white shadow-sm rounded p-3 mb-4 border"
-                        style={{ borderLeft: '4px solid #0d6efd' }}
+                        style={{ borderLeft: `4px solid ${'var(--color-black)'}` }}
                       >
                         <div className="d-flex">
                           <div
-                            className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                            className="rounded-circle bg-info text-white d-flex align-items-center justify-content-center me-3"
                             style={{ width: '50px', height: '50px', fontSize: '18px' }}
                           >
                             {initials}
                           </div>
 
-                          <div className="flex-grow-1">
+                          <div className="flex-grow-1" style={{ color: 'var(--color-black)' }}>
                             <div className="d-flex justify-content-between align-items-center">
                               <div>
                                 <h6 className="mb-0">
@@ -1273,7 +1797,7 @@ const DoctorDetailsPage = () => {
                                     comment.customerMobileNumber}
                                 </h6>
 
-                                <small className="text-muted">{timeAgo}</small>
+                                <small style={{ color: 'var(--color-black)' }}>{timeAgo}</small>
                               </div>
                               <div className="fw-bold">
                                 ⭐{comment.doctorRating} <i className="fa fa-star" />
@@ -1291,7 +1815,7 @@ const DoctorDetailsPage = () => {
                   })}
                 </div>
               ) : (
-                <p className="text-muted">No ratings or comments available.</p>
+                <p>No ratings or comments available.</p>
               )}
             </CTabPane>
 
@@ -1299,9 +1823,9 @@ const DoctorDetailsPage = () => {
               <div className="d-flex flex-wrap gap-3">
                 {/*  All Categories in One Card */}
                 {doctorData?.category?.length > 0 && (
-                  <div className="card border-primary" style={{ width: '100%' }}>
+                  <div className="card border-info" style={{ width: '100%' }}>
                     <div className="card-body">
-                      <h5 className="card-title text-primary">All Categories</h5>
+                      <h5 className="card-title text-info">All Categories</h5>
                       <ul className="mb-0">
                         {doctorData.category.map((cat, index) => (
                           <li key={index}>{cat.categoryName}</li>
@@ -1329,7 +1853,7 @@ const DoctorDetailsPage = () => {
                 {doctorData?.subServices?.length > 0 && (
                   <div className="card border-warning" style={{ width: '100%' }}>
                     <div className="card-body">
-                      <h5 className="card-title text-warning">All Sub Services</h5>
+                      <h5 className="card-title text-warning">All Procedures</h5>
                       <ul className="mb-0">
                         {doctorData.subServices.map((sub, index) => (
                           <li key={index}>{sub.subServiceName}</li>
@@ -1348,43 +1872,36 @@ const DoctorDetailsPage = () => {
           <CModalTitle>Add Slots</CModalTitle>
         </CModalHeader>
         <CModalBody>
-          <label>Select Date</label>
+          <label style={{ color: 'var(--color-black)' }}>Select Date</label>
           <CFormInput
             type="date"
             value={selectedDate}
             min={minDate}
             max={maxDate}
+            // style={{ color: 'var(--color-black)' }}
             onChange={(e) => setSelectedDate(e.target.value)}
           />
 
-          <label className="mt-3">Add Slot</label>
+          <label className="mt-3" style={{ color: 'var(--color-black)' }}>
+            Add Slot
+          </label>
 
           <div className="d-flex gap-2 flex-wrap mb-3">
-            {/* <CInputGroup className="mb-3">
-              <CFormInput
-                placeholder="Eg: 09:00 AM"
-                value={timeInput}
-                onChange={(e) => {
-                  setTimeInput(e.target.value)
-                }}
-              />
-              <CButton color="primary" onClick={addTimeSlot}>
-                +
-              </CButton>
-              Trigger Button
-              
-            </CInputGroup> */}
+            <CInputGroup>{/* Trigger Button */}</CInputGroup>
             <CInputGroup className="mb-3">
-              <CFormInput placeholder="Eg: 09:00 AM" disabled />
-              <CButton color="primary" onClick={openModal}>
+              <CFormInput placeholder="Click the plus icon to add a slot." disabled />
+              <CButton
+                style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
+                onClick={openModal}
+              >
                 +
               </CButton>
             </CInputGroup>
-            <span color="warning" style={{ fontSize: '12px' }}>
+            {/* <span color="warning" style={{ fontSize: '12px' }}>
               {' '}
               ⚠️ Note: Please enter a valid time in <strong>hh:mm AM/PM</strong> format (e.g., 09:00
               AM, 03:30 PM). Only <strong>half-hour intervals</strong> are accepted.
-            </span>
+            </span> */}
           </div>
 
           {/* <CListGroup>
@@ -1427,60 +1944,158 @@ const DoctorDetailsPage = () => {
       </CModal>
 
       <CModal visible={visibleSlot} onClose={() => setVisibleSlot(false)} size="lg">
-        <CModalHeader>Select Available Time Slots</CModalHeader>
+        <CModalHeader style={{ color: 'var(--color-black)' }}>
+          Select Available Time Slots
+        </CModalHeader>
         <CModalBody>
-          {/* Select All Checkbox */}
-          <div className="form-check mb-3">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              id="selectAllSlots"
-              checked={selectedSlots.length === timeSlots.length}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  setSelectedSlots([...timeSlots])
-                } else {
-                  setSelectedSlots([])
-                }
-              }}
-            />
-            <label className="form-check-label" htmlFor="selectAllSlots">
-              Select All Slots
-            </label>
+          {/* <div className="d-flex flex-wrap gap-3">
+            {slots.map((slot, i) => {
+              const isSelected = selectedSlots.includes(slot)
+
+              return (
+                <div
+                  key={i}
+                  className={`slot-item px-3 py-2 border rounded ${
+                    isSelected ? 'bg-dark text-white' : 'bg-light'
+                  }`}
+                  onClick={() => {
+                    if (isSelected) {
+                      setSelectedSlots((prev) => prev.filter((s) => s !== slot))
+                    } else {
+                      setSelectedSlots((prev) => [...prev, slot])
+                    }
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {slot}
+                </div>
+              )
+            })}
           </div>
+          Select All Slots */}
+          {/* Select All Checkbox */}
 
           {/* Slot Buttons */}
-          <div className="d-flex flex-wrap gap-2 mb-3">
-            {timeSlots.map((slot) => (
+          <div>
+            {/* Interval Selection */}
+            <div className="d-flex gap-3 align-items-center mb-3">
+              <label className="d-flex align-items-center gap-1">
+                <input
+                  type="radio"
+                  value={10}
+                  checked={interval === 10}
+                  onChange={() => setInterval(10)}
+                />
+                10 min
+              </label>
+              <label className="d-flex align-items-center gap-1">
+                <input
+                  type="radio"
+                  value={20}
+                  checked={interval === 20}
+                  onChange={() => setInterval(20)}
+                />
+                20 min
+              </label>
+              <label className="d-flex align-items-center gap-1">
+                <input
+                  type="radio"
+                  value={30}
+                  checked={interval === 30}
+                  onChange={() => setInterval(30)}
+                />
+                30 min
+              </label>
+
               <CButton
-                key={slot}
-                size="sm"
-                className="text-white"
-                color={selectedSlots.includes(slot) ? 'success' : 'secondary'}
-                onClick={() =>
-                  setSelectedSlots((prev) =>
-                    prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot],
-                  )
-                }
+                style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+                onClick={handleGenerate}
               >
-                {slot}
+                Generate Slots
               </CButton>
-            ))}
+            </div>
+
+            {slots.length > 0 && (
+              <div className="form-check mb-3">
+                <input
+                  className="form-check-input"
+                  style={{ color: 'var(--color-black)' }}
+                  type="checkbox"
+                  id="selectAllSlots"
+                  checked={selectedSlots.length === timeSlots.length}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedSlots([...timeSlots])
+                    } else {
+                      setSelectedSlots([])
+                    }
+                  }}
+                />
+                <label
+                  className="form-check-label"
+                  htmlFor="selectAllSlots"
+                  style={{ color: 'var(--color-black)' }}
+                >
+                  Select All Slots
+                </label>
+              </div>
+            )}
+
+            {/* Slot Grid */}
+            <div className="d-flex flex-wrap gap-3 mb-3">
+              {slots.map((slot, i) => {
+                const isSelected = selectedSlots.includes(slot)
+                return (
+                  <CButton
+                    key={slot}
+                    size="sm"
+                    style={{
+                      backgroundColor: isSelected ? 'var(--color-black)' : 'gray', // unselected = gray
+                      color: 'white', // always white text
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => toggleSlot(slot)}
+                  >
+                    {slot}
+                  </CButton>
+                  // <div
+                  //   key={i}
+                  //   className={`slot-item px-3 py-2 border rounded ${
+                  //     isSelected ? 'var(--color-black) ' : 'bg-light'
+                  //   }`}
+                  //   onClick={() => toggleSlot(slot)}
+                  //   style={{ cursor: 'pointer' }}
+                  // >
+                  //   {slot}
+                  // </div>
+                )
+              })}
+            </div>
           </div>
         </CModalBody>
         <CModalFooter>
           <CButton color="secondary" onClick={() => setVisibleSlot(false)}>
             Cancel
           </CButton>
-          <CButton color="primary" onClick={handleAddSlot} disabled={selectedSlots.length === 0}>
+          <CButton
+            color="info"
+            onClick={handleAddSlot}
+            disabled={selectedSlots.length === 0}
+            style={{ backgroundColor: 'var(--color-black)', color: 'white', border: 'none' }}
+          >
             Save Slots ({selectedSlots.length})
           </CButton>
         </CModalFooter>
       </CModal>
 
-      <CModal visible={showDeleteConfirmModal} onClose={() => setShowDeleteConfirmModal(false)}>
+      <CModal
+        visible={showDeleteConfirmModal}
+        onClose={() => setShowDeleteConfirmModal(false)}
+        alignment="center"
+      >
         <CModalHeader closeButton>
-          <CModalTitle>Confirm Delete</CModalTitle>
+          <CModalTitle style={{ color: 'var(--color-black)' }}>Confirm Delete</CModalTitle>
         </CModalHeader>
         <CModalBody>
           {deleteMode === 'selected' ? (
@@ -1496,18 +2111,21 @@ const DoctorDetailsPage = () => {
           )}
         </CModalBody>
         <CModalFooter>
-          <CButton color="secondary" onClick={() => setShowDeleteConfirmModal(false)}>
+          <CButton
+            style={{ backgroundColor: COLORS.lowgray }}
+            onClick={() => setShowDeleteConfirmModal(false)}
+          >
             Cancel
           </CButton>
           <CButton
-            color="danger"
+            style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
             onClick={async () => {
               try {
                 if (deleteMode === 'selected') {
                   // delete selected
                   for (const slot of selectedSlots) {
-                    await axios.delete(
-                      `${BASE_URL}/doctorId/${doctorData?.doctorId}/${selectedDate}/${slot}/slots`,
+                    await http.delete(
+                      `/doctorId/${doctorData?.doctorId}/${selectedDate}/${slot}/slots`,
                     )
                   }
                   toast.success(' Selected slots deleted successfully.')
@@ -1515,9 +2133,7 @@ const DoctorDetailsPage = () => {
                   fetchSlots()
                 } else if (deleteMode === 'all') {
                   // delete all for date
-                  await axios.delete(
-                    `${BASE_URL}/delete-by-date/${doctorData?.doctorId}/${selectedDate}`,
-                  )
+                  await http.delete(`/delete-by-date/${doctorData?.doctorId}/${selectedDate}`)
                   toast.success(` All slots for ${selectedDate} deleted.`)
                   setSelectedSlots([])
                   fetchSlots()

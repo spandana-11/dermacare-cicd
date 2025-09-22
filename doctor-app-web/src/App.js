@@ -5,7 +5,6 @@ import { CSpinner, useColorModes } from '@coreui/react'
 import './scss/style.scss'
 import './scss/examples.scss'
 import { COLORS } from './Themes'
-import Dashboard from './views/dashboard/Dashboard'
 import { ToastContainer } from 'react-toastify'
 
 const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'))
@@ -34,6 +33,14 @@ const App = () => {
     onResize()
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  // Optional: clear localStorage if session is invalid
+  useEffect(() => {
+    const sessionKey = localStorage.getItem('sessionKey')
+    if (!sessionKey) {
+      localStorage.clear()
+    }
   }, [])
 
   if (isMobile) {
@@ -65,7 +72,7 @@ const App = () => {
       <Suspense
         fallback={
           <div
-            className="pt-3 text-center  "
+            className="pt-3 text-center"
             style={{ backgroundColor: COLORS.theme, minHeight: '100vh' }}
           >
             <CSpinner color="primary" variant="grow" />
@@ -74,19 +81,12 @@ const App = () => {
       >
         <div style={{ minHeight: '100vh', backgroundColor: COLORS.theme, padding: 20 }}>
           <Routes>
-            {/* Start at /login */}
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
-
             <Route path="/register" element={<Register />} />
-
-            {/* App shell */}
             <Route path="/*" element={<DefaultLayout />} />
-
-            {/* Errors */}
             <Route path="/404" element={<Page404 />} />
             <Route path="/500" element={<Page500 />} />
-            {/* Catch-all */}
             <Route path="*" element={<Navigate to="/404" replace />} />
           </Routes>
         </div>

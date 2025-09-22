@@ -26,6 +26,8 @@ public class DoctorSlot {
 
     private String doctorId;
     private String hospitalId ;
+    private String branchId;
+    
     private String date;
 
     private List<DoctorAvailableSlotDTO> availableSlots;

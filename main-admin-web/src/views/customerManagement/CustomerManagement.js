@@ -44,7 +44,7 @@ const CustomerManagement = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 5
+  const [itemsPerPage, setItemsPerPage]=useState(5)
 
   const [isAdding, setIsAdding] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -62,8 +62,18 @@ const CustomerManagement = () => {
     dateOfBirth: '',
     referCode: '',
   })
-  const getISODate = (date) => date.toISOString().split('T')[0]
 
+  const getISODate = (date) => date.toISOString().split('T')[0]
+  const indexOfLastItem=currentPage * itemsPerPage;
+  const indexOfFirstItem=indexOfLastItem-itemsPerPage;
+  const currentItems=filteredData.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage)
+
+  const handlePerChange=(page)=>{
+    if(page>=1 && page<=totalPages){
+      setCurrentPage(page)
+    }
+  }
   // Calculate today's date for minimum date restriction in the form
   // const today = new Date()
   // const todayISO = getISODate(today)
@@ -218,7 +228,7 @@ const CustomerManagement = () => {
       const alreadyExists = customerData.some((cust) => cust.mobileNumber === formData.mobileNumber)
       const alreadyExistsEmial = customerData.some((cust) => cust.emailId === formData.emailId)
       if (alreadyExists) {
-        toast.error('Customer already exists.')
+        toast.error('Mobile Number already exists.')
         return
       } else if (alreadyExistsEmial) {
         toast.error('Customer email id already exists.')
@@ -278,6 +288,7 @@ const CustomerManagement = () => {
       dateOfBirth: '',
       referCode: '',
     })
+    setFormErrors({})
   }
 
   const paginatedData = filteredData.slice(
@@ -315,12 +326,12 @@ const CustomerManagement = () => {
       await deleteCustomerData(customerIdToDelete)
       toast.success('Customer deleted successfully')
 
-      const updatedData = customerData.filter(
-        (customer) => customer?.mobileNumber !== customerIdToDelete,
-      )
-
-      setCustomerData(updatedData)
-      setFilteredData(updatedData)
+  setCustomerData((prev) =>
+      prev.filter((c) => c.mobileNumber !== customerIdToDelete)
+    )
+    setFilteredData((prev) =>
+      prev.filter((c) => c.mobileNumber !== customerIdToDelete)
+    )
     } catch (error) {
       console.error('Delete failed:', error)
       toast.error('Failed to delete customer')
@@ -449,6 +460,7 @@ const CustomerManagement = () => {
             <div style={centeredMessageStyle}>No Customer Data Found</div>
           ) : (
             <>
+             
               <CTable hover striped responsive>
                 <CTableHead>
                   <CTableRow>
@@ -459,10 +471,13 @@ const CustomerManagement = () => {
                     <CTableHeaderCell>Actions</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
-                <CTableBody>
-                  {paginatedData.map((customer, index) => (
+            
+                    <CTableBody>
+                       
+                  {currentItems.map((customer, index) => (
                     <CTableRow key={customer.mobileNumber || index}>
-                      <CTableDataCell>{index + 1}</CTableDataCell>
+                      {/* ✅ serial number across all pages */}
+                      <CTableDataCell>{indexOfFirstItem + index + 1}</CTableDataCell>
                       <CTableDataCell>{customer?.fullName || '-'}</CTableDataCell>
                       <CTableDataCell>{customer?.mobileNumber || '-'}</CTableDataCell>
                       <CTableDataCell>{customer?.gender || '-'}</CTableDataCell>
@@ -509,9 +524,34 @@ const CustomerManagement = () => {
                 </CTableBody>
               </CTable>
 
-              {Math.ceil(filteredData.length / itemsPerPage) > 1 && (
-                <div className="d-flex justify-content-center mt-3">
-                  <CPagination align="center">
+               {filteredData.length > 0 && (
+                <div className="d-flex justify-content-between align-items-center mt-3">
+                  {/* Rows per page dropdown */}
+                  <div>
+                    <label className="me-2">Rows per page:</label>
+                    <CFormSelect
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value))
+                        setCurrentPage(1) // reset to first page
+                      }}
+                      style={{ width: '80px', display: 'inline-block' }}
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                    </CFormSelect>
+                  </div>
+
+                  {/* Showing info */}
+                  <div>
+                    Showing {indexOfFirstItem + 1} to{' '}
+                    {Math.min(indexOfLastItem, filteredData.length)} of {filteredData.length} entries
+                  </div>
+
+                  {/* Pagination */}
+                  <CPagination align="end">
                     <CPaginationItem
                       disabled={currentPage === 1}
                       onClick={() => handlePageChange(currentPage - 1)}
@@ -519,21 +559,18 @@ const CustomerManagement = () => {
                       Previous
                     </CPaginationItem>
 
-                    {Array.from(
-                      { length: Math.ceil(filteredData.length / itemsPerPage) },
-                      (_, i) => i + 1,
-                    ).map((page) => (
+                    {[...Array(totalPages)].map((_, idx) => (
                       <CPaginationItem
-                        key={page}
-                        active={page === currentPage}
-                        onClick={() => handlePageChange(page)}
+                        key={idx + 1}
+                        active={currentPage === idx + 1}
+                        onClick={() => handlePageChange(idx + 1)}
                       >
-                        {page}
+                        {idx + 1}
                       </CPaginationItem>
                     ))}
 
                     <CPaginationItem
-                      disabled={currentPage === Math.ceil(filteredData.length / itemsPerPage)}
+                      disabled={currentPage === totalPages}
                       onClick={() => handlePageChange(currentPage + 1)}
                     >
                       Next
@@ -651,12 +688,15 @@ const CustomerManagement = () => {
                 {formErrors.gender && <div className="text-danger small">{formErrors.gender}</div>}
               </CCol>
               <CCol md={6}>
-                <CFormLabel>Refer Code</CFormLabel>
+                <CFormLabel>Referral Code</CFormLabel>
                 <CFormInput
                   name="referCode"
                   value={formData.referCode}
                   onChange={handleInputChange}
                 />
+                {formErrors.referCode &&(
+                  <div className="text-danger">{formErrors.referCode}</div>
+                )}
               </CCol>
             </CRow>
 

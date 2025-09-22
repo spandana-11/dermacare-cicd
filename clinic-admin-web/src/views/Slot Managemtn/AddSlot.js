@@ -10,6 +10,7 @@ import {
   CFormInput,
 } from '@coreui/react';
 import axios from 'axios';
+import { http } from '../../Utils/Interceptors';
 
 const AddSlotModal = ({ visible, setVisible, selectedDate, refreshSlots }) => {
   const [timeInput, setTimeInput] = useState('');
@@ -28,7 +29,7 @@ const AddSlotModal = ({ visible, setVisible, selectedDate, refreshSlots }) => {
 
   const handleSave = async () => {
     try {
-      const response = await axios.post('https://your-api-endpoint.com/addSlots', {
+      const response = await http.post('https://your-api-endpoint.com/addSlots', {
         date: selectedDate,
         slots: timeSlots,
       });

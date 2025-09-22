@@ -5,6 +5,8 @@ import org.springframework.data.annotation.Id;
 
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,13 +15,15 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CustomerRating {
     @Id
     private ObjectId id; // MongoDB ObjectId
     private double doctorRating;
-    private double hospitalRating;
+    private double branchRating;
     private String feedback;
     private String hospitalId;
+    private String branchId;
     private String doctorId; // Provider's mobile number
     private String customerMobileNumber;
     private String patientId;

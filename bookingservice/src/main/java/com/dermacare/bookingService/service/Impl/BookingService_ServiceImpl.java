@@ -1,6 +1,7 @@
 package com.dermacare.bookingService.service.Impl;
 
 
+import java.lang.annotation.Annotation;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -16,6 +17,12 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.type.ReferenceType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeVisitor;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +30,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import com.dermacare.bookingService.dto.BookingRequset;
 import com.dermacare.bookingService.dto.BookingResponse;
+import com.dermacare.bookingService.dto.DoctorSaveDetailsDTO;
 import com.dermacare.bookingService.dto.NotificationDTO;
 import com.dermacare.bookingService.entity.Booking;
 import com.dermacare.bookingService.entity.ReportsList;
+import com.dermacare.bookingService.feign.DoctorFeign;
 import com.dermacare.bookingService.feign.NotificationFeign;
 import com.dermacare.bookingService.producer.KafkaProducer;
 import com.dermacare.bookingService.repository.BookingServiceRepository;
@@ -47,6 +56,9 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	
 	@Autowired
 	private NotificationFeign notificationFeign;
+	
+	@Autowired
+	private DoctorFeign doctorFeign;
 
 	@Override
 	public ResponseEntity<?> addService(BookingRequset request) {
@@ -70,11 +82,13 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 				b.setStatus("Confirmed");
 				b.setServicetime(request.getServicetime());
 				b.setServiceDate(request.getServiceDate());
+				b.setVisitType(request.getVisitType());
 				Booking ety = repository.save(b);
 				ety.setReports(null);
 				ety.setNotes(null);
 				ety.setAttachments(null);
 				ety.setConsentFormPdf(null);
+				ety.setPrescriptionPdf(null);
 				try {
 					kafkaProducer.publishBooking(ety);
 					}catch (Exception e) {
@@ -98,12 +112,14 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		res.setNotes(null);
 		res.setAttachments(null);
 		res.setConsentFormPdf(null);
+		res.setPrescriptionPdf(null);
 		try {
 			kafkaProducer.publishBooking(res);
 			}catch (Exception e) {
 				throw new RuntimeException("Unable to book service");
 			}
-		response = ResponseStructure.buildResponse(toResponse(entity), "Service Booked Sucessfully",
+		BookingResponse bRes = new ObjectMapper().convertValue(res, BookingResponse.class);
+		response = ResponseStructure.buildResponse(bRes,"Service Booked Sucessfully",
 				HttpStatus.CREATED, HttpStatus.CREATED.value());}
 		return ResponseEntity.status(response.getStatusCode()).body(response);
 	}
@@ -117,6 +133,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	    String formattedTime = istTime.format(formatter);
 		entity.setBookedAt(formattedTime);
 		entity.setFreeFollowUpsLeft(request.getFreeFollowUps());
+		//entity.setPrescriptionPdf(new ObjectMapper().convertValue(request.getPrescriptionPdf(),new TypeReference<List<byte[]>>(){}));
 		if(request.getConsultationType() != null){
 		if(request.getConsultationType().equalsIgnoreCase("video consultation") || request.getConsultationType().equalsIgnoreCase("online consultation") ) {
 			entity.setChannelId(randomNumber());
@@ -139,11 +156,23 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	}
 	
 	
-	private static BookingResponse toResponse(Booking entity) {
+	private BookingResponse toResponse(Booking entity) {		
 		BookingResponse response = new ObjectMapper().convertValue(entity,BookingResponse.class );
+		DoctorSaveDetailsDTO dto = getPrescriptionpdf(response.getBookingId());
+		if(dto != null ) {
+		response.setPrescriptionPdf(dto.getPrescriptionPdf());}
 		response.setBookingId(String.valueOf(entity.getBookingId()));
-		return response;
-	}
+		return response; }
+	
+	
+	private DoctorSaveDetailsDTO getPrescriptionpdf(String bid) {
+		try {
+		Response res =  doctorFeign.getDoctorSaveDetailsByBookingId(bid).getBody();
+		return new ObjectMapper().convertValue(res.getData(),DoctorSaveDetailsDTO.class);
+	}catch(Exception e) {
+		System.out.println(e.getMessage());
+		return null;
+	}}
 	
 	
 	  private static String generatePatientId() {	       
@@ -160,7 +189,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
     }
 
 	private List<BookingResponse> toResponses(List<Booking> bookings) {
-		return bookings.stream().map(BookingService_ServiceImpl::toResponse).toList();
+		return  new ObjectMapper().convertValue(bookings,new TypeReference<List<BookingResponse>>(){});
 	}
 	
 	
@@ -485,7 +514,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		if (bookingResponse.getStatus() != null) entity.setStatus(bookingResponse.getStatus());
 		if (bookingResponse.getNotes() != null) entity.setNotes(bookingResponse.getNotes());
 		if (bookingResponse.getReports() != null)
-		    entity.setReports(new ObjectMapper().convertValue(bookingResponse.getReports(), ReportsList.class));
+		    entity.setReports(new ObjectMapper().convertValue(bookingResponse.getReports(),new TypeReference<List<ReportsList>>(){}));
 		if (bookingResponse.getSubServiceId() != null) entity.setSubServiceId(bookingResponse.getSubServiceId());
 		if (bookingResponse.getSubServiceName() != null) entity.setSubServiceName(bookingResponse.getSubServiceName());
 		if (bookingResponse.getReasonForCancel() != null) entity.setReasonForCancel(bookingResponse.getReasonForCancel());
@@ -675,5 +704,36 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 				res.setMessage(e.getMessage());}
 			return ResponseEntity.status(res.getStatusCode()).body(res);
 		}
-
+		
+		
+		
+		public ResponseEntity<?> getDoctorFutureAppointments(String doctorId){
+			ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
+			   try{
+				List<Booking> booked=repository.findByDoctorId(doctorId);
+				List<BookingResponse> response=new ArrayList<>();
+				if(booked!=null && !booked.isEmpty()){
+					for(Booking b:booked){
+					DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+					LocalDate serviceDate = LocalDate.parse(b.getServiceDate(), formatter);
+					LocalDate currentDate = LocalDate.now();
+					LocalDate plus = currentDate.plusDays(15);
+						if(!serviceDate.isBefore(currentDate) && !serviceDate.isAfter(plus)){
+							response.add(toResponse(b));}}
+					if(response!=null && !response.isEmpty()){
+						res.setStatusCode(200);
+						res.setHttpStatus(HttpStatus.OK);
+						res.setData(response);
+						res.setMessage("appointments found");
+					}else{
+						res.setStatusCode(200);
+						res.setHttpStatus(HttpStatus.OK);
+						res.setData(response);
+						res.setMessage("appointments not found");}}}
+			catch(Exception e){
+				res.setStatusCode(500);
+				res.setMessage(e.getMessage());}
+			return ResponseEntity.status(res.getStatusCode()).body(res);
+		}
+		
 }

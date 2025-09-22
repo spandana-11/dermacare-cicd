@@ -27,6 +27,7 @@ public class BookingResponse {
 	private String age;
 	private String gender;
 	private String mobileNumber;
+	private String customerId;
 	private String consultationExpiration;
 	private String customerDeviceId;
 	private String problem;
@@ -34,6 +35,8 @@ public class BookingResponse {
 	private String clinicId;
 	private String clinicDeviceId;
 	private String clinicName;
+	private String branchId;
+	private String branchname;
 	private String doctorId;
 	private String doctorName;
 	private String doctorMobileDeviceId;
@@ -48,12 +51,14 @@ public class BookingResponse {
 	private String channelId;
 	private String reasonForCancel;
 	private String notes;
-	private ReportsDtoList reports;
+	private List<ReportsDtoList> reports;
 	private String BookedAt;
 	private String status;
 	private double totalFee;
 	private List<String> attachments;
 	private String consentFormPdf;
+	private List<String> prescriptionPdf;
+	private String doctorRefCode;
 	private String paymentType;
 
 }

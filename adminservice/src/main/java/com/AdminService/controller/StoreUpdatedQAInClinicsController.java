@@ -2,9 +2,13 @@ package com.AdminService.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,19 +20,19 @@ import com.AdminService.util.Response;
 
 @RestController
 @RequestMapping("/admin")
-// @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class StoreUpdatedQAInClinicsController {
 	@Autowired
 	StoreUpdatedQAInClinicsService storeUpdatedQAInClinicsService;
 	
-	@GetMapping("getQuestionsAndAnswer/{savedQuestionId}")
-	public ResponseEntity<Response> saveQuestions(@PathVariable String savedQuestionId){
-		Response response = storeUpdatedQAInClinicsService.saveQaAndAnswers(savedQuestionId);
+	@PostMapping("clinicQA/postQuestionsAndAnswer")
+	public ResponseEntity<Response> saveQuestions(@RequestBody StoreUpdatedQAInClinicsDTO dto){
+		Response response = storeUpdatedQAInClinicsService.saveQaAndAnswers(dto);
 		return ResponseEntity.status(response.getStatus()).body(response);	
 		
 	}
 	
-	@PutMapping("updateQuestionsAndAnswer/{id}")
+	@PutMapping("clinicQA/updateQuestionsAndAnswer/{id}")
 	public ResponseEntity<Response> updateQA(@PathVariable String id, @RequestBody StoreUpdatedQAInClinicsDTO dto){
 		Response response = storeUpdatedQAInClinicsService.updateQaAndAnswers(id, dto);
 		return ResponseEntity.status(response.getStatus()).body(response);	
@@ -36,7 +40,7 @@ public class StoreUpdatedQAInClinicsController {
 	}
 	
 	 // ✅ Get Q&A by Id
-    @GetMapping("getQuestionsAndAnswerById/{id}")
+    @GetMapping("clinicQA/getQuestionsAndAnswerById/{id}")
     public ResponseEntity<Response> getById(@PathVariable String id) {
         Response response = storeUpdatedQAInClinicsService.getById(id);
         return ResponseEntity.status(response.getStatus()).body(response);

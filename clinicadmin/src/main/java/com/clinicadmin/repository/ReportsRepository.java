@@ -13,5 +13,7 @@ public interface ReportsRepository extends MongoRepository<ReportsList, String> 
 	
 	@Query("{ 'reportsList.bookingId': ?0 }")
 	List<ReportsList> findByReportsListBookingId(String bookingId);
+	
+	List<ReportsList> findByCustomerId(String customerId);
 
 }

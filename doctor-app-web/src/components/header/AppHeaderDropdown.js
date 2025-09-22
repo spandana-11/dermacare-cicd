@@ -124,7 +124,7 @@ const AppHeaderDropdown = () => {
         {/* Lock Account */}
         <CDropdownItem onClick={handleLock}>
           <CIcon icon={cilLockLocked} className="me-2" />
-          Lock Account
+          Logout
         </CDropdownItem>
       </CDropdownMenu>
     </CDropdown>

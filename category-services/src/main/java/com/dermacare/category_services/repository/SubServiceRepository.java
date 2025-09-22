@@ -20,7 +20,7 @@ public interface SubServiceRepository extends MongoRepository<SubServices,Object
 	List<SubServices> findAll();
 	public SubServices findByHospitalIdAndSubServiceId(String hospitalId, ObjectId subServiceId);
 	public Optional<SubServices> deleteByHospitalIdAndSubServiceId(String hospitalId, ObjectId subServiceId);
-	public List<SubServices> findBySubServiceId( ObjectId subServiceId);
+	public List<SubServices> findBySubServiceId(ObjectId subServiceId);
 	public List<SubServices> findByHospitalId(String hospitalId);
 	public SubServices findByHospitalIdAndSubServiceIdAndSubServiceNameIgnoreCase(String hospitalId, ObjectId objectId,
 			String subServiceName);

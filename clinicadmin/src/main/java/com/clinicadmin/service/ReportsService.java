@@ -14,5 +14,7 @@ public interface ReportsService {
 	Response getAllReports();
 
 	Response getReportsByBookingId(String bookingId);
+	public Response getReportsByCustomerId(String cId);
+	
 
 }

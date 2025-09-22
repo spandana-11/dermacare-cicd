@@ -4,17 +4,30 @@ import Snackbar from '../components/Snackbar'
 import AppSidebar from './AppSidebar'
 import { COLORS } from '../Themes'
 import { CCard, CCardBody, CNav, CNavItem, CNavLink, CContainer } from '@coreui/react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useParams } from 'react-router-dom'
 import { useDoctorContext } from '../Context/DoctorContext'
-import { SavePatientPrescription } from '../Auth/Auth'
+import { SavePatientPrescription, getInProgressDetails } from '../Auth/Auth'
 import { useToast } from '../utils/Toaster'
 
 const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = false }) => {
   const { id } = useParams()
   const { state } = useLocation()
   const { patientData } = useDoctorContext()
+
   const [patient, setPatient] = useState(patientData || state?.patient || null)
-  const navigate = useNavigate()
+  const [details, setDetails] = useState(state?.details || null)
+
+  const [formData, setFormData] = useState(state?.formData || {
+    symptoms: {},
+    tests: {},
+    prescription: {},
+    treatments: {},
+    followUp: {},
+    summary: {},
+    history: {},
+    ClinicImages: {},
+  })
+
   const { success, info } = useToast()
 
   // Tabs (with default fallback)
@@ -33,33 +46,20 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
   const [activeTab, setActiveTab] = useState(defaultTab || ALL_TABS[0])
   const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
 
-  // Fetch patient if not in state/context
+  // 🔥 Fetch details only if In-Progress and not already passed
   useEffect(() => {
-    if (!patient && id) {
-      ;(async () => {
+    if (state?.fromTab === 'In-Progress' && patient && !details) {
+      (async () => {
         try {
-          const res = await fetch(`/api/patients/${id}`)
-          if (!res.ok) throw new Error('Failed to fetch patient')
-          const data = await res.json()
-          setPatient(data)
+          const data = await getInProgressDetails(patient.patientId, patient.bookingId)
+          setDetails(data)
+          setFormData(data?.savedDetails?.[0] || {})
         } catch (err) {
-          console.error('Error fetching patient:', err)
+          console.error('❌ Failed to fetch in-progress details:', err)
         }
       })()
     }
-  }, [id, patient])
-
-  // Form Data
-  const [formData, setFormData] = useState({
-    symptoms: {},
-    tests: {},
-    prescription: {},
-    treatments: {},
-    followUp: {},
-    summary: {},
-    history: {},
-    ClinicImages: {},
-  })
+  }, [state?.fromTab, patient, details])
 
   // Go to next tab
   const goToNext = useCallback(
@@ -131,56 +131,43 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
   )
 
   // Save prescription template
-  const savePrescriptionTemplate = async () => {
-    try {
-      const title = formData.symptoms.diagnosis || 'NA'
-      if (!title) {
-        alert('Diagnosis is missing. Cannot save template.')
-        return
-      }
-      const clinicId = localStorage.getItem('hospitalId')
-      const template = {
-        clinicId,
-        title,
-        symptoms: formData.symptoms.diagnosis,
-        tests: formData.tests,
-        prescription: formData.prescription,
-        treatments: formData.treatments,
-        followUp: formData.followUp,
-      }
-      console.log('✅ Saved template response:', template)
-      if (
-        template.title !== '' &&
-        template.title !== 'NA' &&
-        template.title !== undefined &&
-        template.title !== null
-      ) {
-        const res = await SavePatientPrescription(template)
-        console.log('✅ Saved template response:', template.title)
+const savePrescriptionTemplate = async () => {
+  try {
+    const diagnosis = formData.symptoms?.diagnosis?.trim() || ''
 
-        if (res.status == 200) {
-          success(`${res.message || 'Prescription Template saved successfully to server!'}`, {
-            title: 'Success',
-          })
-        } else {
-          info(`${res.message || 'A prescription template updated successfully'}`, {
-            title: 'Info',
-          })
-        }
-      } else {
-        info('Provide the probable diagnosis/disease before creating the template.', {
-          title: 'Info',
-        })
-      }
-    } catch (error) {
-      console.error('❌ Error saving template:', error)
-      alert('Failed to save prescription template. Please try again.')
+    if (!diagnosis) {
+      alert('Diagnosis is missing. Cannot save template.')
+      return
     }
+
+    const clinicId = localStorage.getItem('hospitalId')
+    const template = {
+      clinicId,
+      title: diagnosis,
+      symptoms: diagnosis,
+      tests: formData.tests || [],
+      prescription: formData.prescription || [],
+      treatments: formData.treatments || [],
+      followUp: formData.followUp || '',
+    }
+
+    const res = await SavePatientPrescription(template)
+    if (res.status === 200) {
+      success(`${res.message || 'Prescription Template saved successfully to server!'}`, { title: 'Success' })
+    } else {
+      info(`${res.message || 'A prescription template updated successfully'}`, { title: 'Info' })
+    }
+  } catch (error) {
+    console.error('❌ Error saving template:', error)
+    alert('Failed to save prescription template. Please try again.')
   }
+}
+
+
 
   // 🔹 Scroll to top when active tab changes
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' }) // or 'auto' for instant
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [activeTab])
 
   return (

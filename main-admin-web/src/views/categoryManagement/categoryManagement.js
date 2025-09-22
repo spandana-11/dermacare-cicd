@@ -16,6 +16,15 @@ import {
   CRow,
   CCol,
   CFormTextarea,
+  CTable,
+  CTableHead,
+  CTableRow,
+  CTableHeaderCell,
+  CTableBody,
+  CTableDataCell,
+  CPagination,
+  CPaginationItem,
+  CFormSelect,
 } from '@coreui/react'
 import DataTable from 'react-data-table-component'
 import CIcon from '@coreui/icons-react'
@@ -35,24 +44,20 @@ const CategoryManagement = () => {
   const [category, setCategory] = useState([])
   const [filteredData, setFilteredData] = useState([])
   const [loading, setLoading] = useState(false)
-
   const [error, setError] = useState(null)
   const [modalVisible, setModalVisible] = useState(false)
   const [viewCategory, setViewCategory] = useState(null)
   const [editCategoryMode, setEditCategoryMode] = useState(false)
   const [categoryToEdit, setCategoryToEdit] = useState(null)
-
   const [imagePreview, setImagePreview] = useState(null)
   const [errors, setErrors] = useState({
     categoryName: '',
     categoryImage: '',
-    // description: '',
   })
 
   const [newCategory, setNewCategory] = useState({
     categoryName: '',
     categoryImage: null,
-    // description: '',
   })
 
   const [isModalVisible, setIsModalVisible] = useState(false)
@@ -61,20 +66,23 @@ const CategoryManagement = () => {
     categoryId: '',
     categoryName: '',
     categoryImage: null,
-    // description: '',
   })
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
 
   const fetchData = async () => {
     setLoading(true)
     setError(null)
     try {
       console.log('CategoryData calling')
-
       const data = await CategoryData()
       console.log('API success:', data.data)
       setCategory(data.data)
+      setFilteredData(data.data) // Initialize filteredData with all data
     } catch (error) {
-      console.error('Fetch error:', error) // 🪵 Log actual error
+      console.error('Fetch error:', error)
       setError('Failed to fetch category data.')
     } finally {
       setLoading(false)
@@ -83,7 +91,6 @@ const CategoryManagement = () => {
 
   useEffect(() => {
     console.log('useEffect triggered')
-
     fetchData()
   }, [])
 
@@ -92,222 +99,142 @@ const CategoryManagement = () => {
       const trimmedQuery = searchQuery.toLowerCase().trim()
 
       if (!trimmedQuery) {
-        setFilteredData([]) // If no search query, reset the filtered data
+        setFilteredData(category) // If no search query, show all data
         return
       }
 
       const filtered = category.filter((category) => {
-        const categoryMatch = category.categoryName?.toLowerCase().startsWith(trimmedQuery)
+        const categoryMatch = category.categoryName?.toLowerCase().includes(trimmedQuery)
         return categoryMatch
       })
 
-      setFilteredData(filtered) // Set the filtered data
+      setFilteredData(filtered)
+      setCurrentPage(1) // Reset to first page when searching
     }
 
     handleSearch()
   }, [searchQuery, category])
 
-  const columns = [
-    {
-      name: (
-        <div
-          style={{
-            fontSize: '20px',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          S.No
-        </div>
-      ),
-      selector: (row, index) => index + 1,
-      sortable: true,
-      width: '10%',
+  // Calculate pagination values
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem)
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage)
 
-      headerStyle: { textAlign: 'center' },
-    },
-    {
-      name: (
-        <div
-          style={{
-            fontSize: '20px',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          Category Name
-        </div>
-      ),
-      selector: (row) => row.categoryName,
-      sortable: true,
-      width: '50%',
-      cell: (row) => (
-        <div style={{ textAlign: 'center', fontSize: '20px' }}>{row.categoryName}</div>
-      ),
-      headerStyle: { textAlign: 'center' },
-    },
+  // Handle Enter key submission
+  useEffect(() => {
+    const handleEnterKey = (e) => {
+      if (e.key === 'Enter' && modalVisible) {
+        e.preventDefault()
+        handleAddCategory()
+      } else if (e.key === 'Enter' && editCategoryMode) {
+        e.preventDefault()
+        handleUpdateCategory()
+      }
+    }
 
-    {
-      name: (
-        <div
-          style={{
-            fontSize: '20px',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          Actions
-        </div>
-      ),
-      cell: (row) => (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            width: '230px',
-          }}
-        >
-          <CButton
-            //  color="link"
-            className="text-primary p-0"
-            onClick={() => setViewCategory(row)}
-            style={{ marginRight: '10px', width: '80px' }}
-          >
-            View
-          </CButton>
+    window.addEventListener('keydown', handleEnterKey)
+    
+    return () => {
+      window.removeEventListener('keydown', handleEnterKey)
+    }
+  }, [modalVisible, editCategoryMode, newCategory, updatedCategory])
 
-          <CButton
-            color="link"
-            className="text-success p-0"
-            onClick={() => handleCategoryEdit(row)}
-            style={{ marginRight: '10px', width: '80px' }}
-          >
-            Edit
-          </CButton>
+  const validateField = (name, value) => {
+    let error = ""
 
-          <CButton
-            color="link"
-            className="text-danger p-0"
-            onClick={() => handleCategoryDelete(row.categoryId)}
-            style={{ width: '80px' }}
-          >
-            Delete
-          </CButton>
+    if (name === "categoryName") {
+      if (!value) error = "Category name is required."
+      // else if (!/^[A-Za-z\s]+$/.test(value)) {
+      //   error = "Category name must only contain alphabets and spaces."
+      // }
+    }
 
-          <ConfirmationModal
-            isVisible={isModalVisible}
-            message="Are you sure you want to delete this category?"
-            onConfirm={handleConfirmDelete}
-            onCancel={handleCancelDelete}
-          />
-        </div>
-      ),
-      width: '150px',
-      headerStyle: { textAlign: 'center' },
-    },
-  ]
+    if (name === "categoryImage") {
+      if (!value) error = "Category image is required."
+    }
+
+    setErrors((prev) => ({ ...prev, [name]: error }))
+    return error === ""
+  }
+
+  const handleCategoryChange = (e) => {
+    const { name, value } = e.target
+    const capitalizedValue =
+      name === "categoryName"
+        ? value.charAt(0).toUpperCase() + value.slice(1)
+        : value
+
+    setNewCategory((prev) => ({ ...prev, [name]: capitalizedValue }))
+    validateField(name, capitalizedValue)
+  }
 
   const handleFileChange = (e) => {
     const file = e.target.files[0]
-
     if (file) {
+      if (!file.type.startsWith("image/")) {
+        setErrors((prev) => ({ ...prev, categoryImage: "Only image files are allowed." }))
+        return
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        setErrors((prev) => ({ ...prev, categoryImage: "File size must be less than 2MB." }))
+        return
+      }
+
       const reader = new FileReader()
       reader.onloadend = () => {
-        let base64String = reader.result
-        if (base64String) {
-          base64String = base64String.split(',')[1]
-        }
-        setNewCategory((prevCategory) => ({
-          ...prevCategory,
-          categoryImage: base64String,
-        }))
+        let base64String = reader.result?.split(",")[1]
+        setNewCategory((prev) => ({ ...prev, categoryImage: base64String }))
+        validateField("categoryImage", base64String)
       }
       reader.readAsDataURL(file)
     }
   }
 
-  const handleCategoryChange = (e) => {
-    const { name, value } = e.target
-    setNewCategory({
-      ...newCategory,
-      [name]: value,
-    })
-    if (name === 'categoryName') {
-      const capitalizedValue = value.charAt(0).toUpperCase() + value.slice(1)
-      setNewCategory({
-        ...newCategory,
-        [name]: capitalizedValue,
-      })
-    }
-  }
-
   const validateForm = () => {
-    const newErrors = {}
-
-    if (!newCategory.categoryName) {
-      newErrors.categoryName = 'Category name is required.'
-    } else if (!/^[A-Za-z\s]+$/.test(newCategory.categoryName)) {
-      newErrors.categoryName = 'Category name must only contain alphabets and spaces.'
-    }
-
-    if (!newCategory.categoryImage) {
-      newErrors.categoryImage = 'Category image is required.'
-    }
-
-    // if (!newCategory.description || !newCategory.description.trim()) {
-    //   newErrors.description = 'Description is required.'
-    // } else if (newCategory.description.length < 10) {
-    //   newErrors.description = 'Description must be at least 10 characters long.'
-    // }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    const fields = ["categoryName", "categoryImage"]
+    const results = fields.map((field) => validateField(field, newCategory[field]))
+    return results.every((res) => res)
   }
 
-const handleAddCategory = async () => {
-  if (!validateForm()) return;
+  const handleAddCategory = async () => {
+    if (!validateForm()) return
 
-  try {
-    const payload = {
-      categoryName: newCategory.categoryName,
-      categoryImage: newCategory.categoryImage,
-      // description: newCategory.description,
-    };
+    try {
+      const payload = {
+        categoryName: newCategory.categoryName,
+        categoryImage: newCategory.categoryImage,
+      }
 
-    const response = await postCategoryData(payload);
+      const response = await postCategoryData(payload)
+      toast.success('Category added successfully!', { position: 'top-right' })
+      fetchData()
+      setModalVisible(false)
+      setNewCategory({
+        categoryName: '',
+        categoryImage: null,
+      })
+      setErrors({ categoryName: '', categoryImage: '' })
+    } catch (error) {
+      console.error('Error adding category:', error)
+      const errorMessage = error.response?.data?.message || error.response?.statusText || 'An unexpected error occurred.'
+      const statusCode = error.response?.status
 
-    // Only show success toast if postCategoryData completes without throwing an error
-    toast.success('Category added successfully!', { position: 'top-right' });
-    fetchData(); // Assuming this refreshes your data
-    setModalVisible(false); // Assuming this closes a modal
-
-  } catch (error) {
-    console.error('Error adding category:', error);
-
-    // Check for specific error messages or status codes for duplicates
-    const errorMessage = error.response?.data?.message || error.response?.statusText || 'An unexpected error occurred.';
-    const statusCode = error.response?.status;
-
-    if (statusCode === 409 || errorMessage.toLowerCase().includes('duplicate')) { // Example: 409 Conflict for duplicates
-      toast.error(`Error: Duplicate category name - ${newCategory.categoryName} already exists!`, { position: 'top-right' });
-    } else {
-      // For any other error
-      toast.error(`Error adding category: ${errorMessage}`, { position: 'top-right' });
+      if (statusCode === 409 || errorMessage.toLowerCase().includes('duplicate')) {
+        toast.error(`Error: Duplicate category name - ${newCategory.categoryName} already exists!`, { position: 'top-right' })
+      } else {
+        toast.error(`Error adding category: ${errorMessage}`, { position: 'top-right' })
+      }
     }
   }
-};
+
   const handleCategoryEdit = (category) => {
-    console.log('Category to edit:', category) // Debug log
+    console.log('Category to edit:', category)
     setCategoryToEdit(category)
     setUpdatedCategory({
       categoryId: category.categoryId || '',
       categoryName: category.categoryName || '',
       categoryImage: category.categoryImage || null,
-      // _id: category._id // Make sure to capture the ID
     })
     setEditCategoryMode(true)
   }
@@ -341,28 +268,37 @@ const handleAddCategory = async () => {
       categoryId: '',
       categoryName: '',
       categoryImage: null,
-      // description: '',
     })
+    setErrors({ categoryName: '', categoryImage: '' })
     setEditCategoryMode(false)
   }
 
-  const handleEditFileChange = async (e) => {
+  const handleEditFileChange = (e) => {
     const file = e.target.files[0]
+
     if (file) {
-      try {
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          const base64String = reader.result.split(',')[1]
-          setUpdatedCategory((prev) => ({
-            ...prev,
-            categoryImage: base64String,
-          }))
-        }
-        reader.readAsDataURL(file)
-      } catch (error) {
-        console.error('Error reading file:', error)
-        toast.error('Error processing image')
+      if (!file.type.startsWith("image/")) {
+        setErrors((prev) => ({ ...prev, categoryImage: "Only image files are allowed." }))
+        return
       }
+
+      if (file.size > 2 * 1024 * 1024) {
+        setErrors((prev) => ({ ...prev, categoryImage: "File size must be less than 2MB." }))
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const base64String = reader.result?.split(",")[1]
+        setUpdatedCategory((prev) => ({
+          ...prev,
+          categoryImage: base64String,
+        }))
+        setErrors((prev) => ({ ...prev, categoryImage: "" }))
+      }
+      reader.readAsDataURL(file)
+    } else {
+      setErrors((prev) => ({ ...prev, categoryImage: "Category image is required." }))
     }
   }
 
@@ -387,15 +323,76 @@ const handleAddCategory = async () => {
     setNewCategory({
       categoryName: '',
       categoryImage: null,
-      // description: '',
     })
-    setErrors({})
+    setErrors({ categoryName: '', categoryImage: '' })
     setModalVisible(false)
   }
 
   const handleCancelDelete = () => {
     setIsModalVisible(false)
   }
+
+  // Table columns
+  const columns = [
+    {
+      name: 'S.No',
+      selector: (row, index) => (currentPage - 1) * itemsPerPage + index + 1,
+      sortable: true,
+      width: '10%',
+      headerStyle: { textAlign: 'center' },
+    },
+    {
+      name: 'Category Name',
+      selector: (row) => row.categoryName,
+      sortable: true,
+      width: '50%',
+      cell: (row) => (
+        <div style={{ textAlign: 'center', fontSize: '20px' }}>{row.categoryName}</div>
+      ),
+      headerStyle: { textAlign: 'center' },
+    },
+    {
+      name: 'Actions',
+      cell: (row) => (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '230px',
+          }}
+        >
+          <CButton
+            className="text-primary p-0"
+            onClick={() => setViewCategory(row)}
+            style={{ marginRight: '10px', width: '80px' }}
+          >
+            View
+          </CButton>
+
+          <CButton
+            color="link"
+            className="text-success p-0"
+            onClick={() => handleCategoryEdit(row)}
+            style={{ marginRight: '10px', width: '80px' }}
+          >
+            Edit
+          </CButton>
+
+          <CButton
+            color="link"
+            className="text-danger p-0"
+            onClick={() => handleCategoryDelete(row.categoryId)}
+            style={{ width: '80px' }}
+          >
+            Delete
+          </CButton>
+        </div>
+      ),
+      width: '150px',
+      headerStyle: { textAlign: 'center' },
+    },
+  ]
 
   return (
     <div style={{ overflow: 'hidden' }}>
@@ -420,7 +417,10 @@ const handleAddCategory = async () => {
           <CButton
             color="primary"
             style={{ height: '40px', marginRight: '100px' }}
-            onClick={() => setModalVisible(true)}
+            onClick={(e) => {
+              e.preventDefault()
+              setModalVisible(true)
+            }}
           >
             Add Category
           </CButton>
@@ -461,14 +461,7 @@ const handleAddCategory = async () => {
                   <span>No image available</span>
                 )}
               </CCol>
-            </CRow>
-
-            {/* <CRow className="mb-4">
-              <CCol sm={4}>
-                <strong>Description :</strong>
-              </CCol>
-              <CCol sm={8}>{viewCategory.description || 'No description available'}</CCol>
-            </CRow> */}
+            </CRow> 
           </CModalBody>
           <CModalFooter></CModalFooter>
         </CModal>
@@ -479,7 +472,13 @@ const handleAddCategory = async () => {
           <CModalTitle>Add New Category</CModalTitle>
         </CModalHeader>
         <CModalBody>
-          <CForm>
+          <CForm
+            onSubmit={(e) => {
+              e.preventDefault()
+              handleAddCategory()
+            }}
+            id="addCategoryForm"
+          >
             <h6>
               Category Name <span style={{ color: 'red' }}>*</span>
             </h6>
@@ -489,6 +488,12 @@ const handleAddCategory = async () => {
               value={newCategory.categoryName || ''}
               name="categoryName"
               onChange={handleCategoryChange}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleAddCategory()
+                }
+              }}
             />
             {errors.categoryName && (
               <CFormText className="text-danger">{errors.categoryName}</CFormText>
@@ -496,16 +501,29 @@ const handleAddCategory = async () => {
             <h6>
               Category Image <span style={{ color: 'red' }}>*</span>
             </h6>
-            <CFormInput type="file" onChange={handleFileChange} />
+            <CFormInput 
+              type="file" 
+              onChange={handleFileChange} 
+              accept="image/*"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleAddCategory()
+                }
+              }}
+            />
             {errors.categoryImage && (
               <CFormText className="text-danger">{errors.categoryImage}</CFormText>
             )}
-           
           </CForm>
         </CModalBody>
 
         <CModalFooter>
-          <CButton color="primary" onClick={handleAddCategory}>
+          <CButton 
+            type="submit" 
+            color="primary" 
+            form="addCategoryForm"
+          >
             Add
           </CButton>
           <CButton color="secondary" onClick={handleCancelAdd}>
@@ -516,14 +534,23 @@ const handleAddCategory = async () => {
 
       <CModal
         visible={editCategoryMode}
-        onClose={() => setEditCategoryMode(false)}
+        onClose={() => {
+          setErrors({ categoryName: '', categoryImage: '' })
+          setEditCategoryMode(false)
+        }}
         backdrop="static"
       >
         <CModalHeader>
           <CModalTitle>Edit Category</CModalTitle>
         </CModalHeader>
         <CModalBody>
-          <CForm>
+          <CForm
+            onSubmit={(e) => {
+              e.preventDefault()
+              handleUpdateCategory()
+            }}
+            id="editCategoryForm"
+          >
             <h6>
               Category Name <span style={{ color: 'red' }}>*</span>
             </h6>
@@ -532,20 +559,56 @@ const handleAddCategory = async () => {
               placeholder="Category Name"
               value={updatedCategory?.categoryName || ''}
               onChange={(e) => {
-                const capitalizedValue =
-                  e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1)
+                const value = e.target.value
+                const capitalizedValue = value.charAt(0).toUpperCase() + value.slice(1)
 
-                setUpdatedCategory({
-                  ...updatedCategory,
+                setUpdatedCategory((prev) => ({
+                  ...prev,
                   categoryName: capitalizedValue,
-                })
+                }))
+
+                if (!value.trim()) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    categoryName: "Category name is required.",
+                  }))
+                } else if (!/^[A-Za-z\s]+$/.test(value)) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    categoryName: "Category name must only contain alphabets and spaces.",
+                  }))
+                } else {
+                  setErrors((prev) => ({ ...prev, categoryName: "" }))
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleUpdateCategory()
+                }
               }}
             />
+            {errors.categoryName && (
+              <CFormText className="text-danger">{errors.categoryName}</CFormText>
+            )}
 
             <h6>
               Category Image <span style={{ color: 'red' }}>*</span>
             </h6>
-            <CFormInput type="file" accept="image/*" onChange={handleEditFileChange} />
+            <CFormInput 
+              type="file" 
+              accept="image/*" 
+              onChange={handleEditFileChange}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleUpdateCategory()
+                }
+              }}
+            />
+            {errors.categoryImage && (
+              <CFormText className="text-danger">{errors.categoryImage}</CFormText>
+            )}
 
             {updatedCategory?.categoryImage ? (
               <img
@@ -556,12 +619,14 @@ const handleAddCategory = async () => {
             ) : (
               <span style={{ display: 'block', marginTop: '10px' }}>No image available</span>
             )}
-
-           
           </CForm>
         </CModalBody>
         <CModalFooter>
-          <CButton color="primary" onClick={handleUpdateCategory}>
+          <CButton 
+            type="submit" 
+            color="primary" 
+            form="editCategoryForm"
+          >
             Update
           </CButton>
           <CButton color="secondary" onClick={handleCancel}>
@@ -569,6 +634,13 @@ const handleAddCategory = async () => {
           </CButton>
         </CModalFooter>
       </CModal>
+
+      <ConfirmationModal
+        isVisible={isModalVisible}
+        message="Are you sure you want to delete this category?"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
 
       {loading ? (
         <div
@@ -581,18 +653,130 @@ const handleAddCategory = async () => {
       ) : (
         <div>
           {filteredData.length > 0 ? (
-            <DataTable columns={columns} data={filteredData} pagination />
+            <>
+              <DataTable 
+                columns={columns} 
+                data={currentItems} 
+                pagination={false}
+              />
+              
+              {/* Pagination Controls */}
+              {filteredData.length > itemsPerPage && (
+                <div className="d-flex justify-content-between align-items-center mt-3">
+                  <div>
+                    <span className="me-2">Rows per page:</span>
+                    <CFormSelect
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value))
+                        setCurrentPage(1)
+                      }}
+                      style={{width:'80px', display:'inline-block'}}
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                    </CFormSelect>
+                  </div>
+                  <div>
+                    <span className="me-3">
+                      Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredData.length)} of {filteredData.length} entries
+                    </span>
+                    <CPagination>
+                      <CPaginationItem
+                        onClick={() => setCurrentPage(prev => Math.max(prev-1, 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </CPaginationItem>
+                      {[...Array(totalPages)].map((_, i) => (
+                        <CPaginationItem
+                          key={i+1}
+                          active={i+1 === currentPage}
+                          onClick={() => setCurrentPage(i+1)}
+                        >
+                          {i+1}
+                        </CPaginationItem>
+                      ))}
+                      <CPaginationItem
+                        onClick={() => setCurrentPage(prev => Math.min(prev+1, totalPages))}
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                      </CPaginationItem>
+                    </CPagination>
+                  </div>
+                </div>
+              )}
+            </>
           ) : searchQuery ? (
             <div style={{ textAlign: 'center', fontSize: '20px', color: 'gray' }}>
               No data found
             </div>
           ) : (
-            <DataTable columns={columns} data={category} pagination />
+            <>
+              <DataTable 
+                columns={columns} 
+                data={currentItems} 
+                pagination={false}
+              />
+              
+              {/* Pagination Controls */}
+              {category.length > itemsPerPage && (
+                <div className="d-flex justify-content-between align-items-center mt-3">
+                  <div>
+                    <span className="me-2">Rows per page:</span>
+                    <CFormSelect
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value))
+                        setCurrentPage(1)
+                      }}
+                      style={{width:'80px', display:'inline-block'}}
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                    </CFormSelect>
+                  </div>
+                  <div>
+                    <span className="me-3">
+                      Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, category.length)} of {category.length} entries
+                    </span>
+                    <CPagination>
+                      <CPaginationItem
+                        onClick={() => setCurrentPage(prev => Math.max(prev-1, 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </CPaginationItem>
+                      {[...Array(Math.ceil(category.length / itemsPerPage))].map((_, i) => (
+                        <CPaginationItem
+                          key={i+1}
+                          active={i+1 === currentPage}
+                          onClick={() => setCurrentPage(i+1)}
+                        >
+                          {i+1}
+                        </CPaginationItem>
+                      ))}
+                      <CPaginationItem
+                        onClick={() => setCurrentPage(prev => Math.min(prev+1, Math.ceil(category.length / itemsPerPage)))}
+                        disabled={currentPage === Math.ceil(category.length / itemsPerPage)}
+                      >
+                        Next
+                      </CPaginationItem>
+                    </CPagination>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
     </div>
-  )
+  ) 
 }
 
 export default CategoryManagement

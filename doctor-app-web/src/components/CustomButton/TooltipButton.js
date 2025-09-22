@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Popover from 'react-bootstrap/Popover'
 import Button from './CustomButton'
@@ -8,35 +8,22 @@ import { useNavigate } from 'react-router-dom'
 import { useDoctorContext } from '../../Context/DoctorContext'
 import { flushSync } from 'react-dom'
 import { CSpinner } from '@coreui/react'
+import { getInProgressDetails } from '../../Auth/Auth'
+import { capitalizeFirst } from '../../utils/CaptalZeWord'
+
 const generateContent = (patient) => (
   <div className="tooltip-body">
-    <div>
-      <strong>Name:</strong> {patient.name}
-    </div>
-    <div>
-      <strong>Age:</strong> {patient.age}
-    </div>
-    <div>
-      <strong>Gender:</strong> {patient.gender}
-    </div>
-    <div>
-      <strong>Problem:</strong> {patient.problem}
-    </div>
-    {patient.subService && (
-      <div>
-        <strong>Subservice:</strong> {patient.subService}
-      </div>
-    )}
-    {patient.duration && (
-      <div>
-        <strong>Duration:</strong> {patient.duration}
-      </div>
-    )}
+    <div><strong>Name:</strong> {capitalizeFirst(patient.name)}</div>
+    <div><strong>Age:</strong> {patient.age}</div>
+    <div><strong>Gender:</strong> {patient.gender}</div>
+    <div><strong>Problem:</strong> {patient.problem}</div>
+    {patient.subService && <div><strong>Subservice:</strong> {patient.subService}</div>}
+    {patient.duration && <div><strong>Duration:</strong> {patient.duration}</div>}
   </div>
 )
 
-const TooltipButton = ({ patient, onSelect, tab }) => {
-  const navigate = useNavigate() // ✅ hook inside component
+const TooltipButton = ({ patient, onSelect, tab, disabled }) => {
+  const navigate = useNavigate()
   const { setPatientData } = useDoctorContext()
   const [navLoading, setNavLoading] = useState(false)
 
@@ -46,29 +33,35 @@ const TooltipButton = ({ patient, onSelect, tab }) => {
     </Popover>
   )
 
-  // const handleClick = () => {
-  //   setPatientData(patient)
-  //   // localStorage.setItem('selected_patient', JSON.stringify(patient))
-  //   navigate(`/tab-content/${patient.patientId}`, { state: { patient } })
-
-  //   if (onSelect) onSelect() // ✅ call this to close dropdown + clear input
-  // }
-
-  const handleClick = () => {
-    // paint the overlay immediately
+  const handleClick = async () => {
     flushSync(() => setNavLoading(true))
 
-    setPatientData(patient)
-    onSelect?.()
+    try {
+      let formData = {}
+      let details = null
 
-    // navigate after we’ve shown the overlay
-    if (tab === 'Confirmed') {
-      navigate(`/tab-content/${patient.patientId}`, { state: { patient } })
-    } else if (tab === 'Completed') {
-      navigate(`/tab-completed-content/${patient.patientId}`, { state: { patient } })
+      if (tab === 'In-Progress') {
+        // 🔥 fetch API
+        details = await getInProgressDetails(patient.patientId, patient.bookingId)
+        formData = details?.savedDetails?.[0] || {}
+      }
+
+      // save in context
+      setPatientData({ ...patient, details })
+      onSelect?.()
+
+      // navigation
+      if (tab === 'Confirmed') {
+        navigate(`/tab-content/${patient.patientId}`, { state: { patient, formData, fromTab: 'Confirmed' } })
+      } else if (tab === 'In-Progress') {
+        navigate(`/tab-inProgress/${patient.patientId}`, { state: { patient, formData, details, fromTab: 'In-Progress' } })
+      } else if (tab === 'Completed') {
+        navigate(`/tab-completed-content/${patient.patientId}`, { state: { patient, formData, fromTab: 'Completed' } })
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch details:', error)
+      setNavLoading(false)
     }
-
-    // no need to setNavLoading(false); this component will unmount after navigation
   }
 
   return (
@@ -79,12 +72,13 @@ const TooltipButton = ({ patient, onSelect, tab }) => {
             size="small"
             customColor={COLORS.bgcolor}
             onClick={handleClick}
-            disabled={navLoading}
+            disabled={disabled || navLoading} // <-- Use parent disabled + loading
           >
             View
           </Button>
         </span>
       </OverlayTrigger>
+
       {navLoading && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-25"

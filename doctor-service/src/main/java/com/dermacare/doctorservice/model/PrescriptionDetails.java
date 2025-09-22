@@ -6,7 +6,6 @@ package com.dermacare.doctorservice.model;
 import lombok.*;
 
 import java.util.List;
-import java.util.UUID;
 
 
 

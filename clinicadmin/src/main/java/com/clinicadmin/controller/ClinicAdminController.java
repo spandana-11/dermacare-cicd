@@ -22,7 +22,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/clinic-admin")
-//Origin(origins = {"http://localhost:3000", "http://localhost:3001"})
+//@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class ClinicAdminController {
 
 	@Autowired
@@ -75,5 +75,10 @@ public class ClinicAdminController {
 //		Response response = clinicAdminService.deleteClinic(hospitalId);
 //		return ResponseEntity.status(response.getStatus()).body(response);
 //	}
+	
+	@GetMapping("/getBranchesByClinicId/{clinicId}")
+    public ResponseEntity<?> getBranchesByClinicId(@PathVariable String clinicId) {
+        return clinicAdminService.getBranchesByClinicId(clinicId);
+    }
 
 }

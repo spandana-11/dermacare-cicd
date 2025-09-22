@@ -28,4 +28,6 @@ public interface BookingService_Service {
 	public ResponseEntity<?> getSizeOfConsultationTypesByDoctorId(String hospitalId,String doctorId);
 	public Response getPatientDetailsForConsetForm(String bookingId, String patientId, String mobileNumber);
 	public ResponseEntity<?> getInProgressAppointments(String number);
+	
+	public ResponseEntity<?> getDoctorFutureAppointments(String doctorId);
 }

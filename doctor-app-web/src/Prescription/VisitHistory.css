@@ -1,7 +1,19 @@
-/* Accordion base */
-.vh-accordion {
-  margin-top: 12px;
+.visit-history {
+  max-height: 80vh;
+  overflow-y: auto; /* outer scroll */
+  padding-right: 10px;
 }
+.vh-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.vh-accordion {
+  margin-top: 10px;
+}
+
 .vh-acc-item + .vh-acc-item {
   margin-top: 10px;
 }
@@ -28,25 +40,16 @@
 }
 
 .vh-acc-panel {
-  max-height: 0;
-  overflow: hidden;
-  transition:
-    max-height 220ms ease,
-    padding 220ms ease;
-  padding: 0 12px;
+  padding: 10px 12px;
   border-left: 1px solid #e6e6ef;
   border-right: 1px solid #e6e6ef;
   border-bottom: 1px solid #e6e6ef;
   border-radius: 0 0 10px 10px;
   background: #fff;
+  /* remove max-height from here */
+  overflow: visible;
 }
 
-.vh-acc-panel.open {
-  padding: 10px 12px 12px;
-  max-height: 800px;
-}
-
-/* Keep your existing styles */
 .section {
   margin-top: 14px;
 }
@@ -64,46 +67,17 @@
 .diagnosis {
   font-weight: 600;
 }
-/* simple table styling for reports */
-.vh-table-wrap {
-  overflow: auto;
+
+.vh-inner-accordion {
+  margin-top: 10px;
 }
-.vh-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-.vh-table th,
-.vh-table td {
-  border: 1px solid #e6e6ef;
-  padding: 8px 10px;
-  text-align: left;
-}
-.vh-table thead th {
-  background: #f7f7fb;
-  font-weight: 600;
-}
-.muted {
-  color: #777;
-  margin: 6px 0;
-}
-/* One scrollable region inside the accordion item */
+
+/* Scrollable reports */
 .accordion-scroller {
-  max-height: 65vh;       /* adjust to your layout */
-  overflow: auto;         /* vertical scroll when needed */
-  padding-right: .5rem;   /* space for scrollbar */
+  max-height: 40vh; 
+  overflow-y: auto;
+  padding-right: 0.5rem;
 }
-
-/* Optional: make the "Reports" heading stick at top while scrolling */
-.sticky-heading {
-  position: sticky;
-  top: 0;
-  background: var(--cui-body-bg, #fff);
-  z-index: 1;
-  padding: .25rem 0;
-}
-
-/* Optional: prettier scrollbar */
 .accordion-scroller::-webkit-scrollbar {
   width: 8px;
 }

@@ -68,6 +68,25 @@ public class DoctorSaveDetailsController {
         Response response = service.getVisitHistoryByPatientAndDoctor(patientId, doctorId);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
-
-
+    
+    @GetMapping("/doctor In-progressDetails/{patientId}/{bookingId}")
+    public ResponseEntity<Response> getInProgressDetails(
+            @PathVariable String patientId,
+            @PathVariable String bookingId) {
+        return ResponseEntity.ok(
+                service.getInProgressDetails(patientId, bookingId)
+        );
+    }
+    
+    
+    @GetMapping("/getDoctorSaveDetailsByBookingId/{bookingId}")
+    public ResponseEntity<Response> getDoctorSaveDetailsByBookingId(@PathVariable String bookingId) {
+        Response response = service.getDoctorDetailsByBookingId(bookingId);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }      
+    @GetMapping("/getDoctorSaveDetailsByCustomerId/{customerId}")
+    public ResponseEntity<Response> getDoctorSaveDetailsByCustomerId(@PathVariable String customerId) {
+        Response response = service.getDoctorDetailsByCustomerId(customerId);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
 }

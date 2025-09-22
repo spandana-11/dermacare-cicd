@@ -17,6 +17,8 @@ import {
   CButton,
   CCard,
   CCardBody,
+  CBadge,
+  CFormCheck,
 } from '@coreui/react'
 import { useNavigate } from 'react-router-dom'
 import Slider from 'react-slick'
@@ -27,10 +29,15 @@ import { cilOptions } from '@coreui/icons'
 import 'slick-carousel/slick/slick.css'
 import 'slick-carousel/slick/slick-theme.css'
 import axios from 'axios'
-import { MainAdmin_URL, AllCustomerAdvertisements, GetBy_DoctorId, servr_Url } from '../../baseUrl'
+import { MainAdmin_URL, AllCustomerAdvertisements } from '../../baseUrl'
 // import { appointments_Ref } from '../../baseUrl'
 import { AppointmentData, GetBookingByClinicIdData } from '../AppointmentManagement/appointmentAPI'
 import { DoctorData, getDoctorByClinicIdData } from '../Doctors/DoctorAPI'
+import { COLORS } from '../../Constant/Themes'
+import './Widget.css'
+import LoadingIndicator from '../../Utils/loader'
+import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
+import { http } from '../../Utils/Interceptors'
 
 const WidgetsDropdown = (props) => {
   const [slides, setSlides] = useState([])
@@ -52,9 +59,39 @@ const WidgetsDropdown = (props) => {
   const [loadingDoctors, setLoadingDoctors] = useState(true) // New state for loading indicator
   const [doctorError, setDoctorError] = useState(null) // New state for appointment fetch error
   const [doctors, setDoctors] = useState([])
+  const { searchQuery } = useGlobalSearch()
+  const [filteredData, setFilteredData] = useState([])
+  const [filterTypes, setFilterTypes] = useState([])
+  const [statusFilters, setStatusFilters] = useState([])
+  const [selectedServiceTypes, setSelectedServiceTypes] = useState([])
+  const [selectedConsultationTypes, setSelectedConsultationTypes] = useState([])
 
+  const statusLabelMap = {
+    'In-Progress': 'Active',
+    Completed: 'Completed',
+    Pending: 'Pending',
+    Rejected: 'Rejected',
+    Confirmed: 'Confirmed',
+  }
+  const handleStatusChange = (e) => {
+    const value = e.target.value
+
+    if (statusFilters.includes(value)) {
+      setStatusFilters([]) // Deselect if the same one is clicked
+    } else {
+      setStatusFilters([value]) // Allow only one selection
+    }
+  }
   const navigate = useNavigate()
-
+  const toggleFilter = (type) => {
+    if (filterTypes.includes(type)) {
+      // setFilterTypes(filterTypes.filter((t) => t !== type))// multiple selections.
+      setFilterTypes([]) //one selection at a time
+    } else {
+      setFilterTypes([type]) //one selection at a time
+      // setFilterTypes([...filterTypes, type])// multiple selections.
+    }
+  }
   const convertToISODate = useCallback((dateString) => {
     if (!dateString) return ''
 
@@ -84,13 +121,15 @@ const WidgetsDropdown = (props) => {
     return `${year}-${month}-${day}`
   }, [])
 
+  const normalize = (str) => (str ? str.toString().toLowerCase().trim() : '')
+
   // Get today's date in YYYY-MM-DD format, using a consistent method
   const todayISO = new Date().toISOString().split('T')[0]
 
   // Fetch Advertisements (unchanged)
   const fetchAdvertisements = async () => {
     try {
-      const response = await axios.get(`${MainAdmin_URL}/${AllCustomerAdvertisements}`)
+      const response = await axios.get(`${MainAdmin_URL}/${AllCustomerAdvertisements}`) //TODO:chnage when apigetway call axios to http
       console.log('✅ Advertisements Response:', response.data)
       if (Array.isArray(response.data)) {
         setSlides(response.data)
@@ -141,7 +180,8 @@ const WidgetsDropdown = (props) => {
     setLoadingDoctors(true)
     setDoctorError(null)
     try {
-      const response = await getDoctorByClinicIdData(clinicId)
+      const branchId=localStorage.getItem("branchId")
+      const response = await getDoctorByClinicIdData(clinicId,branchId)
       console.log('Raw Doctors Data:', response)
 
       // ✅ Access the inner data array
@@ -237,7 +277,11 @@ const WidgetsDropdown = (props) => {
       clearInterval(intervalRef.current)
     }
   }, [slides])
-
+ const consultationTypeMap = {
+    'Service & Treatment': 'services & treatments',
+    'Tele Consultation': ['tele consultation', 'online consultation'], // Map a single button to multiple backend values
+    'In-clinic': 'in-clinic consultation',
+}
   const getMediaSrc = (src) => {
     if (!src) return ''
     if (src.startsWith('data:') || src.startsWith('http') || src.startsWith('blob:')) return src
@@ -335,7 +379,7 @@ const WidgetsDropdown = (props) => {
                   <CIcon icon={cilOptions} className="text-high-emphasis-inverse" />
                 </CDropdownToggle>
                 <CDropdownMenu>
-                  <CDropdownItem onClick={() => navigate('/appointment-management')}>
+                  <CDropdownItem onClick={() => navigate('/Appointment-Management')}>
                     View All Appointments
                   </CDropdownItem>{' '}
                   {/* Link to your appointments page */}
@@ -470,15 +514,61 @@ const WidgetsDropdown = (props) => {
       </CRow>
 
       {/* Carousel Section */}
-      <CCard className="mt-4 text-center border-2 border-dashed rounded bg-light">
-        <CCardBody className="fw-bold text-secondary fs-5">Ad Space</CCardBody>
+      <CCard
+        className="mt-4 text-center border-2 border-dashed rounded"
+        style={{ backgroundColor: 'var(--color-bgcolor)' }}
+      >
+        <CCardBody className="fw-bold fs-5 " style={{ color: 'var(--color-black)' }}>
+          Ad Space
+        </CCardBody>
       </CCard>
 
       {/*to display today Appointments Table */}
-      <div className="container mt-4">
-        <h5>Today Appointments</h5>
+      <div className="container mt-4 ">
+        <h5 className="mb-4">Today Appointments</h5>
+        <div className="d-flex gap-2 mb-3">
+          <button
+            onClick={() => toggleFilter('Service & Treatment')}
+            className={`btn ${
+              filterTypes.includes('Service & Treatment') ? 'btn-selected' : 'btn-unselected'
+            }`}
+          >
+            Service & Treatment
+          </button>
+
+          <button
+            onClick={() => toggleFilter('In-clinic')}
+            className={`btn ${
+              filterTypes.includes('In-clinic') ? 'btn-selected' : 'btn-unselected'
+            }`}
+          >
+            In-Clinic Consultation
+          </button>
+
+          <button
+            onClick={() => toggleFilter('Tele Consultation')}
+            className={`btn ${
+              filterTypes.includes('Tele Consultation') ? 'btn-selected' : 'btn-unselected'
+            }`}
+          >
+            Tele Consultation
+          </button>
+          <CButton
+            className="ms-5"
+            style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
+            onClick={() => {
+              setSelectedServiceTypes([])
+              setSelectedConsultationTypes([])
+              setFilterTypes([])
+              setStatusFilters([])
+            }}
+          >
+            Reset Filters
+          </CButton>
+        </div>
+
         <CTable striped hover responsive>
-          <CTableHead>
+          <CTableHead className="pink-table">
             <CTableRow>
               <CTableHeaderCell>S.No</CTableHeaderCell>
               <CTableHeaderCell>Patient File_ID</CTableHeaderCell>
@@ -495,22 +585,77 @@ const WidgetsDropdown = (props) => {
           <CTableBody>
             {loadingAppointments ? (
               <CTableRow>
-                <CTableDataCell colSpan="9" className="text-center">
-                  Loading appointments...
+                <CTableDataCell
+                  colSpan="9"
+                  className="text-center"
+                  style={{ color: 'var(--color-black)' }}
+                >
+                  <LoadingIndicator message="Loading appointments..." />
                 </CTableDataCell>
               </CTableRow>
             ) : appointmentError ? (
               <CTableRow>
-                <CTableDataCell colSpan="9" className="text-center text-danger fw-bold">
+                <CTableDataCell
+                  colSpan="9"
+                  className="text-center "
+                  style={{ color: 'var(--color-black)' }}
+                >
                   {appointmentError}
                 </CTableDataCell>
               </CTableRow>
-            ) : todayBookings.filter((item) => item.status?.toLowerCase() === 'confirmed').length >
-              0 ? (
-              todayBookings
-                .filter((item) => item.status?.toLowerCase() === 'confirmed')
-                .map((item, index) => (
-                  <CTableRow key={`${item.id}-${index}`}>
+            ) : (
+              (() => {
+                // 1. Filter by status (Confirmed appointments)
+                const confirmed = todayBookings.filter(
+                  (item) => item.status?.toLowerCase() === 'confirmed',
+                )
+
+                // 2. Filter by consultation type
+              const filteredByTypes = confirmed.filter((item) => {
+    if (filterTypes.length === 0) {
+        return true;
+    }
+    const itemType = item.consultationType?.toLowerCase().trim();
+    return filterTypes.some((type) => {
+        const mappedValues = consultationTypeMap[type];
+        if (Array.isArray(mappedValues)) {
+            return mappedValues.some(val => itemType === val.toLowerCase().trim());
+        } else {
+            return itemType === mappedValues.toLowerCase().trim();
+        }
+    });
+});
+
+                // 3. Apply global search filter to the result
+                const finalFilteredData = filteredByTypes.filter((item) => {
+                  if (searchQuery.trim().length < 2) {
+                    return true
+                  }
+                  return Object.values(item).some((val) =>
+                    normalize(val).includes(normalize(searchQuery)),
+                  )
+                })
+
+                // 4. Handle no results found
+                if (finalFilteredData.length === 0) {
+                  return (
+                    <CTableRow>
+                      <CTableDataCell
+                        colSpan="9"
+                        className="text-center"
+                        style={{ color: 'var(--color-black)' }}
+                      >
+                        {searchQuery || filterTypes.length > 0
+                          ? 'No appointments match your search and filters.'
+                          : 'No appointments for today.'}
+                      </CTableDataCell>
+                    </CTableRow>
+                  )
+                }
+
+                // 5. Render the filtered data
+                return finalFilteredData.map((item, index) => (
+                  <CTableRow key={`${item.id}-${index}`} className="pink-table">
                     <CTableDataCell>{index + 1}</CTableDataCell>
                     <CTableDataCell>{item.patientId}</CTableDataCell>
                     <CTableDataCell>{item.name}</CTableDataCell>
@@ -518,11 +663,17 @@ const WidgetsDropdown = (props) => {
                     <CTableDataCell>{item.consultationType}</CTableDataCell>
                     <CTableDataCell>{item.serviceDate}</CTableDataCell>
                     <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
-                    <CTableDataCell>{item.status}</CTableDataCell>
+                    <CTableDataCell>
+                      <CBadge
+                        style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
+                      >
+                        {statusLabelMap[item.status] || item.status}
+                      </CBadge>
+                    </CTableDataCell>
                     <CTableDataCell>
                       <CButton
-                        color="info"
-                         className='text-white'
+                        style={{ backgroundColor: 'var(--color-black)' }}
+                        className="text-white"
                         size="sm"
                         onClick={() =>
                           navigate(`/appointmentDetails/${item.bookingId}`, {
@@ -535,12 +686,7 @@ const WidgetsDropdown = (props) => {
                     </CTableDataCell>
                   </CTableRow>
                 ))
-            ) : (
-              <CTableRow>
-                <CTableDataCell colSpan="9" className="text-center text-info fw-bold">
-                  No  appointments for today.
-                </CTableDataCell>
-              </CTableRow>
+              })()
             )}
           </CTableBody>
         </CTable>

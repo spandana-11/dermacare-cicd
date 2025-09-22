@@ -15,7 +15,7 @@ const Tooltips = () => {
             <p className="text-body-secondary small">Hover over the links below to see tooltips:</p>
             <DocsExample href="components/tooltip">
               <p className="text-body-secondary">
-                Tight pants next level keffiyeh
+                Tight pants t level keffiyeh
                 <CTooltip content="Tooltip text">
                   <CLink> you probably </CLink>
                 </CTooltip>

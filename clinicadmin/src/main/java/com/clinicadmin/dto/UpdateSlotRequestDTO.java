@@ -12,4 +12,7 @@ public class UpdateSlotRequestDTO {
 	    private String date;
 	    private String oldSlot;
 	    private String newSlot;
-}
+	    private String branchId;
+		
+		}
+

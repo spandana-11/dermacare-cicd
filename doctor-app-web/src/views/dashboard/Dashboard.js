@@ -1,18 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import classNames from 'classnames'
 import 'bootstrap/dist/css/bootstrap.min.css'
-
 import {
-  CAvatar,
-  CButton,
-  CButtonGroup,
   CCard,
   CCardBody,
-  CCardFooter,
   CCardHeader,
-  CCardImage,
   CCol,
-  CProgress,
   CRow,
   CTable,
   CTableBody,
@@ -20,186 +13,192 @@ import {
   CTableHead,
   CTableHeaderCell,
   CTableRow,
+  CDropdown,
+  CDropdownToggle,
+  CDropdownMenu,
+  CDropdownItem,
 } from '@coreui/react'
-import CIcon from '@coreui/icons-react'
-import {
-  cibCcAmex,
-  cibCcApplePay,
-  cibCcMastercard,
-  cibCcPaypal,
-  cibCcStripe,
-  cibCcVisa,
-  cibGoogle,
-  cibFacebook,
-  cibLinkedin,
-  cifBr,
-  cifEs,
-  cifFr,
-  cifIn,
-  cifPl,
-  cifUs,
-  cibTwitter,
-  cilCloudDownload,
-  cilPeople,
-  cilUser,
-  cilUserFemale,
-} from '@coreui/icons'
 
-import avatar1 from 'src/assets/images/avatars/1.jpg'
-import avatar2 from 'src/assets/images/avatars/2.jpg'
-import avatar3 from 'src/assets/images/avatars/3.jpg'
-import avatar4 from 'src/assets/images/avatars/4.jpg'
-import avatar5 from 'src/assets/images/avatars/5.jpg'
-import avatar6 from 'src/assets/images/avatars/6.jpg'
-
-import WidgetsBrand from '../widgets/WidgetsBrand'
-import WidgetsDropdown from '../widgets/WidgetsDropdown'
-import MainChart from './MainChart'
 import Button from '../../components/CustomButton/CustomButton'
-import { COLORS, SIZES } from '../../Themes'
 import TooltipButton from '../../components/CustomButton/TooltipButton'
-import avatar8 from './../../assets/images/12.png'
-// import { patientData } from '../../Prescription/patientData.json'
+
+import { COLORS, SIZES } from '../../Themes'
 import { useDoctorContext } from '../../Context/DoctorContext'
 import { getTodayAppointments } from '../../Auth/Auth'
-// import { patientData } from '../../Prescription/patientData.json'
-const Dashboard = () => {
-  const { setPatientData, doctorId, setTodayAppointments, todayAppointments } = useDoctorContext() // this calls the persisted helper if you set it up
+import CalendarModal from '../../utils/CalenderModal'
 
+// Helper function
+const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1)
+
+const Dashboard = () => {
+  const {
+    setPatientData,
+    doctorId,
+    setTodayAppointments,
+    todayAppointments, doctorDetails
+  } = useDoctorContext()
+
+  const [selectedType, setSelectedType] = useState(null)
+  const [selectedBranch, setSelectedBranch] = useState(null)
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [branches, setBranches] = useState([]) // Fetch from backend if needed
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(10)
+  const allBranches = doctorDetails?.branches || []
+  // Filtered patients based on type and branch
+  const filteredPatients = todayAppointments.filter((item) => {
+    let typeMatch = selectedType ? item.consultationType === selectedType : true
+    let branchMatch = selectedBranch ? item.branchId === selectedBranch.branchId : true
+    return typeMatch && branchMatch
+  })
+
+  const totalPages = Math.ceil(filteredPatients.length / itemsPerPage)
+  const currentPatients = filteredPatients.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  // Count consultations for buttons
   const consultationCounts = todayAppointments.reduce((acc, item) => {
-    const key = item.consultationType
-    acc[key] = (acc[key] || 0) + 1
+    acc[item.consultationType] = (acc[item.consultationType] || 0) + 1
     return acc
   }, {})
 
-  const [selectedType, setSelectedType] = useState(null)
 
-  const filteredPatients = selectedType
-    ? todayAppointments.filter((item) => item.consultationType === selectedType)
-    : todayAppointments
-  const [adImage, setAdImage] = useState(null) // null = not yet loaded
 
-  useEffect(() => {
-    // Simulate backend fetch delay
-    setTimeout(() => {
-      // Replace with actual fetch later
-      setAdImage(avatar8) // or set to a backend URL
-    }, 2000) // 2 seconds delay
-  }, [])
-
-  useEffect(() => {
-    // clear context + localStorage so sidebar shows doctor data
-    setPatientData(null)
-  }, [])
-
-  useEffect(() => {
-    // clear context + localStorage so sidebar shows doctor data
-    appointmentDetails()
-  }, [])
-
-  const appointmentDetails = async () => {
+  const fetchAppointments = async () => {
     const response = await getTodayAppointments()
-    console.log(response)
-
-    if (response.statusCode == 200) {
-      console.log(response.data)
+    if (response.statusCode === 200) {
       setTodayAppointments(response.data)
+
+      // Extract unique branchIds from appointments
+      const uniqueBranchIds = [...new Set(response.data.map((item) => item.branchId))]
+
+      // Match with doctorDetails branches to get branchName
+      const matchedBranches = allBranches.filter((b) => uniqueBranchIds.includes(b.branchId))
+
+      setBranches(matchedBranches)
     }
   }
 
+
+  useEffect(() => {
+    setPatientData(null) // Clear patient context
+    fetchAppointments()
+  }, [])
+
   return (
-    <div className="container-fluid " style={{ marginTop: '2%' }}>
-      <h5 className="mb-4" style={{ fontSize: SIZES.medium,color:COLORS.black }}>
+    <div className="container-fluid mt-3">
+      <h5 className="mb-4" style={{ fontSize: SIZES.medium, color: COLORS.black }}>
         Today Appointments
       </h5>
 
       <div className="d-flex flex-wrap flex-md-nowrap gap-3">
-        {/* LEFT SIDE - Appointments and Filters (60%) */}
+        {/* LEFT SIDE */}
         <div className="flex-grow-1" style={{ flexBasis: '60%' }}>
-          {/* Filter Buttons */}
-          <div className="mb-3 d-flex gap-2 flex-wrap">
-            <Button
-              variant={selectedType === null ? 'primary' : 'outline'}
-              customColor={COLORS.bgcolor}
-              color={COLORS.black}
-              onClick={() => setSelectedType(null)}
-              size="small"
-            >
-              All ({todayAppointments.length})
-            </Button>
-            {Object.entries(consultationCounts).map(([type, count]) => (
+          {/* Filters */}
+          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+            <div className="d-flex gap-2 flex-wrap">
               <Button
-                key={type}
-                variant={selectedType === type ? 'primary' : 'outline'}
-                customColor={selectedType === type ? COLORS.bgcolor : COLORS.black}
-                onClick={() => setSelectedType(type)}
+                variant={selectedType === null ? 'primary' : 'outline'}
+                customColor={COLORS.bgcolor}
+                color={COLORS.black}
+                onClick={() => setSelectedType(null)}
                 size="small"
               >
-                {type} ({count})
+                All ({todayAppointments.length})
               </Button>
-            ))}
-          </div>
+              {Object.entries(consultationCounts).map(([type, count]) => (
+                <Button
+                  key={type}
+                  variant="outline"
+                  customColor={COLORS.bgcolor}
+                  color={COLORS.black}
+                  size="small"
+                  onClick={() => setSelectedType(type)}
+                >
+                  {type} ({count})
+                </Button>
+              ))}
+            </div>
 
-          {/* Table Section with Scroll */}
-          <div
-            style={{
-              maxHeight: 'calc(100vh - 250px)',
-              overflowY: 'auto',
-              borderRadius: '8px',
-
-              overflow: 'hidden',
-            }}
-          >
-            <CTable className=" border">
-              <CTableHead>
-                <CTableRow
+            <div className="d-flex gap-2">
+              {/* Branch Dropdown */}
+              <CDropdown>
+                <CDropdownToggle
                   style={{
-                    fontSize: '0.875rem',
-                    backgroundColor: '#d6d8db',
+                    backgroundColor: COLORS.bgcolor,
+                    color: COLORS.black,
+                    borderRadius: '8px',
+                    padding: '0.5rem 1rem',
+                    textAlign: 'left',
                   }}
                 >
-                  {[
-                    'S.No',
-                    'Patient ID',
-                    'Name',
-                    'Mobile Number',
-                    'Time',
-                    'Consultation',
-                    'Action',
-                  ].map((header, i) => (
-                    <CTableHeaderCell
-                      key={i}
-                      style={{
-                          backgroundColor: COLORS.bgcolor,
-                          color: COLORS.black,
-                          fontWeight: 'bold',
-                        }}
+                  {selectedBranch ? selectedBranch.branchName : 'Select Branch'}
+                </CDropdownToggle>
+                <CDropdownMenu>
+                  {branches.length > 0 ? (
+                    branches.map((branch) => (
+                      <CDropdownItem
+                        key={branch.branchId}
+                        onClick={() => setSelectedBranch(branch)}
+                      >
+                        {branch.branchName}({branch.branchId})
+                      </CDropdownItem>
+                    ))
+                  ) : (
+                    <CDropdownItem disabled>No branches available</CDropdownItem>
+                  )}
+                </CDropdownMenu>
+              </CDropdown>
 
-                      className={header === 'Action' ? 'text-center' : ''}
-                    >
-                      {header}
-                    </CTableHeaderCell>
-                  ))}
+              <Button
+                variant="outline"
+                customColor={COLORS.bgcolor}
+                color={COLORS.black}
+                size="small"
+                onClick={() => setShowCalendar(true)}
+              >
+                My Calendar
+              </Button>
+            </div>
+          </div>
+
+          {/* Appointments Table */}
+          <div style={{ maxHeight: 'calc(100vh - 250px)', overflowY: 'auto', borderRadius: '8px' }}>
+            <CTable className="border">
+              <CTableHead>
+                <CTableRow>
+                  {['S.No', 'Patient ID', 'Name', 'Mobile', 'Date', 'Time', 'Consultation', 'Action'].map(
+                    (header, i) => (
+                      <CTableHeaderCell
+                        key={i}
+                        className={header === 'Action' ? 'text-center' : ''}
+                        style={{ backgroundColor: COLORS.bgcolor, color: COLORS.black }}
+                      >
+                        {header}
+                      </CTableHeaderCell>
+                    )
+                  )}
                 </CTableRow>
               </CTableHead>
-
               <CTableBody>
-                {filteredPatients.length === 0 ? (
+                {currentPatients.length === 0 ? (
                   <CTableRow>
-                    <CTableDataCell colSpan="7" className="text-center py-4 text-muted">
+                    <CTableDataCell colSpan="8" className="text-center py-4 text-muted">
                       No Appointments Available
                     </CTableDataCell>
                   </CTableRow>
                 ) : (
-                  filteredPatients.map((item, index) => (
-                    <CTableRow key={index} style={{ fontSize: '0.875rem' }}>
-                      <CTableDataCell>{index + 1}</CTableDataCell>
+                  currentPatients.map((item, idx) => (
+                    <CTableRow key={idx}>
+                      <CTableDataCell>{idx + 1}</CTableDataCell>
                       <CTableDataCell>{item.patientId}</CTableDataCell>
-                      <CTableDataCell>{item.name}</CTableDataCell>
+                      <CTableDataCell>{capitalizeFirst(item.name)}</CTableDataCell>
                       <CTableDataCell>{item.mobileNumber}</CTableDataCell>
+                      <CTableDataCell>{item.serviceDate}</CTableDataCell>
                       <CTableDataCell>{item.servicetime}</CTableDataCell>
                       <CTableDataCell>{item.consultationType}</CTableDataCell>
-
                       <CTableDataCell className="text-center">
                         <TooltipButton patient={item} tab={item.status} />
                       </CTableDataCell>
@@ -208,53 +207,59 @@ const Dashboard = () => {
                 )}
               </CTableBody>
             </CTable>
+
+            {/* Pagination */}
+            <div className="d-flex justify-content-end align-items-center mt-2 gap-2">
+              <Button
+                size="small"
+                variant="outline"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Prev
+              </Button>
+              <span>
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                size="small"
+                variant="outline"
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* RIGHT SIDE - Ads (40%) */}
+        {/* RIGHT SIDE - Ad */}
         <div
           className="d-flex align-items-start justify-content-start bg-dark"
-          style={{
-            height: '60vh',
-            width: '200px',
-            overflow: 'hidden',
-            position: 'relative', // or 'fixed' if you want it to stay on screen always
-            borderRadius: '10px',
-          }}
+          style={{ height: '60vh', width: '200px', overflow: 'hidden', borderRadius: '10px' }}
         >
-          <CCard style={{ width: '100%', height: '100%', overflow: 'hidden', backgroundColor: COLORS.bgcolor, display: "flex", justifyContent: "center", alignItems: 'center' }}>
-            {/* {adImage ? (
-              <CCardImage
-                src={adImage}
-                alt="Profile Ad"
-                style={{
-                  objectFit: 'fit', // or 'contain' if you want full image inside without cropping
-                  height: '100%',
-                  width: '100%',
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  height: '100%',
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.2rem',
-                  color: '#888',
-                }}
-              >
-                Loading Ad...
-              </div>
-            )} */}
-
-             <span style={{ color: COLORS.black, textAlign: 'center', fontWeight: 'bold',
-    fontSize: '1rem', }}>Ad Space</span>
-
+          <CCard
+            className="w-100 h-100 d-flex justify-content-center align-items-center"
+            style={{ backgroundColor: COLORS.bgcolor }}
+          >
+            <span style={{ color: COLORS.black, fontWeight: 'bold', textAlign: 'center' }}>
+              Ad Space
+            </span>
           </CCard>
         </div>
       </div>
+
+      {/* Calendar Modal */}
+      {showCalendar && (
+        <CalendarModal
+          visible={showCalendar}
+          onClose={() => setShowCalendar(false)}
+          todayAppointments={todayAppointments}
+          defaultBookedSlots={[]}
+          handleClick={() => { }}
+          fetchAppointments={fetchAppointments}
+        />
+      )}
     </div>
   )
 }

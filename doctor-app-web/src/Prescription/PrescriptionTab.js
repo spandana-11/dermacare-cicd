@@ -33,6 +33,7 @@ import { medicineTemplate, SavePrescription } from '../Auth/Auth'
 import Select from 'react-select'
 import api from '../Auth/axiosInterceptor'
 import AsyncSelect from 'react-select/async'
+import { formatDuration } from '../utils/formatDateTime'
 
 const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
   const [search, setSearch] = useState('')
@@ -54,7 +55,23 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
   const [filteredPrescriptions, setFilteredPrescriptions] = useState([])
   const [selectedPrescriptionMedicines, setSelectedPrescriptionMedicines] = useState([])
   const [isSelectLoading, setIsSelectLoading] = useState(false)
-  const [medicines, setMedicines] = useState(Array.isArray(seed.medicines) ? seed.medicines : [])
+  const [medicines, setMedicines] = useState(
+    Array.isArray(seed.medicines)
+      ? seed.medicines.map((m) => ({
+        medicineType: m.medicineType || "",
+        name: m.name || "",
+        dose: m.dose || "",
+        remindWhen: m.remindWhen || "Once A Day",
+        others: m.others || "",
+        duration: m.duration || "",
+        durationUnit: m.durationUnit || "",
+        food: m.food || "",
+        note: m.note || "",
+        times: Array.isArray(m.times) ? m.times : ["", "", ""],
+      }))
+      : []
+  )
+
   const [note, setNote] = useState(seed.note ?? '')
   //Toaster
   const { success, error, info, warning } = useToast()
@@ -66,20 +83,26 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
   const sanitizeMedicines = (list) =>
     list.map((m) => ({
       ...m,
-      dose: m.dose?.trim() || 'NA',
-      note: m.note?.trim() || 'NA',
-      food: m.food?.trim() || 'NA',
-      duration: m.duration?.trim() || 'NA',
-      remindWhen: m.remindWhen?.trim() || 'NA',
+      dose: m.dose?.toString().trim() || "NA",
+      note: m.note?.trim() || "NA",
+      food: m.food?.trim() || "NA",
+      medicineType: m.medicineType?.trim() || "NA",
+      duration: m.duration?.toString().trim() || "NA",
+      durationUnit: m.durationUnit?.trim() || "",   // 👈 keep empty string if missing
+      others: m.others?.trim() || "NA",
+      remindWhen: m.remindWhen?.trim() || "NA",
       times: Array.isArray(m.times)
         ? m.times.map((t) => `${t}`.trim()).filter(Boolean)
-        : typeof m.times === 'string'
+        : typeof m.times === "string"
           ? m.times
-            .split(',')
+            .split(",")
             .map((t) => t.trim())
             .filter(Boolean)
           : [],
-    }))
+    }));
+
+
+
 
   useEffect(() => {
     const storedTemplates = JSON.parse(localStorage.getItem('templates') || '[]')
@@ -152,20 +175,27 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
   }
 
   const addMedicine = (name) => {
-    const exists = medicines.some((med) => med.name.toLowerCase() === name.toLowerCase())
+    const lower = name.toLowerCase()
+
+    const exists =
+      medicines.some((med) => med.name?.toLowerCase() === lower) ||
+      selectedPrescriptionMedicines.some((med) => med.name?.toLowerCase() === lower) ||
+      (activeMedicine?.name?.toLowerCase() === lower)
 
     if (exists) {
-      warning('Medicine already added', { title: 'Warning' })
+      info('Medicine already added',)
       return
     }
 
     setActiveMedicine({
       name,
       dose: '',
-      remindWhen: 'Thrice A Day',
+      medicineType: '',
+      remindWhen: 'NA',
       note: '',
       duration: '',
       food: '',
+      others: '',
       times: ['', '', ''],
     })
 
@@ -184,13 +214,28 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
       return
     }
 
-    const newTemplate = JSON.stringify(medicines)
+    // Sanitize medicines before saving
+    const sanitized = medicines.map((m) => ({
+      name: m.name || "NA",
+      dose: m.dose || "NA",
+      medicineType: m.medicineType || "", // default empty string
+      food: m.food || "",                // Instructions
+      remindWhen: m.remindWhen || "Once A Day",
+      duration: m.duration || "",
+      durationUnit: m.durationUnit || "",
+      note: m.note || "",
+      others: m.others || "",
+      times: Array.isArray(m.times) ? m.times : ["", "", ""]
+    }))
+
+    const newTemplate = JSON.stringify(sanitized)
     const updated = [...templates, newTemplate]
     setTemplates(updated)
+    localStorage.setItem('templates', JSON.stringify(updated)) // optional
 
     const clinicId = localStorage.getItem('hospitalId')
     const prescriptionData = {
-      medicines,
+      medicines: sanitized,
       clinicId,
     }
 
@@ -206,14 +251,31 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
     }
   }
 
+  // ✅ FIXED LOAD TEMPLATE FUNCTION
   const loadTemplate = (templateStr) => {
     try {
       const parsed = JSON.parse(templateStr)
-      setMedicines(parsed)
+
+      // Sanitize loaded medicines
+      const sanitized = parsed.map((m) => ({
+        name: m.name || "NA",
+        dose: m.dose || "NA",
+        medicineType: m.medicineType || "", // empty string fallback
+        food: m.food || "",                 // Instructions fallback
+        remindWhen: m.remindWhen || "Once A Day",
+        duration: m.duration || "",
+        durationUnit: m.durationUnit || "",
+        note: m.note || "",
+        others: m.others || "",
+        times: Array.isArray(m.times) ? m.times : ["", "", ""]
+      }))
+
+      setMedicines(sanitized)
     } catch (e) {
       console.error('Invalid template')
     }
   }
+
 
   const generatePDF = () => {
     setIsGenerating(true)
@@ -264,7 +326,8 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [])
-  // PrescriptionTab.jsx (only the changed/added bits inside the component)
+
+
   const isDuplicateName = (name) => {
     const n = String(name || '')
       .trim()
@@ -276,6 +339,18 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
           .toLowerCase() === n,
     )
   }
+
+
+  const isAlreadySelected = (name) => {
+    if (!name) return false;
+    const lower = name.toLowerCase();
+
+    return (
+      medicines.some((m) => m.name?.toLowerCase() === lower) ||
+      selectedPrescriptionMedicines.some((m) => m.name?.toLowerCase() === lower) ||
+      (activeMedicine && activeMedicine.name?.toLowerCase() === lower)
+    );
+  };
 
   return (
     <div className="container pb-5">
@@ -296,10 +371,10 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                         m.name?.toLowerCase().includes(inputValue.toLowerCase())
                       )
                       .map((m) => ({
-                        label: m.name,                      // ✅ individual medicine name
-                        value: m.id,                        // ✅ unique medicine id
+                        label: m.name,
+                        value: m.id,
                         prescriptionId: presc.prescriptionId,
-                        data: m,                            // ✅ store medicine data
+                        data: m,
                       })) || []
                   )
 
@@ -308,11 +383,17 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                 defaultOptions={false}
                 placeholder="Search prescription medicine..."
                 onChange={(selectedOption) => {
-                  const selectedMed = selectedOption?.data
+                  const selectedMed = selectedOption?.data;
                   if (selectedMed) {
-                    setSelectedPrescriptionMedicines((prev) => [...prev, selectedMed]) // ✅ add medicine individually
+                    if (isAlreadySelected(selectedMed.name)) {
+                      info('Medicine already added');
+                      return;
+                    }
+                    setSelectedPrescriptionMedicines((prev) => [...prev, selectedMed]);
                   }
                 }}
+
+                value={null}   // 👈 clears selection so caret never shows before "ASPIRIN"
                 noOptionsMessage={() => 'Start typing to search...'}
                 styles={{
                   container: (base) => ({
@@ -325,6 +406,7 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                   }),
                 }}
               />
+
 
             </div>
           </div>
@@ -426,17 +508,19 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
 
       {medicines.length > 0 && (
         <div className="mb-4">
-          <GradientTextCard text={'Prescription Table'} />
+          <GradientTextCard text={'Medication Table'} />
 
           <CTable striped hover responsive className="align-middle">
             <CTableHead>
               <CTableRow className="bg-info  fst-normal">
-                <CTableHeaderCell scope="col">#</CTableHeaderCell>
+                <CTableHeaderCell scope="col">S.NO</CTableHeaderCell>
+                <CTableHeaderCell scope="col">Medicine Type</CTableHeaderCell>
                 <CTableHeaderCell scope="col">Medicine</CTableHeaderCell>
                 <CTableHeaderCell scope="col">Dosage</CTableHeaderCell>
-                <CTableHeaderCell scope="col">Remind</CTableHeaderCell>
+
+                <CTableHeaderCell scope="col">Frequency</CTableHeaderCell>
                 <CTableHeaderCell scope="col">Duration</CTableHeaderCell>
-                <CTableHeaderCell scope="col">Food</CTableHeaderCell>
+                <CTableHeaderCell scope="col">Instructions</CTableHeaderCell>
                 <CTableHeaderCell scope="col">Note</CTableHeaderCell>
                 <CTableHeaderCell scope="col">Timings</CTableHeaderCell>
                 <CTableHeaderCell scope="col" className="text-end">
@@ -451,6 +535,17 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                   <CTableHeaderCell scope="row">{index + 1}</CTableHeaderCell>
 
                   {/* Medicine */}
+                  <CTableDataCell>
+                    {editingIndex === index ? (
+                      <CFormInput
+                        size="sm"
+                        value={med.medicineType || ""} // 👈 fallback to empty string
+                        onChange={(e) => handleUpdate(index, "medicineType", e.target.value)}
+                      />
+                    ) : (
+                      med.medicineType || 'NA'
+                    )}
+                  </CTableDataCell>
                   <CTableDataCell>
                     {editingIndex === index ? (
                       <CFormInput
@@ -476,42 +571,76 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                     )}
                   </CTableDataCell>
 
-                  {/* Remind */}
+
                   <CTableDataCell>
                     {editingIndex === index ? (
                       <CFormSelect
                         size="sm"
                         value={med.remindWhen}
-                        onChange={(e) => handleUpdate(index, 'remindWhen', e.target.value)}
+                        onChange={(e) => handleUpdate(index, "remindWhen", e.target.value)}
                       >
                         <option>Once A Day</option>
                         <option>Twice A Day</option>
                         <option>Thrice A Day</option>
+                        <option>others</option>
                       </CFormSelect>
                     ) : (
-                      med.remindWhen || 'NA'
+                      <>
+                        {med.remindWhen && med.remindWhen !== "NA"
+                          ? med.remindWhen === "Other" && med.others
+                            ? `Other (${med.others})`
+                            : med.remindWhen
+                          : med.others || "NA"}
+                      </>
                     )}
                   </CTableDataCell>
 
                   {/* Duration */}
                   <CTableDataCell>
                     {editingIndex === index ? (
-                      <CFormInput
-                        size="sm"
-                        value={med.duration}
-                        onChange={(e) => handleUpdate(index, 'duration', e.target.value)}
-                      />
+                      <>
+                        {/* Duration number input */}
+                        <CFormInput
+                          size="sm"
+                          type="number"
+                          value={med.duration}
+                          onChange={(e) => handleUpdate(index, "duration", e.target.value)}
+                          style={{ width: "70px", display: "inline-block", marginRight: "8px" }}
+                        />
+
+                        {/* Duration unit dropdown */}
+                        <CFormSelect
+                          size="sm"
+                          value={med.durationUnit || ""} // 👈 fallback to empty string
+                          onChange={(e) => handleUpdate(index, "durationUnit", e.target.value)}
+                        >
+                          <option value="">Unit</option>
+                          <option value="Hour">Hour</option>
+                          <option value="Day">Day</option>
+                          <option value="Week">Week</option>
+                          <option value="Month">Month</option>
+                        </CFormSelect>
+                      </>
                     ) : (
-                      med.duration || 'NA'
+                      med.duration
+                        ? (() => {
+                          const value = parseInt(med.duration, 10);
+                          const unit = med.durationUnit || "";
+                          if (!unit) return value; // show only number if unit missing
+                          return `${value} ${value > 1 ? unit + "s" : unit}`;
+                        })()
+                        : "NA"
                     )}
                   </CTableDataCell>
+
+
 
                   <CTableDataCell>
                     {editingIndex === index ? (
                       <CFormInput
                         size="sm"
-                        value={med.food}
-                        onChange={(e) => handleUpdate(index, 'duration', e.target.value)}
+                        value={med.food || ""} // 👈 fallback to empty string
+                        onChange={(e) => handleUpdate(index, 'food', e.target.value)}
                       />
                     ) : (
                       med.food || 'NA'
@@ -547,6 +676,7 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                   {/* Timings */}
                   <CTableDataCell style={{ minWidth: 180 }}>
                     {editingIndex === index ? (
+                      // Editing mode
                       <div className="d-flex flex-column gap-1">
                         {Array.isArray(med.times)
                           ? med.times.map((time, i) => (
@@ -564,19 +694,28 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                           : null}
                       </div>
                     ) : Array.isArray(med.times) ? (
+                      // View mode: Array
                       med.times
                         .filter((t) => t && t.trim())
-                        .map((t) => t.trim().charAt(0).toUpperCase()) // M, A, E
+                        .map(
+                          (t) =>
+                            t.trim().charAt(0).toUpperCase() + t.trim().slice(1).toLowerCase()
+                        ) // Capitalize full word: Morning, Evening
                         .join(', ')
                     ) : typeof med.times === 'string' ? (
+                      // View mode: String
                       med.times
                         .split(',')
-                        .map((t) => t.trim().charAt(0).toUpperCase())
+                        .map(
+                          (t) =>
+                            t.trim().charAt(0).toUpperCase() + t.trim().slice(1).toLowerCase()
+                        )
                         .join(', ')
                     ) : (
                       'NA'
                     )}
                   </CTableDataCell>
+
 
                   {/* Action */}
                   <CTableDataCell className="text-end" style={{ whiteSpace: 'nowrap' }}>

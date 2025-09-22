@@ -1,10 +1,12 @@
 package com.clinicadmin.service;
 
+import java.util.List;
+
 import com.clinicadmin.dto.ProbableDiagnosisDTO;
 import com.clinicadmin.dto.Response;
 
 public interface ProbableDiagnosisService {
-	public Response addDisease(ProbableDiagnosisDTO dto);
+//	public Response addDisease(ProbableDiagnosisDTO dto);
 
 	public Response getAllDiseases();
 
@@ -18,6 +20,8 @@ public interface ProbableDiagnosisService {
 
 	Response updateDiseaseById(String id, String hospitalId, ProbableDiagnosisDTO dto);
 	Response getAllDiseasesByHospitalId(String hospitalId);
+
+	Response addDiseases(List<ProbableDiagnosisDTO> dtoList);
 
 
 }

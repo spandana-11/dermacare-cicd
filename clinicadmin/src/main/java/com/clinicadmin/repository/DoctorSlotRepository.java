@@ -13,5 +13,13 @@ public interface DoctorSlotRepository extends MongoRepository<DoctorSlot, String
 	 DoctorSlot findByDoctorIdAndDate(String doctorId, String date);
 
 	List<DoctorSlot> findByHospitalIdAndDoctorId(String hospitalId, String doctorId);
+
+	DoctorSlot findByDoctorIdAndDateAndBranchId(String doctorId, String date, String branchId);
+
+	List<DoctorSlot> findByHospitalIdAndDoctorIdAndBranchId(String hospitalId, String doctorId, String branchId);
+
+	DoctorSlot findByDoctorIdAndBranchIdAndDate(String doctorId, String branchId, String date);
+
+	List<DoctorSlot> findByHospitalIdAndBranchIdAndDoctorId(String hospitalId, String branchId, String doctorId);
 	
 }
