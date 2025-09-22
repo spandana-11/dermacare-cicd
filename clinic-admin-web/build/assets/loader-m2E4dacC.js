@@ -1,0 +1,1 @@
+import{j as s,n}from"./index-DIpuK5ve.js";const t=({message:e="Loading..."})=>s.jsxs("div",{className:"d-flex justify-content-center align-items-center",style:{height:"50vh",color:"var(--color-black)"},children:[s.jsx(n,{size:"sm",className:"me-2"}),s.jsx("span",{children:e})]});export{t as L};

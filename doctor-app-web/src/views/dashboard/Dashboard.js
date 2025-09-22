@@ -82,10 +82,18 @@ const Dashboard = () => {
   }
 
 
-  useEffect(() => {
-    setPatientData(null) // Clear patient context
-    fetchAppointments()
-  }, [])
+useEffect(() => {
+  setPatientData(null); // Clear patient context
+  fetchAppointments();   // Fetch initially
+
+  // Auto-fetch every 10 seconds
+  const interval = setInterval(() => {
+    fetchAppointments();
+  }, 10000); // Adjust time (ms) as needed
+
+  return () => clearInterval(interval); // Cleanup interval on unmount
+}, []);
+
 
   return (
     <div className="container-fluid mt-3">

@@ -90,7 +90,7 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
   const [hasTemplate, setHasTemplate] = useState(false)
 
   const handleNext = () => {
-    const payload = { symptomDetails, doctorObs, diagnosis, duration }
+    const payload = { symptomDetails, doctorObs, diagnosis, duration, }
     console.log('🚀 Submitting payload:', payload)
     onNext?.(payload)
   }
@@ -199,12 +199,27 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
       ...merged,
       __templateApplied: { dx, at: Date.now() },
     }))
+
     setUpdateTemplate(true)
     success('Template applied successfully!', { title: 'Success' })
 
-    const payload = { symptomDetails, doctorObs, diagnosis: dx, duration, attachments }
+    // ✅ include prescription & tests & followUp in payload
+    const payload = {
+      symptomDetails,
+      doctorObs,
+      diagnosis: dx,
+      duration,
+      attachments,
+      prescription: merged.prescription,   // 👈 now medicineType, duration, food, note will come
+      tests: merged.tests,
+      treatments: merged.treatments,
+      followUp: merged.followUp,
+    }
+
+    console.log("🚀 Final Payload:", payload) // debug log
     onNext?.(payload)
   }
+
 
   // NEW: options for react-select
   const options = useMemo(
@@ -285,17 +300,27 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
     const testReason = t?.tests?.testReason ?? ''
 
     // ---- Prescription (map 'food' -> remindWhen)
-    const medicines = Array.isArray(t?.prescription?.medicines)
-      ? t.prescription.medicines.map((m) => ({
-        id: m?.id ?? `tmp-${Date.now()}-${Math.random()}`,
-        name: m?.name ?? '',
-        dose: m?.dose ?? '',
-        duration: m?.duration ?? '',
-        remindWhen: m?.food ?? m?.remindWhen ?? '', // <- important mapping
-        note: m?.note ?? '',
-        times: m?.times ?? m?.time ?? '',
-      }))
-      : []
+  const medicines = Array.isArray(t?.prescription?.medicines)
+  ? t.prescription.medicines.map((m) => ({
+    id: m?.id ?? `tmp-${Date.now()}-${Math.random()}`,
+    name: m?.name ?? '',
+    medicineType: m?.medicineType ?? 'NA',
+    dose: m?.dose ?? '',
+    duration: m?.duration && m?.durationUnit
+      ? `${m.duration} ${m.durationUnit}`
+      : m?.duration ?? '',
+    frequency: m?.remindWhen ?? 'NA',        // use remindWhen for table
+    remindWhen: m?.remindWhen ?? '',
+    note: m?.note?.trim() || 'NA',
+    instruction: m?.instruction?.trim() || 'NA',  // show NA if empty
+    others: m?.others ?? '',
+    times: typeof m?.times === 'string' ? m.times : Array.isArray(m?.times) ? m.times.filter(Boolean).join(', ') : '',
+  }))
+  : []
+
+
+
+
 
     // ---- Treatments
     const generatedData = t?.treatments?.generatedData ?? {}
@@ -494,13 +519,13 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
                         sx={{
                           backgroundColor: COLORS.bgcolor,
                           color: COLORS.black,
-                          border: "2px solid #000", // add border here
-
+                          border: "2px solid #000",
                         }}
                         onClick={() => applyTemplate(diagnosis)}
                       >
                         Apply
                       </Button>
+
 
                     </CCardBody>
                   </CCard>

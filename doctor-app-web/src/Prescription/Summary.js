@@ -39,7 +39,7 @@ import { capitalizeFirst } from '../utils/CaptalZeWord'
  *   }
  */
 
-const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formData = {} }) => {
+const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formData = {},fromPage = 'dashboard' }) => {
   const { doctorDetails, setDoctorDetails, setClinicDetails, clinicDetails, updateTemplate } =
     useDoctorContext()
 
@@ -270,19 +270,18 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
     }
   }
 
-  const skipTemplate = async () => {
-    console.log("Skipped saving as template. Pending Action:", pendingAction)
-    setShowTemplateModal(false)
-    try {
-      const ok = await uploadPrescription({ downloadAfter: pendingAction === ACTIONS.SAVE_PRINT })
-      if (ok) {
-        console.log("Navigation to Dashboard after skipping template")
-        navigate('/dashboard', { replace: true })
-      }
-    } finally {
-      setPendingAction(null)
-    }
+const skipTemplate = () => {
+  console.log("Skipped saving template. Navigating back to", fromPage);
+  setShowTemplateModal(false);
+  setPendingAction(null);
+
+  if (fromPage === 'appointments') {
+    navigate('/appointments', { replace: true });
+  } else {
+    navigate('/dashboard', { replace: true });
   }
+};
+
 
 
   // ---------------- Render ----------------
@@ -644,7 +643,17 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
                   You can reuse this prescription layout later for faster entry.
                 </p>
                 <div className="d-flex gap-2 justify-content-end">
-                  <Button onClick={skipTemplate} customColor={COLORS.bgcolor}>No, just continue</Button>
+                  <Button
+  onClick={() => {
+    setPendingAction(ACTIONS.SAVE);
+    skipTemplate(); // just navigate back
+  }}
+  customColor={COLORS.bgcolor}
+  color={COLORS.black}
+>
+  No, just continue
+</Button>
+
                   <Button customColor={COLORS.bgcolor} onClick={confirmSaveAsTemplate}>
                     Yes, save as template
                   </Button>
