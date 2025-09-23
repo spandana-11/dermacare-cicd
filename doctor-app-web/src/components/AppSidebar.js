@@ -34,7 +34,13 @@ const AppSidebar = () => {
   const hasPatient = !!patientData
   const [ratings, setRatings] = useState([])
   const [showModal, setShowModal] = useState(false)
-  const [vitals, setVitals] = useState({ height: '—', weight: '—', bloodPressure: '—', temperature: '—', bmi: '—' });
+  const [vitals, setVitals] = useState({
+    height: null,
+    weight: null,
+    bloodPressure: null,
+    temperature: null,
+    bmi: null,
+  });
   useEffect(() => {
     const fetchData = async () => {
       const doctor = await getDoctorDetails()
@@ -74,15 +80,19 @@ const AppSidebar = () => {
     };
   }, [hasPatient, patientData]);
 
-  const genderImg = (patientData?.gender || '').toString().toLowerCase() === 'male' ? male : female
+  const seed = patientData?.name || "guest"; // patient-specific seed
+  const genderImg = `https://api.dicebear.com/6.x/avataaars/png?seed=${encodeURIComponent(seed)}&clothingColor=pink`;
 
   const display = {
     name: patientData?.name || '—',
     age: patientData?.age || '—',
     gender: patientData?.gender || '—',
     mobile: patientData?.mobileNumber || '—',
-    visitType: patientData?.consultationType || '—',
-    visitCount: patientData?.visitCount || '—',
+    visitType: patientData?.consultationType === null
+      ? 0
+      : patientData?.consultationType ?? '—',
+
+    visitCount: patientData?.visitCount === null ? 0 : patientData?.visitCount ?? '—',
     followUp: patientData?.freeFollowUps || '—',
     symptom: patientData?.problem || '—',
     patientId: patientData?.patientId || '—',
@@ -161,9 +171,9 @@ const AppSidebar = () => {
                 >
                   {capitalizeFirst(display.name)}
                 </h4>
-                <div style={{ textAlign: "left", width: "100%", marginLeft: "15px",lineHeight:"2px" }}>
+                <div style={{ textAlign: "left", width: "100%", marginLeft: "15px", lineHeight: "2px" }}>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                   Age/Gender: {display.age} Years / {display.gender}
+                    Age/Gender: {display.age} Years / {display.gender}
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
                     Mobile: {display.mobile}
@@ -172,10 +182,10 @@ const AppSidebar = () => {
                     Visit Type: {display.visitType}
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Visit Count: {display.visitCount}
+                    Visit Count: {display.visitCount=== '—' ? 0 : display.visitCount}
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    FollowUp Count: {display.followUp}
+                    FollowUp Count: {display.followUp=== '—' ? 0 : display.followUp}
                   </h6>
                 </div>
 
@@ -190,20 +200,21 @@ const AppSidebar = () => {
                     Vitals
                   </h4>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Height: {display.vitals.height} cm
+                   Height: {display.vitals.height === '—' ? 0 : display.vitals.height} cm
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Weight: {display.vitals.weight} kg
+                    Weight: {display.vitals.weight === '—' ? 0 :display.vitals.weight} kg
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Blood Pressure: {display.vitals.bloodPressure} mmHg
+                    Blood Pressure: {display.vitals.bloodPressure === '—' ? 0 :display.vitals.bloodPressure} mmHg
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Temperature: {display.vitals.temperature} °C
+                    Temperature: {display.vitals.temperature === '—' ? 0 :display.vitals.temperature} °C
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    BMI: {display.vitals.bmi} kg/m²
+                    BMI: {display.vitals.bmi === '—' ? 0 :display.vitals.bmi} kg/m²
                   </h6>
+
 
                 </div>
               </>
@@ -308,12 +319,12 @@ const AppSidebar = () => {
                     >
                       <div
                         className={`progress-bar ${item.category.toLowerCase().includes('excellent')
-                            ? 'bg-success'
-                            : item.category.toLowerCase().includes('good')
-                              ? 'bg-primary'
-                              : item.category.toLowerCase().includes('average')
-                                ? 'bg-warning'
-                                : 'bg-secondary'
+                          ? 'bg-success'
+                          : item.category.toLowerCase().includes('good')
+                            ? 'bg-primary'
+                            : item.category.toLowerCase().includes('average')
+                              ? 'bg-warning'
+                              : 'bg-secondary'
                           }`}
                         role="progressbar"
                         style={{ width: `${item.percentage}%`, borderRadius: 4 }}

@@ -60,31 +60,31 @@ const Appointments = ({ searchTerm = '' }) => {
     return ''
   }
 
-useEffect(() => {
-  let isMounted = true;
+  useEffect(() => {
+    let isMounted = true;
 
-  const fetchData = async () => {
-    const tabNumber = tabToNumberMap[activeTab];
-    try {
-      // Add cache-buster to ensure fresh data
-      const appointmentsData = await getAppointments(`${tabNumber}?_=${new Date().getTime()}`);
-      if (isMounted) setAppointments(appointmentsData || []);
-    } catch (err) {
-      console.error('Error fetching appointments:', err);
-    }
-  };
+    const fetchData = async () => {
+      const tabNumber = tabToNumberMap[activeTab];
+      try {
+        // Add cache-buster to ensure fresh data
+        const appointmentsData = await getAppointments(`${tabNumber}?_=${new Date().getTime()}`);
+        if (isMounted) setAppointments(appointmentsData || []);
+      } catch (err) {
+        console.error('Error fetching appointments:', err);
+      }
+    };
 
-  fetchData(); // initial fetch
+    fetchData(); // initial fetch
 
-  const interval = setInterval(() => {
-    fetchData(); // auto-fetch every 10 seconds
-  }, 10000); // adjust interval as needed
+    const interval = setInterval(() => {
+      fetchData(); // auto-fetch every 10 seconds
+    }, 10000); // adjust interval as needed
 
-  return () => {
-    isMounted = false;
-    clearInterval(interval); // clean up interval on unmount
-  };
-}, [activeTab]);
+    return () => {
+      isMounted = false;
+      clearInterval(interval); // clean up interval on unmount
+    };
+  }, [activeTab]);
 
 
   // Filtering + Sorting
@@ -210,9 +210,14 @@ useEffect(() => {
                           color: COLORS.black,
                         }}
                       >
-                        {selectedBranch ? selectedBranch.branchName : 'Select Branch'}
+                        {selectedBranch ? selectedBranch.branchName : 'All Branches'}
                       </CDropdownToggle>
                       <CDropdownMenu>
+                        {/* All Branches option */}
+                        <CDropdownItem onClick={() => setSelectedBranch(null)}>
+                          All Branches
+                        </CDropdownItem>
+
                         {branches.length > 0 ? (
                           branches.map((branch) => (
                             <CDropdownItem
@@ -228,6 +233,7 @@ useEffect(() => {
                       </CDropdownMenu>
                     </CDropdown>
                   </div>
+
                 </div>
               </CCol>
             </CRow>

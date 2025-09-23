@@ -65,6 +65,20 @@ public class PrivacyPolicyServiceImpl implements PrivacyPolicyService {
                         .status(HttpStatus.NOT_FOUND.value())
                         .build());
     }
+    
+    @Override
+    public Response getPoliciesByClinicId(String clinicId) {
+        Response response = new Response();
+        List<PrivacyPolicyDTO> policies = repository.findByClinicId(clinicId);
+        response.setSuccess(true);
+        response.setData(policies);
+        response.setMessage(policies.isEmpty() 
+            ? "No privacy policies found for clinicId: " + clinicId
+            : "Policies fetched successfully");
+        response.setStatus(200);
+        return response;
+    }
+
 
     @Override
     public Response updatePolicy(PrivacyPolicyDTO dto) {
@@ -128,12 +142,12 @@ public class PrivacyPolicyServiceImpl implements PrivacyPolicyService {
     }
     private PrivacyPolicyDTO toDTO(PrivacyPolicy entity) {
         if (entity == null) return null;
-        return new PrivacyPolicyDTO(entity.getId(), entity.getPrivacyPolicy());
+        return new PrivacyPolicyDTO(entity.getId().toString(), entity.getClinicId(), entity.getPrivacyPolicy());
     }
 
 
     private PrivacyPolicy toEntity(PrivacyPolicyDTO dto) {
         if (dto == null) return null;
-        return new PrivacyPolicy(dto.getId(), dto.getPrivacyPolicy());
+        return new PrivacyPolicy(dto.getId(),dto.getClinicId() ,dto.getPrivacyPolicy());
              }
 }

@@ -8,6 +8,7 @@ public class ReferredDoctorMapper {
     public static ReferredDoctor dtoToEntity(ReferredDoctorDTO dto) {
         ReferredDoctor doctor = new ReferredDoctor();
         doctor.setFullName(dto.getFullName());
+        doctor.setClinicId(dto.getClinicId());
         doctor.setGender(dto.getGender());
         doctor.setDateOfBirth(dto.getDateOfBirth());
         doctor.setGovernmentId(dto.getGovernmentId());
@@ -19,10 +20,10 @@ public class ReferredDoctorMapper {
         doctor.setMobileNumber(dto.getMobileNumber());
         doctor.setEmail(dto.getEmail());
         doctor.setAddress(dto.getAddress());
-        doctor.setFirstReferralDate(dto.getFirstReferralDate());
-        doctor.setTotalReferrals(dto.getTotalReferrals());
-        doctor.setReferredPatients(dto.getReferredPatients());
-        doctor.setPreferredCommunicationMethod(dto.getPreferredCommunicationMethod());
+//        doctor.setFirstReferralDate(dto.getFirstReferralDate());
+//        doctor.setTotalReferrals(dto.getTotalReferrals());
+//        doctor.setReferredPatients(dto.getReferredPatients());
+//        doctor.setPreferredCommunicationMethod(dto.getPreferredCommunicationMethod());
         doctor.setBankAccountNumber(dto.getBankAccountNumber());
         doctor.setStatus(dto.getStatus());
         return doctor;
@@ -30,6 +31,7 @@ public class ReferredDoctorMapper {
 
     public static ReferredDoctorDTO entityToDto(ReferredDoctor doctor) {
         ReferredDoctorDTO dto = new ReferredDoctorDTO();
+        dto.setClinicId(doctor.getClinicId());
         dto.setFullName(doctor.getFullName());
         dto.setGender(doctor.getGender());
         dto.setDateOfBirth(doctor.getDateOfBirth());
@@ -42,10 +44,10 @@ public class ReferredDoctorMapper {
         dto.setMobileNumber(doctor.getMobileNumber());
         dto.setEmail(doctor.getEmail());
         dto.setAddress(doctor.getAddress());
-        dto.setFirstReferralDate(doctor.getFirstReferralDate());
-        dto.setTotalReferrals(doctor.getTotalReferrals());
-        dto.setReferredPatients(doctor.getReferredPatients());
-        dto.setPreferredCommunicationMethod(doctor.getPreferredCommunicationMethod());
+//        dto.setFirstReferralDate(doctor.getFirstReferralDate());
+//        dto.setTotalReferrals(doctor.getTotalReferrals());
+//        dto.setReferredPatients(doctor.getReferredPatients());
+//        dto.setPreferredCommunicationMethod(doctor.getPreferredCommunicationMethod());
         dto.setBankAccountNumber(doctor.getBankAccountNumber());
         dto.setStatus(doctor.getStatus());
         return dto;

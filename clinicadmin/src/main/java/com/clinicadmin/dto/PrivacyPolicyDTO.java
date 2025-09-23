@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 public class PrivacyPolicyDTO {
 
 	private String id;
-	
+	private String clinicId;
 	private String PrivacyPolicy;
 }

@@ -29,8 +29,9 @@ const FollowUp = ({ seed = {}, onNext, sidebarWidth = 0, patientData }) => {
   const [patientName, setPatientName] = useState('')
   const [followUpNote, setFollowUpNote] = useState(seed.followUpNote ?? '')
   const [durationValue, setDurationValue] = useState(seed.durationValue ?? '')
-  const [durationUnit, setDurationUnit] = useState('Days')
+
   const [nextFollowUpDate, setNextFollowUpDate] = useState('')
+  const [durationUnit, setDurationUnit] = useState("");
   const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
   const [userTouched, setUserTouched] = useState(false)
   // Calculate next follow-up date when duration/unit changes
@@ -132,16 +133,20 @@ const FollowUp = ({ seed = {}, onNext, sidebarWidth = 0, patientData }) => {
                       value={durationValue}
                       onChange={(e) => setDurationValue(Number(e.target.value))}
                       placeholder="Select Duration in Days"
-                        min={0}
+                      min={0}
                     />
                     <CFormSelect
                       value={durationUnit}
                       onChange={(e) => setDurationUnit(e.target.value)}
                     >
+                      <option value="" >
+                        Select Duration Unit
+                      </option>
                       <option value="Days">Days</option>
                       <option value="Weeks">Weeks</option>
                       <option value="Months">Months</option>
                     </CFormSelect>
+
                   </div>
 
                   {/* Next follow-up date */}

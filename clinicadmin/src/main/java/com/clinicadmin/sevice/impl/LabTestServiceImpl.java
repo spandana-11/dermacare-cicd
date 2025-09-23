@@ -43,12 +43,22 @@ public class LabTestServiceImpl implements LabTestService {
 	        return response;
 	    }
 
+	    // Check if test name already exists for the given hospital
+	    Optional<LabTest> existingTest = labTestRepository.findByHospitalIdAndTestNameIgnoreCase(dto.getHospitalId(), dto.getTestName());
+	    if (existingTest.isPresent()) {
+	        response.setSuccess(false);
+	        response.setMessage("Lab Test with name '" + dto.getTestName() + "' already exists in this hospital.");
+	        response.setStatus(HttpStatus.CONFLICT.value()); // 409 Conflict
+	        return response;
+	    }
+
 	    // Proceed with adding the lab test
 	    LabTest test = new LabTest();
 	    test.setTestName(dto.getTestName());
 	    test.setHospitalId(dto.getHospitalId());
 	    test.setDescription(dto.getDescription());
 	    test.setPurpose(dto.getPurpose());
+
 	    LabTest saved = labTestRepository.save(test);
 
 	    LabTestDTO resDto = new LabTestDTO();
@@ -57,7 +67,7 @@ public class LabTestServiceImpl implements LabTestService {
 	    resDto.setTestName(saved.getTestName());
 	    resDto.setDescription(saved.getDescription());
 	    resDto.setPurpose(saved.getPurpose());
-	    
+
 	    response.setSuccess(true);
 	    response.setData(resDto);
 	    response.setMessage("Lab Test added successfully");

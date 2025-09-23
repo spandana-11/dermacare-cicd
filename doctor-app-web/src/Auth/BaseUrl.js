@@ -15,7 +15,7 @@ export const testsbaseUrl = `${ipUrl}/clinic-admin/labtest/getAllLabTests`
 export const labtestsbase = `${ipUrl}/clinic-admin/labtests`
 export const diseasesbaseUrl = `${ipUrl}/clinic-admin/diseases`
 export const treatmentsbaseUrl = `${ipUrl}/clinic-admin/treatment/getAllTreatments`
-export const treatmentUrl=`${ipUrl}/clinic-admin/treatments`
+export const treatmentUrl = `${ipUrl}/clinic-admin/treatments`
 
 export const ratingsbaseUrl = `${ipUrl}/clinic-admin/averageRatings`
 

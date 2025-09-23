@@ -54,4 +54,11 @@ public class ReferredDoctorController {
         Response response = service.getAllReferralDoctor();
         return ResponseEntity.status(response.getStatus()).body(response);
     }
+    
+    @GetMapping("/getReferralDoctorsByClinicId/{clinicId}")
+    public ResponseEntity<Response> getReferralDoctorsByClinicId(@PathVariable String clinicId) {
+        Response response = service.getReferralDoctorsByClinicId(clinicId);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
 }

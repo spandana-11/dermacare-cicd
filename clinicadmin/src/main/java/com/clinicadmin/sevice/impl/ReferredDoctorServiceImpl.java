@@ -1,7 +1,5 @@
 package com.clinicadmin.sevice.impl;
 
-
-import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +22,7 @@ public class ReferredDoctorServiceImpl implements ReferredDoctorService {
     @Override
     public Response addReferralDoctor(ReferredDoctorDTO dto) {
         try {
-       
+            // ✅ Check if doctor with the same mobile number already exists
             if (repository.existsByMobileNumber(dto.getMobileNumber())) {
                 return Response.builder()
                         .success(false)
@@ -33,39 +31,39 @@ public class ReferredDoctorServiceImpl implements ReferredDoctorService {
                         .build();
             }
 
-     
+            // ✅ Map DTO to Entity
             ReferredDoctor doctor = ReferredDoctorMapper.dtoToEntity(dto);
 
-          
+            // ✅ Generate Referral ID
             String last4Mobile = doctor.getMobileNumber().length() >= 4
                     ? doctor.getMobileNumber().substring(doctor.getMobileNumber().length() - 4)
                     : doctor.getMobileNumber();
 
-         
             String cleanName = doctor.getFullName().replaceAll("\\s+", "").replace(".", "");
 
-         
             if (cleanName.toLowerCase().startsWith("dr")) {
                 cleanName = cleanName.substring(2);
             }
 
-            
             String referralId = "DR-" + cleanName + last4Mobile;
 
-            // Ensure uniqueness by appending counter if needed
+            // Ensure uniqueness of referralId
             String baseReferralId = referralId;
             int counter = 1;
             while (repository.existsByReferralId(referralId)) {
                 referralId = baseReferralId + counter;
                 counter++;
             }
-
             doctor.setReferralId(referralId);
-            doctor.setFirstReferralDate(new Date());
-            doctor.setTotalReferrals(0);
 
-            doctor.setStatus(dto.getStatus() != null ? dto.getStatus() : "Active");
+            // ✅ Always set default status to "Active" if null/empty
+            if (dto.getStatus() != null && !dto.getStatus().trim().isEmpty()) {
+                doctor.setStatus(dto.getStatus().trim());
+            } else {
+                doctor.setStatus("Active");
+            }
 
+            // ✅ Save the new doctor
             ReferredDoctor saved = repository.save(doctor);
 
             return Response.builder()
@@ -83,6 +81,7 @@ public class ReferredDoctorServiceImpl implements ReferredDoctorService {
                     .build();
         }
     }
+
 
     @Override
     public Response getDoctorByReferralId(String referralId) {
@@ -132,7 +131,7 @@ public class ReferredDoctorServiceImpl implements ReferredDoctorService {
             ReferredDoctor doctor = repository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Doctor not found with id: " + id));
 
-          
+            // Update fields only if present in DTO
             if (dto.getFullName() != null) doctor.setFullName(dto.getFullName());
             if (dto.getGender() != null) doctor.setGender(dto.getGender());
             if (dto.getDateOfBirth() != null) doctor.setDateOfBirth(dto.getDateOfBirth());
@@ -140,20 +139,26 @@ public class ReferredDoctorServiceImpl implements ReferredDoctorService {
             if (dto.getMedicalRegistrationNumber() != null)
                 doctor.setMedicalRegistrationNumber(dto.getMedicalRegistrationNumber());
             if (dto.getSpecialization() != null) doctor.setSpecialization(dto.getSpecialization());
-            if (dto.getYearsOfExperience() != 0) doctor.setYearsOfExperience(dto.getYearsOfExperience());
+            if (dto.getYearsOfExperience() > 0) doctor.setYearsOfExperience(dto.getYearsOfExperience());
             if (dto.getCurrentHospitalName() != null) doctor.setCurrentHospitalName(dto.getCurrentHospitalName());
             if (dto.getDepartment() != null) doctor.setDepartment(dto.getDepartment());
             if (dto.getMobileNumber() != null) doctor.setMobileNumber(dto.getMobileNumber());
             if (dto.getEmail() != null) doctor.setEmail(dto.getEmail());
             if (dto.getAddress() != null) doctor.setAddress(dto.getAddress());
-            if (dto.getPreferredCommunicationMethod() != null)
-                doctor.setPreferredCommunicationMethod(dto.getPreferredCommunicationMethod());
             if (dto.getBankAccountNumber() != null) doctor.setBankAccountNumber(dto.getBankAccountNumber());
 
-     
-            doctor.setStatus(dto.getStatus() != null ? dto.getStatus() : doctor.getStatus() != null ? doctor.getStatus() : "Active");
+            // ✅ Status handling with default "Active"
+            if (dto.getStatus() != null && !dto.getStatus().trim().isEmpty()) {
+                doctor.setStatus(dto.getStatus().trim());
+            } else {
+                doctor.setStatus(
+                    (doctor.getStatus() != null && !doctor.getStatus().trim().isEmpty())
+                    ? doctor.getStatus()
+                    : "Active"   // default if both DTO and DB value are missing
+                );
+            }
 
-          
+            // Save the updated doctor
             ReferredDoctor saved = repository.save(doctor);
 
             return Response.builder()
@@ -213,4 +218,18 @@ public class ReferredDoctorServiceImpl implements ReferredDoctorService {
                     .build();
         }
     }
+@Override
+public Response getReferralDoctorsByClinicId(String clinicId) {
+    Response response = new Response();
+    List<ReferredDoctorDTO> doctors = repository.findByClinicId(clinicId);
+
+    response.setSuccess(true);
+    response.setData(doctors);
+    response.setMessage(doctors.isEmpty() 
+        ? "No referred doctors found for clinicId: " + clinicId
+        : "Referred doctors fetched successfully");
+    response.setStatus(200);
+    return response;
+}
+
 }

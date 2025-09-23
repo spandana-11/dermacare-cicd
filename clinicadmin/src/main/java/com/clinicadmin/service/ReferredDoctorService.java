@@ -16,4 +16,6 @@ public interface ReferredDoctorService {
 	Response updateReferralDoctorById(String id, ReferredDoctorDTO dto);
 
 	Response getReferralDoctorrById(String id);
+
+	Response getReferralDoctorsByClinicId(String clinicId);
 }

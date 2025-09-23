@@ -45,13 +45,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
-
-  hospitalName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 4,
-  },
-
   hospitalDetail: {
     fontSize: 14,
     color: "#444",
@@ -60,7 +53,45 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-
+  patientInfo: {
+    fontSize: 10,
+    marginBottom: 2,
+    flexWrap: "wrap",       // ✅ allow wrapping
+    maxWidth: "100%",       // ✅ prevent overflow
+    wordBreak: "break-word" // ✅ break long words (like URLs)
+  },
+  hospitalInfo: {
+    flex: 1,
+    paddingLeft: 10,
+  },
+  hospitalName: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginBottom: 6,
+    flexWrap: "wrap",   // ✅ wrap long names
+    flexShrink: 1,      // ✅ shrink text if needed
+  },
+  infoRow: {
+    flexDirection: "row",
+    marginBottom: 3,
+    flexWrap: "wrap",   // ✅ allows multiple lines
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: "bold",
+  },
+  value: {
+    fontSize: 11,
+    flexShrink: 1,
+    flexWrap: "wrap",   // ✅ wrap onto next line
+  },
+  hospitalInfoText: {
+    fontSize: 10,
+    marginBottom: 2,
+    flexWrap: "wrap",
+    maxWidth: "100%",
+    wordBreak: "break-word",
+  },
   // Section
   section: { marginBottom: 22 },
   sectionTitle: {
@@ -112,7 +143,10 @@ const styles = StyleSheet.create({
     borderRight: "1px solid #ccc",
     fontSize: 9,
   },
-
+  wrapText: {
+    flexWrap: "wrap",
+    flexShrink: 1,
+  },
   // Signature
   signatureBlock: {
     marginTop: 32,
@@ -169,7 +203,11 @@ const PrescriptionPDF = ({
     f === 'day' ? 'Daily' : f === 'week' ? 'Weekly' : f === 'month' ? 'Monthly' : f || '—'
   const hospitalLogo =
     clicniData?.hospitalLogo ? `data:image/png;base64,${clicniData.hospitalLogo}` : logoSrc;
-
+  const cleanAddress = (clicniData?.address ?? "—")
+    .split(",")                // split by comma
+    .map((part) => part.trim()) // trim spaces
+    .filter(Boolean)            // remove empty parts
+    .join(", ");
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -179,16 +217,16 @@ const PrescriptionPDF = ({
           <View style={styles.leftBlock}>
             {hospitalLogo && <Image style={styles.logo} src={hospitalLogo} />}
             <View style={styles.patientInfoBlock}>
-              <Text style={styles.patientName}>
+              <Text style={[styles.patientName, styles.wrapText]}>
                 Patient Name: {capitalizeFirst(patientData?.name ?? "—")}
               </Text>
-              <Text style={styles.patientInfo}>
+              <Text style={[styles.patientInfo, styles.wrapText]}>
                 Age/Gender: {patientData?.age ?? "—"} yrs / {patientData?.gender ?? "—"}
               </Text>
-              <Text style={[styles.patientInfo, { flexWrap: "wrap" }]}>
+              <Text style={[styles.patientInfo, styles.wrapText]}>
                 Address: {patientData?.patientAddress ?? "—"}
               </Text>
-              <Text style={styles.patientInfo}>
+              <Text style={[styles.patientInfo, styles.wrapText]}>
                 Mobile number: {patientData?.mobileNumber ?? "—"}
               </Text>
             </View>
@@ -196,15 +234,46 @@ const PrescriptionPDF = ({
 
           {/* Right side - Hospital info */}
           <View style={styles.hospitalInfo}>
-            <Text style={styles.hospitalName}>
+            {/* Name */}
+            <Text style={[styles.hospitalName, { flexWrap: "wrap", flexShrink: 1 }]}>
               {clicniData?.name ?? "—"}
             </Text>
 
-            <Text>Address: {clicniData?.address ?? "—"}</Text>
-            <Text>Branch: {clicniData?.branch ?? "—"}</Text>
-            <Text>Contact: {clicniData?.contactNumber ?? "—"}</Text>
-            <Text>Website: {clicniData?.website ?? "—"}</Text>
+            {/* Address */}
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Address: </Text>
+              <Text style={[styles.value, { flex: 1, flexWrap: "wrap" }]}>
+                {cleanAddress}
+              </Text>
+            </View>
+
+            {/* Branch */}
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Branch: </Text>
+              <Text style={[styles.value, { flex: 1, flexWrap: "wrap" }]}>
+                {clicniData?.branch ?? "—"}
+              </Text>
+            </View>
+
+            {/* Contact */}
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Contact: </Text>
+              <Text style={[styles.value, { flex: 1, flexWrap: "wrap" }]}>
+                {clicniData?.contactNumber ?? "—"}
+              </Text>
+            </View>
+
+            {/* Website */}
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Website: </Text>
+              <Text style={[styles.value, { flex: 1, flexWrap: "wrap" }]}>
+                {clicniData?.website ?? "—"}
+              </Text>
+            </View>
           </View>
+
+
+
 
         </View>
 
