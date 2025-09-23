@@ -17,7 +17,7 @@ export const diseasesbaseUrl = `${ipUrl}/clinic-admin/diseases`
 export const treatmentsbaseUrl = `${ipUrl}/clinic-admin/treatment/getAllTreatments`
 export const treatmentUrl = `${ipUrl}/clinic-admin/treatments`
 
-export const ratingsbaseUrl = `${ipUrl}/clinic-admin/averageRatings`
+export const ratingsbaseUrl = `${ipUrl}/clinic-admin/getAverageRatingsByDoctorId`
 
 export const updateLoginEndpoint = 'update-password'
 export const addDiseaseUrl = `${ipUrl}/clinic-admin`

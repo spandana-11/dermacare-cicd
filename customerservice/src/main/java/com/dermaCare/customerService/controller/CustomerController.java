@@ -355,10 +355,29 @@ public ResponseEntity<Response> getRatingInfo(@PathVariable String branchlId, @P
 		}
 }
 
+@GetMapping("/getRatingInfoByDoctorId/{doctorId}")
+public ResponseEntity<Response> getRatingInfoByDoctorId(@PathVariable String doctorId) {
+	 Response response = customerService.getRatingForServiceBydoctorId(doctorId);
+	 if(response != null && response.getStatus() != 0) {
+		 return ResponseEntity.status(response.getStatus()).body(response);
+	 }else {
+			return null;
+		}
+}
 
 @GetMapping("/getAverageRating/{branchId}/{doctorId}")
 public ResponseEntity<Response> getRatingAverageRating(@PathVariable String branchId, @PathVariable String doctorId) {
 	 Response response = customerService.getAverageRating(branchId,doctorId);
+	 if(response != null && response.getStatus() != 0) {
+		 return ResponseEntity.status(response.getStatus()).body(response);
+	 }else {
+			return null;
+		}
+}
+
+@GetMapping("/getAverageRatingByDoctorId/{doctorId}")
+public ResponseEntity<Response> getAverageRatingByDoctorId( @PathVariable String doctorId) {
+	 Response response = customerService.getAverageRatingByDoctorId(doctorId);
 	 if(response != null && response.getStatus() != 0) {
 		 return ResponseEntity.status(response.getStatus()).body(response);
 	 }else {

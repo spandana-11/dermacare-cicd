@@ -43,6 +43,17 @@ public class TreatmentServiceImpl implements TreatmentService {
             return response;
         }
 
+        // 🔑 Check for duplicate treatment in the same hospital
+        Optional<Treatment> existing = treatmentRepository
+                .findByHospitalIdAndTreatmentName(dto.getHospitalId(), dto.getTreatmentName());
+
+        if (existing.isPresent()) {
+            response.setSuccess(false);
+            response.setMessage("Treatment '" + dto.getTreatmentName() + "' already exists in this hospital.");
+            response.setStatus(HttpStatus.CONFLICT.value()); // 409 Conflict
+            return response;
+        }
+
         // Proceed to save treatment
         Treatment treatment = new Treatment();
         treatment.setTreatmentName(dto.getTreatmentName());

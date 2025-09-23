@@ -63,6 +63,9 @@ public interface ClinicAdminFeign {
 	 @GetMapping("/clinic-admin/getBestDoctorByKeyWords/{keyPoints}")
 	    public ResponseEntity<Response> getRecommendedClinicsAndOnDoctors(@PathVariable String keyPoints);
 	 
+	 @GetMapping("/clinic-admin/getAverageRatingsByDoctorId/{doctorId}")
+		public ResponseEntity<Response> getAverageRatingsByDoctorId( @PathVariable String doctorId) ;
+	 
 //	//FALLBACK METHODS
 //	
 //		default ResponseEntity<?> clinicAdminServiceFallBack(Exception e){		 

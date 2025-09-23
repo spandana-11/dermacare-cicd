@@ -26,13 +26,13 @@ const makeWhatsAppLink = (number, text = "") => {
 export default function DoctorHelpCenter() {
   const { doctorDetails, clinicDetails, isPatientLoading } = useDoctorContext()
   // 🔄 Reload page every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      window.location.reload()
-    }, 30000)
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     window.location.reload()
+  //   }, 30000)
 
-    return () => clearInterval(interval)
-  }, [])
+  //   return () => clearInterval(interval)
+  // }, [])
 
   if (isPatientLoading) return <div>Loading...</div>
   if (!doctorDetails || !clinicDetails) return <div>No doctor or clinic data found.</div>
@@ -40,7 +40,7 @@ export default function DoctorHelpCenter() {
   const helpCenterData = {
     clinicName: clinicDetails.name || "Clinic",
     logo: clinicDetails.logo || "https://via.placeholder.com/80",
-    doctorName: doctorDetails.doctorName || "Dr. John Doe",
+    doctorName: doctorDetails.doctorName || "",
     doctorPhoto: doctorDetails.photo || "https://via.placeholder.com/80",
     support: {
       whatsapp: clinicDetails.contactNumber || "",

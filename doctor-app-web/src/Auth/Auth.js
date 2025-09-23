@@ -370,9 +370,9 @@ export const getAllTreatmentsByHospital = async () => {
 };
 
 //Ratings
-export const averageRatings = async (hospitalId, doctorId) => {
+export const averageRatings = async (doctorId) => {
   try {
-    const response = await api.get(`${ratingsbaseUrl}/${hospitalId}/${doctorId}`);
+    const response = await api.get(`${ratingsbaseUrl}/${doctorId}`);
 
     if (response.data?.success && response.data?.data) {
       const {

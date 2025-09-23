@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import '../Profile/DoctorProfile.css'
 
 import { formatDistanceToNow } from 'date-fns'
-import { format, addDays, startOfToday } from 'date-fns'
+import { format, addDays, startOfToday, parse } from 'date-fns'
 import {
   CCard,
   CCardBody,
@@ -93,31 +93,32 @@ const DoctorProfile = () => {
 
   useEffect(() => {
     const fetchRatings = async () => {
-      const doctorId = localStorage.getItem('doctorId')
-      const hospitalId = localStorage.getItem('hospitalId')
+      const doctorId = localStorage.getItem('doctorId');
 
-      if (!doctorId || !hospitalId) {
-        console.warn('⚠️ Missing doctorId or hospitalId in localStorage')
-        return
+      if (!doctorId) {
+        console.warn('⚠️ Missing doctorId in localStorage');
+        return;
       }
 
       try {
-        const response = await averageRatings(hospitalId, doctorId)
+        const response = await averageRatings(doctorId);
 
-        console.log('✅ Ratings API raw response:', response) // 👈 log what comes back
+        console.log('✅ Ratings API raw response:', response);
 
         if (response) {
-          setRatingsData(response)
+          setRatingsData(response);
+
         } else {
-          console.warn('⚠️ No ratings data returned')
+          console.warn('⚠️ No ratings data returned');
         }
       } catch (error) {
-        console.error('❌ Error fetching ratings in DoctorProfile:', error)
+        console.error('❌ Error fetching ratings in DoctorProfile:', error);
       }
     }
 
-    fetchRatings()
-  }, [])
+    fetchRatings();
+  }, []); // Ratings
+
 
 
   const handleDateClick = (dayObj, idx) => {
@@ -329,6 +330,8 @@ const DoctorProfile = () => {
                     <p className="fw-semibold">{doctorDetails?.availableTimes || "N/A"}</p>
                   </div>
                 </CCol>
+
+               
               </CRow>
 
 
@@ -542,7 +545,7 @@ const DoctorProfile = () => {
                       <div>
                         <p className="mb-1 text-muted fw-medium">
                           Doctor Overall Rating: {ratingsData?.doctorRating ?? 'N/A'}
-                          <span className="text-warning"> / 5 ⭐</span>
+                          <span > / 5 </span>
                         </p>
                       </div>
                     </div>
@@ -552,7 +555,8 @@ const DoctorProfile = () => {
                       <div>
                         <p className="mb-1 text-muted fw-medium">
                           Hospital Overall Rating: {ratingsData?.hospitalRating ?? 'N/A'}
-                          <span className="text-warning"> / 5 ⭐</span>
+
+                          <span> / 5 </span>
                         </p>
                       </div>
                     </div>
@@ -565,16 +569,6 @@ const DoctorProfile = () => {
 
               {ratingsData?.comments?.length ? (
                 ratingsData.comments.map((feedback, idx) => {
-                  let fullDateTime;
-                  if (feedback.dateAndTimeAtRating) {
-                    const parsedDate = new Date(feedback.dateAndTimeAtRating);
-                    if (!isNaN(parsedDate)) fullDateTime = parsedDate;
-                    else {
-                      const today = new Date().toISOString().split('T')[0];
-                      fullDateTime = new Date(`${today} ${feedback.dateAndTimeAtRating}`);
-                    }
-                  }
-
                   return (
                     <div
                       key={idx}
@@ -593,19 +587,20 @@ const DoctorProfile = () => {
                         <div className="flex-grow-1">
                           <div className="d-flex justify-content-between align-items-start mb-2">
                             <div>
-                              <h6 className="mb-0 fw-semibold">
-                                {feedback.patientName || "N/A"}
-                              </h6>
+                              <h6 className="mb-0 fw-semibold">{feedback.patientName || "N/A"}</h6>
                               <small className="text-muted">
-                                {fullDateTime
-                                  ? formatDistanceToNow(fullDateTime, { addSuffix: true })
+                                {feedback.dateAndTimeAtRating
+                                  ? formatDistanceToNow(
+                                    parse(feedback.dateAndTimeAtRating, 'dd-MM-yyyy hh:mm:ss a', new Date()),
+                                    { addSuffix: true }
+                                  )
                                   : 'Unknown time'}
                               </small>
                             </div>
-                            <div className="fw-bold text-warning fs-5">⭐ {feedback.doctorRating}</div>
+                            <div className="fs-5">{feedback.doctorRating ?? 'N/A'}</div>
                           </div>
                           <p className="mt-1 mb-0 text-dark">
-                            {feedback.feedback?.trim() ? feedback.feedback : 'No feedback provided'}
+                            {feedback.feedback?.trim() || 'No feedback provided'}
                           </p>
                         </div>
                       </div>

@@ -180,96 +180,49 @@ public class SubServicesServiceImpl implements SubServicesService {
 		subServiceRepository.deleteByHospitalIdAndSubServiceId(hospitalId, new ObjectId(subServiceId));
 	}
 
-	public SubServicesDto updateSubService(String hospitalId, String subServiceId, SubServicesDto domainService) {
-		SubServices optionalSubService = subServiceRepository.findByHospitalIdAndSubServiceId(hospitalId,
-				new ObjectId(subServiceId));
+public SubServicesDto updateSubService(String hospitalId, String subServiceId, SubServicesDto domainService) {
+    SubServices optionalSubService = subServiceRepository.findByHospitalIdAndSubServiceId(
+            hospitalId, new ObjectId(subServiceId));
 
-		if (optionalSubService == null) {
-			throw new RuntimeException("SubService not found with ID: " + subServiceId);
-		}
-		if (domainService.getCategoryId() != null) {
-			optionalSubService.setCategoryId(new ObjectId(domainService.getCategoryId()));
-		}
-		if (domainService.getCategoryName() != null) {
-			optionalSubService.setCategoryName(domainService.getCategoryName());
-		}
-		if (domainService.getProcedureQA() != null) {
-			optionalSubService.setProcedureQA(domainService.getProcedureQA());
-		}
-		if (domainService.getPreProcedureQA() != null) {
-			optionalSubService.setPreProcedureQA(domainService.getPreProcedureQA());
-		}
-		if (domainService.getPostProcedureQA() != null) {
-			optionalSubService.setPostProcedureQA(domainService.getPostProcedureQA());
-		}
-		if (domainService.getGst() !=0) {
-			optionalSubService.setGst(domainService.getGst());
-		}
-		if (domainService.getConsultationFee() != 0.0) {
-			optionalSubService.setConsultationFee(domainService.getConsultationFee());
-		}
+    if (optionalSubService == null) {
+        throw new RuntimeException("SubService not found with ID: " + subServiceId);
+    }
 
-		if (domainService.getDiscountAmount() != 0.0) {
-			optionalSubService.setDiscountAmount(domainService.getDiscountAmount());
-		}
-		if (domainService.getDiscountedCost() != 0.0) {
-			optionalSubService.setDiscountedCost(domainService.getDiscountedCost());
-		}
-		if (domainService.getDiscountPercentage() != 0.0) {
-			optionalSubService.setDiscountPercentage(domainService.getDiscountPercentage());
-		}
-		if (domainService.getFinalCost() != 0.0) {
-			optionalSubService.setFinalCost(domainService.getFinalCost());
-		}
-		if (domainService.getHospitalId() != null) {
-			optionalSubService.setHospitalId(domainService.getHospitalId());
-		}
-		if (domainService.getMinTime() != null) {
-			optionalSubService.setMinTime(domainService.getMinTime());
-		}
-		if (domainService.getPlatformFee() != 0.0) {
-			optionalSubService.setPlatformFee(domainService.getPlatformFee());
-		}
-		if (domainService.getPlatformFeePercentage() != 0.0) {
-			optionalSubService.setPlatformFeePercentage(domainService.getPlatformFeePercentage());
-		}
-		if (domainService.getPrice() != 0.0) {
-			optionalSubService.setPrice(domainService.getPrice());
-		}
-		if (domainService.getServiceId() != null) {
-			optionalSubService.setServiceId(new ObjectId(domainService.getServiceId()));
-		}
-		if (domainService.getServiceName() != null) {
-			optionalSubService.setServiceName(domainService.getServiceName());
-		}
-		if (domainService.getSubServiceImage() != null) {
-			optionalSubService.setSubServiceImage(Base64.getDecoder().decode(domainService.getSubServiceImage()));
-		}
-		if (domainService.getTaxAmount() != 0.0) {
-			optionalSubService.setTaxAmount(domainService.getTaxAmount());
-		}
-		if (domainService.getTaxPercentage() != 0.0) {
-			optionalSubService.setTaxPercentage(domainService.getTaxPercentage());
-		}
-		if (domainService.getGstAmount() != 0.0) {
-			optionalSubService.setGstAmount(domainService.getGstAmount());
-		}
-		if (domainService.getViewDescription() != null) {
-			optionalSubService.setViewDescription(domainService.getViewDescription());
-		}
-		if (domainService.getSubServiceName() != null) {
-			optionalSubService.setSubServiceName(domainService.getSubServiceName());
-		}
-		if (domainService.getSubServiceId() != null) {
-			optionalSubService.setSubServiceId(new ObjectId(domainService.getSubServiceId()));
-		}
-		if(domainService.getConsentFormType() != null) {
-			optionalSubService.setConsentFormType(domainService.getConsentFormType());
-			
-		}
-		SubServices subServices = subServiceRepository.save(optionalSubService);
-		return HelperForConversion.toDto(subServices);
-	}
+    // Update only editable fields
+    if (domainService.getCategoryId() != null) {
+        optionalSubService.setCategoryId(new ObjectId(domainService.getCategoryId()));
+    }
+    if (domainService.getCategoryName() != null) {
+        optionalSubService.setCategoryName(domainService.getCategoryName());
+    }
+    if (domainService.getSubServiceName() != null) {
+        optionalSubService.setSubServiceName(domainService.getSubServiceName());
+    }
+    if (domainService.getPrice() != 0.0) {
+        optionalSubService.setPrice(domainService.getPrice());
+    }
+    if (domainService.getDiscountPercentage() != 0) {
+        optionalSubService.setDiscountPercentage(domainService.getDiscountPercentage());
+    }
+    if (domainService.getTaxPercentage() != 0) {
+        optionalSubService.setTaxPercentage(domainService.getTaxPercentage());
+    }
+    if (domainService.getPlatformFeePercentage() != 0) {
+        optionalSubService.setPlatformFeePercentage(domainService.getPlatformFeePercentage());
+    }
+    if (domainService.getGst() != 0) {
+        optionalSubService.setGst(domainService.getGst());
+    }
+    if (domainService.getConsultationFee() != 0.0) {
+        optionalSubService.setConsultationFee(domainService.getConsultationFee());
+    }
+
+    // 🔑 Recalculate all amounts here
+    calculateAmounts(optionalSubService);
+
+    SubServices subServices = subServiceRepository.save(optionalSubService);
+    return HelperForConversion.toDto(subServices);
+}
 
 	public void deleteSubServicesByCategoryId(ObjectId objectId) {
 		List<SubServices> listOfSubServices = subServiceRepository.findByCategoryId(objectId);

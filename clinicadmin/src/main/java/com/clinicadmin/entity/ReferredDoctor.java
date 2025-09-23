@@ -1,15 +1,16 @@
 package com.clinicadmin.entity;
 
+import java.util.Date;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.clinicadmin.dto.Address;
 import com.clinicadmin.dto.BankAccountDetails;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.Date;
 
 @Data
 @AllArgsConstructor
@@ -35,7 +36,7 @@ public class ReferredDoctor {
 
     private String mobileNumber;
     private String email;
-    private String address;
+    private Address address;
 
      private String referralId; 
      

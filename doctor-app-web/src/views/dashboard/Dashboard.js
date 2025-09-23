@@ -16,17 +16,17 @@ import {
 
 import Button from '../../components/CustomButton/CustomButton'
 import TooltipButton from '../../components/CustomButton/TooltipButton'
-
 import { COLORS, SIZES } from '../../Themes'
 import { useDoctorContext } from '../../Context/DoctorContext'
-import { getTodayAppointments, getBookedSlots } from '../../Auth/Auth'
+import { getTodayAppointments } from '../../Auth/Auth'
 import CalendarModal from '../../utils/CalenderModal'
 import { useNavigate } from 'react-router-dom'
 
 // Helper function
-const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1)
+const capitalizeFirst = (str) => str?.charAt(0).toUpperCase() + str?.slice(1)
 
 const Dashboard = () => {
+  const navigate = useNavigate()
   const {
     setPatientData,
     setTodayAppointments,
@@ -40,17 +40,37 @@ const Dashboard = () => {
   const [branches, setBranches] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
-  const [bookedSlots, setBookedSlots] = useState([])
 
   const allBranches = doctorDetails?.branches || []
-  const navigate = useNavigate()
 
-  // Filtered patients based on type and branch
+  // Fetch appointments
+  const fetchAppointments = async () => {
+    try {
+      const response = await getTodayAppointments()
+      if (response.statusCode === 200) {
+        setTodayAppointments(response.data)
+        setBranches(allBranches)
+      }
+    } catch (error) {
+      console.error('❌ Error fetching appointments:', error)
+    }
+  }
+
+  useEffect(() => {
+    setPatientData(null)
+    fetchAppointments()
+
+    const interval = setInterval(() => {
+      fetchAppointments()
+    }, 10000)
+
+    return () => clearInterval(interval)
+  }, [doctorDetails])
+
+  // Filter patients based on type and branch
   const filteredPatients = todayAppointments.filter((item) => {
-    let typeMatch = selectedType ? item.consultationType === selectedType : true
-    let branchMatch = selectedBranch
-      ? item.branchId === selectedBranch.branchId
-      : true
+    const typeMatch = selectedType ? item.consultationType === selectedType : true
+    const branchMatch = selectedBranch ? item.branchId === selectedBranch.branchId : true
     return typeMatch && branchMatch
   })
 
@@ -60,63 +80,17 @@ const Dashboard = () => {
     currentPage * itemsPerPage
   )
 
-  // Count consultations for filter buttons
+  // Count consultations
   const consultationCounts = todayAppointments.reduce((acc, item) => {
     acc[item.consultationType] = (acc[item.consultationType] || 0) + 1
     return acc
   }, {})
 
-  // ✅ Fetch today's appointments (auto-refresh every 15s)
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      const response = await getTodayAppointments()
-      if (response.statusCode === 200) {
-        setTodayAppointments(response.data)
-        setBranches(allBranches) // keep doctor’s branches
-      }
-    }
-
-    fetchAppointments()
-    const interval = setInterval(fetchAppointments, 15000)
-    return () => clearInterval(interval)
-  }, [setTodayAppointments, allBranches])
-
-  // ✅ Fetch booked slots (for calendar modal)
-  const fetchBookedSlots = async () => {
-    const doctorId = localStorage.getItem('doctorId')
-    if (!doctorId) return console.error('No doctorId found')
-
-    const response = await getBookedSlots(doctorId)
-    if (Array.isArray(response)) {
-      setBookedSlots(response)
-    } else {
-      console.warn('Unexpected API response:', response)
-      setBookedSlots([])
-    }
-  }
-
-  useEffect(() => {
-    fetchBookedSlots()
-  }, [])
-
-  // ✅ Handle click inside calendar (navigate to patient page)
-  const handleClick = (appointment) => {
+  // Handle calendar click (simple navigation)
+  const handleCalendarClick = (appointment) => {
     if (!appointment) return
     setPatientData(appointment)
-
-    if (appointment.status === 'Confirmed') {
-      navigate(`/tab-content/${appointment.patientId}`, {
-        state: { patient: appointment, fromTab: 'Confirmed' },
-      })
-    } else if (appointment.status === 'In-Progress') {
-      navigate(`/tab-inProgress/${appointment.patientId}`, {
-        state: { patient: appointment, fromTab: 'In-Progress' },
-      })
-    } else if (appointment.status === 'Completed') {
-      navigate(`/tab-completed-content/${appointment.patientId}`, {
-        state: { patient: appointment, fromTab: 'Completed' },
-      })
-    }
+    navigate(`/tab-content/${appointment.patientId}`, { state: { patient: appointment } })
   }
 
   return (
@@ -137,7 +111,7 @@ const Dashboard = () => {
                 color={COLORS.black}
                 onClick={() => {
                   setSelectedType(null)
-                  setSelectedBranch(null)
+                  setSelectedBranch(null) // 🔥 reset branch too
                 }}
                 size="small"
               >
@@ -156,7 +130,6 @@ const Dashboard = () => {
                 </Button>
               ))}
             </div>
-
             <div className="d-flex gap-2">
               {/* Branch Dropdown */}
               <CDropdown>
@@ -173,16 +146,18 @@ const Dashboard = () => {
                 </CDropdownToggle>
 
                 <CDropdownMenu>
+                  {/* All Branches option */}
                   <CDropdownItem onClick={() => setSelectedBranch(null)}>
                     All Branches
                   </CDropdownItem>
+
                   {branches.length > 0 ? (
                     branches.map((branch) => (
                       <CDropdownItem
                         key={branch.branchId}
                         onClick={() => setSelectedBranch(branch)}
                       >
-                        {branch.branchName}
+                        {branch.branchName} ({branch.branchId})
                       </CDropdownItem>
                     ))
                   ) : (
@@ -201,6 +176,7 @@ const Dashboard = () => {
                 My Calendar
               </Button>
             </div>
+
           </div>
 
           {/* Appointments Table */}
@@ -210,17 +186,24 @@ const Dashboard = () => {
             <CTable className="border">
               <CTableHead>
                 <CTableRow>
-                  {['S.No', 'Patient ID', 'Name', 'Mobile', 'Date', 'Time', 'Consultation', 'Action'].map(
-                    (header, i) => (
-                      <CTableHeaderCell
-                        key={i}
-                        className={header === 'Action' ? 'text-center' : ''}
-                        style={{ backgroundColor: COLORS.bgcolor, color: COLORS.black }}
-                      >
-                        {header}
-                      </CTableHeaderCell>
-                    )
-                  )}
+                  {[
+                    'S.No',
+                    'Patient ID',
+                    'Name',
+                    'Mobile',
+                    'Date',
+                    'Time',
+                    'Consultation',
+                    'Action',
+                  ].map((header, i) => (
+                    <CTableHeaderCell
+                      key={i}
+                      className={header === 'Action' ? 'text-center' : ''}
+                      style={{ backgroundColor: COLORS.bgcolor, color: COLORS.black }}
+                    >
+                      {header}
+                    </CTableHeaderCell>
+                  ))}
                 </CTableRow>
               </CTableHead>
               <CTableBody>
@@ -290,7 +273,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Calendar Modal */}
       {showCalendar && (
         <CalendarModal
           visible={showCalendar}
@@ -300,11 +282,12 @@ const Dashboard = () => {
               ? todayAppointments.filter((a) => a.branchId === selectedBranch.branchId)
               : todayAppointments
           }
-          defaultBookedSlots={bookedSlots}
-          handleClick={handleClick}
-          fetchAppointments={getTodayAppointments}
+          defaultBookedSlots={[]}
+          handleClick={handleCalendarClick} // simple navigation
+          fetchAppointments={fetchAppointments}
         />
       )}
+
     </div>
   )
 }

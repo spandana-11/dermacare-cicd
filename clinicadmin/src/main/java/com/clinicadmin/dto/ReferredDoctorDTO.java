@@ -26,7 +26,7 @@ public class ReferredDoctorDTO {
 
     private String mobileNumber;
     private String email;
-    private String address;
+    private Address address;
 
 //    private Date firstReferralDate;
 //    private int totalReferrals;

@@ -115,4 +115,8 @@ public interface CustomerService {
 
 	public ResponseEntity<Response> getRecommendedClinicsAndOnDoctors(String keyPoints);
 
+	Response getRatingForServiceBydoctorId(String doctorId);
+
+	Response getAverageRatingByDoctorId(String doctorId);
+
 }

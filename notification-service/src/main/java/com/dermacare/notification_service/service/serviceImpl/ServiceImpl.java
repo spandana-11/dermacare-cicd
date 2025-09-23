@@ -488,7 +488,7 @@ public class ServiceImpl implements ServiceInterface{
 		            // Fetch booking details
 		            // Iterate over prescribed medicines
 		            for (Medicines m : doctorSaveDetailsDTO.getPrescription().getMedicines()) {
-		                long duration = convertDurationToDays(m.getDuration()); // already long?
+		                long duration = convertDurationToDays(m.getDuration(),m.getDurationUnit()); // already long?
 		                LocalDateTime plusDays = visitedDate.plusDays(duration);
 	                   // System.out.println(plusDays);
 		                LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Kolkata"));
@@ -556,7 +556,7 @@ public class ServiceImpl implements ServiceInterface{
 	            // Fetch booking details
 	            // Iterate over prescribed medicines
 	            for (Medicines m : doctorSaveDetailsDTO.getPrescription().getMedicines()) {
-	                long duration = convertDurationToDays(m.getDuration()); // already long?
+	                long duration = convertDurationToDays(m.getDuration(),m.getDurationUnit()); // already long?
 	                LocalDateTime plusDays = visitedDate.plusDays(duration);
                    // System.out.println(plusDays);
 	                LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Kolkata"));
@@ -632,7 +632,7 @@ public class ServiceImpl implements ServiceInterface{
 		            // Fetch booking details
 		            // Iterate over prescribed medicines
 		            for (Medicines m : doctorSaveDetailsDTO.getPrescription().getMedicines()) {
-		                long duration = convertDurationToDays(m.getDuration()); // already long?
+		                long duration = convertDurationToDays(m.getDuration(),m.getDurationUnit()); // already long?
 		               // System.out.println(duration);
 		                LocalDateTime plusDays = visitedDate.plusDays(duration);
 	                   // System.out.println(plusDays);
@@ -683,7 +683,7 @@ public class ServiceImpl implements ServiceInterface{
 		             }}}}}}catch (Exception e) {e.printStackTrace();}}
 
 
-	@Scheduled(cron = "0 01 20 * * ?")
+	@Scheduled(cron = "0 30 20 * * ?")
 	public void remindNightMedicines() {
 		      try {
 		        // Fetch doctor details
@@ -703,7 +703,7 @@ public class ServiceImpl implements ServiceInterface{
 		            // Fetch booking details
 		            // Iterate over prescribed medicines
 		            for (Medicines m : doctorSaveDetailsDTO.getPrescription().getMedicines()) {
-		                long duration = convertDurationToDays(m.getDuration()); // already long?
+		                long duration = convertDurationToDays(m.getDuration(),m.getDurationUnit()); // already long?
 		                LocalDateTime plusDays = visitedDate.plusDays(duration);
 	                   // System.out.println(plusDays);
 		                LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Kolkata"));
@@ -752,7 +752,7 @@ public class ServiceImpl implements ServiceInterface{
 
 	
 	
-	 private int convertDurationToDays(String duration) {
+	 private int convertDurationToDays(String duration,String durationUnit) {
 	        if (duration == null || duration.isEmpty()) {
 	            throw new IllegalArgumentException("Duration cannot be null or empty");
 	        }
@@ -761,14 +761,14 @@ public class ServiceImpl implements ServiceInterface{
 
 	        // Split into number and unit
 	        String[] parts = duration.split(" ");
-	        if (parts.length < 2) {
+	        if (parts.length < 1) {
 	            throw new IllegalArgumentException("Invalid duration format: " + duration);
 	        }
 
 	        int number = Integer.parseInt(parts[0]); 
-	        String unit = parts[1];
+	       //// String unit = parts[1];
 
-	        switch (unit) {
+	        switch (durationUnit) {
 	            case "day":
 	            case "days":
 	                return number;
@@ -779,7 +779,7 @@ public class ServiceImpl implements ServiceInterface{
 	            case "months":
 	                return number * 30; // Approximation
 	            default:
-	                throw new IllegalArgumentException("Unsupported duration unit: " + unit);
+	                throw new IllegalArgumentException("Unsupported duration unit: " + durationUnit);
 	        }
 	    }
 		
