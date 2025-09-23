@@ -167,12 +167,23 @@ const AppSidebar = () => {
                   style={{ borderWidth: 2, padding: 5, color: COLORS.gray }}
                 />
                 <h4
-  className="mb-2 mt-2"
-  style={{ color: COLORS.black, fontWeight: 'bold', fontSize: SIZES.large }}
->
-  {capitalizeFirst(display.name)}
-</h4>
-<div style={{ height: "12px" }}></div>
+                  className="mb-2 mt-2"
+                  style={{
+                    color: COLORS.black,
+                    fontWeight: 'bold',
+                    fontSize: SIZES.large,
+                    textAlign: 'center',        // horizontally center
+                    display: 'block',
+                    lineHeight: '1.2',          // adjust spacing between lines
+                    wordWrap: 'break-word',     // allow breaking long words
+                    overflowWrap: 'break-word',
+                    maxWidth: '100%',           // optional, restrict width
+                    whiteSpace: 'normal',       // allow wrapping
+                  }}
+                >
+                  {capitalizeFirst(display.name)}
+                </h4>
+                <div style={{ height: "12px" }}></div>
 
                 <div style={{ textAlign: "left", width: "100%", marginLeft: "15px" }}>
                   <h6 style={{ color: COLORS.black, fontSize: SIZES.small, marginBottom: "6px" }}>

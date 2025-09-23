@@ -330,12 +330,7 @@ const DoctorProfile = () => {
                     <p className="fw-semibold">{doctorDetails?.availableTimes || "N/A"}</p>
                   </div>
                 </CCol>
-
-               
               </CRow>
-
-
-
               {/* Signature in new row */}
               <CRow className="mt-3">
                 <CCol md={12}>

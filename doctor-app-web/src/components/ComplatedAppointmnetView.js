@@ -109,10 +109,10 @@ const savePrescriptionTemplate = async () => {
   try {
     const diagnosis = formData.symptoms?.diagnosis?.trim() || ''
     
-    if (!diagnosis) {
-      alert('Diagnosis is missing. Cannot save template.')
-      return
-    }
+    // if (!diagnosis) {
+    //   alert('Diagnosis is missing. Cannot save template.')
+    //   return
+    // }
 
     const clinicId = localStorage.getItem('hospitalId')
     const template = {

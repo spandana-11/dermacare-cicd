@@ -39,7 +39,7 @@ import { capitalizeFirst } from '../utils/CaptalZeWord'
  *   }
  */
 
-const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formData = {}, fromPage = 'dashboard' }) => {
+const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formData = {}, fromPage }) => {
   const { doctorDetails, setDoctorDetails, setClinicDetails, clinicDetails, updateTemplate } =
     useDoctorContext()
 
@@ -180,12 +180,14 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
 
   // Package all data + pdf (base64) and send it
   // Upload prescription
-  const uploadPrescription = async ({ downloadAfter = false } = {}) => {
+  const uploadPrescription = async ({ downloadAfter = false } = {}) => { //TODO:change uploadPrescription to onSaveTemplate
+
     try {
       // ✅ Check diagnosis first
       const diagnosis = formData?.symptoms?.diagnosis?.trim() || ''
       if (!diagnosis) {
         //  alert('Diagnosis is missing. Cannot save or upload the prescription.')
+           warning('"Diagnosis" is missing. Cannot save or upload the prescription.', { title: 'Warning' })
         return false
       }
 
@@ -258,31 +260,64 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
     console.log("Confirm Save As Template Action:", action)
     setShowTemplateModal(false)
     try {
-      await onSaveTemplate?.()
+      // await onSaveTemplate?.()
       console.log("Template Saved Successfully")
       const ok = await uploadPrescription({ downloadAfter: action === ACTIONS.SAVE_PRINT })
       if (ok) {
         console.log("Navigation to Dashboard")
-        navigate('/dashboard', { replace: true })
+        navigate('/appointments', { replace: true })
       }
     } finally {
       setPendingAction(null)
     }
   }
 
-  const skipTemplate = () => {
-    console.log("Skipped saving template. Navigating back to", fromPage);
-    setShowTemplateModal(false);
-    setPendingAction(null);
+const skipTemplate = async () => {
+   try {
+ console.log("Preparing to upload prescription...")
+      const blob = await renderPrescriptionPdfBlob()
+      console.log("PDF Blob Generated:", blob)
 
-    if (fromPage === 'appointments') {
-      navigate('/appointments', { replace: true });
-    } else {
-      navigate('/dashboard', { replace: true });
+      const base64 = await blobToBase64(blob)
+      console.log("Base64 PDF length:", base64.length)
+
+      const safeName = (patientData?.name || 'Prescription').replace(/[^\w\-]+/g, '_')
+      const filename = `${safeName}.pdf`
+
+      const payload = {
+        bookingId: patientData?.bookingId,
+        clinicName: clinicDetails?.name,
+        customerId: patientData?.customerId,
+        clinicId: clinicDetails?.hospitalId,
+        patientId: patientData?.patientId,
+        doctorId: doctorDetails?.doctorId,
+        symptoms: formData?.symptoms,
+        tests: formData?.tests,
+        treatments: formData?.treatments,
+        followUp: formData?.followUp,
+        prescription: formData?.prescription,
+        prescriptionPdf: [base64],
+        visitType: patientData?.visitType || "OFFLINE",
+      }
+      console.log("Final Payload to Upload:", payload)
+
+      const resp = await createDoctorSaveDetails(payload)
+      console.log("API Response:", resp)
+
+      if (resp) {
+        success('Prescription saved successfully!', { title: 'Success' })
+          navigate('/appointments', { replace: true })
+      } else {
+        warning('Saved, but got an unexpected response.')
+      }
+
+      return true
+    } catch (e) {
+      console.error("Upload Prescription Error:", e)
+      error('Failed to generate or send the PDF.', { title: 'Error' })
+      return false
     }
-  };
-
-
+}
 
   // ---------------- Render ----------------
   return (
@@ -595,7 +630,9 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
             customColor={COLORS.bgcolor}
             onClick={() => {
               setClickedSaveTemplate(true)
-              onSaveTemplate?.()
+              uploadPrescription({ downloadAfter: false })
+
+              // onSaveTemplate?.()
               // info('Template saved. You can now Save or Save & Download.', { title: 'Template' })
             }}
           >
