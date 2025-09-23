@@ -312,22 +312,24 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
     const medicines = Array.isArray(t?.prescription?.medicines)
       ? t.prescription.medicines.map((m) => {
         const dur = m?.duration ? `${m.duration}`.trim() : "NA";
-        const unit = m?.durationUnit ? m.durationUnit.trim() : "";
+        let unit = m?.durationUnit ? m.durationUnit.trim() : "";
 
-        // Pluralize if duration > 1
-        const durationDisplay =
-          dur !== "NA" && unit
-            ? `${dur} ${Number(dur) > 1 ? `${unit}s` : unit}`
-            : dur;
+        // 🔹 Auto pluralize if duration > 1
+        if (dur !== "NA" && unit) {
+          const num = parseInt(dur, 10);
+          if (!isNaN(num) && num > 1 && !unit.endsWith("s")) {
+            unit = `${unit}s`;
+          }
+        }
 
         return {
           id: m?.id ?? `tmp-${Date.now()}-${Math.random()}`,
-          medicineType: m?.medicineType?.trim() ||"NA",
+          medicineType: m?.medicineType?.trim() || "NA",
           name: m?.name || "",
           dose: m?.dose || "",
           remindWhen: m?.remindWhen || "Once A Day",
           others: m?.others || "",
-          duration: durationDisplay,
+          duration: dur !== "NA" && unit ? `${dur} ${unit}` : dur, // 👈 duration + unit (with plural if needed)
           food: m?.food || "",
           note: m?.note || "",
           times: Array.isArray(m?.times)

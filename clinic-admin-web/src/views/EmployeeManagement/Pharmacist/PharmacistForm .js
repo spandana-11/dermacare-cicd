@@ -38,7 +38,7 @@ const PharmacistForm = ({
     branchId: localStorage.getItem('branchId'),
     hospitalName: localStorage.getItem('HospitalName'),
     fullName: '',
-    gender: 'male',
+    gender: '',
     dateOfBirth: '',
     contactNumber: '',
     emailID: '',

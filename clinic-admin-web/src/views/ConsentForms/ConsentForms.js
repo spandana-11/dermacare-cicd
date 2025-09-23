@@ -3,6 +3,7 @@ import { CCard, CCardBody, CNav, CNavItem, CNavLink, CTabContent, CTabPane } fro
 
 import GenericConsentForm from './GenericConsentForm'
 import ProcedureConsentForm from './ProcedureConsentForm'
+import PrivacyPolicyConsentForm from './PrivacyPolicyConsentForm'
 
 const ConsentTabs = () => {
   const [activeKey, setActiveKey] = useState(1)
@@ -33,10 +34,10 @@ const ConsentTabs = () => {
           <CNavItem>
             <CNavLink
               active={activeKey === 3}
-              onClick={() => setActiveKey(2)}
+              onClick={() => setActiveKey(3)}
               style={{ color: 'var(--color-black)' }}
             >
-              Privacy and policy
+              Privacy Policy Consent Form
             </CNavLink>
           </CNavItem>
         </CNav>
@@ -50,7 +51,8 @@ const ConsentTabs = () => {
             <ProcedureConsentForm />
           </CTabPane>
           <CTabPane visible={activeKey === 3}>
-           
+            {/* <ProcedureConsentForm /> */}
+            <PrivacyPolicyConsentForm/>
           </CTabPane>
         </CTabContent>
       </CCardBody>

@@ -39,7 +39,7 @@ import { capitalizeFirst } from '../utils/CaptalZeWord'
  *   }
  */
 
-const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formData = {},fromPage = 'dashboard' }) => {
+const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formData = {}, fromPage = 'dashboard' }) => {
   const { doctorDetails, setDoctorDetails, setClinicDetails, clinicDetails, updateTemplate } =
     useDoctorContext()
 
@@ -270,17 +270,17 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
     }
   }
 
-const skipTemplate = () => {
-  console.log("Skipped saving template. Navigating back to", fromPage);
-  setShowTemplateModal(false);
-  setPendingAction(null);
+  const skipTemplate = () => {
+    console.log("Skipped saving template. Navigating back to", fromPage);
+    setShowTemplateModal(false);
+    setPendingAction(null);
 
-  if (fromPage === 'appointments') {
-    navigate('/appointments', { replace: true });
-  } else {
-    navigate('/dashboard', { replace: true });
-  }
-};
+    if (fromPage === 'appointments') {
+      navigate('/appointments', { replace: true });
+    } else {
+      navigate('/dashboard', { replace: true });
+    }
+  };
 
 
 
@@ -390,13 +390,13 @@ const skipTemplate = () => {
                   {medicines.map((med, index) => {
                     const durationValue = parseInt(med.duration, 10);
                     const durationUnit =
-                      med.durationUnit && med.durationUnit !== "NA"
-                        ? med.durationUnit.trim()
+                      med.duration_unit && med.duration_unit !== "NA"
+                        ? med.duration_unit.trim()
                         : "";
 
                     const displayDuration =
-                      durationValue > 0 && durationUnit
-                        ? `${durationValue} ${durationUnit}${durationValue > 1 ? "s" : ""}`
+                      durationValue > 0 && med.durationUnit
+                        ? `${durationValue} ${med.durationUnit}${durationValue > 1 ? "s" : ""}`
                         : durationValue > 0
                           ? `${durationValue}`
                           : "NA";
@@ -644,15 +644,15 @@ const skipTemplate = () => {
                 </p>
                 <div className="d-flex gap-2 justify-content-end">
                   <Button
-  onClick={() => {
-    setPendingAction(ACTIONS.SAVE);
-    skipTemplate(); // just navigate back
-  }}
-  customColor={COLORS.bgcolor}
-  color={COLORS.black}
->
-  No, just continue
-</Button>
+                    onClick={() => {
+                      setPendingAction(ACTIONS.SAVE);
+                      skipTemplate(); // just navigate back
+                    }}
+                    customColor={COLORS.bgcolor}
+                    color={COLORS.black}
+                  >
+                    No, just continue
+                  </Button>
 
                   <Button customColor={COLORS.bgcolor} onClick={confirmSaveAsTemplate}>
                     Yes, save as template

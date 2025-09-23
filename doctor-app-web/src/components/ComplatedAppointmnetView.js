@@ -174,7 +174,7 @@ const savePrescriptionTemplate = async () => {
                         <span
                           style={{
                             fontSize: '16px',
-                            color: active ? COLORS.bgcolor : COLORS.black,
+                            color: active ? COLORS.black : COLORS.black,
                             fontWeight: active ? '700' : '500',
                             backgroundColor: "transparent"
                           }}

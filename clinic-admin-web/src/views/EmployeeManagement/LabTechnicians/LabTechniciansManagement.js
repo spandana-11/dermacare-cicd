@@ -41,7 +41,7 @@ const LabTechnicianManagement = () => {
   const [deleteId, setDeleteId] = useState(null)
 
   // ✅ Load from localStorage on mount
-const [modalData, setModalData] = useState(null) // store username & password
+  const [modalData, setModalData] = useState(null) // store username & password
   const [modalTVisible, setModalTVisible] = useState(false)
   const fetchTechs = async () => {
     setLoading(true)
@@ -76,7 +76,7 @@ const [modalData, setModalData] = useState(null) // store username & password
         // setTechnicians((prev) => [...prev, res.data.data])
         toast.success('Technician updated successfully!')
       } else {
-       const res = await addLabTechnician(formData)
+        const res = await addLabTechnician(formData)
         await fetchTechs() // refresh from API
         console.log(res)
         setModalData({
@@ -85,7 +85,8 @@ const [modalData, setModalData] = useState(null) // store username & password
         })
         setModalVisible(false)
         setModalTVisible(true)
-        toast.success('Technician added successfully!')}
+        toast.success('Technician added successfully!')
+      }
     } catch (err) {
       toast.error('❌ Failed to save technician.')
       console.error('API error:', err)
@@ -170,9 +171,10 @@ const [modalData, setModalData] = useState(null) // store username & password
         <CModalFooter>
           <CButton
             color="primary"
-            onClick={() =>{ setModalTVisible(false)
+            onClick={() => {
+              setModalTVisible(false)
               setModalData(null)
-            }} 
+            }}
           >
             Close
           </CButton>

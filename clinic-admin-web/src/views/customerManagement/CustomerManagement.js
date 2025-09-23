@@ -389,50 +389,67 @@ const [viewCustomerData, setViewCustomerData] = useState(null)
       handlePincodeChange(formData.address.postalCode)
     }
   }, [isEditing])
+const handleFormSubmit = async (e) => {
+  e.preventDefault()
+  console.log('Submitting form', formData)
 
-  const handleFormSubmit = async (e) => {
-    e.preventDefault()
-    console.log('Submitting form', formData)
-    // ✅ Validate the form first
-    if (!validateForm()) return
+  // ✅ Validate the form first
+  if (!validateForm()) return
 
-    try {
-      const updatedFormData = { ...formData }
+  try {
+    const updatedFormData = { ...formData }
 
-      // Combine Title + First Name + Last Name
-      updatedFormData.fullName =
-        `${formData.title} ${formData.firstName} ${formData.lastName}`.trim()
+    // Combine Title + First Name + Last Name
+    updatedFormData.fullName =
+      `${formData.title} ${formData.firstName} ${formData.lastName}`.trim()
 
-      // Format DOB to DD-MM-YYYY
-      if (updatedFormData.dateOfBirth) {
-        const dateObj = new Date(updatedFormData.dateOfBirth)
-        if (!isNaN(dateObj)) {
-          const day = String(dateObj.getDate()).padStart(2, '0')
-          const month = String(dateObj.getMonth() + 1).padStart(2, '0')
-          const year = dateObj.getFullYear()
-          updatedFormData.dateOfBirth = `${day}-${month}-${year}`
-        }
-      }
-
-      if (isEditing) {
-        await updateCustomerData(formData.customerId, updatedFormData)
-        toast.success('Customer updated successfully')
-      } else {
-        await addCustomer(updatedFormData)
-        toast.success('Customer added successfully')
-      }
-
-      await fetchCustomers()
-      handleCancel()
-    } catch (error) {
-      console.error('Error submitting customer:', error)
-      if (error?.response?.status === 409) {
-        toast.error('Customer already exists with this mobile number or email.')
-      } else {
-        toast.error('Something went wrong while submitting.')
+    // Format DOB to DD-MM-YYYY
+    if (updatedFormData.dateOfBirth) {
+      const dateObj = new Date(updatedFormData.dateOfBirth)
+      if (!isNaN(dateObj)) {
+        const day = String(dateObj.getDate()).padStart(2, '0')
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+        const year = dateObj.getFullYear()
+        updatedFormData.dateOfBirth = `${day}-${month}-${year}`
       }
     }
+
+    if (isEditing) {
+      // ✅ Update customer
+      await updateCustomerData(formData.customerId, updatedFormData)
+      toast.success('Customer updated successfully')
+    } else {
+      // ✅ Add customer
+      await addCustomer(updatedFormData)
+      toast.success('Customer added successfully')
+
+      // ✅ Clear the form after adding new customer
+      setFormData({
+        title: '',
+        firstName: '',
+        lastName: '',
+        fullName: '',
+        dateOfBirth: '',
+        email: '',
+        mobile: '',
+        address: '',
+        // add other fields you have in formData...
+      })
+    }
+
+    await fetchCustomers()
+    handleCancel()
+  } catch (error) {
+    console.error('Error submitting customer:', error)
+    if (error?.response?.status === 409) {
+      toast.error('Customer already exists with this mobile number or email.')
+    } 
+    // else {
+    //   toast.error('Something went wrong while submitting.')
+    // }
   }
+}
+
 
 const handleCancel = () => {
   // Reset editing and adding state

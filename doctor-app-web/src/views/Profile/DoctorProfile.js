@@ -157,7 +157,7 @@ const DoctorProfile = () => {
             </span>
           </CNavLink>
         </CNavItem>
-        <CNavItem>
+        {/* <CNavItem>
           <CNavLink
             style={{
               padding: '.5rem .850rem',
@@ -181,7 +181,7 @@ const DoctorProfile = () => {
               Doctor Slots
             </span>
           </CNavLink>
-        </CNavItem>
+        </CNavItem> */}
         <CNavItem>
           <CNavLink
             style={{
@@ -356,56 +356,58 @@ const DoctorProfile = () => {
           {/* Profile Info */}
           <CCard className="mb-4 shadow-sm border-0 rounded-3">
             <CCardBody>
-              <h6 className="fw-bold mb-3 border-bottom pb-2 " style={{ color: COLORS.black }}>📝 Profile Information</h6>
+              <h6 className="fw-bold mb-4 border-bottom pb-2" style={{ color: COLORS.black }}>
+                📝 Profile Information
+              </h6>
 
-              <CRow className="mt-3">
-                {/* Column 1 - Description */}
-                <CCol md={3}>
-                  <div className="mb-3">
-                    <p className="mb-1 text-muted"><strong>Description:</strong></p>
-                    <p className="fw-semibold">
-                      {doctorDetails?.profileDescription || "No description available"}
-                    </p>
-                  </div>
-                </CCol>
+              {/* Description */}
+              <div className="mb-4">
+                <p className="fw-semibold mb-1" style={{ color: COLORS.black }}>
+                  Description
+                </p>
+                <p className="ps-4 fw-medium" style={{ color: COLORS.gray }}>
+                  {doctorDetails?.profileDescription || "No description available"}
+                </p>
+              </div>
 
-                {/* Column 2 - Achievements */}
-                <CCol md={3}>
-                  <div className="mb-3">
-                    <p className="mb-1 text-muted"><strong>🏅 Achievements</strong></p>
+              {/* Achievements */}
+              <div className="mb-4">
+                <p className="fw-semibold mb-1" style={{ color: COLORS.black }}>
+                  🏅 Achievements
+                </p>
+                {Array.isArray(doctorDetails?.highlights) && doctorDetails.highlights.length > 0 ? (
+                  <ul className="list-unstyled ps-4 fw-medium" style={{ color: COLORS.gray }}>
+                    {doctorDetails.highlights.map((item, idx) => (
+                      <li key={idx}>➤ {item.replace(/^•\s*/, "")}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="ps-2 mb-0 fw-medium" style={{ color: COLORS.gray }}>
+                    No achievements added
+                  </p>
+                )}
+              </div>
 
-                    {Array.isArray(doctorDetails?.highlights) && doctorDetails.highlights.length > 0 ? (
-                      <ul className="list-unstyled mb-0 ps-3">
-                        {doctorDetails.highlights.map((item, idx) => (
-                          <li key={idx}>• {item.replace(/^•\s*/, "")}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-muted mb-0">No achievements added</p>
-                    )}
-                  </div>
-                </CCol>
+              {/* Area of Expertise */}
+              <div>
+                <p className="fw-semibold mb-1" style={{ color: COLORS.black }}>
+                  🔍 Area of Expertise
+                </p>
+                {Array.isArray(doctorDetails?.focusAreas) && doctorDetails.focusAreas.length > 0 ? (
+                  <ul className="list-unstyled ps-4 fw-medium" style={{ color: COLORS.gray }}>
+                    {doctorDetails.focusAreas.map((area, idx) => (
+                      <li key={idx}>➤ {area.replace(/^•\s*/, "")}</li>
 
-                {/* Column 3 - Area of Expertise */}
-                <CCol md={3}>
-                  <div className="mb-3">
-                    <p className="mb-1 text-muted"><strong>🔍 Area of Expertise</strong></p>
-                    {Array.isArray(doctorDetails?.focusAreas) && doctorDetails.focusAreas.length > 0 ? (
-                      <ul className="list-unstyled mb-0 ps-3">
-                        {doctorDetails.focusAreas.map((area, idx) => (
-                          <li key={idx}>• {area.replace(/^•\s*/, "")}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-muted mb-0">No focus areas listed</p>
-                    )}
-                  </div>
-                </CCol>
-              </CRow>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="ps-2 mb-0 fw-medium" style={{ color: COLORS.gray }}>
+                    No focus areas listed
+                  </p>
+                )}
+              </div>
             </CCardBody>
           </CCard>
-
-
 
           {/* Professional Info */}
           <CCard className="mb-4 shadow-sm border-0 rounded-3">

@@ -454,9 +454,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
         backdrop="static"
       >
         <CModalHeader>
-          <CModalTitle>
-            {viewMode ? 'Personal Information' : 'Add / Edit  Nurse'}
-          </CModalTitle>
+          <CModalTitle>{viewMode ? 'Personal Information' : 'Add / Edit  Nurse'}</CModalTitle>
         </CModalHeader>
         <CModalBody>
           {viewMode ? (
@@ -1128,22 +1126,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                   User Permissions
                 </CButton>
               </div>
-                 <UserPermissionModal
-                              show={showPModal}
-                              onClose={() => setShowPModal(false)}
-                              features={features}
-                              actions={actions}
-                              permissions={formData.permissions}
-                              toggleFeature={toggleFeature}
-                              toggleAllActions={toggleAllActions}
-                              togglePermission={togglePermission}
-                              onSave={() => {
-                                console.log('Saved Permissions', formData.permissions)
-                                setShowPModal(false)
-                              }}
-                            />
-
-          <UserPermissionModal
+              <UserPermissionModal
                 show={showPModal}
                 onClose={() => setShowPModal(false)}
                 features={features}
@@ -1158,7 +1141,21 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                 }}
               />
 
-          </CForm>
+              <UserPermissionModal
+                show={showPModal}
+                onClose={() => setShowPModal(false)}
+                features={features}
+                actions={actions}
+                permissions={formData.permissions}
+                toggleFeature={toggleFeature}
+                toggleAllActions={toggleAllActions}
+                togglePermission={togglePermission}
+                onSave={() => {
+                  console.log('Saved Permissions', formData.permissions)
+                  setShowPModal(false)
+                }}
+              />
+            </CForm>
           )}
         </CModalBody>
         <CModalFooter>

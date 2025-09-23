@@ -62,10 +62,12 @@ const styles = StyleSheet.create({
   },
   hospitalInfo: {
     flex: 1,
-    paddingLeft: 10,
+
+    marginLeft: 20,   // moves whole block right
+    paddingLeft: 5,
   },
   hospitalName: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "bold",
     marginBottom: 6,
     flexWrap: "wrap",   // ✅ wrap long names
@@ -79,18 +81,19 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 11,
     fontWeight: "bold",
+    color: "#444"   // 👈 dark gray (dim black)
   },
   value: {
-    fontSize: 11,
+    fontSize: 10,
     flexShrink: 1,
     flexWrap: "wrap",   // ✅ wrap onto next line
+    color: "#222"       // optional: make values slightly lighter than pure black too
   },
   hospitalInfoText: {
     fontSize: 10,
     marginBottom: 2,
     flexWrap: "wrap",
-    maxWidth: "100%",
-    wordBreak: "break-word",
+    maxWidth: "90%",   // or a fixed number like 250–300
   },
   // Section
   section: { marginBottom: 22 },
@@ -212,72 +215,63 @@ const PrescriptionPDF = ({
     <Document>
       <Page size="A4" style={styles.page}>
         {/* Header */}
+        {/* Header */}
         <View style={styles.header}>
-          {/* Left side - Logo + Patient info */}
+          {/* Left side - Logo + Hospital info */}
           <View style={styles.leftBlock}>
             {hospitalLogo && <Image style={styles.logo} src={hospitalLogo} />}
-            <View style={styles.patientInfoBlock}>
-              <Text style={[styles.patientName, styles.wrapText]}>
-                Patient Name: {capitalizeFirst(patientData?.name ?? "—")}
+            <View style={styles.hospitalInfo}>
+              {/* Name */}
+              <Text style={styles.hospitalName}>
+                {clicniData?.name ?? "—"}
               </Text>
-              <Text style={[styles.patientInfo, styles.wrapText]}>
-                Age/Gender: {patientData?.age ?? "—"} yrs / {patientData?.gender ?? "—"}
-              </Text>
-              <Text style={[styles.patientInfo, styles.wrapText]}>
-                Address: {patientData?.patientAddress ?? "—"}
-              </Text>
-              <Text style={[styles.patientInfo, styles.wrapText]}>
-                Mobile number: {patientData?.mobileNumber ?? "—"}
-              </Text>
+
+              {/* Address */}
+              <Text style={styles.hospitalInfoText}>{cleanAddress}</Text>
+
+              {/* Branch */}
+              {clicniData?.branch && (
+                <Text style={styles.hospitalInfoText}>Branch: {clicniData.branch}</Text>
+              )}
+
+              {/* Contact */}
+              {clicniData?.contactNumber && (
+                <Text style={styles.hospitalInfoText}>Contact: {clicniData.contactNumber}</Text>
+              )}
+
+              {/* Website */}
+              {clicniData?.website && (
+                <Text style={styles.hospitalInfoText}>Website: {clicniData.website}</Text>
+              )}
             </View>
           </View>
-
-          {/* Right side - Hospital info */}
-          <View style={styles.hospitalInfo}>
-            {/* Name */}
-            <Text style={[styles.hospitalName, { flexWrap: "wrap", flexShrink: 1 }]}>
-              {clicniData?.name ?? "—"}
-            </Text>
-
-            {/* Address */}
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Address: </Text>
-              <Text style={[styles.value, { flex: 1, flexWrap: "wrap" }]}>
-                {cleanAddress}
-              </Text>
-            </View>
-
-            {/* Branch */}
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Branch: </Text>
-              <Text style={[styles.value, { flex: 1, flexWrap: "wrap" }]}>
-                {clicniData?.branch ?? "—"}
-              </Text>
-            </View>
-
-            {/* Contact */}
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Contact: </Text>
-              <Text style={[styles.value, { flex: 1, flexWrap: "wrap" }]}>
-                {clicniData?.contactNumber ?? "—"}
-              </Text>
-            </View>
-
-            {/* Website */}
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Website: </Text>
-              <Text style={[styles.value, { flex: 1, flexWrap: "wrap" }]}>
-                {clicniData?.website ?? "—"}
-              </Text>
-            </View>
-          </View>
-
-
 
 
         </View>
+        {/* Patient Details */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Patient Details</Text>
 
+          <Text style={styles.note}>
+            <Text style={{ fontWeight: "bold" }}>Patient Name: </Text>
+            {capitalizeFirst(patientData?.name ?? "—")}
+          </Text>
 
+          <Text style={styles.note}>
+            <Text style={{ fontWeight: "bold" }}>Age / Gender: </Text>
+            {patientData?.age ?? "—"} yrs / {patientData?.gender ?? "—"}
+          </Text>
+
+          <Text style={styles.note}>
+            <Text style={{ fontWeight: "bold" }}>Mobile number: </Text>
+            {patientData?.mobileNumber ?? "—"}
+          </Text>
+
+          <Text style={styles.note}>
+            <Text style={{ fontWeight: "bold" }}>Address: </Text>
+            {patientData?.patientAddress ?? "—"}
+          </Text>
+        </View>
 
         {/* Symptoms */}
         <View style={styles.section}>

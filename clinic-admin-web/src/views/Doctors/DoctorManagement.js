@@ -436,11 +436,6 @@ const DoctorManagement = () => {
       isValid = false
     }
 
-    // if (!form.languages || form.languages.length === 0) {
-    //   errors.languages = 'Please add at least one language.'
-    //   isValid = false
-    // }
-
     if (!startDay || !endDay) {
       errors.availableDays = 'Start and end days are required'
       isValid = false
@@ -464,7 +459,17 @@ const DoctorManagement = () => {
       errors.availableTimes = 'Start time must be before end time'
       isValid = false
     }
+    // ✅ Gender validation
+    if (!form.gender) {
+      errors.gender = 'Please select gender'
+      isValid = false
+    }
 
+    // ✅ Branch validation
+    if (!form.branch || form.branch.length === 0) {
+      errors.branch = 'Please select at least one branch'
+      isValid = false
+    }
     setFormErrors(errors)
     return isValid
   }
@@ -1005,16 +1010,21 @@ const DoctorManagement = () => {
               )}
             </CCol>
             <CCol md={6}>
-              <CFormLabel>Gender</CFormLabel>
+              <CFormLabel>
+                Gender
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <CFormSelect
                 value={form.gender}
                 onChange={(e) => setForm((p) => ({ ...p, gender: e.target.value }))}
+                className={formErrors.gender ? 'is-invalid' : ''}
               >
-                <option value="">Select Gender</option> {/* Add this line */}
+                <option value="">Select Gender</option>
                 <option>Female</option>
                 <option>Male</option>
                 <option>Other</option>
               </CFormSelect>
+              {formErrors.gender && <div className="text-danger">{formErrors.gender}</div>}
             </CCol>
             <CCol md={6}>
               <CFormLabel>
@@ -1127,6 +1137,15 @@ const DoctorManagement = () => {
                       return
                     }
 
+                    // ✅ Check file size (<250 KB)
+                    if (file.size > 250 * 1024) {
+                      setFormErrors((prev) => ({
+                        ...prev,
+                        doctorPicture: 'File size must be less than 250KB',
+                      }))
+                      return
+                    }
+
                     const reader = new FileReader()
                     reader.onloadend = () => {
                       setForm((p) => ({ ...p, doctorPicture: reader.result }))
@@ -1145,6 +1164,7 @@ const DoctorManagement = () => {
                 }}
                 invalid={!!formErrors.doctorPicture}
               />
+
               {formErrors.doctorPicture && (
                 <div className="text-danger mt-1">{formErrors.doctorPicture}</div>
               )}
@@ -1418,10 +1438,13 @@ const DoctorManagement = () => {
               />
             </CCol>
             <CCol md={6}>
-              <CFormLabel>Branch</CFormLabel>
+              <CFormLabel>
+                Branch
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <Select
                 isMulti
-                options={branchOptions} // [{ value: 'H_1-B_1', label: 'punjagutta' }, ...]
+                options={branchOptions}
                 value={branchOptions.filter(
                   (opt) =>
                     Array.isArray(form.branch) && form.branch.some((b) => b.branchId === opt.value),
@@ -1436,7 +1459,9 @@ const DoctorManagement = () => {
                   }))
                 }
                 placeholder="Select branches..."
+                className={formErrors.branch ? 'is-invalid' : ''}
               />
+              {formErrors.branch && <div className="text-danger">{formErrors.branch}</div>}
             </CCol>
           </CRow>
           <ChipSection
@@ -1498,7 +1523,7 @@ const DoctorManagement = () => {
                 id="file-input-doctor-signature"
                 type="file"
                 accept="image/jpeg, image/png"
-                style={{ display: 'none' }} // Hide the native file input
+                style={{ display: 'none' }}
                 onChange={(e) => {
                   const file = e.target.files[0]
                   if (file) {
@@ -1510,12 +1535,22 @@ const DoctorManagement = () => {
                       }))
                       return
                     }
+
+                    // ✅ Check file size (<250 KB)
+                    if (file.size > 250 * 1024) {
+                      setFormErrors((prev) => ({
+                        ...prev,
+                        doctorSignature: 'File size must be less than 250KB',
+                      }))
+                      return
+                    }
+
                     const reader = new FileReader()
                     reader.onloadend = () => {
                       setForm((p) => ({
                         ...p,
                         doctorSignature: reader.result,
-                        doctorPictureFileName: file.name,
+                        doctorSignatureFileName: file.name, // ✅ fixed typo (was doctorPictureFileName)
                       }))
                       setFormErrors((prev) => ({
                         ...prev,
@@ -1533,6 +1568,7 @@ const DoctorManagement = () => {
                 }}
                 invalid={!!formErrors.doctorSignature}
               />
+
               {formErrors.doctorSignature && (
                 <div className="text-danger p-2">{formErrors.doctorSignature}</div>
               )}

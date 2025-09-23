@@ -110,140 +110,155 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine, onAdd, 
   };
 
   return (
-    <CCard className="w-100 mb-3 shadow-sm p-3" style={{ marginInline: "5px" }}>
-      <CCardHeader className="d-flex align-items-center justify-content-between" style={{ paddingInline: "5px", paddingBlock: "8px" }}>
-        <div className="d-flex align-items-center gap-2">
-          <CBadge color="secondary" shape="rounded-pill">#{index + 1}</CBadge>
-          <strong>{medicine.name || "Medicine"}</strong>
-          {isDup && <CBadge color="danger" shape="rounded-pill">Duplicate</CBadge>}
-        </div>
+    <div>
+      <CCard className="w-100 mb-3 shadow-sm p-3" style={{ marginInline: "5px" }}>
+        <CCardHeader className="d-flex align-items-center justify-content-between" style={{ paddingInline: "5px", paddingBlock: "8px" }}>
+          <div className="d-flex align-items-center gap-2">
+            <CBadge color="secondary" shape="rounded-pill">#{index + 1}</CBadge>
+            <strong>{medicine.name || "Medicine"}</strong>
+            {isDup && <CBadge color="danger" shape="rounded-pill">Duplicate</CBadge>}
+          </div>
 
-        <div className="d-flex align-items-center gap-1">
+
+        </CCardHeader>
+
+        <CCardBody >
+          <CRow>
+            {/* Dosage */}
+            <CCol xs={12} sm={6} md={4} lg={3}>
+              <GradientTextCard text="Dosage" />
+              <CFormInput
+                type="number"
+                min={0} // prevents typing negative numbers in most browsers
+                value={medicine.dose || ""}
+                placeholder="e.g. 1 tablet"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Allow empty string to let user delete input
+                  if (value === "" || Number(value) >= 0) {
+                    handleChange("dose", value);
+                  }
+                }}
+              />
+            </CCol>
+
+
+            {/* Medicine Type */}
+            <CCol xs={12} sm={6} md={4} lg={3}>
+              <GradientTextCard text="Medicine Type" />
+              <CreatableSelect
+                isClearable
+                options={medicineTypes.map((t) => ({ label: t, value: t }))}
+                value={medicine.medicineType ? { label: medicine.medicineType, value: medicine.medicineType } : null}
+                onChange={(selected) => handleChange("medicineType", selected ? selected.value : "")}
+                onCreateOption={handleCreateMedicineType}
+                placeholder="Choose Medicine Type"
+                styles={{
+                  control: (provided) => ({
+                    ...provided,
+                    minHeight: '30px',   // adjust height if needed
+                    width: '250px',      // set the desired width
+                  }),
+                  valueContainer: (provided) => ({
+                    ...provided,
+                    padding: '0 6px',
+                  }),
+                  input: (provided) => ({
+                    ...provided,
+                    margin: '0px',
+                  }),
+                }}
+              />
+            </CCol>
+
+            {/* Duration */}
+            <CCol xs={12} sm={6} md={4} lg={3}>
+              <GradientTextCard text="Duration" />
+              <div className="d-flex gap-2">
+                <CFormInput type="number" min={0} value={medicine.duration || ""} placeholder="e.g. 5" onChange={(e) => handleChange("duration", e.target.value)} style={{ flex: 2 }} />
+                <CFormSelect value={medicine.durationUnit || ""} onChange={(e) => handleChange("durationUnit", e.target.value)} style={{ flex: 1 }}>
+                  <option value="">Select Unit</option>
+                  <option value="Hour">Hour</option>
+                  <option value="Day">Day</option>
+                  <option value="Week">Week</option>
+                  <option value="Month">Month</option>
+                </CFormSelect>
+              </div>
+            </CCol>
+
+            {/* Frequency */}
+            <CCol xs={12} sm={6} md={4} lg={3}>
+              <GradientTextCard text="Frequency" />
+              <CFormSelect value={medicine.remindWhen || "NA"} onChange={(e) => handleChange("remindWhen", e.target.value)} disabled={medicine.durationUnit === "Hour"}>
+                <option value="NA">NA</option>
+                {getFrequencyOptions().map((f) => <option key={f} value={f}>{f}</option>)}
+              </CFormSelect>
+            </CCol>
+
+            {/* Others */}
+            <CCol xs={12} sm={6} md={4} lg={3}>
+              <GradientTextCard text="Others" />
+              <CFormInput type="text" placeholder="Custom frequency..." value={medicine.others || ""} onChange={(e) => handleChange("others", e.target.value)} disabled={medicine.remindWhen !== "NA"} />
+            </CCol>
+
+            {/* Food / Instructions */}
+            <CCol xs={12} sm={6} md={4} lg={3}>
+              <GradientTextCard text="Instructions" />
+              <CFormSelect value={medicine.food || "NA"} onChange={(e) => handleChange("food", e.target.value)}>
+                {foodOptions.map((f) => <option key={f} value={f}>{f}</option>)}
+              </CFormSelect>
+            </CCol>
+          </CRow>
+
+          {/* Time slots */}
+          <CRow className="gx-2 gy-2 mt-1">
+            {[...Array(3)].map((_, i) => (
+              <CCol xs={12} md={3} key={i}>
+                <GradientTextCard text={`Time ${i + 1}`} />
+                <CFormSelect value={medicine.times?.[i] || ""} onChange={(e) => handleSlotChange(i, e.target.value)} disabled={medicine.durationUnit === "Hour" || i >= slotCount}>
+                  <option value="">Select Time…</option>
+                  {slotOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value} disabled={(medicine.times?.[i] !== opt.value && taken.has(opt.value)) || i >= slotCount}>{opt.label}</option>
+                  ))}
+                </CFormSelect>
+              </CCol>
+            ))}
+          </CRow>
+
+          {/* Notes */}
+          <div className="mt-3">
+            <GradientTextCard text="Notes" />
+            <CFormTextarea rows={2} placeholder="Add any special instructions…" value={medicine.note || ""} onChange={(e) => handleChange("note", e.target.value)} />
+          </div>
+        </CCardBody>
+        <div className="d-flex justify-content-end gap-2 mb-3" style={{ marginRight: "10px" }}>
           <CTooltip content="Add to table">
             <span>
-              <Button customColor={COLORS.bgcolor} variant="primary" size="sm" onClick={() => onAdd?.(medicine)}>
+              <Button
+                customColor={COLORS.bgcolor}
+                variant="primary"
+                size="sm"
+                onClick={() => onAdd?.(medicine)}
+              >
                 <CIcon icon={cilPlus} style={{ color: COLORS.black }} />
               </Button>
             </span>
           </CTooltip>
           <CTooltip content="Remove card">
-            <Button customColor={COLORS.bgcolor} variant="primary" size="sm" onClick={removeMedicine}>
+            <Button
+              customColor={COLORS.bgcolor}
+              variant="primary"
+              size="sm"
+              onClick={removeMedicine}
+            >
               <CIcon icon={cilTrash} style={{ color: COLORS.black }} />
             </Button>
           </CTooltip>
         </div>
-      </CCardHeader>
+      </CCard>
 
-      <CCardBody style={{ paddingTop: 5, paddingBottom: 0 }}>
-        <CRow>
-          {/* Dosage */}
-          <CCol xs={12} sm={6} md={4} lg={3}>
-            <GradientTextCard text="Dosage" />
-            <CFormInput
-              type="number"
-              min={0} // prevents typing negative numbers in most browsers
-              value={medicine.dose || ""}
-              placeholder="e.g. 1 tablet"
-              onChange={(e) => {
-                const value = e.target.value;
-                // Allow empty string to let user delete input
-                if (value === "" || Number(value) >= 0) {
-                  handleChange("dose", value);
-                }
-              }}
-            />
-          </CCol>
+    </div>
 
-
-          {/* Medicine Type */}
-          <CCol xs={12} sm={6} md={4} lg={3}>
-            <GradientTextCard text="Medicine Type" />
-            <CreatableSelect
-              isClearable
-              options={medicineTypes.map((t) => ({ label: t, value: t }))}
-              value={medicine.medicineType ? { label: medicine.medicineType, value: medicine.medicineType } : null}
-              onChange={(selected) => handleChange("medicineType", selected ? selected.value : "")}
-              onCreateOption={handleCreateMedicineType}
-              placeholder="Choose Medicine Type"
-              styles={{
-                control: (provided) => ({
-                  ...provided,
-                  minHeight: '30px',   // adjust height if needed
-                  width: '250px',      // set the desired width
-                }),
-                valueContainer: (provided) => ({
-                  ...provided,
-                  padding: '0 6px',
-                }),
-                input: (provided) => ({
-                  ...provided,
-                  margin: '0px',
-                }),
-              }}
-            />
-          </CCol>
-
-          {/* Duration */}
-          <CCol xs={12} sm={6} md={4} lg={3}>
-            <GradientTextCard text="Duration" />
-            <div className="d-flex gap-2">
-              <CFormInput type="number" min={0} value={medicine.duration || ""} placeholder="e.g. 5" onChange={(e) => handleChange("duration", e.target.value)} style={{ flex: 2 }} />
-              <CFormSelect value={medicine.durationUnit || ""} onChange={(e) => handleChange("durationUnit", e.target.value)} style={{ flex: 1 }}>
-                <option value="">Select Unit</option>
-                <option value="Hour">Hour</option>
-                <option value="Day">Day</option>
-                <option value="Week">Week</option>
-                <option value="Month">Month</option>
-              </CFormSelect>
-            </div>
-          </CCol>
-
-          {/* Frequency */}
-          <CCol xs={12} sm={6} md={4} lg={3}>
-            <GradientTextCard text="Frequency" />
-            <CFormSelect value={medicine.remindWhen || "NA"} onChange={(e) => handleChange("remindWhen", e.target.value)} disabled={medicine.durationUnit === "Hour"}>
-              <option value="NA">NA</option>
-              {getFrequencyOptions().map((f) => <option key={f} value={f}>{f}</option>)}
-            </CFormSelect>
-          </CCol>
-
-          {/* Others */}
-          <CCol xs={12} sm={6} md={4} lg={3}>
-            <GradientTextCard text="Others" />
-            <CFormInput type="text" placeholder="Custom frequency..." value={medicine.others || ""} onChange={(e) => handleChange("others", e.target.value)} disabled={medicine.remindWhen !== "NA"} />
-          </CCol>
-
-          {/* Food / Instructions */}
-          <CCol xs={12} sm={6} md={4} lg={3}>
-            <GradientTextCard text="Instructions" />
-            <CFormSelect value={medicine.food || "NA"} onChange={(e) => handleChange("food", e.target.value)}>
-              {foodOptions.map((f) => <option key={f} value={f}>{f}</option>)}
-            </CFormSelect>
-          </CCol>
-        </CRow>
-
-        {/* Time slots */}
-        <CRow className="gx-2 gy-2 mt-1">
-          {[...Array(3)].map((_, i) => (
-            <CCol xs={12} md={3} key={i}>
-              <GradientTextCard text={`Time ${i + 1}`} />
-              <CFormSelect value={medicine.times?.[i] || ""} onChange={(e) => handleSlotChange(i, e.target.value)} disabled={medicine.durationUnit === "Hour" || i >= slotCount}>
-                <option value="">Select Time…</option>
-                {slotOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value} disabled={(medicine.times?.[i] !== opt.value && taken.has(opt.value)) || i >= slotCount}>{opt.label}</option>
-                ))}
-              </CFormSelect>
-            </CCol>
-          ))}
-        </CRow>
-
-        {/* Notes */}
-        <div className="mt-3">
-          <GradientTextCard text="Notes" />
-          <CFormTextarea rows={2} placeholder="Add any special instructions…" value={medicine.note || ""} onChange={(e) => handleChange("note", e.target.value)} />
-        </div>
-      </CCardBody>
-    </CCard>
   );
 };
 

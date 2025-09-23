@@ -49,8 +49,8 @@ const ProcedureManagement = React.lazy(
   () => import('./views/ProcedureManagement/ProcedureManagement'),
 )
 
-const RefferDoctorManagement = React.lazy(
-  () => import('./views/EmployeeManagement/RefferDoctor/RefferDoctorManagement'),
+const ReferDoctorManagement = React.lazy(
+  () => import('./views/EmployeeManagement/ReferDoctor/ReferDoctorManagement'),
 )
 const SecurityManagement = React.lazy(
   () => import('./views/EmployeeManagement/Security/SecurityManagement'),
@@ -67,7 +67,7 @@ const routes = [
   { path: '/ConsentForms', name: 'ConsentForms', element: ConsentForms },
 
   { path: '/Nurse', name: 'Nurse', element: Nurse },
-  { path: '/refDoctor', name: 'Reffer Doctor', element: RefferDoctorManagement },
+  { path: '/refDoctor', name: 'Reffer Doctor', element: ReferDoctorManagement },
   { path: '/Security', name: 'Security', element: SecurityManagement },
   { path: '/OtherStaff', name: 'Other Staff', element: otherStaffManagement },
   { path: '/FrontDesk', name: 'Receptionist', element: FrontDeskManagement },

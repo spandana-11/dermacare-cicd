@@ -80,8 +80,8 @@ const AppSidebar = () => {
     };
   }, [hasPatient, patientData]);
 
-  const seed = patientData?.name || "guest"; // patient-specific seed
-  const genderImg = `https://api.dicebear.com/6.x/avataaars/png?seed=${encodeURIComponent(seed)}&clothingColor=pink`;
+  const genderImg = (patientData?.gender || '').toString().toLowerCase() === 'male' ? male : female
+
 
   const display = {
     name: patientData?.name || '—',
@@ -182,10 +182,10 @@ const AppSidebar = () => {
                     Visit Type: {display.visitType}
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Visit Count: {display.visitCount=== '—' ? 0 : display.visitCount}
+                    Visit Count: {display.visitCount === '—' ? 0 : display.visitCount}
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    FollowUp Count: {display.followUp=== '—' ? 0 : display.followUp}
+                    FollowUp Count: {display.followUp === '—' ? 0 : display.followUp}
                   </h6>
                 </div>
 
@@ -200,19 +200,19 @@ const AppSidebar = () => {
                     Vitals
                   </h4>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                   Height: {display.vitals.height === '—' ? 0 : display.vitals.height} cm
+                    Height: {display.vitals.height === '—' ? 0 : display.vitals.height} cm
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Weight: {display.vitals.weight === '—' ? 0 :display.vitals.weight} kg
+                    Weight: {display.vitals.weight === '—' ? 0 : display.vitals.weight} kg
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Blood Pressure: {display.vitals.bloodPressure === '—' ? 0 :display.vitals.bloodPressure} mmHg
+                    Blood Pressure: {display.vitals.bloodPressure === '—' ? 0 : display.vitals.bloodPressure} mmHg
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Temperature: {display.vitals.temperature === '—' ? 0 :display.vitals.temperature} °C
+                    Temperature: {display.vitals.temperature === '—' ? 0 : display.vitals.temperature} °C
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    BMI: {display.vitals.bmi === '—' ? 0 :display.vitals.bmi} kg/m²
+                    BMI: {display.vitals.bmi === '—' ? 0 : display.vitals.bmi} kg/m²
                   </h6>
 
 
@@ -371,8 +371,8 @@ const AppSidebar = () => {
                     <div>Booking For: {display.bookingFor}</div>
                     <div>Patient ID: {display.patientId}</div>
                     <div>Visit Type: {display.visitType}</div>
-                    <div>Visit Count: {display.visitCount}</div>
-                    <div>FollowUp Count: {display.followUp}</div>
+                    <div>Visit Count: {display.visitCount === '—' ? 0 : display.visitCount}</div>
+                    <div> FollowUp Count: {display.followUp === '—' ? 0 : display.followUp}</div>
                   </div>
                 </div>
               </div>
@@ -478,11 +478,11 @@ const AppSidebar = () => {
                 Vitals
               </h6>
               <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                <div>Height: {display.vitals.height}</div>
-                <div>Weight: {display.vitals.weight}</div>
-                <div>Blood Pressure: {display.vitals.bp}</div>
-                <div>Temperature: {display.vitals.temperature}</div>
-                <div>BMI: {display.vitals.bmi}</div>
+                <div>  Height: {display.vitals.height === '—' ? 0 : display.vitals.height} cm</div>
+                <div> Weight: {display.vitals.weight === '—' ? 0 : display.vitals.weight} kg</div>
+                <div>Blood Pressure: {display.vitals.bloodPressure === '—' ? 0 : display.vitals.bloodPressure} mmHg</div>
+                <div>Temperature: {display.vitals.temperature === '—' ? 0 : display.vitals.temperature} °C</div>
+                <div>BMI: {display.vitals.bmi === '—' ? 0 : display.vitals.bmi} kg/m²</div>
               </div>
             </CCol>
           </CRow>

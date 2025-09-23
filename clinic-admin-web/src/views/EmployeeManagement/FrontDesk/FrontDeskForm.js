@@ -15,6 +15,7 @@ import {
 import { toast } from 'react-toastify'
 import { actions, features } from '../../../Constant/Features'
 import capitalizeWords from '../../../Utils/capitalizeWords'
+import UserPermissionModal from '../UserPermissionModal'
 
 const FrontDeskForm = ({
   visible,
@@ -46,7 +47,7 @@ const FrontDeskForm = ({
     previousEmploymentHistory: '',
     role: 'receptionist',
 
-    gender: 'male',
+    gender: '',
     yearOfExperience: '',
     // specialization: '',
     vaccinationStatus: 'Fully Vaccinated',
