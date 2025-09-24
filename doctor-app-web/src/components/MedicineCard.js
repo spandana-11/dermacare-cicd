@@ -118,30 +118,30 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine, onAdd, 
             <strong>{medicine.name || "Medicine"}</strong>
             {isDup && <CBadge color="danger" shape="rounded-pill">Duplicate</CBadge>}
           </div>
-   <div className="d-flex justify-content-end gap-2 mb-3" style={{ marginRight: "10px" }}>
-          <CTooltip content="Add to table">
-            <span>
+          <div className="d-flex justify-content-end gap-2 mb-3" style={{ marginRight: "10px" }}>
+            <CTooltip content="Add to table">
+              <span>
+                <Button
+                  customColor={COLORS.bgcolor}
+                  variant="primary"
+                  size="sm"
+                  onClick={() => onAdd?.(medicine)}
+                >
+                  <CIcon icon={cilPlus} style={{ color: COLORS.black }} />
+                </Button>
+              </span>
+            </CTooltip>
+            <CTooltip content="Remove card">
               <Button
                 customColor={COLORS.bgcolor}
                 variant="primary"
                 size="sm"
-                onClick={() => onAdd?.(medicine)}
+                onClick={removeMedicine}
               >
-                <CIcon icon={cilPlus} style={{ color: COLORS.black }} />
+                <CIcon icon={cilTrash} style={{ color: COLORS.black }} />
               </Button>
-            </span>
-          </CTooltip>
-          <CTooltip content="Remove card">
-            <Button
-              customColor={COLORS.bgcolor}
-              variant="primary"
-              size="sm"
-              onClick={removeMedicine}
-            >
-              <CIcon icon={cilTrash} style={{ color: COLORS.black }} />
-            </Button>
-          </CTooltip>
-        </div>
+            </CTooltip>
+          </div>
 
         </CCardHeader>
 
@@ -151,19 +151,28 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine, onAdd, 
             <CCol xs={12} sm={6} md={4} lg={3}>
               <GradientTextCard text="Dosage" />
               <CFormInput
-                type="number"
-                min={0} // prevents typing negative numbers in most browsers
+                type="text"
                 value={medicine.dose || ""}
-                placeholder="e.g. 1 tablet"
+                placeholder="Enter dosage (e.g. Pea-sized or 100 Mg)"
                 onChange={(e) => {
-                  const value = e.target.value;
-                  // Allow empty string to let user delete input
-                  if (value === "" || Number(value) >= 0) {
+                  let value = e.target.value;
+
+                  // Allow empty input
+                  if (value === "") {
+                    handleChange("dose", "");
+                    return;
+                  }
+
+                  // ✅ Allow alphabets, numbers, spaces, and hyphen (not at start)
+                  if (/^(?!-)[A-Za-z0-9\s-]+$/.test(value)) {
                     handleChange("dose", value);
                   }
                 }}
               />
             </CCol>
+
+
+
 
 
             {/* Medicine Type */}
@@ -254,7 +263,7 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine, onAdd, 
             <CFormTextarea rows={2} placeholder="Add any special instructions…" value={medicine.note || ""} onChange={(e) => handleChange("note", e.target.value)} />
           </div>
         </CCardBody>
-     
+
       </CCard>
 
     </div>

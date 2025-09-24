@@ -554,7 +554,7 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
             if (templates.isEmpty()) {
                 return Response.builder()
                         .success(false)
-                        .status(HttpStatus.NOT_FOUND.value())
+                        .status(HttpStatus.OK.value())
                         .message("No templates found for clinicId: " + clinicId + " and exact title: " + title)
                         .data(null)
                         .build();

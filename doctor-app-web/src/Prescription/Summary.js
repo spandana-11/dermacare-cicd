@@ -187,7 +187,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
       const diagnosis = formData?.symptoms?.diagnosis?.trim() || ''
       if (!diagnosis) {
         //  alert('Diagnosis is missing. Cannot save or upload the prescription.')
-           warning('"Diagnosis" is missing. Cannot save or upload the prescription.', { title: 'Warning' })
+        warning('"Diagnosis" is missing. Cannot save or upload the prescription.', { title: 'Warning' })
         return false
       }
 
@@ -272,9 +272,9 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
     }
   }
 
-const skipTemplate = async () => {
-   try {
- console.log("Preparing to upload prescription...")
+  const skipTemplate = async () => {
+    try {
+      console.log("Preparing to upload prescription...")
       const blob = await renderPrescriptionPdfBlob()
       console.log("PDF Blob Generated:", blob)
 
@@ -306,7 +306,7 @@ const skipTemplate = async () => {
 
       if (resp) {
         success('Prescription saved successfully!', { title: 'Success' })
-          navigate('/appointments', { replace: true })
+        navigate('/appointments', { replace: true })
       } else {
         warning('Saved, but got an unexpected response.')
       }
@@ -317,7 +317,7 @@ const skipTemplate = async () => {
       error('Failed to generate or send the PDF.', { title: 'Error' })
       return false
     }
-}
+  }
 
   // ---------------- Render ----------------
   return (
@@ -338,8 +338,13 @@ const skipTemplate = async () => {
               </CCol>
               <CCol xs={12} md={3}>
                 <div>
-                  <span className="fw-semibold">Age/Sex:</span>{' '}
-                  {patientData?.age ? `${patientData.age} Years` : '—'}
+                  <span className="fw-semibold">Age / Gender:</span>{' '}
+                  {patientData?.age
+                    ? (patientData.age.toString().toLowerCase().includes("yr") ||
+                      patientData.age.toString().toLowerCase().includes("year")
+                      ? patientData.age
+                      : `${patientData.age} yrs`)
+                    : "—"}
                   {patientData?.gender ? ` / ${patientData.gender}` : ''}
                 </div>
               </CCol>

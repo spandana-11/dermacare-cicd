@@ -301,7 +301,17 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
       <div>Generated on ${escapeHtml(dateStr)}</div>
       <div>${escapeHtml(clinicDetails.name)}</div>
     </div>
-
+<!-- Signature -->
+<div class="signature-block">
+  <div style="text-align:right; margin-top:40px;">
+    <img src="${doctorDetails?.doctorSignature}" 
+         alt="Doctor's Signature"
+         style="max-height:60px;" />
+    <div style="font-size: 12px; color:#374151; margin-top:4px;">
+      Doctor's Signature
+    </div>
+  </div>
+</div>
     <div class="no-print" style="margin-top: 12px; text-align:right;">
       <button onclick="window.print()" style="
         background: var(--accent);
