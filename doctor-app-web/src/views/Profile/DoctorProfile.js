@@ -20,7 +20,7 @@ import {
 } from '@coreui/react'
 import { averageRatings, getAvailableSlots } from '../../Auth/Auth'
 import { COLORS } from '../../Themes'
-import { capitalizeWords } from '../../utils/CaptalZeWord'
+import { capitalizeEachWord, capitalizeWords } from '../../utils/CaptalZeWord'
 
 const DoctorProfile = () => {
   const [doctorDetails, setDoctorDetails] = useState(null)
@@ -276,7 +276,7 @@ const DoctorProfile = () => {
                   )}
                 </div>
                 <div>
-                  <h3 className="fw-bold mb-1">{capitalizeWords(doctorDetails?.doctorName) || 'Doctor Name'}</h3>
+                  <h5 className="fw-bold mb-1">{capitalizeEachWord(doctorDetails?.doctorName) || 'Doctor Name'}</h5>
                   <p className="mb-1"><strong>Qualification:</strong> {doctorDetails?.qualification || "Qualification"}</p>
                   <p className="mb-1"><strong>License No:</strong> {doctorDetails?.doctorLicence || "DoctorLicence"}</p>
                   <p className="mb-0"><strong>Experience:</strong> {doctorDetails?.experience ? `${doctorDetails.experience} Years` : "Experience"}</p>
@@ -374,9 +374,11 @@ const DoctorProfile = () => {
                   🏅 Achievements
                 </p>
                 {Array.isArray(doctorDetails?.highlights) && doctorDetails.highlights.length > 0 ? (
-                  <ul className="list-unstyled ps-4 fw-medium" style={{ color: COLORS.gray }}>
+                  <ul className="list-unstyled ps-4 fw-medium">
                     {doctorDetails.highlights.map((item, idx) => (
-                      <li key={idx}>➤ {item.replace(/^•\s*/, "")}</li>
+                      <li key={idx} style={{ color: COLORS.gray }}>
+                        * {item.replace(/^•\s*/, "")}
+                      </li>
                     ))}
                   </ul>
                 ) : (
@@ -384,6 +386,7 @@ const DoctorProfile = () => {
                     No achievements added
                   </p>
                 )}
+
               </div>
 
               {/* Area of Expertise */}
@@ -392,10 +395,11 @@ const DoctorProfile = () => {
                   🔍 Area of Expertise
                 </p>
                 {Array.isArray(doctorDetails?.focusAreas) && doctorDetails.focusAreas.length > 0 ? (
-                  <ul className="list-unstyled ps-4 fw-medium" style={{ color: COLORS.gray }}>
+                  <ul className="list-unstyled ps-4 fw-medium">
                     {doctorDetails.focusAreas.map((area, idx) => (
-                      <li key={idx}>➤ {area.replace(/^•\s*/, "")}</li>
-
+                      <li key={idx} style={{ color: COLORS.gray }}>
+                        * {area.replace(/^•\s*/, "")}
+                      </li>
                     ))}
                   </ul>
                 ) : (
@@ -403,6 +407,7 @@ const DoctorProfile = () => {
                     No focus areas listed
                   </p>
                 )}
+
               </div>
             </CCardBody>
           </CCard>

@@ -35,24 +35,20 @@ const ReferDoctorForm = ({
     gender: 'male',
     dateOfBirth: '',
     mobileNumber: '',
-    emailId: '',
+    email: '',
     govermentId: '',
-    getReferralDoctorByReferralId: '',
+    // getReferralDoctorByReferralId: '',
 
     // qualificationOrCertifications: '',
     dateOfJoining: '',
     department: '',
-    yearOfExperience: '',
+    yearsOfExperience: '',
     currentHospitalName: '',
-    department: '',
     specialization: '',
-    firstReferralDate: '',
-    totalReferrals: '',
-    referredPatients: '',
-    preferredCommunicationMethod: '',
+    medicalRegistrationNumber:'',
     status: '',
     // shiftTimingsOrAvailability: '',
-    role: 'ReferDoctor',
+    role: 'referdoctor',
     address: {
       houseNo: '',
       street: '',
@@ -63,7 +59,7 @@ const ReferDoctorForm = ({
       country: 'India',
     },
     // emergencyContact: '',
-    bankAccountDetails: {
+    bankAccountNumber: {
       accountNumber: '',
       accountHolderName: '',
       ifscCode: '',
@@ -71,16 +67,10 @@ const ReferDoctorForm = ({
       branchName: '',
       panCardNumber: '',
     },
-    medicalFitnessCertificate: '',
-    profilePicture: '',
 
-    policeVerification: '',
-    // vaccinationStatus: 'Fully Vaccinated',
-    previousEmploymentHistory: '',
-    traningOrGuardLicense: '',
-    permissions: emptyPermissions,
-    userName: '',
-    password: '',
+    // permissions: emptyPermissions,
+    // userName: '',
+    // password: '',
   }
 
   // 🔹 State
@@ -91,16 +81,20 @@ const ReferDoctorForm = ({
   const [showPModal, setShowPModal] = useState(false)
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
+  
 
   // Mandatory fields
   const mandatoryFields = [
     'fullName',
     'dateOfBirth',
     'gender',
-    'contactNumber',
+    'mobileNumber',
     'govermentId',
-    'dateOfJoining',
     'department',
+    'yearsOfExperience',
+    'currentHospitalName',
+    'email',
+    'status',
 
     // address fields (Address is @NotNull)
     'address.houseNo', // make sure Address DTO has these
@@ -110,17 +104,15 @@ const ReferDoctorForm = ({
     'address.postalCode',
     'address.country',
 
-    // bank details fields (BankAccountDetails is @NotNull)
-    'bankAccountDetails.accountNumber',
-    'bankAccountDetails.accountHolderName',
-    'bankAccountDetails.bankName',
-    'bankAccountDetails.branchName',
-    'bankAccountDetails.ifscCode',
-    'bankAccountDetails.panCardNumber',
+    // bank details fields (bankAccountNumber is @NotNull)
+    'bankAccountNumber.accountNumber',
+    'bankAccountNumber.accountHolderName',
+    'bankAccountNumber.bankName',
+    'bankAccountNumber.branchName',
+    'bankAccountNumber.ifscCode',
+    'bankAccountNumber.panCardNumber',
 
     // extra mandatory fields in ReferDoctorStaffDTO
-    'policeVerification', // @NotBlank
-    'medicalFitnessCertificate', // @NotBlank
   ]
 
   function validateMandatoryFields(formData, mandatoryFields) {
@@ -204,14 +196,14 @@ const ReferDoctorForm = ({
     } else {
       setFormData(emptyForm)
     }
-  }, [initialData])
+  }, [initialData,visible])
 
   // 🔹 Handle text inputs (top-level fields)
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  // 🔹 Handle nested objects (address, bankAccountDetails)
+  // 🔹 Handle nested objects (address, bankAccountNumber)
   const handleNestedChange = (parent, field, value) => {
     setFormData((prev) => ({
       ...prev,
@@ -270,21 +262,21 @@ const ReferDoctorForm = ({
 
     // ✅ Mobile validation (10 digits, starting with 6-9)
     const mobileRegex = /^[6-9]\d{9}$/
-    if (!mobileRegex.test(formData.contactNumber)) {
+    if (!mobileRegex.test(formData.mobileNumber)) {
       toast.error('Contact number must be 10 digits and start with 6-9.')
       return
     }
 
     // ✅ Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailId)) {
+    if (!emailRegex.test(formData.email)) {
       toast.error('Please enter a valid email address.')
       return
     }
 
     // ✅ Check duplicate contact number
     const duplicateContact = technicians?.some(
-      (t) => t.contactNumber === formData.contactNumber && t.id !== formData.id,
+      (t) => t.mobileNumber === formData.mobileNumber && t.id !== formData.id,
     )
     if (duplicateContact) {
       toast.error('Contact number already exists!')
@@ -293,7 +285,7 @@ const ReferDoctorForm = ({
 
     // ✅ Check duplicate email
     const duplicateEmail = technicians?.some(
-      (t) => t.emailId === formData.emailId && t.id !== formData.id,
+      (t) => t.emailId === formData.email && t.id !== formData.id,
     )
     if (duplicateEmail) {
       toast.error('Email already exists!')
@@ -335,20 +327,20 @@ const ReferDoctorForm = ({
     }
 
     const mobileRegex = /^[6-9]\d{9}$/
-    if (!mobileRegex.test(formData.contactNumber)) {
+    if (!mobileRegex.test(formData.mobileNumber)) {
       toast.error('Contact number must be 10 digits and start with 6-9.')
       return
     }
 
     // ✅ Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailId)) {
+    if (!emailRegex.test(formData.email)) {
       toast.error('Please enter a valid email address.')
       return
     }
 
     const duplicateContact = technicians?.some(
-      (t) => t.contactNumber === formData.contactNumber && t.id !== formData.id,
+      (t) => t.mobileNumber === formData.mobileNumber && t.id !== formData.id,
     )
     if (duplicateContact) {
       toast.error('Contact number already exists!')
@@ -356,7 +348,7 @@ const ReferDoctorForm = ({
     }
 
     const duplicateEmail = technicians?.some(
-      (t) => t.emailId === formData.emailId && t.id !== formData.id,
+      (t) => t.emailId === formData.email && t.id !== formData.id,
     )
     if (duplicateEmail) {
       toast.error('Email already exists!')
@@ -478,16 +470,16 @@ const ReferDoctorForm = ({
                   </div>
                   <div className="mb-1">
                     <span className="fw-bold">Email : </span>
-                    <span>{formData.emailId}</span>
+                    <span>{formData.email}</span>
                   </div>
                   <div>
                     <span className="fw-bold">Cantact : </span>
-                    <span>{formData.contactNumber}</span>
+                    <span>{formData.mobileNumber}</span>
                   </div>
                 </div>
 
-                {/* Right Side: Image + ID */}
-                <div className="text-center">
+                
+                 {/* <div className="text-center">
                   {formData.profilePicture ? (
                     <img
                       src={decodeImage(formData.profilePicture)} // ✅ decode first
@@ -523,7 +515,7 @@ const ReferDoctorForm = ({
                   >
                     ID: {formData.id}
                   </div>
-                </div>
+                </div> */}
               </div>
               <hr />
 
@@ -535,10 +527,10 @@ const ReferDoctorForm = ({
                     <Row label="Full Name" value={formData.fullName} />
                   </div>
                   <div className="col-md-4">
-                    <Row label="Email" value={formData.emailId} />
+                    <Row label="Email" value={formData.email} />
                   </div>
                   <div className="col-md-4">
-                    <Row label="Contact" value={formData.contactNumber} />
+                    <Row label="Contact" value={formData.mobileNumber} />
                   </div>
                   <div className="col-md-4">
                     <Row label="Gender" value={formData.gender} />
@@ -561,17 +553,23 @@ const ReferDoctorForm = ({
                       <Row label="Department" value={formData.department} />
                     </div>
                     <div className="col-md-4">
-                      <Row label="Experience" value={formData.yearOfExperience} />
+                      <Row label="Experience" value={formData.yearsOfExperience} />
+                    </div>
+                    <div className="col-md-4">
+                      <Row label="Specialization" value={formData.specialization} />
+                    </div>
+                     <div className="col-md-4">
+                      <Row label="Current Hospital Name" value={formData.currentHospitalName} />
+                    </div>
+                     <div className="col-md-4">
+                      <Row label="Medical Registration Number" value={formData.medicalRegistrationNumber} />
                     </div>
                     {/* <div className="col-md-4">
-                      <Row label="Specialization" value={formData.specialization} />
-                    </div> */}
-                    <div className="col-md-4">
                       <Row label="Shift Timings" value={formData.shiftTimingsOrAvailability} />
-                    </div>
-                    <div className="col-md-4">
+                    </div> */}
+                    {/* <div className="col-md-4">
                       <Row label="Emergency Contact" value={formData.emergencyContact} />
-                    </div>
+                    </div> */}
                   </div>
                 </Section>
 
@@ -588,26 +586,26 @@ const ReferDoctorForm = ({
                     <div className="col-md-4">
                       <Row
                         label="Account Number"
-                        value={formData.bankAccountDetails.accountNumber}
+                        value={formData.bankAccountNumber.accountNumber}
                       />
                     </div>
                     <div className="col-md-4">
                       <Row
                         label="Account Holder Name"
-                        value={formData.bankAccountDetails.accountHolderName}
+                        value={formData.bankAccountNumber.accountHolderName}
                       />
                     </div>
                     <div className="col-md-4">
-                      <Row label="IFSC Code" value={formData.bankAccountDetails.ifscCode} />
+                      <Row label="IFSC Code" value={formData.bankAccountNumber.ifscCode} />
                     </div>
                     <div className="col-md-4">
-                      <Row label="Bank Name" value={formData.bankAccountDetails.bankName} />
+                      <Row label="Bank Name" value={formData.bankAccountNumber.bankName} />
                     </div>
                     <div className="col-md-4">
-                      <Row label="Branch Name" value={formData.bankAccountDetails.branchName} />
+                      <Row label="Branch Name" value={formData.bankAccountNumber.branchName} />
                     </div>
                     <div className="col-md-4">
-                      <Row label="PAN Card" value={formData.bankAccountDetails.panCardNumber} />
+                      <Row label="PAN Card" value={formData.bankAccountNumber.panCardNumber} />
                     </div>
                   </div>
                 </Section>
@@ -656,12 +654,12 @@ const ReferDoctorForm = ({
                       />
                     </div>
                     <div className="row mb-2">
-                      <div className="col-md-6">
+                      {/* <div className="col-md-6">
                         <RowFull label="User Name" value={formData.userName} />
                       </div>
                       <div className="col-md-6">
                         <RowFull label="Password" value={formData.password} />
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 </Section>
@@ -742,17 +740,17 @@ const ReferDoctorForm = ({
 
                 <div className="col-md-4">
                   <CFormLabel>
-                    Contact Number <span style={{ color: 'red' }}>*</span>
+                    Mobile Number <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
                     type="text"
                     maxLength={10} // ✅ Restrict to 10 digits
-                    value={formData.contactNumber}
+                    value={formData.mobileNumber}
                     onChange={(e) => {
                       const value = e.target.value
                       // ✅ Allow only digits
                       if (/^\d*$/.test(value)) {
-                        handleChange('contactNumber', value)
+                        handleChange('mobileNumber', value)
                       }
                     }}
                   />
@@ -761,8 +759,8 @@ const ReferDoctorForm = ({
                   <CFormLabel>Email</CFormLabel>
                   <CFormInput
                     type="email"
-                    value={formData.emailId}
-                    onChange={(e) => handleChange('emailId', e.target.value)}
+                    value={formData.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
                   />
                 </div>
               </div>
@@ -787,11 +785,11 @@ const ReferDoctorForm = ({
 
                 <div className="col-md-4">
                   <CFormLabel>
-                    Police Verification <span style={{ color: 'red' }}>*</span>
+                    Medical Registration Number<span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
-                    value={capitalizeWords(formData.policeVerification)}
-                    onChange={(e) => handleChange('policeVerification', e.target.value)}
+                    value={capitalizeWords(formData.medicalRegistrationNumber)}
+                    onChange={(e) => handleChange('medicalRegistrationNumber', e.target.value)}
                   />
                 </div>
                 <div className="col-md-4">
@@ -805,44 +803,47 @@ const ReferDoctorForm = ({
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>
-                    Date of Joining <span style={{ color: 'red' }}>*</span>
+                    Specialization <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
-                    type="date"
-                    value={formData.dateOfJoining}
-                    onChange={(e) => handleChange('dateOfJoining', e.target.value)}
+                    type="text"
+                    value={formData.specialization}
+                    onChange={(e) => handleChange('specialization', e.target.value)}
                   />
                 </div>
-              </div>
-
-              <div className="row mb-3">
-                {/* <div className="col-md-4">
+                 <div className="col-md-4">
                   {' '}
-                  <CFormLabel>Medical Fitness Certificate</CFormLabel>
+                  <CFormLabel>Current Hospital Name</CFormLabel>
                   <CFormInput
-                    value={capitalizeWords(formData.medicalFitnessCertificate)}
-                    onChange={(e) => handleChange('departmentOrAssignedLab', e.target.value)}
+                    value={capitalizeWords(formData.currentHospitalName)}
+                    onChange={(e) => handleChange('currentHospitalName', e.target.value)}
                   />{' '}
-                </div> */}
-                {/* <div className="col-md-4">
+                </div> 
+                <div className="col-md-4">
                   {' '}
                   <CFormLabel>
                     Years of Experience <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
                     type="number"
-                    value={formData.yearOfExperience}
-                    onChange={(e) => handleChange('yearOfExperience', e.target.value)}
+                    value={formData.yearsOfExperience}
+                    onChange={(e) => handleChange('yearsOfExperience', e.target.value)}
                   />
-                </div> */}
-                <div className="col-md-4">
-                  {' '}
-                  {/* <CFormLabel>Specialization</CFormLabel>
-                  <CFormInput
-                    value={capitalizeWords(formData.specialization)}
-                    onChange={(e) => handleChange('specialization', e.target.value)}
-                  /> */}
                 </div>
+              </div>
+
+              <div className="row mb-3">
+               
+               <div className="col-md-4">
+  <CFormLabel>Status</CFormLabel>
+  <CFormSelect
+    value={formData.status || 'Active'} // default to Active if empty
+    onChange={(e) => handleChange('status', e.target.value)}
+  >
+    <option value="Active">Active</option>
+    <option value="Inactive">Inactive</option>
+  </CFormSelect>
+</div>
               </div>
 
               <div className="row mb-3">
@@ -941,7 +942,7 @@ const ReferDoctorForm = ({
 
               {/* 🔹 Bank Details */}
               <h5 className="mt-3">Bank Account Details</h5>
-              {Object.keys(formData.bankAccountDetails)
+              {Object.keys(formData.bankAccountNumber)
                 .reduce((rows, field, index) => {
                   if (index % 3 === 0) rows.push([]) // start new row every 3 fields
                   rows[rows.length - 1].push(field)
@@ -955,7 +956,7 @@ const ReferDoctorForm = ({
                           {field} <span style={{ color: 'red' }}>*</span>
                         </CFormLabel>
                         <CFormInput
-                          value={formData.bankAccountDetails[field]}
+                          value={formData.bankAccountNumber[field]}
                           maxLength={
                             field === 'accountNumber'
                               ? 20
@@ -971,7 +972,7 @@ const ReferDoctorForm = ({
                             // ✅ Account Number → only numbers
                             if (field === 'accountNumber') {
                               if (/^\d*$/.test(value)) {
-                                handleNestedChange('bankAccountDetails', field, value)
+                                handleNestedChange('bankAccountNumber', field, value)
                               }
                               return
                             }
@@ -983,7 +984,7 @@ const ReferDoctorForm = ({
 
                               // Allow only letters/digits in correct order
                               if (/^[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}$/.test(value)) {
-                                handleNestedChange('bankAccountDetails', field, value)
+                                handleNestedChange('bankAccountNumber', field, value)
                               }
 
                               // Validate final 10 characters
@@ -1004,14 +1005,14 @@ const ReferDoctorForm = ({
                               if (!/^[A-Z0-9]*$/.test(value)) return
 
                               // Save only valid characters
-                              handleNestedChange('bankAccountDetails', field, value)
+                              handleNestedChange('bankAccountNumber', field, value)
 
                               if (value.length === 11) {
                                 const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
                                 if (!ifscRegex.test(value)) {
                                   toast.error('Invalid IFSC format (e.g., HDFC0001234)')
-                                  handleNestedChange('bankAccountDetails', 'bankName', '')
-                                  handleNestedChange('bankAccountDetails', 'branchName', '')
+                                  handleNestedChange('bankAccountNumber', 'bankName', '')
+                                  handleNestedChange('bankAccountNumber', 'branchName', '')
                                   return
                                 }
 
@@ -1021,35 +1022,35 @@ const ReferDoctorForm = ({
                                   if (res.ok) {
                                     const data = await res.json()
                                     handleNestedChange(
-                                      'bankAccountDetails',
+                                      'bankAccountNumber',
                                       'bankName',
                                       data.BANK || '',
                                     )
                                     handleNestedChange(
-                                      'bankAccountDetails',
+                                      'bankAccountNumber',
                                       'branchName',
                                       data.BRANCH || '',
                                     )
                                   } else {
                                     toast.error('Invalid IFSC Code')
-                                    handleNestedChange('bankAccountDetails', 'bankName', '')
-                                    handleNestedChange('bankAccountDetails', 'branchName', '')
+                                    handleNestedChange('bankAccountNumber', 'bankName', '')
+                                    handleNestedChange('bankAccountNumber', 'branchName', '')
                                   }
                                 } catch (err) {
                                   toast.error('Error fetching bank details')
-                                  handleNestedChange('bankAccountDetails', 'bankName', '')
-                                  handleNestedChange('bankAccountDetails', 'branchName', '')
+                                  handleNestedChange('bankAccountNumber', 'bankName', '')
+                                  handleNestedChange('bankAccountNumber', 'branchName', '')
                                 }
                               } else {
                                 // Clear while incomplete
-                                handleNestedChange('bankAccountDetails', 'bankName', '')
-                                handleNestedChange('bankAccountDetails', 'branchName', '')
+                                handleNestedChange('bankAccountNumber', 'bankName', '')
+                                handleNestedChange('bankAccountNumber', 'branchName', '')
                               }
                               return
                             }
 
                             // ✅ Other Fields
-                            handleNestedChange('bankAccountDetails', field, value)
+                            handleNestedChange('bankAccountNumber', field, value)
                           }}
                         />
                       </div>
@@ -1058,12 +1059,12 @@ const ReferDoctorForm = ({
                 ))}
 
               {/* 🔹 Documents */}
-              <h5 className="mt-3">Documents</h5>
+              {/* <h5 className="mt-3">Documents</h5>
 
               <div className="row mb-3">
                 <div className="col-md-4">
                   <CFormLabel>
-                    Profile Image <span style={{ color: 'red' }}>*</span>
+                      Image <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
                     type="file"
@@ -1111,8 +1112,8 @@ const ReferDoctorForm = ({
                   justifyContent: 'end',
                   alignContent: 'end',
                   alignItems: 'end',
-                }}
-              >
+                }} */}
+              {/* > */}
                 {/* <CButton
                   style={{
                     color: 'var(--color-black)',
@@ -1122,7 +1123,7 @@ const ReferDoctorForm = ({
                 >
                   User Permissions
                 </CButton> */}
-              </div>
+              {/* </div> */}
 
               {showPModal && (
                 <div className="modal fade show d-block" tabIndex="-1">

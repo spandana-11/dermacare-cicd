@@ -22,7 +22,7 @@ import male from '../assets/images/male.png'
 import female from '../assets/images/female.png'
 import { useDoctorContext } from '../Context/DoctorContext'
 import { getClinicDetails, getDoctorDetails, averageRatings, getPatientVitals } from '../Auth/Auth'
-import { capitalizeFirst, capitalizeWords } from '../utils/CaptalZeWord'
+import { capitalizeEachWord, capitalizeFirst, capitalizeWords } from '../utils/CaptalZeWord'
 
 const AppSidebar = () => {
   const dispatch = useDispatch()
@@ -94,7 +94,7 @@ const AppSidebar = () => {
       : patientData?.consultationType ?? '—',
 
     visitCount: patientData?.visitCount === null ? 0 : patientData?.visitCount ?? '—',
-    followUp: patientData?.freeFollowUps || '—',
+    followUp: patientData?.freeFollowUpsLeft || '—',
     symptom: patientData?.problem || '—',
     patientId: patientData?.patientId || '—',
     clinicName: patientData?.clinicName || '—',
@@ -181,13 +181,23 @@ const AppSidebar = () => {
                     whiteSpace: 'normal',       // allow wrapping
                   }}
                 >
-                  {capitalizeFirst(display.name)}
+                  {capitalizeEachWord(display.name)}
                 </h4>
                 <div style={{ height: "12px" }}></div>
 
                 <div style={{ textAlign: "left", width: "100%", marginLeft: "15px" }}>
                   <h6 style={{ color: COLORS.black, fontSize: SIZES.small, marginBottom: "6px" }}>
-                    <strong>Age/Gender:</strong> <span>{display.age} Years / {display.gender}</span>
+                    <strong>Age / Gender:</strong>{" "}
+                    <span>
+                     {display.age
+  ? display.age.toString().toLowerCase().includes("year") || 
+    display.age.toString().toLowerCase().includes("yr")
+    ? display.age
+    : `${display.age} Years`
+  : "-"}
+
+                      / {display.gender || "-"}
+                    </span>
                   </h6>
                   <h6 style={{ color: COLORS.black, fontSize: SIZES.small, marginBottom: "6px" }}>
                     <strong>Mobile:</strong> <span>{display.mobile}</span>

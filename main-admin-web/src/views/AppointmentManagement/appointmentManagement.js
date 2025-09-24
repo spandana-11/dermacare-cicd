@@ -19,14 +19,14 @@ import {
   CCardBody,
 } from '@coreui/react'
 import { BASE_URL, ClinicAllData } from '../../baseUrl'
-import { AppointmentData, getBookingBy_ClinicId } from './appointmentAPI'
+import { AppointmentData, getBookingBy_ClinicId } from './AppointmentAPI'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import { getBookingBy_DoctorId } from './appointmentAPI'
+import { getBookingBy_DoctorId } from './AppointmentAPI'
 import { COLORS } from '../../Constant/Themes'
 import LoadingIndicator from '../../Utils/loader'
 
-const appointmentManagement = () => {
+const AppointmentManagement = () => {
   const [viewService, setViewService] = useState(null)
   const [selectedServiceTypes, setSelectedServiceTypes] = useState([])
   const [selectedConsultationTypes, setSelectedConsultationTypes] = useState([])
@@ -444,4 +444,4 @@ const appointmentManagement = () => {
   )
 }
 
-export default appointmentManagement
+export default AppointmentManagement

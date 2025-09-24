@@ -83,6 +83,7 @@ const PharmacistForm = ({
   const [showPModal, setShowPModal] = useState(false)
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
+const [pharmacist, setPharmacist] = useState([])  // ✅ correct name
 
   // Mandatory fields
   const mandatoryFields = [
@@ -234,78 +235,86 @@ const PharmacistForm = ({
   }
 
   // 🔹 Save handler
-  const handleSubmit = () => {
-    const missing = validateMandatoryFields(formData, mandatoryFields)
-
-    if (missing.length > 0) {
-      toast.error(`Please fill required fields: ${missing.join(', ')}`)
-      return
-    }
-
-    //     const missing = validateMandatoryFields(formData, mandatoryFields)
-
-    // if (missing.length > 0) {
-    //   toast.error(`Please fill required fields: ${missing.join(', ')}`)
-    //   return
-    // }
-
-    if (formData.dateOfBirth) {
-      const dob = new Date(formData.dateOfBirth)
-      const today = new Date()
-      const age = today.getFullYear() - dob.getFullYear()
-      const isBeforeBirthday =
-        today.getMonth() < dob.getMonth() ||
-        (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())
-
-      const actualAge = isBeforeBirthday ? age - 1 : age
-
-      if (actualAge < 18) {
-        toast.error('Technician must be at least 18 years old.')
-        return
-      }
-    }
-
-    // ✅ Mobile validation (10 digits, starting with 6-9)
-    const mobileRegex = /^[6-9]\d{9}$/
-    if (!mobileRegex.test(formData.contactNumber)) {
-      toast.error('Contact number must be 10 digits and start with 6-9.')
-      return
-    }
-
-    // ✅ Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailID)) {
-      toast.error('Please enter a valid email address.')
-      return
-    }
-
-    // ✅ Check duplicate contact number
-    const duplicateContact = pharmacists?.some(
-      (t) => t.contactNumber === formData.contactNumber && t.id !== formData.id,
-    )
-    if (duplicateContact) {
-      toast.error('Contact number already exists!')
-      return
-    }
-
-    // ✅ Check duplicate email
-    const duplicateEmail = pharmacists?.some(
-      (t) => t.emailID === formData.emailID && t.pharmacistId !== formData.pharmacistId,
-    )
-    if (duplicateEmail) {
-      toast.error('Email already exists!')
-      return
-    }
-    if (Object.keys(formData.permissions).length === 0) {
-      toast.error('Please assign at least one user permission before saving.')
-      return
-    }
-
-    console.log(formData)
-    onSave(formData)
-    setFormData(emptyForm)
-    onClose()
+const handleSubmit = () => {
+  const missing = validateMandatoryFields(formData, mandatoryFields)
+  if (missing.length > 0) {
+    toast.error(`Please fill required fields: ${missing.join(', ')}`)
+    return
   }
+
+  // Age validation
+  if (formData.dateOfBirth) {
+    const dob = new Date(formData.dateOfBirth)
+    const today = new Date()
+    const age = today.getFullYear() - dob.getFullYear()
+    const isBeforeBirthday =
+      today.getMonth() < dob.getMonth() ||
+      (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())
+    const actualAge = isBeforeBirthday ? age - 1 : age
+    if (actualAge < 18) {
+      toast.error('Technician must be at least 18 years old.')
+      return
+    }
+  }
+
+  // Mobile validation
+  const mobileRegex = /^[6-9]\d{9}$/
+  if (!mobileRegex.test(formData.contactNumber)) {
+    toast.error('Contact number must be 10 digits and start with 6-9.')
+    return
+  }
+
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(formData.emailID)) {
+    toast.error('Please enter a valid email address.')
+    return
+  }
+
+  // Duplicate checks
+  const duplicateContact = pharmacist.some(
+    (t) => t.contactNumber === formData.contactNumber && t.pharmacistId !== formData.pharmacistId,
+  )
+  if (duplicateContact) {
+    toast.error('Contact number already exists!')
+    return
+  }
+
+  const duplicateEmail = pharmacist.some(
+    (t) => t.emailID === formData.emailID && t.pharmacistId !== formData.pharmacistId,
+  )
+  if (duplicateEmail) {
+    toast.error('Email already exists!')
+    return
+  }
+// Permissions check
+const hasAtLeastOnePermission = Object.values(formData.permissions).some(
+  (value) => {
+    // value can be boolean or array
+    if (Array.isArray(value)) return value.length > 0
+    return Boolean(value)
+  }
+)
+
+if (!hasAtLeastOnePermission) {
+  toast.error('Please assign at least one user permission before saving.')
+  return
+}
+
+  // Permissions check
+  if (!formData.permissions || Object.keys(formData.permissions).length === 0) {
+    toast.error('Please assign at least one user permission before saving.')
+    return
+  }
+
+  // Save
+  console.log('Saving pharmacist data:', formData)
+  onSave(formData)
+  setFormData(emptyForm)
+  onClose()
+}
+
+
 
   const handleUserPermission = () => {
     const missing = validateMandatoryFields(formData, mandatoryFields)

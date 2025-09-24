@@ -136,7 +136,7 @@ export const postData = 'admin/providerReassign'
 // export const GetBookingBy_ClinicId = 'customer/getAllBookedServicesByClinicId'
 // export const GetBookingBy_DoctorId = 'admin/getBookingByDoctorId'
 //appointments
-export const GetBy_DoctorId = 'clinic-admin/doctor'
+export const GetBy_DoctorId = 'admin/getDoctorById'
 export const getAllBookedServices = 'admin/getAllBookedServices'
 export const DeleteBookings = 'admin/deleteServiceByBookedId'
 

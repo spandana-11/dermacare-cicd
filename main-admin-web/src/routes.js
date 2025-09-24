@@ -29,7 +29,7 @@ const PatientViewDetails = React.lazy(
 const AddDoctor = React.lazy(() => import('./views/clinicManagement/AddDoctors'))
 const BranchManagement=React.lazy(()=>import('./views/clinicManagement/AddBranchForm'))
 const AppointmentManagement = React.lazy(
-  () => import('./views/AppointmentManagement/appointmentManagement'),
+  () => import('./views/AppointmentManagement/AppointmentManagement'),
 )
 const AppointmentDetails = React.lazy(
   () => import('./views/AppointmentManagement/AppointmnetDetails'),

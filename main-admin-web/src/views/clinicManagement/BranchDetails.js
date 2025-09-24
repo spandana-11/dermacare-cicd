@@ -34,26 +34,22 @@ import 'react-toastify/dist/ReactToastify.css'
 import { BASE_URL } from '../../baseUrl'
 import { fetchBranchByBranchId } from './AddBranchAPI'
 import AddDoctors from '../Doctors/AddDoctors'
+// import EditDoctor from '../Doctors/EditDoctor'
 import {getDoctorsByHospitalAndBranchId} from '../Doctors/DoctorAPI'
 import { DoctorAllData } from '../../baseUrl'
 import DoctorCard from '../Doctors/DoctorCard'
 import { ToastContainer } from 'react-toastify'
+import AppointmentManagement from '../AppointmentManagement/AppointmentManagement'
 import 'react-toastify/dist/ReactToastify.css'
 
+
 const BranchDetails = () => {
-  <ToastContainer 
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        pauseOnHover
-        draggable
-      />
-  const { branchId } = useParams()
-  const { clinicId } = useParams()
+
+  const { branchId, clinicId } = useParams()
+
   
   const navigate = useNavigate()
+  const [formErrors, setFormErrors] = useState({})
 
   const [activeTab, setActiveTab] = useState(0)
   const [branchData, setBranchData] = useState(null)
@@ -66,6 +62,9 @@ const BranchDetails = () => {
 const [selectedDoctor, setSelectedDoctor] = useState(null)
 const [showDoctorModal, setShowDoctorModal] = useState(false)
  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [modalVisible, setModalVisible] = useState(false)
+const [editDoctorModal, setEditDoctorModal] = useState(false)
+// const currentItems = allDoctors.slice(indexOfFirstItem, indexOfLastItem)
 
 const fetchAllDoctors = async (clinicId, branchId) => {
   try {
@@ -163,15 +162,7 @@ const handleDeleteDoctor = async () => {
   return (
     
     <CCard className="mt-4">
-       <ToastContainer 
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        pauseOnHover
-        draggable
-      />
+       <ToastContainer />
       {/* Header */}
       <CCardHeader className="d-flex justify-content-between align-items-center">
         <h3 className="mb-0">Branch Details</h3>
@@ -198,6 +189,7 @@ const handleDeleteDoctor = async () => {
               Appointments
             </CNavLink>
           </CNavItem>
+          
         </CNav>
 
             <CModal
@@ -400,148 +392,122 @@ const handleDeleteDoctor = async () => {
         </CModalFooter>
       </CModal>
           {/* Doctors Tab */}
-                     <CTabPane visible={activeTab === 1}>              
-                         <table className="table">
-                           <thead>
-                             <tr>
-                               <th>S.No</th>
-                               <th>Doctor Name</th>
-                               <th>Contact</th>
-                               <th>Specialization</th>
-                               <th>Sub Services</th> {/* 👈 Added */}
-                               <th>Status</th>
-                               <th>Actions</th>
-                             </tr>
-                           </thead>
-                           <tbody>
-                             {allDoctors.length > 0 ? (
-         currentItems.map((doc, idx) => (
-                                   <tr key={idx}>
-                                   <td>{indexOfFirstItem +idx + 1}</td> 
-                                   <td>{capitalizeWords(doc.doctorName)}</td>
-                                   <td>{doc.doctorMobileNumber}</td>
-                                   <td>{doc.specialization}</td>
-                                   <td>
-                                     {doc.subServices && doc.subServices.length > 0
-                                       ? doc.subServices.map((sub) => sub.subServiceName).join(', ')
-                                       : 'No Sub Services'}
-                                   </td>
-                                   <td>{doc.status || 'Active'}</td>
-                                   <td>
-                                     <CButton
-                                       className="btn btn-primary me-2"
-                                       size="sm"
-                                       onClick={() => {
-                                        // DoctorCard(doc)
-                                         setSelectedDoctor(doc)
-                                         setShowDoctorModal(true)
-                                       }}
-                                     >
-                                       View
-                                     </CButton>
-                                      <CButton
-                                       className="btn btn-warning me-2"
-                                       size="sm"
-                                       onClick={() => {
-                                        // 
-                                         setSelectedDoctor(doc)
-                                         setShowDoctorModal(true)
-                                       }}
-                                     >
-                                       Edit
-                                     </CButton>
-                                     {allDoctors.map((doc) => (
-        <CButton
-          color="danger"
-          size="sm"
-          key={doc.doctorId}
-          onClick={() => openDeleteModal(doc)}
-        >
-          Delete
-        </CButton>
-      ))}
-                                   </td>
-                                 </tr>
-                               ))
-                             ) : (
-                               <tr>
-                                 <td colSpan="6" className="text-center">
-                                   No Doctors Available
-                                 </td>
-                               </tr>
-                             )}
-                           </tbody>
-                         </table>
-         
-                         {allDoctors.length>0 &&(
-                           <div className="d-flex justify-content-between align-items-center mt-3">
-                             <div className="d-flex align-items-center">
-                               <span className="me-2">Rows per page:</span>
-                               <CFormSelect
-                               value={itemsPerPage}
-                               onChange={(e)=>{
-                                 setItemsPerPage(Number(e.target.value))
-                                 setCurrentPage(1)
-                               }}
-                               style={{width:'auto'}}
-                               >
-                                 <option value={5}>5</option>
-                                 <option value={10}>10</option>
-                                 <option value={15}>25</option>
-                               </CFormSelect>
-                             </div>
-                             <CPagination className="mb-0">
-                               <CPaginationItem
-                               disabled={currentPage===1}
-                               onClick={()=>setCurrentPage(currentPage-1)}
-                               >
-                                 Previous
-                               </CPaginationItem>
-                              {Array.from({ length: totalPages }, (_, index) => (
-  <CPaginationItem
-    key={index}
-    active={currentPage === index + 1}
-    onClick={() => setCurrentPage(index + 1)}
-  >
-    {index + 1}
-  </CPaginationItem>
-))}
-                               <CPaginationItem  
-                               disabled={currentPage===totalPages}
-                               onClick={()=>setCurrentPage(currentPage+1)}
-                               >
-                                 Next
-                               </CPaginationItem>
-                             </CPagination>
-                           </div>
-                         )}
-                       </CTabPane>
+                    <CTabPane visible={activeTab === 1}>
+  <CCardHeader>
+    <div className="d-flex justify-content-between align-items-center mb-3 w-100">
+      <CButton color="secondary" onClick={() => navigate(-1)}>
+        Back
+      </CButton>
 
-          {/* Appointments Tab */}
-          <CTabPane visible={activeTab === 2}>
-            {appointments.length > 0 ? (
-              <CTable hover>
-                <CTableHead>
-                  <CTableRow>
-                    <CTableHeaderCell>#</CTableHeaderCell>
-                    <CTableHeaderCell>Patient</CTableHeaderCell>
-                    <CTableHeaderCell>Date</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  {appointments.map((apt, idx) => (
-                    <CTableRow key={idx}>
-                      <CTableDataCell>{idx + 1}</CTableDataCell>
-                      <CTableDataCell>{apt.patientName}</CTableDataCell>
-                      <CTableDataCell>{apt.date}</CTableDataCell>
-                    </CTableRow>
-                  ))}
-                </CTableBody>
-              </CTable>
-            ) : (
-              <p>No appointments found for this branch.</p>
-            )}
-          </CTabPane>
+      <h4 className="mb-0 text-center flex-grow-1">Doctor Details</h4>
+
+      <button
+        className="btn btn-info text-white d-flex align-items-center gap-2 shadow-sm rounded-pill px-4 py-2"
+        onClick={() => {
+          setFormErrors({})
+          setModalVisible(true)
+        }}
+        style={{
+          background: 'linear-gradient(90deg, #0072CE 0%, #00AEEF 100%)',
+          border: 'none',
+          fontWeight: '600',
+          fontSize: '16px',
+        }}
+      >
+        <span>Add Doctor</span>
+      </button>
+    </div>
+  </CCardHeader>
+
+  {/* Add Doctor Modal */}
+  {branchData?.clinicId && (
+    <AddDoctors
+      modalVisible={modalVisible}
+      setModalVisible={setModalVisible}
+      clinicId={branchData.clinicId}  // hospitalId
+      branchId={branchData.branchId}   // branchId
+      closeForm={() => setModalVisible(false)}
+      fetchAllDoctors={() => fetchAllDoctors(branchData.clinicId, branchId)}
+    />
+  )}
+
+  {/* Edit Doctor Modal */}
+  {editDoctorModal && selectedDoctor && (
+    <CModal visible={editDoctorModal} onClose={() => setEditDoctorModal(false)} size="lg" backdrop="static">
+      <CModalHeader>
+        <CModalTitle>Edit Doctor</CModalTitle>
+      </CModalHeader>
+      <CModalBody>
+        <EditDoctor
+          doctorId={selectedDoctor.doctorId} 
+          doctor={selectedDoctor}
+          clinicId={branchData?.clinicId}
+          branchId={branchData?.branchId}  
+          onSave={async (updatedData) => {
+            try {
+              await axios.put(`${BASE_URL}/admin/updateDoctor/${selectedDoctor.doctorId}`, updatedData)
+              setAllDoctors(prev => prev.map(doc => doc.doctorId === selectedDoctor.doctorId ? updatedData : doc))
+              setEditDoctorModal(false)
+              toast.success('Doctor updated successfully!')
+            } catch (error) {
+              console.error('Error updating doctor:', error)
+              toast.error('Failed to update doctor')
+            }
+          }}
+        />
+      </CModalBody>
+      <CModalFooter>
+        <CButton color="secondary" onClick={() => setEditDoctorModal(false)}>
+          Cancel
+        </CButton>
+      </CModalFooter>
+    </CModal>
+  )}
+
+  {/* Doctor Cards */}
+  {/* Doctor Cards */}
+{currentItems.length > 0 ? (
+  <div className="doctor-card-container">
+    {currentItems.map(doc => (
+      <DoctorCard
+        key={doc.doctorId}
+        doctor={doc}
+        onEdit={() => {
+          setSelectedDoctor(doc)
+          setEditDoctorModal(true)
+        }}
+        onDelete={() => openDeleteModal(doc)}
+        onView={() => {
+          setSelectedDoctor(doc)
+          setShowDoctorModal(true)
+        }}
+      />
+    ))}
+  </div>
+) : (
+  <p className="text-center">No Doctors Available</p>
+)}
+
+<style>{`
+  .doctor-card-container {
+    display: flex;
+    flex-direction: column; /* stack vertically */
+    gap: 20px; /* spacing between cards */
+  }
+
+  .doctor-card {
+    width: 100%; /* full width */
+  }
+`}</style>
+
+</CTabPane>
+
+
+
+     <CTabPane visible={activeTab === 2}>
+  <AppointmentManagement branchId={branchId} clinicId={branchData?.clinicId} />
+</CTabPane>
+
         </CTabContent>
       </CCardBody>
     </CCard>

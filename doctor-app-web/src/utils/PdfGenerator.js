@@ -8,7 +8,7 @@ import {
   Image,
   StyleSheet,
 } from "@react-pdf/renderer";
-import { capitalizeFirst } from "./CaptalZeWord";
+import { capitalizeEachWord, capitalizeFirst } from "./CaptalZeWord";
 
 
 const styles = StyleSheet.create({
@@ -254,12 +254,19 @@ const PrescriptionPDF = ({
 
           <Text style={styles.note}>
             <Text style={{ fontWeight: "bold" }}>Patient Name: </Text>
-            {capitalizeFirst(patientData?.name ?? "—")}
+            {capitalizeEachWord(patientData?.name ?? "—")}
           </Text>
 
           <Text style={styles.note}>
             <Text style={{ fontWeight: "bold" }}>Age / Gender: </Text>
-            {patientData?.age ?? "—"} yrs / {patientData?.gender ?? "—"}
+            {patientData?.age
+  ? (patientData.age.toString().toLowerCase().includes("yr") || 
+     patientData.age.toString().toLowerCase().includes("year")
+      ? patientData.age
+      : `${patientData.age} yrs`)
+  : "—"} 
+/ {patientData?.gender ?? "—"}
+
           </Text>
 
           <Text style={styles.note}>

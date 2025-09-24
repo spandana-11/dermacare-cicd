@@ -71,7 +71,7 @@ const ReferDoctorManagement = () => {
   const handleSave = async (formData) => {
     try {
       if (selectedTech) {
-        await updateReferDoctor(selectedTech.ReferDoctorStaffId, formData)
+        await updateReferDoctor(selectedTech.id, formData)
         fetchTechs()
 
         // setTechnicians((prev) => [...prev, res.data.data])
@@ -221,7 +221,7 @@ const ReferDoctorManagement = () => {
               <CTableHeaderCell>Contact</CTableHeaderCell>
               <CTableHeaderCell>Sex</CTableHeaderCell>
               {/* <CTableHeaderCell>Specialization</CTableHeaderCell> */}
-              <CTableHeaderCell>Date Of Joining</CTableHeaderCell>
+              <CTableHeaderCell>Experience</CTableHeaderCell>
               <CTableHeaderCell className="text-end">Actions</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
@@ -259,11 +259,11 @@ const ReferDoctorManagement = () => {
                   </CTableDataCell>
 
                   <CTableDataCell>{capitalizeWords(tech.fullName)}</CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(tech.contactNumber)}</CTableDataCell>
+                  <CTableDataCell>{capitalizeWords(tech.mobileNumber)}</CTableDataCell>
                   <CTableDataCell>{capitalizeWords(tech.gender)}</CTableDataCell>
                   {/* <CTableDataCell>{tech.specialization || 'NA'}</CTableDataCell> */}
 
-                  <CTableDataCell>{tech.dateOfJoining}</CTableDataCell>
+                  <CTableDataCell>{tech.yearsOfExperience}</CTableDataCell>
 
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
@@ -297,8 +297,8 @@ const ReferDoctorManagement = () => {
                         <button
                           className="actionBtn"
                           onClick={() => {
-                            console.log(tech.ReferDoctorStaffId)
-                            setDeleteId(tech.ReferDoctorStaffId) // store id
+                            console.log(tech.id)
+                            setDeleteId(tech.id) // store id
                             setIsModalVisible(true) // show confirmation modal
                           }}
                           title="Delete"
