@@ -33,7 +33,11 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
   const { setUpdateTemplate } = useDoctorContext()
 
   const [doctorObs, setDoctorObs] = useState(seed.doctorObs ?? '')
-  const [diagnosis, setDiagnosis] = useState(seed.diagnosis ?? '')
+  const [diagnosis, setDiagnosis] = useState(
+    seed.diagnosis ?? (patientData?.subServiceName && patientData.subServiceName !== 'NA'
+      ? patientData.subServiceName
+      : '')
+  )
   const [duration, setDuration] = useState(patientData?.symptomsDuration ?? '')
   const [attachments, setAttachments] = useState(
     Array.isArray(seed.attachments)
@@ -52,7 +56,7 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
   const [probableSymptoms, setProbableSymptoms] = useState('')
   const [keyNotes, setKeyNotes] = useState('')
   const [modalOpen, setmodalOpen] = useState(false)
-
+  const [clearDiagnosis, setClearDiagnosis] = useState(false);
   // Update probableSymptoms and keyNotes whenever diagnosis changes
   useEffect(() => {
     if (!diagnosis) {
@@ -425,18 +429,36 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
               <div className="mb-0">
                 <GradientTextCard text="Probable Diagnosis / Disease" />
 
-                {/* Field + right-side Add button */}
                 <div className="mt-2 d-flex align-items-start gap-2">
                   <div className="flex-grow-1">
                     <Select
-                      value={diagnosis ? { label: diagnosis, value: diagnosis } : null}
-                      onChange={handleDiagnosisChange}
+                      value={
+                        // priority: diagnosis > fallback subServiceName > null
+                        diagnosis
+                          ? { label: diagnosis, value: diagnosis } // user-selected diagnosis
+                          : patientData?.subServiceName && patientData.subServiceName !== 'NA'
+                            ? { label: patientData.subServiceName, value: patientData.subServiceName } // default fallback
+                            : null
+                      }
+                      onChange={(selected) => {
+                        if (!selected) {
+                          if (patientData?.subServiceName && patientData.subServiceName !== 'NA') {
+                            setDiagnosis(patientData.subServiceName);
+                          } else {
+                            setDiagnosis('');
+                          }
+                          setInputValue(''); // clear input
+                        } else {
+                          setDiagnosis(selected.value);
+                          setInputValue(''); // clear input to show selected value
+                        }
+                      }}
                       inputValue={inputValue}
                       onInputChange={(val, meta) => {
-                        if (meta.action === 'input-change') setInputValue(val)
+                        if (meta.action === 'input-change') setInputValue(val);
                       }}
                       options={options}
-                      isClearable   // ✅ enables clear functionality
+                      isClearable
                       components={{ ClearIndicator: ClearInput }}
                       placeholder="Select diagnosis..."
                       menuPlacement="bottom"
@@ -451,6 +473,7 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
                         placeholder: (provided) => ({ ...provided, color: '#000' }),
                       }}
                     />
+
                   </div>
 
                   <div className="pt-1">
@@ -473,18 +496,21 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
                       {adding ? "Adding…" : "Add"}
                     </button>
                   </div>
+
                   <SymptomsModal
                     visible={modalOpen}
                     onClose={() => setmodalOpen(false)}
                     addDisease={addDisease}
                     fetchDiseases={fetchDiseases}
-                    setDiagnosis={setDiagnosis}
+                    setDiagnosis={(val) => {
+                      setDiagnosis(val);
+                      setClearDiagnosis(false);
+                    }}
                     success={success}
                     info={info}
                     error={error}
-                    defaultDiseaseName={inputValue} // <-- pass the typed disease name here
+                    defaultDiseaseName={inputValue}
                   />
-
                 </div>
               </div>
               {/* Display probableSymptoms and keyNotes automatically */}

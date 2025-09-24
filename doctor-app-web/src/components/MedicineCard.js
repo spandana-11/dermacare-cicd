@@ -118,34 +118,11 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine, onAdd, 
             <strong>{medicine.name || "Medicine"}</strong>
             {isDup && <CBadge color="danger" shape="rounded-pill">Duplicate</CBadge>}
           </div>
-          <div className="d-flex justify-content-end gap-2 mb-3" style={{ marginRight: "10px" }}>
-            <CTooltip content="Add to table">
-              <span>
-                <Button
-                  customColor={COLORS.bgcolor}
-                  variant="primary"
-                  size="sm"
-                  onClick={() => onAdd?.(medicine)}
-                >
-                  <CIcon icon={cilPlus} style={{ color: COLORS.black }} />
-                </Button>
-              </span>
-            </CTooltip>
-            <CTooltip content="Remove card">
-              <Button
-                customColor={COLORS.bgcolor}
-                variant="primary"
-                size="sm"
-                onClick={removeMedicine}
-              >
-                <CIcon icon={cilTrash} style={{ color: COLORS.black }} />
-              </Button>
-            </CTooltip>
-          </div>
+
 
         </CCardHeader>
 
-        <CCardBody style={{ paddingTop: 5, paddingBottom: 0 }}>
+        <CCardBody >
           <CRow>
             {/* Dosage */}
             <CCol xs={12} sm={6} md={4} lg={3}>
@@ -263,7 +240,30 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine, onAdd, 
             <CFormTextarea rows={2} placeholder="Add any special instructions…" value={medicine.note || ""} onChange={(e) => handleChange("note", e.target.value)} />
           </div>
         </CCardBody>
-
+        <div className="d-flex justify-content-end gap-2 mb-3" style={{ marginRight: "10px" }}>
+          <CTooltip content="Add to table">
+            <span>
+              <Button
+                customColor={COLORS.bgcolor}
+                variant="primary"
+                size="sm"
+                onClick={() => onAdd?.(medicine)}
+              >
+                <CIcon icon={cilPlus} style={{ color: COLORS.black }} />
+              </Button>
+            </span>
+          </CTooltip>
+          <CTooltip content="Remove card">
+            <Button
+              customColor={COLORS.bgcolor}
+              variant="primary"
+              size="sm"
+              onClick={removeMedicine}
+            >
+              <CIcon icon={cilTrash} style={{ color: COLORS.black }} />
+            </Button>
+          </CTooltip>
+        </div>
       </CCard>
 
     </div>
