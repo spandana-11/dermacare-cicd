@@ -258,12 +258,11 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
       return
     }
 
-    // Sanitize medicines before saving
     const sanitized = medicines.map((m) => ({
       name: m.name || "NA",
       dose: m.dose || "NA",
-      medicineType: m.medicineType || "", // default empty string
-      food: m.food || "",                // Instructions
+      medicineType: m.medicineType || "",
+      food: m.food || "",
       remindWhen: m.remindWhen || "Once A Day",
       duration: m.duration || "",
       durationUnit: m.durationUnit?.trim() || "",
@@ -272,21 +271,17 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
       times: Array.isArray(m.times) ? m.times : ["", "", ""]
     }))
 
-    const newTemplate = JSON.stringify(sanitized)
-    const updated = [...templates, newTemplate]
-    setTemplates(updated)
-    localStorage.setItem('templates', JSON.stringify(updated)) // optional
-
     const clinicId = localStorage.getItem('hospitalId')
-    const prescriptionData = {
-      medicines: sanitized,
-      clinicId,
-    }
+    const prescriptionData = { medicines: sanitized, clinicId }
 
     try {
       const result = await SavePrescription(prescriptionData)
       if (result) {
         success('Medicines saved successfully!', { title: 'Success' })
+
+        // 👇 Refresh prescriptions immediately so Local Finder sees it
+        const updated = await medicineTemplate()
+        setPrescriptions(updated || [])
       } else {
         warning('Failed to save medicines. Try again.', { title: 'Warning' })
       }

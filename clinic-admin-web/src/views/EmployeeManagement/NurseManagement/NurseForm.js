@@ -102,6 +102,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
     'role',
     'nursingLicense',
     'nursingCouncilRegistration',
+    'nursingDegreeOrDiplomaCertificate',
     // address fields
     'address.houseNo',
     'address.street',
@@ -186,13 +187,19 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
     })
   }
 
-  const toBase64 = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.readAsDataURL(file) // ✅ Converts file to base64 with data:image/... prefix
-      reader.onload = () => resolve(reader.result)
-      reader.onerror = (error) => reject(error)
-    })
+const toBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = () => {
+      // Remove prefix before sending
+      const result = reader.result
+      const base64Data = result.split(',')[1]  // ✅ Only Base64
+      resolve(base64Data)
+    }
+    reader.onerror = (error) => reject(error)
+  })
+
 
   useEffect(() => {
     if (initialData) {
@@ -402,13 +409,25 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
       <p className="text-base text-gray-900 text-break">{value || 'N/A'}</p>
     </div>
   )
+  const getFileUrl = (data, type = "image/png") => {
+  if (!data) return null
+  return data.startsWith("data:")
+    ? data
+    : `data:${type};base64,${data}`
+}
+
 
   // 🔹 File Preview with modal trigger
   const FilePreview = ({ label, type, data }) => {
     if (!data) return <p>{label} </p>
 
     const isImage = type?.startsWith('image/')
-    const fileUrl = data.startsWith('data:') ? data : `data:${type};base64,${data}`
+   const fileUrl = data.startsWith('data:')
+  ? data
+  : `data:${type};base64,${data}`;
+
+
+
 
     return (
       <div className="bg-white p-3 rounded-md shadow-sm">
@@ -481,17 +500,18 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                 {/* Right Side: Image + ID */}
                 <div className="text-center">
                   {formData.profilePicture ? (
-                    <img
-                      src={decodeImage(formData.profilePicture)} // ✅ decode first
-                      alt={formData.fullName}
-                      width="80"
-                      height="80"
-                      style={{
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                        border: '1px solid var(--color-black)',
-                      }}
-                    />
+                   <img
+  src={getFileUrl(formData.profilePicture, formData.profilePictureType)}
+  alt={formData.fullName}
+  width="80"
+  height="80"
+  style={{
+    borderRadius: '50%',
+    objectFit: 'cover',
+    border: '1px solid var(--color-black)',
+  }}
+/>
+
                   ) : (
                     <img
                       src="/assets/images/default-avatar.png"
@@ -572,9 +592,10 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
 
                 {/* Address */}
                 <Section title="Address">
-                  <RowFull
-                    value={`${formData.address.houseNo}, ${formData.address.street}, ${formData.address.city}, ${formData.address.state} - ${formData.address.postalCode}, ${formData.address.country}`}
-                  />
+               <RowFull
+  value={`${formData.address.houseNo}, ${formData.address.street}, ${formData.address.city}, ${formData.address.state} - ${formData.address.postalCode}, ${formData.address.country}`}
+/>
+
                 </Section>
 
                 {/* Bank Info */}
@@ -613,8 +634,8 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                     {formData.qualificationOrCertifications != '' ? (
                       <div className="col-md-6">
                         <FilePreview
-                          label="Qualification / Certifications"
-                          type={formData.nursingDegreeOrDiplomaCertificate}
+                          label="Qualification / NursingDegreeOrDiplomaCertificate"
+                          type={formData.nursingDegreeOrDiplomaCertificateType}
                           data={formData.nursingDegreeOrDiplomaCertificate}
                         />
                       </div>
@@ -1091,7 +1112,9 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
 
                 {/* Qualification / Certifications */}
                 <div className="col-md-4 mb-3">
-                  <CFormLabel>Qualification / Certifications</CFormLabel>
+                  <CFormLabel>Qualification/Nursing Certificate<span style={{ color: 'red' }}>*</span>
+
+                  </CFormLabel>
                   <CFormInput
                     type="file"
                     onChange={(e) => handleFileUpload(e, 'nursingDegreeOrDiplomaCertificate')}

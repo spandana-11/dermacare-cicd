@@ -98,6 +98,22 @@ public class BookingServiceController {
 				HttpStatus.OK);
 
 	}
+	
+	
+	@GetMapping("/getAllBookedServicesByBranchId/{branchId}")
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getAllBookedServicesByBranchId(@PathVariable String branchId) {
+
+		List<BookingResponse> response = service.bookingByBranchId(branchId);
+		if (response == null || response.isEmpty()) {
+			return new ResponseEntity<>(ResponseStructure.buildResponse(null,
+					"unable to find any Bookings yet ", HttpStatus.OK, HttpStatus.OK.value()),
+					HttpStatus.OK);
+		}
+		return new ResponseEntity<>(ResponseStructure.buildResponse(response,
+				"Booked Service Fetched Sucessfully on branchId" + branchId, HttpStatus.OK, HttpStatus.OK.value()),
+				HttpStatus.OK);
+
+	}
 
 	@GetMapping("/getBookedServicesByServiceId/{serviceId}")
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingByServiceId(@PathVariable String serviceId) {

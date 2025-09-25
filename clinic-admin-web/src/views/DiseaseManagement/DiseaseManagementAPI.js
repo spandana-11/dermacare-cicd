@@ -1,5 +1,12 @@
 import axios from 'axios'
-import { AddDisease, AllDiseases, BASE_URL, DeleteDisease, GetDiseasesByHId, UpdateDisease } from '../../baseUrl'
+import {
+  AddDisease,
+  AllDiseases,
+  BASE_URL,
+  DeleteDisease,
+  GetDiseasesByHId,
+  UpdateDisease,
+} from '../../baseUrl'
 import { http } from '../../Utils/Interceptors'
 
 export const DiseaseData = async () => {
@@ -36,7 +43,7 @@ export const TestdDiseaseByHId = async (hospitalId) => {
 export const postDiseaseData = async (diseaseData) => {
   try {
     const requestData = {
-      diseaseName: diseaseData.diseaseName || '', 
+      diseaseName: diseaseData.diseaseName || '',
       hospitalId: diseaseData.hospitalId || '',
       probableSymptoms: diseaseData.probableSymptoms || '',
       notes: diseaseData.notes || '',
@@ -64,15 +71,11 @@ export const updateDiseaseData = async (updatedDisease, id, hospitalId) => {
       hospitalId: hospitalId,
     }
 
-    const response = await http.put(
-      `/${UpdateDisease}/${id}/${hospitalId}`,
-      requestData,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+    const response = await http.put(`/${UpdateDisease}/${id}/${hospitalId}`, requestData, {
+      headers: {
+        'Content-Type': 'application/json',
       },
-    )
+    })
     return response.data
   } catch (error) {
     console.error('Error updating disease:', error.response?.data || error)
@@ -80,18 +83,14 @@ export const updateDiseaseData = async (updatedDisease, id, hospitalId) => {
   }
 }
 
-
 // ✅ 4. Delete disease
 export const deleteDiseaseData = async (diseaseId, hospitalId) => {
   try {
-    const response = await http.delete(
-      `/${DeleteDisease}/${diseaseId}/${hospitalId}`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+    const response = await http.delete(`/${DeleteDisease}/${diseaseId}/${hospitalId}`, {
+      headers: {
+        'Content-Type': 'application/json',
       },
-    )
+    })
     console.log('Disease deleted successfully:', response.data)
     return response.data
   } catch (error) {
@@ -99,4 +98,3 @@ export const deleteDiseaseData = async (diseaseId, hospitalId) => {
     throw error
   }
 }
-

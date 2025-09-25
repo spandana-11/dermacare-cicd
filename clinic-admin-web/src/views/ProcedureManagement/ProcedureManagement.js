@@ -129,6 +129,7 @@ const ServiceManagement = () => {
     description: '',
     price: '',
     gst: 0,
+    gstAmount: 0,
     consultationFee: 0,
     // preProcedure: '',
     // postProcedure: '',
@@ -196,6 +197,7 @@ const ServiceManagement = () => {
     const discountPercentage = parseFloat(newService.discountPercentage || 0)
     const taxPercentage = parseFloat(newService.taxPercentage || 0)
     const gst = parseFloat(newService.gst || 0)
+    const gstAmount = parseFloat(newService.gstAmount || 0)
     const consultationFee = parseFloat(newService.consultationFee || 0)
 
     // discount calc
@@ -233,6 +235,7 @@ const ServiceManagement = () => {
       taxPercentage,
       taxAmount,
       gst,
+      gstAmount,
       consultationFee,
       finalCost,
 
@@ -260,6 +263,7 @@ const ServiceManagement = () => {
       price: '',
       discount: 0,
       gst: 0,
+      gstAmount: 0,
       consultationFee: 0,
       minTime: '',
       taxPercentage: 0,
@@ -352,6 +356,7 @@ const ServiceManagement = () => {
       price: service.price || '',
       discount: service.discountPercentage || 0,
       gst: service.gst || 0,
+      gstAmount: service.gstAmount || 0,
       consultationFee: service.consultationFee || 0,
       taxPercentage: service.taxPercentage || 0,
       minTime: service.minTime || '',
@@ -644,6 +649,9 @@ const ServiceManagement = () => {
     if (newService.gst === '' || isNaN(newService.gst) || parseFloat(newService.gst) < 0) {
       newErrors.gst = 'GST must be a valid number and not negative.'
     }
+    // if (newService.gstAmount === '' || isNaN(newService.gstAmount) || parseFloat(newService.gst) < 0) {
+    //   newErrors.gstAmount = 'GST  amount must be a valid number and not negative.'
+    // }
     if (
       newService.consultationFee === '' ||
       isNaN(newService.consultationFee) ||
@@ -743,6 +751,7 @@ const ServiceManagement = () => {
 
     // Calculate derived values before sending
     const discountAmount = (newService.price * newService.discount) / 100
+    const gstAmount = (newService.price * newService.gst) / 100
     const discountedCost = newService.price - discountAmount
     const taxAmount = (discountedCost * newService.taxPercentage) / 100
     const gst = newService.gst || 0
@@ -788,6 +797,7 @@ const ServiceManagement = () => {
       clinicPay,
       finalCost,
       gst: newService.gst,
+      gstAmount: newService.gstAmount,
       consultationFee: newService.consultationFee,
 
       minTime: formattedMinTime,
@@ -828,6 +838,7 @@ const ServiceManagement = () => {
       price: 0,
       discount: 0,
       gst: 0,
+      gstAmount: 0,
       consultationFee: 0,
       taxPercentage: 0,
       minTimeValue,
@@ -919,6 +930,7 @@ const ServiceManagement = () => {
         platformFeePercentage: newService.platformFeePercentage || 0,
         subServiceImage: base64ImageToSend,
         gst: newService.gst || 0,
+        gstAmount: newService.gstAmount || 0,
         consultationFee: newService.consultationFee || 0,
         // ProcedureQA:newService.ProcedureQA
       }
@@ -992,6 +1004,7 @@ const ServiceManagement = () => {
       // For numeric fields, parseFloat
       if (
         name === 'gst' ||
+        name === 'gstAmount' ||
         name === 'consultationFee' ||
         name === 'price' ||
         name === 'discount' ||
@@ -1241,8 +1254,12 @@ const ServiceManagement = () => {
 
             <CRow className="mb-3">
               <CCol sm={4}>
+                <strong>GST Amount:</strong>
+                <div>{Math.round(viewService.gstAmount)}</div>
+              </CCol>
+              <CCol sm={4}>
                 <strong>GST:</strong>
-                <div>₹ {Math.round(viewService.gst)}</div>
+                <div>{Math.round(viewService.gst)}</div>
               </CCol>
               <CCol sm={4}>
                 <strong>Consultation Fee:</strong>
@@ -1664,6 +1681,21 @@ const ServiceManagement = () => {
                   }
                 />
               </CCol>
+              <CCol md={3}>
+                <h6>
+                  GST (%)<span className="text-danger">*</span>
+                </h6>
+                <CFormInput
+                  type="number"
+                  placeholder="GST Amount"
+                  value={newService.gstAmount || ''}
+                  onChange={(e) =>
+                    setNewService((prev) => ({ ...prev, gstAmount: Number(e.target.value) }))
+                  }
+                />
+              </CCol>
+              
+
 
               <CCol md={3}>
                 <h6>Other Taxes(%)</h6>

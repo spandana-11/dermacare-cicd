@@ -673,7 +673,7 @@ public class ServiceImpl implements ServiceInterface{
 		                   // System.out.println(bookingResponse.getCustomerDeviceId());	
 		                   // System.out.println("not invoke");
 			 
-			 	appNotification.sendPushNotification(
+			 	        appNotification.sendPushNotification(
 			 			bookingResponse.getCustomerDeviceId(),
 			             "🌆 Good evening!",
 			            "Time to take your prescribed "+m.getName()+","+m.getDose()+" with water.",
@@ -694,7 +694,7 @@ public class ServiceImpl implements ServiceInterface{
 		        List<DoctorSaveDetails> doctorSaveDetailsDTOs =
 		        		mapper.convertValue(obj.getData(), new TypeReference<List<DoctorSaveDetails>>() {});
 
-		       // System.out.println("Fetched doctors: " + doctorSaveDetailsDTOs.size());
+		       //System.out.println("Fetched doctors: " + doctorSaveDetailsDTOs.size());
 
 		        for (DoctorSaveDetails doctorSaveDetailsDTO : doctorSaveDetailsDTOs) {
 
@@ -705,9 +705,9 @@ public class ServiceImpl implements ServiceInterface{
 		            for (Medicines m : doctorSaveDetailsDTO.getPrescription().getMedicines()) {
 		                long duration = convertDurationToDays(m.getDuration(),m.getDurationUnit()); // already long?
 		                LocalDateTime plusDays = visitedDate.plusDays(duration);
-	                   // System.out.println(plusDays);
+	                   //System.out.println(plusDays);
 		                LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Kolkata"));
-	                    ///System.out.println(now);
+	                    //System.out.println(now);
 		                // Check if today is within duration
 		                if (!now.isBefore(visitedDate) && !now.isAfter(plusDays)) {
 		                    boolean isNight = Arrays.stream(m.getRemindWhen().split(" "))
@@ -728,7 +728,7 @@ public class ServiceImpl implements ServiceInterface{
 		    		            bookingResponse = res.getBody().getData();
 
 		    		            if (bookingResponse == null) {
-		    		                //System.out.println("No booking found for ID: " + doctorSaveDetailsDTO.getBookingId());
+		    		               // System.out.println("No booking found for ID: " + doctorSaveDetailsDTO.getBookingId());
 		    		                continue;
 		    		            }
 
@@ -736,10 +736,10 @@ public class ServiceImpl implements ServiceInterface{
 		    		            }catch(Exception e) {
 		    		            	 System.out.println(e.getMessage());
 		    		            }}
-		                   // System.out.println(isAfternoon);
+		                   //System.out.println(isNight);
 			                
 		                    if(bookingResponse != null && bookingResponse.getCustomerDeviceId() != null) {
-		                   // System.out.println(bookingResponse.getCustomerDeviceId());	
+		                  // System.out.println(bookingResponse.getCustomerDeviceId());	
 		                   // System.out.println("not invoke");
 			 	        appNotification.sendPushNotification(
 			 			bookingResponse.getCustomerDeviceId(),
@@ -751,6 +751,61 @@ public class ServiceImpl implements ServiceInterface{
 		             }}}}}}catch (Exception e) {e.printStackTrace();}}
 
 	
+	@Scheduled(cron = "0 01 9 * * ?")
+	public void remindFollowUpsBeforeTwoDays() {
+		      try {
+		        // Fetch doctor details
+		        Response obj = doctorFeign.getAllDoctorSaveDetails().getBody();     
+		        ObjectMapper mapper = new ObjectMapper();
+		        mapper.registerModule(new JavaTimeModule());
+		        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+		        List<DoctorSaveDetails> doctorSaveDetailsDTOs =
+		        		mapper.convertValue(obj.getData(), new TypeReference<List<DoctorSaveDetails>>() {});
+		       //System.out.println("Fetched doctors: " + doctorSaveDetailsDTOs.size());
+		        for (DoctorSaveDetails doctorSaveDetailsDTO : doctorSaveDetailsDTOs) {
+                      DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+		              LocalDateTime visitedDate = doctorSaveDetailsDTO.getVisitDateTime();
+		              String dte = formatter.format(visitedDate);
+		             // System.out.println(dte);
+		              LocalDate formattedVisitedDate = LocalDate.parse(dte);
+		                int follup = convertDurationToDays(String.valueOf(doctorSaveDetailsDTO.getFollowUp()
+		                .getDurationValue()),doctorSaveDetailsDTO.getFollowUp().getDurationUnit());
+		                LocalDate plusDays = formattedVisitedDate.plusDays(follup);
+	                    //System.out.println(plusDays);
+		                LocalDate now = LocalDate.now();
+	                    //System.out.println(now);
+		                // Check if today is within duration
+		                LocalDate minusDay = plusDays.minusDays(2);
+		               // System.out.println(minusDay);
+		                if (minusDay.equals(now)) {
+		                        try{
+		    		            ResponseEntity<ResponseStructure<BookingResponse>> res =
+		    		                    bookServiceFeign.getBookedService(doctorSaveDetailsDTO.getBookingId());
+		    		            bookingResponse = res.getBody().getData();
+		    		            if (bookingResponse == null) {
+		    		                System.out.println("No booking found for ID: " + doctorSaveDetailsDTO.getBookingId());
+		    		                continue;
+		    		            }
+		    		           // System.out.println("Booking: " + bookingResponse);
+		    		            }catch(Exception e) {
+		    		            	 System.out.println(e.getMessage());
+		    		            }}			                
+		                    if(bookingResponse != null && bookingResponse.getCustomerDeviceId() != null &&
+		                    !bookingResponse.getStatus().equalsIgnoreCase("Completed")) {
+		                   // System.out.println(bookingResponse.getCustomerDeviceId());	
+		                   /// System.out.println("not invoke");
+			 	        appNotification.sendPushNotification(
+			 			bookingResponse.getCustomerDeviceId(),
+			             "🌞 Good morning!",
+			             "Reminder: You have a follow-up appointment on " + doctorSaveDetailsDTO.getFollowUp().getNextFollowUpDate() +
+			             " with Dr." + doctorSaveDetailsDTO.getDoctorName() + "\n" +
+			             "📍 "+doctorSaveDetailsDTO.getClinicName()+" \n" +
+			             "Please be present, and contact us if you need to reschedule.",
+			             "FollowUp REMINDER",
+			 		    "reminderScreen","default"
+			         );	
+		             }}}catch (Exception e) {e.printStackTrace();}}
+
 	
 	 private int convertDurationToDays(String duration,String durationUnit) {
 	        if (duration == null || duration.isEmpty()) {
@@ -770,12 +825,18 @@ public class ServiceImpl implements ServiceInterface{
 
 	        switch (durationUnit) {
 	            case "day":
+	            case "Day":
+	            case "Days":
 	            case "days":
 	                return number;
 	            case "week":
+	            case "Week":
+	            case "Weeks":
 	            case "weeks":
 	                return number * 7;
 	            case "month":
+	            case "Month":
+	            case "Months":
 	            case "months":
 	                return number * 30; // Approximation
 	            default:

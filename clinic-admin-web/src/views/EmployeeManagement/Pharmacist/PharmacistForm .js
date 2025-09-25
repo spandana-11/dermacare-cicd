@@ -83,6 +83,7 @@ const PharmacistForm = ({
   const [showPModal, setShowPModal] = useState(false)
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
+  const [pharmacist, setPharmacist] = useState([]) // ✅ correct name
 
   // Mandatory fields
   const mandatoryFields = [
@@ -191,13 +192,16 @@ const PharmacistForm = ({
     })
   useEffect(() => {
     if (initialData) {
-      setFormData({
-        ...emptyForm,
+      setFormData((prev) => ({
+        ...prev,
         ...initialData,
-        address: { ...emptyForm.address, ...initialData.address },
-        bankAccountDetails: { ...emptyForm.bankAccountDetails, ...initialData.bankAccountDetails },
-        permissions: { ...emptyForm.permissions, ...initialData.permissions },
-      })
+        address: { ...emptyForm.address, ...(initialData.address || {}) },
+        bankAccountDetails: {
+          ...emptyForm.bankAccountDetails,
+          ...(initialData.bankAccountDetails || {}),
+        },
+        permissions: { ...emptyPermissions, ...(initialData.permissions || {}) },
+      }))
     } else {
       setFormData(emptyForm)
     }
@@ -236,19 +240,12 @@ const PharmacistForm = ({
   // 🔹 Save handler
   const handleSubmit = () => {
     const missing = validateMandatoryFields(formData, mandatoryFields)
-
     if (missing.length > 0) {
       toast.error(`Please fill required fields: ${missing.join(', ')}`)
       return
     }
 
-    //     const missing = validateMandatoryFields(formData, mandatoryFields)
-
-    // if (missing.length > 0) {
-    //   toast.error(`Please fill required fields: ${missing.join(', ')}`)
-    //   return
-    // }
-
+    // Age validation
     if (formData.dateOfBirth) {
       const dob = new Date(formData.dateOfBirth)
       const today = new Date()
@@ -256,54 +253,61 @@ const PharmacistForm = ({
       const isBeforeBirthday =
         today.getMonth() < dob.getMonth() ||
         (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())
-
       const actualAge = isBeforeBirthday ? age - 1 : age
-
       if (actualAge < 18) {
         toast.error('Technician must be at least 18 years old.')
         return
       }
     }
 
-    // ✅ Mobile validation (10 digits, starting with 6-9)
+    // Mobile validation
     const mobileRegex = /^[6-9]\d{9}$/
     if (!mobileRegex.test(formData.contactNumber)) {
       toast.error('Contact number must be 10 digits and start with 6-9.')
       return
     }
 
-    // ✅ Email validation
+    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.emailID)) {
       toast.error('Please enter a valid email address.')
       return
     }
 
-    // ✅ Check duplicate contact number
+    // Duplicate checks
     const duplicateContact = pharmacists?.some(
-      (t) => t.contactNumber === formData.contactNumber && t.id !== formData.id,
+      (t) => t.contactNumber === formData.contactNumber && t.pharmacistId !== formData.pharmacistId,
     )
     if (duplicateContact) {
       toast.error('Contact number already exists!')
       return
     }
 
-    // ✅ Check duplicate email
-    const duplicateEmail = pharmacists?.some(
+    const duplicateEmail = pharmacist.some(
       (t) => t.emailID === formData.emailID && t.pharmacistId !== formData.pharmacistId,
     )
     if (duplicateEmail) {
       toast.error('Email already exists!')
       return
     }
-    if (Object.keys(formData.permissions).length === 0) {
-      toast.error('Please assign at least one user permission before saving.')
-      return
+    // Permissions check
+    // Permissions check (Mandatory only for Add, optional for Edit)
+    if (!formData.pharmacistId) {
+      const hasAtLeastOnePermission = Object.values(formData.permissions || {}).some((value) => {
+        if (Array.isArray(value)) return value.length > 0
+        return Boolean(value)
+      })
+
+      if (!hasAtLeastOnePermission) {
+        toast.error('Please assign at least one user permission before saving.')
+        return
+      }
     }
 
-    console.log(formData)
+    // Save
+    console.log('Saving pharmacist data:', formData)
     onSave(formData)
-    setFormData(emptyForm)
+    if (!formData.pharmacistId) setFormData(emptyForm)
     onClose()
   }
 
@@ -1006,7 +1010,10 @@ const PharmacistForm = ({
               <div className="row mb-3">
                 {/* Profile Picture */}
                 <div className="col-md-4">
-                  <CFormLabel>Profile Picture</CFormLabel>
+                  <CFormLabel>
+                    Profile Picture
+                    <span className="text-danger">*</span>
+                  </CFormLabel>
                   {formData.profilePicture && (
                     <div className="mb-2">
                       <img
@@ -1073,7 +1080,7 @@ const PharmacistForm = ({
               <CFormLabel>Previous Employment History</CFormLabel>
               <CFormTextarea
                 rows={3} // you can adjust height
-                value={formData.previousEmploymentHistoryType}
+                value={formData.previousEmploymentHistory}
                 onChange={(e) => handleChange('previousEmploymentHistory', e.target.value)}
                 placeholder="Enter previous employment history"
               />

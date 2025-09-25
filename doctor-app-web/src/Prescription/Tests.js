@@ -20,9 +20,9 @@ import {
   CContainer,
 } from '@coreui/react'
 import GradientTextCard from '../components/GradintColorText'
-import { getLabTests } from '../../src/Auth/Auth'
+import { addLabTest, getLabTests } from '../../src/Auth/Auth'
 import { useDoctorContext } from '../Context/DoctorContext'
-
+import CreatableSelect from 'react-select/creatable'
 /**
  * Props:
  * - onNext?: (payload) => void
@@ -30,7 +30,7 @@ import { useDoctorContext } from '../Context/DoctorContext'
  * - patientName?: string
  * - doctor?: { name?: string, regNo?: string, clinic?: string, phone?: string }
  */
-const Tests = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
+const Investigations = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
   const [selectedTests, setSelectedTests] = useState(seed.selectedTests ?? [])
   const [testReason, setTestReason] = useState(seed.testReason ?? '')
   const [selectedTestOption, setSelectedTestOption] = useState('')
@@ -385,28 +385,46 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
                         <GradientTextCard text={'Recommended Test (Optional)'} />
                       </CFormLabel>
 
-                      <Select
-                        options={availableTests
-                          .filter((t) => !selectedTests.includes(t.testName))
-                          .map((t) => ({ label: t.testName, value: t.testName }))
-                        }
-                        placeholder="Select Tests..."
-                        value={
-                          selectedTestOption
-                            ? { label: selectedTestOption, value: selectedTestOption }
-                            : null
-                        }
-                        onChange={(selected) => {
-                          if (selected) {
-                            handleAddTest({ target: { value: selected.value } })
-                          } else {
-                            // Clear case
-                            setSelectedTestOption(null)   // 👈 reset state
-                          }
-                        }}
+                      <CreatableSelect
+                        options={availableTests.map((t) => ({ label: t.testName, value: t.testName }))}
+                        placeholder="Select or add tests..."
+                        value={selectedTestOption ? { label: selectedTestOption, value: selectedTestOption } : null}
                         isClearable
                         isSearchable
+                        formatCreateLabel={(inputValue) => `Add "${inputValue}"`}
+                        onChange={(selected) => {
+                          if (!selected) {
+                            setSelectedTestOption(null);
+                            return;
+                          }
+
+                          const value = selected.value;
+
+                          if (!selectedTests.includes(value)) {
+                            setSelectedTests((prev) => [...prev, value]);
+                          }
+
+                          setSelectedTestOption(null);
+                        }}
+                        onCreateOption={async (inputValue) => {
+                          if (!inputValue) return;
+
+                          // Call your API to add the test
+                          const addedTest = await addLabTest(inputValue);
+
+                          // Update available tests so it shows in dropdown
+                          setAvailableTests((prev) => [...prev, { testName: addedTest }]);
+
+                          // Select the new test
+                          setSelectedTests((prev) => [...prev, addedTest]);
+
+                          // Reset input
+                          setSelectedTestOption(null);
+
+                          showSnackbar(`Added new test: ${addedTest}`, 'success');
+                        }}
                       />
+
 
                     </CCol>
 
@@ -569,4 +587,4 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
   )
 }
 
-export default Tests
+export default Investigations

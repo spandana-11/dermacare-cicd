@@ -103,6 +103,7 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 		existing.setTraningOrGuardLicense(staff.getTraningOrGuardLicense());
 		existing.setPreviousEmployeeHistory(staff.getPreviousEmployeeHistory());
 		existing.setProfilePicture(staff.getProfilePicture());
+		existing.setShiftTimingsOrAvailability(staff.getShiftTimingsOrAvailability());
 
 		SecurityStaff updated = repository.save(existing);
 

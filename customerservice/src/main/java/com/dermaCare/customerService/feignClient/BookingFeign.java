@@ -63,6 +63,10 @@ public interface BookingFeign {
 	@GetMapping("/api/v1/getDoctorFutureAppointments/{doctorId}")
 	public ResponseEntity<?> getDoctorFutureAppointments(@PathVariable String doctorId);
 	
+	@GetMapping("/api/v1/getAllBookedServicesByBranchId/{branchId}")
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getAllBookedServicesByBranchId(@PathVariable String branchId);
+
+	
 	//FALLBACK METHODS
 	
 //		default ResponseEntity<?> bookingServiceFallBack(Exception e){		 

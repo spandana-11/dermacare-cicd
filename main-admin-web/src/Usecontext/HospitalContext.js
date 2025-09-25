@@ -217,6 +217,7 @@ export const HospitalProvider = ({ children }) => {
         hospitals,             // ✅ all hospitals
         selectedHospital,      // ✅ selected one
         doctorData,
+        setDoctorData,         // ✅ expose this so components can update doctor list
         subServices,
         loading,
         errorMessage,

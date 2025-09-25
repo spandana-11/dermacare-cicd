@@ -118,5 +118,7 @@ public interface CustomerService {
 	Response getRatingForServiceBydoctorId(String doctorId);
 
 	Response getAverageRatingByDoctorId(String doctorId);
+	
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingsByBranchId(String branchId);
 
 }

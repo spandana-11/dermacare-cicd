@@ -133,66 +133,72 @@ const DiseasesManagement = () => {
     return Object.keys(newErrors).length === 0
   }
 
-  const nameRegex = /^[A-Za-z\s.]+$/
+// Allow letters, spaces, ., (, ), -, /, '
+const nameRegex = /^[A-Za-z\s.\-()/']+$/
 
-  const handleAddDisease = async () => {
-    const trimmedName = newDisease.diseaseName.trim()
 
-    // Empty check
-    if (!trimmedName) {
-      setErrors({ diseaseName: 'Disease name is required.' })
-      return
-    }
+ const handleAddDisease = async () => {
+  const trimmedName = newDisease.diseaseName.trim()
 
-    // Regex validation
-    if (!nameRegex.test(trimmedName)) {
-      setErrors({ diseaseName: 'Only alphabets, spaces, and "." are allowed.' })
-      return
-    }
-
-    // ✅ Duplicate check before API call
-    const duplicate = diseases.some(
-      (t) => t.diseaseName.trim().toLowerCase() === trimmedName.toLowerCase(),
-    )
-    if (duplicate) {
-      toast.error(`Duplicate disease name - ${trimmedName} already exists!`, {
-        position: 'top-right',
-      })
-      setModalVisible(false)
-      return
-    }
-
-    try {
-      const payload = {
-        diseaseName: trimmedName,
-        hospitalId,
-        probableSymptoms: newDisease.probableSymptoms,
-        notes: newDisease.notes,
-      }
-
-      const response = await postDiseaseData(payload)
-
-      const newDiseaseRow = {
-        id: response.data.id || response.id,
-        diseaseName: response.data.diseaseName,
-        probableSymptoms: response.data.probableSymptoms,
-        notes: response.data.notes,
-        hospitalId: response.data.hospitalId,
-      }
-
-      setDiseases((prev) => [newDiseaseRow, ...prev])
-      setNewDisease({ diseaseName: '', probableSymptoms: '', notes: '' })
-      fetchDataByHid(hospitalId)
-      toast.success('Disease added successfully!')
-      setModalVisible(false)
-    } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.statusText ||
-        'An unexpected error occurred.'
-      toast.error(`Error adding disease: ${errorMessage}`)
-    }
+  // Empty check
+  if (!trimmedName) {
+    setErrors({ diseaseName: 'Disease name is required.' })
+    return
   }
+
+  // Regex validation
+  if (!nameRegex.test(trimmedName)) {
+    setErrors({
+      diseaseName:
+        'Only alphabets, spaces, ".", "(", ")", "-", "/", and "\'" are allowed.',
+    })
+    return
+  }
+
+  // Duplicate check
+  const duplicate = diseases.some(
+    (t) => t.diseaseName.trim().toLowerCase() === trimmedName.toLowerCase()
+  )
+  if (duplicate) {
+    toast.error(`Duplicate disease name - ${trimmedName} already exists!`, {
+      position: 'top-right',
+    })
+    setModalVisible(false)
+    return
+  }
+
+  // Proceed with API call
+  try {
+    const payload = {
+      diseaseName: trimmedName,
+      hospitalId,
+      probableSymptoms: newDisease.probableSymptoms,
+      notes: newDisease.notes,
+    }
+
+    const response = await postDiseaseData(payload)
+    const newDiseaseRow = {
+      id: response.data.id || response.id,
+      diseaseName: response.data.diseaseName,
+      probableSymptoms: response.data.probableSymptoms,
+      notes: response.data.notes,
+      hospitalId: response.data.hospitalId,
+    }
+
+    setDiseases((prev) => [newDiseaseRow, ...prev])
+    setNewDisease({ diseaseName: '', probableSymptoms: '', notes: '' })
+    fetchDataByHid(hospitalId)
+    toast.success('Disease added successfully!')
+    setModalVisible(false)
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.statusText ||
+      'An unexpected error occurred.'
+    toast.error(`Error adding disease: ${errorMessage}`)
+  }
+}
+
 
   const handleUpdateDisease = async () => {
     if (!diseaseToEdit?.diseaseName?.trim()) {

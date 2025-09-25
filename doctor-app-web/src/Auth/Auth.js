@@ -20,7 +20,9 @@ import {
   adminBaseUrl,
   treatmentUrl,
   labtestsbase,
-  baseUrl
+  baseUrl,
+  labtestsupdatedbase,
+  addtreatmentUrl
 } from './BaseUrl'
 
 export const postLogin = async (payload, endpoint) => {
@@ -282,6 +284,20 @@ export const getLabTests = async () => {
   }
 };
 
+export const addLabTest = async (testName) => {
+  const hospitalId = localStorage.getItem("hospitalId");
+  if (!hospitalId || !testName) return null;
+
+  try {
+    const response = await api.post(`${labtestsupdatedbase}`, { hospitalId, testName });
+    return response.data?.data?.[0] || testName;
+  } catch (error) {
+    console.error("Error adding lab test:", error);
+    return testName;
+  }
+};
+
+
 
 // Get all diseases
 export const getAllDiseases = async () => {
@@ -366,6 +382,20 @@ export const getAllTreatmentsByHospital = async () => {
       error.response?.data || error.message
     );
     return [];
+  }
+};
+
+//Add new treatments
+export const addTreatmentByHospital = async (treatmentName) => {
+  const hospitalId = localStorage.getItem("hospitalId");
+  if (!hospitalId || !treatmentName) return null;
+
+  try {
+    const response = await api.post(`${addtreatmentUrl}`, { hospitalId, treatmentName });
+    return response.data?.data?.[0] || treatmentName;
+  } catch (error) {
+    console.error("Error adding treatment:", error);
+    return treatmentName;
   }
 };
 

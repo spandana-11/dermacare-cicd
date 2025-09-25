@@ -58,6 +58,7 @@ public class SecurityStaffMapper {
         staff.setDepartment(dto.getDepartment());
         staff.setAddress(dto.getAddress());
         staff.setBankAccountDetails(dto.getBankAccountDetails());
+        staff.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
 
         // Encode certificates
         staff.setPoliceVerification(encodeIfNotBase64(dto.getPoliceVerification()));
@@ -90,6 +91,7 @@ public class SecurityStaffMapper {
         dto.setGovermentId(staff.getGovermentId());
         dto.setDateOfJoining(staff.getDateOfJoining());
         dto.setDepartment(staff.getDepartment());
+        dto.setShiftTimingsOrAvailability(staff.getShiftTimingsOrAvailability());
         dto.setAddress(staff.getAddress());
         dto.setBankAccountDetails(staff.getBankAccountDetails());
         dto.setPoliceVerificationCertificate(safeReturnAsBase64(staff.getPoliceVerificationCertificate()));

@@ -44,6 +44,8 @@ public class SecurityStaff {
 	private String previousEmployeeHistory;
     private String profilePicture;
     private Map<String, List<String>> permissions;
+    private String shiftTimingsOrAvailability;
+
 
 	
 	

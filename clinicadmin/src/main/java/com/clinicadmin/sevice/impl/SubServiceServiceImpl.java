@@ -1,16 +1,23 @@
 package com.clinicadmin.sevice.impl;
 
 import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
 import com.clinicadmin.dto.ResponseStructure;
 import com.clinicadmin.dto.SubServicesDto;
+import com.clinicadmin.entity.ProbableDiagnosis;
+import com.clinicadmin.entity.Treatment;
 import com.clinicadmin.exceptions.FeignClientException;
 import com.clinicadmin.feignclient.ServiceFeignClient;
+import com.clinicadmin.repository.ProbableDiagnosisRepository;
+import com.clinicadmin.repository.TreatmentRepository;
 import com.clinicadmin.service.SubServiceService;
 import com.clinicadmin.utils.ExtractFeignMessage;
+
 import feign.FeignException;
 
 @Service
@@ -19,17 +26,51 @@ public class SubServiceServiceImpl implements SubServiceService {
 	@Autowired
 	private ServiceFeignClient feignClient;
 
+//	@Override
+//	public ResponseEntity<ResponseStructure<SubServicesDto>> addService(String subServiceId, SubServicesDto dto) {
+//		try {
+//			ResponseEntity<ResponseStructure<SubServicesDto>> response = feignClient.addService(subServiceId, dto);
+//			return ResponseEntity.status(response.getBody().getStatusCode()).body(response.getBody());
+//
+//		} catch (FeignClientException ex) {
+//			return buildErrorResponse(ex.getMessage(), ex.getStatusCode());
+//		} catch (FeignException e) {
+//			return buildErrorResponse(ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR.value());
+//		}
+//	}
+	@Autowired
+	private TreatmentRepository treatmentRepository;
+
+	@Autowired
+	private ProbableDiagnosisRepository probableDiagnosisRepository;
+
 	@Override
 	public ResponseEntity<ResponseStructure<SubServicesDto>> addService(String subServiceId, SubServicesDto dto) {
-		try {
-			ResponseEntity<ResponseStructure<SubServicesDto>> response = feignClient.addService(subServiceId, dto);
-			return ResponseEntity.status(response.getBody().getStatusCode()).body(response.getBody());
+	    try {
+	        // 1️⃣ Save SubService (via Feign)
+	        ResponseEntity<ResponseStructure<SubServicesDto>> response = feignClient.addService(subServiceId, dto);
+	        SubServicesDto savedSubService = response.getBody().getData();
 
-		} catch (FeignClientException ex) {
-			return buildErrorResponse(ex.getMessage(), ex.getStatusCode());
-		} catch (FeignException e) {
-			return buildErrorResponse(ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR.value());
-		}
+	        // 2️⃣ Save Treatment
+	        Treatment treatment = new Treatment();
+	        treatment.setTreatmentName(savedSubService.getSubServiceName());
+	        treatment.setHospitalId(savedSubService.getHospitalId());
+	        treatmentRepository.save(treatment);
+
+	        // 3️⃣ Save ProbableDiagnosis
+	        ProbableDiagnosis diagnosis = new ProbableDiagnosis();
+	        diagnosis.setDiseaseName(savedSubService.getSubServiceName()); // map subServiceName → diseaseName
+	        diagnosis.setHospitalId(savedSubService.getHospitalId());
+	        probableDiagnosisRepository.save(diagnosis);
+
+	        // 4️⃣ Return SubService response
+	        return ResponseEntity.status(response.getBody().getStatusCode()).body(response.getBody());
+
+	    } catch (FeignClientException ex) {
+	        return buildErrorResponse(ex.getMessage(), ex.getStatusCode());
+	    } catch (FeignException e) {
+	        return buildErrorResponse(ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR.value());
+	    }
 	}
 
 	@Override

@@ -745,4 +745,19 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			return ResponseEntity.status(res.getStatusCode()).body(res);
 		}
 		
+		
+		
+		@Override
+		public List<BookingResponse> bookingByBranchId(String branchId) {
+			List<Booking> bookings = repository.findByBranchId(branchId);
+			List<Booking> reversedBookings = new ArrayList<>();
+			for(int i = bookings.size()-1; i >= 0; i--) {
+				reversedBookings.add(bookings.get(i));
+			}
+			if (bookings == null  || bookings.isEmpty()) {
+				return null;
+			}
+			return toResponses(reversedBookings);
+		}
+		
 }

@@ -49,7 +49,9 @@ const PharmacistManagement = () => {
   // ✅ Load from localStorage on mount
 const [modalData, setModalData] = useState(null) // store username & password
   const [modalTVisible, setModalTVisible] = useState(false)
-  
+  const [credentialsModalVisible, setCredentialsModalVisible] = useState(false)
+const [credentials, setCredentials] = useState(null)
+
   const fetchTechs = async () => {
     setLoading(true)
     try {
@@ -89,45 +91,39 @@ const [modalData, setModalData] = useState(null) // store username & password
 
 const handleSave = async (formData) => {
   try {
-    // 💡 Correct the permissions format before sending
     const correctedFormData = {
       ...formData,
       permissions: {
         Laboratory: Object.entries(formData.permissions.Laboratory || {})
-          .filter(([key, value]) => value) // filter out false values
-          .map(([key]) => key), // get just the action names
+          .filter(([key, value]) => value)
+          .map(([key]) => key),
         viewPatients: formData.permissions.viewPatients ? ['read'] : [],
-        // Add other permissions here and apply the same logic
       },
-    };
+    }
 
     if (selectedTech) {
-      // Use correctedFormData
-      await UpdatePharmacistById(selectedTech.pharmacistId, correctedFormData);
-      toast.success('Pharmacist updated successfully!');
+      await UpdatePharmacistById(selectedTech.pharmacistId, correctedFormData)
+      toast.success('Pharmacist updated successfully!')
     } else {
-      // Use correctedFormData
-      const res = await addPharmacist(correctedFormData);
-      await fetchTechs(); // refresh from API
-     if (res?.data?.data) {
-        setModalData({
+      const res = await addPharmacist(correctedFormData)
+      await fetchTechs()
+
+      if (res?.data?.data?.userName && res?.data?.data?.password) {
+        setCredentials({
           username: res.data.data.userName,
           password: res.data.data.password,
-          pharmacistName: res.data.data.fullName, // optional: show name
-        });
-        setModalVisible(false);
-        setModalTVisible(true); // show modal
+          pharmacistName: res.data.data.fullName,
+        })
+        setCredentialsModalVisible(true) // open modal
       }
 
-      toast.success('Pharmacist added successfully!');
+      toast.success('Pharmacist added successfully!')
     }
-  } 
-   catch (err) {
-    console.error('API error:', err);
+  } catch (err) {
+    console.error('API error:', err)
     toast.error(err.response?.data?.message || '❌ Failed to save pharmacist.')
-    // toast.error('❌ Failed to save pharmacist.');
   }
-};
+}
 
   // Delete pharmacist
   const handleDelete = async (pharmacistId ) => {
@@ -185,22 +181,16 @@ const handleSave = async (formData) => {
         </div>
         
       )}
-    <CModal visible={modalTVisible} backdrop="static" keyboard={false}>
+ <CModal visible={credentialsModalVisible} backdrop="static" keyboard={false}>
   <CModalHeader>
     <h5>Pharmacist Credentials</h5>
   </CModalHeader>
   <CModalBody>
-    {modalData ? (
+    {credentials ? (
       <div>
-        <p>
-          <strong>Name:</strong> {modalData.pharmacistName || 'New Pharmacist'}
-        </p>
-        <p>
-          <strong>Username:</strong> {modalData.username}
-        </p>
-        <p>
-          <strong>Password:</strong> {modalData.password}
-        </p>
+        <p><strong>Name:</strong> {credentials.pharmacistName || 'New Pharmacist'}</p>
+        <p><strong>Username:</strong> {credentials.username}</p>
+        <p><strong>Password:</strong> {credentials.password}</p>
         <small className="text-danger">
           ⚠️ Please save these credentials securely. They will not be shown again.
         </small>
@@ -213,8 +203,8 @@ const handleSave = async (formData) => {
     <CButton
       color="primary"
       onClick={() => {
-        setModalTVisible(false);
-        setModalData(null); // clear after closing
+        setCredentialsModalVisible(false)
+        setCredentials(null) // clear after closing
       }}
     >
       Close
@@ -362,6 +352,7 @@ const handleSave = async (formData) => {
         onSave={handleSave}
         initialData={selectedTech}
         viewMode={viewMode}
+        pharmacistList={pharmacist} 
         pharmacist={pharmacist}
         fetchTechs={fetchTechs}
       />

@@ -52,6 +52,8 @@ public class ReceptionistEntity {
 	private String gender;
 	private String yearOfExperience;
 	private String vaccinationStatus;
+    private String shiftTimingsOrAvailability;
+
 
 	// ---------- Optional Fields ----------
 	private String emailId;

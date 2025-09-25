@@ -153,7 +153,8 @@ const TestsManagement = () => {
   }
   const isValidObjectId = (id) => /^[a-f\d]{24}$/i.test(id)
 
-  const nameRegex = /^[A-Za-z\s.]+$/
+const nameRegex = /^[A-Za-z\s.\-()\/']+$/
+
   const handleAddTest = async () => {
     if (!newTest.testName.trim()) {
       setErrors({ testName: 'Test name is required.' })

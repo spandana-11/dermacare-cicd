@@ -477,7 +477,7 @@ const DoctorSummary = ({
             {(tests.length > 0 || testsReason) && (
               <CCard className="shadow-sm mb-3">
                 <CCardHeader className="py-2">
-                  <strong style={{ color: COLORS.black }}>Tests</strong>
+                  <strong style={{ color: COLORS.black }}>Investigations</strong>
                 </CCardHeader>
                 <CCardBody>
                   {tests.length > 0 ? (
@@ -509,7 +509,7 @@ const DoctorSummary = ({
             {treatments.length > 0 && (
               <CCard className="shadow-sm mb-3">
                 <CCardHeader className="py-2">
-                  <strong style={{ color: COLORS.black }}>Treatments</strong>
+                  <strong style={{ color: COLORS.black }}>Procedures</strong>
                 </CCardHeader>
                 <CCardBody>
                   <ul className="mb-2">

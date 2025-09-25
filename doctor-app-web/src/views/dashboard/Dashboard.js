@@ -157,7 +157,7 @@ const Dashboard = () => {
                         key={branch.branchId}
                         onClick={() => setSelectedBranch(branch)}
                       >
-                        {branch.branchName} ({branch.branchId})
+                        {branch.branchName}
                       </CDropdownItem>
                     ))
                   ) : (
@@ -194,6 +194,7 @@ const Dashboard = () => {
                     'Date',
                     'Time',
                     'Consultation',
+                    'Branch',
                     'Action',
                   ].map((header, i) => (
                     <CTableHeaderCell
@@ -209,7 +210,7 @@ const Dashboard = () => {
               <CTableBody>
                 {currentPatients.length === 0 ? (
                   <CTableRow>
-                    <CTableDataCell colSpan="8" className="text-center py-4 text-muted">
+                    <CTableDataCell colSpan="9" className="text-center py-4 text-muted">
                       No Appointments Available
                     </CTableDataCell>
                   </CTableRow>
@@ -223,6 +224,9 @@ const Dashboard = () => {
                       <CTableDataCell>{item.serviceDate}</CTableDataCell>
                       <CTableDataCell>{item.servicetime}</CTableDataCell>
                       <CTableDataCell>{item.consultationType}</CTableDataCell>
+                      <CTableDataCell style={{ whiteSpace: 'normal', wordBreak: 'break-word', maxWidth: '150px' }}>
+                        {branches.find((b) => b.branchId === item.branchId)?.branchName || 'N/A'}
+                      </CTableDataCell>
                       <CTableDataCell className="text-center">
                         <TooltipButton patient={item} tab={item.status} />
                       </CTableDataCell>

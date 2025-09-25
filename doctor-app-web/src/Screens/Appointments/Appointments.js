@@ -224,7 +224,7 @@ const Appointments = ({ searchTerm = '' }) => {
                               key={branch.branchId}
                               onClick={() => setSelectedBranch(branch)}
                             >
-                              {branch.branchName} ({branch.branchId})
+                              {branch.branchName} 
                             </CDropdownItem>
                           ))
                         ) : (
@@ -262,6 +262,7 @@ const Appointments = ({ searchTerm = '' }) => {
                       'Date',
                       'Time',
                       'Consultation',
+                      'Branch',
                       'Status',
                       'Action',
                     ].map((header) => (
@@ -281,7 +282,7 @@ const Appointments = ({ searchTerm = '' }) => {
                 <CTableBody>
                   {loading ? (
                     <CTableRow>
-                      <CTableDataCell colSpan={9} className="text-center py-4">
+                      <CTableDataCell colSpan={10} className="text-center py-4">
                         Loading...
                       </CTableDataCell>
                     </CTableRow>
@@ -307,6 +308,9 @@ const Appointments = ({ searchTerm = '' }) => {
                         <CTableDataCell>{p.serviceDate}</CTableDataCell>
                         <CTableDataCell>{p.servicetime}</CTableDataCell>
                         <CTableDataCell>{p.consultationType}</CTableDataCell>
+                        <CTableDataCell style={{ whiteSpace: 'normal', wordBreak: 'break-word', maxWidth: '150px' }}>
+                          {branches.find((b) => b.branchId === p.branchId)?.branchName || 'N/A'}
+                        </CTableDataCell>
                         <CTableDataCell>
                           <span
                             className="px-2 py-1 rounded"

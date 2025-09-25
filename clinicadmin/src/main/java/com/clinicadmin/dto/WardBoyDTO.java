@@ -66,12 +66,15 @@ public class WardBoyDTO {
     
     private String gender;
     private String workExprience;
-    private String shiftTimingOrAvailability;
+    
+    private String shiftTimingsOrAvailability;
     private Address address;
     private String emergencyContact;
     
     private String userName;
     private String password;
+    
+
     
     private  String role;
 	private Map<String, List<String>> permissions;

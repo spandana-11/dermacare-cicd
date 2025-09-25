@@ -408,7 +408,7 @@ const PrescriptionPDF = ({
         {/* Tests */}
         {(tests.length > 0 || testsReason) && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Tests</Text>
+            <Text style={styles.sectionTitle}>Investigations</Text>
 
             {/* Selected Tests */}
             {tests.length > 0 ? (

@@ -202,5 +202,57 @@ public class TreatmentServiceImpl implements TreatmentService {
         }
         return response;
     }
+    
+    @Override
+    public Response addOrGetTreatment(TreatmentDTO dto) {
+        Response response = new Response();
+        try {
+            // 1️⃣ Check if hospital exists via Admin Service
+            ResponseEntity<Response> clinicResponseEntity = adminServiceClient.getClinicById(dto.getHospitalId());
+            Response clinicResponse = clinicResponseEntity.getBody();
+
+            if (clinicResponse == null || !clinicResponse.isSuccess() || clinicResponse.getData() == null) {
+                response.setSuccess(false);
+                response.setMessage("Hospital with ID " + dto.getHospitalId() + " does not exist.");
+                response.setStatus(HttpStatus.NOT_FOUND.value());
+                return response;
+            }
+
+            // 2️⃣ Check if treatment already exists for this hospital
+            Optional<Treatment> existingTreatment = treatmentRepository
+                    .findByHospitalIdAndTreatmentName(dto.getHospitalId(), dto.getTreatmentName());
+
+            if (existingTreatment.isPresent()) {
+                Treatment t = existingTreatment.get();
+                TreatmentDTO resDto = new TreatmentDTO(t.getId().toString(), t.getTreatmentName(), t.getHospitalId());
+                response.setSuccess(true);
+                response.setData(resDto);
+                response.setMessage("Treatment already exists, returning existing record.");
+                response.setStatus(HttpStatus.OK.value());
+                return response;
+            }
+
+            // 3️⃣ If not found → Add new treatment
+            Treatment newTreatment = new Treatment();
+            newTreatment.setTreatmentName(dto.getTreatmentName());
+            newTreatment.setHospitalId(dto.getHospitalId());
+
+            Treatment saved = treatmentRepository.save(newTreatment);
+
+            TreatmentDTO resDto = new TreatmentDTO(saved.getId().toString(), saved.getTreatmentName(), saved.getHospitalId());
+            response.setSuccess(true);
+            response.setData(resDto);
+            response.setMessage("Treatment added successfully.");
+            response.setStatus(HttpStatus.CREATED.value()); // 201
+            return response;
+
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Exception in addOrGetTreatment: " + e.getMessage());
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return response;
+        }
+    }
+
 
 }

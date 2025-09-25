@@ -68,6 +68,8 @@ public class ReceptionistRequestDTO {
 	private String gender;
 	private String yearOfExperience;
 	private String vaccinationStatus;
+    private String shiftTimingsOrAvailability;
+
 
 	// ---------- Optional ----------
 	@Email(message = "Invalid email format")

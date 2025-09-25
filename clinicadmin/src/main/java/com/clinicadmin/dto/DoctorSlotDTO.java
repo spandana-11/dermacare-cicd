@@ -14,6 +14,7 @@ public class DoctorSlotDTO {
 	private String hospitalId ; 
 	private String branchId;
 	private String date;
+	private String branchName;
 	private List<DoctorAvailableSlotDTO> availableSlots;
 	
 }

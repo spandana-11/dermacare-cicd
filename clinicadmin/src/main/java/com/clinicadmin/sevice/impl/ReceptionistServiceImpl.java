@@ -143,6 +143,7 @@ public class ReceptionistServiceImpl implements ReceptionistService {
         if (dto.getBankAccountDetails() != null) existing.setBankAccountDetails(dto.getBankAccountDetails());
         if (dto.getEmailId() != null) existing.setEmailId(dto.getEmailId());
         if (dto.getPreviousEmploymentHistory() != null) existing.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
+        if (dto.getShiftTimingsOrAvailability() != null) existing.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
 
         // 🔹 update Base64 fields (PDF/Image)
         if (dto.getProfilePicture() != null) 

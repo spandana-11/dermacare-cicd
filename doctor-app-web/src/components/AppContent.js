@@ -44,9 +44,9 @@ const AppContent = () => {
                 fromDoctorTemplate={true} // ✅ tells TabContent to load DoctorSymptoms
                 tabs={[
                   'Symptoms',
-                  'Tests',
+                  'Investigations',
                   'Medication',
-                  'Treatments',
+                  'Procedures',
                   'Follow-up',
                   'Prescription',
                 ]}

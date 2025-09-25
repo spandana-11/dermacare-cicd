@@ -73,6 +73,7 @@ public class ReceptionistMapper {
         dto.setGender(entity.getGender());
         dto.setYearOfExperience(entity.getYearOfExperience());
         dto.setVaccinationStatus(entity.getVaccinationStatus());
+        dto.setShiftTimingsOrAvailability(entity.getShiftTimingsOrAvailability());
         
 
         // Decode files safely
@@ -110,6 +111,7 @@ public class ReceptionistMapper {
         if (dto.getGender() != null) entity.setGender(dto.getGender());
         if (dto.getYearOfExperience() != null) entity.setYearOfExperience(dto.getYearOfExperience());
         if (dto.getVaccinationStatus() != null) entity.setVaccinationStatus(dto.getVaccinationStatus());
+        if (dto.getShiftTimingsOrAvailability() != null) entity.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
 
         // Encode files if provided
         if (dto.getGraduationCertificate() != null)
@@ -148,5 +150,6 @@ public class ReceptionistMapper {
         entity.setGender(dto.getGender());
         entity.setYearOfExperience(dto.getYearOfExperience());
         entity.setVaccinationStatus(dto.getVaccinationStatus());
+        entity.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
     }
 }

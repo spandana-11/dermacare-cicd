@@ -236,17 +236,24 @@ const NurseManagement = () => {
                   <CTableDataCell>{(currentPage - 1) * rowsPerPage + index + 1}</CTableDataCell>
                   <CTableDataCell>
                     {nurse.profilePicture ? (
-                      <img
-                        src={decodeImage(nurse.profilePicture)}
-                        alt={nurse.fullName}
-                        width="40"
-                        height="40"
-                        style={{
-                          borderRadius: '50%',
-                          objectFit: 'cover',
-                          border: '1px solid var(--color-black)',
-                        }}
-                      />
+                    <img
+  src={
+    nurse.profilePicture
+      ? (nurse.profilePicture.startsWith("data:")
+          ? nurse.profilePicture // already full data URL
+          : `data:image/png;base64,${nurse.profilePicture}`) // add prefix
+      : "/assets/images/default-avatar.png"
+  }
+  alt={nurse.fullName || "No profile"}
+  width="40"
+  height="40"
+  style={{
+    borderRadius: "50%",
+    objectFit: "cover",
+    border: "1px solid var(--color-black)",
+  }}
+/>
+
                     ) : (
                       <img
                         src="/assets/images/default-avatar.png"

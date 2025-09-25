@@ -510,6 +510,12 @@ public ResponseEntity<Response> getAverageRatingByDoctorId( @PathVariable String
 			 @PathVariable String keyPoints){
 	   return customerService.getRecommendedClinicsAndOnDoctors(keyPoints);
  }
+   
+   
+   @GetMapping("/getBookingsByBranchId/{branchId}")
+   public ResponseEntity<?> getBookingsByBranchId(
+			 @PathVariable String branchId){
+	   return customerService.getBookingsByBranchId(branchId);
+ }
 
- 
 }

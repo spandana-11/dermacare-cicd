@@ -104,6 +104,7 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
       tests: templateData.tests,
       treatments: templateData.treatments,
       followUp: templateData.followUp,
+
     }
     console.log('🚀 Submitting payload:', payload)
     onNext?.(payload)
@@ -433,11 +434,10 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
                   <div className="flex-grow-1">
                     <Select
                       value={
-                        // priority: diagnosis > fallback subServiceName > null
                         diagnosis
-                          ? { label: diagnosis, value: diagnosis } // user-selected diagnosis
+                          ? { label: diagnosis, value: diagnosis }
                           : patientData?.subServiceName && patientData.subServiceName !== 'NA'
-                            ? { label: patientData.subServiceName, value: patientData.subServiceName } // default fallback
+                            ? { label: patientData.subServiceName, value: patientData.subServiceName }
                             : null
                       }
                       onChange={(selected) => {
@@ -447,10 +447,10 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
                           } else {
                             setDiagnosis('');
                           }
-                          setInputValue(''); // clear input
+                          setInputValue('');
                         } else {
                           setDiagnosis(selected.value);
-                          setInputValue(''); // clear input to show selected value
+                          setInputValue('');
                         }
                       }}
                       inputValue={inputValue}
@@ -461,7 +461,9 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
                       isClearable
                       components={{ ClearIndicator: ClearInput }}
                       placeholder="Select diagnosis..."
-                      menuPlacement="bottom"
+                      menuPlacement="auto"          // auto decides top/bottom
+                      menuPosition="fixed"          // fix dropdown position
+                      menuPortalTarget={document.body}  // render at top-level
                       noOptionsMessage={() =>
                         inputValue
                           ? `No matches. Click Add to create "${inputValue}" as a diagnosis`
@@ -471,8 +473,10 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
                         input: (provided) => ({ ...provided, color: 'black' }),
                         singleValue: (provided) => ({ ...provided, color: 'black' }),
                         placeholder: (provided) => ({ ...provided, color: '#000' }),
+                        menuPortal: (base) => ({ ...base, zIndex: 9999 }), // ensure dropdown is on top
                       }}
                     />
+
 
                   </div>
 

@@ -139,11 +139,11 @@ public class WardBoyServiceImpl implements WardBoyService {
 			existing.setGender(dto.getGender());
 		if (dto.getWorkExprience() != null)
 			existing.setWorkExprience(dto.getWorkExprience());
-		if (dto.getShiftTimingOrAvailability() != null)
-			existing.setShiftTimingOrAvailability(dto.getShiftTimingOrAvailability());
+		if (dto.getShiftTimingsOrAvailability() != null)
+			existing.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
 		if (dto.getEmergencyContact() != null)
 			existing.setEmergencyContact(dto.getEmergencyContact());
-
+		
 		if (dto.getMedicalFitnessCertificate() != null)
 			existing.setMedicalFitnessCertificate(WardBoyMapper.toEntity(dto).getMedicalFitnessCertificate());
 		if (dto.getBasicHealthFirstAidTrainingCertificate() != null)

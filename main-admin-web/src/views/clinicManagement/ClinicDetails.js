@@ -250,46 +250,7 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
 
   return (
     <CCard className="mt-4">
-    <CCardHeader>
-  <div className="d-flex justify-content-between align-items-center mb-3 w-100">
-    {/* Left: Back Button */}
-    <CButton color="secondary" onClick={() => navigate(-1)}>
-      Back
-    </CButton>
-
-    {/* Center: Title */}
-    <h4 className="mb-0 text-center flex-grow-1">Clinic Details</h4>
-
-    {/* Right: Add Doctor Button */}
-    {activeTab === 3 && (
-      <button
-        className="btn btn-info text-white d-flex align-items-center gap-2 shadow-sm rounded-pill px-4 py-2"
-        onClick={() => {
-          setFormErrors({});
-          setModalVisible(true);
-        }}
-        style={{
-          background: 'linear-gradient(90deg, #0072CE 0%, #00AEEF 100%)',
-          border: 'none',
-          fontWeight: '600',
-          fontSize: '16px',
-        }}
-      >
-        <CIcon icon={cilUser} size="lg" />
-        <span>Add Doctor</span>
-      </button>
-    )}
-  </div>
-
- {modalVisible && (
-  <AddDoctors
-    modalVisible={modalVisible}
-    setModalVisible={setModalVisible}
-    clinicId={hospitalId}
-    closeForm={() => setModalVisible(false)} // closes modal
-  />
-)}
-</CCardHeader>
+    
 
 
       <CCardBody>
@@ -313,18 +274,14 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
             Branch Details
           </CNavLink>
         </CNavItem>
-        {/* <CNavItem>
-          <CNavLink active={activeTab === 3} onClick={() => handleTabChange(3)}>
-            Doctors
-          </CNavLink>
-        </CNavItem>
-        <CNavItem>
-          <CNavLink active={activeTab === 4} onClick={() => handleTabChange(4)}>
+ {/* <CNavItem>
+     
+          <CNavLink active={activeTab === 3} onClick={() => handleTabChange(4)}>
             Appointments
           </CNavLink>
-        </CNavItem> */}
+        </CNavItem>  */}
         <CNavItem>
-          <CNavLink active={activeTab === 3} onClick={() => handleTabChange(5)}>
+          <CNavLink active={activeTab === 3} onClick={() => handleTabChange(3)}>
             Procedures
           </CNavLink>
         </CNavItem>
@@ -451,7 +408,7 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
 
  {isEditing ? (
   <>
-    <CButton
+    {/* <CButton
       color="success"
       className="me-2"
       onClick={async () => {
@@ -465,7 +422,7 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
       }}
     >
       Update
-    </CButton>
+    </CButton> */}
 
     <CButton
       color="secondary"

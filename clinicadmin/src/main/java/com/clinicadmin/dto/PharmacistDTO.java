@@ -38,6 +38,8 @@ public class PharmacistDTO {
     private String dPharmaOrBPharmaCertificate;
     private String experienceCertificates;
     private Map<String, List<String>> permissions;
+    private String shiftTimingsOrAvailability;
+
 	
 	private String userName;
 	private String password;

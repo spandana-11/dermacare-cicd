@@ -13,10 +13,11 @@ export const savePrescriptionbaseUrl = `${ipUrl}/api/doctors`
 
 export const testsbaseUrl = `${ipUrl}/clinic-admin/labtest/getAllLabTests`
 export const labtestsbase = `${ipUrl}/clinic-admin/labtests`
+export const labtestsupdatedbase=`${ipUrl}/clinic-admin/addOrGetTest`
 export const diseasesbaseUrl = `${ipUrl}/clinic-admin/diseases`
 export const treatmentsbaseUrl = `${ipUrl}/clinic-admin/treatment/getAllTreatments`
 export const treatmentUrl = `${ipUrl}/clinic-admin/treatments`
-
+export const addtreatmentUrl = `${ipUrl}/clinic-admin/addOrGetTreatment`
 export const ratingsbaseUrl = `${ipUrl}/clinic-admin/getAverageRatingsByDoctorId`
 
 export const updateLoginEndpoint = 'update-password'

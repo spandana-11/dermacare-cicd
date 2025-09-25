@@ -58,5 +58,12 @@ public class TreatmentController {
     	 Response response = treatmentService.getAllTreatmentsByHospitalId(hospitalId);
          return ResponseEntity.status(response.getStatus()).body(response);
     }
+    
+    @PostMapping("/addOrGetTreatment")
+    public ResponseEntity<Response> addOrGetTreatment(@RequestBody TreatmentDTO dto) {
+        Response response = treatmentService.addOrGetTreatment(dto);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
 
 }

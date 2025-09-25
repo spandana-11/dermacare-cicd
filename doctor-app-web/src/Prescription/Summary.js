@@ -25,7 +25,7 @@ import { createDoctorSaveDetails, getClinicDetails, getDoctorDetails } from '../
 import { useDoctorContext } from '../Context/DoctorContext'
 import PrescriptionPDF from '../utils/PdfGenerator'
 import { pdf } from '@react-pdf/renderer'
-import { capitalizeFirst } from '../utils/CaptalZeWord'
+import { capitalizeEachWord, capitalizeFirst } from '../utils/CaptalZeWord'
 
 /**
  * Props:
@@ -332,7 +332,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
             <CRow className="g-3">
               <CCol xs={12} md={4}>
                 <div>
-                  <span className="fw-semibold">Name:</span> {capitalizeFirst(patientData?.name || '—')}
+                  <span className="fw-semibold">Name:</span> {capitalizeEachWord(patientData?.name || '—')}
 
                 </div>
               </CCol>
@@ -479,7 +479,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {(tests.length > 0 || testsReason) && (
           <CCard className="shadow-sm mb-3">
             <CCardHeader className="py-2">
-              <strong style={{ color: COLORS.black }}>Tests</strong>
+              <strong style={{ color: COLORS.black }}>Investigations</strong>
             </CCardHeader>
             <CCardBody>
               {tests.length > 0 ? (
@@ -511,7 +511,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {treatments.length > 0 && (
           <CCard className="shadow-sm mb-3">
             <CCardHeader className="py-2">
-              <strong style={{ color: COLORS.black }}>Treatments</strong>
+              <strong style={{ color: COLORS.black }}>Procedures</strong>
             </CCardHeader>
             <CCardBody>
               <ul className="mb-2">

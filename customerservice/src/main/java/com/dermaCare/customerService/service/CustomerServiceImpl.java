@@ -1391,4 +1391,13 @@ try {
 	return ResponseEntity.status(e.status()).body(res);		
 }}
 
+
+public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingsByBranchId(String branchId){
+	ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
+	try {		
+	return bookingFeign.getAllBookedServicesByBranchId(branchId);		
+}catch(FeignException e) {
+	res = new ResponseStructure<List<BookingResponse>>(null,ExtractFeignMessage.clearMessage(e),HttpStatus.INTERNAL_SERVER_ERROR,e.status());
 }
+	return ResponseEntity.status(res.getStatusCode()).body(res);
+}}

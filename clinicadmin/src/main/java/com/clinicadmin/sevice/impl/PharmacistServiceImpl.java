@@ -110,61 +110,68 @@ public class PharmacistServiceImpl implements PharmacistService {
 	// ---------------- UPDATE ----------------
 	@Override
 	public Response updatePharmacist(String pharmacistId, PharmacistDTO dto) {
-		Response response = new Response();
+	    Response response = new Response();
 
-		return pharmacistRepository.findByPharmacistId(pharmacistId).map(existing -> {
+	    return pharmacistRepository.findByPharmacistId(pharmacistId).map(existing -> {
 
-			if (dto.getHospitalId() != null)
-				existing.setHospitalId(dto.getHospitalId());
-			if (dto.getFullName() != null)
-				existing.setFullName(dto.getFullName());
-			if (dto.getGender() != null)
-				existing.setGender(dto.getGender());
-			if (dto.getQualification() != null)
-				existing.setQualification(dto.getQualification());
-			if (dto.getDateOfBirth() != null)
-				existing.setDateOfBirth(dto.getDateOfBirth());
-			if (dto.getContactNumber() != null)
-				existing.setContactNumber(dto.getContactNumber());
-			if (dto.getGovernmentId() != null)
-				existing.setGovernmentId(dto.getGovernmentId());
-			if (dto.getPharmacyLicense() != null)
-				existing.setPharmacyLicense(dto.getPharmacyLicense());
-			if (dto.getStatePharmacyCouncilRegistration() != null)
-				existing.setStatePharmacyCouncilRegistration(dto.getStatePharmacyCouncilRegistration());
-			if (dto.getDateOfJoining() != null)
-				existing.setDateOfJoining(dto.getDateOfJoining());
-			if (dto.getDepartment() != null)
-				existing.setDepartment(dto.getDepartment());
-			if (dto.getBankAccountDetails() != null)
-				existing.setBankAccountDetails(dto.getBankAccountDetails());
-			if (dto.getAddress() != null)
-				existing.setAddress(dto.getAddress());
-			if (dto.getEmailID() != null)
-				existing.setEmailID(dto.getEmailID());
-			if (dto.getPreviousEmploymentHistory() != null)
-				existing.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
-			if (dto.getExperienceCertificates() != null)
-				existing.setExperienceCertificates(dto.getExperienceCertificates());
-			if (dto.getEmergencyContactNumber() != null)
-				existing.setEmergencyContactNumber(dto.getEmergencyContactNumber());
-			if (dto.getDPharmaOrBPharmaCertificate() != null)
-				existing.setDPharmaOrBPharmaCertificate(dto.getDPharmaOrBPharmaCertificate());
+	        if (dto.getHospitalId() != null)
+	            existing.setHospitalId(dto.getHospitalId());
+	        if (dto.getFullName() != null)
+	            existing.setFullName(dto.getFullName());
+	        if (dto.getGender() != null)
+	            existing.setGender(dto.getGender());
+	        if (dto.getQualification() != null)
+	            existing.setQualification(dto.getQualification());
+	        if (dto.getDateOfBirth() != null)
+	            existing.setDateOfBirth(dto.getDateOfBirth());
+	        if (dto.getContactNumber() != null)
+	            existing.setContactNumber(dto.getContactNumber());
+	        if (dto.getGovernmentId() != null)
+	            existing.setGovernmentId(dto.getGovernmentId());
+	        if (dto.getShiftTimingsOrAvailability() != null)
+	            existing.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
+	        if (dto.getPharmacyLicense() != null)
+	            existing.setPharmacyLicense(dto.getPharmacyLicense());
+	        if (dto.getStatePharmacyCouncilRegistration() != null)
+	            existing.setStatePharmacyCouncilRegistration(
+	                    Base64CompressionUtil.compressBase64(dto.getStatePharmacyCouncilRegistration()));
+	        if (dto.getDateOfJoining() != null)
+	            existing.setDateOfJoining(dto.getDateOfJoining());
+	        if (dto.getDepartment() != null)
+	            existing.setDepartment(dto.getDepartment());
+	        if (dto.getBankAccountDetails() != null)
+	            existing.setBankAccountDetails(dto.getBankAccountDetails());
+	        if (dto.getAddress() != null)
+	            existing.setAddress(dto.getAddress());
+	        if (dto.getEmailID() != null)
+	            existing.setEmailID(dto.getEmailID());
+	        if (dto.getPreviousEmploymentHistory() != null)
+	            existing.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
+	        if (dto.getExperienceCertificates() != null)
+	            existing.setExperienceCertificates(
+	                    Base64CompressionUtil.compressBase64(dto.getExperienceCertificates()));
+	        if (dto.getEmergencyContactNumber() != null)
+	            existing.setEmergencyContactNumber(dto.getEmergencyContactNumber());
+	        if (dto.getDPharmaOrBPharmaCertificate() != null)
+	            existing.setDPharmaOrBPharmaCertificate(
+	                    Base64CompressionUtil.compressBase64(dto.getDPharmaOrBPharmaCertificate()));
+	        if (dto.getProfilePicture() != null)
+	            existing.setProfilePicture(Base64CompressionUtil.compressBase64(dto.getProfilePicture()));
 
-			Pharmacist updated = pharmacistRepository.save(existing);
+	        Pharmacist updated = pharmacistRepository.save(existing);
 
-			response.setSuccess(true);
-			response.setData(mapEntityToDto(updated));
-			response.setMessage("Pharmacist updated successfully");
-			response.setStatus(HttpStatus.OK.value());
-			return response;
+	        response.setSuccess(true);
+	        response.setData(mapEntityToDto(updated));
+	        response.setMessage("Pharmacist updated successfully");
+	        response.setStatus(HttpStatus.OK.value());
+	        return response;
 
-		}).orElseGet(() -> {
-			response.setSuccess(false);
-			response.setMessage("Pharmacist not found");
-			response.setStatus(HttpStatus.NOT_FOUND.value());
-			return response;
-		});
+	    }).orElseGet(() -> {
+	        response.setSuccess(false);
+	        response.setMessage("Pharmacist not found");
+	        response.setStatus(HttpStatus.NOT_FOUND.value());
+	        return response;
+	    });
 	}
 
 	@Override
@@ -262,6 +269,7 @@ public class PharmacistServiceImpl implements PharmacistService {
 		pharmacist.setBankAccountDetails(dto.getBankAccountDetails());
 		pharmacist.setAddress(dto.getAddress());
 		pharmacist.setEmailID(dto.getEmailID());
+		pharmacist.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
 		pharmacist.setEmergencyContactNumber(dto.getEmergencyContactNumber());
 		pharmacist.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
 		pharmacist.setProfilePicture(Base64CompressionUtil.compressBase64(dto.getProfilePicture()));
@@ -293,6 +301,7 @@ public class PharmacistServiceImpl implements PharmacistService {
 		dto.setBankAccountDetails(pharmacist.getBankAccountDetails());
 		dto.setAddress(pharmacist.getAddress());
 		dto.setEmailID(pharmacist.getEmailID());
+		dto.setShiftTimingsOrAvailability(pharmacist.getShiftTimingsOrAvailability());
 		dto.setPreviousEmploymentHistory(pharmacist.getPreviousEmploymentHistory());
 		dto.setEmergencyContactNumber(pharmacist.getEmergencyContactNumber());
 		dto.setProfilePicture(Base64CompressionUtil.decompressBase64(pharmacist.getProfilePicture()));

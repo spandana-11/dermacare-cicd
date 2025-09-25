@@ -39,6 +39,8 @@ public class Pharmacist {
 	private String emailID;
 	private String previousEmploymentHistory;
 	private String emergencyContactNumber;
+    private String shiftTimingsOrAvailability;
+
 	
 	private String profilePicture;
 	private String statePharmacyCouncilRegistration;

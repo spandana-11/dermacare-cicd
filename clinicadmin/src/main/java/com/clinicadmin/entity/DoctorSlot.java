@@ -27,6 +27,7 @@ public class DoctorSlot {
     private String doctorId;
     private String hospitalId ;
     private String branchId;
+    private String branchName;
     
     private String date;
 

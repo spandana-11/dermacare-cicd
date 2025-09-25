@@ -10,9 +10,7 @@ import java.io.InputStream;
 
 @Component
 public class CustomFeignErrorDecoder implements ErrorDecoder {
-
     private final ErrorDecoder defaultDecoder = new Default();
-
     @Override
     public Exception decode(String methodKey, Response response) {
         try (InputStream bodyIs = response.body().asInputStream()) {

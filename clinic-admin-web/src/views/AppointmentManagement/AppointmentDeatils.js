@@ -82,7 +82,7 @@ const AppointmentDetails = () => {
   }, [normalizedStatus, appointment?.doctorId])
 
   useEffect(() => {
-    if (['confirmed', 'completed', 'active'].includes(normalizedStatus)) {
+    if (['confirmed','active', 'completed' ].includes(normalizedStatus)) {
       fetchVitals()
     }
   }, [appointment?.bookingId, appointment?.patientId, normalizedStatus])
@@ -92,14 +92,14 @@ const AppointmentDetails = () => {
     return picture.startsWith('data:image') ? picture : `data:image/jpeg;base64,${picture}`
   }
 
-  useEffect(() => {
-    if (
-      appointment?.status &&
-      ['completed', 'in-progress', 'confirmed'].includes(appointment.status.toLowerCase())
-    ) {
-      fetchVitals()
-    }
-  }, [appointment?.bookingId, appointment?.patientId, appointment?.status])
+  // useEffect(() => {
+  //   if (
+  //     appointment?.status &&
+  //     ['completed', 'in-progress', 'confirmed'].includes(appointment.status.toLowerCase())
+  //   ) {
+  //     fetchVitals()
+  //   }
+  // }, [appointment?.bookingId, appointment?.patientId, appointment?.status])
 
   const fetchVitals = async () => {
     try {
@@ -297,8 +297,8 @@ const AppointmentDetails = () => {
       URL.revokeObjectURL(url)
     }
   }
-  const showAccordion = ['confirmed', 'in-progress', 'completed'].includes(normalizedStatus)
-  const showPrescription = ['in-progress', 'completed'].includes(normalizedStatus)
+  const showAccordion = ['confirmed', 'active', 'completed'].includes(normalizedStatus)
+  const showPrescription = ['active', 'completed'].includes(normalizedStatus)
 
   return (
     <div className="container mt-4">
@@ -493,130 +493,98 @@ const AppointmentDetails = () => {
         </div>
 
         {/* vitals */}
-        {vitals && (
-          <div className="card shadow-sm p-3 mb-3 mt-4" style={{ color: 'var(--color-black)' }}>
-            <div className="d-flex justify-content-between align-items-center">
-              <h5>Vitals Card</h5>
-              {/* <div>
-                <CButton
-                  size="sm"
-                  color="primary"
-                  className="me-2"
-                  onClick={() => {
-                    setFormData(vitals) // preload values
-                    setShowModal(true) // open modal for editing
-                  }}
-                >
-                  Edit
-                </CButton>
-                <CButton size="sm" color="danger" onClick={handleDeleteVitals}>
-                  Delete
-                </CButton>
-              </div> */}
-            </div>
-            <div className="row mt-3">
-              <div className="col-md-4">
-                <strong>Height:</strong> {vitals.height} cm
-              </div>
-              <div className="col-md-4">
-                <strong>Weight:</strong> {vitals.weight} kg
-              </div>
-              <div className="col-md-4">
-                <strong>Blood Pressure:</strong> {vitals.bloodPressure}
-              </div>
-              <div className="col-md-4">
-                <strong>Temperature:</strong> {vitals.temperature} °C
-              </div>
-              <div className="col-md-4">
-                <strong>BMI:</strong> {vitals.bmi}
-              </div>
-            </div>
-          </div>
-        )}
+       {/* Vitals Card */}
+{/* Vitals Card */}
+{showVitalsCard && (
+  <div className="card shadow-sm p-3 mb-3 mt-4" style={{ color: 'var(--color-black)' }}>
+    <div className="d-flex justify-content-between align-items-center">
+      <h5>Vitals Card</h5>
+      {showConfirmed && !vitals && (
+        <CButton
+          style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+          onClick={() => setShowModal(true)}
+        >
+          Add Vitals
+        </CButton>
+      )}
+    </div>
+    {vitals ? (
+      <div className="row mt-3">
+        <div className="col-md-4"><strong>Height:</strong> {vitals.height} cm</div>
+        <div className="col-md-4"><strong>Weight:</strong> {vitals.weight} kg</div>
+        <div className="col-md-4"><strong>Blood Pressure:</strong> {vitals.bloodPressure}</div>
+        <div className="col-md-4"><strong>Temperature:</strong> {vitals.temperature} °C</div>
+        <div className="col-md-4"><strong>BMI:</strong> {vitals.bmi}</div>
+      </div>
+    ) : (
+      !showConfirmed && (
+        <div className="row mt-3">
+          <div className="col-12">No vitals data available.</div>
+        </div>
+      )
+    )}
+  </div>
+)}
 
         {showConfirmedOrCompleted && doctor && (
           <>
             <div className="mt-4">
-              <CAccordion activeItemKey={1}>
-                {/* Consent Form Accordion */}
-                <CAccordionItem itemKey={1}>
-                  <CAccordionHeader>Consent Form</CAccordionHeader>
-                  <CAccordionBody>
-                    <div className="d-flex gap-2">
-                      <CButton
-                        color="primary"
-                        onClick={() =>
-                          handlePreview(appointment?.consentFormPdf, 'consent_form.pdf')
-                        }
-                      >
-                        Preview
-                      </CButton>
-                      <CButton
-                        color="success"
-                        onClick={() =>
-                          handleDownload(appointment?.consentFormPdf, 'consent_form.pdf')
-                        }
-                      >
-                        Download
-                      </CButton>
-                    </div>
-                  </CAccordionBody>
-                </CAccordionItem>
+            <CAccordion activeItemKey={1}>
+  {/* Consent Form Accordion */}
+  <CAccordionItem itemKey={1}>
+    <CAccordionHeader>Consent Form</CAccordionHeader>
+    <CAccordionBody>
+      <div className="d-flex gap-2">
+        <CButton color="primary" onClick={() => handlePreview(appointment?.consentFormPdf, 'consent_form.pdf')}>
+          Preview
+        </CButton>
+        <CButton color="success" onClick={() => handleDownload(appointment?.consentFormPdf, 'consent_form.pdf')}>
+          Download
+        </CButton>
+      </div>
+    </CAccordionBody>
+  </CAccordionItem>
 
-                {/* Past Reports Accordion */}
-                <CAccordionItem itemKey={2}>
-                  <CAccordionHeader>Past Reports</CAccordionHeader>
-                  <CAccordionBody>
-                    {appointment?.attachments && appointment.attachments.length > 0 ? (
-                      appointment.attachments.map((attachment, index) => (
-                        <div key={index} className="d-flex gap-2 mb-2">
-                          <span>Attachment {index + 1}</span>
-                          <CButton
-                            color="primary"
-                            onClick={() => handlePreview(attachment, `attachment_${index + 1}.pdf`)}
-                          >
-                            Preview
-                          </CButton>
-                          <CButton
-                            color="success"
-                            onClick={() =>
-                              handleDownload(attachment, `attachment_${index + 1}.pdf`)
-                            }
-                          >
-                            Download
-                          </CButton>
-                        </div>
-                      ))
-                    ) : (
-                      <p>No past reports available.</p>
-                    )}
-                  </CAccordionBody>
-                </CAccordionItem>
+  {/* Past Reports Accordion */}
+  <CAccordionItem itemKey={2}>
+    <CAccordionHeader>Past Reports</CAccordionHeader>
+    <CAccordionBody>
+      {appointment?.attachments && appointment.attachments.length > 0 ? (
+        appointment.attachments.map((attachment, index) => (
+          <div key={index} className="d-flex gap-2 mb-2">
+            <span>Attachment {index + 1}</span>
+            <CButton color="primary" onClick={() => handlePreview(attachment, `attachment_${index + 1}.pdf`)}>
+              Preview
+            </CButton>
+            <CButton color="success" onClick={() => handleDownload(attachment, `attachment_${index + 1}.pdf`)}>
+              Download
+            </CButton>
+          </div>
+        ))
+      ) : (
+        <p>No past reports available.</p>
+      )}
+    </CAccordionBody>
+  </CAccordionItem>
 
-                <CAccordionItem itemKey={3}>
-                  <CAccordionHeader>Prescription</CAccordionHeader>
-                  <CAccordionBody>
-                    <div className="d-flex gap-2">
-                      <CButton
-                        color="primary"
-                        onClick={() =>
-                          handlePreview(appointment?.prescriptionPdf, 'prescription.pdf')
-                        }
-                      >
-                        Preview
-                      </CButton>
-                      <CButton
-                        color="success"
-                        onClick={() =>
-                          handleDownload(appointment?.prescriptionPdf, 'prescription.pdf')
-                        }
-                      >
-                        Download
-                      </CButton>
-                    </div>
-                  </CAccordionBody>
-                </CAccordionItem>
-              </CAccordion>
+  {/* Prescription Accordion - only for in-progress and completed */}
+  {showPrescription && (
+    <CAccordionItem itemKey={3}>
+      <CAccordionHeader>Prescription</CAccordionHeader>
+      <CAccordionBody>
+        <div className="d-flex gap-2">
+          <CButton color="primary" onClick={() => handlePreview(appointment?.prescriptionPdf, 'prescription.pdf')}>
+            Preview
+          </CButton>
+          <CButton color="success" onClick={() => handleDownload(appointment?.prescriptionPdf, 'prescription.pdf')}>
+            Download
+          </CButton>
+        </div>
+      </CAccordionBody>
+    </CAccordionItem>
+  )}
+</CAccordion>
+
             </div>
             <h6 className="fw-bold mt-4">Doctor Details</h6>{' '}
             <div className="d-flex align-items-center gap-3 border rounded p-3 shadow-sm">

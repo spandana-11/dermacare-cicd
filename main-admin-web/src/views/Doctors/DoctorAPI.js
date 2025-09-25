@@ -1,7 +1,7 @@
 // doctorUtils.js
 
 import axios from 'axios'
-import { BASE_URL, getAllDoctors, getDoctorByClinicId, doctorAvailableUrl, addDoctorUrl, GetBranches_ByClinicId, getDoctorsByHospitalIdAndBranchId, UpdateDoctor } from '../../baseUrl'
+import { BASE_URL, getAllDoctors, getDoctorByClinicId, doctorAvailableUrl, addDoctorUrl, GetBranches_ByClinicId, getDoctorsByHospitalIdAndBranchId, UpdateDoctor,GetBy_DoctorId } from '../../baseUrl'
 import { toast } from 'react-toastify'
 
 // 🆕 Update Doctor Availability (true/false)
@@ -98,16 +98,30 @@ export const getDoctorDetailsById = async (doctorId) => {
   }
 }
 
-export const AddDoctorByAdmin=async(doctorData)=>{
-  try{
-    const response= await axios.post(`${BASE_URL}/${addDoctorUrl}`, doctorData,{
-      headers:{
-        "Content-type":"application/json",
+export const AddDoctorByAdmin = async (doctorData) => {
+  try {
+    console.log('🚀 AddDoctorByAdmin API Call:');
+    console.log('URL:', `${BASE_URL}/${addDoctorUrl}`);
+    console.log('Payload:', doctorData);
+    
+    const response = await axios.post(`${BASE_URL}/${addDoctorUrl}`, doctorData, {
+      headers: {
+        "Content-Type": "application/json",
       },
-    })
-    return response.data;
-  }catch(error){
-    console.error("Error while adding Doctor:", error.response?.data || error.message);
+      timeout: 30000, // Add timeout to prevent hanging
+    });
+    
+    console.log('✅ API Response Status:', response.status);
+    console.log('✅ API Response Data:', response.data);
+    return response;
+    
+  } catch (error) {
+    console.error('❌ API Error Details:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      url: error.config?.url
+    });
     throw error;
   }
 };

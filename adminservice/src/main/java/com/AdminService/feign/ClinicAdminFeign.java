@@ -3,7 +3,6 @@ import java.util.List;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import com.AdminService.dto.DoctorSlotDTO;
 import com.AdminService.dto.DoctorsDTO;
 import com.AdminService.dto.LabTestDTO;
 import com.AdminService.dto.ProbableDiagnosisDTO;
@@ -19,17 +19,14 @@ import com.AdminService.dto.TreatmentDTO;
 import com.AdminService.util.Response;
 import com.AdminService.util.ResponseStructure;
 
-
-@FeignClient(name = "clinicadmin")
-//@CircuitBreaker(name = "circuitBreaker", fallbackMethod = "clinicAdminServiceFallBack")
+@FeignClient(value = "clinicadmin")
 public interface ClinicAdminFeign {
-	
-	 // ---------------------- Sub-Service APIs ----------------------
-	@GetMapping("/clinic-admin/subService/getAllSubServies")
-    public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getAllSubServices();
-	
-	
-	// ---------------- Doctor CRUD ---------------- //
+
+    // ---------------------- Sub-Service APIs ----------------------
+    @GetMapping("/clinic-admin/subService/getAllSubServies")
+    ResponseEntity<ResponseStructure<List<SubServicesDto>>> getAllSubServices();
+
+    // ---------------- Doctor CRUD ---------------- //
     @PostMapping("/clinic-admin/addDoctor")
     ResponseEntity<Response> addDoctor(@RequestBody DoctorsDTO dto);
 
@@ -61,48 +58,29 @@ public interface ClinicAdminFeign {
     ResponseEntity<Response> getDoctorsByHospitalIdAndBranchId(@PathVariable("hospitalId") String hospitalId,
                                                                @PathVariable("branchId") String branchId);
 
-
-	
-	///FALLBACK METHODS
-	
-	default ResponseEntity<?> clinicAdminServiceFallBack(Exception e){		 
-		return ResponseEntity.status(503).body(new Response(false,null,"CLINIC ADMIN SERVICE NOT AVAILABLE",503,null,null, null, null, null));
-		
-	
-	}
-	
-	// ---------------------- Disease APIs ----------------------
-	
-	// Add multiple or single diseases
+    // ---------------------- Disease APIs ----------------------
     @PostMapping("/clinic-admin/addDiseases")
     ResponseEntity<Response> addDiseases(@RequestBody Object requestBody);
 
-    // Get all diseases
     @GetMapping("/clinic-admin/get-all-diseases")
     ResponseEntity<Response> getAllDiseases();
 
-    // Get disease by ID and hospital ID
     @GetMapping("/clinic-admin/getDisease/{id}/{hospitalId}")
     ResponseEntity<Response> getDiseaseByDiseaseId(@PathVariable("id") String id,
                                                    @PathVariable("hospitalId") String hospitalId);
 
-    // Delete disease by ID and hospital ID
     @DeleteMapping("/clinic-admin/deleteDisease/{id}/{hospitalId}")
     ResponseEntity<Response> deleteDiseaseByDiseaseId(@PathVariable("id") String id,
                                                       @PathVariable("hospitalId") String hospitalId);
 
-    // Update disease by ID and hospital ID
     @PutMapping("/clinic-admin/updateDisease/{id}/{hospitalId}")
     ResponseEntity<Response> updateDiseaseByDiseaseId(@PathVariable("id") String id,
                                                       @PathVariable("hospitalId") String hospitalId,
                                                       @RequestBody ProbableDiagnosisDTO dto);
 
-    // Get all diseases by hospital ID
     @GetMapping("/clinic-admin/diseases/{hospitalId}")
     ResponseEntity<ResponseStructure<List<ProbableDiagnosisDTO>>> getDiseasesByHospitalId(@PathVariable("hospitalId") String hospitalId);
 
-    
-    
     // ---------------------- Lab Test APIs ----------------------
     @PostMapping("/clinic-admin/labtest/addLabTest")
     ResponseEntity<Response> addLabTest(@RequestBody LabTestDTO dto);
@@ -126,7 +104,6 @@ public interface ClinicAdminFeign {
     @GetMapping("/clinic-admin/labtests/{hospitalId}")
     ResponseEntity<ResponseStructure<List<LabTestDTO>>> getLabTestsByHospitalId(@PathVariable("hospitalId") String hospitalId);
 
-    
     // ---------------------- Treatment APIs ----------------------
     @PostMapping("/clinic-admin/treatment/addTreatment")
     ResponseEntity<Response> addTreatment(@RequestBody TreatmentDTO dto);
@@ -149,5 +126,26 @@ public interface ClinicAdminFeign {
 
     @GetMapping("/clinic-admin/treatments/{hospitalId}")
     ResponseEntity<ResponseStructure<List<TreatmentDTO>>> getTreatmentsByHospitalId(@PathVariable("hospitalId") String hospitalId);
+    
+    
+ 
 
+    // ---------------------- Fallback Method ----------------------
+    default ResponseEntity<?> clinicAdminServiceFallBack(Exception e) {
+        return ResponseEntity.status(503).body(
+                new Response(false, null, "CLINIC ADMIN SERVICE NOT AVAILABLE", 503, null, null, null, null, null)
+        );
+    }
+
+    // ---------------------- Doctor Slot APIs (Added Last) ----------------------
+    @PostMapping("/clinic-admin/addDoctorSlots/{hospitalId}/{branchId}/{doctorId}")
+    ResponseEntity<Response> addDoctorSlot(@PathVariable("hospitalId") String hospitalId,
+                                           @PathVariable("branchId") String branchId,
+                                           @PathVariable("doctorId") String doctorId,
+                                           @RequestBody DoctorSlotDTO slotDto);
+
+    @GetMapping("/clinic-admin/getDoctorSlots/{hospitalId}/{branchId}/{doctorId}")
+    ResponseEntity<Response> getDoctorSlots(@PathVariable("hospitalId") String hospitalId,
+                                            @PathVariable("branchId") String branchId,
+                                            @PathVariable("doctorId") String doctorId);
 }

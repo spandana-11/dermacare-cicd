@@ -10,27 +10,34 @@ import org.springframework.data.mongodb.repository.Query;
 import com.clinicadmin.entity.Doctors;
 
 public interface DoctorsRepository extends MongoRepository<Doctors, ObjectId> {
-	boolean existsByDoctorMobileNumber(String mobileNumber);
 
-	public Optional<Doctors> findByDoctorId(String doctorId);
+    boolean existsByDoctorMobileNumber(String mobileNumber);
 
-	public List<Doctors> findByHospitalId(String hospitalId);
+    Optional<Doctors> findByDoctorId(String doctorId);
 
-	@Query("{ 'subServices.subServiceId': ?0 }")
-	List<Doctors> findBySubServiceById(String subServiceId);
+    List<Doctors> findByHospitalId(String hospitalId);
 
-	List<Doctors> findByHospitalIdAndSubServicesSubServiceId(String hospitalId, String subServiceId);
+    @Query("{ 'subServices.subServiceId': ?0 }")
+    List<Doctors> findBySubServiceById(String subServiceId);
 
-	Optional<Doctors> findByHospitalIdAndDoctorId(String clinicId, String doctorId);
+    List<Doctors> findByHospitalIdAndSubServicesSubServiceId(String hospitalId, String subServiceId);
 
-	@Query("{ 'hospitalId': ?0, 'branches.branchId': ?1, 'subServices.subServiceId': ?2 }")
-	List<Doctors> findByHospitalIdAndBranchesBranchIdAndSubServicesSubServiceId(String hospitalId, String branchId,
-			String subServiceId);
+    Optional<Doctors> findByHospitalIdAndDoctorId(String clinicId, String doctorId);
 
-	List<Doctors> findByHospitalIdAndBranchId(String hospitalId, String branchId);
-	
-	@Query("{ 'hospitalId': ?0, $or: [ { 'branchId': ?1 }, { 'branches.branchId': ?1 } ] }")
+    @Query("{ 'hospitalId': ?0, 'branches.branchId': ?1, 'subServices.subServiceId': ?2 }")
+    List<Doctors> findByHospitalIdAndBranchesBranchIdAndSubServicesSubServiceId(
+            String hospitalId, String branchId, String subServiceId);
 
-	List<Doctors> findByHospitalIdAndBranchIdIncludingBranches(String hospitalId, String branchId);
+    // -------------------- STRICT BRANCH METHOD --------------------
+    // Fetch only doctors whose branchId exactly matches
+    List<Doctors> findByHospitalIdAndBranchId(String hospitalId, String branchId);
+    
+    @Query("{ 'hospitalId': ?0, 'branchId': ?1 }")
+    List<Doctors> findByHospitalIdAndBranchIdStrict(String hospitalId, String branchId);
 
+
+    // -------------------- CROSS-BRANCH METHOD --------------------
+    // Includes doctors of the branch and doctors in its sub-branches
+    @Query("{ 'hospitalId': ?0, $or: [ { 'branchId': ?1 }, { 'branches.branchId': ?1 } ] }")
+    List<Doctors> findByHospitalIdAndBranchIdIncludingBranches(String hospitalId, String branchId);
 }

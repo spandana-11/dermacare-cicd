@@ -82,7 +82,6 @@ public class AdminServiceImpl implements AdminService {
 	private CustomerFeign customerFeign;
 
 	@Autowired
-
 	private  ClinicAdminFeign clinicAdminFeign;
 
 	@Autowired
@@ -959,9 +958,6 @@ public class AdminServiceImpl implements AdminService {
 
 
 	@Override
-
-		
-
 	public Response updateClinic(String clinicId, ClinicDTO clinic) {
 
 	    Response response = new Response();
@@ -971,41 +967,37 @@ public class AdminServiceImpl implements AdminService {
 	        Clinic savedClinic = clinicRep.findByHospitalId(clinicId);
 
 	        if (savedClinic != null) {
-	        	
-	        	
+	        	if(!savedClinic.getContactNumber().equalsIgnoreCase(clinic.getContactNumber())) {       	
 	        	if (clinicRep.findByContactNumber(clinic.getContactNumber()) != null) {
 	  	            response.setMessage("ContactNumber already exists");
 	  	            response.setSuccess(false);
 	  	            response.setStatus(409);
 	  	            return response;
-	  	        }
+	  	        }}
 
+	        	if(!savedClinic.getLicenseNumber().equalsIgnoreCase(clinic.getLicenseNumber())) {       	
 	  	        if (clinicRep.findByLicenseNumber(clinic.getLicenseNumber()) != null) {
 	  	            response.setMessage("LicenseNumber already exists");
 	  	            response.setSuccess(false);
 	  	            response.setStatus(409);
 	  	            return response;
-	  	        }
+	  	        }}
 
+	        	if(!savedClinic.getEmailAddress().equalsIgnoreCase(clinic.getEmailAddress())) {       	
 	  	        if (clinicRep.findByEmailAddress(clinic.getEmailAddress()) != null) {
 	  	            response.setMessage("EmailAddress already exists");
 	  	            response.setSuccess(false);
 	  	            response.setStatus(409);
 	  	            return response;
-	  	        }
-
+	  	        }}
 
 	            if (clinic.getAddress() != null) savedClinic.setAddress(clinic.getAddress());
 
 	            if (clinic.getCity() != null) savedClinic.setCity(clinic.getCity());
 
-
-
 	            if (clinic.getName() != null) {
 
 	                savedClinic.setName(clinic.getName());
-
-
 
 	                // Update hospital name in credentials
 
@@ -1039,8 +1031,6 @@ public class AdminServiceImpl implements AdminService {
 
 	            }
 
-
-
 	            // Contractor Documents
 
 	            if (clinic.getContractorDocuments() != null && !clinic.getContractorDocuments().isEmpty()) {
@@ -1049,15 +1039,11 @@ public class AdminServiceImpl implements AdminService {
 
 	            }
 
-
-
 	            if (clinic.getHospitalOverallRating() != 0.0) {
 
 	                savedClinic.setHospitalOverallRating(clinic.getHospitalOverallRating());
 
 	            }
-
-
 
 	            if (clinic.getClosingTime() != null) savedClinic.setClosingTime(clinic.getClosingTime());
 
@@ -1073,11 +1059,6 @@ public class AdminServiceImpl implements AdminService {
 
 	            if (clinic.getIssuingAuthority() != null) savedClinic.setIssuingAuthority(clinic.getIssuingAuthority());
 	            
-	            
-	            
-	           
-
-
 	            // Optional hospital ID update (not recommended usually)
 
 	            if (clinic.getHospitalId() != null && !clinic.getHospitalId().equals(clinicId)) {
@@ -1085,8 +1066,6 @@ public class AdminServiceImpl implements AdminService {
 	                savedClinic.setHospitalId(clinic.getHospitalId());
 
 	            }
-
-
 
 	            // Medicines Sold On Site
 
@@ -1114,8 +1093,6 @@ public class AdminServiceImpl implements AdminService {
 
 	            }
 
-
-
 	            // Pharmacist Section
 
 	            savedClinic.setHasPharmacist(clinic.getHasPharmacist());
@@ -1133,8 +1110,6 @@ public class AdminServiceImpl implements AdminService {
 	                savedClinic.setPharmacistCertificate(null);
 
 	            }
-
-
 
 	            // Other Certificates
 
@@ -1212,16 +1187,12 @@ public class AdminServiceImpl implements AdminService {
 	            savedClinic.setBranch(clinic.getBranch());
 				savedClinic.setBranches(clinic.getBranches());
 
-	         
-
-
 	            // Consultation Expiration
 
 	            if (clinic.getConsultationExpiration() != null && !clinic.getConsultationExpiration().isEmpty()) {
 
 	                savedClinic.setConsultationExpiration(clinic.getConsultationExpiration());
 	                
-
 	            }
 
 	            // Social Media
@@ -1232,20 +1203,12 @@ public class AdminServiceImpl implements AdminService {
 
 	            if (clinic.getFacebookHandle() != null) savedClinic.setFacebookHandle(clinic.getFacebookHandle());
 
-
-
 	            // Recommended
-
 	            savedClinic.setRecommended(clinic.isRecommended());
-
-
-
 	            // Save updates
 
 	            clinicRep.save(savedClinic);
-
-
-
+	            
 	            response.setMessage("Clinic updated successfully");
 
 	            response.setSuccess(true);
@@ -3249,6 +3212,5 @@ public class AdminServiceImpl implements AdminService {
 	
 
 }
-
 
 

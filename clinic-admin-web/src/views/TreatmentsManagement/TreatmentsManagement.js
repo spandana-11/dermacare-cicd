@@ -134,7 +134,8 @@ const TreatmentsManagement = () => {
     setHospitalIdToDelete(null)
     setIsModalVisible(false)
   }
-  const nameRegex = /^[A-Za-z\s.]+$/
+const nameRegex = /^[A-Za-z\s.\-()\/']+$/
+
   // Add treatment
   const handleAddTreatment = async () => {
     const trimmedName = newTreatment.treatmentName.trim()
