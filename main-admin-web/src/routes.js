@@ -43,7 +43,7 @@ const AdsManagement = React.lazy(() => import('./views/AdsManagement/AdsManageme
 const AdsServiceManagement = React.lazy(
   () => import('./views/AdsServiceManagement/AdsServiceManagement'),
 )
-const DoctorDetailsPage = React.lazy(() => import('./views/Doctors/DoctorDetailspage'))
+const DoctorDetailsPage = React.lazy(() => import('./views/Doctors/DoctorDetailsPage'))
 
 const routes = [
   { path: '/', exact: true, name: 'Home' },
