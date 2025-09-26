@@ -25,6 +25,7 @@ public class WardBoy {
 	private String clinicId;
 	private String hospitalName;
 	private String branchId;
+	private String branchName;
 	private String fullName;
 	private String dateOfBirth;
 

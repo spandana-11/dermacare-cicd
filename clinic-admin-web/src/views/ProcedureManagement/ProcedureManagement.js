@@ -57,6 +57,7 @@ import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
 import capitalizeWords from '../../Utils/capitalizeWords'
 import LoadingIndicator from '../../Utils/loader'
 import { http } from '../../Utils/Interceptors'
+import { useHospital } from '../Usecontext/HospitalContext'
 
 const ServiceManagement = () => {
   // const [searchQuery, setSearchQuery] = useState('')
@@ -82,6 +83,10 @@ const ServiceManagement = () => {
   const { searchQuery, setSearchQuery } = useGlobalSearch()
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
+
+  const { user } = useHospital()
+  const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
+
   const [serviceToEdit, setServiceToEdit] = useState({
     serviceImage: '',
     viewImage: '',
@@ -1124,7 +1129,7 @@ const ServiceManagement = () => {
               <CIcon icon={cilSearch} />
             </CInputGroupText>
           </CInputGroup> */}
-
+{can('Procedure Management', 'create') && (
           <div
             className=" w-100"
             style={{
@@ -1144,7 +1149,7 @@ const ServiceManagement = () => {
               Add Procedure Details
             </CButton>
           </div>
-
+)}
           {/* <CButton
             color="info"
             className="text-white"
@@ -1253,10 +1258,10 @@ const ServiceManagement = () => {
             </CRow>
 
             <CRow className="mb-3">
-              <CCol sm={4}>
+              {/* <CCol sm={4}>
                 <strong>GST Amount:</strong>
                 <div>{Math.round(viewService.gstAmount)}</div>
-              </CCol>
+              </CCol> */}
               <CCol sm={4}>
                 <strong>GST:</strong>
                 <div>{Math.round(viewService.gst)}</div>
@@ -1640,48 +1645,132 @@ const ServiceManagement = () => {
                 <h6>
                   Procedure Price <span className="text-danger">*</span>
                 </h6>
-                <CFormInput
-                  type="number"
-                  placeholder="Discount"
-                  value={newService.price || ''}
-                  onChange={(e) => setNewService((prev) => ({ ...prev, price: e.target.value }))}
-                />
+          <CFormInput
+  type="number"
+  placeholder="Procedure Price"
+  value={newService.price || ''}
+  min={100} // blocks <100 in most browsers
+  onChange={(e) => {
+    const value = e.target.value
+    setNewService((prev) => ({ ...prev, price: value }))
 
-                {errors.price && <CFormText className="text-danger">{errors.price}</CFormText>}
+    // Validation
+    let error = ''
+    if (!value || value.trim() === '') {
+      error = 'Price is required'
+    }
+
+    setErrors((prev) => ({ ...prev, price: error }))
+  }}
+  onKeyDown={(e) => {
+    // Prevent negative numbers, 'e', or '0' as first digit
+    if (
+      e.key === '-' ||
+      e.key === 'e' ||
+      (e.key === '0' && !newService.price)
+    ) {
+      e.preventDefault()
+    }
+  }}
+  invalid={!!errors.price}
+/>
+
+{errors.price && (
+  <CFormText className="text-danger">{errors.price}</CFormText>
+)}
+
+
+
+
               </CCol>
               <CCol md={3}>
                 <h6>
                   Discount (%) <span className="text-danger">*</span>
                 </h6>
-                <CFormInput
-                  type="number"
-                  placeholder="Discount"
-                  value={newService.discount || ''}
-                  name="discount"
-                  onChange={handleChange}
-                  min={1}
-                  onKeyDown={(e) => {
-                    if (e.key === '-' || e.key === 'e') e.preventDefault()
-                  }}
-                />
-                {errors.discount && (
-                  <CFormText className="text-danger">{errors.discount}</CFormText>
-                )}
+               <CFormInput
+  type="number"
+  placeholder="Discount"
+  value={newService.discount || ''}
+  name="discount"
+  onChange={(e) => {
+    let value = e.target.value;
+
+    // Remove leading zeros
+    if (value.startsWith('0')) value = value.replace(/^0+/, '');
+
+    // Optional: Limit to 2 digits
+    if (value.length > 2) value = value.slice(0, 2);
+
+    setNewService((prev) => ({ ...prev, discount: value }));
+
+    // Validation
+    let error = '';
+    if (!value) {
+      error = 'Discount is required';
+    } else if (isNaN(value) || Number(value) <= 0) {
+      error = 'Discount must be greater than 0';
+    } else if (Number(value) > 99) {
+      error = 'Discount cannot exceed 99';
+    }
+
+    setErrors((prev) => ({ ...prev, discount: error }));
+  }}
+  onKeyDown={(e) => {
+    if (e.key === '-' || e.key === 'e') e.preventDefault();
+  }}
+  invalid={!!errors.discount}
+/>
+{errors.discount && (
+  <CFormText className="text-danger">{errors.discount}</CFormText>
+)}
+
               </CCol>
               <CCol md={3}>
                 <h6>
                   GST (%)<span className="text-danger">*</span>
                 </h6>
-                <CFormInput
-                  type="number"
-                  placeholder="GST"
-                  value={newService.gst || ''}
-                  onChange={(e) =>
-                    setNewService((prev) => ({ ...prev, gst: Number(e.target.value) }))
-                  }
-                />
+          <CFormInput
+  type="number"
+  placeholder="GST (%)"
+  value={newService.gst || ''}
+  onChange={(e) => {
+    let value = e.target.value;
+
+    // Allow only 1-2 digits and prevent leading zero
+    if (/^\d{0,2}$/.test(value) && !(value.startsWith('0') && value.length > 1)) {
+      setNewService((prev) => ({ ...prev, gst: value }));
+
+      // Validation
+      let error = '';
+      if (!value.trim()) {
+        error = 'GST is required';
+      } else if (Number(value) <= 0) {
+        error = 'GST must be greater than 0';
+      } else if (Number(value) > 99) {
+        error = 'GST cannot exceed 99%';
+      }
+
+      setErrors((prev) => ({ ...prev, gst: error }));
+    }
+  }}
+  onKeyDown={(e) => {
+    // Prevent negative numbers, 'e', '+', or leading zero
+    if (['-', 'e', '+'].includes(e.key)) e.preventDefault();
+    if (e.key === '0' && !newService.gst) e.preventDefault(); // Prevent 0 as first digit
+  }}
+  min={1}
+  max={99}
+  invalid={!!errors.gst}
+/>
+
+{errors.gst && (
+  <CFormText className="text-danger">{errors.gst}</CFormText>
+)}
+
+
+
               </CCol>
-              <CCol md={3}>
+              {/* <CCol md={3}>
                 <h6>
                   GST (%)<span className="text-danger">*</span>
                 </h6>
@@ -1693,26 +1782,50 @@ const ServiceManagement = () => {
                     setNewService((prev) => ({ ...prev, gstAmount: Number(e.target.value) }))
                   }
                 />
-              </CCol>
+              </CCol> */}
               
 
 
               <CCol md={3}>
                 <h6>Other Taxes(%)</h6>
-                <CFormInput
-                  type="number"
-                  placeholder="Tax Percentage"
-                  value={newService.taxPercentage || ''}
-                  name="taxPercentage"
-                  onChange={handleChange}
-                  min={1}
-                  onKeyDown={(e) => {
-                    if (e.key === '-' || e.key === 'e') e.preventDefault()
-                  }}
-                />
-                {errors.taxPercentage && (
-                  <CFormText className="text-danger">{errors.taxPercentage}</CFormText>
-                )}
+              <CFormInput
+  type="number"
+  placeholder="Tax Percentage"
+  value={newService.taxPercentage || ''}
+  name="taxPercentage"
+  min={1}
+  max={99} // max 2 digits
+  onChange={(e) => {
+    let value = e.target.value;
+
+    // Allow only numbers up to 2 digits
+    if (/^\d{0,2}$/.test(value)) {
+      setNewService((prev) => ({ ...prev, taxPercentage: value }));
+
+      // Validation
+      let error = '';
+     if (Number(value) <= 0) {
+        error = 'Tax Percentage must be greater than 0';
+      } else if (Number(value) > 99) {
+        error = 'Tax Percentage cannot exceed 99';
+      }
+
+      setErrors((prev) => ({ ...prev, taxPercentage: error }));
+    }
+  }}
+  onKeyDown={(e) => {
+    // Prevent negative numbers, scientific notation, or typing 0 as first digit
+    if (e.key === '-' || e.key === 'e' || e.key === '+' || (e.key === '0' && !newService.taxPercentage)) {
+      e.preventDefault();
+    }
+  }}
+  invalid={!!errors.taxPercentage}
+/>
+
+{errors.taxPercentage && (
+  <CFormText className="text-danger">{errors.taxPercentage}</CFormText>
+)}
+
               </CCol>
             </CRow>
             <h6 className="m-3">Procedure (Optional)</h6>
@@ -1793,6 +1906,7 @@ const ServiceManagement = () => {
                   <CTableDataCell>{test.price || 'NA'}</CTableDataCell>
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
+                     {can('Procedure Management', 'read') && (
                       <button
                         className="actionBtn"
                         onClick={() => setViewService(test)}
@@ -1800,7 +1914,8 @@ const ServiceManagement = () => {
                       >
                         <Eye size={18} />
                       </button>
-
+                     )}
+                     {can('Procedure Management', 'update') && (
                       <button
                         className="actionBtn"
                         onClick={() => openEditModal(test)}
@@ -1808,7 +1923,9 @@ const ServiceManagement = () => {
                       >
                         <Edit2 size={18} />
                       </button>
+                     )}
 
+                     {can('Procedure Management', 'delete') && (
                       <button
                         className="actionBtn"
                         onClick={() => handleServiceDelete(test)}
@@ -1816,6 +1933,7 @@ const ServiceManagement = () => {
                       >
                         <Trash2 size={18} />
                       </button>
+                     )}
                       <ConfirmationModal
                         isVisible={isModalVisible}
                         title="Delete Procedure"

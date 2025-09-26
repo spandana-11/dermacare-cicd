@@ -200,25 +200,25 @@ public interface CssFeign {
 	/// SUBSERVICE FALLBACK METHODS
 	
 	default ResponseEntity<?> addSubServiceFallBack(Exception e){		 
-		return ResponseEntity.status(503).body(new Response(false,null,"Category-Service Not Available",503,null,null, null, null, null));}
+		return ResponseEntity.status(503).body(new Response(false,null,"Category-Service Not Available",503,null,null, null, null, null, null));}
 	
 	default ResponseEntity<?> getSubServiceByIdCategoryFallBack(Exception e){		 
-		return ResponseEntity.status(503).body(new Response(false,null,"Category-Service Not Available",503,null,null, null, null, null));}
+		return ResponseEntity.status(503).body(new Response(false,null,"Category-Service Not Available",503,null,null, null, null, null, null));}
 	
 	default ResponseEntity<?> getSubServicesByServiceIdFallBack(Exception e){		 
-		return ResponseEntity.status(503).body(new Response(false,null,"Category-Service Not Available",503,null,null, null, null, null));}
+		return ResponseEntity.status(503).body(new Response(false,null,"Category-Service Not Available",503,null,null, null, null, null, null));}
 	
 	default ResponseEntity<?> getSubServiceBySubServiceIdFallBack(Exception e){		 
-		return ResponseEntity.status(503).body(new Response(false,null,"Category-Service Not Available",503,null,null, null, null, null));}
+		return ResponseEntity.status(503).body(new Response(false,null,"Category-Service Not Available",503,null,null, null, null, null, null));}
 	
 	default ResponseEntity<?> getAllSubServicesFallBack(Exception e){		 
-		return ResponseEntity.status(503).body(new Response(false,null,"Category-Service Not Available",503,null,null, null, null, null));}
+		return ResponseEntity.status(503).body(new Response(false,null,"Category-Service Not Available",503,null,null, null, null, null, null));}
 	
 	default ResponseEntity<?> updateBySubServiceIdFallBack(Exception e){		 
-		return ResponseEntity.status(503).body(new Response(false,null,"Category-Service Not Available",503,null,null, null, null, null));}
+		return ResponseEntity.status(503).body(new Response(false,null,"Category-Service Not Available",503,null,null, null, null, null, null));}
 	
 	default ResponseEntity<?> deleteSubServiceFallBack(Exception e){		 
-		return ResponseEntity.status(503).body(new Response(false,null,"Category-Service Not Available",503,null,null, null, null, null));}
+		return ResponseEntity.status(503).body(new Response(false,null,"Category-Service Not Available",503,null,null, null, null, null, null));}
 	
     
 }

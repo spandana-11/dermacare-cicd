@@ -1,27 +1,29 @@
 package com.clinicadmin.sevice.impl;
+
 import java.security.SecureRandom;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.clinicadmin.dto.LabTechnicanRestPassword;
-import com.clinicadmin.dto.LabTechnicianLogin;
+
+import com.clinicadmin.dto.Branch;
 import com.clinicadmin.dto.LabTechnicianRequestDTO;
-import com.clinicadmin.dto.OnBoardResponse;
-import com.clinicadmin.dto.PharmacistDTO;
+import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.ResponseStructure;
 import com.clinicadmin.entity.DoctorLoginCredentials;
 import com.clinicadmin.entity.LabTechnicianEntity;
-import com.clinicadmin.entity.Pharmacist;
+import com.clinicadmin.feignclient.AdminServiceClient;
 import com.clinicadmin.repository.DoctorLoginCredentialsRepository;
 import com.clinicadmin.repository.LabTechnicianRepository;
 import com.clinicadmin.service.LabTechnicianService;
 import com.clinicadmin.utils.LabTechnicianMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class LabTechnicianServiceImpl implements LabTechnicianService {
@@ -35,6 +37,12 @@ public class LabTechnicianServiceImpl implements LabTechnicianService {
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 
+	@Autowired
+	AdminServiceClient adminServiceClient;
+
+	@Autowired
+	ObjectMapper objectMapper;
+
 	// ✅ Create Lab Technician
 	@Override
 	public ResponseStructure<LabTechnicianRequestDTO> createLabTechnician(LabTechnicianRequestDTO dto) {
@@ -43,7 +51,11 @@ public class LabTechnicianServiceImpl implements LabTechnicianService {
 					HttpStatus.CONFLICT, HttpStatus.CONFLICT.value());
 		}
 
+		ResponseEntity<Response> res = adminServiceClient.getBranchById(dto.getBranchId());
+		Branch br = objectMapper.convertValue(res.getBody().getData(), Branch.class);
+
 		LabTechnicianEntity entity = LabTechnicianMapper.toEntity(dto);
+		entity.setBranchName(br.getBranchName());
 		entity.setId(generateLabTechId());
 //        entity.setUserName(dto.getContactNumber()); // username = contact number
 //        entity.setPassword(generateStructuredPassword()); // random password
@@ -53,20 +65,14 @@ public class LabTechnicianServiceImpl implements LabTechnicianService {
 		String username = dto.getContactNumber();
 		String rawPassword = generateStructuredPassword();
 		String encodedPassword = passwordEncoder.encode(rawPassword);
-		DoctorLoginCredentials credentials = DoctorLoginCredentials.builder()
-				.staffId(saved.getId())
-				.staffName(saved.getFullName())
-				.hospitalId(saved.getClinicId())
-				.hospitalName(saved.getHospitalName())
-				.branchId(saved.getBranchId())
-				.username(username)
-				.password(encodedPassword)
-				.role(dto.getRole())
-				.permissions(saved.getPermissions())
-				.build();
+		DoctorLoginCredentials credentials = DoctorLoginCredentials.builder().staffId(saved.getId())
+				.staffName(saved.getFullName()).hospitalId(saved.getClinicId()).hospitalName(saved.getHospitalName())
+				.branchId(saved.getBranchId()).branchName(saved.getBranchName()).username(username)
+				.password(encodedPassword).role(dto.getRole()).permissions(saved.getPermissions()).build();
 		credentialsRepository.save(credentials);
 
 		LabTechnicianRequestDTO responseDTO = LabTechnicianMapper.toDTO(saved);
+		responseDTO.setBranchName(saved.getBranchName());
 		responseDTO.setUserName(username);
 		responseDTO.setPassword(rawPassword); // expose only on create
 

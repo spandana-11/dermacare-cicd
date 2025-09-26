@@ -82,6 +82,8 @@ const TreatmentsManagement = () => {
       setLoading(false)
     }
   }
+
+  
   const fetchDataBy_HId = async (hospitalId) => {
     setLoading(true)
     try {

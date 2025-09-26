@@ -623,59 +623,64 @@ const handleNestedBlur = (parent, field, value) => {
               {/* 🔹 Basic Info */}
               <h5>Basic Information</h5>
 
-              <div className="row mb-3">
-                <div className="col-md-4">
-                  <div className="row">
-                    <div className="col-md-5">
-                      <CFormLabel>
-                        ClinicID <span style={{ color: 'red' }}>*</span>
-                      </CFormLabel>
-                      <CFormInput
-                        value={clinicId}
-                        disabled
-                        onChange={(e) => handleChange('clinicId', e.target.value)}
-                      />
-                    </div>
-                    <div className="col-md-7">
-                      <CFormLabel>
-                        Role <span style={{ color: 'red' }}>*</span>
-                      </CFormLabel>
-                      <CFormInput
-                        value={formData.role}
-                        disabled
-                        onChange={(e) => handleChange('role', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="mb-3">
-        <CFormLabel>
-          Full Name <span style={{ color: 'red' }}>*</span>
-        </CFormLabel>
-        <CFormInput
-          value={formData.fullName}
-          onChange={(e) => handleChange('fullName', e.target.value)}
-          onBlur={() => handleBlur('fullName', formData.fullName)}
-        />
-        {errors.fullName && <div className="text-danger mt-1">{errors.fullName}</div>}
-      </div>
-               <div className="col-md-4">
-  <CFormLabel>
-    Gender <span style={{ color: 'red' }}>*</span>
-  </CFormLabel>
-  <CFormSelect
-    value={formData.gender}
-    onChange={(e) => handleChange('gender', e.target.value)}
-  >
-    <option value="">Select Gender</option>
-    <option value="male">Male</option>
-    <option value="female">Female</option>
-    <option value="other">Other</option>
-  </CFormSelect>
-  {errors.gender && <div className="text-danger mt-1">{errors.gender}</div>}
+             <div className="row mb-3">
+  <div className="col-md-2">
+    <CFormLabel>
+      ClinicID <span style={{ color: 'red' }}>*</span>
+    </CFormLabel>
+    <CFormInput
+      value={clinicId}
+      disabled
+      onChange={(e) => handleChange('clinicId', e.target.value)}
+    />
+  </div>
+
+  <div className="col-md-2">
+    <CFormLabel>
+      Role <span style={{ color: 'red' }}>*</span>
+    </CFormLabel>
+    <CFormInput
+      value={formData.role}
+      disabled
+      onChange={(e) => handleChange('role', e.target.value)}
+    />
+  </div>
+
+  <div className="col-md-4">
+    <CFormLabel>
+      Full Name <span style={{ color: 'red' }}>*</span>
+    </CFormLabel>
+    <CFormInput
+      value={formData.fullName}
+      onChange={(e) => handleChange('fullName', e.target.value)}
+      onBlur={() => handleBlur('fullName', formData.fullName)}
+      invalid={!!errors.fullName}
+    />
+    {errors.fullName && (
+      <div className="text-danger mt-1">{errors.fullName}</div>
+    )}
+  </div>
+
+  <div className="col-md-4">
+    <CFormLabel>
+      Gender <span style={{ color: 'red' }}>*</span>
+    </CFormLabel>
+    <CFormSelect
+      value={formData.gender}
+      onChange={(e) => handleChange('gender', e.target.value)}
+      invalid={!!errors.gender}
+    >
+      <option value="">Select Gender</option>
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+      <option value="other">Other</option>
+    </CFormSelect>
+    {errors.gender && (
+      <div className="text-danger mt-1">{errors.gender}</div>
+    )}
+  </div>
 </div>
 
-              </div>
 
               <div className="row mb-3">
                 <div className="col-md-4">
@@ -1133,7 +1138,7 @@ const handleNestedBlur = (parent, field, value) => {
                   alignItems: 'end',
                 }}
               >
-                <CButton
+                {/* <CButton
                   style={{
                     color: 'var(--color-black)',
                     backgroundColor: 'var(--color-bgcolor)',
@@ -1141,7 +1146,7 @@ const handleNestedBlur = (parent, field, value) => {
                   onClick={handleUserPermission}
                 >
                   User Permissions
-                </CButton>
+                </CButton> */}
               </div>
 
             <UserPermissionModal

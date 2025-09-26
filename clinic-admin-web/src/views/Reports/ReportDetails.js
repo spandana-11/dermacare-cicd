@@ -24,6 +24,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
+import { useHospital } from '../Usecontext/HospitalContext'
 
 const ReportDetails = () => {
   const { id } = useParams()
@@ -51,16 +52,18 @@ const ReportDetails = () => {
   const [pageNumber, setPageNumber] = useState(1)
 
   const [uploadModal, setUploadModal] = useState(false)
-const patientId =
-  appointmentInfo?.patientId ||
-  appointmentInfo?.item?.patientId ||
-  appointmentInfo?.selectedAppointment?.patientId ||
-  ''
+  const patientId =
+    appointmentInfo?.patientId ||
+    appointmentInfo?.item?.patientId ||
+    appointmentInfo?.selectedAppointment?.patientId ||
+    ''
+
+  const { user } = useHospital()
+  const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
 
   // Initial state for new report, with reportDate not prefilled
-  const [newReport, setNewReport] = useState(
-    {
-      customerId:appointmentInfo?.customerId,
+  const [newReport, setNewReport] = useState({
+    customerId: appointmentInfo?.customerId,
     reportName: '',
     reportDate: '', // No prefill for date
     reportStatus: '',
@@ -183,31 +186,31 @@ const patientId =
 
     try {
       const payload = {
-          customerId: newReport.customerId,
+        customerId: newReport.customerId,
         reportsList: [
           {
             ...newReport,
-             patientId: patientId,
-           
+            patientId: patientId,
+
             reportFile: [newReport.reportFile], // API expects an array of base64 strings
           },
         ],
       }
-      
-    // const payload = {
-    //   customerId: newReport.customerId,  // Moved outside reportsList
-    //   reportsList: [
-    //     {
-    //       bookingId: newReport.bookingId,
-    //       patientId: newReport.patientId,
-    //       reportName: newReport.reportName,
-    //       reportDate: newReport.reportDate,
-    //       reportStatus: newReport.reportStatus,
-    //       reportType: newReport.reportType,
-    //       reportFile: [newReport.reportFile], // API expects array
-    //     },
-    //   ],
-    // };
+
+      // const payload = {
+      //   customerId: newReport.customerId,  // Moved outside reportsList
+      //   reportsList: [
+      //     {
+      //       bookingId: newReport.bookingId,
+      //       patientId: newReport.patientId,
+      //       reportName: newReport.reportName,
+      //       reportDate: newReport.reportDate,
+      //       reportStatus: newReport.reportStatus,
+      //       reportType: newReport.reportType,
+      //       reportFile: [newReport.reportFile], // API expects array
+      //     },
+      //   ],
+      // };
 
       const response = await SaveReportsData(payload)
       console.log('Report uploaded:', response)
@@ -283,14 +286,16 @@ const patientId =
           <CButton color="secondary" size="sm" onClick={() => navigate(-1)}>
             Back
           </CButton>
-          <CButton
-            color="success"
-            size="sm"
-            onClick={() => setUploadModal(true)}
-            style={{ backgroundColor: 'var(--color-black)', color: 'white', border: 'none' }}
-          >
-            Upload Report
-          </CButton>
+          {can('Reports', 'create') && (
+            <CButton
+              color="success"
+              size="sm"
+              onClick={() => setUploadModal(true)}
+              style={{ backgroundColor: 'var(--color-black)', color: 'white', border: 'none' }}
+            >
+              Upload Report
+            </CButton>
+          )}
         </div>
       </div>
 
@@ -339,6 +344,7 @@ const patientId =
                       {base64File ? (
                         <div className="d-flex gap-2">
                           {/* 👁️ Preview Button */}
+                          {/* {can('Reports', 'read') && ( */}
                           <CButton
                             className="bg-info text-white border-0"
                             size="sm"
@@ -351,7 +357,7 @@ const patientId =
                           >
                             <FaEye />
                           </CButton>
-
+                          {/* )} */}
                           {/* ⬇️ Download Button */}
                           <a
                             href={fileUrl}

@@ -45,7 +45,8 @@ const Login = () => {
   const [showResetModal, setShowResetModal] = useState(false)
 
   // const { fetchHospitalDetails,selectedHospital } = useHospital()
-  const { selectedHospital, setUser, setHospitalId, setSelectedHospital } = useHospital()
+  const { selectedHospital, setUser, setHospitalId, setSelectedHospital, fetchAllData } =
+    useHospital()
   const navigate = useNavigate()
 
   const validateForm = () => {
@@ -105,6 +106,7 @@ const Login = () => {
         const token = payload.accessToken
         const permissions = payload.permissions
         const branchId = payload.branchId
+        const branchName = payload.branchName
         console.log(HospitalId, HospitalName, selectedHospital, role)
 
         // ✅ Store in localStorage
@@ -133,6 +135,9 @@ const Login = () => {
         if (staffName) {
           localStorage.setItem('staffName', staffName)
         }
+        if (branchName) {
+          localStorage.setItem('branchName', branchName)
+        }
 
         if (payload.accessToken) {
           localStorage.setItem('token', payload.accessToken)
@@ -144,75 +149,51 @@ const Login = () => {
         await new Promise((resolve) => setTimeout(resolve, 100))
 
         if (HospitalId) {
-          // setSelectedHospital({
-          //   hospitalId: HospitalId,
-          //   hospitalName: HospitalName,
-          // })
+          const hospitalData = payload.hospitalData || {} // logo, name, etc.
 
-          if (selectedHospital != null) {
-            const normalizePermissions = (permissions) => {
-              const fixed = {}
-              Object.keys(permissions).forEach((key) => {
-                fixed[key.trim()] = permissions[key]
-              })
-              return fixed
-            }
+          // 1. Set user in context & localStorage
+          const userData = { name: HospitalName || staffName, role, permissions }
+          setUser(userData)
+          localStorage.setItem('hospitalUser', JSON.stringify(userData))
+          localStorage.setItem('permissions', JSON.stringify(permissions))
 
-            // when setting user
-            setUser({
-              name: HospitalName ? HospitalName : staffName,
-              role,
-              permissions,
-            })
-
-            // persist to localStorage
-            localStorage.setItem(
-              'hospitalUser',
-              JSON.stringify({
-                name: HospitalName ? HospitalName : staffName,
-                role,
-                permissions,
-              }),
-            )
-            // setUser({
-            //   name: HospitalName ? HospitalName : staffName,
-            //   role: role,
-            //   permissions: permissions || {},
-            // })
-            localStorage.setItem('permissions', JSON.stringify(permissions))
-            toast.success(res.data?.message || 'Login successful!')
-            navigate('/dashboard')
-          } else {
-            // toast.error('Clinic details missing')
+          // 2. Set hospital in context & localStorage
+          const hospitalContextData = {
+            hospitalId: HospitalId,
+            hospitalName: HospitalName,
+            data: hospitalData,
           }
+          setSelectedHospital(hospitalContextData)
+          localStorage.setItem('selectedHospital', JSON.stringify(hospitalContextData))
+
+          setHospitalId(HospitalId)
+          localStorage.setItem('HospitalId', HospitalId)
+          await fetchAllData(HospitalId)
+          toast.success(res.data?.message || 'Login successful!')
+          navigate('/dashboard') // immediately navigates to dashboard with context updated
+        }
+      }
+    } catch (err) {
+      console.error('Login error:', err)
+
+      const backendMessage = err?.response?.data?.message
+
+      if (backendMessage) {
+        if (backendMessage.toLowerCase().includes('username')) {
+          setErrorMessage('Invalid username. Please try again.')
+          toast.error('Invalid username. Please try again.')
+        } else if (backendMessage.toLowerCase().includes('password')) {
+          setErrorMessage('Invalid password. Please try again.')
+          toast.error('Invalid password. Please try again.')
         } else {
-          toast.error('Clinic ID is missing')
+          setErrorMessage(backendMessage)
+          toast.error(backendMessage)
         }
       } else {
-        toast.error(res.data?.message || 'Login failed')
+        setErrorMessage('An unexpected error occurred. Please try again later.')
+        toast.error('An unexpected error occurred. Please try again later.')
       }
-    }catch (err) {
-  console.error('Login error:', err)
-
-  const backendMessage = err?.response?.data?.message
-
-  if (backendMessage) {
-    if (backendMessage.toLowerCase().includes('username')) {
-      setErrorMessage('Invalid username. Please try again.')
-      toast.error('Invalid username. Please try again.')
-    } else if (backendMessage.toLowerCase().includes('password')) {
-      setErrorMessage('Invalid password. Please try again.')
-      toast.error('Invalid password. Please try again.')
-    } else {
-      setErrorMessage(backendMessage)
-      toast.error(backendMessage)
-    }
-  } else {
-    setErrorMessage('An unexpected error occurred. Please try again later.')
-    toast.error('An unexpected error occurred. Please try again later.')
-  }
-}
- finally {
+    } finally {
       setIsLoading(false)
     }
   }

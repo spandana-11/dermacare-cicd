@@ -180,8 +180,8 @@ const WidgetsDropdown = (props) => {
     setLoadingDoctors(true)
     setDoctorError(null)
     try {
-      const branchId=localStorage.getItem("branchId")
-      const response = await getDoctorByClinicIdData(clinicId,branchId)
+      const branchId = localStorage.getItem('branchId')
+      const response = await getDoctorByClinicIdData(clinicId, branchId)
       console.log('Raw Doctors Data:', response)
 
       // ✅ Access the inner data array
@@ -277,11 +277,11 @@ const WidgetsDropdown = (props) => {
       clearInterval(intervalRef.current)
     }
   }, [slides])
- const consultationTypeMap = {
+  const consultationTypeMap = {
     'Service & Treatment': 'services & treatments',
     'Tele Consultation': ['tele consultation', 'online consultation'], // Map a single button to multiple backend values
     'In-clinic': 'in-clinic consultation',
-}
+  }
   const getMediaSrc = (src) => {
     if (!src) return ''
     if (src.startsWith('data:') || src.startsWith('http') || src.startsWith('blob:')) return src
@@ -418,14 +418,7 @@ const WidgetsDropdown = (props) => {
         <CCol sm={6} xl={4}>
           <CWidgetStatsA
             color="success"
-            value={
-              <>
-                10{' '}
-                {/* <span className="fs-6 fw-normal">
-                (+2.8%) <CIcon icon={cilArrowTop} />
-              </span> */}
-              </>
-            }
+            value={totalAppointmentsCount}
             title="Total Patients"
             action={
               <CDropdown alignment="end">
@@ -611,20 +604,20 @@ const WidgetsDropdown = (props) => {
                 )
 
                 // 2. Filter by consultation type
-              const filteredByTypes = confirmed.filter((item) => {
-    if (filterTypes.length === 0) {
-        return true;
-    }
-    const itemType = item.consultationType?.toLowerCase().trim();
-    return filterTypes.some((type) => {
-        const mappedValues = consultationTypeMap[type];
-        if (Array.isArray(mappedValues)) {
-            return mappedValues.some(val => itemType === val.toLowerCase().trim());
-        } else {
-            return itemType === mappedValues.toLowerCase().trim();
-        }
-    });
-});
+                const filteredByTypes = confirmed.filter((item) => {
+                  if (filterTypes.length === 0) {
+                    return true
+                  }
+                  const itemType = item.consultationType?.toLowerCase().trim()
+                  return filterTypes.some((type) => {
+                    const mappedValues = consultationTypeMap[type]
+                    if (Array.isArray(mappedValues)) {
+                      return mappedValues.some((val) => itemType === val.toLowerCase().trim())
+                    } else {
+                      return itemType === mappedValues.toLowerCase().trim()
+                    }
+                  })
+                })
 
                 // 3. Apply global search filter to the result
                 const finalFilteredData = filteredByTypes.filter((item) => {

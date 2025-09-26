@@ -40,9 +40,12 @@ const AppHeader = () => {
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.sidebarShow)
   const navigate = useNavigate()
-  const username = localStorage.getItem('staffName')
+  const HospitalName = localStorage.getItem('staffName')
     ? localStorage.getItem('staffName')
     : localStorage.getItem('HospitalName')?.split(' ')[0] || 'Hospital'
+  const branch = localStorage.getItem('branchName')
+    ? localStorage.getItem('branchName')
+    : localStorage.getItem('branchName') || 'branchName'
 
   useEffect(() => {
     document.addEventListener('scroll', () => {
@@ -93,9 +96,20 @@ const AppHeader = () => {
           {/* Bell icon with badge */}
 
           {/* Welcome text */}
-          <span className="fw-bold  mx-5" style={{ color: 'var(--color-black)' }}>
-            Welcome, {username}
-          </span>
+          <div
+            className="fw-bold mx-5"
+            style={{
+              color: 'var(--color-black)',
+              textAlign: 'center', // center-align both lines
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
+            <div style={{ fontSize: '1.2rem' }}>Welcome, {HospitalName}</div>
+            <div style={{ fontSize: '0.9rem', fontWeight: 'normal', opacity: 0.9 }}>{branch}</div>
+          </div>
+
           <div
             className="position-relative me-3 cursor-pointer"
             style={{ cursor: 'pointer' }}

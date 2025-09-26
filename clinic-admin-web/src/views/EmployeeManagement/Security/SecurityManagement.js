@@ -149,7 +149,7 @@ const [modalData, setModalData] = useState(null) // store username & password
       )}
       <CModal visible={modalTVisible} backdrop="static" keyboard={false}>
         <CModalHeader>
-          <h5>Technician Credentials</h5>
+          <h5>Security Credentials</h5>
         </CModalHeader>
         <CModalBody>
           {modalData ? (

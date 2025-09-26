@@ -8,16 +8,20 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.clinicadmin.dto.Branch;
 import com.clinicadmin.dto.NurseDTO;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.entity.DoctorLoginCredentials;
 import com.clinicadmin.entity.Nurse;
+import com.clinicadmin.feignclient.AdminServiceClient;
 import com.clinicadmin.repository.DoctorLoginCredentialsRepository;
 import com.clinicadmin.repository.NurseRepository;
 import com.clinicadmin.service.NurseService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class NurseServiceImpl implements NurseService {
@@ -29,7 +33,13 @@ public class NurseServiceImpl implements NurseService {
 
 	@Autowired
 	PasswordEncoder passwordEncoder;
-
+	
+	@Autowired
+	AdminServiceClient adminServiceClient;
+	
+	@Autowired
+	ObjectMapper objectMapper;
+		
 	@Override
 	public Response nureseOnboarding(NurseDTO dto) {
 		Response response = new Response();
@@ -41,7 +51,11 @@ public class NurseServiceImpl implements NurseService {
 			response.setStatus(HttpStatus.BAD_REQUEST.value());
 			return response;
 		}
+		ResponseEntity <Response> res=adminServiceClient.getBranchById(dto.getBranchId());
+		Branch br =objectMapper.convertValue(res.getBody().getData(), Branch.class);
 		Nurse nurse = mapNurseDtoTONurseEntity(dto);
+		nurse.setBranchName(br.getBranchName());
+		
 		String nurseId = generateNurseId();
 		nurse.setNurseId(nurseId);
 		String username = dto.getNurseContactNumber();
@@ -56,6 +70,7 @@ public class NurseServiceImpl implements NurseService {
 				.hospitalId(savedNurse.getHospitalId())
 				.hospitalName(savedNurse.getHospitalName())
 				.branchId(savedNurse.getBranchId())
+				.branchName(savedNurse.getBranchName())
 				.username(username)
 				.password(encodedPassword)
 				.role(dto.getRole())

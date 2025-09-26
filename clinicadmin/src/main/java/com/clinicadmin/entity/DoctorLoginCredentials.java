@@ -22,6 +22,7 @@ public class DoctorLoginCredentials {
 	private String hospitalId;
 	private String hospitalName;
 	private String branchId;
+	private String branchName;
 	private String username;
 	private String password;
 	private String role;

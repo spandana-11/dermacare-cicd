@@ -774,27 +774,46 @@ const handleChange = (field, value) => {
                   <CFormLabel>
                     Mobile Number <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
-                  <CFormInput
-                    type="text"
-                    maxLength={10} // ✅ Restrict to 10 digits
-                    value={formData.mobileNumber}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      // ✅ Allow only digits
-                      if (/^\d*$/.test(value)) {
-                        handleChange('mobileNumber', value)
-                      }
-                    }}
-                  />
+                 <CFormInput
+  type="text"
+  maxLength={10} // ✅ Restrict to 10 digits
+  value={formData.mobileNumber}
+  onChange={(e) => {
+    const value = e.target.value;
+
+    // Allow only digits
+    if (/^\d*$/.test(value)) {
+      // Update form data
+      handleChange('mobileNumber', value);
+
+      // Run live validation
+      const err = validateField('contactNumber', value, formData);
+      setErrors((prev) => ({ ...prev, mobileNumber: err }));
+    }
+  }}
+/>
+{errors.mobileNumber && <div className="text-danger mt-1">{errors.mobileNumber}</div>}
+
                 </div>
                 <div className="col-md-4">
-                  <CFormLabel>Email</CFormLabel>
-                  <CFormInput
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleChange('email', e.target.value)}
-                  />
-                </div>
+  <CFormLabel>Email</CFormLabel>
+  <CFormInput
+    type="email"
+    value={formData.email}
+    onChange={(e) => {
+      const value = e.target.value;
+
+      // Update form data
+      handleChange('email', value);
+
+      // Run live validation using your validateField function
+      const err = validateField('emailId', value, formData);
+      setErrors((prev) => ({ ...prev, email: err }));
+    }}
+  />
+  {errors.email && <div className="text-danger mt-1">{errors.email}</div>}
+</div>
+
               </div>
 
               <div className="row mb-3">
@@ -802,46 +821,104 @@ const handleChange = (field, value) => {
                   <CFormLabel>
                     GovernmentID(AadharCard No) <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
-                  <CFormInput
-                    maxLength={12}
-                    value={formData.governmentId}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      // ✅ Only numbers allowed, max 12
-                      if (/^\d*$/.test(value)) {
-                        handleChange('governmentId', value)
-                      }
-                    }}
-                  />
+                <CFormInput
+  maxLength={12}
+  value={formData.governmentId}
+  onChange={(e) => {
+    const value = e.target.value;
+
+    // ✅ Only digits allowed, max 12
+    if (/^\d*$/.test(value)) {
+      // Update form data
+      handleChange('governmentId', value);
+
+      // Run live validation
+      const err = validateField('governmentId', value, formData);
+      setErrors((prev) => ({ ...prev, governmentId: err }));
+    }
+  }}
+/>
+{errors.governmentId && (
+  <div className="text-danger mt-1">{errors.governmentId}</div>
+)}
+
                 </div>
 
                 <div className="col-md-4">
                   <CFormLabel>
                     Medical Registration Number<span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
-                  <CFormInput
-                    value={capitalizeWords(formData.medicalRegistrationNumber)}
-                    onChange={(e) => handleChange('medicalRegistrationNumber', e.target.value)}
-                  />
+                 <CFormInput
+  value={capitalizeWords(formData.medicalRegistrationNumber)}
+  onChange={(e) => {
+    const value = e.target.value;
+
+    // Update form data
+    handleChange('medicalRegistrationNumber', value);
+
+    // Run live validation
+    const err = validateField('medicalRegistrationNumber', value, formData);
+    setErrors((prev) => ({
+      ...prev,
+      medicalRegistrationNumber: err,
+    }));
+  }}
+/>
+{errors.medicalRegistrationNumber && (
+  <div className="text-danger mt-1">{errors.medicalRegistrationNumber}</div>
+)}
+
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>
                     Department <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
-                  <CFormInput
-                    value={capitalizeWords(formData.department)}
-                    onChange={(e) => handleChange('department', e.target.value)}
-                  />
+                 <CFormInput
+  value={capitalizeWords(formData.department)}
+  onChange={(e) => {
+    const value = e.target.value;
+
+    // Update form data
+    handleChange('department', value);
+
+    // Run live validation
+    const err = validateField('department', value, formData);
+    setErrors((prev) => ({
+      ...prev,
+      department: err,
+    }));
+  }}
+/>
+{errors.department && (
+  <div className="text-danger mt-1">{errors.department}</div>
+)}
+
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>
                     Specialization <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
-                  <CFormInput
-                    type="text"
-                    value={formData.specialization}
-                    onChange={(e) => handleChange('specialization', e.target.value)}
-                  />
+                 <CFormInput
+  type="text"
+  value={formData.specialization}
+  onChange={(e) => {
+    const value = e.target.value;
+
+    // Update form data
+    handleChange('specialization', value);
+
+    // Run live validation
+    const err = validateField('specialization', value, formData);
+    setErrors((prev) => ({
+      ...prev,
+      specialization: err,
+    }));
+  }}
+/>
+{errors.specialization && (
+  <div className="text-danger mt-1">{errors.specialization}</div>
+)}
+
                 </div>
                  <div className="col-md-4">
                   {' '}
@@ -856,26 +933,57 @@ const handleChange = (field, value) => {
                   <CFormLabel>
                     Years of Experience <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
-                  <CFormInput
-                    type="number"
-                    value={formData.yearsOfExperience}
-                    onChange={(e) => handleChange('yearsOfExperience', e.target.value)}
-                  />
+                 <CFormInput
+  type="number"
+  value={formData.yearsOfExperience}
+  onChange={(e) => {
+    const value = e.target.value;
+
+    // Allow only digits
+    if (/^\d*$/.test(value)) {
+      handleChange('yearsOfExperience', value);
+
+      // Run live validation
+      const err = validateField('yearsOfExperience', value, formData);
+      setErrors((prev) => ({
+        ...prev,
+        yearsOfExperience: err,
+      }));
+    }
+  }}
+/>
+{errors.yearsOfExperience && (
+  <div className="text-danger mt-1">{errors.yearsOfExperience}</div>
+)}
+
                 </div>
               </div>
 
               <div className="row mb-3">
                
-               <div className="col-md-4">
-  <CFormLabel>Status</CFormLabel>
+              <div className="col-md-4">
+  <CFormLabel>Status <span style={{ color: 'red' }}>*</span></CFormLabel>
   <CFormSelect
-    value={formData.status || 'Active'} // default to Active if empty
-    onChange={(e) => handleChange('status', e.target.value)}
+    value={formData.status || ''} // empty initially
+    onChange={(e) => {
+      const value = e.target.value;
+      handleChange('status', value);  
+
+      // Run live validation
+      const err = validateField('status', value);
+      setErrors((prev) => ({
+        ...prev,
+        status: err,
+      }));
+    }}
   >
+    <option value="">Select Status</option>
     <option value="Active">Active</option>
     <option value="Inactive">Inactive</option>
   </CFormSelect>
+  {errors.status && <div className="text-danger mt-1">{errors.status}</div>}
 </div>
+
               </div>
 
               <div className="row mb-3">
@@ -936,159 +1044,154 @@ const handleChange = (field, value) => {
               </div>
 
               {/* 🔹 Address */}
-              <h5 className="mt-3">Address</h5>
+            <h5 className="mt-3">Address</h5>
 
-              {Object.keys(formData.address)
-                .reduce((rows, field, index) => {
-                  if (index % 3 === 0) rows.push([]) // start new row every 3 fields
-                  rows[rows.length - 1].push(field)
-                  return rows
-                }, [])
-                .map((rowFields, rowIndex) => (
-                  <div className="row mb-3" key={rowIndex}>
-                    {rowFields.map((field) => (
-                      <div className="col-md-4" key={field}>
-                        <CFormLabel className="text-capitalize">
-                          {field} <span style={{ color: 'red' }}>*</span>
-                        </CFormLabel>
-                        <CFormInput
-                          type={field === 'postalCode' ? 'text' : 'text'}
-                          maxLength={field === 'postalCode' ? 6 : undefined}
-                          value={capitalizeWords(formData.address[field])}
-                          onChange={(e) => {
-                            let value = e.target.value
-                            if (field === 'postalCode') {
-                              // ✅ Allow only digits
-                              if (/^\d*$/.test(value)) {
-                                handleNestedChange('address', field, value)
-                              }
-                            } else {
-                              handleNestedChange('address', field, value)
-                            }
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ))}
+{Object.keys(formData.address)
+  .reduce((rows, field, index) => {
+    if (index % 3 === 0) rows.push([]); // start new row every 3 fields
+    rows[rows.length - 1].push(field);
+    return rows;
+  }, [])
+  .map((rowFields, rowIndex) => (
+    <div className="row mb-3" key={rowIndex}>
+      {rowFields.map((field) => (
+        <div className="col-md-4" key={field}>
+          <CFormLabel className="text-capitalize">
+            {field} <span style={{ color: 'red' }}>*</span>
+          </CFormLabel>
+          <CFormInput
+            type="text"
+            maxLength={field === 'postalCode' ? 6 : undefined}
+            value={capitalizeWords(formData.address[field])}
+            onChange={(e) => {
+              let value = e.target.value;
+              if (field === 'postalCode') {
+                // Only digits allowed
+                if (/^\d*$/.test(value)) {
+                  handleNestedChange('address', field, value);
+                  // Live validation
+                  const err = validateField(field, value, formData);
+                  setErrors((prev) => ({
+                    ...prev,
+                    address: { ...prev.address, [field]: err },
+                  }));
+                }
+              } else {
+                handleNestedChange('address', field, value);
+                // Live validation
+                const err = validateField(field, value, formData);
+                setErrors((prev) => ({
+                  ...prev,
+                  address: { ...prev.address, [field]: err },
+                }));
+              }
+            }}
+          />
+          {errors.address?.[field] && (
+            <div className="text-danger mt-1">{errors.address[field]}</div>
+          )}
+        </div>
+      ))}
+    </div>
+  ))}
+
 
               {/* 🔹 Bank Details */}
-              <h5 className="mt-3">Bank Account Details</h5>
-              {Object.keys(formData.bankAccountNumber)
-                .reduce((rows, field, index) => {
-                  if (index % 3 === 0) rows.push([]) // start new row every 3 fields
-                  rows[rows.length - 1].push(field)
-                  return rows
-                }, [])
-                .map((rowFields, rowIndex) => (
-                  <div className="row mb-3" key={rowIndex}>
-                    {rowFields.map((field) => (
-                      <div className="col-md-4" key={field}>
-                        <CFormLabel className="text-capitalize">
-                          {field} <span style={{ color: 'red' }}>*</span>
-                        </CFormLabel>
-                        <CFormInput
-                          value={formData.bankAccountNumber[field]}
-                          maxLength={
-                            field === 'accountNumber'
-                              ? 20
-                              : field === 'panCardNumber'
-                                ? 10
-                                : field === 'ifscCode'
-                                  ? 11
-                                  : undefined
-                          }
-                          onChange={async (e) => {
-                            let value = e.target.value
+             <h5 className="mt-3">Bank Account Details</h5>
+{Object.keys(formData.bankAccountNumber)
+  .reduce((rows, field, index) => {
+    if (index % 3 === 0) rows.push([]); // start new row every 3 fields
+    rows[rows.length - 1].push(field);
+    return rows;
+  }, [])
+  .map((rowFields, rowIndex) => (
+    <div className="row mb-3" key={rowIndex}>
+      {rowFields.map((field) => (
+        <div className="col-md-4" key={field}>
+          <CFormLabel className="text-capitalize">
+            {field} <span style={{ color: 'red' }}>*</span>
+          </CFormLabel>
+          <CFormInput
+            value={formData.bankAccountNumber[field]}
+            maxLength={
+              field === 'accountNumber'
+                ? 20
+                : field === 'panCardNumber'
+                ? 10
+                : field === 'ifscCode'
+                ? 11
+                : undefined
+            }
+            onChange={async (e) => {
+              let value = e.target.value;
 
-                            // ✅ Account Number → only numbers
-                            if (field === 'accountNumber') {
-                              if (/^\d*$/.test(value)) {
-                                handleNestedChange('bankAccountNumber', field, value)
-                              }
-                              return
-                            }
+              if (field === 'accountNumber') {
+                if (/^\d*$/.test(value)) {
+                  handleNestedChange('bankAccountNumber', field, value);
+                  const err = validateField('accountNumber', value, formData);
+                  setErrors((prev) => ({
+                    ...prev,
+                    bankAccountNumber: { ...prev.bankAccountNumber, accountNumber: err },
+                  }));
+                }
+                return;
+              }
 
-                            // ✅ PAN Card → must be uppercase, follow exact format
-                            // ✅ PAN Card → must be uppercase, follow exact format
-                            if (field === 'panCardNumber') {
-                              value = value.toUpperCase()
+              if (field === 'panCardNumber') {
+                value = value.toUpperCase();
+                if (/^[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}$/.test(value)) {
+                  handleNestedChange('bankAccountNumber', field, value);
+                }
 
-                              // Allow only letters/digits in correct order
-                              if (/^[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}$/.test(value)) {
-                                handleNestedChange('bankAccountNumber', field, value)
-                              }
+                const err = validateField('panCardNumber', value, formData);
+                setErrors((prev) => ({
+                  ...prev,
+                  bankAccountNumber: { ...prev.bankAccountNumber, panCardNumber: err },
+                }));
+                return;
+              }
 
-                              // Validate final 10 characters
-                              if (value.length === 10) {
-                                const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
-                                if (!panRegex.test(value)) {
-                                  toast.error('Invalid PAN format (e.g., ABCDE1234F)')
-                                }
-                              }
-                              return
-                            }
+              if (field === 'ifscCode') {
+                value = value.toUpperCase();
+                if (!/^[A-Z0-9]*$/.test(value)) return;
+                handleNestedChange('bankAccountNumber', field, value);
 
-                            // ✅ IFSC Code → must be uppercase, follow exact format
-                            if (field === 'ifscCode') {
-                              value = value.toUpperCase()
+                const err = validateField('ifscCode', value, formData);
+                setErrors((prev) => ({
+                  ...prev,
+                  bankAccountNumber: { ...prev.bankAccountNumber, ifscCode: err },
+                }));
 
-                              // Allow only alphanumeric
-                              if (!/^[A-Z0-9]*$/.test(value)) return
+                if (value.length === 11 && /^[A-Z]{4}0[A-Z0-9]{6}$/.test(value)) {
+                  try {
+                    const res = await fetch(`https://ifsc.razorpay.com/${value}`);
+                    if (res.ok) {
+                      const data = await res.json();
+                      handleNestedChange('bankAccountNumber', 'bankName', data.BANK || '');
+                      handleNestedChange('bankAccountNumber', 'branchName', data.BRANCH || '');
+                    }
+                  } catch {
+                    handleNestedChange('bankAccountNumber', 'bankName', '');
+                    handleNestedChange('bankAccountNumber', 'branchName', '');
+                  }
+                } else {
+                  handleNestedChange('bankAccountNumber', 'bankName', '');
+                  handleNestedChange('bankAccountNumber', 'branchName', '');
+                }
+                return;
+              }
 
-                              // Save only valid characters
-                              handleNestedChange('bankAccountNumber', field, value)
-
-                              if (value.length === 11) {
-                                const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
-                                if (!ifscRegex.test(value)) {
-                                  toast.error('Invalid IFSC format (e.g., HDFC0001234)')
-                                  handleNestedChange('bankAccountNumber', 'bankName', '')
-                                  handleNestedChange('bankAccountNumber', 'branchName', '')
-                                  return
-                                }
-
-                                // Fetch bank details
-                                try {
-                                  const res = await fetch(`https://ifsc.razorpay.com/${value}`)
-                                  if (res.ok) {
-                                    const data = await res.json()
-                                    handleNestedChange(
-                                      'bankAccountNumber',
-                                      'bankName',
-                                      data.BANK || '',
-                                    )
-                                    handleNestedChange(
-                                      'bankAccountNumber',
-                                      'branchName',
-                                      data.BRANCH || '',
-                                    )
-                                  } else {
-                                    toast.error('Invalid IFSC Code')
-                                    handleNestedChange('bankAccountNumber', 'bankName', '')
-                                    handleNestedChange('bankAccountNumber', 'branchName', '')
-                                  }
-                                } catch (err) {
-                                  toast.error('Error fetching bank details')
-                                  handleNestedChange('bankAccountNumber', 'bankName', '')
-                                  handleNestedChange('bankAccountNumber', 'branchName', '')
-                                }
-                              } else {
-                                // Clear while incomplete
-                                handleNestedChange('bankAccountNumber', 'bankName', '')
-                                handleNestedChange('bankAccountNumber', 'branchName', '')
-                              }
-                              return
-                            }
-
-                            // ✅ Other Fields
-                            handleNestedChange('bankAccountNumber', field, value)
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ))}
+              // Other fields
+              handleNestedChange('bankAccountNumber', field, value);
+            }}
+          />
+          {errors.bankAccountNumber?.[field] && (
+            <div className="text-danger mt-1">{errors.bankAccountNumber[field]}</div>
+          )}
+        </div>
+      ))}
+    </div>
+  ))}
 
               {/* 🔹 Documents */}
               {/* <h5 className="mt-3">Documents</h5>

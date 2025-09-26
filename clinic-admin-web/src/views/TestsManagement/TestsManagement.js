@@ -37,6 +37,7 @@ import ConfirmationModal from '../../components/ConfirmationModal'
 import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
 import capitalizeWords from '../../Utils/capitalizeWords'
 import LoadingIndicator from '../../Utils/loader'
+import { useHospital } from '../Usecontext/HospitalContext'
 
 const TestsManagement = () => {
   // const [searchQuery, setSearchQuery] = useState('')
@@ -144,6 +145,9 @@ const TestsManagement = () => {
     return Object.keys(newErrors).length === 0
   }
 
+  const { user } = useHospital()
+  const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
+
   const handleEditClick = (test) => {
     setSelectedTest({
       ...test, // includes testId
@@ -153,7 +157,7 @@ const TestsManagement = () => {
   }
   const isValidObjectId = (id) => /^[a-f\d]{24}$/i.test(id)
 
-const nameRegex = /^[A-Za-z\s.\-()\/']+$/
+  const nameRegex = /^[A-Za-z\s.\-()\/']+$/
 
   const handleAddTest = async () => {
     if (!newTest.testName.trim()) {
@@ -285,21 +289,27 @@ const nameRegex = /^[A-Za-z\s.\-()\/']+$/
             <CIcon icon={cilSearch} />
           </CInputGroupText>
         </CInputGroup> */}
-
-        <div
-          className=" w-100"
-          style={{ display: 'flex', justifyContent: 'end', alignContent: 'end', alignItems: 'end' }}
-        >
-          <CButton
+        {can('Tests', 'create') && (
+          <div
+            className=" w-100"
             style={{
-              color: 'var(--color-black)',
-              backgroundColor: 'var(--color-bgcolor)',
+              display: 'flex',
+              justifyContent: 'end',
+              alignContent: 'end',
+              alignItems: 'end',
             }}
-            onClick={() => setModalVisible(true)}
           >
-            Add Test
-          </CButton>
-        </div>
+            <CButton
+              style={{
+                color: 'var(--color-black)',
+                backgroundColor: 'var(--color-bgcolor)',
+              }}
+              onClick={() => setModalVisible(true)}
+            >
+              Add Test
+            </CButton>
+          </div>
+        )}
         {/* <CButton
           color="info"
           className="text-white"
@@ -523,28 +533,36 @@ const nameRegex = /^[A-Za-z\s.\-()\/']+$/
                   <CTableDataCell>{capitalizeWords(test.purpose || 'NA')}</CTableDataCell>
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
-                      <button className="actionBtn" onClick={() => setViewTest(test)} title="View">
-                        <Eye size={18} />
-                      </button>
-
-                      <button
-                        className="actionBtn"
-                        onClick={() => {
-                          setTestToEdit(test)
-                          setEditTestMode(true)
-                        }}
-                        title="Edit"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-
-                      <button
-                        className="actionBtn"
-                        onClick={() => handleTestDelete(test)}
-                        title="Delete"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      {can('Tests', 'read') && (
+                        <button
+                          className="actionBtn"
+                          onClick={() => setViewTest(test)}
+                          title="View"
+                        >
+                          <Eye size={18} />
+                        </button>
+                      )}
+                      {can('Tests', 'update') && (
+                        <button
+                          className="actionBtn"
+                          onClick={() => {
+                            setTestToEdit(test)
+                            setEditTestMode(true)
+                          }}
+                          title="Edit"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                      )}
+                      {can('Tests', 'delete') && (
+                        <button
+                          className="actionBtn"
+                          onClick={() => handleTestDelete(test)}
+                          title="Delete"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
                     </div>
                   </CTableDataCell>
                   {/* <CTableDataCell>

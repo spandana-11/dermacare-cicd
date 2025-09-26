@@ -972,150 +972,220 @@ const DoctorManagement = () => {
                 <div className="text-danger mt-1">{formErrors.doctorName}</div>
               )}
             </CCol>{' '}
-            <CCol md={6}>
-              <CFormLabel>
-                License Number
-                <span className="text-danger">*</span>
-              </CFormLabel>
-              <CFormInput
-                value={form.doctorLicence}
-                onChange={(e) => {
-                  const value = e.target.value
-                  setForm((prev) => ({ ...prev, doctorLicence: value }))
+           <CCol md={6}>
+  <CFormLabel>
+    License Number
+    <span className="text-danger">*</span>
+  </CFormLabel>
+  <CFormInput
+    value={form.doctorLicence}
+    onChange={(e) => {
+      let value = e.target.value
 
-                  if (value.trim()) {
-                    // ✅ Check duplicate
-                    const isDuplicate = doctorData?.data?.some(
-                      (doctor) => doctor.doctorLicence === value.trim(),
-                    )
+      // Remove invalid characters (allow only letters, digits, spaces, dashes)
+      value = value.replace(/[^A-Za-z0-9\s-]/g, '')
 
-                    if (isDuplicate) {
-                      setFormErrors((prev) => ({
-                        ...prev,
-                        doctorLicence: 'This License Number already exists',
-                      }))
-                    } else {
-                      setFormErrors((prev) => {
-                        const updated = { ...prev }
-                        delete updated.doctorLicence
-                        return updated
-                      })
-                    }
-                  }
-                }}
-                invalid={!!formErrors?.doctorLicence}
-              />
-              {formErrors?.doctorLicence && (
-                <small className="text-danger">{formErrors.doctorLicence}</small>
-              )}
-            </CCol>
-            <CCol md={6}>
-              <CFormLabel>
-                Gender
-                <span className="text-danger">*</span>
-              </CFormLabel>
-              <CFormSelect
-                value={form.gender}
-                onChange={(e) => setForm((p) => ({ ...p, gender: e.target.value }))}
-                className={formErrors.gender ? 'is-invalid' : ''}
-              >
-                <option value="">Select Gender</option>
-                <option>Female</option>
-                <option>Male</option>
-                <option>Other</option>
-              </CFormSelect>
-              {formErrors.gender && <div className="text-danger">{formErrors.gender}</div>}
-            </CCol>
-            <CCol md={6}>
-              <CFormLabel>
-                Experience (years)
-                <span className="text-danger">*</span>
-              </CFormLabel>
-              <CFormInput
-                type="number"
-                value={form.experience}
-                onChange={(e) => {
-                  const value = e.target.value
-                  setForm((p) => ({ ...p, experience: value }))
+      setForm((prev) => ({ ...prev, doctorLicence: value }))
 
-                  // Clear error if value is a valid number >= 0
-                  if (!isNaN(value) && Number(value) >= 0) {
-                    setFormErrors((prev) => ({ ...prev, experience: '' }))
-                  }
-                }}
-                invalid={!!formErrors.experience}
-              />
-              {formErrors.experience && (
-                <div className="text-danger mt-1">{formErrors.experience}</div>
-              )}
-            </CCol>
-            <CCol md={6}>
-              <CFormLabel>
-                Qualification
-                <span className="text-danger">*</span>
-              </CFormLabel>
-              <CFormInput
-                value={form.qualification}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[0-9]/g, '') // remove numbers
-                  setForm((p) => ({ ...p, qualification: value }))
-                  setFormErrors((prev) => ({
-                    ...prev,
-                    qualification: value.trim() ? '' : 'Qualification is required',
-                  }))
-                }}
-                invalid={!!formErrors.qualification}
-              />
+      // Validation
+      let error = ''
+      if (!value.trim()) {
+        error = 'License Number is required.'
+      } else if (value.trim().length < 3 || value.trim().length > 20) {
+        error = 'License Number must be between 3 and 20 characters.'
+      } else {
+        // Check duplicate
+        const isDuplicate = doctorData?.data?.some(
+          (doctor) => doctor.doctorLicence === value.trim()
+        )
+        if (isDuplicate) {
+          error = 'This License Number already exists.'
+        }
+      }
 
-              {formErrors.qualification && (
-                <div className="text-danger mt-1">{formErrors.qualification}</div>
-              )}
-            </CCol>
-            <CCol md={6}>
-              <CFormLabel>
-                Specialization
-                <span className="text-danger">*</span>
-              </CFormLabel>
-              <CFormInput
-                value={form.specialization}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[0-9]/g, '') // remove numbers
-                  setForm((p) => ({ ...p, specialization: value }))
-                  setFormErrors((prev) => ({
-                    ...prev,
-                    specialization: value.trim() ? '' : 'Specialization is required',
-                  }))
-                }}
-                invalid={!!formErrors.specialization}
-              />
+      setFormErrors((prev) => ({ ...prev, doctorLicence: error }))
+    }}
+    invalid={!!formErrors?.doctorLicence}
+  />
+  {formErrors?.doctorLicence && (
+    <small className="text-danger">{formErrors.doctorLicence}</small>
+  )}
+</CCol>
 
-              {formErrors.specialization && (
-                <div className="text-danger mt-1">{formErrors.specialization}</div>
-              )}
-            </CCol>
-            <CCol md={6}>
-              <CFormLabel>
-                Profile Description
-                <span className="text-danger">*</span>
-              </CFormLabel>
-              <CFormTextarea
-                value={form.profileDescription}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[0-9]/g, '') // remove numbers
-                  setForm((p) => ({ ...p, profileDescription: value }))
-                  setFormErrors((prev) => ({
-                    ...prev,
-                    profileDescription: value.trim() ? '' : 'Profile description is required',
-                  }))
-                }}
-                invalid={!!formErrors.profileDescription}
-                rows={4}
-              />
+           <CCol md={6}>
+  <CFormLabel>
+    Gender
+    <span className="text-danger">*</span>
+  </CFormLabel>
+  <CFormSelect
+    value={form.gender}
+    onChange={(e) => {
+      const value = e.target.value
+      setForm((p) => ({ ...p, gender: value }))
 
-              {formErrors.profileDescription && (
-                <div className="text-danger mt-1">{formErrors.profileDescription}</div>
-              )}
-            </CCol>
+      // ✅ Validation
+      let error = ''
+      if (!value || value.trim() === '') {
+        error = 'Gender is required.'
+      }
+      setFormErrors((prev) => ({ ...prev, gender: error }))
+    }}
+    className={formErrors.gender ? 'is-invalid' : ''}
+  >
+    <option value="">Select Gender</option>
+    <option value="Female">Female</option>
+    <option value="Male">Male</option>
+    <option value="Other">Other</option>
+  </CFormSelect>
+  {formErrors.gender && <div className="text-danger">{formErrors.gender}</div>}
+</CCol>
+
+          <CCol md={6}>
+  <CFormLabel>
+    Experience (years)
+    <span className="text-danger">*</span>
+  </CFormLabel>
+  <CFormInput
+    type="number"
+    value={form.experience}
+    onChange={(e) => {
+      let value = e.target.value
+
+      // ✅ Allow only numbers and max 2 digits
+      if (/^\d{0,2}$/.test(value)) {
+        setForm((p) => ({ ...p, experience: value }))
+
+        // Validation
+        let error = ''
+        if (!value) {
+          error = 'Experience is required.'
+        } else if (Number(value) < 0) {
+          error = 'Experience must be a non-negative number.'
+        }
+
+        setFormErrors((prev) => ({ ...prev, experience: error }))
+      }
+    }}
+    invalid={!!formErrors.experience}
+  />
+  {formErrors.experience && (
+    <div className="text-danger mt-1">{formErrors.experience}</div>
+  )}
+</CCol>
+
+
+           <CCol md={6}>
+  <CFormLabel>
+    Qualification
+    <span className="text-danger">*</span>
+  </CFormLabel>
+  <CFormInput
+    value={form.qualification}
+    onChange={(e) => {
+      let value = e.target.value
+
+      // ✅ Remove digits
+      value = value.replace(/[0-9]/g, '')
+
+      // ✅ Update form
+      setForm((prev) => ({ ...prev, qualification: value }))
+
+      // ✅ Validation
+      let error = ''
+      const trimmedValue = value.trim()
+      if (!trimmedValue) {
+        error = 'Qualification is required.'
+      } else if (!/^[A-Za-z\s]+$/.test(trimmedValue)) {
+        error = 'Qualification can contain only letters and spaces.'
+      } else if (trimmedValue.length < 2 || trimmedValue.length > 50) {
+        error = 'Qualification must be between 2 and 50 characters.'
+      }
+
+      setFormErrors((prev) => ({ ...prev, qualification: error }))
+    }}
+    invalid={!!formErrors.qualification}
+  />
+  {formErrors.qualification && (
+    <div className="text-danger mt-1">{formErrors.qualification}</div>
+  )}
+</CCol>
+
+           <CCol md={6}>
+  <CFormLabel>
+    Specialization
+    <span className="text-danger">*</span>
+  </CFormLabel>
+  <CFormInput
+    value={form.specialization}
+    onChange={(e) => {
+      let value = e.target.value
+
+      // ✅ Remove digits
+      value = value.replace(/[0-9]/g, '')
+
+      // ✅ Update form state
+      setForm((prev) => ({ ...prev, specialization: value }))
+
+      // ✅ Validation
+      let error = ''
+      const trimmedValue = value.trim()
+      if (!trimmedValue) {
+        error = 'Specialization is required.'
+      } else if (!/^[A-Za-z\s]+$/.test(trimmedValue)) {
+        error = 'Specialization can contain only letters and spaces.'
+      } else if (trimmedValue.length < 2 || trimmedValue.length > 50) {
+        error = 'Specialization must be between 2 and 50 characters.'
+      }
+
+      setFormErrors((prev) => ({ ...prev, specialization: error }))
+    }}
+    invalid={!!formErrors.specialization}
+  />
+  {formErrors.specialization && (
+    <div className="text-danger mt-1">{formErrors.specialization}</div>
+  )}
+</CCol>
+
+           <CCol md={6}>
+  <CFormLabel>
+    Profile Description
+    <span className="text-danger">*</span>
+  </CFormLabel>
+  <CFormTextarea
+    value={form.profileDescription}
+    onChange={(e) => {
+      let value = e.target.value
+
+      // ✅ Remove digits (optional, if you don't want numbers)
+      value = value.replace(/[0-9]/g, '')
+
+      // ✅ Update form state
+      setForm((prev) => ({ ...prev, profileDescription: value }))
+
+      // ✅ Validation
+      let error = ''
+      const trimmedValue = value.trim()
+      if (!trimmedValue) {
+        error = 'Profile description is required.'
+      } else if (!/^[A-Za-z\s.,'-]+$/.test(trimmedValue)) {
+        // Allow letters, spaces, periods, commas, apostrophes, hyphens
+        error = 'Profile description can contain only letters and common punctuation.'
+      } else if (trimmedValue.length < 10 || trimmedValue.length > 500) {
+        // Minimum 10, maximum 500 characters
+        error = 'Profile description must be between 10 and 500 characters.'
+      }
+
+      setFormErrors((prev) => ({ ...prev, profileDescription: error }))
+    }}
+    invalid={!!formErrors.profileDescription}
+    rows={4}
+  />
+
+  {formErrors.profileDescription && (
+    <div className="text-danger mt-1">{formErrors.profileDescription}</div>
+  )}
+</CCol>
+
             <CCol md={6}>
               <CFormLabel>
                 Profile Picture
@@ -1138,13 +1208,7 @@ const DoctorManagement = () => {
                     }
 
                     // ✅ Check file size (<250 KB)
-                    if (file.size > 250 * 1024) {
-                      setFormErrors((prev) => ({
-                        ...prev,
-                        doctorPicture: 'File size must be less than 250KB',
-                      }))
-                      return
-                    }
+                   
 
                     const reader = new FileReader()
                     reader.onloadend = () => {
@@ -1372,54 +1436,69 @@ const DoctorManagement = () => {
                 Contact Number
                 <span className="text-danger">*</span>
               </CFormLabel>
-              <CFormInput
-                type="tel"
-                maxLength={10}
-                value={form.doctorMobileNumber}
-                onChange={(e) => {
-                  const value = e.target.value
-                  if (/^\d{0,10}$/.test(value)) {
-                    setForm((prev) => ({ ...prev, doctorMobileNumber: value }))
-                    if (/^\d{10}$/.test(value)) {
-                      setFormErrors((prev) => ({ ...prev, doctorMobileNumber: '' }))
-                    }
-                  }
-                }}
-                placeholder="Enter 10-digit number"
-              />
-              {formErrors.doctorMobileNumber && (
-                <div className="text-danger">{formErrors.doctorMobileNumber}</div>
-              )}
+            <CFormInput
+  type="tel"
+  maxLength={10}
+  value={form.doctorMobileNumber}
+  onChange={(e) => {
+    const value = e.target.value
+
+    // ✅ Allow only digits and max 10
+    if (/^\d{0,10}$/.test(value)) {
+      setForm((prev) => ({ ...prev, doctorMobileNumber: value }))
+
+      // ✅ Run validator and update error
+      let error = ''
+      if (!value) {
+        error = 'Mobile number is required.'
+      } else if (!/^\d{10}$/.test(value)) {
+        error = 'Mobile number must be exactly 10 digits.'
+      }
+
+      setFormErrors((prev) => ({ ...prev, doctorMobileNumber: error }))
+    }
+  }}
+  placeholder="Enter 10-digit number"
+  invalid={!!formErrors.doctorMobileNumber}
+/>
+
+{formErrors.doctorMobileNumber && (
+  <div className="text-danger">{formErrors.doctorMobileNumber}</div>
+)}
+
             </CCol>
             <CCol md={6}>
               <CFormLabel>
                 Email Address
                 <span className="text-danger">*</span>
               </CFormLabel>
-              <CFormInput
-                type="email"
-                value={form.doctorEmail}
-                onChange={(e) => {
-                  const value = e.target.value
-                  setForm((prev) => ({ ...prev, doctorEmail: value }))
+             <CFormInput
+  type="email"
+  value={form.doctorEmail}
+  onChange={(e) => {
+    const value = e.target.value
+    setForm((prev) => ({ ...prev, doctorEmail: value }))
 
-                  // Email validation
-                  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-                  if (emailPattern.test(value)) {
-                    setFormErrors((prev) => ({ ...prev, doctorEmail: '' }))
-                  } else {
-                    setFormErrors((prev) => ({
-                      ...prev,
-                      doctorEmail: 'Enter a valid email address',
-                    }))
-                  }
-                }}
-                placeholder="Enter doctor email"
-                invalid={!!formErrors.doctorEmail}
-              />
-              {formErrors.doctorEmail && (
-                <div className="text-danger">{formErrors.doctorEmail}</div>
-              )}
+    let error = ''
+    if (!value.trim()) {
+      error = 'Email is required.'
+    } else {
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailPattern.test(value.trim())) {
+        error = 'Enter a valid email address.'
+      }
+    }
+
+    setFormErrors((prev) => ({ ...prev, doctorEmail: error }))
+  }}
+  placeholder="Enter doctor email"
+  invalid={!!formErrors.doctorEmail}
+/>
+
+{formErrors.doctorEmail && (
+  <div className="text-danger">{formErrors.doctorEmail}</div>
+)}
+
             </CCol>
           </CRow>
 
@@ -1428,68 +1507,130 @@ const DoctorManagement = () => {
           <h5 className="mb-3">Additional Details</h5>
           <CRow>
             <CCol md={6}>
-              <CFormLabel>Association/Membership</CFormLabel>
-              <CFormInput
-                value={form.associationsOrMemberships}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[0-9]/g, '')
-                  setForm((p) => ({ ...p, associationsOrMemberships: value }))
-                }}
-              />
+         <CFormLabel>Association/Membership</CFormLabel>
+<CFormInput
+  value={form.associationsOrMemberships}
+  onChange={(e) => {
+    let value = e.target.value
+    // Remove numbers
+    value = value.replace(/[0-9]/g, '')
+    setForm((p) => ({ ...p, associationsOrMemberships: value }))
+
+    // Validation
+    let error = ''
+    if (!value.trim()) {
+      error = 'Associations or Memberships is required.'
+    } else if (value.trim().length < 2 || value.trim().length > 100) {
+      error = 'Must be between 2 and 100 characters.'
+    }
+
+    setFormErrors((prev) => ({ ...prev, associationsOrMemberships: error }))
+  }}
+  invalid={!!formErrors.associationsOrMemberships}
+/>
+
+{formErrors.associationsOrMemberships && (
+  <div className="text-danger mt-1">{formErrors.associationsOrMemberships}</div>
+)}
+
             </CCol>
-            <CCol md={6}>
-              <CFormLabel>
-                Branch
-                <span className="text-danger">*</span>
-              </CFormLabel>
-              <Select
-                isMulti
-                options={branchOptions}
-                value={branchOptions.filter(
-                  (opt) =>
-                    Array.isArray(form.branch) && form.branch.some((b) => b.branchId === opt.value),
-                )}
-                onChange={(selected) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    branch: selected.map((opt) => ({
-                      branchId: opt.value,
-                      branchName: opt.label,
-                    })),
-                  }))
-                }
-                placeholder="Select branches..."
-                className={formErrors.branch ? 'is-invalid' : ''}
-              />
-              {formErrors.branch && <div className="text-danger">{formErrors.branch}</div>}
-            </CCol>
+           <CCol md={6}>
+  <CFormLabel>
+    Branch
+    <span className="text-danger">*</span>
+  </CFormLabel>
+  <Select
+    isMulti
+    options={branchOptions}
+    value={branchOptions.filter(
+      (opt) =>
+        Array.isArray(form.branch) && form.branch.some((b) => b.branchId === opt.value)
+    )}
+    onChange={(selected) => {
+      setForm((prev) => ({
+        ...prev,
+        branch: selected.map((opt) => ({
+          branchId: opt.value,
+          branchName: opt.label,
+        })),
+      }))
+
+      // Validation: At least one branch must be selected
+      setFormErrors((prev) => ({
+        ...prev,
+        branch: selected.length > 0 ? '' : 'Please select at least one branch',
+      }))
+    }}
+    placeholder="Select branches..."
+    className={formErrors.branch ? 'is-invalid' : ''}
+  />
+  {formErrors.branch && <div className="text-danger">{formErrors.branch}</div>}
+</CCol>
+
           </CRow>
-          <ChipSection
-            label="Area of Expertise"
-            items={form.focusAreas}
-            onAdd={(items) => setForm((prev) => ({ ...prev, focusAreas: items }))}
-          />
+       <ChipSection
+  label="Area of Expertise"
+  items={form.focusAreas}
+  onAdd={(items) => {
+    // update form state
+    setForm((prev) => ({ ...prev, focusAreas: items }))
+
+    // validation: must have at least one item
+    setFormErrors((prev) => ({
+      ...prev,
+      focusAreas:
+        items && items.length > 0
+          ? '' // clear error
+          : 'Please add at least one focus area',
+    }))
+  }}
+/>
+
+{/* show error */}
+{formErrors.focusAreas && (
+  <div className="text-danger mt-1">{formErrors.focusAreas}</div>
+)}
+
           <div className="mb-3">
             {/* <label label="Language">Languages Known</label> */}
-            <ChipSection
-              label="Languages known"
-              items={form.languages}
-              onAdd={(items) => {
-                setForm((prev) => ({ ...prev, languages: items }))
-                if (items.length > 0) {
-                  setFormErrors((prev) => ({ ...prev, languages: '' }))
-                }
-              }}
-            />
+          <ChipSection
+  label="Languages Known"
+  items={form.languages}
+  onAdd={(items) => {
+    setForm((prev) => ({ ...prev, languages: items }))
+
+    // ✅ Validation: At least one language should be added
+    setFormErrors((prev) => ({
+      ...prev,
+      languages: items.length > 0 ? '' : 'Please add at least one language',
+    }))
+  }}
+/>
+{formErrors.languages && (
+  <div className="text-danger mt-1">{formErrors.languages}</div>
+)}
+
 
             {/* {formErrors.languages && <div className="text-danger mt-1">{formErrors.languages}</div>} */}
           </div>
 
           <ChipSection
-            label="Achievements / Awards"
-            items={form.highlights}
-            onAdd={(items) => setForm((prev) => ({ ...prev, highlights: items }))}
-          />
+  label="Achievements / Awards"
+  items={form.highlights}
+  onAdd={(items) => {
+    setForm((prev) => ({ ...prev, highlights: items }))
+
+    // ✅ Validation: Optional, but you can enforce at least one achievement if required
+    setFormErrors((prev) => ({
+      ...prev,
+      highlights: items.length > 0 ? '' : 'Please add at least one achievement',
+    }))
+  }}
+/>
+{formErrors.highlights && (
+  <div className="text-danger mt-1">{formErrors.highlights}</div>
+)}
+
           <CCol md={6} className="d-flex align-items-center" style={{ gap: '20px' }}>
             {/* The container for the custom file input and label */}
             <div style={{ flex: 1 }}>

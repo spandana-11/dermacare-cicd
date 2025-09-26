@@ -22,6 +22,7 @@ public class Pharmacist {
 	private String hospitalId;
 	private String hospitalName;
 	private String branchId;
+	private String branchName;
 	private String role;
 	private String pharmacistId;
 	private String fullName;

@@ -7,17 +7,22 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.clinicadmin.dto.Branch;
+import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.ResponseStructure;
 import com.clinicadmin.dto.WardBoyDTO;
 import com.clinicadmin.entity.DoctorLoginCredentials;
 import com.clinicadmin.entity.WardBoy;
+import com.clinicadmin.feignclient.AdminServiceClient;
 import com.clinicadmin.repository.DoctorLoginCredentialsRepository;
 import com.clinicadmin.repository.WardBoyRepository;
 import com.clinicadmin.service.WardBoyService;
 import com.clinicadmin.utils.WardBoyMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,6 +38,12 @@ public class WardBoyServiceImpl implements WardBoyService {
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 
+	@Autowired
+	AdminServiceClient adminServiceClient;
+
+	@Autowired
+	ObjectMapper objectMapper;
+
 	private static final String CHAR_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 	private static final SecureRandom random = new SecureRandom();
 
@@ -45,12 +56,14 @@ public class WardBoyServiceImpl implements WardBoyService {
 		if (wardBoyRepository.findByContactNumber(dto.getContactNumber()).isPresent()) {
 
 			return ResponseStructure.buildResponse(null,
-					"WardBoy already exists with contact number : " + dto.getContactNumber(),
-					HttpStatus.CONFLICT, HttpStatus.CONFLICT.value());
+					"WardBoy already exists with contact number : " + dto.getContactNumber(), HttpStatus.CONFLICT,
+					HttpStatus.CONFLICT.value());
 		}
+		ResponseEntity<Response> res = adminServiceClient.getBranchById(dto.getBranchId());
+		Branch br = objectMapper.convertValue(res.getBody().getData(), Branch.class);
 
 		WardBoy wardBoy = WardBoyMapper.toEntity(dto);
-
+		wardBoy.setBranchName(br.getBranchName());
 		wardBoy.setWardBoyId(generateWardBoyId());
 
 		WardBoy saved = wardBoyRepository.save(wardBoy);
@@ -59,20 +72,14 @@ public class WardBoyServiceImpl implements WardBoyService {
 		String rawPassword = generateStructuredPassword();
 		String encodedPassword = passwordEncoder.encode(rawPassword);
 
-		DoctorLoginCredentials credentials = DoctorLoginCredentials.builder()
-				.staffId(saved.getWardBoyId())
-				.staffName(saved.getFullName())
-				.hospitalId(saved.getClinicId())
-				.hospitalName(saved.getHospitalName())
-				.branchId(saved.getBranchId())
-				.username(username)
-				.password(encodedPassword)
-				.role(dto.getRole())
-				.permissions(saved.getPermissions())
-				.build();
+		DoctorLoginCredentials credentials = DoctorLoginCredentials.builder().staffId(saved.getWardBoyId())
+				.staffName(saved.getFullName()).hospitalId(saved.getClinicId()).hospitalName(saved.getHospitalName())
+				.branchId(saved.getBranchId()).branchName(saved.getBranchName()).username(username)
+				.password(encodedPassword).role(dto.getRole()).permissions(saved.getPermissions()).build();
 		credentialsRepository.save(credentials);
 
 		WardBoyDTO responseDto = WardBoyMapper.toDTO(saved);
+		responseDto.setBranchName(saved.getBranchName());
 		responseDto.setUserName(username);
 		responseDto.setPassword(rawPassword);
 
@@ -143,7 +150,7 @@ public class WardBoyServiceImpl implements WardBoyService {
 			existing.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
 		if (dto.getEmergencyContact() != null)
 			existing.setEmergencyContact(dto.getEmergencyContact());
-		
+
 		if (dto.getMedicalFitnessCertificate() != null)
 			existing.setMedicalFitnessCertificate(WardBoyMapper.toEntity(dto).getMedicalFitnessCertificate());
 		if (dto.getBasicHealthFirstAidTrainingCertificate() != null)

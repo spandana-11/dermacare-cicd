@@ -60,6 +60,10 @@ const otherStaffManagement = React.lazy(
   () => import('./views/EmployeeManagement/OtherStaff/OtherStaffManagement'),
 )
 
+const PharmacyManagement = React.lazy(
+  () => import('./components/PharmacyManagement/PharmacyManagement'),
+)
+
 const routes = [
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
   // { path: '/doctor-notifications', name: 'Doctor Notifications', element: DoctorNotofications },
@@ -81,6 +85,12 @@ const routes = [
     path: '/Pharmacist',
     name: 'pharmacist',
     element: PharmacistManagement,
+  },
+
+  {
+    path: '/pharmacyManagement',
+    name: 'Pharmacy Management',
+    element: PharmacyManagement,
   },
 
   { path: '/Receptionist', name: 'Receptionist', element: Receptionist },

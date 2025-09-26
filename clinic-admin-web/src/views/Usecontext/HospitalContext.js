@@ -1,13 +1,17 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { http } from '../../Utils/Interceptors'
 import { GetSubServices_ByClinicId } from '../ProcedureManagement/ProcedureManagementAPI'
-import { roleMenu } from '../../Constant/roleMenu'
 import { getDoctorByClinicId } from '../../baseUrl'
 
 const HospitalContext = createContext()
 
 export const HospitalProvider = ({ children }) => {
-  const [selectedHospital, setSelectedHospital] = useState(null)
+  // Hydrate from localStorage
+  const [selectedHospital, setSelectedHospital] = useState(() => {
+    const stored = localStorage.getItem('selectedHospital')
+    return stored ? JSON.parse(stored) : null
+  })
+
   const [doctorData, setDoctorData] = useState(null)
   const [subServices, setSubServices] = useState([])
   const [loading, setLoading] = useState(false)
@@ -18,75 +22,55 @@ export const HospitalProvider = ({ children }) => {
     const saved = localStorage.getItem('hospitalUser')
     return saved ? JSON.parse(saved) : null
   })
-
   const [hospitalId, setHospitalId] = useState(localStorage.getItem('HospitalId'))
+  const [hydrated, setHydrated] = useState(false) // Track data readiness
 
-  // Set user permissions based on role
-  // useEffect(() => {
-  //   setUser({
-  //     name: 'John Doe',
-  //     role: role,
-  //     permissions: roleMenu[role] || [],
-  //   })
-  // }, [role])
-
+  // Persist user & hospital to localStorage
   useEffect(() => {
-    if (user) {
-      localStorage.setItem('hospitalUser', JSON.stringify(user))
-    } else {
-      localStorage.removeItem('hospitalUser')
-    }
+    if (user) localStorage.setItem('hospitalUser', JSON.stringify(user))
+    else localStorage.removeItem('hospitalUser')
   }, [user])
 
-  // Fetch all data on mount
-
   useEffect(() => {
-    const storedId = localStorage.getItem('HospitalId')
-    if (storedId && storedId !== hospitalId) {
-      setHospitalId(storedId)
-    }
-  }, []) // run once
-  useEffect(() => {
-    console.log(hospitalId)
+    if (selectedHospital) localStorage.setItem('selectedHospital', JSON.stringify(selectedHospital))
+    else localStorage.removeItem('selectedHospital')
+  }, [selectedHospital])
 
-    if (!hospitalId) return
-
-    const fetchAllData = async () => {
+  // Fetch hospital & doctor data
+  const fetchAllData = useCallback(
+    async (id = hospitalId) => {
+      if (!id) return
       setLoading(true)
       try {
-        // Fetch hospital details
+        // Fetch hospital
+        const hospitalRes = await http.get(`/getClinic/${id}`)
+        if (hospitalRes.status === 200 && hospitalRes.data) setSelectedHospital(hospitalRes.data)
 
-        if (hospitalId != undefined) {
-          const hospitalRes = await http.get(`/getClinic/${hospitalId}`)
-          if (hospitalRes.status === 200 && hospitalRes.data) {
-            setSelectedHospital(hospitalRes.data)
-          } else {
-            setErrorMessage('Failed to fetch hospital details.')
-          }
-        }
+        // Fetch doctors
         const branchId = localStorage.getItem('branchId')
-        // Fetch doctor details
-        const doctorRes = await http.get(`${getDoctorByClinicId}/${hospitalId}/${branchId}`)
-        if (doctorRes.status === 200 && doctorRes.data) {
-          setDoctorData(doctorRes.data)
-        } else {
-          setErrorMessage('Failed to fetch doctor details.')
-        }
+        const doctorRes = await http.get(`${getDoctorByClinicId}/${id}/${branchId}`)
+        if (doctorRes.status === 200 && doctorRes.data) setDoctorData(doctorRes.data)
 
         // Fetch subservices
-        const subRes = await GetSubServices_ByClinicId(hospitalId)
+        const subRes = await GetSubServices_ByClinicId(id)
         const list = Array.isArray(subRes?.data) ? subRes.data : []
-        setSubServices(list.filter((s) => s.hospitalId === hospitalId))
+        setSubServices(list.filter((s) => s.hospitalId === id))
       } catch (err) {
         console.error(err)
         setErrorMessage('Error fetching hospital data.')
       } finally {
         setLoading(false)
+        setHydrated(true)
       }
-    }
+    },
+    [hospitalId],
+  )
 
-    fetchAllData()
-  }, [hospitalId]) // run once on mount
+  // Auto-fetch on hospitalId change
+  useEffect(() => {
+    if (hospitalId) fetchAllData()
+    else setHydrated(true)
+  }, [hospitalId, fetchAllData])
 
   return (
     <HospitalContext.Provider
@@ -96,14 +80,19 @@ export const HospitalProvider = ({ children }) => {
         subServices,
         loading,
         errorMessage,
+        hydrated,
+        user,
+        role,
+        notificationCount,
+        hospitalId,
         setSelectedHospital,
         setDoctorData,
-        notificationCount,
-        setNotificationCount,
-        user,
-        setRole,
+        setSubServices,
         setUser,
+        setRole,
         setHospitalId,
+        setNotificationCount,
+        fetchAllData, // expose for manual calls (like after login)
       }}
     >
       {children}

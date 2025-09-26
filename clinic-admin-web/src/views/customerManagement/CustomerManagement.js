@@ -41,6 +41,7 @@ import { Edit2, Eye, Trash2 } from 'lucide-react'
 import LoadingIndicator from '../../Utils/loader'
 import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
 import ConfirmationModal from '../../components/ConfirmationModal'
+import { useHospital } from '../Usecontext/HospitalContext'
 const CustomerManagement = () => {
   const navigate = useNavigate()
   const [customerData, setCustomerData] = useState([])
@@ -59,7 +60,7 @@ const CustomerManagement = () => {
   const [isAdding, setIsAdding] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [isViewModalVisible, setIsViewModalVisible] = useState(false)
-const [viewCustomerData, setViewCustomerData] = useState(null)
+  const [viewCustomerData, setViewCustomerData] = useState(null)
 
   const [formData, setFormData] = useState({
     customerId: '',
@@ -174,6 +175,9 @@ const [viewCustomerData, setViewCustomerData] = useState(null)
       },
     }))
   }
+
+  const { user } = useHospital()
+  const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
 
   // ======= pincode handler with debounce + postal API =======
   const handlePincodeChange = (value) => {
@@ -315,57 +319,55 @@ const [viewCustomerData, setViewCustomerData] = useState(null)
         }
       }
 
- let title = ''
-    let firstName = ''
-    let lastName = ''
+      let title = ''
+      let firstName = ''
+      let lastName = ''
 
-    if (customer.fullName) {
-      const parts = customer.fullName.trim().split(' ')
-      if (parts.length >= 3) {
-        title = parts[0]
-        firstName = parts[1]
-        lastName = parts.slice(2).join(' ') // handles middle/last names
-      } else if (parts.length === 2) {
-        title = parts[0]
-        firstName = parts[1]
-      } else if (parts.length === 1) {
-        firstName = parts[0]
+      if (customer.fullName) {
+        const parts = customer.fullName.trim().split(' ')
+        if (parts.length >= 3) {
+          title = parts[0]
+          firstName = parts[1]
+          lastName = parts.slice(2).join(' ') // handles middle/last names
+        } else if (parts.length === 2) {
+          title = parts[0]
+          firstName = parts[1]
+        } else if (parts.length === 1) {
+          firstName = parts[0]
+        }
       }
-    }
 
-    setFormData({
-      customerId: customer.customerId || '',
-      title,
-      firstName,
-      lastName,
-      fullName: customer.fullName || '',
-      mobileNumber: customer.mobileNumber || '',
-      gender: customer.gender || '',
-      email: customer.email || '',
-      dateOfBirth: formattedDate,
-      referralCode: customer.referralCode || '',
-      age: customer.age || '',
-      hospitalId: localStorage.getItem('HospitalId') || '',
-      hospitalName: localStorage.getItem('HospitalName') || '',
-      branchId: localStorage.getItem('branchId') || '',
-      address: {
-        houseNo: customer.address?.houseNo || '',
-        street: customer.address?.street || '',
-        landmark: customer.address?.landmark || '',
-        city: customer.address?.city || '',
-        state: customer.address?.state || '',
-        country: customer.address?.country || 'India',
-        postalCode: customer.address?.postalCode || '',
-      },
-    })
-
+      setFormData({
+        customerId: customer.customerId || '',
+        title,
+        firstName,
+        lastName,
+        fullName: customer.fullName || '',
+        mobileNumber: customer.mobileNumber || '',
+        gender: customer.gender || '',
+        email: customer.email || '',
+        dateOfBirth: formattedDate,
+        referralCode: customer.referralCode || '',
+        age: customer.age || '',
+        hospitalId: localStorage.getItem('HospitalId') || '',
+        hospitalName: localStorage.getItem('HospitalName') || '',
+        branchId: localStorage.getItem('branchId') || '',
+        address: {
+          houseNo: customer.address?.houseNo || '',
+          street: customer.address?.street || '',
+          landmark: customer.address?.landmark || '',
+          city: customer.address?.city || '',
+          state: customer.address?.state || '',
+          country: customer.address?.country || 'India',
+          postalCode: customer.address?.postalCode || '',
+        },
+      })
 
       setIsAdding(true)
       setIsEditing(true)
       setCurrentMobile(customer.mobileNumber)
       setViewCustomerData(customer)
-// setIsViewModalVisible(true)
-
+      // setIsViewModalVisible(true)
     } catch (error) {
       console.error('Failed to fetch customer:', error)
       toast.error('Failed to load customer data')
@@ -389,108 +391,106 @@ const [viewCustomerData, setViewCustomerData] = useState(null)
       handlePincodeChange(formData.address.postalCode)
     }
   }, [isEditing])
-const handleFormSubmit = async (e) => {
-  e.preventDefault()
-  console.log('Submitting form', formData)
+  const handleFormSubmit = async (e) => {
+    e.preventDefault()
+    console.log('Submitting form', formData)
 
-  // ✅ Validate the form first
-  if (!validateForm()) return
+    // ✅ Validate the form first
+    if (!validateForm()) return
 
-  try {
-    const updatedFormData = { ...formData }
+    try {
+      const updatedFormData = { ...formData }
 
-    // Combine Title + First Name + Last Name
-    updatedFormData.fullName =
-      `${formData.title} ${formData.firstName} ${formData.lastName}`.trim()
+      // Combine Title + First Name + Last Name
+      updatedFormData.fullName =
+        `${formData.title} ${formData.firstName} ${formData.lastName}`.trim()
 
-    // Format DOB to DD-MM-YYYY
-    if (updatedFormData.dateOfBirth) {
-      const dateObj = new Date(updatedFormData.dateOfBirth)
-      if (!isNaN(dateObj)) {
-        const day = String(dateObj.getDate()).padStart(2, '0')
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0')
-        const year = dateObj.getFullYear()
-        updatedFormData.dateOfBirth = `${day}-${month}-${year}`
+      // Format DOB to DD-MM-YYYY
+      if (updatedFormData.dateOfBirth) {
+        const dateObj = new Date(updatedFormData.dateOfBirth)
+        if (!isNaN(dateObj)) {
+          const day = String(dateObj.getDate()).padStart(2, '0')
+          const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+          const year = dateObj.getFullYear()
+          updatedFormData.dateOfBirth = `${day}-${month}-${year}`
+        }
       }
+
+      if (isEditing) {
+        // ✅ Update customer
+        await updateCustomerData(formData.customerId, updatedFormData)
+        toast.success('Customer updated successfully')
+      } else {
+        // ✅ Add customer
+        await addCustomer(updatedFormData)
+        toast.success('Customer added successfully')
+
+        // ✅ Clear the form after adding new customer
+        setFormData({
+          title: '',
+          firstName: '',
+          lastName: '',
+          fullName: '',
+          dateOfBirth: '',
+          email: '',
+          mobile: '',
+          address: '',
+          // add other fields you have in formData...
+        })
+      }
+
+      await fetchCustomers()
+      handleCancel()
+    } catch (error) {
+      console.error('Error submitting customer:', error)
+      if (error?.response?.status === 409) {
+        toast.error('Customer already exists with this mobile number or email.')
+      }
+      // else {
+      //   toast.error('Something went wrong while submitting.')
+      // }
     }
-
-    if (isEditing) {
-      // ✅ Update customer
-      await updateCustomerData(formData.customerId, updatedFormData)
-      toast.success('Customer updated successfully')
-    } else {
-      // ✅ Add customer
-      await addCustomer(updatedFormData)
-      toast.success('Customer added successfully')
-
-      // ✅ Clear the form after adding new customer
-      setFormData({
-        title: '',
-        firstName: '',
-        lastName: '',
-        fullName: '',
-        dateOfBirth: '',
-        email: '',
-        mobile: '',
-        address: '',
-        // add other fields you have in formData...
-      })
-    }
-
-    await fetchCustomers()
-    handleCancel()
-  } catch (error) {
-    console.error('Error submitting customer:', error)
-    if (error?.response?.status === 409) {
-      toast.error('Customer already exists with this mobile number or email.')
-    } 
-    // else {
-    //   toast.error('Something went wrong while submitting.')
-    // }
-  }
-}
-
-
-const handleCancel = () => {
-  // Reset editing and adding state
-  setIsAdding(false)
-  setIsEditing(false)
-  setCurrentMobile(null)
-
-  // Close view modal only if we are canceling from "view" mode, 
-  // not when canceling from "edit"
-  if (!isEditing) {
-    setIsViewing(false)
   }
 
-  // Reset form
-  setFormData({
-    customerId: '',
-    title: '',
-    firstName: '',
-    lastName: '',
-    fullName: '',
-    mobileNumber: '',
-    gender: '',
-    email: '',
-    dateOfBirth: '',
-    referralCode: '',
-    age: '',
-    hospitalId: localStorage.getItem('HospitalId') || '',
-    hospitalName: localStorage.getItem('HospitalName') || '',
-    branchId: localStorage.getItem('branchId') || '',
-    address: {
-      houseNo: '',
-      street: '',
-      landmark: '',
-      city: '',
-      state: '',
-      country: 'India',
-      postalCode: '',
-    },
-  })
-}
+  const handleCancel = () => {
+    // Reset editing and adding state
+    setIsAdding(false)
+    setIsEditing(false)
+    setCurrentMobile(null)
 
+    // Close view modal only if we are canceling from "view" mode,
+    // not when canceling from "edit"
+    if (!isEditing) {
+      setIsViewing(false)
+    }
+
+    // Reset form
+    setFormData({
+      customerId: '',
+      title: '',
+      firstName: '',
+      lastName: '',
+      fullName: '',
+      mobileNumber: '',
+      gender: '',
+      email: '',
+      dateOfBirth: '',
+      referralCode: '',
+      age: '',
+      hospitalId: localStorage.getItem('HospitalId') || '',
+      hospitalName: localStorage.getItem('HospitalName') || '',
+      branchId: localStorage.getItem('branchId') || '',
+      address: {
+        houseNo: '',
+        street: '',
+        landmark: '',
+        city: '',
+        state: '',
+        country: 'India',
+        postalCode: '',
+      },
+    })
+  }
 
   const filteredData = React.useMemo(() => {
     const q = searchQuery.toLowerCase().trim()
@@ -617,30 +617,32 @@ const handleCancel = () => {
 
   return (
     <>
-    
       {!isAdding ? (
         <>
           <CRow className="d-flex align-items-center mb-3">
             <ToastContainer />
-            <div
-              className="mb-3 w-100"
-              style={{
-                display: 'flex',
-                justifyContent: 'end',
-                alignContent: 'end',
-                alignItems: 'end',
-              }}
-            >
-              <CButton
+
+            {can('Customer Management', 'create') && (
+              <div
+                className="mb-3 w-100"
                 style={{
-                  color: 'var(--color-black)',
-                  backgroundColor: 'var(--color-bgcolor)',
+                  display: 'flex',
+                  justifyContent: 'end',
+                  alignContent: 'end',
+                  alignItems: 'end',
                 }}
-                onClick={() => setIsAdding(true)}
               >
-                Add New Customer
-              </CButton>
-            </div>
+                <CButton
+                  style={{
+                    color: 'var(--color-black)',
+                    backgroundColor: 'var(--color-bgcolor)',
+                  }}
+                  onClick={() => setIsAdding(true)}
+                >
+                  Add New Customer
+                </CButton>
+              </div>
+            )}
 
             {/* <div className="col-md-3 d-flex justify-content-end">
               <CButton className="btn btn-primary w-auto" onClick={() => setIsAdding(true)}>
@@ -716,32 +718,36 @@ const handleCancel = () => {
 
                         <CTableDataCell className="text-end">
                           <div className="d-flex justify-content-end gap-2  ">
-                            <button
-                              className="actionBtn"
-                              onClick={() => handleCustomerViewDetails(customer?.customerId)}
-                              title="View"
-                            >
-                              <Eye size={18} />
-                            </button>
-
-                            <button
-                              className="actionBtn"
-                              onClick={() => handleEditCustomer(customer?.customerId)}
-                              title="Edit"
-                            >
-                              <Edit2 size={18} />
-                            </button>
-
-                            <button
-                              className="actionBtn"
-                              onClick={() => {
-                                setCustomerIdToDelete(customer?.customerId)
-                                setIsModalVisible(true)
-                              }}
-                              title="Delete"
-                            >
-                              <Trash2 size={18} />
-                            </button>
+                            {can('Customer Management', 'read') && (
+                              <button
+                                className="actionBtn"
+                                onClick={() => handleCustomerViewDetails(customer?.customerId)}
+                                title="View"
+                              >
+                                <Eye size={18} />
+                              </button>
+                            )}
+                            {can('Customer Management', 'update') && (
+                              <button
+                                className="actionBtn"
+                                onClick={() => handleEditCustomer(customer?.customerId)}
+                                title="Edit"
+                              >
+                                <Edit2 size={18} />
+                              </button>
+                            )}
+                            {can('Customer Management', 'delete') && (
+                              <button
+                                className="actionBtn"
+                                onClick={() => {
+                                  setCustomerIdToDelete(customer?.customerId)
+                                  setIsModalVisible(true)
+                                }}
+                                title="Delete"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
                           </div>
                         </CTableDataCell>
 
@@ -794,60 +800,60 @@ const handleCancel = () => {
                   )}
                 </CTableBody>
               </CTable>
-<CModal
-  visible={isViewModalVisible}
-  onClose={() => setIsViewModalVisible(false)}
-  size="lg"
->
-  <CModalHeader>
-    <CModalTitle>Customer Details</CModalTitle>
-  </CModalHeader>
-  <CModalBody>
-    {loading ? (
-      <div className="text-center">Loading...</div>
-    ) : viewCustomerData ? (
-      <CRow className="mb-2">
-        <CCol md={6}>
-          <strong>Full Name:</strong> {viewCustomerData.fullName || "-"}
-        </CCol>
-        <CCol md={6}>
-          <strong>Mobile:</strong> {viewCustomerData.mobileNumber || "-"}
-        </CCol>
-        <CCol md={6}>
-          <strong>Email:</strong> {viewCustomerData.email || "-"}
-        </CCol>
-        <CCol md={6}>
-          <strong>Gender:</strong> {viewCustomerData.gender || "-"}
-        </CCol>
-        <CCol md={6}>
-          <strong>DOB:</strong> {viewCustomerData.dateOfBirth || "-"}
-        </CCol>
-        <CCol md={6}>
-          <strong>Age:</strong> {viewCustomerData.age || "-"}
-        </CCol>
-        <CCol md={12} className="mt-3">
-          <h6>Address</h6>
-          <p>
-            {viewCustomerData.address?.houseNo || ""},{" "}
-            {viewCustomerData.address?.street || ""},{" "}
-            {viewCustomerData.address?.landmark || ""},{" "}
-            {viewCustomerData.address?.city || ""},{" "}
-            {viewCustomerData.address?.state || ""},{" "}
-            {viewCustomerData.address?.postalCode || ""},{" "}
-            {viewCustomerData.address?.country || ""}
-          </p>
-        </CCol>
-      </CRow>
-    ) : (
-      <p>No customer data available.</p>
-    )}
-  </CModalBody>
-  <CModalFooter>
-    <CButton color="secondary" onClick={() => setIsViewModalVisible(false)}>
-      Close
-    </CButton>
-  </CModalFooter>
-</CModal>
+              <CModal
+                visible={isViewModalVisible}
+                onClose={() => setIsViewModalVisible(false)}
+                size="lg"
+              >
+                <CModalHeader>
+                  <CModalTitle>Customer Details</CModalTitle>
+                </CModalHeader>
+                <CModalBody>
+                  {loading ? (
+                    <div className="text-center">Loading...</div>
+                  ) : viewCustomerData ? (
+                    <CRow className="mb-2">
+                      <CCol md={6}>
+                        <strong>Full Name:</strong> {viewCustomerData.fullName || '-'}
+                      </CCol>
+                      <CCol md={6}>
+                        <strong>Mobile:</strong> {viewCustomerData.mobileNumber || '-'}
+                      </CCol>
+                      <CCol md={6}>
+                        <strong>Email:</strong> {viewCustomerData.email || '-'}
+                      </CCol>
+                      <CCol md={6}>
+                        <strong>Gender:</strong> {viewCustomerData.gender || '-'}
+                      </CCol>
+                      <CCol md={6}>
+                        <strong>DOB:</strong> {viewCustomerData.dateOfBirth || '-'}
+                      </CCol>
+                      <CCol md={6}>
+                        <strong>Age:</strong> {viewCustomerData.age || '-'}
+                      </CCol>
+                      <CCol md={12} className="mt-3">
+                        <h6>Address</h6>
+                        <p>
+                          {viewCustomerData.address?.houseNo || ''},{' '}
+                          {viewCustomerData.address?.street || ''},{' '}
+                          {viewCustomerData.address?.landmark || ''},{' '}
+                          {viewCustomerData.address?.city || ''},{' '}
+                          {viewCustomerData.address?.state || ''},{' '}
+                          {viewCustomerData.address?.postalCode || ''},{' '}
+                          {viewCustomerData.address?.country || ''}
+                        </p>
+                      </CCol>
+                    </CRow>
+                  ) : (
+                    <p>No customer data available.</p>
+                  )}
+                </CModalBody>
+                <CModalFooter>
+                  <CButton color="secondary" onClick={() => setIsViewModalVisible(false)}>
+                    Close
+                  </CButton>
+                </CModalFooter>
+              </CModal>
 
               {!loading && (
                 <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
@@ -989,9 +995,7 @@ const handleCancel = () => {
                   onChange={handleInputChange}
                   invalid={!!formErrors.email}
                 />
-                {formErrors.email && (
-                  <div className="text-danger small">{formErrors.email}</div>
-                )}
+                {formErrors.email && <div className="text-danger small">{formErrors.email}</div>}
               </CCol>
               <CCol md={3}>
                 <CFormLabel>
@@ -1141,7 +1145,9 @@ const handleCancel = () => {
                   value={formData.referralCode}
                   onChange={handleInputChange}
                 />
-                {formErrors.referralCode && <div className="text-danger">{formErrors.referralCode}</div>}
+                {formErrors.referralCode && (
+                  <div className="text-danger">{formErrors.referralCode}</div>
+                )}
               </CCol>
             </CRow>
             <br />
@@ -1158,10 +1164,8 @@ const handleCancel = () => {
               </CButton>
             </div>
           </CForm>
-       {/* ====== VIEW CUSTOMER MODAL ====== */}
-
+          {/* ====== VIEW CUSTOMER MODAL ====== */}
         </>
-        
       )}
     </>
   )

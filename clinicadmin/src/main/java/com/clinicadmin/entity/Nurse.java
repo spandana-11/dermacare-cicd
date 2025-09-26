@@ -24,6 +24,7 @@ public class Nurse {
 	private String hospitalId;
 	private String hospitalName;
 	private String branchId;
+	private String branchName;
 	private String role;
 	private String fullName;
 	private String gender;

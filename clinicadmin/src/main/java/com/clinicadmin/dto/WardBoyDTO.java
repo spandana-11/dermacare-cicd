@@ -26,7 +26,7 @@ public class WardBoyDTO {
     private String clinicId;
 	private String hospitalName;
 	private String branchId;
-
+	private String branchName;
 
     @NotBlank(message = "Date of Birth is required")
     @Pattern(

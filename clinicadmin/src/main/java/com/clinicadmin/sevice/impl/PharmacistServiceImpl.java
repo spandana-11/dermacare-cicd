@@ -7,17 +7,21 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.clinicadmin.dto.Branch;
 import com.clinicadmin.dto.PharmacistDTO;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.entity.DoctorLoginCredentials;
 import com.clinicadmin.entity.Pharmacist;
+import com.clinicadmin.feignclient.AdminServiceClient;
 import com.clinicadmin.repository.DoctorLoginCredentialsRepository;
 import com.clinicadmin.repository.PharmacistRepository;
 import com.clinicadmin.service.PharmacistService;
 import com.clinicadmin.utils.Base64CompressionUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class PharmacistServiceImpl implements PharmacistService {
@@ -30,6 +34,11 @@ public class PharmacistServiceImpl implements PharmacistService {
 
 	@Autowired
 	DoctorLoginCredentialsRepository credentialsRepository;
+	@Autowired
+	AdminServiceClient adminServiceClient;
+
+	@Autowired
+	ObjectMapper objectMapper;
 
 	@Override
 	public Response pharmacistOnboarding(PharmacistDTO dto) {
@@ -41,10 +50,13 @@ public class PharmacistServiceImpl implements PharmacistService {
 			response.setStatus(HttpStatus.BAD_REQUEST.value());
 			return response;
 		}
+		ResponseEntity<Response> res = adminServiceClient.getBranchById(dto.getBranchId());
+		Branch br = objectMapper.convertValue(res.getBody().getData(), Branch.class);
 
 		Pharmacist pharmacist = mapDtoToEntity(dto);
 		String pharmacistId = generatePharmacistId();
 		pharmacist.setPharmacistId(pharmacistId);
+		pharmacist.setBranchName(br.getBranchName());
 
 		// username = contact number
 
@@ -54,20 +66,14 @@ public class PharmacistServiceImpl implements PharmacistService {
 
 		Pharmacist saved = pharmacistRepository.save(pharmacist);
 
-		DoctorLoginCredentials credentials = DoctorLoginCredentials.builder()
-				.staffId(saved.getPharmacistId())
-				.staffName(saved.getFullName())
-				.hospitalId(saved.getHospitalId())
-				.hospitalName(saved.getHospitalName())
-				.branchId(saved.getBranchId())
-				.username(username)
-				.password(encodedPassword)
-				.role(dto.getRole())
-				.permissions(saved.getPermissions())
-				.build();
+		DoctorLoginCredentials credentials = DoctorLoginCredentials.builder().staffId(saved.getPharmacistId())
+				.staffName(saved.getFullName()).hospitalId(saved.getHospitalId()).hospitalName(saved.getHospitalName())
+				.branchId(saved.getBranchId()).branchName(saved.getBranchName()).username(username)
+				.password(encodedPassword).role(dto.getRole()).permissions(saved.getPermissions()).build();
 		credentialsRepository.save(credentials);
 
 		PharmacistDTO savedDTO = mapEntityToDto(saved);
+		savedDTO.setBranchName(saved.getBranchName());
 		savedDTO.setUserName(username);
 		savedDTO.setPassword(rawPassword);
 
@@ -110,68 +116,68 @@ public class PharmacistServiceImpl implements PharmacistService {
 	// ---------------- UPDATE ----------------
 	@Override
 	public Response updatePharmacist(String pharmacistId, PharmacistDTO dto) {
-	    Response response = new Response();
+		Response response = new Response();
 
-	    return pharmacistRepository.findByPharmacistId(pharmacistId).map(existing -> {
+		return pharmacistRepository.findByPharmacistId(pharmacistId).map(existing -> {
 
-	        if (dto.getHospitalId() != null)
-	            existing.setHospitalId(dto.getHospitalId());
-	        if (dto.getFullName() != null)
-	            existing.setFullName(dto.getFullName());
-	        if (dto.getGender() != null)
-	            existing.setGender(dto.getGender());
-	        if (dto.getQualification() != null)
-	            existing.setQualification(dto.getQualification());
-	        if (dto.getDateOfBirth() != null)
-	            existing.setDateOfBirth(dto.getDateOfBirth());
-	        if (dto.getContactNumber() != null)
-	            existing.setContactNumber(dto.getContactNumber());
-	        if (dto.getGovernmentId() != null)
-	            existing.setGovernmentId(dto.getGovernmentId());
-	        if (dto.getShiftTimingsOrAvailability() != null)
-	            existing.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
-	        if (dto.getPharmacyLicense() != null)
-	            existing.setPharmacyLicense(dto.getPharmacyLicense());
-	        if (dto.getStatePharmacyCouncilRegistration() != null)
-	            existing.setStatePharmacyCouncilRegistration(
-	                    Base64CompressionUtil.compressBase64(dto.getStatePharmacyCouncilRegistration()));
-	        if (dto.getDateOfJoining() != null)
-	            existing.setDateOfJoining(dto.getDateOfJoining());
-	        if (dto.getDepartment() != null)
-	            existing.setDepartment(dto.getDepartment());
-	        if (dto.getBankAccountDetails() != null)
-	            existing.setBankAccountDetails(dto.getBankAccountDetails());
-	        if (dto.getAddress() != null)
-	            existing.setAddress(dto.getAddress());
-	        if (dto.getEmailID() != null)
-	            existing.setEmailID(dto.getEmailID());
-	        if (dto.getPreviousEmploymentHistory() != null)
-	            existing.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
-	        if (dto.getExperienceCertificates() != null)
-	            existing.setExperienceCertificates(
-	                    Base64CompressionUtil.compressBase64(dto.getExperienceCertificates()));
-	        if (dto.getEmergencyContactNumber() != null)
-	            existing.setEmergencyContactNumber(dto.getEmergencyContactNumber());
-	        if (dto.getDPharmaOrBPharmaCertificate() != null)
-	            existing.setDPharmaOrBPharmaCertificate(
-	                    Base64CompressionUtil.compressBase64(dto.getDPharmaOrBPharmaCertificate()));
-	        if (dto.getProfilePicture() != null)
-	            existing.setProfilePicture(Base64CompressionUtil.compressBase64(dto.getProfilePicture()));
+			if (dto.getHospitalId() != null)
+				existing.setHospitalId(dto.getHospitalId());
+			if (dto.getFullName() != null)
+				existing.setFullName(dto.getFullName());
+			if (dto.getGender() != null)
+				existing.setGender(dto.getGender());
+			if (dto.getQualification() != null)
+				existing.setQualification(dto.getQualification());
+			if (dto.getDateOfBirth() != null)
+				existing.setDateOfBirth(dto.getDateOfBirth());
+			if (dto.getContactNumber() != null)
+				existing.setContactNumber(dto.getContactNumber());
+			if (dto.getGovernmentId() != null)
+				existing.setGovernmentId(dto.getGovernmentId());
+			if (dto.getShiftTimingsOrAvailability() != null)
+				existing.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
+			if (dto.getPharmacyLicense() != null)
+				existing.setPharmacyLicense(dto.getPharmacyLicense());
+			if (dto.getStatePharmacyCouncilRegistration() != null)
+				existing.setStatePharmacyCouncilRegistration(
+						Base64CompressionUtil.compressBase64(dto.getStatePharmacyCouncilRegistration()));
+			if (dto.getDateOfJoining() != null)
+				existing.setDateOfJoining(dto.getDateOfJoining());
+			if (dto.getDepartment() != null)
+				existing.setDepartment(dto.getDepartment());
+			if (dto.getBankAccountDetails() != null)
+				existing.setBankAccountDetails(dto.getBankAccountDetails());
+			if (dto.getAddress() != null)
+				existing.setAddress(dto.getAddress());
+			if (dto.getEmailID() != null)
+				existing.setEmailID(dto.getEmailID());
+			if (dto.getPreviousEmploymentHistory() != null)
+				existing.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
+			if (dto.getExperienceCertificates() != null)
+				existing.setExperienceCertificates(
+						Base64CompressionUtil.compressBase64(dto.getExperienceCertificates()));
+			if (dto.getEmergencyContactNumber() != null)
+				existing.setEmergencyContactNumber(dto.getEmergencyContactNumber());
+			if (dto.getDPharmaOrBPharmaCertificate() != null)
+				existing.setDPharmaOrBPharmaCertificate(
+						Base64CompressionUtil.compressBase64(dto.getDPharmaOrBPharmaCertificate()));
+			if (dto.getProfilePicture() != null)
+				existing.setProfilePicture(Base64CompressionUtil.compressBase64(dto.getProfilePicture()));
 
-	        Pharmacist updated = pharmacistRepository.save(existing);
+			Pharmacist updated = pharmacistRepository.save(existing);
 
-	        response.setSuccess(true);
-	        response.setData(mapEntityToDto(updated));
-	        response.setMessage("Pharmacist updated successfully");
-	        response.setStatus(HttpStatus.OK.value());
-	        return response;
+			response.setSuccess(true);
+			response.setData(mapEntityToDto(updated));
+			response.setMessage("Pharmacist updated successfully");
+			response.setStatus(HttpStatus.OK.value());
+			return response;
 
-	    }).orElseGet(() -> {
-	        response.setSuccess(false);
-	        response.setMessage("Pharmacist not found");
-	        response.setStatus(HttpStatus.NOT_FOUND.value());
-	        return response;
-	    });
+		}).orElseGet(() -> {
+			response.setSuccess(false);
+			response.setMessage("Pharmacist not found");
+			response.setStatus(HttpStatus.NOT_FOUND.value());
+			return response;
+		});
 	}
 
 	@Override
@@ -256,7 +262,7 @@ public class PharmacistServiceImpl implements PharmacistService {
 		pharmacist.setHospitalName(dto.getHospitalName());
 		pharmacist.setBranchId(dto.getBranchId());
 		pharmacist.setRole(dto.getRole());
-		pharmacist.setPermissions(dto.getPermissions());		
+		pharmacist.setPermissions(dto.getPermissions());
 		pharmacist.setFullName(dto.getFullName());
 		pharmacist.setGender(dto.getGender());
 		pharmacist.setQualification(dto.getQualification());

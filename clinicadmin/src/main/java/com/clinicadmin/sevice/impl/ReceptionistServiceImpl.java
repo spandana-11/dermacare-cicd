@@ -10,17 +10,22 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.clinicadmin.dto.Branch;
 import com.clinicadmin.dto.ReceptionistRequestDTO;
+import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.ResponseStructure;
 import com.clinicadmin.entity.DoctorLoginCredentials;
 import com.clinicadmin.entity.ReceptionistEntity;
+import com.clinicadmin.feignclient.AdminServiceClient;
 import com.clinicadmin.repository.DoctorLoginCredentialsRepository;
 import com.clinicadmin.repository.ReceptionistRepository;
 import com.clinicadmin.service.ReceptionistService;
 import com.clinicadmin.utils.ReceptionistMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class ReceptionistServiceImpl implements ReceptionistService {
@@ -34,6 +39,13 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 	
+	@Autowired
+	AdminServiceClient adminServiceClient;
+	
+	@Autowired
+	ObjectMapper objectMapper;
+
+	
     @Override
     public ResponseStructure<ReceptionistRequestDTO> createReceptionist(ReceptionistRequestDTO dto) {
         if (repository.existsByContactNumber(dto.getContactNumber())) {
@@ -44,9 +56,12 @@ public class ReceptionistServiceImpl implements ReceptionistService {
                     HttpStatus.CONFLICT.value()
             );
         }
+		ResponseEntity <Response> res=adminServiceClient.getBranchById(dto.getBranchId());
+		Branch br =objectMapper.convertValue(res.getBody().getData(), Branch.class);
 
         ReceptionistEntity entity = ReceptionistMapper.toEntity(dto);
         entity.setId(generateReceptionistId());
+        entity.setBranchName(br.getBranchName());
        
 
         ReceptionistEntity saved = repository.save(entity);
@@ -61,6 +76,7 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 				.hospitalId(saved.getClinicId())
 				.hospitalName(saved.getHospitalName())
 				.branchId(saved.getBranchId())
+				.branchName(saved.getBranchName())
 				.username(username)
 				.password(encodedPassword)
 				.role(dto.getRole())
@@ -70,6 +86,7 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 	
 
         ReceptionistRequestDTO responseDTO = ReceptionistMapper.toDTO(saved);
+        responseDTO.setBranchName(saved.getBranchName());
         responseDTO.setUserName(username);
 		responseDTO.setPassword(rawPassword); // expose only on create
 

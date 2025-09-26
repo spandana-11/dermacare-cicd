@@ -21,6 +21,7 @@ public class LabTechnicianRequestDTO {
 	private String clinicId;
 	private String hospitalName;
 	private String branchId;
+	private String branchName;
     @NotBlank(message = "Full name is required")
     private String fullName;
 

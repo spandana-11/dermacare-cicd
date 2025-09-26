@@ -27,6 +27,7 @@ public class LabTechnicianEntity {
     private String clinicId;
     private String branchId;
     private String hospitalName;
+    private String branchName;
     private String fullName;
     private String gender;
     private String dateOfBirth;

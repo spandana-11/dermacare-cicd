@@ -38,6 +38,7 @@ import capitalizeWords from '../../Utils/capitalizeWords'
 import { Eye, Edit2, Trash2 } from 'lucide-react' // modern icons
 import { Button } from 'bootstrap'
 import LoadingIndicator from '../../Utils/loader'
+import { useHospital } from '../Usecontext/HospitalContext'
 const DiseasesManagement = () => {
   // const [searchQuery, setSearchQuery] = useState('')
   const [diseases, setDiseases] = useState([])
@@ -69,6 +70,8 @@ const DiseasesManagement = () => {
       notes: item.notes || '',
       hospitalId: item.hospitalId,
     }))
+  const { user } = useHospital()
+  const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
 
   const fetchData = async () => {
     setLoading(true)
@@ -133,72 +136,69 @@ const DiseasesManagement = () => {
     return Object.keys(newErrors).length === 0
   }
 
-// Allow letters, spaces, ., (, ), -, /, '
-const nameRegex = /^[A-Za-z\s.\-()/']+$/
+  // Allow letters, spaces, ., (, ), -, /, '
+  const nameRegex = /^[A-Za-z\s.\-()/']+$/
 
+  const handleAddDisease = async () => {
+    const trimmedName = newDisease.diseaseName.trim()
 
- const handleAddDisease = async () => {
-  const trimmedName = newDisease.diseaseName.trim()
-
-  // Empty check
-  if (!trimmedName) {
-    setErrors({ diseaseName: 'Disease name is required.' })
-    return
-  }
-
-  // Regex validation
-  if (!nameRegex.test(trimmedName)) {
-    setErrors({
-      diseaseName:
-        'Only alphabets, spaces, ".", "(", ")", "-", "/", and "\'" are allowed.',
-    })
-    return
-  }
-
-  // Duplicate check
-  const duplicate = diseases.some(
-    (t) => t.diseaseName.trim().toLowerCase() === trimmedName.toLowerCase()
-  )
-  if (duplicate) {
-    toast.error(`Duplicate disease name - ${trimmedName} already exists!`, {
-      position: 'top-right',
-    })
-    setModalVisible(false)
-    return
-  }
-
-  // Proceed with API call
-  try {
-    const payload = {
-      diseaseName: trimmedName,
-      hospitalId,
-      probableSymptoms: newDisease.probableSymptoms,
-      notes: newDisease.notes,
+    // Empty check
+    if (!trimmedName) {
+      setErrors({ diseaseName: 'Disease name is required.' })
+      return
     }
 
-    const response = await postDiseaseData(payload)
-    const newDiseaseRow = {
-      id: response.data.id || response.id,
-      diseaseName: response.data.diseaseName,
-      probableSymptoms: response.data.probableSymptoms,
-      notes: response.data.notes,
-      hospitalId: response.data.hospitalId,
+    // Regex validation
+    if (!nameRegex.test(trimmedName)) {
+      setErrors({
+        diseaseName: 'Only alphabets, spaces, ".", "(", ")", "-", "/", and "\'" are allowed.',
+      })
+      return
     }
 
-    setDiseases((prev) => [newDiseaseRow, ...prev])
-    setNewDisease({ diseaseName: '', probableSymptoms: '', notes: '' })
-    fetchDataByHid(hospitalId)
-    toast.success('Disease added successfully!')
-    setModalVisible(false)
-  } catch (error) {
-    const errorMessage =
-      error.response?.data?.message ||
-      error.response?.statusText ||
-      'An unexpected error occurred.'
-    toast.error(`Error adding disease: ${errorMessage}`)
-  }
-}
+    // Duplicate check
+    const duplicate = diseases.some(
+      (t) => t.diseaseName.trim().toLowerCase() === trimmedName.toLowerCase(),
+    )
+    if (duplicate) {
+      toast.error(`Duplicate disease name - ${trimmedName} already exists!`, {
+        position: 'top-right',
+      })
+      setModalVisible(false)
+      return
+    }
 
+    // Proceed with API call
+    try {
+      const payload = {
+        diseaseName: trimmedName,
+        hospitalId,
+        probableSymptoms: newDisease.probableSymptoms,
+        notes: newDisease.notes,
+      }
+
+      const response = await postDiseaseData(payload)
+      const newDiseaseRow = {
+        id: response.data.id || response.id,
+        diseaseName: response.data.diseaseName,
+        probableSymptoms: response.data.probableSymptoms,
+        notes: response.data.notes,
+        hospitalId: response.data.hospitalId,
+      }
+
+      setDiseases((prev) => [newDiseaseRow, ...prev])
+      setNewDisease({ diseaseName: '', probableSymptoms: '', notes: '' })
+      fetchDataByHid(hospitalId)
+      toast.success('Disease added successfully!')
+      setModalVisible(false)
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.statusText ||
+        'An unexpected error occurred.'
+      toast.error(`Error adding disease: ${errorMessage}`)
+    }
+  }
 
   const handleUpdateDisease = async () => {
     if (!diseaseToEdit?.diseaseName?.trim()) {
@@ -263,23 +263,26 @@ const nameRegex = /^[A-Za-z\s.\-()/']+$/
   return (
     <div>
       <ToastContainer />
-      <div
-        className="mb-3 w-100"
-        style={{ display: 'flex', justifyContent: 'end', alignContent: 'end', alignItems: 'end' }}
-      >
-        <CButton
-          style={{
-            color: 'var(--color-black)',
-            backgroundColor: 'var(--color-bgcolor)',
-          }}
-          onClick={() => {
-            setErrors({})
-            setModalVisible(true)
-          }}
+
+      {can('Disease-Management', 'create') && (
+        <div
+          className="mb-3 w-100"
+          style={{ display: 'flex', justifyContent: 'end', alignContent: 'end', alignItems: 'end' }}
         >
-          Add Disease
-        </CButton>
-      </div>
+          <CButton
+            style={{
+              color: 'var(--color-black)',
+              backgroundColor: 'var(--color-bgcolor)',
+            }}
+            onClick={() => {
+              setErrors({})
+              setModalVisible(true)
+            }}
+          >
+            Add Disease
+          </CButton>
+        </div>
+      )}
 
       {viewDisease && (
         <CModal visible={!!viewDisease} onClose={() => setViewDisease(null)} backdrop="static">
@@ -476,29 +479,33 @@ const nameRegex = /^[A-Za-z\s.\-()/']+$/
                   {/* Actions */}
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
-                      <button
-                        className="actionBtn"
-                        onClick={() => setViewDisease(disease)}
-                        title="View"
-                      >
-                        <Eye size={18} />
-                      </button>
-
-                      <button
-                        className="actionBtn"
-                        onClick={() => handleDiseaseEdit(disease)}
-                        title="Edit"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-
-                      <button
-                        className="actionBtn"
-                        onClick={() => handleDiseaseDelete(disease)}
-                        title="Delete"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      {can('Laboratory', 'read') && (
+                        <button
+                          className="actionBtn"
+                          onClick={() => setViewDisease(disease)}
+                          title="View"
+                        >
+                          <Eye size={18} />
+                        </button>
+                      )}
+                      {can('Laboratory', 'update') && (
+                        <button
+                          className="actionBtn"
+                          onClick={() => handleDiseaseEdit(disease)}
+                          title="Edit"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                      )}
+                      {can('Laboratory', 'delete') && (
+                        <button
+                          className="actionBtn"
+                          onClick={() => handleDiseaseDelete(disease)}
+                          title="Delete"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
                     </div>
                   </CTableDataCell>
                 </CTableRow>

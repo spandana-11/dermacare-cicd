@@ -361,7 +361,9 @@ const DoctorDetailsPage = () => {
     try {
       const hospitalId = localStorage.getItem('HospitalId')
       const branchId = localStorage.getItem('branchId')
-      const response = await http.get(`/getDoctorSlots/${hospitalId}/${branchId}/${doctorData.doctorId}`)
+      const response = await http.get(
+        `/getDoctorSlots/${hospitalId}/${branchId}/${doctorData.doctorId}`,
+      )
 
       if (response.data.success) {
         console.log('Fetched Slots Data:', response.data.data)
@@ -1347,118 +1349,113 @@ const DoctorDetailsPage = () => {
                           <p>{doctorData.associationsOrMemberships}</p>
                         )}
                       </CCol>
+                    </CRow>
+                    <CCol style={{ color: 'var(--color-black)' }}>
+                      <p>
+                        <strong>📝 Profile Description:</strong>
+                      </p>
+                      {isEditing ? (
+                        <CFormInput
+                          name="profileDescription"
+                          value={formData.profileDescription}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              profileDescription: e.target.value,
+                            }))
+                          }
+                        />
+                      ) : (
+                        <p>{doctorData.profileDescription}</p>
+                      )}
+                    </CCol>
 
-                      <CCol style={{ color: 'var(--color-black)' }}>
-                        <p>
-                          <strong>📝 Profile Description:</strong>
-                        </p>
-                        {isEditing ? (
-                          <CFormInput
-                            name="profileDescription"
-                            value={formData.profileDescription}
+                    <CCol>
+                      {' '}
+                      <h6 className="mt-4 mb-2">
+                        <strong>🔍 Area of Expertise</strong>
+                      </h6>
+                      {isEditing ? (
+                        <>
+                          <CFormTextarea
+                            name="focusAreas"
+                            rows={5}
+                            style={{ resize: 'vertical' }}
+                            placeholder="• Enter area of focus..."
+                            value={formData.focusAreas?.join('\n') || ''}
+                            onChange={(e) => {
+                              const inputValue = e.target.value
+                              setFormData((prev) => ({
+                                ...prev,
+                                focusAreas: inputValue
+                                  .split('\n')
+                                  .map((line) =>
+                                    line.trimStart().startsWith('•')
+                                      ? line.trim()
+                                      : `• ${line.trim()}`,
+                                  )
+                                  .filter((line) => line !== '•'),
+                              }))
+                            }}
+                          />
+                          <small>
+                            Type each point on a new line. Bullets will be added automatically.
+                          </small>
+                        </>
+                      ) : (
+                        <ul>
+                          {Array.isArray(formData?.focusAreas) && formData.focusAreas.length > 0 ? (
+                            formData.focusAreas.map((area, idx) => (
+                              <li key={idx}>{area.replace(/^•\s*/, '')}</li>
+                            ))
+                          ) : (
+                            <p>No focus areas listed</p>
+                          )}
+                        </ul>
+                      )}
+                    </CCol>
+                    <CCol>
+                      <h6 className="mt-4 mb-2">
+                        <strong>🏅 Achievements</strong>
+                      </h6>
+                      {isEditing ? (
+                        <>
+                          <CFormTextarea
+                            name="highlights"
+                            rows={5}
+                            placeholder="• Enter your first achievement"
+                            value={formData.highlights?.join('\n') || ''}
+                            style={{ resize: 'vertical' }}
                             onChange={(e) =>
                               setFormData((prev) => ({
                                 ...prev,
-                                profileDescription: e.target.value,
+                                highlights: e.target.value
+                                  .split('\n') // line-by-line
+                                  .map((line) =>
+                                    line.trimStart().startsWith('•')
+                                      ? line.trim()
+                                      : `• ${line.trim()}`,
+                                  )
+                                  .filter(Boolean),
                               }))
                             }
                           />
-                        ) : (
-                          <p>{doctorData.profileDescription}</p>
-                        )}
-                      </CCol>
-                    </CRow>
-
-                    <CRow style={{ color: 'var(--color-black)' }}>
-                      <CCol>
-                        {' '}
-                        <h6 className="mt-4 mb-2">
-                          <strong>🔍 Area of Expertise</strong>
-                        </h6>
-                        {isEditing ? (
-                          <>
-                            <CFormTextarea
-                              name="focusAreas"
-                              rows={5}
-                              style={{ resize: 'vertical' }}
-                              placeholder="• Enter area of focus..."
-                              value={formData.focusAreas?.join('\n') || ''}
-                              onChange={(e) => {
-                                const inputValue = e.target.value
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  focusAreas: inputValue
-                                    .split('\n')
-                                    .map((line) =>
-                                      line.trimStart().startsWith('•')
-                                        ? line.trim()
-                                        : `• ${line.trim()}`,
-                                    )
-                                    .filter((line) => line !== '•'),
-                                }))
-                              }}
-                            />
-                            <small>
-                              Type each point on a new line. Bullets will be added automatically.
-                            </small>
-                          </>
-                        ) : (
-                          <ul>
-                            {Array.isArray(formData?.focusAreas) &&
-                            formData.focusAreas.length > 0 ? (
-                              formData.focusAreas.map((area, idx) => (
-                                <li key={idx}>{area.replace(/^•\s*/, '')}</li>
-                              ))
-                            ) : (
-                              <p>No focus areas listed</p>
-                            )}
-                          </ul>
-                        )}
-                      </CCol>
-                      <CCol>
-                        <h6 className="mt-4 mb-2">
-                          <strong>🏅 Achievements</strong>
-                        </h6>
-                        {isEditing ? (
-                          <>
-                            <CFormTextarea
-                              name="highlights"
-                              rows={5}
-                              placeholder="• Enter your first achievement"
-                              value={formData.highlights?.join('\n') || ''}
-                              style={{ resize: 'vertical' }}
-                              onChange={(e) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  highlights: e.target.value
-                                    .split('\n') // line-by-line
-                                    .map((line) =>
-                                      line.trimStart().startsWith('•')
-                                        ? line.trim()
-                                        : `• ${line.trim()}`,
-                                    )
-                                    .filter(Boolean),
-                                }))
-                              }
-                            />
-                            <small>
-                              Press <strong>Enter</strong> to add each point on a new line.
-                            </small>
-                          </>
-                        ) : (
-                          <ul>
-                            {Array.isArray(formData?.highlights) &&
-                            formData.highlights.length > 0 ? (
-                              formData.highlights.map((item, idx) => (
-                                <li key={idx}>{item.replace(/^•\s*/, '')}</li>
-                              ))
-                            ) : (
-                              <p>No achievements added</p>
-                            )}
-                          </ul>
-                        )}
-                      </CCol>
-                    </CRow>
+                          <small>
+                            Press <strong>Enter</strong> to add each point on a new line.
+                          </small>
+                        </>
+                      ) : (
+                        <ul>
+                          {Array.isArray(formData?.highlights) && formData.highlights.length > 0 ? (
+                            formData.highlights.map((item, idx) => (
+                              <li key={idx}>{item.replace(/^•\s*/, '')}</li>
+                            ))
+                          ) : (
+                            <p>No achievements added</p>
+                          )}
+                        </ul>
+                      )}
+                    </CCol>
 
                     <CRow style={{ color: 'var(--color-black)' }}>
                       <CCol md={6}>

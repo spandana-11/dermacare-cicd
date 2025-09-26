@@ -21,6 +21,7 @@ public class SecurityStaffDTO {
 	private String clinicId;
 	private String hospitalName;
 	private String branchId;
+	private String branchName;
 	private String role;
 
 	@NotBlank(message = "Full Name is mandatory")

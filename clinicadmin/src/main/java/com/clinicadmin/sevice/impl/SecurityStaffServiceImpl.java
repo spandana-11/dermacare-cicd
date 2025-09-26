@@ -7,18 +7,23 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.clinicadmin.dto.Branch;
+import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.ResponseStructure;
 import com.clinicadmin.dto.SecurityStaffDTO;
 import com.clinicadmin.entity.DoctorLoginCredentials;
 import com.clinicadmin.entity.SecurityStaff;
+import com.clinicadmin.feignclient.AdminServiceClient;
 import com.clinicadmin.repository.DoctorLoginCredentialsRepository;
 import com.clinicadmin.repository.SecurityStaffRepository;
 import com.clinicadmin.service.SecurityStaffService;
 import com.clinicadmin.utils.IdGenerator;
 import com.clinicadmin.utils.SecurityStaffMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,6 +40,12 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 
+	@Autowired
+	AdminServiceClient adminServiceClient;
+
+	@Autowired
+	ObjectMapper objectMapper;
+
 	@Override
 	public ResponseStructure<SecurityStaffDTO> addSecurityStaff(SecurityStaffDTO dto) {
 
@@ -45,7 +56,12 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 					HttpStatus.CONFLICT.value());
 		}
 		dto.setSecurityStaffId(IdGenerator.generateSecurityStaffId());
+
+		ResponseEntity<Response> res = adminServiceClient.getBranchById(dto.getBranchId());
+		Branch br = objectMapper.convertValue(res.getBody().getData(), Branch.class);
+
 		SecurityStaff staff = SecurityStaffMapper.toEntity(dto);
+		staff.setBranchName(br.getBranchName());
 
 		SecurityStaff saved = repository.save(staff);
 
@@ -55,10 +71,11 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 
 		DoctorLoginCredentials credentials = DoctorLoginCredentials.builder().staffId(saved.getSecurityStaffId())
 				.staffName(saved.getFullName()).hospitalId(saved.getClinicId()).hospitalName(saved.getHospitalName())
-				.branchId(saved.getBranchId()).username(username).password(encodedPassword).role(dto.getRole())
-				.permissions(saved.getPermissions()).build();
+				.branchId(saved.getBranchId()).branchName(saved.getBranchName()).username(username)
+				.password(encodedPassword).role(dto.getRole()).permissions(saved.getPermissions()).build();
 		credentialsRepository.save(credentials);
 		SecurityStaffDTO responseDTO = SecurityStaffMapper.toDTO(saved);
+		responseDTO.setBranchName(saved.getBranchName());
 		responseDTO.setUserName(username);
 		responseDTO.setPassword(rawPassword); // expose only on create
 		return ResponseStructure.buildResponse(responseDTO, "Security staff added successfully", HttpStatus.CREATED,
@@ -98,7 +115,8 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 		existing.setAddress(staff.getAddress());
 		existing.setBankAccountDetails(staff.getBankAccountDetails());
 		existing.setPoliceVerification(staff.getPoliceVerification());
-		existing.setPoliceVerificationCertificate(staff.getPoliceVerificationCertificate());		existing.setMedicalFitnessCertificate(staff.getMedicalFitnessCertificate());
+		existing.setPoliceVerificationCertificate(staff.getPoliceVerificationCertificate());
+		existing.setMedicalFitnessCertificate(staff.getMedicalFitnessCertificate());
 		existing.setEmailId(staff.getEmailId());
 		existing.setTraningOrGuardLicense(staff.getTraningOrGuardLicense());
 		existing.setPreviousEmployeeHistory(staff.getPreviousEmployeeHistory());
