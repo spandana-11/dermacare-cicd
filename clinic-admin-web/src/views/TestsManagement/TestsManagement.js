@@ -82,18 +82,17 @@ const TestsManagement = () => {
     }
   }
   const fetchDataById = async (hospitalId) => {
-    setLoading(true)
-    try {
-      const response = await TestDataById(hospitalId)
-      setTest(normalizeTests(response.data).reverse())
-
-      // setTest(normalizeTests(response.data))
-    } catch (error) {
-      setError('Failed to fetch test data.')
-    } finally {
-      setLoading(false)
-    }
+  setLoading(true)
+  try {
+    const response = await TestDataById(hospitalId)
+    setTest(normalizeTests(response.data))   // ❌ no .reverse()
+  } catch (error) {
+    setError('Failed to fetch test data.')
+  } finally {
+    setLoading(false)
   }
+}
+
 
   const handleConfirmDelete = async () => {
     try {
@@ -348,7 +347,16 @@ const TestsManagement = () => {
         </CModal>
       )}
 
-      <CModal visible={modalVisible} onClose={() => setModalVisible(false)} backdrop="static">
+      <CModal
+        visible={modalVisible}
+        onClose={() => {
+          setModalVisible(false)
+          setNewTest({ testName: '', hospitalId: '', description: '', purpose: '' }) // reset form
+          setErrors({})
+        }}
+        backdrop="static"
+      >
+
         <CModalHeader>
           <CModalTitle>Add New Test</CModalTitle>
         </CModalHeader>

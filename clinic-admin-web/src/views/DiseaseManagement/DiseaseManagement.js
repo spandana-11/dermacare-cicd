@@ -313,7 +313,15 @@ const DiseasesManagement = () => {
       )}
 
       {/* Add Disease Modal */}
-      <CModal visible={modalVisible} onClose={() => setModalVisible(false)} backdrop="static">
+      <CModal
+  visible={modalVisible}
+  onClose={() => {
+    setModalVisible(false)
+    setNewDisease({ diseaseName: '', probableSymptoms: '', notes: '' })
+    setErrors({})
+  }}
+  backdrop="static"
+>
         <CModalHeader>
           <CModalTitle>Add New Disease</CModalTitle>
         </CModalHeader>

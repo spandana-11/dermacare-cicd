@@ -83,7 +83,7 @@ const TreatmentsManagement = () => {
     }
   }
 
-  
+
   const fetchDataBy_HId = async (hospitalId) => {
     setLoading(true)
     try {
@@ -136,7 +136,7 @@ const TreatmentsManagement = () => {
     setHospitalIdToDelete(null)
     setIsModalVisible(false)
   }
-const nameRegex = /^[A-Za-z\s.\-()\/']+$/
+  const nameRegex = /^[A-Za-z\s.\-()\/']+$/
 
   // Add treatment
   const handleAddTreatment = async () => {
@@ -177,7 +177,8 @@ const nameRegex = /^[A-Za-z\s.\-()\/']+$/
         treatmentName: response.data.treatmentName || trimmedName,
         hospitalId: response.data.hospitalId || hospitalId,
       }
-      setTreatment((prev) => [newTreatmentRow, ...prev]) // new first
+      setTreatment((prev) => [...prev, newTreatmentRow]) // new last
+
 
       toast.success('Treatment added successfully!')
       setModalVisible(false)
@@ -347,22 +348,22 @@ const nameRegex = /^[A-Za-z\s.\-()\/']+$/
             <CIcon icon={cilSearch} />
           </CInputGroupText>
         </CInputGroup> */}
- {can('Treatments', 'create') && (
-        <div
-          className=" w-100"
-          style={{ display: 'flex', justifyContent: 'end', alignContent: 'end', alignItems: 'end' }}
-        >
-          <CButton
-            style={{
-              color: 'var(--color-black)',
-              backgroundColor: 'var(--color-bgcolor)',
-            }}
-            onClick={() => setModalVisible(true)}
+        {can('Treatments', 'create') && (
+          <div
+            className=" w-100"
+            style={{ display: 'flex', justifyContent: 'end', alignContent: 'end', alignItems: 'end' }}
           >
-            Add Treatment
-          </CButton>
-        </div>
- )}
+            <CButton
+              style={{
+                color: 'var(--color-black)',
+                backgroundColor: 'var(--color-bgcolor)',
+              }}
+              onClick={() => setModalVisible(true)}
+            >
+              Add Treatment
+            </CButton>
+          </div>
+        )}
 
         {/* <CButton
           color="info"
@@ -397,7 +398,15 @@ const nameRegex = /^[A-Za-z\s.\-()\/']+$/
       )}
 
       {/* Add Modal */}
-      <CModal visible={modalVisible} onClose={() => setModalVisible(false)} backdrop="static">
+      <CModal
+        visible={modalVisible}
+        onClose={() => {
+          setModalVisible(false)
+          setNewTreatment({ treatmentName: '' }) // reset form
+          setErrors({})
+        }}
+        backdrop="static"
+      >
         <CModalHeader>
           <CModalTitle>Add New Treatment</CModalTitle>
         </CModalHeader>
@@ -557,26 +566,26 @@ const nameRegex = /^[A-Za-z\s.\-()\/']+$/
                         </button>
                       )}
 
- {can('Treatments', 'update') && (
-                      <button
-                        className="actionBtn"
-                        onClick={() => {
-                          setTreatmentToEdit(treatment)
-                          setEditTreatmentMode(true)
-                        }}
-                        title="Edit"
-                      >
-                        <Edit2 size={18} />
-                      </button>
- )}
-  {can('Treatments', 'delete') && (
-                      <button
-                        className="actionBtn"
-                        onClick={() => handleTreatmentDelete(treatment)}
-                        title="Delete"
-                      >
-                        <Trash2 size={18} />
-                      </button>)}
+                      {can('Treatments', 'update') && (
+                        <button
+                          className="actionBtn"
+                          onClick={() => {
+                            setTreatmentToEdit(treatment)
+                            setEditTreatmentMode(true)
+                          }}
+                          title="Edit"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                      )}
+                      {can('Treatments', 'delete') && (
+                        <button
+                          className="actionBtn"
+                          onClick={() => handleTreatmentDelete(treatment)}
+                          title="Delete"
+                        >
+                          <Trash2 size={18} />
+                        </button>)}
                     </div>
                   </CTableDataCell>
                   {/* <CTableDataCell>

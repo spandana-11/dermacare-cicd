@@ -1,8 +1,0 @@
-import{u as m,a as p,j as t}from"./index-BpN0qZrt.js";import{F as h}from"./index.es-BjxbXZ9o.js";import{f,a as d,b as y,c as u,d as x,e as C,g as b,h as j}from"./index-BS1iOPDO.js";import{C as g}from"./index.esm-BAveQmLP.js";import{C as k,a as v}from"./CRow-D0GPXItY.js";import{C as N,a as S}from"./CCardBody-UGHnv641.js";const w=()=>{const o=m(),{user:e}=p(),i={doctor:j,nurse:b,pharmacist:C,laboratory:x,admin:u,frontDesk:y,security:d,otherStaff:f},c=[{title:"Doctors",type:"doctor",path:"/Doctor"},{title:"Nurses",type:"nurse",path:"/Nurse"},{title:"Pharmacist",type:"pharmacist",path:"/Pharmacist"},{title:"Lab Technician",type:"laboratory",path:"/Lab-Technician"},{title:"Administrator",type:"admin",path:"/Admin"},{title:"FrontDesk",type:"frontDesk",path:"/FrontDesk"},{title:"Security",type:"security",path:"/Security"},{title:"OtherStaff",type:"otherStaff",path:"/OtherStaff"}],n=a=>{var r;return(((r=e==null?void 0:e.permissions)==null?void 0:r[a])||[]).length>0},l=c.filter(a=>n(a.title));return t.jsxs(g,{children:[t.jsx("style",{children:`
-          .card-zoom {
-            transition: transform 0.3s ease-in-out;
-          }
-          .card-zoom:hover {
-            transform: scale(1.05);
-          }
-        `}),t.jsx("h2",{className:"text-center mb-4",children:"Employee Management"}),t.jsx(k,{className:"g-4 justify-content-start",children:l.map((a,s)=>t.jsx(v,{xs:12,sm:6,md:3,children:t.jsx(N,{className:"text-center shadow-lg p-3 card-zoom",style:{cursor:"pointer",backgroundColor:"var(--color-bgcolor)"},onClick:()=>o(a.path),children:t.jsxs(S,{children:[t.jsx(h,{icon:i[a.type],style:{fontSize:"70px",color:"var(--color-black)"},className:"mb-3"}),t.jsx("h5",{style:{color:"var(--color-black)"},children:a.title})]})})},s))})]})};export{w as default};
