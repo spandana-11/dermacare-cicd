@@ -33,14 +33,13 @@ const EmployeeManagement = () => {
 
   // All possible employees
   const employees = [
-    { title: 'Doctors', type: 'doctor', path: '/Doctor' },
-    { title: 'Nurses', type: 'nurse', path: '/Nurse' },
-    { title: 'Pharmacist', type: 'pharmacist', path: '/Pharmacist' },
-    { title: 'Lab Technician', type: 'laboratory', path: '/Lab-Technician' }, //TODO: Lab technician
-    { title: 'Administrator', type: 'admin', path: '/Admin' }, //TODO: Administrator
-    { title: 'FrontDesk', type: 'frontDesk', path: '/FrontDesk' },
-    { title: 'Security', type: 'security', path: '/Security' },
-    { title: 'OtherStaff', type: 'otherStaff', path: '/OtherStaff' },
+    { title: 'Doctors', type: 'doctor', path: '/doctor' },
+    { title: 'Nurses', type: 'nurse', path: '/employee-management/nurse' },
+    { title: 'Pharmacist', type: 'pharmacist', path: '/employee-management/pharmacist' },
+    { title: 'Laboratory', type: 'laboratory', path: '/employee-management/lab-technician' },
+    { title: 'FrontDesk', type: 'frontDesk', path: '/employee-management/frontdesk' },
+    { title: 'Security', type: 'security', path: '/employee-management/security' },
+    { title: 'OtherStaff', type: 'otherStaff', path: '/employee-management/otherstaff' },
   ]
 
   // ✅ Permission check function

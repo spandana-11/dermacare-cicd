@@ -79,7 +79,7 @@ const [credentials, setCredentials] = useState(null)
 // const formData = {
 //   ...
 //   permissions: {
-//     Laboratory: {
+//     Pharmacist: {
 //       create: true,
 //       read: true,
 //       update: false,
@@ -94,7 +94,7 @@ const handleSave = async (formData) => {
     const correctedFormData = {
       ...formData,
       permissions: {
-        Laboratory: Object.entries(formData.permissions.Laboratory || {})
+        Pharmacist: Object.entries(formData.permissions.Pharmacist || {})
           .filter(([key, value]) => value)
           .map(([key]) => key),
         viewPatients: formData.permissions.viewPatients ? ['read'] : [],
@@ -164,7 +164,7 @@ const handleSave = async (formData) => {
 
   return (
     <div>
-      {can('Laboratory', 'create') && (
+      {can('Pharmacist', 'create') && (
         <div
           className="mb-3 w-100"
           style={{ display: 'flex', justifyContent: 'end', alignContent: 'end', alignItems: 'end' }}
@@ -293,17 +293,17 @@ const handleSave = async (formData) => {
                   <CTableDataCell>{pharma.dateOfJoining || 'NA'}</CTableDataCell>
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2">
-                      {can('Laboratory', 'read') && (
+                      {can('Pharmacist', 'read') && (
                         <button className="actionBtn" onClick={() => { setSelectedTech(pharma); setViewMode(true); setModalVisible(true) }} title="View">
                           <Eye size={18} />
                         </button>
                       )}
-                      {can('Laboratory', 'update') && (
+                      {can('Pharmacist', 'update') && (
                         <button className="actionBtn" onClick={() => { setSelectedTech(pharma); setViewMode(false); setModalVisible(true) }} title="Edit">
                           <Edit2 size={18} />
                         </button>
                       )}
-                      {can('Laboratory', 'delete') && (
+                      {can('Pharmacist', 'delete') && (
                         <button className="actionBtn" onClick={() => { setDeleteId(pharma.pharmacistId); setIsModalVisible(true) }} title="Delete">
                           <Trash2 size={18} />
                         </button>

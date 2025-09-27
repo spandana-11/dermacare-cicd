@@ -379,7 +379,7 @@ const WidgetsDropdown = (props) => {
                   <CIcon icon={cilOptions} className="text-high-emphasis-inverse" />
                 </CDropdownToggle>
                 <CDropdownMenu>
-                  <CDropdownItem onClick={() => navigate('/Appointment-Management')}>
+                  <CDropdownItem onClick={() => navigate('/appointment-management')}>
                     View All Appointments
                   </CDropdownItem>{' '}
                   {/* Link to your appointments page */}
@@ -669,7 +669,7 @@ const WidgetsDropdown = (props) => {
                         className="text-white"
                         size="sm"
                         onClick={() =>
-                          navigate(`/appointmentDetails/${item.bookingId}`, {
+                          navigate(`/appointment-details/${item.bookingId}`, {
                             state: { appointment: item },
                           })
                         }

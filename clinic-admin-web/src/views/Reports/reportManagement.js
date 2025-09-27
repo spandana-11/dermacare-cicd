@@ -286,7 +286,7 @@ const ReportsManagement = () => {
                           className="text-white"
                           size="sm"
                           onClick={() =>
-                            navigate(`/reportDetails/${item.bookingId}`, {
+                            navigate(`/report-details/${item.bookingId}`, {
                               state: {
                                 report: item,
                                 appointmentInfo: {

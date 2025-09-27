@@ -421,7 +421,7 @@ const appointmentManagement = () => {
                       className="text-white"
                       size="sm"
                       onClick={() =>
-                        navigate(`/appointmentDetails/${item.bookingId}`, {
+                        navigate(`/appointment-details/${item.bookingId}`, {
                           state: { appointment: item },
                         })
                       }

@@ -55,7 +55,7 @@ const LabTechnicianManagement = () => {
         setTechnicians(res.data?.data || [])
       }
     } catch (err) {
-      console.error('❌ Error fetching lab technicians:', err)
+      console.error('❌ Error fetching Laboratorys:', err)
       setTechnicians([])
       setLoading(false)
     } finally {
@@ -314,7 +314,7 @@ const LabTechnicianManagement = () => {
                   className="text-center"
                   style={{ color: 'var(--color-black)' }}
                 >
-                  No lab technician found.
+                  No Laboratory found.
                 </CTableDataCell>
               </CTableRow>
               //   <CTableRow>

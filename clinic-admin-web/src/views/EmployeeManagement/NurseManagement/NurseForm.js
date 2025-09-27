@@ -724,24 +724,28 @@ const toBase64 = (file) =>
                   <CFormLabel>
                     Full Name <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
-                  <CFormInput
-                                     value={formData.fullName}
-                                     onChange={(e) => {
-                                       const value = e.target.value;
-                                   
-                                       // Update the form value
-                                       handleChange('fullName', value);
-                                   
-                                       // Run validation from your validators file
-                                       const error = validateField('fullName', value);
-                                   
-                                       // Update errors state for live feedback
-                                       setErrors((prev) => ({ ...prev, fullName: error }));
-                                     }}
-                                   />
-                                   {errors.fullName && (
-                                     <div className="text-danger mt-1">{errors.fullName}</div>
-                                   )}
+
+<CFormInput
+  value={formData.fullName}
+  onChange={(e) => {
+    // 1️⃣ Filter input: only letters and spaces
+    const cleaned = e.target.value.replace(/[^A-Za-z\s]/g, '');
+    handleChange('fullName', cleaned);
+
+    // 2️⃣ Validate using your switch-case function
+    const error = validateField('fullName', cleaned);
+
+    // 3️⃣ Update error state
+    setErrors((prev) => ({ ...prev, fullName: error }));
+  }}
+/>
+
+{/* Display error */}
+{errors.fullName && <span className="text-danger">{errors.fullName}</span>}
+
+
+
+
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>

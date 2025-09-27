@@ -624,7 +624,7 @@ const AppointmentDetails = () => {
                   size="sm"
                   className="px-3 text-white"
                   onClick={() =>
-                    navigate(`/Doctor/${doctor.doctorId}`, {
+                    navigate(`/doctor/${doctor.doctorId}`, {
                       state: { doctor },
                     })
                   }

@@ -4,17 +4,36 @@ export const validateField = (field, value, formData = {}, technicians = []) => 
 
   switch (field) {
     // 🔹 Basic Info
-   case 'fullName':
-  if (!value || value.trim() === '') {
-    error = 'Full Name is required.';
-  } else if (!/^[A-Za-z\s]+$/.test(value)) {
-    error = 'Full Name can contain only letters and spaces.'; // blocks numbers and special characters
-  } else if (value.trim().length < 3 || value.trim().length > 50) {
-    error = 'Full Name must be between 3 and 50 characters.';
-  } else {
-    error = '';
-  }
-  break;
+  case 'fullName':
+    {
+      // Remove numbers and special characters immediately
+      if (value) {
+        value = value.replace(/[^A-Za-z\s]/g, '');
+      }
+
+      const trimmedValue = value ? value.trim() : '';
+      let error = '';
+
+      // Validation
+      if (!trimmedValue) {
+        error = 'Full Name is required.';
+      } else if (trimmedValue.length < 3 || trimmedValue.length > 50) {
+        error = 'Full Name must be between 3 and 50 characters.';
+      } else {
+        error = '';
+      }
+
+      // Return or set error in your state as needed
+      // Example:
+      // setErrors(prev => ({ ...prev, fullName: error }));
+    }
+    break;
+
+  // ...other fields
+
+
+
+
 
 
     case 'gender':
