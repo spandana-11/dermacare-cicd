@@ -1400,4 +1400,19 @@ public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingsByBra
 	res = new ResponseStructure<List<BookingResponse>>(null,ExtractFeignMessage.clearMessage(e),HttpStatus.INTERNAL_SERVER_ERROR,e.status());
 }
 	return ResponseEntity.status(res.getStatusCode()).body(res);
-}}
+}
+
+
+
+@Override
+public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingsByClinicIdWithBranchId(String clinicId, String branchId) {
+    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+    try {
+        return bookingFeign.getBookedServicesByClinicIdWithBranchId(clinicId, branchId);
+    } catch (FeignException e) {
+        res = new ResponseStructure<>(null, ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR, e.status());
+        return ResponseEntity.status(res.getStatusCode()).body(res);
+    }
+}
+
+}

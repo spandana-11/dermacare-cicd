@@ -56,7 +56,7 @@ export const AddDoctor = 'clinic-admin/addDoctor'
 
 export const UpdateDoctor = 'admin/updateDoctor'
 
-export const deleteDoctor = 'clinic-admin/deleteClinic'
+export const deleteDoctor = 'admin/deleteDoctor'
 export const GetBranches_ByClinicId = 'admin/getBranchByClinicId'
 
 export const getDoctorsByHospitalIdAndBranchId='admin/getDoctorsByHospitalIdAndBranchId'

@@ -66,6 +66,10 @@ public interface BookingFeign {
 	@GetMapping("/api/v1/getAllBookedServicesByBranchId/{branchId}")
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getAllBookedServicesByBranchId(@PathVariable String branchId);
 
+	@GetMapping("/api/v1/getBookedServicesByClinicIdWithBranchId/{clinicId}/{branchId}")
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookedServicesByClinicIdWithBranchId(
+	        @PathVariable String clinicId,
+	        @PathVariable String branchId);
 	
 	//FALLBACK METHODS
 	

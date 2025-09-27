@@ -2,7 +2,7 @@
   "name": "@coreui/coreui-free-react-admin-template",
   "version": "5.2.0",
   "description": "SureCare ",
-  "homepage": ".",
+  "homepage": "/",
   "private": true,
   "scripts": {
     "build": "vite build",

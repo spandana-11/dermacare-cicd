@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   CButton,
   CForm,
@@ -25,14 +25,18 @@ import {
   CPaginationItem
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilSearch } from '@coreui/icons'
+import { cilSearch,cilTrash  } from '@coreui/icons'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { getAllServices, postServiceData, updateServiceData, deleteServiceData, getServiceByServiceId } from './ServiceAPI'
 import { CategoryData } from '../categoryManagement/CategoryAPI'
 import Select from 'react-select'
+import { cilXCircle } from '@coreui/icons'
+
 
 const ServiceManagement = () => {
+  const fileInputRef = useRef(null);
+
   const [searchQuery, setSearchQuery] = useState('')
   const [service, setService] = useState([])
   const [categories, setCategories] = useState([])
@@ -144,8 +148,8 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
       return
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, serviceImage: "File size must be < 2MB" }))
+    if (file.size > 100 * 1024) {
+      setErrors((prev) => ({ ...prev, serviceImage: "File size must be < 100kb" }))
       return
     }
 
@@ -627,21 +631,71 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
       </div>
 
       {/* Service Image */}
-      <div className="mb-3">
-        <label className="form-label">
-          Service Image <span style={{ color: 'red' }}>*</span>
-        </label>
-        <CFormInput
-          type="file"
-          name="serviceImage"
-          onChange={handleFileChange}
-          accept="image/*"
-          className={errors.serviceImage ? 'is-invalid' : ''}
-        />
-        {errors.serviceImage && (
-          <div className="invalid-feedback d-block">{errors.serviceImage}</div>
-        )}
-      </div>
+     <div className="mb-3 position-relative">
+  <label className="form-label">
+    Service Image <span style={{ color: 'red' }}>*</span>
+  </label>
+
+  {/* <div className="mb-3 position-relative">
+  <label className="form-label">
+    Service Image <span style={{ color: "red" }}>*</span>
+  </label> */}
+
+  {/* File Input */}
+  <CFormInput
+    type="file"
+    name="serviceImage"
+    accept="image/*"
+    onChange={handleFileChange}
+    className={errors.serviceImage ? "is-invalid" : ""}
+    ref={fileInputRef}
+  />
+
+  {/* Preview Image */}
+ {newService.serviceImage && (
+  <div
+    className="position-relative mt-2"
+    style={{ display: "inline-block", width: "auto", height: "auto" }}
+  >
+    <img
+      src={
+        newService.serviceImage.startsWith("data:image")
+          ? newService.serviceImage
+          : `data:image/png;base64,${newService.serviceImage}`
+      }
+      alt="Service"
+      className="rounded shadow-md"
+      style={{ width: "150px", height: "150px", objectFit: "cover", display: "block" }}
+    />
+
+    {/* Close Icon Overlay */}
+    <CIcon
+      icon={cilTrash}
+      size="xl"
+      className="position-absolute bg-white rounded-circle p-1 shadow"
+      style={{
+        top: "-10px", // negative to overlap the corner
+        right: "-10px", // negative to overlap the corner
+        color: "red",
+        cursor: "pointer",
+        border: "1px solid #ddd",
+      }}
+      onClick={() => {
+        setNewService((prev) => ({ ...prev, serviceImage: null }));
+        setErrors((prev) => ({ ...prev, serviceImage: "" }));
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }}
+    />
+  </div>
+)}
+
+  {/* Validation Error */}
+  {errors.serviceImage && (
+    <div className="invalid-feedback d-block">{errors.serviceImage}</div>
+  )}
+</div>
+
+
     </CForm>
   </CModalBody>
   <CModalFooter>
@@ -712,7 +766,7 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
     >
       {/* Service Name */}
       <div className="mb-3">
-        <label className="form-label">Service Name</label>
+        <label className="form-label">Service Name <span style={{ color: 'red' }}>*</span></label>
         <CFormInput
           value={updatedService.ServiceName}
           onChange={(e) => {
@@ -734,7 +788,7 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
 
       {/* Description */}
       <div className="mb-3">
-        <label className="form-label">Description</label>
+        <label className="form-label">Description <span style={{ color: 'red' }}>*</span></label>
         <CFormInput
           value={updatedService.description}
           onChange={(e) => {
@@ -756,7 +810,7 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
 
       {/* Category */}
       <div className="mb-3">
-        <label className="form-label">Category</label>
+        <label className="form-label">Category <span style={{ color: 'red' }}>*</span></label>
         <CFormSelect
           value={updatedService.categoryId}
           onChange={(e) => {
@@ -778,44 +832,90 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
       </div>
 
       {/* Service Image */}
-      <div className="mb-3">
-        <label className="form-label">Service Image</label>
-        <CFormInput
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            const file = e.target.files[0]
-            setUpdatedService({
-              ...updatedService,
-              serviceImage: file,
-              existingImageName: file?.name || updatedService.existingImageName,
-            })
-            validateEditField("serviceImage", file)
-          }}
-        />
-        {editErrors.serviceImage && (
-          <div className="text-danger">{editErrors.serviceImage}</div>
-        )}
-      </div>
+     <div className="mb-3">
+  <label className="form-label">Service Image <span style={{ color: 'red' }}>*</span></label>
+  <CFormInput
+    type="file"
+    accept="image/*"
+    onChange={(e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 100 * 1024) {
+        setEditErrors((prev) => ({
+          ...prev,
+          serviceImage: "File size must be less than 100kb",
+        }));
+        return;
+      } else {
+        setEditErrors((prev) => ({
+          ...prev,
+          serviceImage: "",
+        }));
+      }
+      setUpdatedService((prev) => ({
+        ...prev,
+        serviceImage: file,
+        existingImageName: file?.name || prev.existingImageName,
+      }));
+      validateEditField("serviceImage", file);
+    }}
+    ref={fileInputRef}
+    className={editErrors.serviceImage ? "is-invalid" : ""}
+  />
 
-      {/* Preview */}
-      {updatedService?.serviceImage ? (
-        <img
-          src={
-            typeof updatedService.serviceImage === 'string'
-              ? updatedService.serviceImage.startsWith('data:image')
-                ? updatedService.serviceImage
-                : `data:image/png;base64,${updatedService.serviceImage}`
-              : URL.createObjectURL(updatedService.serviceImage)
-          }
-          alt="Service"
-          style={{ width: '200px', height: 'auto', marginTop: '10px' }}
-        />
-      ) : (
-        <span style={{ display: 'block', marginTop: '10px' }}>
-          No image available
-        </span>
-      )}
+  {/* Image Preview with Delete Icon */}
+  {(updatedService.serviceImage || updatedService.existingImage) && (
+    <div className="position-relative mt-3 d-inline-block">
+      <img
+        src={
+          typeof updatedService.serviceImage === "string"
+            ? updatedService.serviceImage.startsWith("data:image")
+              ? updatedService.serviceImage
+              : `data:image/png;base64,${updatedService.serviceImage}`
+            : URL.createObjectURL(updatedService.serviceImage)
+        }
+        alt="Service Preview"
+        className="rounded shadow"
+        style={{ width: "120px", height: "120px", objectFit: "cover" }}
+      />
+      <CIcon
+        icon={cilTrash}
+        size="xxl"
+        className="position-absolute bg-white rounded-circle p-2 shadow"
+        style={{
+          top: "-10px",
+          right: "-10px",
+          color: "red",
+          cursor: "pointer",
+          border: "1px solid #ddd",
+          transition: "transform 0.2s ease, background 0.2s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "#ffe5e5";
+          e.currentTarget.style.transform = "scale(1.1)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "white";
+          e.currentTarget.style.transform = "scale(1)";
+        }}
+        onClick={() => {
+          setUpdatedService((prev) => ({
+            ...prev,
+            serviceImage: null,
+            existingImageName: "",
+          }));
+          setEditErrors((prev) => ({ ...prev, serviceImage: "" }));
+          if (fileInputRef.current) fileInputRef.current.value = "";
+        }}
+      />
+    </div>
+  )}
+
+  {editErrors.serviceImage && (
+    <div className="text-danger">{editErrors.serviceImage}</div>
+  )}
+</div>
+
     </CForm>
   </CModalBody>
   <CModalFooter>

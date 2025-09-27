@@ -250,7 +250,12 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
 
   return (
     <CCard className="mt-4">
-    
+      <CCardHeader className="d-flex justify-content-between align-items-center">
+            <h3 className="mb-0">Branch Details</h3>
+            <CButton color="secondary" onClick={() => navigate(-1)}>
+              Back
+            </CButton>
+          </CCardHeader>
 
 
       <CCardBody>
@@ -408,7 +413,7 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
 
  {isEditing ? (
   <>
-    {/* <CButton
+    <CButton
       color="success"
       className="me-2"
       onClick={async () => {
@@ -421,8 +426,8 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
         }
       }}
     >
-      Update
-    </CButton> */}
+      Save
+    </CButton>
 
     <CButton
       color="secondary"
@@ -1608,7 +1613,7 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
         }
       }}
     >
-      Update
+      Save
     </CButton>
 
     <CButton

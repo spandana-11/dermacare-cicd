@@ -622,7 +622,7 @@ const handleSubmit = async () => {
     // ✅ Step 7: Call API
     const response = await AddDoctorByAdmin(payload);
     console.log("✅ API Response:", response);
-
+    
     if (!response?.data) {
       throw new Error("Invalid API response structure");
     }

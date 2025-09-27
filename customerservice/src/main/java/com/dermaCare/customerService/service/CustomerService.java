@@ -121,4 +121,6 @@ public interface CustomerService {
 	
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingsByBranchId(String branchId);
 
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingsByClinicIdWithBranchId(String clinicId, String branchId);
+
 }

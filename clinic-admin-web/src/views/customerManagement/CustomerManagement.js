@@ -240,6 +240,7 @@ const CustomerManagement = () => {
   const fetchCustomers = useCallback(async () => {
     setLoading(true)
     setError(null)
+   
     try {
       const data = await CustomerData()
       const safeData = Array.isArray(data)
@@ -358,7 +359,7 @@ const CustomerManagement = () => {
           landmark: customer.address?.landmark || '',
           city: customer.address?.city || '',
           state: customer.address?.state || '',
-          country: customer.address?.country || 'India',
+          country: 'India',
           postalCode: customer.address?.postalCode || '',
         },
       })

@@ -518,4 +518,11 @@ public ResponseEntity<Response> getAverageRatingByDoctorId( @PathVariable String
 	   return customerService.getBookingsByBranchId(branchId);
  }
 
+   @GetMapping("/getBookingsByClinicIdWithBranchId/{clinicId}/{branchId}")
+   public ResponseEntity<?> getBookingsByClinicIdWithBranchId(
+           @PathVariable String clinicId,
+           @PathVariable String branchId) {
+       return customerService.getBookingsByClinicIdWithBranchId(clinicId, branchId);
+   }
+
 }

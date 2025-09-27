@@ -760,4 +760,18 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			return toResponses(reversedBookings);
 		}
 		
+		@Override
+		public List<BookingResponse> getBookedServicesByClinicIdWithBranchId(String clinicId, String branchId) {
+		    List<Booking> bookings = repository.findByClinicIdAndBranchId(clinicId, branchId);
+		    List<Booking> reversedBookings = new ArrayList<>();
+		    for (int i = bookings.size() - 1; i >= 0; i--) {
+		        reversedBookings.add(bookings.get(i));
+		    }
+		    if (bookings == null || bookings.isEmpty()) {
+		        return null;
+		    }
+		    return toResponses(reversedBookings);
+		}
+
+		
 }

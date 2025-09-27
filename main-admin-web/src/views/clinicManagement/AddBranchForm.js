@@ -72,6 +72,7 @@ const [currentPage, setCurrentPage] = useState(1)
   // Load branches on component mount
   useEffect(() => {
     loadBranches();
+    console.log('jaskfaslkfjsk',loadBranches())
   }, []);
 React.useEffect(() => {
   if (clinicId) {

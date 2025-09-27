@@ -40,7 +40,7 @@ import { BASE_URL } from '../../baseUrl'
 import capitalizeWords from '../../Utils/capitalizeWords'
 import { useNavigate } from 'react-router-dom'
 import { useHospital } from '../../Usecontext/HospitalContext'
-import { GetClinicBranches, handleDeleteToggle } from './DoctorAPI'
+import { GetClinicBranches, handleDeleteToggle, UpdateDoctorById } from './DoctorAPI'
 import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -112,7 +112,7 @@ const DoctorDetailsPage = () => {
     const isDeleted = await handleDeleteToggle(id)
     console.log(isDeleted)
     if (isDeleted) {
-      navigate('/doctor')
+      navigate('/doctors')
       toast.success('Doctor deleted successfully')
     } else {
       // toast.error(`${isDeleted.message}` || 'Failed to delete doctor')
@@ -214,9 +214,9 @@ const DoctorDetailsPage = () => {
           })) || [],
       }
 
-      const res = await http.put(`/updateDoctor/${doctorData.doctorId}`, payload)
+        const res = await UpdateDoctorById(doctorData.doctorId, payload);
 
-      if (res.data.success) {
+      if (res.success) {
         toast.success(res.data.message || 'Doctor updated successfully')
         setDoctorData(res.data.updatedDoctor)
         setFormData(res.data.updatedDoctor)

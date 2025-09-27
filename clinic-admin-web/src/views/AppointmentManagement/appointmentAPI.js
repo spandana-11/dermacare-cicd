@@ -83,6 +83,8 @@ import {
 import { http } from '../../Utils/Interceptors'
 
 export const AppointmentData = async () => {
+  const hospitalId = localStorage.getItem('HospitalId')
+  const branchId = localStorage.getItem('branchId')
   try {
     const response = await axios.get(`${Booking_service_Url}/${getAllBookedServices}`) //TODO:chnage when apigetway call axios to http
     return response.data

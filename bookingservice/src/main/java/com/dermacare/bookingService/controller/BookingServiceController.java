@@ -110,7 +110,7 @@ public class BookingServiceController {
 					HttpStatus.OK);
 		}
 		return new ResponseEntity<>(ResponseStructure.buildResponse(response,
-				"Booked Service Fetched Sucessfully on branchId" + branchId, HttpStatus.OK, HttpStatus.OK.value()),
+				"Booked Service Fetched Sucessfully on branchId : " + branchId, HttpStatus.OK, HttpStatus.OK.value()),
 				HttpStatus.OK);
 
 	}
@@ -146,7 +146,23 @@ public class BookingServiceController {
 
 	}
 
-	
+	@GetMapping("/getBookedServicesByClinicIdWithBranchId/{clinicId}/{branchId}")
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookedServicesByClinicIdWithBranchId(
+	        @PathVariable String clinicId,
+	        @PathVariable String branchId) {
+
+	    List<BookingResponse> response = service.getBookedServicesByClinicIdWithBranchId(clinicId, branchId);
+	    if (response == null || response.isEmpty()) {
+	        return new ResponseEntity<>(ResponseStructure.buildResponse(null,
+	                "No bookings found for clinicId: " + clinicId + " and branchId: " + branchId,
+	                HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
+	    }
+
+	    return new ResponseEntity<>(ResponseStructure.buildResponse(response,
+	            "Bookings fetched successfully for clinicId: " + clinicId + " and branchId: " + branchId,
+	            HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
+	}
+
 	@PutMapping("/updateAppointment")
 	public ResponseEntity<?> updateAppointment(@RequestBody BookingResponse bookingResponse ){
 		return service.updateAppointment(bookingResponse);

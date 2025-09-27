@@ -782,7 +782,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
 
       minTime: formattedMinTime,
       status: newService.status,
-      subServiceImage: newService.serviceImage,
+      subServiceImage: newService.subServiceImage,
 
       procedureQA: newService.procedureQA,
       preProcedureQA: newService.preProcedureQA,
@@ -826,6 +826,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       minTimeUnit: '',
       status: '',
       serviceImage: '',
+      subServiceImage:'',
       viewDescription: '',
       consentFormType: '',
       procedureQA: [],
@@ -1326,7 +1327,7 @@ const handleChanges = async (e) => {
 
             <CRow>
               <CCol sm={6}>
-                <strong>Service Image:</strong>
+                <strong>Sub Service Image:</strong>
                 {viewService.subServiceImage ? (
                   <div className="mt-2">
                     <img

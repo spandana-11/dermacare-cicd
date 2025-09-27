@@ -47,10 +47,10 @@ const PharmacistManagement = () => {
   const [deleteId, setDeleteId] = useState(null)
 
   // ✅ Load from localStorage on mount
-const [modalData, setModalData] = useState(null) // store username & password
+  const [modalData, setModalData] = useState(null) // store username & password
   const [modalTVisible, setModalTVisible] = useState(false)
   const [credentialsModalVisible, setCredentialsModalVisible] = useState(false)
-const [credentials, setCredentials] = useState(null)
+  const [credentials, setCredentials] = useState(null)
 
   const fetchTechs = async () => {
     setLoading(true)
@@ -75,61 +75,62 @@ const [credentials, setCredentials] = useState(null)
   }, [])
 
   // Save (Add / Edit)
- // A hypothetical example of how the data might be structured in your form
-// const formData = {
-//   ...
-//   permissions: {
-//     Pharmacist: {
-//       create: true,
-//       read: true,
-//       update: false,
-//       delete: false
-//     },
-//     viewPatients: false // <-- This is the root of the problem
-//   }
-// }
+  // A hypothetical example of how the data might be structured in your form
+  // const formData = {
+  //   ...
+  //   permissions: {
+  //     Pharmacist: {
+  //       create: true,
+  //       read: true,
+  //       update: false,
+  //       delete: false
+  //     },
+  //     viewPatients: false // <-- This is the root of the problem
+  //   }
+  // }
 
-const handleSave = async (formData) => {
-  try {
-    const correctedFormData = {
-      ...formData,
-      permissions: {
-        Pharmacist: Object.entries(formData.permissions.Pharmacist || {})
-          .filter(([key, value]) => value)
-          .map(([key]) => key),
-        viewPatients: formData.permissions.viewPatients ? ['read'] : [],
-      },
-    }
-
-    if (selectedTech) {
-      await UpdatePharmacistById(selectedTech.pharmacistId, correctedFormData)
-      toast.success('Pharmacist updated successfully!')
-    } else {
-      const res = await addPharmacist(correctedFormData)
-      await fetchTechs()
-
-      if (res?.data?.data?.userName && res?.data?.data?.password) {
-        setCredentials({
-          username: res.data.data.userName,
-          password: res.data.data.password,
-          pharmacistName: res.data.data.fullName,
-        })
-        setCredentialsModalVisible(true) // open modal
+  const handleSave = async (formData) => {
+    try {
+      const correctedFormData = {
+        ...formData,
+        permissions: {
+          Pharmacist: Object.entries(formData.permissions.Pharmacist || {})
+            .filter(([key, value]) => value)
+            .map(([key]) => key),
+          viewPatients: formData.permissions.viewPatients ? ['read'] : [],
+        },
       }
 
-      toast.success('Pharmacist added successfully!')
+      if (selectedTech) {
+        await UpdatePharmacistById(selectedTech.pharmacistId, correctedFormData)
+        fetchTechs()
+        toast.success('Pharmacist updated successfully!')
+      } else {
+        const res = await addPharmacist(correctedFormData)
+        await fetchTechs()
+
+        if (res?.data?.data?.userName && res?.data?.data?.password) {
+          setCredentials({
+            username: res.data.data.userName,
+            password: res.data.data.password,
+            pharmacistName: res.data.data.fullName,
+          })
+          setCredentialsModalVisible(true) // open modal
+        }
+
+        toast.success('Pharmacist added successfully!')
+      }
+    } catch (err) {
+      console.error('API error:', err)
+      toast.error(err.response?.data?.message || '❌ Failed to save pharmacist.')
     }
-  } catch (err) {
-    console.error('API error:', err)
-    toast.error(err.response?.data?.message || '❌ Failed to save pharmacist.')
   }
-}
 
   // Delete pharmacist
-  const handleDelete = async (pharmacistId ) => {
+  const handleDelete = async (pharmacistId) => {
     try {
-      await DeletePharmacistById(pharmacistId )
-      setPharmacist((prev) => prev.filter((p) => p.pharmacistId  !== pharmacistId ))
+      await DeletePharmacistById(pharmacistId)
+      setPharmacist((prev) => prev.filter((p) => p.pharmacistId !== pharmacistId))
       toast.success('Pharmacist deleted successfully!')
     } catch (err) {
       console.error('Delete error:', err)
@@ -161,7 +162,6 @@ const handleSave = async (formData) => {
     }
   }
 
-
   return (
     <div>
       {can('Pharmacist', 'create') && (
@@ -179,50 +179,55 @@ const handleSave = async (formData) => {
             Add Pharmacist
           </CButton>
         </div>
-        
       )}
- <CModal visible={credentialsModalVisible} backdrop="static" keyboard={false}>
-  <CModalHeader>
-    <h5>Pharmacist Credentials</h5>
-  </CModalHeader>
-  <CModalBody>
-    {credentials ? (
-      <div>
-        <p><strong>Name:</strong> {credentials.pharmacistName || 'New Pharmacist'}</p>
-        <p><strong>Username:</strong> {credentials.username}</p>
-        <p><strong>Password:</strong> {credentials.password}</p>
-        <small className="text-danger">
-          ⚠️ Please save these credentials securely. They will not be shown again.
-        </small>
-      </div>
-    ) : (
-      <p>No data available</p>
-    )}
-  </CModalBody>
-  <CModalFooter>
-    <CButton
-      color="primary"
-      onClick={() => {
-        setCredentialsModalVisible(false)
-        setCredentials(null) // clear after closing
-      }}
-    >
-      Close
-    </CButton>
-  </CModalFooter>
-</CModal>
+      <CModal visible={credentialsModalVisible} backdrop="static" keyboard={false}>
+        <CModalHeader>
+          <h5>Pharmacist Credentials</h5>
+        </CModalHeader>
+        <CModalBody>
+          {credentials ? (
+            <div>
+              <p>
+                <strong>Name:</strong> {credentials.pharmacistName || 'New Pharmacist'}
+              </p>
+              <p>
+                <strong>Username:</strong> {credentials.username}
+              </p>
+              <p>
+                <strong>Password:</strong> {credentials.password}
+              </p>
+              <small className="text-danger">
+                ⚠️ Please save these credentials securely. They will not be shown again.
+              </small>
+            </div>
+          ) : (
+            <p>No data available</p>
+          )}
+        </CModalBody>
+        <CModalFooter>
+          <CButton
+            color="primary"
+            onClick={() => {
+              setCredentialsModalVisible(false)
+              setCredentials(null) // clear after closing
+            }}
+          >
+            Close
+          </CButton>
+        </CModalFooter>
+      </CModal>
 
-<ConfirmationModal
-  isVisible={isModalVisible}
-  title="Delete Pharmacist"
-  message="Are you sure you want to delete this pharmacist? This action cannot be undone."
-  confirmText="Yes, Delete"
-  cancelText="Cancel"
-  confirmColor="danger"
-  cancelColor="secondary"
-  onConfirm={() => handleDelete(deleteId)} // ✅ Use deleteId from state
-  onCancel={() => setIsModalVisible(false)}
-/>
+      <ConfirmationModal
+        isVisible={isModalVisible}
+        title="Delete Pharmacist"
+        message="Are you sure you want to delete this pharmacist? This action cannot be undone."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        confirmColor="danger"
+        cancelColor="secondary"
+        onConfirm={() => handleDelete(deleteId)} // ✅ Use deleteId from state
+        onCancel={() => setIsModalVisible(false)}
+      />
 
       {loading ? (
         <div className="d-flex justify-content-center align-items-center">
@@ -248,63 +253,86 @@ const handleSave = async (formData) => {
               <CTableHeaderCell>Name</CTableHeaderCell>
               <CTableHeaderCell>Contact</CTableHeaderCell>
               <CTableHeaderCell>Sex</CTableHeaderCell>
-              <CTableHeaderCell>Qualification</CTableHeaderCell>
+              <CTableHeaderCell>Specialization</CTableHeaderCell>
               <CTableHeaderCell>Date Of Joining</CTableHeaderCell>
               <CTableHeaderCell className="text-end">Actions</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
-        <CTableBody className="pink-table">
+          <CTableBody className="pink-table">
             {displayData.length ? (
               displayData.map((pharma, index) => (
                 <CTableRow key={pharma.id}>
                   <CTableDataCell>{(currentPage - 1) * rowsPerPage + index + 1}</CTableDataCell>
-                   <CTableDataCell>
-  {pharma.profilePicture ? (
-    <img
-      src={pharma.profilePicture} // ✅ use base64 directly
-      alt={pharma.fullName}
-      width="40"
-      height="40"
-      style={{
-        borderRadius: '50%',
-        objectFit: 'cover',
-        border: '1px solid var(--color-black)',
-      }}
-    />
-  ) : (
-    <img
-      src="/assets/images/default-avatar.png"
-      alt="No profile"
-      width="40"
-      height="40"
-      style={{
-        borderRadius: '50%',
-        objectFit: 'cover',
-        border: '1px solid var(--color-black)',
-      }}
-    />
-  )}
-</CTableDataCell>
+                  <CTableDataCell>
+                    {pharma.profilePicture ? (
+                      <img
+                        src={pharma.profilePicture} // ✅ use base64 directly
+                        alt={pharma.fullName}
+                        width="40"
+                        height="40"
+                        style={{
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '1px solid var(--color-black)',
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src="/assets/images/default-avatar.png"
+                        alt="No profile"
+                        width="40"
+                        height="40"
+                        style={{
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '1px solid var(--color-black)',
+                        }}
+                      />
+                    )}
+                  </CTableDataCell>
 
                   <CTableDataCell>{capitalizeWords(pharma.fullName)}</CTableDataCell>
                   <CTableDataCell>{pharma.contactNumber || 'NA'}</CTableDataCell>
                   <CTableDataCell>{pharma.gender || 'NA'}</CTableDataCell>
-                  <CTableDataCell>{pharma.qualification || 'NA'}</CTableDataCell>
+                  <CTableDataCell>{pharma.specialization || 'NA'}</CTableDataCell>
                   <CTableDataCell>{pharma.dateOfJoining || 'NA'}</CTableDataCell>
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2">
                       {can('Pharmacist', 'read') && (
-                        <button className="actionBtn" onClick={() => { setSelectedTech(pharma); setViewMode(true); setModalVisible(true) }} title="View">
+                        <button
+                          className="actionBtn"
+                          onClick={() => {
+                            setSelectedTech(pharma)
+                            setViewMode(true)
+                            setModalVisible(true)
+                          }}
+                          title="View"
+                        >
                           <Eye size={18} />
                         </button>
                       )}
                       {can('Pharmacist', 'update') && (
-                        <button className="actionBtn" onClick={() => { setSelectedTech(pharma); setViewMode(false); setModalVisible(true) }} title="Edit">
+                        <button
+                          className="actionBtn"
+                          onClick={() => {
+                            setSelectedTech(pharma)
+                            setViewMode(false)
+                            setModalVisible(true)
+                          }}
+                          title="Edit"
+                        >
                           <Edit2 size={18} />
                         </button>
                       )}
                       {can('Pharmacist', 'delete') && (
-                        <button className="actionBtn" onClick={() => { setDeleteId(pharma.pharmacistId); setIsModalVisible(true) }} title="Delete">
+                        <button
+                          className="actionBtn"
+                          onClick={() => {
+                            setDeleteId(pharma.pharmacistId)
+                            setIsModalVisible(true)
+                          }}
+                          title="Delete"
+                        >
                           <Trash2 size={18} />
                         </button>
                       )}
@@ -314,7 +342,11 @@ const handleSave = async (formData) => {
               ))
             ) : (
               <CTableRow>
-                <CTableDataCell colSpan="9" className="text-center" style={{ color: 'var(--color-black)' }}>
+                <CTableDataCell
+                  colSpan="9"
+                  className="text-center"
+                  style={{ color: 'var(--color-black)' }}
+                >
                   No pharmacist found.
                 </CTableDataCell>
               </CTableRow>
@@ -352,7 +384,7 @@ const handleSave = async (formData) => {
         onSave={handleSave}
         initialData={selectedTech}
         viewMode={viewMode}
-        pharmacistList={pharmacist} 
+        pharmacistList={pharmacist}
         pharmacist={pharmacist}
         fetchTechs={fetchTechs}
       />

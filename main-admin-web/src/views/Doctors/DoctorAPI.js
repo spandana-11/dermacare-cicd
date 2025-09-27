@@ -1,7 +1,7 @@
 // doctorUtils.js
 
 import axios from 'axios'
-import { BASE_URL, getAllDoctors, getDoctorByClinicId, doctorAvailableUrl, addDoctorUrl, GetBranches_ByClinicId, getDoctorsByHospitalIdAndBranchId, UpdateDoctor,GetBy_DoctorId } from '../../baseUrl'
+import { BASE_URL, getAllDoctors,deleteDoctor, getDoctorByClinicId, doctorAvailableUrl, addDoctorUrl, GetBranches_ByClinicId, getDoctorsByHospitalIdAndBranchId, UpdateDoctor,GetBy_DoctorId } from '../../baseUrl'
 import { toast } from 'react-toastify'
 
 // 🆕 Update Doctor Availability (true/false)
@@ -31,7 +31,7 @@ export const updateDoctorAvailability = async (doctorId, isAvailable) => {
 export const handleDeleteToggle = async (doctorID) => {
   console.log(doctorID)
   try {
-    const response = await axios.delete(`${BASE_URL}/delete-doctor/${doctorID}`)
+    const response = await axios.delete(`${BASE_URL}/${deleteDoctor}/${doctorID}`)
     console.log('Doctor deleted successfully:', response.data)
     // Optional: return true or response if needed
     return response

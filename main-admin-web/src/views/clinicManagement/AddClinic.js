@@ -561,52 +561,6 @@ const handleClearFile = (name, inputRef) => {
   }))
   setErrors((prev) => ({ ...prev, [name]: '' }))
 }
-
-
-
-
-  // const convertIfExists = async (file) => {
-  //   if (!file) return ''                  // nothing selected
-  //   if (file instanceof Blob) return await convertFileToBase64(file) // new file
-  //   return file                            // already Base64 string
-  // }
-
-  // const convertMultipleIfExists = async (files) => {
-  //   if (!Array.isArray(files) || files.length === 0) return [];
-  //   return await Promise.all(
-  //     files.map(async (file) => {
-  //       if (!allowedTypes.includes(file.type)) {
-  //         throw new Error(`Invalid file type: ${file.name}`);
-  //       }
-  //       if (file.size > 102400) {
-  //         throw new Error(`File must be < 100 KB: ${file.name}`);
-  //       }
-  //       return await convertFileToBase64(file);
-  //     })
-  //   );
-
-
-  //   const selectedFiles = Array.from(files)
-
-  //   // Validate files
-  //   for (let file of selectedFiles) {
-  //     if (!allowedTypes.includes(file.type)) {
-  //       setErrors((prev) => ({ ...prev, [name]: 'Invalid file type' }))
-  //       return
-  //     }
-  //     if (file.size > 102400) { // 100 KB
-  //       setErrors((prev) => ({ ...prev, [name]: 'File must be < 100 KB' }))
-  //       return
-  //     }
-  //   }
-
-  //   // Save files
-  //   const value = multiple ? selectedFiles : selectedFiles[0]
-  //   setFormData((prev) => ({ ...prev, [name]: value }))
-
-  //   // Clear errors
-  //   setErrors((prev) => ({ ...prev, [name]: '' }))
-  // }
   const handleProfessionalIndemnityFiles = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
@@ -887,30 +841,37 @@ resolve({ name: file.name, base64: rawBase64 })          }
 
   setIsSubmitting(true);
 
-  const { emailAddress, contactNumber } = formData;
-  const safeExistingDoctors = Array.isArray(existingDoctors) ? existingDoctors : [];
+ const { emailAddress, contactNumber, licenseNumber } = formData;
+const safeExistingDoctors = Array.isArray(existingDoctors) ? existingDoctors : [];
 
-  const isEmailDuplicate = safeExistingDoctors.some(
-    (doc) => doc.emailAddress?.toLowerCase() === emailAddress?.toLowerCase()
-  );
-  const isMobileDuplicate = safeExistingDoctors.some(
-    (doc) => doc.contactNumber === contactNumber
-  );
+const isEmailDuplicate = safeExistingDoctors.some(
+  (doc) => doc.emailAddress?.toLowerCase() === emailAddress?.toLowerCase()
+);
+const isMobileDuplicate = safeExistingDoctors.some(
+  (doc) => doc.contactNumber === contactNumber
+);
+const isLicenseDuplicate = safeExistingDoctors.some(
+  (doc) => doc.licenseNumber?.toLowerCase() === licenseNumber?.toLowerCase()
+);
 
-  if (isEmailDuplicate || isMobileDuplicate) {
-    const newErrors = {};
-    if (isEmailDuplicate) {
-      toast.error("Email already exists");
-      newErrors.emailAddress = "Email already exists";
-    }
-    if (isMobileDuplicate) {
-      toast.error("Mobile number already exists");
-      newErrors.contactNumber = "Mobile number already exists";
-    }
-    setErrors((prev) => ({ ...prev, ...newErrors }));
-    setIsSubmitting(false);
-    return;
+if (isEmailDuplicate || isMobileDuplicate || isLicenseDuplicate) {
+  const newErrors = {};
+  
+  if (isEmailDuplicate) {
+    newErrors.emailAddress = "Email already exists";
   }
+  if (isMobileDuplicate) {
+    newErrors.contactNumber = "Mobile number already exists";
+  }
+  if (isLicenseDuplicate) {
+    newErrors.licenseNumber = "License Number already exists";
+  }
+
+  setErrors((prev) => ({ ...prev, ...newErrors }));
+  setIsSubmitting(false);
+  return;
+}
+
 
   try {
     // 🔹 Helper functions
@@ -1080,10 +1041,14 @@ resolve({ name: file.name, base64: rawBase64 })          }
                 {errors.name && <CFormFeedback invalid>{errors.name}</CFormFeedback>}
               </CCol>
                <CCol md={6}>
+                 <CFormLabel>
+    Email Address<span style={{ color: 'red' }}>*</span>
+  </CFormLabel>
+                
   <CFormInput
     type="email"
     name="emailAddress"
-    label="Email Address"
+ 
     value={formData.emailAddress}
     onChange={(e) => {
       const { name, value } = e.target;
@@ -1957,17 +1922,13 @@ resolve({ name: file.name, base64: rawBase64 })          }
     // Real-time validation
     let error = "";
 
-    if (!value.trim()) {
-      error = "Walkthrough URL is required";
-    } else if (value.includes(" ")) {
-      error = "URL cannot contain spaces";
-    } else {
-      try {
-        new URL(value); // throws if invalid
-      } catch {
-        error = "Enter a valid URL (e.g. https://example.com)";
-      }
-    }
+  if (value.trim()) {
+  try {
+    new URL(value); // throws if invalid
+  } catch {
+    error = "Enter a valid URL (e.g. https://example.com)";
+  }
+}
 
     // Set or clear error
     setErrors((prev) => ({

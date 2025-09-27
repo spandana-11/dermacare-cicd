@@ -12,8 +12,9 @@ import { http } from '../../Utils/Interceptors'
 
 // Fetch all customers
 export const CustomerData = async () => {
+  const hospitalId = localStorage.getItem('HospitalId')
   try {
-    const url = `${BASE_URL}/${GetAllCustomers}`
+    const url = `${BASE_URL}/${GetAllCustomers}/${hospitalId}`
     const response = await axios.get(url) //TODO:chnage when apigetway call axios to http
     // Assuming backend wraps list in response.data.data
     return Array.isArray(response.data.data) ? response.data.data : [response.data.data]
@@ -99,7 +100,7 @@ export const CustomerDataByBranchId = async (branchId) => {
     throw error
   }
 }
-export const CustomerByClinicNdBranchId = async (hospitalId,branchId) => {
+export const CustomerByClinicNdBranchId = async (hospitalId, branchId) => {
   try {
     const url = `${BASE_URL}/${GetCustomersByHospitalIdAndBranchId}/${hospitalId}/branch/${branchId}`
     const response = await axios.get(url) //TODO:chnage when apigetway call axios to http
@@ -110,5 +111,4 @@ export const CustomerByClinicNdBranchId = async (hospitalId,branchId) => {
     throw error
   }
 }
-export const getCustomerByMobile = async (mobileNumber) => {
-}
+export const getCustomerByMobile = async (mobileNumber) => {}

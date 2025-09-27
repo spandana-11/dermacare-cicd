@@ -41,6 +41,7 @@ import DoctorCard from '../Doctors/DoctorCard'
 import { ToastContainer } from 'react-toastify'
 import AppointmentManagement from '../AppointmentManagement/AppointmentManagement'
 import 'react-toastify/dist/ReactToastify.css'
+import DoctorDetailsPage from '../Doctors/DoctorDetailsPage'
 
 
 const BranchDetails = () => {
@@ -135,8 +136,6 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
     setSelectedDoctor(doctor)
     setShowDeleteModal(true)
   }
-
-
 const handleDeleteDoctor = async () => {
   if (!selectedDoctor) return
 
@@ -157,10 +156,7 @@ const handleDeleteDoctor = async () => {
     setSelectedDoctor(null)
   }
 }
-
-
   return (
-    
     <CCard className="mt-4">
        <ToastContainer />
       {/* Header */}
@@ -170,7 +166,6 @@ const handleDeleteDoctor = async () => {
           Back
         </CButton>
       </CCardHeader>
-
       <CCardBody>
         {/* Navigation Tabs */}
         <CNav variant="tabs">
@@ -432,13 +427,13 @@ const handleDeleteDoctor = async () => {
   )}
 
   {/* Edit Doctor Modal */}
-  {editDoctorModal && selectedDoctor && (
+  {/* {editDoctorModal && selectedDoctor && (
     <CModal visible={editDoctorModal} onClose={() => setEditDoctorModal(false)} size="lg" backdrop="static">
       <CModalHeader>
         <CModalTitle>Edit Doctor</CModalTitle>
       </CModalHeader>
       <CModalBody>
-        <EditDoctor
+        <DoctorDetailsPage
           doctorId={selectedDoctor.doctorId} 
           doctor={selectedDoctor}
           clinicId={branchData?.clinicId}
@@ -462,7 +457,7 @@ const handleDeleteDoctor = async () => {
         </CButton>
       </CModalFooter>
     </CModal>
-  )}
+  )} */}
 
   {/* Doctor Cards */}
   {/* Doctor Cards */}

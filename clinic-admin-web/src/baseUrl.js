@@ -190,7 +190,7 @@ export const addPayouts = 'payments/addpayment'
 
 //** Customer Management- main **
 export const AddCustomer = 'customers/onboard'
-export const GetAllCustomers = 'customers/getAllCustomers'
+export const GetAllCustomers = 'customers/hospital'
 // export const UpdateCustomer = 'customers'
 // export const DeleteCustomer = 'customers'
 // export const GetCustomerByCustomerId = 'customers'

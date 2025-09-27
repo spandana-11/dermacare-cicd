@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState,useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   CForm,
@@ -28,7 +28,7 @@ import {
   CCardBody,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilSearch } from '@coreui/icons'
+import { cilSearch,cilTrash  } from '@coreui/icons'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import {
@@ -40,6 +40,7 @@ import {
 import { ConfirmationModal } from '../../Utils/ConfirmationDelete'
 
 const CategoryManagement = () => {
+    const fileInputRef = useRef(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [category, setCategory] = useState([])
   const [filteredData, setFilteredData] = useState([])
@@ -49,6 +50,7 @@ const CategoryManagement = () => {
   const [viewCategory, setViewCategory] = useState(null)
   const [editCategoryMode, setEditCategoryMode] = useState(false)
   const [categoryToEdit, setCategoryToEdit] = useState(null)
+  const [fileKey, setFileKey] = useState(Date.now()) // used to reset file input
 
   const [errors, setErrors] = useState({
     categoryName: '',
@@ -168,16 +170,27 @@ const CategoryManagement = () => {
     setNewCategory((prev) => ({ ...prev, [name]: capitalizedValue }))
     validateField(name, capitalizedValue)
   }
-
+const handleDeleteCategoryImage = () => {
+  setUpdatedCategory((prev) => ({
+    ...prev,
+    categoryImage: null,
+  }))
+  if(fileInputRef.current){
+    fileInputRef.current.value=null;
+  }
+}
   const handleFileChange = (e) => {
     const file = e.target.files[0]
+    if(!file) return
     if (file) {
       if (!file.type.startsWith("image/")) {
         setErrors((prev) => ({ ...prev, categoryImage: "Only image files are allowed." }))
+            setNewCategory((prev) => ({ ...prev, categoryImage: null }));
+
         return
       }
-      if (file.size > 2 * 1024 * 1024) {
-        setErrors((prev) => ({ ...prev, categoryImage: "File size must be less than 2MB." }))
+      if (file.size > 100 * 1024) {
+        setErrors((prev) => ({ ...prev, categoryImage: "File size must be less than 100kb." }))
         return
       }
 
@@ -240,11 +253,22 @@ const CategoryManagement = () => {
   }
 
   const handleUpdateCategory = async () => {
+    let isValid=true;
+
     if (!updatedCategory.categoryName.trim()) {
-      toast.error('Category name is required')
-      return
+      setErrors((prev)=>({...prev, categoryName:"Category Name is required"}))
+      isValid=false;
+    }else{
+      setErrors((prev)=>({...prev, categoryName:''}))
+    }
+    if(!updatedCategory.categoryImage){
+      setErrors((prev)=>({...prev, categoryImage:"Category Image is required"}))
+      isValid=false;
+    }else{
+      setErrors((prev)=>({...prev, categoryImage:""}))
     }
 
+    if(!isValid) return;
     try {
       const updateData = {
         categoryName: updatedCategory.categoryName,
@@ -300,6 +324,11 @@ const CategoryManagement = () => {
     } else {
       setErrors((prev) => ({ ...prev, categoryImage: "Category image is required." }))
     }
+  }
+  const handleClearImage = () => {
+    setNewCategory((prev) => ({ ...prev, categoryImage: null }))
+    setErrors((prev) => ({ ...prev, categoryImage: "" }))
+    setFileKey(Date.now()) // reset input
   }
 
   const handleCategoryDelete = (categoryId) => {
@@ -550,23 +579,51 @@ const CategoryManagement = () => {
             {errors.categoryName && (
               <CFormText className="text-danger">{errors.categoryName}</CFormText>
             )}
-            <h6>
-              Category Image <span style={{ color: 'red' }}>*</span>
-            </h6>
-            <CFormInput 
-              type="file" 
-              onChange={handleFileChange} 
-              accept="image/*"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  handleAddCategory()
-                }
-              }}
-            />
-            {errors.categoryImage && (
-              <CFormText className="text-danger">{errors.categoryImage}</CFormText>
-            )}
+<h6>
+        Category Image <span style={{ color: "red" }}>*</span>
+      </h6>
+      <CFormInput
+        key={fileKey} // changing key resets the input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault()
+            handleAddCategory()
+          }
+        }}
+      />
+
+      {/* Image Preview */}
+      {newCategory?.categoryImage && (
+        <div className="position-relative d-inline-block mt-2">
+          <img
+            src={`data:image/png;base64,${newCategory.categoryImage}`}
+            alt="Category"
+            style={{
+              width: "150px",
+              height: "150px",
+              objectFit: "cover",
+              display: "block",
+              borderRadius: "8px",
+            }}
+          />
+          {/* Clear Icon */}
+          <CIcon
+            icon={cilTrash}
+            size="xl"
+            className="position-absolute bg-white rounded-circle p-1 shadow text-danger"
+            style={{ top: "-8px", right: "-8px", cursor: "pointer", border: "1px solid #ddd" }}
+            onClick={handleClearImage}
+          />
+        </div>
+      )}
+
+      {/* Validation Error */}
+      {errors.categoryImage && <CFormText className="text-danger">{errors.categoryImage}</CFormText>}
+
           </CForm>
         </CModalBody>
 
@@ -644,33 +701,46 @@ const CategoryManagement = () => {
               <CFormText className="text-danger">{errors.categoryName}</CFormText>
             )}
 
-            <h6>
-              Category Image <span style={{ color: 'red' }}>*</span>
-            </h6>
-            <CFormInput 
-              type="file" 
-              accept="image/*" 
-              onChange={handleEditFileChange}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  handleUpdateCategory()
-                }
-              }}
-            />
-            {errors.categoryImage && (
-              <CFormText className="text-danger">{errors.categoryImage}</CFormText>
-            )}
+<h6>
+  Category Image <span style={{ color: 'red' }}>*</span>
+</h6>
+<CFormInput
+  type="file"
+  accept="image/*"
+  ref={fileInputRef}
+  onChange={handleEditFileChange}
+/>
 
-            {updatedCategory?.categoryImage ? (
-              <img
-                src={`data:image/png;base64,${updatedCategory.categoryImage}`}
-                alt="Category"
-                style={{ width: '200px', height: 'auto', marginTop: '10px' }}
-              />
-            ) : (
-              <span style={{ display: 'block', marginTop: '10px' }}>No image available</span>
-            )}
+{updatedCategory?.categoryImage ? (
+  <div style={{ position: 'relative', display: 'inline-block', marginTop: '10px' }}>
+    <img
+      src={`data:image/png;base64,${updatedCategory.categoryImage}`}
+      alt="Category"
+      style={{ width: '200px', height: 'auto', borderRadius: '5px' }}
+    />
+    <CIcon
+      icon={cilTrash}
+      size="lg"
+      onClick={handleDeleteCategoryImage}
+      style={{
+        position: 'absolute',
+        top: '5px',
+        right: '5px',
+        color: 'white',
+        backgroundColor: 'red',
+        borderRadius: '50%',
+        padding: '4px',
+        cursor: 'pointer',
+      }}
+    />
+  </div>
+) : (
+  <span style={{ display: 'block', marginTop: '10px' }}>No image available</span>
+)}
+
+{errors.categoryImage && (
+  <CFormText className="text-danger">{errors.categoryImage}</CFormText>
+)}
           </CForm>
         </CModalBody>
         <CModalFooter>
