@@ -58,6 +58,19 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	public ResponseEntity<?> addService(BookingRequset request) {
 		ResponseStructure<BookingResponse> response = new ResponseStructure<BookingResponse>();
 		Booking entity = toEntity(request);
+		if(request.getFollowupStatus().equalsIgnoreCase("no-followup")) {
+			Booking bkng = repository.findByMobileNumberAndPatientIdAndBookingId(request.getMobileNumber(),request.getPatientId(),request.getBookingId());
+			//System.out.println(bkng);
+			if(bkng != null) {
+		    bkng.setStatus("Completed");
+			Booking res = repository.save(bkng);
+			BookingResponse bRes = new ObjectMapper().convertValue(res, BookingResponse.class);
+			response = ResponseStructure.buildResponse(bRes, "Booking updated Sucessfully",
+					HttpStatus.OK, HttpStatus.OK.value());			
+			}else{
+				response = ResponseStructure.buildResponse(null, "Booking Not Found",
+						HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value());	
+		}}else{
 		if(request.getVisitType().equalsIgnoreCase("follow-up")){
 		if(repository.findByMobileNumberAndPatientIdAndBookingId(request.getMobileNumber(),request.getPatientId(),request.getBookingId()) != null){
 		Booking b = repository.findByMobileNumberAndPatientIdAndBookingId(request.getMobileNumber(),request.getPatientId(),request.getBookingId());
@@ -115,7 +128,9 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		BookingResponse bRes = new ObjectMapper().convertValue(res, BookingResponse.class);
 		response = ResponseStructure.buildResponse(bRes,"Service Booked Sucessfully",
 				HttpStatus.CREATED, HttpStatus.CREATED.value());}
+		}
 		return ResponseEntity.status(response.getStatusCode()).body(response);
+		
 	}
 		
 	
