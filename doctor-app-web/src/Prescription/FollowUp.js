@@ -56,22 +56,19 @@ const FollowUp = ({ seed = {}, onNext, sidebarWidth = 0, patientData }) => {
 
   // Calculate next follow-up date only if user edits OR we don't have a template date
   useEffect(() => {
-    const hasTemplateDate = !!(seed && seed.nextFollowUpDate)
-    if (!userTouched && hasTemplateDate) return
-
-    const val = Number(durationValue) || 0
-    if (!val) {
+    // Only calculate if user has entered a duration AND selected a unit
+    if (!durationValue || !durationUnit) {
       setNextFollowUpDate('')
       return
     }
 
     const now = new Date()
+
     if (durationUnit === 'Weeks') {
-      now.setDate(now.getDate() + val * 7)
+      now.setDate(now.getDate() + durationValue * 7)
     } else if (durationUnit === 'Months') {
-      // month-aware increment
       const d = new Date(now)
-      d.setMonth(d.getMonth() + val)
+      d.setMonth(d.getMonth() + durationValue)
       // handle month overflow (e.g., Jan 31 + 1 month)
       if (d.getDate() !== now.getDate()) {
         d.setDate(0)
@@ -79,12 +76,17 @@ const FollowUp = ({ seed = {}, onNext, sidebarWidth = 0, patientData }) => {
       now.setTime(d.getTime())
     } else {
       // Days
-      now.setDate(now.getDate() + val)
+      now.setDate(now.getDate() + durationValue)
     }
 
-    const options = { day: '2-digit', month: 'short', year: 'numeric' }
-    setNextFollowUpDate(now.toLocaleDateString('en-GB', options))
-  }, [durationValue, durationUnit, userTouched, seed])
+    const day = String(now.getDate()).padStart(2, '0')
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const year = now.getFullYear()
+
+    setNextFollowUpDate(`${day}-${month}-${year}`)
+  }, [durationValue, durationUnit])
+
+
 
   const handleNext = () => {
     const payload = {
@@ -146,7 +148,6 @@ const FollowUp = ({ seed = {}, onNext, sidebarWidth = 0, patientData }) => {
                       <option value="Weeks">Weeks</option>
                       <option value="Months">Months</option>
                     </CFormSelect>
-
                   </div>
 
                   {/* Next follow-up date */}

@@ -58,6 +58,7 @@ const CustomerManagement = () => {
   const [formErrors, setFormErrors] = useState({})
   const { searchQuery, setSearchQuery } = useGlobalSearch()
   const [isAdding, setIsAdding] = useState(false)
+  const [isViewing, setIsViewing] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [isViewModalVisible, setIsViewModalVisible] = useState(false)
   const [viewCustomerData, setViewCustomerData] = useState(null)
@@ -72,7 +73,7 @@ const CustomerManagement = () => {
     gender: '',
     email: '',
     dateOfBirth: '',
-    referralCode: '',
+    referredBy: '',
     age: '',
     hospitalId: localStorage.getItem('HospitalId') || '',
     hospitalName: localStorage.getItem('HospitalName') || '',
@@ -240,7 +241,7 @@ const CustomerManagement = () => {
   const fetchCustomers = useCallback(async () => {
     setLoading(true)
     setError(null)
-   
+
     try {
       const data = await CustomerData()
       const safeData = Array.isArray(data)
@@ -348,7 +349,7 @@ const CustomerManagement = () => {
         gender: customer.gender || '',
         email: customer.email || '',
         dateOfBirth: formattedDate,
-        referralCode: customer.referralCode || '',
+        referredBy: customer.referredBy || '',
         age: customer.age || '',
         hospitalId: localStorage.getItem('HospitalId') || '',
         hospitalName: localStorage.getItem('HospitalName') || '',
@@ -378,15 +379,27 @@ const CustomerManagement = () => {
   }
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
+    const { name, value } = e.target;
 
-    const errors = { ...formErrors }
-    if (errors[name]) {
-      delete errors[name]
-      setFormErrors(errors)
+    let newValue = value;
+    if (name === 'referredBy') {
+      // Allow letters, numbers, and underscore
+      newValue = newValue.replace(/[^a-zA-Z0-9_]/g, '');
     }
-  }
+
+    setFormData({ ...formData, [name]: newValue });
+
+    // Clear error
+    if (formErrors[name]) {
+      setFormErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[name];
+        return updated;
+      });
+    }
+  };
+
+
   useEffect(() => {
     if (isEditing && formData.address.postalCode) {
       handlePincodeChange(formData.address.postalCode)
@@ -476,7 +489,7 @@ const CustomerManagement = () => {
       gender: '',
       email: '',
       dateOfBirth: '',
-      referralCode: '',
+      referredBy: '',
       age: '',
       hospitalId: localStorage.getItem('HospitalId') || '',
       hospitalName: localStorage.getItem('HospitalName') || '',
@@ -607,11 +620,12 @@ const CustomerManagement = () => {
       errors.gender = 'Gender is required'
     }
 
-    // Referral Code (optional)
-    if (formData.referralCode && /[^a-zA-Z0-9]/.test(formData.referralCode)) {
-      errors.referralCode = 'Refer code must contain only letters and numbers'
+    // Referral code is optional
+    // Allowed characters: letters, numbers, -, _, @, #
+    const referral = formData.referredBy?.trim();
+    if (referral && /[^a-zA-Z0-9-_@#]/.test(referral)) {
+      errors.referredBy = 'Referral code can only contain letters, numbers, and - _ @ #';
     }
-
     setFormErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -815,6 +829,9 @@ const CustomerManagement = () => {
                   ) : viewCustomerData ? (
                     <CRow className="mb-2">
                       <CCol md={6}>
+                        <strong>Customer Id:</strong> {viewCustomerData.customerId || '-'}
+                      </CCol>
+                      <CCol md={6}>
                         <strong>Full Name:</strong> {viewCustomerData.fullName || '-'}
                       </CCol>
                       <CCol md={6}>
@@ -933,7 +950,11 @@ const CustomerManagement = () => {
                 <CFormInput
                   name="firstName"
                   value={formData.firstName}
-                  onChange={handleInputChange}
+                  onChange={(e) => {
+                    // Remove numbers and special characters, allow only letters and spaces
+                    const value = e.target.value.replace(/[^A-Za-z\s]/g, '');
+                    handleInputChange({ target: { name: 'firstName', value } });
+                  }}
                   invalid={!!formErrors.firstName}
                 />
                 {formErrors.firstName && (
@@ -947,7 +968,12 @@ const CustomerManagement = () => {
                 <CFormInput
                   name="lastName"
                   value={formData.lastName}
-                  onChange={handleInputChange}
+                  onChange={(e) => {
+                    // Remove numbers and special characters, allow only letters and spaces
+                    const value = e.target.value.replace(/[^A-Za-z\s]/g, '');
+                    handleInputChange({ target: { name: 'lastName', value } });
+                  }}
+
                 />
               </CCol>
               <CCol md={3}>
@@ -1006,18 +1032,19 @@ const CustomerManagement = () => {
                 <CFormInput
                   name="mobileNumber"
                   value={formData.mobileNumber}
-                  onChange={handleInputChange}
-                  // disabled
-                  onKeyDown={(e) => {
-                    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete') {
-                      e.preventDefault()
+                  onChange={(e) => {
+                    const value = e.target.value
+                    // allow only digits
+                    if (/^[0-9]*$/.test(value)) {
+                      handleInputChange(e)
                     }
                   }}
-                  onPaste={(e) => e.preventDefault()}
+                  onPaste={(e) => e.preventDefault()} // block pasting
                   maxLength={10}
                   invalid={!!formErrors.mobileNumber}
                   disabled={isEditing}
                 />
+
 
                 {formErrors.mobileNumber && (
                   <div className="text-danger small">{formErrors.mobileNumber}</div>
@@ -1100,7 +1127,14 @@ const CustomerManagement = () => {
                 <CFormInput
                   type="text"
                   value={capitalizeWords(formData.address.city)}
-                  onChange={(e) => handleNestedChange('address', 'city', e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    // allow only letters and spaces
+                    if (/^[a-zA-Z\s]*$/.test(value)) {
+                      handleNestedChange('address', 'city', value)
+                    }
+                  }}
+
                 />
               </CCol>
               {/* State */}
@@ -1111,19 +1145,16 @@ const CustomerManagement = () => {
                 <CFormInput
                   type="text"
                   value={capitalizeWords(formData.address.state)}
-                  onChange={(e) => handleNestedChange('address', 'state', e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    // allow only letters and spaces
+                    if (/^[a-zA-Z\s]*$/.test(value)) {
+                      handleNestedChange('address', 'state', value)
+                    }
+                  }}
                 />
-                {/* <CFormSelect
-                  value={formData.address.state}
-                  onChange={(e) => handleNestedChange('address', 'state', e.target.value)}
-                > */}
-                {/* <option value="">Select State</option>
-                  {states.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))} */}
-                {/* </CFormSelect> */}
+
+
               </CCol>
 
               {/* Country */}
@@ -1134,20 +1165,29 @@ const CustomerManagement = () => {
                 <CFormInput
                   type="text"
                   value={capitalizeWords(formData.address.country)}
-                  onChange={(e) => handleNestedChange('address', 'country', e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    // allow only letters and spaces
+                    if (/^[a-zA-Z\s]*$/.test(value)) {
+                      handleNestedChange('address', 'country', value)
+                    }
+                  }}
+
                 />
               </CCol>
 
               {/* Referral Code */}
               <CCol md={3}>
-                <CFormLabel>Referral Code</CFormLabel>
+                <CFormLabel>Referral Code (optional)</CFormLabel>
                 <CFormInput
-                  name="referralCode"
-                  value={formData.referralCode}
+                  name="referredBy"
+                  value={formData.referredBy}
                   onChange={handleInputChange}
+                  placeholder="Enter referral code"
+                  disabled={isEditing} // <-- disabled only when editing
                 />
-                {formErrors.referralCode && (
-                  <div className="text-danger">{formErrors.referralCode}</div>
+                {formErrors.referredBy && (
+                  <div className="text-danger">{formErrors.referredBy}</div>
                 )}
               </CCol>
             </CRow>

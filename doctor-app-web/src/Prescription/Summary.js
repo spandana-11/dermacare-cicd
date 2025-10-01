@@ -367,7 +367,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
             <CCardBody>
               <CRow className="g-3">
                 <CCol xs={12} md={8}>
-                  <h6 className="mb-2">Patient-Provided Symptoms</h6>
+                  <h6 className="mb-2">Symptoms Complaints</h6>
                   <div style={{ whiteSpace: 'pre-wrap' }}>{symptomsDetails}</div>
                   <h6 className="mb-2 mt-2">
                     Doctor Observations <span className="text-body-secondary">(if any)</span>
@@ -396,7 +396,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         {diagnosis && (
           <CCard className="shadow-sm mb-3">
             <CCardHeader className="py-2">
-              <strong style={{ color: COLORS.black }}>Probable Diagnosis / Disease</strong>
+              <strong style={{ color: COLORS.black }}>Probable Disease</strong>
             </CCardHeader>
             <CCardBody>
               <div className="fs-6">{diagnosis}</div>

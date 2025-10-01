@@ -536,9 +536,9 @@ const TestsManagement = () => {
                   <CTableDataCell style={{ paddingLeft: '40px' }}>
                     {(currentPage - 1) * rowsPerPage + index + 1}
                   </CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(test.testName)}</CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(test.description || 'NA')}</CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(test.purpose || 'NA')}</CTableDataCell>
+                  <CTableDataCell>{(test.testName)}</CTableDataCell>
+                  <CTableDataCell>{(test.description || 'NA')}</CTableDataCell>
+                  <CTableDataCell>{(test.purpose || 'NA')}</CTableDataCell>
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
                       {can('Tests', 'read') && (

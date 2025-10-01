@@ -288,7 +288,7 @@ const PrescriptionPDF = ({
             {symptomsDetails}
           </Text>
           <Text style={styles.note}>
-            <Text style={{ fontWeight: "bold" }}>Probable Diagnosis / Disease: </Text>
+            <Text style={{ fontWeight: "bold" }}>Probable Disease: </Text>
             {formData?.symptoms?.diagnosis ?? "NA"}
           </Text>
           <Text style={styles.note}>

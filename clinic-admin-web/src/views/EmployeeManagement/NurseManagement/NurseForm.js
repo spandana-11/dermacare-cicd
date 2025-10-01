@@ -26,6 +26,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
   const emptyForm = {
     hospitalId: localStorage.getItem('HospitalId'),
     branchId: localStorage.getItem('branchId'),
+    branchName: localStorage.getItem('branchName'),
     hospitalName: localStorage.getItem('HospitalName'),
     fullName: '',
     gender: '',
@@ -63,9 +64,9 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
     nursingLicense: '',
     nursingDegreeOrDiplomaCertificate: '',
     nursingCouncilRegistration: '',
-    nursePreviousEmploymentHistory: '',
+    previousEmploymentHistory: '',
     experienceCertificates: '',
-    vaccinationStatus: 'Fully Vaccinated',
+    vaccinationStatus: '',
     insuranceOrESIdetails: {
       policyOrEsiNumber: '',
       providerName: '',
@@ -271,19 +272,21 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
     }
 
     // ✅ Mobile validation (10 digits, starting with 6-9)
-    const mobileRegex = /^[6-9]\d{9}$/
+    const mobileRegex = /^[5-9]\d{9}$/
     if (!mobileRegex.test(formData.nurseContactNumber)) {
       toast.error('Contact number must be 10 digits and start with 6-9.')
       return
     }
 
     // ✅ Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailId)) {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+
+
+    const email = formData.emailId.trim()
+    if (!emailRegex.test(email)) {
       toast.error('Please enter a valid email address.')
       return
     }
-
     // ✅ Check duplicate contact number
     const duplicateContact = nurses?.some(
       (t) => t.nurseContactNumber === formData.nurseContactNumber && t.id !== formData.id,
@@ -427,11 +430,6 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
 
     const isImage = type?.startsWith('image/')
     const fileUrl = data.startsWith('data:') ? data : `data:${type};base64,${data}`
-
-
-
-
-
 
     return (
       <div className="bg-white p-3 rounded-md shadow-sm">
@@ -639,7 +637,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                       <div className="col-md-6">
                         <FilePreview
                           label="Qualification / NursingDegreeOrDiplomaCertificate"
-                          type={formData.nursingDegreeOrDiplomaCertificateType|| 'application/pdf'}
+                          type={formData.nursingDegreeOrDiplomaCertificateType || 'application/pdf'}
                           data={formData.nursingDegreeOrDiplomaCertificate}
                         />
                       </div>
@@ -657,12 +655,15 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                     ) : (
                       <p className="col-md-6">Not Provided Medical Fitness Certificate</p>
                     )}
-                    {formData.nursingCouncilRegistration != '' ? (
+                    {formData.nursingLicense
+                      != '' ? (
                       <div className="col-md-6">
                         <FilePreview
                           label="Nursing Council Registration"
-                          type={formData.nursingCouncilRegistration || 'application/pdf'}
-                          data={formData.nursingCouncilRegistration}
+                          type={formData.nursingLicense
+                            || 'application/pdf'}
+                          data={formData.nursingLicense
+                          }
                         />
                       </div>
                     ) : (
@@ -682,7 +683,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                     <div className="col-md-12">
                       <RowFull
                         label="Previous Employment"
-                        value={formData.nursePreviousEmploymentHistory}
+                        value={formData.previousEmploymentHistory}
                       />
                     </div>
                   </div>
@@ -729,14 +730,13 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                     onChange={(e) => {
                       const value = e.target.value;
 
-                      // Update the form value
-                      handleChange('fullName', value);
+                      // Allow only letters and spaces
+                      if (/^[A-Za-z\s]*$/.test(value)) {
+                        handleChange('fullName', value);
 
-                      // Run validation from your validators file
-                      const error = validateField('fullName', value);
-
-                      // Update errors state for live feedback
-                      setErrors((prev) => ({ ...prev, fullName: error }));
+                        const error = validateField('fullName', value);
+                        setErrors((prev) => ({ ...prev, fullName: error }));
+                      }
                     }}
                   />
                   {errors.fullName && (
@@ -872,16 +872,18 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                     Nursing Council Registration<span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
-                    value={capitalizeWords(formData.nursingCouncilRegistration)}
+                    type="text" // ✅ very important, don't use "number"
+                    maxLength={20}
+                    value={formData.nursingCouncilRegistration}
                     onChange={(e) => {
-                      const value = e.target.value;
+                      const value = e.target.value; // accept everything
                       handleChange('nursingCouncilRegistration', value);
 
-                      // ✅ Validate using validators.js
                       const error = validateField('nursingCouncilRegistration', value);
                       setErrors((prev) => ({ ...prev, nursingCouncilRegistration: error }));
                     }}
                   />
+
                   {errors.nursingCouncilRegistration && (
                     <div className="text-danger mt-1">
                       {errors.nursingCouncilRegistration}
@@ -921,14 +923,17 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                     Department<span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
-                    value={capitalizeWords(formData.department)}
+                    value={(formData.department)}
                     onChange={(e) => {
                       const value = e.target.value;
-                      handleChange('department', value);
 
-                      // ✅ Validate using switch case
-                      const error = validateField('department', value);
-                      setErrors((prev) => ({ ...prev, department: error }));
+                      // allow only letters + spaces
+                      if (/^[A-Za-z\s]*$/.test(value)) {
+                        handleChange('department', value);
+
+                        const error = validateField('department', value);
+                        setErrors((prev) => ({ ...prev, department: error }));
+                      }
                     }}
                   />
                   {errors.department && (
@@ -964,15 +969,20 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                 <div className="col-md-4">
                   <CFormLabel>Qualifications <span style={{ color: 'red' }}>*</span></CFormLabel>
                   <CFormInput
-                    value={capitalizeWords(formData.qualifications)}
+                    value={(formData.qualifications)}
                     onChange={(e) => {
                       const value = e.target.value;
-                      handleChange('qualifications', value);
 
-                      const error = validateField('qualifications', value);
-                      setErrors((prev) => ({ ...prev, qualifications: error }));
+                      // Allow only letters and spaces
+                      if (/^[A-Za-z\s]*$/.test(value)) {
+                        handleChange('qualifications', value);
+
+                        const error = validateField('qualifications', value);
+                        setErrors((prev) => ({ ...prev, qualifications: error }));
+                      }
                     }}
                   />
+
                   {errors.qualifications && (
                     <div className="text-danger mt-1">
                       {errors.qualifications}
@@ -1022,17 +1032,18 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
 
                   <CFormInput
                     type="text"
-                    maxLength={10} // ✅ Restrict to 10 digits
-                    value={formData.emergencyContact}
+                    inputMode="numeric"
+                    maxLength={10}   // Restrict to 10 digits
+                    value={formData.emergencyContactNumber}
                     onChange={(e) => {
-                      const value = e.target.value
-                      // ✅ Allow only digits
+                      const value = e.target.value;
+
+                      // Allow only digits
                       if (/^\d*$/.test(value)) {
-                        handleChange('emergencyContact', e.target.value)
+                        handleChange('emergencyContactNumber', value);
                       }
                     }}
                   />
-
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>
@@ -1052,7 +1063,6 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
 
               {/* 🔹 Address */}
               <h5 className="mt-3">Address</h5>
-
               {Object.keys(formData.address)
                 .reduce((rows, field, index) => {
                   if (index % 3 === 0) rows.push([]); // start new row every 3 fields
@@ -1068,24 +1078,44 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                         </CFormLabel>
                         <CFormInput
                           type="text"
-                          maxLength={field === 'postalCode' ? 6 : undefined}
-                          value={capitalizeWords(formData.address[field])}
+                          maxLength={
+                            field === 'postalCode'
+                              ? 6
+                              : undefined
+                          }
+                          value={(formData.address[field])}
                           onChange={(e) => {
                             let value = e.target.value;
+
+                            // Postal Code: digits only
                             if (field === 'postalCode') {
-                              // Only digits allowed
                               if (/^\d*$/.test(value)) {
                                 handleNestedChange('address', field, value);
-                                // Live validation
                                 const err = validateField(field, value, formData);
                                 setErrors((prev) => ({
                                   ...prev,
                                   address: { ...prev.address, [field]: err },
                                 }));
                               }
-                            } else {
+                            }
+                            // City, State, Country: letters + spaces only
+                            else if (
+                              field === 'city' ||
+                              field === 'state' ||
+                              field === 'country'
+                            ) {
+                              if (/^[A-Za-z\s]*$/.test(value)) {
+                                handleNestedChange('address', field, value);
+                                const err = validateField(field, value, formData);
+                                setErrors((prev) => ({
+                                  ...prev,
+                                  address: { ...prev.address, [field]: err },
+                                }));
+                              }
+                            }
+                            // Other fields: accept anything
+                            else {
                               handleNestedChange('address', field, value);
-                              // Live validation
                               const err = validateField(field, value, formData);
                               setErrors((prev) => ({
                                 ...prev,
@@ -1101,6 +1131,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                     ))}
                   </div>
                 ))}
+
 
               {/* 🔹 Bank Details */}
               <h5 className="mt-3">Bank Account Details</h5>
@@ -1146,7 +1177,11 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                               value = value.toUpperCase();
                               if (/^[A-Z0-9]*$/.test(value)) handleNestedChange('bankAccountDetails', field, value);
                             }
-                            // Other fields
+                            // Account Holder Name → letters and spaces only
+                            else if (field === 'accountHolderName') {
+                              if (/^[A-Za-z\s]*$/.test(value)) handleNestedChange('bankAccountDetails', field, value);
+                            }
+                            // Other fields → accept anything
                             else {
                               handleNestedChange('bankAccountDetails', field, value);
                             }
@@ -1172,13 +1207,13 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                               },
                             }));
 
-                            // Special handling for PAN
+                            // PAN validation
                             if (field === 'panCardNumber' && value.length === 10) {
                               const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
                               if (!panRegex.test(value)) toast.error('Invalid PAN format (e.g., ABCDE1234F)');
                             }
 
-                            // Special handling for IFSC
+                            // IFSC validation
                             if (field === 'ifscCode' && value.length === 11) {
                               const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
                               if (!ifscRegex.test(value)) {
@@ -1284,8 +1319,8 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
               <CFormLabel>Previous Employment History</CFormLabel>
               <CFormTextarea
                 rows={3} // you can adjust height
-                value={formData.nursePreviousEmploymentHistory} // updated field name
-                onChange={(e) => handleChange('nursePreviousEmploymentHistory', e.target.value)}
+                value={formData.previousEmploymentHistory} // updated field name
+                onChange={(e) => handleChange('previousEmploymentHistory', e.target.value)}
                 placeholder="Enter previous employment history"
               />
 

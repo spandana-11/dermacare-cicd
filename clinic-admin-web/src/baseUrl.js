@@ -9,6 +9,8 @@ export const BASE_URL = `${wifiUrl}/clinic-admin`
 export const MainAdmin_URL = `${wifiUrl}/admin`
 export const subService_URL = `${BASE_URL}/api/v1`
 
+export const baseUrlmedicine = `${wifiUrl}/api/doctors`
+
 // END POINTS
 // login
 export const endPoint = '/clinicLogin'

@@ -393,7 +393,7 @@ const DoctorSummary = ({
             {diagnosis && (
               <CCard className="shadow-sm mb-3">
                 <CCardHeader className="py-2">
-                  <strong>Probable Diagnosis / Disease</strong>
+                  <strong>Probable Disease</strong>
                 </CCardHeader>
                 <CCardBody>
                   <div className="fs-6">{diagnosis}</div>

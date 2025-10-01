@@ -553,7 +553,7 @@ const TreatmentsManagement = () => {
                   <CTableDataCell style={{ paddingLeft: '40px' }}>
                     {(currentPage - 1) * rowsPerPage + index + 1}
                   </CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(treatment.treatmentName)}</CTableDataCell>
+                  <CTableDataCell>{(treatment.treatmentName)}</CTableDataCell>
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
                       {can('Treatments', 'read') && (

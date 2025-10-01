@@ -678,10 +678,10 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
                         }}
                       >
                         <option value="">Select Subscription</option> 
-                        <option value="Basic">Basic</option>
-                        <option value="Free">Free</option>
-                        <option value="Standard">Standard</option>
-                        <option value="Premium">Premium</option>
+                         <option value="Free">Free</option>
+                  <option value="Basic">Basic</option>
+                  <option value="Standard">Standard</option>
+                  <option value="Premium">Premium</option>
                       </CFormSelect>
 
                       {formErrors.subscription && (

@@ -71,10 +71,10 @@ const PrescriptionTab = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
   }, []);
   const foodOptions = ["Before Food", "After Food", "With Food", "NA"];
   const slotOptions = [
-    { value: "morning", label: "Morning (8–9 AM)" },
-    { value: "afternoon", label: "Afternoon (1–2 PM)" },
-    { value: "evening", label: "Evening (6–7 PM)" },
-    { value: "night", label: "Night (9–10 PM)" },
+    { value: "morning", label: "Morning" },
+    { value: "afternoon", label: "Afternoon" },
+    { value: "evening", label: "Evening" },
+    { value: "night", label: "Night" },
     { value: "NA", label: "NA" },
   ];
 

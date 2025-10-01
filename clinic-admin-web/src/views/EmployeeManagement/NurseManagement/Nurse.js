@@ -113,16 +113,11 @@ const NurseManagement = () => {
     const q = searchQuery.toLowerCase().trim()
     if (!q) return nurses
     return nurses.filter((item) =>
-      Object.values(item).some((val) =>
-        String(val).toLowerCase().includes(q)
-      )
+      Object.values(item).some((val) => String(val).toLowerCase().includes(q)),
     )
   }, [searchQuery, nurses])
 
-  const displayData = filteredData.slice(
-    (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
-  )
+  const displayData = filteredData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
 
   const decodeImage = (data) => {
     try {
@@ -154,8 +149,12 @@ const NurseManagement = () => {
         <CModalBody>
           {modalData ? (
             <div>
-              <p><strong>Username:</strong> {modalData.username}</p>
-              <p><strong>Password:</strong> {modalData.password}</p>
+              <p>
+                <strong>Username:</strong> {modalData.username}
+              </p>
+              <p>
+                <strong>Password:</strong> {modalData.password}
+              </p>
               <small className="text-danger">
                 ⚠️ Please save these credentials securely. They will not be shown again.
               </small>
@@ -196,7 +195,10 @@ const NurseManagement = () => {
           <LoadingIndicator message="Loading nurses..." />
         </div>
       ) : error ? (
-        <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
+        <div
+          className="d-flex justify-content-center align-items-center"
+          style={{ height: '50vh' }}
+        >
           {error}
         </div>
       ) : (
@@ -214,10 +216,10 @@ const NurseManagement = () => {
             </CTableRow>
           </CTableHead>
 
-          <CTableBody>
+          <CTableBody style={{ color: 'var(--color-black)' }}>
             {displayData.length > 0 ? (
               displayData.map((nurse, index) => (
-                <CTableRow key={nurse.nurseId}>
+                <CTableRow key={nurse.nurseId} style={{ color: 'var(--color-black)' }}>
                   <CTableDataCell>{(currentPage - 1) * rowsPerPage + index + 1}</CTableDataCell>
                   <CTableDataCell>
                     {nurse.profilePicture ? (
@@ -246,11 +248,21 @@ const NurseManagement = () => {
                       />
                     )}
                   </CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(nurse.fullName)}</CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(nurse.nurseContactNumber)}</CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(nurse.gender)}</CTableDataCell>
-                  <CTableDataCell>{nurse.qualifications || 'NA'}</CTableDataCell>
-                  <CTableDataCell>{nurse.dateOfJoining}</CTableDataCell>
+                  <CTableDataCell style={{ color: 'var(--color-black)' }}>
+                    {capitalizeWords(nurse.fullName)}
+                  </CTableDataCell>
+                  <CTableDataCell style={{ color: 'var(--color-black)' }}>
+                    {capitalizeWords(nurse.nurseContactNumber)}
+                  </CTableDataCell>
+                  <CTableDataCell style={{ color: 'var(--color-black)' }}>
+                    {capitalizeWords(nurse.gender)}
+                  </CTableDataCell>
+                  <CTableDataCell style={{ color: 'var(--color-black)' }}>
+                    {nurse.qualifications || 'NA'}
+                  </CTableDataCell>
+                  <CTableDataCell style={{ color: 'var(--color-black)' }}>
+                    {nurse.dateOfJoining}
+                  </CTableDataCell>
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2">
                       {can('Nurses', 'read') && (

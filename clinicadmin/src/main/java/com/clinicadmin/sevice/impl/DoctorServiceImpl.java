@@ -502,6 +502,108 @@ public class DoctorServiceImpl implements DoctorService {
 		}
 		return response;
 	}
+	
+	@Override
+
+	public Response deleteDoctorFromBranch(String doctorId, String branchId) {
+
+	    Response response = new Response();
+
+
+
+	    Optional<Doctors> optionalDoctor = doctorsRepository.findByDoctorId(doctorId);
+
+
+
+	    if (optionalDoctor.isEmpty()) {
+
+	        response.setSuccess(false);
+
+	        response.setStatus(HttpStatus.NOT_FOUND.value());
+
+	        response.setMessage("Doctor not found with ID: " + doctorId);
+
+	        return response;
+
+	    }
+
+
+
+	    Doctors doctor = optionalDoctor.get();
+
+
+
+	    if (doctor.getBranches() == null || doctor.getBranches().isEmpty()) {
+
+	        response.setSuccess(false);
+
+	        response.setStatus(HttpStatus.BAD_REQUEST.value());
+
+	        response.setMessage("Doctor has no branches assigned");
+
+	        return response;
+
+	    }
+
+
+
+	    // Remove the branch
+
+	    Boolean removed = doctor.getBranches().removeIf(b -> b.getBranchId().equals(branchId));
+
+
+
+	    if (!removed) {
+
+	        response.setSuccess(false);
+
+	        response.setStatus(HttpStatus.NOT_FOUND.value());
+
+	        response.setMessage("Doctor not assigned to branch: " + branchId);
+
+	        return response;
+
+	    }
+
+
+
+	    if (doctor.getBranches().isEmpty()) {
+
+	        // No branches left, delete the doctor and credentials
+
+	        doctorsRepository.deleteById(doctor.getId());
+
+	        Optional<DoctorLoginCredentials> optionalCredentials = credentialsRepository.findByStaffId(doctorId);
+
+	        optionalCredentials.ifPresent(credentialsRepository::delete);
+
+
+
+	        response.setSuccess(true);
+
+	        response.setStatus(HttpStatus.OK.value());
+
+	        response.setMessage("Doctor deleted entirely as no branches left");
+
+	    } else {
+
+	        // Update doctor with remaining branches
+
+	        doctorsRepository.save(doctor);
+
+	        response.setSuccess(true);
+
+	        response.setStatus(HttpStatus.OK.value());
+
+	        response.setMessage("Doctor removed from branch successfully");
+
+	    }
+
+
+
+	    return response;
+
+	}
 
 	@Override
 	public Response deleteDoctorsByClinic(String hospitalId) {

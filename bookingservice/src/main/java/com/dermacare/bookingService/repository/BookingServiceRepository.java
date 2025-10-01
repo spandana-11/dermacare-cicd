@@ -5,8 +5,10 @@ import java.util.Optional;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 
+import com.dermacare.bookingService.dto.BookingResponse;
 import com.dermacare.bookingService.entity.Booking;
 
 @Repository
@@ -25,7 +27,7 @@ public interface BookingServiceRepository extends MongoRepository<Booking,String
 	public List<Booking> findByRelationIgnoreCaseAndMobileNumber(String relation, String mobileNumber);
 	public Optional<Booking> findByBookingIdAndPatientIdAndMobileNumber(String bookingId, String patientId,
 			String mobileNumber);  
-	
 	public Booking findByMobileNumberAndPatientIdAndBookingId(String mobileNumber, String patientId,String bid);
 	public List<Booking> findByClinicIdAndBranchId(String clinicId, String branchId);
+	public List<Booking> findByClinicIdAndBranchIdAndServiceDateOrderByServicetimeAsc(String clinicId,String branchId,String serviceDate);
 }

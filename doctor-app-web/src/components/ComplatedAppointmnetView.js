@@ -59,9 +59,9 @@ const CompletedAppointmentsView = ({ defaultTab, tabs, fromDoctorTemplate = fals
   )
 
   const onNextMap = {
-    Symptoms: (data) => {
+    Diagnosis: (data) => {
       setFormData((prev) => ({ ...prev, symptoms: { ...prev.symptoms, ...data } }))
-      goToNext('Symptoms')
+      goToNext('Diagnosis')
     },
     Investigations: (data) => {
       setFormData((prev) => ({ ...prev, tests: { ...prev.tests, ...data } }))

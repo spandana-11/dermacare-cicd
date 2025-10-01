@@ -70,11 +70,11 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
   const [previewImage, setPreviewImage] = useState(null)
 
   const [serviceToEdit, setServiceToEdit] = useState({
-    serviceImage: '',
+    subServiceImage: '',
     viewImage: '',
     subServiceName: '',
     serviceName: '',
-    serviceImageFile: null,
+    subServiceImageFile: null,
   })
   const [qaPreProcedure, setQaPreProcedure] = useState([])
   const [qaProcedure, setQaProcedure] = useState([])
@@ -113,6 +113,10 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     categoryId: '',
     serviceName: '',
     subServiceName: '',
+    subServiceImage:'',
+    serviceID:'',
+    subServiceId:'',
+    viewDescription:'',
     description: '',
     price: '',
     gst: 0,
@@ -188,7 +192,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     const payload = {
       clinicId: clinicId,
       
-      serviceId: newService.serviceId,
+      serviceID: newService.serviceID,
       serviceName: newService.serviceName,
       categoryId: newService.categoryId,
       categoryName: newService.categoryName,
@@ -233,7 +237,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       categoryName: '',
       categoryId: '',
       serviceName: '',
-      serviceId: '',
+      serviceID: '',
       subServiceId: '',
       subServiceName: '',
       price: '',
@@ -243,8 +247,8 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       minTime: '',
       taxPercentage: 0,
       status: '',
-      serviceImage: '',
-      serviceImageFile: null,
+      subServiceImage: '',
+      subServiceImageFile: null,
       viewImage: '',
       viewDescription: '',
       consentFormType: serviceData.consentFormType === 'Generic ConsentForm' ? '1' : '2',
@@ -278,13 +282,13 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     }
 
     const selectedService = fetchedServiceOptions.find((s) => s.serviceName === service.serviceName)
-    const serviceId = selectedService?.serviceId || ''
+    const serviceID = selectedService?.serviceID || ''
 
     // 3. Fetch subservices
     let subServiceList = []
-    if (serviceId) {
+    if (serviceID) {
       try {
-        const subRes = await subServiceData(serviceId)
+        const subRes = await subServiceData(serviceID)
         const subList = subRes.data
         if (Array.isArray(subList)) {
           subServiceList = subList.flatMap((item) => item.subServices || [])
@@ -317,7 +321,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       ? service.postProcedureQA
       : JSON.parse(service.postProcedureQA || '[]')
 
-    const rawImage = service.serviceImage || ''
+    const rawImage = service.subServiceImage || ''
     const fullImage = rawImage.startsWith('data:') ? rawImage : `data:image/jpeg;base64,${rawImage}`
 
     // Prefill all fields
@@ -325,7 +329,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       subServiceId: resolvedSubServiceId,
       subServiceName: resolvedSubServiceName,
       serviceName: service.serviceName || '',
-      serviceId: serviceId,
+      serviceID: serviceID,
       categoryName: service.categoryName || '',
       categoryId: categoryId || '',
       price: service.price || '',
@@ -334,9 +338,9 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       consultationFee: service.consultationFee || 0,
       taxPercentage: service.taxPercentage || 0,
       minTime: service.minTime || '',
-      serviceImage: rawImage,
+      subServiceImage: rawImage,
 
-      serviceImageFile: null,
+      subServiceImageFile: null,
       status: service.status || '',
       viewDescription: service.viewDescription || '',
       consentFormType: service.consentFormType ? String(service.consentFormType) : '',
@@ -366,7 +370,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
   const [errors, setErrors] = useState({
     subServiceName: '',
     serviceName: '',
-    serviceId: '',
+    serviceID: '',
     categoryName: '',
     price: '',
     status: '',
@@ -377,7 +381,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     discount: '',
     viewDescription: '',
     consentFormType: '',
-    serviceImage: '',
+    subServiceImage: '',
     bannerImage: '',
   })
 
@@ -404,7 +408,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       if (clinicId) {
         // console.log("clinic ID SUb ", subServiceId)
         const subServiceData = await GetSubServices_ByClinicId(clinicId)
-        // console.log('hi tehre ', selectedSubServiceObj?.subServiceId)
+        console.log('hi tehre ', subServiceData)
         if (Array.isArray(subServiceData)) {
           // you might need to flatten if response is nested
           // but usually GetSubServices_ByClinicId should return a clean array
@@ -665,9 +669,9 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       newErrors.consentFormType = 'consentFormType is Required.'
     }
 
-    if (!newService.serviceImage) {
+    if (!newService.subServiceImage) {
       console.log('Service Image in Form:', newService.serviceImage)
-      newErrors.serviceImage = 'Please upload a service image.'
+      newErrors.subServiceImage = 'Please upload a service image.'
     }
 
     if (!newService.categoryId) {
@@ -762,7 +766,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       hospitalId: clinicId,
       subServiceName: newService.subServiceName,
       subServiceId: newService.subServiceId,
-      serviceId: newService.serviceId,
+      serviceID: newService.serviceID,
       serviceName: newService.serviceName,
       categoryName: newService.categoryName,
       categoryId: newService.categoryId,
@@ -814,7 +818,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       categoryName: '',
       categoryId: '',
       serviceName: '',
-      serviceId: '',
+      serviceID: '',
       subServiceId: '',
       subServiceName: '',
       price: 0,
@@ -825,8 +829,8 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       minTimeValue,
       minTimeUnit: '',
       status: '',
-      serviceImage: '',
-      subServiceImage:'',
+      subServiceImage: '',
+      subSubServiceImage:'',
       viewDescription: '',
       consentFormType: '',
       procedureQA: [],
@@ -864,8 +868,8 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
         const base64String = reader.result?.split(',')[1] || ''
         setNewService((prev) => ({
           ...prev,
-          serviceImage: base64String,
-          serviceImageFile: file,
+          subServiceImage: base64String,
+          subServiceImageFile: file,
         }))
       }
       reader.readAsDataURL(file)
@@ -878,13 +882,13 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
 
       let base64ImageToSend = ''
 
-      if (newService.serviceImageFile) {
-        const fullBase64String = await toBase64(newService.serviceImageFile)
+      if (newService.subServiceImageFile) {
+        const fullBase64String = await toBase64(newService.subServiceImageFile)
         base64ImageToSend = fullBase64String.split(',')[1]
-      } else if (newService.serviceImage?.startsWith('data:')) {
-        base64ImageToSend = newService.serviceImage.split(',')[1]
+      } else if (newService.subServiceImage?.startsWith('data:')) {
+        base64ImageToSend = newService.subServiceImage.split(',')[1]
       } else {
-        base64ImageToSend = newService.serviceImage || ''
+        base64ImageToSend = newService.subServiceImage || ''
       }
 
       // Ensure numeric values are numbers, not empty strings or null
@@ -941,10 +945,10 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       reader.onerror = (error) => reject(error)
     })
 
-  const handleServiceDelete = async (serviceId) => {
-    console.log(serviceId)
+  const handleServiceDelete = async (serviceID) => {
+    console.log(serviceID)
 
-    setServiceIdToDelete(serviceId.subServiceId)
+    setServiceIdToDelete(serviceID.subServiceId)
     setIsModalVisible(true)
   }
 
@@ -1022,7 +1026,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       minTimeValue: '', //reset value
       minTimeUnit: 'minutes', // reset unit
       status: '',
-      serviceImage: '',
+      subServiceImage: '',
       viewImage: '',
       viewDescription: '',
       consentFormType: '',
@@ -1044,7 +1048,7 @@ const handleChanges = async (e) => {
       categoryName: selectedCategory?.categoryName || '',
       categoryId: value,
       serviceName: '',
-      serviceId: '',
+      serviceID: '',
     }))
 
     try {
@@ -1058,17 +1062,17 @@ const handleChanges = async (e) => {
     }
   } else if (name === 'serviceName') {
     const selectedService = serviceOptions.find((s) => s.serviceName === value)
-    const serviceId = selectedService?.serviceId || ''
+    const serviceID = selectedService?.serviceID || ''
 
     setNewService((prev) => ({
       ...prev,
       serviceName: value,
-      serviceId,
+      serviceID,
     }))
 
-    if (serviceId) {
+    if (serviceID) {
       try {
-        const subRes = await subServiceData(serviceId)
+        const subRes = await subServiceData(serviceID)
         const subList = subRes.data
         let allSubServices = []
 
@@ -1151,7 +1155,7 @@ const handleChanges = async (e) => {
               <CCol sm={6}>
                 <strong>Service Id:</strong>
               
-                <div>{viewService.serviceId}</div>
+                <div>{viewService.serviceID}</div>
               </CCol>
             </CRow>
 
@@ -1409,7 +1413,7 @@ const handleChanges = async (e) => {
                 >
                   <option value="">Select Service</option>
                   {serviceOptions.map((service) => (
-                    <option key={service.serviceId} value={service.serviceName}>
+                    <option key={service.serviceID} value={service.serviceName}>
                       {service.serviceName}
                     </option>
                   ))}
@@ -1446,8 +1450,8 @@ const handleChanges = async (e) => {
                   }}
                 >
                   <option value="">Select Procedure</option>
-                  {Array.isArray(subServiceOptions.subServices) &&
-                    subServiceOptions.subServices.map((sub) => (
+                  {Array.isArray(subServiceOptions?.subServices) &&
+                    subServiceOptions.map((sub) => (
                       <option key={sub.subServiceId} value={sub.subServiceId}>
                         {sub.subServiceName}
                       </option>
@@ -1475,8 +1479,8 @@ const handleChanges = async (e) => {
                         const base64String = reader.result?.split(',')[1] || ''
                         setNewService((prev) => ({
                           ...prev,
-                          serviceImage: base64String,
-                          serviceImageFile: file,
+                          subServiceImage: base64String,
+                          subServiceImageFile: file,
                         }))
                       }
                       reader.readAsDataURL(file)
@@ -1484,12 +1488,12 @@ const handleChanges = async (e) => {
                   }}
                 />
 
-                {newService?.serviceImage && (
+                {newService?.subServiceImage && (
                   <img
                     src={
-                      newService.serviceImage.startsWith('data:')
-                        ? newService.serviceImage
-                        : `data:image/jpeg;base64,${newService.serviceImage}`
+                      newService.subServiceImage.startsWith('data:')
+                        ? newService.subServiceImage
+                        : `data:image/jpeg;base64,${newService.subServiceImage}`
                     }
                     alt="Preview"
                     style={{ width: 100, height: 100, marginTop: 10 }}

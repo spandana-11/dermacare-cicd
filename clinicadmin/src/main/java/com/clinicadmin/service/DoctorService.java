@@ -90,5 +90,7 @@ public interface DoctorService {
 
 	Response getDoctorsByHospitalIdAndBranchId(String hospitalId, String branchId);
 
+	public Response deleteDoctorFromBranch(String doctorId, String branchId);
+
 }
 

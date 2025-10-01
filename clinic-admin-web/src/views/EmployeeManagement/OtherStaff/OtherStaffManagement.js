@@ -216,7 +216,7 @@ const [modalData, setModalData] = useState(null) // store username & password
               <CTableHeaderCell>Name</CTableHeaderCell>
               <CTableHeaderCell>Contact</CTableHeaderCell>
               <CTableHeaderCell>Sex</CTableHeaderCell>
-              <CTableHeaderCell>Specialization</CTableHeaderCell>
+              <CTableHeaderCell>Department</CTableHeaderCell>
               <CTableHeaderCell>Date Of Joining</CTableHeaderCell>
               <CTableHeaderCell className="text-end">Actions</CTableHeaderCell>
             </CTableRow>
@@ -257,7 +257,7 @@ const [modalData, setModalData] = useState(null) // store username & password
                   <CTableDataCell>{capitalizeWords(tech.fullName)}</CTableDataCell>
                   <CTableDataCell>{capitalizeWords(tech.contactNumber)}</CTableDataCell>
                   <CTableDataCell>{capitalizeWords(tech.gender)}</CTableDataCell>
-                  <CTableDataCell>{tech.specialization || 'NA'}</CTableDataCell>
+                  <CTableDataCell>{tech.department || 'NA'}</CTableDataCell>
 
                   <CTableDataCell>{tech.dateOfJoining}</CTableDataCell>
 

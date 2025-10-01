@@ -396,7 +396,7 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
           <CCol lg={6}>
             <CCardBody>
               <div className="mb-3">
-                <GradientTextCard text="Patient-Provided Symptoms" />
+                <GradientTextCard text="Patient Complaints" />
                 <CFormTextarea
                   className="mt-2"
                   rows={3}
@@ -428,7 +428,7 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
               </div>
 
               <div className="mb-0">
-                <GradientTextCard text="Probable Diagnosis / Disease" />
+                <GradientTextCard text="Probable Disease" />
 
                 <div className="mt-2 d-flex align-items-start gap-2">
                   <div className="flex-grow-1">
@@ -480,26 +480,47 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
 
                   </div>
 
-                  <div className="pt-1">
-                    <button
-                      type="button"
-                      disabled={!canShowAdd || adding}
-                      onClick={openMadal}
-                      style={{
-                        backgroundColor: !canShowAdd || adding ? "#a5c4d4ff" : "#7e3a93",
-                        color: !canShowAdd || adding ? "#7e3a93" : "#fff",
-                        cursor: !canShowAdd || adding ? "not-allowed" : "pointer",
-                        border: "none",
-                        padding: "6px 14px",
-                        borderRadius: "6px",
-                        fontWeight: "600",
-                        transition: "all 0.3s ease",
-                      }}
-                      title={canShowAdd ? "Add new disease" : "Type a new disease name"}
-                    >
-                      {adding ? "Adding…" : "Add"}
-                    </button>
-                  </div>
+                <div className="pt-1 d-flex gap-2">
+  {/* ADD button */}
+  <button
+    type="button"
+    disabled={!canShowAdd || adding}
+    onClick={openMadal}
+    style={{
+      backgroundColor: !canShowAdd || adding ? "#a5c4d4ff" : "#7e3a93",
+      color: !canShowAdd || adding ? "#7e3a93" : "#fff",
+      cursor: !canShowAdd || adding ? "not-allowed" : "pointer",
+      border: "none",
+      padding: "6px 14px",
+      borderRadius: "6px",
+      fontWeight: "600",
+      transition: "all 0.3s ease",
+    }}
+    title={canShowAdd ? "Add new disease" : "Type a new disease name"}
+  >
+    {adding ? "Adding…" : "Add"}
+  </button>
+
+  {/* AI button */}
+  <button
+    type="button"
+    // onClick={handleAISuggest}
+    style={{
+      backgroundColor: "#a5c4d4ff",
+      color: "#7e3a93",
+      border: "none",
+      padding: "6px 14px",
+      borderRadius: "6px",
+      fontWeight: "600",
+      cursor: "pointer",
+      transition: "all 0.3s ease",
+    }}
+    title="AI Suggestion"
+  >
+    AI
+  </button>
+</div>
+
 
                   <SymptomsModal
                     visible={modalOpen}

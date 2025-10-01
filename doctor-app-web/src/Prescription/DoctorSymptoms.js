@@ -110,35 +110,35 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
       const selectedTests = Array.isArray(t?.tests?.selectedTests) ? t.tests.selectedTests : []
       const testReason = t?.tests?.testReason ?? ''
 
-     const medicines = Array.isArray(t?.prescription?.medicines)
-      ? t.prescription.medicines.map((m) => {
-        const dur = m?.duration ? `${m.duration}`.trim() : "NA";
-        const unit = m?.durationUnit ? m.durationUnit.trim() : "";
+      const medicines = Array.isArray(t?.prescription?.medicines)
+        ? t.prescription.medicines.map((m) => {
+          const dur = m?.duration ? `${m.duration}`.trim() : "NA";
+          const unit = m?.durationUnit ? m.durationUnit.trim() : "";
 
-        // Pluralize if duration > 1
-        const durationDisplay =
-          dur !== "NA" && unit
-            ? `${dur} ${Number(dur) > 1 ? `${unit}s` : unit}`
-            : dur;
+          // Pluralize if duration > 1
+          const durationDisplay =
+            dur !== "NA" && unit
+              ? `${dur} ${Number(dur) > 1 ? `${unit}s` : unit}`
+              : dur;
 
-        return {
-          id: m?.id ?? `tmp-${Date.now()}-${Math.random()}`,
-          medicineType: m?.medicineType?.trim() ||"NA",
-          name: m?.name || "",
-          dose: m?.dose || "",
-          remindWhen: m?.remindWhen || "Once A Day",
-          others: m?.others || "",
-          duration: durationDisplay,
-          food: m?.food || "",
-          note: m?.note || "",
-          times: Array.isArray(m?.times)
-            ? m.times.map((t) => `${t}`.trim()).filter(Boolean)
-            : m?.times && typeof m.times === "string"
-              ? m.times.split(",").map((t) => t.trim()).filter(Boolean)
-              : [],
-        };
-      })
-      : [];
+          return {
+            id: m?.id ?? `tmp-${Date.now()}-${Math.random()}`,
+            medicineType: m?.medicineType?.trim() || "NA",
+            name: m?.name || "",
+            dose: m?.dose || "",
+            remindWhen: m?.remindWhen || "Once A Day",
+            others: m?.others || "",
+            duration: durationDisplay,
+            food: m?.food || "",
+            note: m?.note || "",
+            times: Array.isArray(m?.times)
+              ? m.times.map((t) => `${t}`.trim()).filter(Boolean)
+              : m?.times && typeof m.times === "string"
+                ? m.times.split(",").map((t) => t.trim()).filter(Boolean)
+                : [],
+          };
+        })
+        : [];
 
       const generatedData = t?.treatments?.generatedData ?? {}
       const selectedTestTreatments =
@@ -236,11 +236,13 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
     setUpdateTemplate(true)
     success('Template applied successfully!', { title: 'Success' })
 
-    const payload = { symptomDetails, doctorObs, diagnosis: dx, duration, attachments, prescription: merged.prescription,
+    const payload = {
+      symptomDetails, doctorObs, diagnosis: dx, duration, attachments, prescription: merged.prescription,
       tests: merged.tests,
       treatments: merged.treatments,
-      followUp: merged.followUp, }
-       console.log("🚀 Final Payload:", payload) // debug log
+      followUp: merged.followUp,
+    }
+    console.log("🚀 Final Payload:", payload) // debug log
     onNext?.(payload)
   }
 
@@ -330,7 +332,7 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
           <CCol lg={6}>
             <CCardBody>
               <div className="mb-0">
-                <GradientTextCard text="Probable Diagnosis / Disease" />
+                <GradientTextCard text="Probable Disease" />
 
                 <div className="mt-2 d-flex align-items-start gap-2">
                   <div className="flex-grow-1">
@@ -359,7 +361,7 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
                     />
                   </div>
 
-                  <div className="pt-1">
+                  <div className="pt-1 d-flex gap-2">
                     <button
                       type="button"
                       disabled={!canShowAdd || adding}
@@ -377,6 +379,23 @@ const DoctorSymptoms = ({ seed = {}, onNext, sidebarWidth = 0, patientData, setF
                       title={canShowAdd ? "Add new disease" : "Type a new disease name"}
                     >
                       {adding ? "Adding…" : "Add"}
+                    </button>
+                    <button
+                      type="button"
+                      // onClick={handleAISuggest}
+                      style={{
+                        backgroundColor: "#a5c4d4ff",
+                        color: "#7e3a93",
+                        border: "none",
+                        padding: "6px 14px",
+                        borderRadius: "6px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        transition: "all 0.3s ease",
+                      }}
+                      title="AI Suggestion"
+                    >
+                      AI
                     </button>
                   </div>
 

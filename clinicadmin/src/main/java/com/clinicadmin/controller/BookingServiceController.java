@@ -5,9 +5,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.clinicadmin.dto.BookingResponse;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.service.BookingService;
 
@@ -26,9 +29,29 @@ public class BookingServiceController {
 	}
 	
 	@GetMapping("/getAllbookingsDetailsByClinicAndBranchId/{clinicId}/{branchId}")
-	public ResponseEntity<Response> getAllbookingsDetailsByClinicAndBranchId(@PathVariable String clinicId,@PathVariable String branchId) {
-		Response response = bookingService.getBookedServicesDetailsByClinicIdWithBranchId(clinicId, branchId);
-		return ResponseEntity.status(response.getStatus()).body(response);
+	public ResponseEntity<?> getAllbookingsDetailsByClinicAndBranchId(@PathVariable String clinicId,@PathVariable String branchId) {
+		return bookingService.getBookingsByClinicIdWithBranchId(clinicId,branchId);
+		
+	}
+	
+	
+	@GetMapping("/appointments/byIds/{clinicId}/{branchId}")
+	public ResponseEntity<?> retrieveTodayAndTomorrowAndDayAfterTomorrowAppointments(@PathVariable String clinicId,@PathVariable String branchId) {
+		return bookingService.retrieveTodayAndTomorrowAndDayAfterTomorrowAppointments(clinicId, branchId);
+	
+	}
+	
+	
+	@GetMapping("/appointments/byIdsAndDate/{clinicId}/{branchId}/{date}")
+	public ResponseEntity<?> retrieveAppointnmentsByServiceDate(@PathVariable String clinicId,@PathVariable String branchId,@PathVariable String date) {
+	return bookingService.retrieveAppointnmentsByServiceDate(clinicId, branchId, date);		
+	}
+	
+	
+	@PutMapping("/updateAppointmentBasedOnBookingId")
+	public ResponseEntity<?> updateAppointmentBasedOnBookingId(@RequestBody BookingResponse bookingResponse) {
+		return bookingService.updateAppointmentBasedOnBookingId(bookingResponse);
+		
 	}
 	
 	

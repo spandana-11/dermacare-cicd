@@ -1062,7 +1062,7 @@ const handleChange = (field, value) => {
           <CFormInput
             type="text"
             maxLength={field === 'postalCode' ? 6 : undefined}
-            value={capitalizeWords(formData.address[field])}
+            value={(formData.address[field])}
             onChange={(e) => {
               let value = e.target.value;
               if (field === 'postalCode') {

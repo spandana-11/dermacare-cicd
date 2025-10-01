@@ -314,14 +314,14 @@ const DiseasesManagement = () => {
 
       {/* Add Disease Modal */}
       <CModal
-  visible={modalVisible}
-  onClose={() => {
-    setModalVisible(false)
-    setNewDisease({ diseaseName: '', probableSymptoms: '', notes: '' })
-    setErrors({})
-  }}
-  backdrop="static"
->
+        visible={modalVisible}
+        onClose={() => {
+          setModalVisible(false)
+          setNewDisease({ diseaseName: '', probableSymptoms: '', notes: '' })
+          setErrors({})
+        }}
+        backdrop="static"
+      >
         <CModalHeader>
           <CModalTitle>Add New Disease</CModalTitle>
         </CModalHeader>
@@ -478,16 +478,16 @@ const DiseasesManagement = () => {
               displayData.map((disease, index) => (
                 <CTableRow key={disease.id}>
                   <CTableDataCell>{(currentPage - 1) * rowsPerPage + index + 1}</CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(disease.diseaseName)}</CTableDataCell>
+                  <CTableDataCell>{(disease.diseaseName)}</CTableDataCell>
                   <CTableDataCell>
-                    {capitalizeWords(disease.probableSymptoms || 'NA')}
+                    {(disease.probableSymptoms || 'NA')}
                   </CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(disease.notes || 'NA')}</CTableDataCell>
+                  <CTableDataCell>{(disease.notes || 'NA')}</CTableDataCell>
 
                   {/* Actions */}
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
-                      {can('Laboratory', 'read') && (
+                      {can('Disease-Management', 'read') && (
                         <button
                           className="actionBtn"
                           onClick={() => setViewDisease(disease)}
@@ -496,7 +496,7 @@ const DiseasesManagement = () => {
                           <Eye size={18} />
                         </button>
                       )}
-                      {can('Laboratory', 'update') && (
+                      {can('Disease-Management', 'update') && (
                         <button
                           className="actionBtn"
                           onClick={() => handleDiseaseEdit(disease)}
@@ -505,7 +505,7 @@ const DiseasesManagement = () => {
                           <Edit2 size={18} />
                         </button>
                       )}
-                      {can('Laboratory', 'delete') && (
+                      {can('Disease-Management', 'delete') && (
                         <button
                           className="actionBtn"
                           onClick={() => handleDiseaseDelete(disease)}

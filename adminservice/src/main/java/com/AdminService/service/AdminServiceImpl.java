@@ -1240,7 +1240,6 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	
-
 	@Override
 	public Response deleteClinic(String clinicId) {
 	    Response response = new Response();
@@ -1276,7 +1275,7 @@ public class AdminServiceImpl implements AdminService {
 	                for (Branch branch : branches) {
 	                    String branchId = branch.getBranchId();
 	                    branchRepository.deleteByBranchId(branchId);
-	                    branchCredentialsRepository.deleteById(branchId);
+	                    branchCredentialsRepository.deleteByBranchId(branchId);
 	                }
 	            } catch (Exception e) {
 	                branchesDeleted = false;
@@ -1372,7 +1371,6 @@ public class AdminServiceImpl implements AdminService {
 
 	    return response;
 	}
-
     
 
     //GENERATE RANDOM PASSWORD

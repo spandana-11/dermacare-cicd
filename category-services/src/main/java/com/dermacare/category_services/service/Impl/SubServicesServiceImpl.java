@@ -133,7 +133,7 @@ public class SubServicesServiceImpl implements SubServicesService {
 				SubServices savedSubService = subServiceRepository.save(subService);
 				return new ResponseEntity<ResponseStructure<SubServicesDto>>(
 						ResponseStructure.buildResponse(HelperForConversion.toDto(savedSubService),
-								"Service Created  successfully.", HttpStatus.CREATED, HttpStatus.CREATED.value()),
+								"Procedure Created  successfully.", HttpStatus.CREATED, HttpStatus.CREATED.value()),
 						HttpStatus.CREATED);
 			} else {
 				return new ResponseEntity<ResponseStructure<SubServicesDto>>(ResponseStructure.buildResponse(null,

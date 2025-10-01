@@ -1,0 +1,46 @@
+.pharmacy-management {
+  background-color: #f4f7fa;
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.pm-title {
+  font-weight: 700;
+  color: #7e3a93;
+}
+
+.pm-tabs .nav-link {
+  font-weight: 600;
+  color: #555;
+  transition: all 0.3s ease;
+}
+
+.pm-tabs .nav-link:hover {
+  color: #3b3b98;
+}
+
+.pm-tabs .active-tab {
+  color: #fff !important;
+  background-color: #3b3b98;
+  border-radius: 8px;
+}
+
+.pm-card {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  padding: 1.5rem;
+  background-color: #fff;
+  transition: transform 0.3s ease;
+}
+.pm-add-btn {
+  height: 38px; /* match the search input height */
+  padding: 0 12px;
+}
+.pm-card:hover {
+  transform: translateY(-5px);
+}
+
+.pm-card h4 {
+  color: #3b3b98;
+  margin-bottom: 0.5rem;
+}

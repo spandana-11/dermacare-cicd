@@ -68,9 +68,17 @@ public interface BookingFeign {
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getAllBookedServicesByBranchId(@PathVariable String branchId);
 	
 	@GetMapping("/api/v1/getBookedServicesByClinicIdWithBranchId/{clinicId}/{branchId}")
-	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookedServicesByClinicIdWithBranchId(
+	public ResponseEntity<ResponseStructure<List<BookingResponseDTO>>> getBookedServicesByClinicIdWithBranchId(
 	        @PathVariable String clinicId,
 	        @PathVariable String branchId);
-
-
+	
+	@GetMapping("/api/v1/appointments/byIds/{clinicId}/{branchId}")
+	public ResponseEntity<?> retrieveTodayAndTomorrowAndDayAfterTomorrowAppointments(@PathVariable String clinicId,@PathVariable String branchId);
+	
+	@GetMapping("/api/v1/appointments/byIdsAndDate/{clinicId}/{branchId}/{date}")
+	public ResponseEntity<?> retrieveAppointnmentsByServiceDate(@PathVariable String clinicId,@PathVariable String branchId,@PathVariable String date);
+	
+	@PutMapping("/api/v1/updateAppointmentBasedOnBookingId")
+	public ResponseEntity<?> updateAppointmentBasedOnBookingId(@RequestBody BookingResponse bookingResponse );
+	
 }

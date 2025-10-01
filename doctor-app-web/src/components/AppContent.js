@@ -43,7 +43,7 @@ const AppContent = () => {
                 defaultTab="Symptoms"
                 fromDoctorTemplate={true} // ✅ tells TabContent to load DoctorSymptoms
                 tabs={[
-                  'Symptoms',
+                  'Diagnosis',
                   'Investigations',
                   'Medication',
                   'Procedures',

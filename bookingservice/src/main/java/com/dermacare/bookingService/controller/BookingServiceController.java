@@ -227,4 +227,27 @@ public class BookingServiceController {
 		{
 			return service.getDoctorFutureAppointments(doctorId);
 		}	
+		
+		
+		@GetMapping("/appointments/byIds/{clinicId}/{branchId}")
+		public ResponseEntity<?> retrieveTodayAndTomorrowAndDayAfterTomorrowAppointments(@PathVariable String clinicId,@PathVariable String branchId)
+		{
+			return service.retrieveTodayAndTomorrowAndDayAfterTomorrowAppointments(clinicId, branchId);
+		}
+		
+		
+		@GetMapping("/appointments/byIdsAndDate/{clinicId}/{branchId}/{date}")
+		public ResponseEntity<?> retrieveAppointnmentsByServiceDate(@PathVariable String clinicId,@PathVariable String branchId,@PathVariable String date)
+		{
+			return service.retrieveAppointments(clinicId, branchId, date);
+		}
+		
+		
+		@PutMapping("/updateAppointmentBasedOnBookingId")
+		public ResponseEntity<?> updateAppointmentBasedOnBookingId(@RequestBody BookingResponse bookingResponse ){
+		{
+			return service.updateAppointmentBasedOnBookingId(bookingResponse);
+		}
+		
+		}
 }

@@ -38,6 +38,7 @@ const PharmacistForm = ({
   const emptyForm = {
     hospitalId: localStorage.getItem('HospitalId'),
     branchId: localStorage.getItem('branchId'),
+    branchName: localStorage.getItem('branchName'),
     hospitalName: localStorage.getItem('HospitalName'),
     fullName: '',
     gender: '',
@@ -45,13 +46,15 @@ const PharmacistForm = ({
     contactNumber: '',
     emailID: '',
     governmentId: '',
-    dPharmaOrBPharmaCertificate: '',
+    dpharmaOrBPharmaCertificate: '',
+    shiftTimingsOrAvailability: '',
+
     experienceCertificates: '',
     statePharmacyCouncilRegistration: '',
     dateOfJoining: '',
     department: '',
     qualification: '',
-    specialization: '',
+    // specialization: '',
     role: 'pharmacist',
     address: {
       houseNo: '',
@@ -72,6 +75,7 @@ const PharmacistForm = ({
       panCardNumber: '',
     },
     profilePicture: '',
+ 
     pharmacyLicense: '',
     previousEmploymentHistory: '',
     permissions: emptyPermissions,
@@ -103,7 +107,9 @@ const PharmacistForm = ({
     'hospitalId',
     'profilePicture',
     'role',
-    'specialization',
+    'qualification',
+
+    'shiftTimingsOrAvailability',
     // address fields
     'address.houseNo',
     'address.street',
@@ -562,6 +568,7 @@ const PharmacistForm = ({
                   <div className="col-md-4">
                     <Row label="Government ID" value={formData.governmentId} />
                   </div>
+
                 </div>
 
                 {/* Work Info */}
@@ -575,11 +582,14 @@ const PharmacistForm = ({
                     </div>
 
                     <div className="col-md-4">
-                      <Row label="Specialization" value={formData.specialization} />
+                      <Row label="Qualification" value={formData.qualification} />
                     </div>
 
                     <div className="col-md-4">
                       <Row label="Emergency Contact" value={formData.emergencyContactNumber} />
+                    </div>
+                    <div className="col-md-4">
+                      <Row label="Shift Timings" value={formData.shiftTimingsOrAvailability} />
                     </div>
                   </div>
                 </Section>
@@ -622,16 +632,16 @@ const PharmacistForm = ({
                 {/* Documents */}
                 <Section title="Documents">
                   <div className="row">
-                    {formData.dPharmaOrBPharmaCertificate != '' ? (
+                    {formData.dpharmaOrBPharmaCertificate != '' ? (
                       <div className="col-md-6">
                         <FilePreview
-                          label="dPharmaOrBPharmaCertificate"
-                          type={formData.dPharmaOrBPharmaCertificateType || 'application/pdf'}
-                          data={formData.dPharmaOrBPharmaCertificate}
+                          label="dpharmaOrBPharmaCertificate"
+                          type={formData.dpharmaOrBPharmaCertificateType || 'application/pdf'}
+                          data={formData.dpharmaOrBPharmaCertificate}
                         />
                       </div>
                     ) : (
-                      <p className="col-md-6">Not Provided dPharmaOrBPharmaCertificate</p>
+                      <p className="col-md-6">Not Provided dpharmaOrBPharmaCertificate</p>
                     )}
                     {formData.statePharmacyCouncilRegistration != '' ? (
                       <div className="col-md-6">
@@ -672,6 +682,7 @@ const PharmacistForm = ({
                     </div>
                   </div>
                 </Section>
+                
               </div>
             </div>
           ) : (
@@ -714,16 +725,17 @@ const PharmacistForm = ({
                     onChange={(e) => {
                       const value = e.target.value;
 
-                      // Update the form value
-                      handleChange('fullName', value);
+                      // Allow only letters and spaces
+                      if (/^[A-Za-z\s]*$/.test(value)) {
+                        handleChange('fullName', value);
 
-                      // Run validation from your validators file
-                      const error = validateField('fullName', value);
-
-                      // Update errors state for live feedback
-                      setErrors((prev) => ({ ...prev, fullName: error }));
+                        // Run validation
+                        const error = validateField('fullName', value);
+                        setErrors((prev) => ({ ...prev, fullName: error }));
+                      }
                     }}
                   />
+
                   {errors.fullName && (
                     <div className="text-danger mt-1">{errors.fullName}</div>
                   )}
@@ -871,16 +883,21 @@ const PharmacistForm = ({
                   {' '}
                   <CFormLabel>Department<span style={{ color: 'red' }}>*</span></CFormLabel>
                   <CFormInput
-                    value={capitalizeWords(formData.department)}
+                    value={(formData.department)}
                     onChange={(e) => {
                       const value = e.target.value;
-                      handleChange('department', value);
 
-                      // ✅ Validate using validators.js
-                      const error = validateField('department', value);
-                      setErrors((prev) => ({ ...prev, department: error }));
+                      // Allow only letters and spaces
+                      if (/^[A-Za-z\s]*$/.test(value)) {
+                        handleChange('department', value);
+
+                        // Run validation
+                        const error = validateField('department', value);
+                        setErrors((prev) => ({ ...prev, department: error }));
+                      }
                     }}
                   />
+
                   {errors.department && (
                     <div className="text-danger mt-1">{errors.department}</div>
                   )}
@@ -889,27 +906,25 @@ const PharmacistForm = ({
 
                 <div className="col-md-4">
                   {' '}
-                  <CFormLabel>Specialization<span style={{ color: 'red' }}>*</span></CFormLabel>
+                  <CFormLabel>Qualification<span style={{ color: 'red' }}>*</span></CFormLabel>
                   <CFormInput
-                    value={capitalizeWords(formData.specialization)}
+                    value={formData.qualification}
                     onChange={(e) => {
                       const value = e.target.value;
-                      handleChange('specialization', value);
 
-                      // ✅ Validate using validators.js
-                      const error = validateField('specialization', value);
-                      setErrors((prev) => ({ ...prev, specialization: error }));
+                      // Allow only letters and spaces
+                      if (/^[A-Za-z\s]*$/.test(value)) {
+                        handleChange('qualification', value);
+                        const error = validateField('qualification', value);
+                        setErrors((prev) => ({ ...prev, qualification: error }));
+                      }
                     }}
                   />
-                  {errors.specialization && (
-                    <div className="text-danger mt-1">{errors.specialization}</div>
+                  {errors.qualification && (
+                    <div className="text-danger mt-1">{errors.qualification}</div>
                   )}
-
                 </div>
-              </div>
-
-              <div className="row mb-3">
-                <div className="col-md-4">
+                  <div className="col-md-4">
                   <CFormLabel>Emergency Contact<span style={{ color: 'red' }}>*</span></CFormLabel>
 
                   <CFormInput
@@ -934,6 +949,58 @@ const PharmacistForm = ({
                 </div>
               </div>
 
+              <div className="row mb-3">
+              
+                <div className="col-md-4">
+                  <CFormLabel>
+                    Shift Timings / Availability <span style={{ color: 'red' }}>*</span>
+                  </CFormLabel>
+                  <CFormSelect
+                    value={formData.shiftTimingsOrAvailability}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      handleChange('shiftTimingsOrAvailability', value);
+
+                      const error = validateField('shiftTimingsOrAvailability', value);
+                      setErrors((prev) => ({ ...prev, shiftTimingsOrAvailability: error }));
+                    }}
+                  >
+                    <option value="">Select Shift</option>
+                    <option value="06:00-12:00">Morning (06:00 AM – 12:00 PM) – 6 hrs</option>
+                    <option value="12:00-18:00">Afternoon (12:00 PM – 06:00 PM) – 6 hrs</option>
+                    <option value="18:00-00:00">Evening (06:00 PM – 12:00 AM) – 6 hrs</option>
+                    <option value="00:00-06:00">Night (12:00 AM – 06:00 AM) – 6 hrs</option>
+                    <option value="06:00-15:00">Day Shift (06:00 AM – 03:00 PM) – 9 hrs</option>
+                    <option value="15:00-00:00">Evening Shift (03:00 PM – 12:00 AM) – 9 hrs</option>
+                    <option value="21:00-06:00">Night Shift (09:00 PM – 06:00 AM) – 9 hrs</option>
+                    <option value="06:00-18:00">Long Day (06:00 AM – 06:00 PM) – 12 hrs</option>
+                    <option value="18:00-06:00">Long Night (06:00 PM – 06:00 AM) – 12 hrs</option>
+                  </CFormSelect>
+
+                  {errors.shiftTimingsOrAvailability && (
+                    <div className="text-danger mt-1">
+                      {errors.shiftTimingsOrAvailability}
+                    </div>
+                  )}
+
+                </div>
+                {/* <div className="col-md-4">
+                  <CFormLabel>
+                    Vaccination Status <span style={{ color: 'red' }}>*</span>
+                  </CFormLabel>
+                  <CFormSelect
+                    value={formData.vaccinationStatus}
+                    onChange={(e) => handleChange('vaccinationStatus', e.target.value)}
+                  >
+                    <option value="">Select Status</option>
+                    <option value="Not Vaccinated">Not Vaccinated</option>
+                    <option value="Partially Vaccinated">Partially Vaccinated</option>
+                    <option value="Fully Vaccinated">Fully Vaccinated</option>
+                  </CFormSelect>
+                </div> */}
+              </div>
+
+
               {/* 🔹 Address */}
               <h5 className="mt-3">Address</h5>
 
@@ -953,23 +1020,35 @@ const PharmacistForm = ({
                         <CFormInput
                           type="text"
                           maxLength={field === 'postalCode' ? 6 : undefined}
-                          value={capitalizeWords(formData.address[field])}
+                          value={(formData.address[field])}
                           onChange={(e) => {
                             let value = e.target.value;
+
+                            // Postal Code → only digits
                             if (field === 'postalCode') {
-                              // Only digits allowed
                               if (/^\d*$/.test(value)) {
                                 handleNestedChange('address', field, value);
-                                // Live validation
                                 const err = validateField(field, value, formData);
                                 setErrors((prev) => ({
                                   ...prev,
                                   address: { ...prev.address, [field]: err },
                                 }));
                               }
-                            } else {
+                            }
+                            // City, State, Country → letters and spaces only
+                            else if (field === 'city' || field === 'state' || field === 'country') {
+                              if (/^[A-Za-z\s]*$/.test(value)) {
+                                handleNestedChange('address', field, value);
+                                const err = validateField(field, value, formData);
+                                setErrors((prev) => ({
+                                  ...prev,
+                                  address: { ...prev.address, [field]: err },
+                                }));
+                              }
+                            }
+                            // Other fields → accept anything
+                            else {
                               handleNestedChange('address', field, value);
-                              // Live validation
                               const err = validateField(field, value, formData);
                               setErrors((prev) => ({
                                 ...prev,
@@ -985,6 +1064,7 @@ const PharmacistForm = ({
                     ))}
                   </div>
                 ))}
+
 
               {/* 🔹 Bank Details */}
               <h5 className="mt-3">Bank Account Details</h5>
@@ -1030,7 +1110,11 @@ const PharmacistForm = ({
                               value = value.toUpperCase();
                               if (/^[A-Z0-9]*$/.test(value)) handleNestedChange('bankAccountDetails', field, value);
                             }
-                            // Other fields
+                            // Account Holder Name → letters and spaces only
+                            else if (field === 'accountHolderName') {
+                              if (/^[A-Za-z\s]*$/.test(value)) handleNestedChange('bankAccountDetails', field, value);
+                            }
+                            // Other fields → accept anything
                             else {
                               handleNestedChange('bankAccountDetails', field, value);
                             }
@@ -1056,13 +1140,13 @@ const PharmacistForm = ({
                               },
                             }));
 
-                            // Special handling for PAN
+                            // PAN validation
                             if (field === 'panCardNumber' && value.length === 10) {
                               const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
                               if (!panRegex.test(value)) toast.error('Invalid PAN format (e.g., ABCDE1234F)');
                             }
 
-                            // Special handling for IFSC
+                            // IFSC validation
                             if (field === 'ifscCode' && value.length === 11) {
                               const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
                               if (!ifscRegex.test(value)) {
@@ -1147,7 +1231,7 @@ const PharmacistForm = ({
                   <CFormLabel>dPharma/BPharma Certificate</CFormLabel>
                   <CFormInput
                     type="file"
-                    onChange={(e) => handleFileUpload(e, 'dPharmaOrBPharmaCertificate')}
+                    onChange={(e) => handleFileUpload(e, 'dpharmaOrBPharmaCertificate')}
                   />
                 </div>
                 <div className="col-md-4">

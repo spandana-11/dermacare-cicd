@@ -53,6 +53,9 @@ const OtherStaffManagement = React.lazy(
 const PharmacyManagement = React.lazy(
   () => import('./components/PharmacyManagement/PharmacyManagement'),
 )
+const ActiveAppointmentsScreen = React.lazy(
+  () => import('./views/AppointmentManagement/In-progressAppointmnets'),
+)
 
 const routes = [
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
@@ -94,6 +97,11 @@ const routes = [
     element: AppointmentDetailsPage,
   },
 
+  {
+    path: '/in-progress',
+    name: 'Active Appointments',
+    element: ActiveAppointmentsScreen,
+  },
   { path: '/report-management', name: 'Reports', element: Reports },
   { path: '/report-details/:id', name: 'Report Details', element: ReportsDetails },
 

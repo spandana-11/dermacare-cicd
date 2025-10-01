@@ -506,128 +506,7 @@ const ServiceManagement = () => {
     setEditServiceMode(true)
   }
 
-  // const columns = [
-  //   {
-  //     name: 'S.No',
-  //     selector: (row, index) => index + 1,
-  //     width: '60px',
-  //     sortable: false,
-  //   },
-  //   {
-  //     name: 'Procedure Name',
-  //     selector: (row) => row.subServiceName,
-  //     sortable: true,
-  //   },
-  //   {
-  //     name: 'Service Name',
-  //     selector: (row) => row.serviceName,
-  //   },
-  //   {
-  //     name: 'Category Name',
-  //     selector: (row) => row.categoryName,
-  //   },
-  //   {
-  //     name: 'Price',
-  //     selector: (row) => row.price,
-  //   },
 
-  //   {
-  //     name: 'Actions',
-  //     cell: (row) => (
-  //       <div className="d-flex justify-content-end gap-2  ">
-  //         <button className="actionBtn" onClick={() => setViewService(row)} title="View">
-  //           <Eye size={18} />
-  //         </button>
-
-  //         <button className="actionBtn" onClick={() => openEditModal(row)} title="Edit">
-  //           <Edit2 size={18} />
-  //         </button>
-
-  //         <button className="actionBtn" onClick={() => handleServiceDelete(row)} title="Delete">
-  //           <Trash2 size={18} />
-  //         </button>
-  //         <ConfirmationModal
-  //           isVisible={isModalVisible}
-  //           title="Delete Procedure"
-  //           message="Are you sure you want to delete this procedure? This action cannot be undone."
-  //           confirmText="Yes, Delete"
-  //           cancelText="Cancel"
-  //           confirmColor="danger"
-  //           cancelColor="secondary"
-  //           onConfirm={handleConfirmDelete}
-  //           onCancel={handleCancelDelete}
-  //         />
-  //       </div>
-
-  //       // <div
-  //       //   style={{
-  //       //     display: 'flex',
-  //       //     justifyContent: 'space-between',
-  //       //     alignItems: 'end',
-  //       //     width: '250px',
-  //       //   }}
-  //       // >
-  //       //   <div
-  //       //     color="info"
-  //       //     onClick={() => setViewService(row)}
-  //       //     style={{ marginRight: '5px', width: '50px', color: 'green' }}
-  //       //   >
-  //       //     View
-  //       //   </div>
-  //       //   <div
-  //       //     color="info"
-  //       //     onClick={() => openEditModal(row)}
-  //       //     style={{ marginRight: '5px', width: '50px', color: 'blue' }}
-  //       //   >
-  //       //     Edit
-  //       //   </div>
-  //       //   <div
-  //       //     color="danger"
-  //       //     onClick={() => handleServiceDelete(row)}
-  //       //     style={{ width: '50px', color: 'red' }}
-  //       //   >
-  //       //     Delete
-  //       //   </div>
-
-  //       //   {/* <ConfirmationModal
-  //       //     isVisible={isModalVisible}
-  //       //     title="Delete Procedure Details"
-  //       //     message="Are you sure you want to delete this Procedure Details? This action cannot be undone."
-  //       //     confirmText="Yes, Delete"
-  //       //     cancelText="Cancel"
-  //       //     onConfirm={handleConfirmDelete}
-  //       //     onCancel={handleCancelDelete}
-  //       //   /> */}
-
-  //       //   {/* <ConfirmationModal
-  //       //     isVisible={isModalVisible}
-  //       //     message="Are you sure you want to delete this service?"
-  //       //     onConfirm={handleConfirmDelete}
-  //       //     onCancel={handleCancelDelete}
-  //       //   /> */}
-  //       // </div>
-  //     ),
-  //     width: '150px',
-  //     headerStyle: { textAlign: 'end' },
-  //   },
-  // ]
-
-  // const ConfirmationModal = ({ isVisible, message, onConfirm, onCancel }) => {
-  //   return (
-  //     <CModal visible={isVisible} onClose={onCancel} backdrop={false}>
-  //       <CHeader style={{ marginLeft: '200px' }}> !Alert</CHeader>
-  //       <CModalBody style={{ textAlign: 'center' }}>{message}</CModalBody>
-  //       <CModalFooter>
-  //         <CButton color="secondary" onClick={onCancel}>
-  //           Cancel
-  //         </CButton>
-  //         <CButton color="danger" onClick={onConfirm}>
-  //           Confirm
-  //         </CButton>
-  //       </CModalFooter>
-  //     </CModal>
-  //   )
-  // }
   const minTimeValue = parseFloat(newService.minTime)
   const validateForm = () => {
     const newErrors = {}
@@ -1900,9 +1779,9 @@ const ServiceManagement = () => {
                   <CTableDataCell style={{ paddingLeft: '40px' }}>
                     {(currentPage - 1) * rowsPerPage + index + 1}
                   </CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(test.subServiceName)}</CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(test.serviceName || 'NA')}</CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(test.categoryName || 'NA')}</CTableDataCell>
+                  <CTableDataCell>{(test.subServiceName)}</CTableDataCell>
+                  <CTableDataCell>{(test.serviceName || 'NA')}</CTableDataCell>
+                  <CTableDataCell>{(test.categoryName || 'NA')}</CTableDataCell>
                   <CTableDataCell>{test.price || 'NA'}</CTableDataCell>
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">

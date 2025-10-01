@@ -45,7 +45,7 @@ public class Pharmacist {
 	
 	private String profilePicture;
 	private String statePharmacyCouncilRegistration;
-	private String dPharmaOrBPharmaCertificate;
+	private String dpharmaOrBPharmaCertificate;
 	private String experienceCertificates;
 	private Map<String, List<String>> permissions;
 

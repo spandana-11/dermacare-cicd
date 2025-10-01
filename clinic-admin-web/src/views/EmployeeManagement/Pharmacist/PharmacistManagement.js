@@ -253,7 +253,7 @@ const PharmacistManagement = () => {
               <CTableHeaderCell>Name</CTableHeaderCell>
               <CTableHeaderCell>Contact</CTableHeaderCell>
               <CTableHeaderCell>Sex</CTableHeaderCell>
-              <CTableHeaderCell>Specialization</CTableHeaderCell>
+              <CTableHeaderCell>Qualification</CTableHeaderCell>
               <CTableHeaderCell>Date Of Joining</CTableHeaderCell>
               <CTableHeaderCell className="text-end">Actions</CTableHeaderCell>
             </CTableRow>
@@ -294,7 +294,7 @@ const PharmacistManagement = () => {
                   <CTableDataCell>{capitalizeWords(pharma.fullName)}</CTableDataCell>
                   <CTableDataCell>{pharma.contactNumber || 'NA'}</CTableDataCell>
                   <CTableDataCell>{pharma.gender || 'NA'}</CTableDataCell>
-                  <CTableDataCell>{pharma.specialization || 'NA'}</CTableDataCell>
+                  <CTableDataCell>{pharma.qualification || 'NA'}</CTableDataCell>
                   <CTableDataCell>{pharma.dateOfJoining || 'NA'}</CTableDataCell>
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2">

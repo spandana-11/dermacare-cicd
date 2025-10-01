@@ -36,7 +36,7 @@ public class PharmacistDTO {
 	private String emergencyContactNumber;
     private String profilePicture;
     private String statePharmacyCouncilRegistration;
-    private String dPharmaOrBPharmaCertificate;
+    private String dpharmaOrBPharmaCertificate;
     private String experienceCertificates;
     private Map<String, List<String>> permissions;
     private String shiftTimingsOrAvailability;

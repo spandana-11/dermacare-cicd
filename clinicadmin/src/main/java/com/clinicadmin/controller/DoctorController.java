@@ -140,6 +140,15 @@ public class DoctorController {
 		return ResponseEntity.status(response.getStatus()).body(response);
 
 	}
+	// Delete doctor from a specific branch
+		@DeleteMapping("/delete-doctor/{doctorId}/branch/{branchId}")
+		public ResponseEntity<Response> deleteDoctorFromBranch(
+		        @PathVariable String doctorId,
+		        @PathVariable String branchId) {
+
+		    Response response = doctorService.deleteDoctorFromBranch(doctorId, branchId);
+		    return ResponseEntity.status(response.getStatus()).body(response);
+		}
 	
 	@DeleteMapping("/delete-doctors-by-clinic/{clinicId}")
 	public ResponseEntity<Response> deleteDoctorsByClinic(@PathVariable String clinicId) {

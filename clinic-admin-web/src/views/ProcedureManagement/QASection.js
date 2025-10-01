@@ -143,7 +143,7 @@ const QASection = ({ title, qaList = [], setQAList }) => {
       )}
 
       <CButton color="info" className="mb-3 text-white" onClick={saveCurrentQA}>
-        {editingIndex !== null ? 'Update Q&A' : 'Save Q&A'}
+        {editingIndex !== null ? 'Update' : 'Save'}
       </CButton>
 
       {qaList.length > 0 && (

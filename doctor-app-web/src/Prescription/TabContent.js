@@ -29,7 +29,7 @@ const TabContent = ({
   let content = null
 
   switch (activeTab) {
-    case 'Symptoms':
+    case 'Diagnosis':
       content = fromDoctorTemplate ? (
         <DoctorSymptoms seed={formData.symptoms || {}} onNext={onNext} sidebarWidth={260} patientData={patientData} setFormData={setFormData} formData={formData} />
       ) : (

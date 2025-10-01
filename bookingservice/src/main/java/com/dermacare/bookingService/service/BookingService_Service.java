@@ -28,7 +28,9 @@ public interface BookingService_Service {
 	public ResponseEntity<?> getSizeOfConsultationTypesByDoctorId(String hospitalId,String doctorId);
 	public Response getPatientDetailsForConsetForm(String bookingId, String patientId, String mobileNumber);
 	public ResponseEntity<?> getInProgressAppointments(String number);
-	
+	public ResponseEntity<?> retrieveTodayAndTomorrowAndDayAfterTomorrowAppointments(String cinicId,String branchId);			
 	public ResponseEntity<?> getDoctorFutureAppointments(String doctorId);
 	public List<BookingResponse> getBookedServicesByClinicIdWithBranchId(String clinicId, String branchId);
+	public ResponseEntity<?> retrieveAppointments(String cinicId,String branchId,String date);
+	public ResponseEntity<?> updateAppointmentBasedOnBookingId(BookingResponse dto);
 }

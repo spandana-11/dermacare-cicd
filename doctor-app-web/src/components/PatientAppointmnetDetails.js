@@ -32,7 +32,7 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
 
   // Tabs (with default fallback)
   const ALL_TABS = tabs || [
-    'Symptoms',
+    'Diagnosis',
     'Investigations',
     'Medication',
     'Procedures',
@@ -72,9 +72,9 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
 
   // Tab-specific next actions
   const onNextMap = {
-    Symptoms: (data) => {
+    Diagnosis: (data) => {
       setFormData((prev) => ({ ...prev, symptoms: { ...prev.symptoms, ...data } }))
-      goToNext('Symptoms')
+      goToNext('Diagnosis')
     },
     Investigations: (data) => {
       setFormData((prev) => ({ ...prev, tests: { ...prev.tests, ...data } }))
@@ -116,7 +116,7 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
       formData?.symptoms?.diagnosis && formData.symptoms.diagnosis.trim() !== ''
 
     if (hasDisease) return ALL_TABS
-    return ['Symptoms']
+    return ['Diagnosis']
   }, [ALL_TABS, fromDoctorTemplate, formData?.symptoms?.diagnosis])
 
   // Badge counts
@@ -182,7 +182,7 @@ const savePrescriptionTemplate = async () => {
               <CNav variant="tabs" role="tablist" style={{ whiteSpace: 'nowrap' }}>
                 {TABS.map((t) => {
                   const active = t === activeTab
-                  const label = fromDoctorTemplate && t === 'Symptoms' ? 'Diseases' : t
+                  const label = fromDoctorTemplate && t === 'Diagnosis' ? 'Diseases' : t
 
                   return (
                     <CNavItem key={t}>

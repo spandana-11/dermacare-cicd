@@ -20,10 +20,10 @@ import { addMedicineType, getMedicineTypes } from "../Auth/Auth";
 import CreatableSelect from "react-select/creatable";
 
 const slotOptions = [
-  { value: "morning", label: "Morning (8–9 AM)" },
-  { value: "afternoon", label: "Afternoon (1–2 PM)" },
-  { value: "evening", label: "Evening (6–7 PM)" },
-  { value: "night", label: "Night (9–10 PM)" },
+  { value: "morning", label: "Morning" },
+  { value: "afternoon", label: "Afternoon" },
+  { value: "evening", label: "Evening" },
+  { value: "night", label: "Night" },
   { value: "NA", label: "NA" },
 ];
 
@@ -89,19 +89,24 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine, onAdd, 
   const slotCount = getSlotCount();
   const taken = new Set((medicine.times || []).filter(Boolean));
   const isDup = isDuplicateName?.(medicine?.name);
-
+const isSOS = medicine.remindWhen === "SOS";
   const getFrequencyOptions = () => {
-    switch (medicine.durationUnit) {
-      case "Day":
-        return ["Once A Day", "Twice A Day", "Thrice A Day"];
-      case "Week":
-        return ["Once A Week", "Twice A Week", "Thrice A Week"];
-      case "Month":
-        return ["Once A Month", "Twice A Month", "Thrice A Month"];
-      default:
-        return [];
-    }
+    const baseOptions = (() => {
+      switch (medicine.durationUnit) {
+        case "Day":
+          return ["Once A Day", "Twice A Day", "Thrice A Day"];
+        case "Week":
+          return ["Once A Week", "Twice A Week", "Thrice A Week"];
+        case "Month":
+          return ["Once A Month", "Twice A Month", "Thrice A Month"];
+        default:
+          return [];
+      }
+    })();
+
+    return ["SOS", ...baseOptions]; // Add SOS at the top
   };
+
 
   const handleCreateMedicineType = async (inputValue) => {
     const newType = await addMedicineType(inputValue);
@@ -147,10 +152,6 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine, onAdd, 
                 }}
               />
             </CCol>
-
-
-
-
 
             {/* Medicine Type */}
             <CCol xs={12} sm={6} md={4} lg={3}>
@@ -198,41 +199,65 @@ const MedicineCard = ({ index, medicine, updateMedicine, removeMedicine, onAdd, 
             {/* Frequency */}
             <CCol xs={12} sm={6} md={4} lg={3}>
               <GradientTextCard text="Frequency" />
-              <CFormSelect value={medicine.remindWhen || "NA"} onChange={(e) => handleChange("remindWhen", e.target.value)} disabled={medicine.durationUnit === "Hour"}>
+              <CFormSelect
+                value={medicine.remindWhen || "NA"}
+                onChange={(e) => handleChange("remindWhen", e.target.value)}
+                disabled={medicine.durationUnit === "Hour"} // keep Hour rule
+              >
                 <option value="NA">NA</option>
                 {getFrequencyOptions().map((f) => <option key={f} value={f}>{f}</option>)}
               </CFormSelect>
             </CCol>
 
-            {/* Others */}
-            <CCol xs={12} sm={6} md={4} lg={3}>
-              <GradientTextCard text="Others" />
-              <CFormInput type="text" placeholder="Custom frequency..." value={medicine.others || ""} onChange={(e) => handleChange("others", e.target.value)} disabled={medicine.remindWhen !== "NA"} />
-            </CCol>
+           {/* Others */}
+<CCol xs={12} sm={6} md={4} lg={3}>
+  <GradientTextCard text="Others" />
+  <CFormInput
+    type="text"
+    placeholder="Custom frequency..."
+    value={medicine.others || ""}
+    onChange={(e) => handleChange("others", e.target.value)}
+    disabled={false} // always editable even for SOS
+  />
+</CCol>
 
-            {/* Food / Instructions */}
-            <CCol xs={12} sm={6} md={4} lg={3}>
-              <GradientTextCard text="Instructions" />
-              <CFormSelect value={medicine.food || "NA"} onChange={(e) => handleChange("food", e.target.value)}>
-                {foodOptions.map((f) => <option key={f} value={f}>{f}</option>)}
-              </CFormSelect>
-            </CCol>
+{/* Food / Instructions */}
+<CCol xs={12} sm={6} md={4} lg={3}>
+  <GradientTextCard text="Instructions" />
+  <CFormSelect
+    value={medicine.food || "NA"}
+    onChange={(e) => handleChange("food", e.target.value)}
+    disabled={false} // enable for SOS
+  >
+    {foodOptions.map((f) => <option key={f} value={f}>{f}</option>)}
+  </CFormSelect>
+</CCol>
           </CRow>
 
           {/* Time slots */}
-          <CRow className="gx-2 gy-2 mt-1">
-            {[...Array(3)].map((_, i) => (
-              <CCol xs={12} md={3} key={i}>
-                <GradientTextCard text={`Time ${i + 1}`} />
-                <CFormSelect value={medicine.times?.[i] || ""} onChange={(e) => handleSlotChange(i, e.target.value)} disabled={medicine.durationUnit === "Hour" || i >= slotCount}>
-                  <option value="">Select Time…</option>
-                  {slotOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value} disabled={(medicine.times?.[i] !== opt.value && taken.has(opt.value)) || i >= slotCount}>{opt.label}</option>
-                  ))}
-                </CFormSelect>
-              </CCol>
-            ))}
-          </CRow>
+         <CRow className="gx-2 gy-2 mt-1">
+  {[...Array(3)].map((_, i) => (
+    <CCol xs={12} md={3} key={i}>
+      <GradientTextCard text={`Time ${i + 1}`} />
+      <CFormSelect
+        value={medicine.times?.[i] || ""}
+        onChange={(e) => handleSlotChange(i, e.target.value)}
+        disabled={medicine.durationUnit === "Hour" || i >= slotCount} // **SOS allows editing**, so remove isSOS from disabled
+      >
+        <option value="">Select Time…</option>
+        {slotOptions.map((opt) => (
+          <option
+            key={opt.value}
+            value={opt.value}
+            disabled={(medicine.times?.[i] !== opt.value && taken.has(opt.value)) || i >= slotCount}
+          >
+            {opt.label}
+          </option>
+        ))}
+      </CFormSelect>
+    </CCol>
+  ))}
+</CRow>
 
           {/* Notes */}
           <div className="mt-3">

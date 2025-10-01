@@ -2,7 +2,6 @@ package com.clinicadmin.dto;
 
 
 import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -23,15 +22,22 @@ public class BookingResponseDTO {
 	private String patientMobileNumber;
 	private String patientId;
 	private String visitType;
+	private Integer freeFollowUpsLeft;
+	private Integer freeFollowUps;
+	private String patientAddress;
 	private String age;
 	private String gender;
 	private String mobileNumber;
+	private String customerId;
+	private String consultationExpiration;
 	private String customerDeviceId;
 	private String problem;
 	private String symptomsDuration;
 	private String clinicId;
 	private String clinicDeviceId;
 	private String clinicName;
+	private String branchId;
+	private String branchname;
 	private String doctorId;
 	private String doctorName;
 	private String doctorMobileDeviceId;
@@ -42,6 +48,7 @@ public class BookingResponseDTO {
 	private String servicetime;
 	private String consultationType;
 	private double consultationFee;
+	private Integer visitCount;
 	private String channelId;
 	private String reasonForCancel;
 	private String notes;
@@ -50,8 +57,11 @@ public class BookingResponseDTO {
 	private String status;
 	private double totalFee;
 	private List<String> attachments;
+	private String consentFormPdf;
+	private List<String> prescriptionPdf;
+	private String doctorRefCode;
 	private String paymentType;
-	private String address;
+	private String followupStatus;
 
 }
 

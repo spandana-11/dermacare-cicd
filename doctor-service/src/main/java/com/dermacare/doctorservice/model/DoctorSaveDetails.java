@@ -29,13 +29,9 @@ public class DoctorSaveDetails {
     private String clinicName;
     private String bookingId;
     private String customerId;
-
-
     private LocalDateTime visitDateTime;
     private String visitType; 
     private int visitCount; 
-
-
     private SymptomDetails symptoms;
     private TestDetails tests;
     private TreatmentResponse treatments;

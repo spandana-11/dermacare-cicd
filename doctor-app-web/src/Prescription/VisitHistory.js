@@ -230,7 +230,7 @@ const VisitHistory = ({ formData, patientData, patientId, doctorId }) => {
       <h4 className="visit-title">Visit History</h4>
       {visits.map((v, idx) => (
         <AccordionItem key={v.id} id={v.id} title={v.title} defaultOpen={idx === 0}>
-          <h6 className="section-title">Patient-Provided Symptoms</h6>
+          <h6 className="section-title">Patient Complaints</h6>
           <p className="symptoms-text">
             {v.symptoms.map((s, i) => (
               <span key={i}>
@@ -241,7 +241,7 @@ const VisitHistory = ({ formData, patientData, patientId, doctorId }) => {
           </p>
 
           <div className="section">
-            <h6 className="section-title">Probable Diagnosis / Disease</h6>
+            <h6 className="section-title">Probable Disease</h6>
             <p className="diagnosis">{v.diagnosis}</p>
           </div>
 

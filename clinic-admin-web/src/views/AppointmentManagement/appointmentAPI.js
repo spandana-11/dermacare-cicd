@@ -118,11 +118,56 @@ export const GetdoctorsByClinicIdData = async (doctorId) => {
 }
 
 export const GetBookingByClinicIdData = async (id) => {
+  const hID = localStorage.getItem('HospitalId')
+  const branchId = localStorage.getItem('branchId')
   console.log(id)
   try {
     const response = await axios.get(
-      `${Booking_service_Url}/customer/getAllBookedServicesByClinicId/${id}`,
+      `${BASE_URL}/getAllbookingsDetailsByClinicAndBranchId/${hID}/${branchId}`,
     ) //TODO:chnage when apigetway call axios to http
+    return response.data
+  } catch (error) {
+    console.error('Error fetching booking by clinicId:', error.message)
+    throw error
+  }
+}
+
+// Assume `bookingDetails` is a JS object with the same structure as your Dart model
+
+export const followUpBookings = async (bookingDetails) => {
+  console.log('Request URL:', BASE_URL)
+  console.log('Request payload:', bookingDetails)
+
+  try {
+    const response = await axios.post(BASE_URL, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(bookingDetails),
+    })
+
+    const responseBody = await response.text()
+    console.log('Response body:', responseBody)
+
+    if (response.ok) {
+      console.log('Booking posted successfully!')
+      // Parse JSON if available
+      const responseData = responseBody ? JSON.parse(responseBody) : null
+      return responseData
+    } else {
+      console.log('Failed to post booking. Status code:', response.status)
+      return null
+    }
+  } catch (error) {
+    console.log('Error posting booking:', error)
+    return null
+  }
+}
+
+export const GetBookingInprogress = async (id) => {
+  console.log(id)
+  try {
+    const response = await axios.get(`${Booking_service_Url}/customer/inprogressAppointments/${id}`) //TODO:chnage when apigetway call axios to http
     return response.data
   } catch (error) {
     console.error('Error fetching booking by clinicId:', error.message)

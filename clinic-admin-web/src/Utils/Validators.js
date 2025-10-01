@@ -4,32 +4,32 @@ export const validateField = (field, value, formData = {}, technicians = []) => 
 
   switch (field) {
     // 🔹 Basic Info
-  case 'fullName':
-    {
-      // Remove numbers and special characters immediately
-      if (value) {
-        value = value.replace(/[^A-Za-z\s]/g, '');
+    case 'fullName':
+      {
+        // Remove numbers and special characters immediately
+        if (value) {
+          value = value.replace(/[^A-Za-z\s]/g, '');
+        }
+
+        const trimmedValue = value ? value.trim() : '';
+        let error = '';
+
+        // Validation
+        if (!trimmedValue) {
+          error = 'Full Name is required.';
+        } else if (trimmedValue.length < 3 || trimmedValue.length > 50) {
+          error = 'Full Name must be between 3 and 50 characters.';
+        } else {
+          error = '';
+        }
+
+        // Return or set error in your state as needed
+        // Example:
+        // setErrors(prev => ({ ...prev, fullName: error }));
       }
+      break;
 
-      const trimmedValue = value ? value.trim() : '';
-      let error = '';
-
-      // Validation
-      if (!trimmedValue) {
-        error = 'Full Name is required.';
-      } else if (trimmedValue.length < 3 || trimmedValue.length > 50) {
-        error = 'Full Name must be between 3 and 50 characters.';
-      } else {
-        error = '';
-      }
-
-      // Return or set error in your state as needed
-      // Example:
-      // setErrors(prev => ({ ...prev, fullName: error }));
-    }
-    break;
-
-  // ...other fields
+    // ...other fields
 
 
 
@@ -37,14 +37,14 @@ export const validateField = (field, value, formData = {}, technicians = []) => 
 
 
     case 'gender':
-  if (!value || value.trim() === '') {
-    error = 'Gender is required.';
-  } else if (!['male', 'female', 'other'].includes(value.toLowerCase())) {
-    error = 'Invalid gender selected.';
-  } else {
-    error = '';
-  }
-  break;
+      if (!value || value.trim() === '') {
+        error = 'Gender is required.';
+      } else if (!['male', 'female', 'other'].includes(value.toLowerCase())) {
+        error = 'Invalid gender selected.';
+      } else {
+        error = '';
+      }
+      break;
 
 
     case 'dateOfBirth':
@@ -59,26 +59,26 @@ export const validateField = (field, value, formData = {}, technicians = []) => 
         if (age < 18) error = 'Staff must be at least 18 years old.';
       }
       break;
-      case 'yearsOfExperience':
-  if (value === '' || value === null || value === undefined) {
-    error = 'Years of Experience is required.';
-  } else if (!/^\d+$/.test(value)) {
-    error = 'Years of Experience must be a number.';
-  } else if (parseInt(value) < 0) {
-    error = 'Years of Experience cannot be negative.';
-  } else if (parseInt(value) > 50) { // optional max limit
-    error = 'Years of Experience seems too high.';
-  } else {
-    error = '';
-  }
-  break;
+    case 'yearsOfExperience':
+      if (value === '' || value === null || value === undefined) {
+        error = 'Years of Experience is required.';
+      } else if (!/^\d+$/.test(value)) {
+        error = 'Years of Experience must be a number.';
+      } else if (parseInt(value) < 0) {
+        error = 'Years of Experience cannot be negative.';
+      } else if (parseInt(value) > 50) { // optional max limit
+        error = 'Years of Experience seems too high.';
+      } else {
+        error = '';
+      }
+      break;
 
 
     case 'contactNumber':
       if (!value || !/^[6-9]\d{9}$/.test(value)) error = 'Contact number must be 10 digits and start with 6-9.';
       else if (technicians?.some(t => t.contactNumber === value && t.id !== formData.id)) error = 'Contact number already exists.';
       break;
-       case 'nurseContactNumber':
+    case 'nurseContactNumber':
       if (!value || !/^[6-9]\d{9}$/.test(value)) error = 'Contact number must be 10 digits and start with 6-9.';
       else if (technicians?.some(t => t.contactNumber === value && t.id !== formData.id)) error = 'Contact number already exists.';
       break;
@@ -87,60 +87,60 @@ export const validateField = (field, value, formData = {}, technicians = []) => 
       if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = 'Valid Email is required.';
       else if (technicians?.some(t => t.emailId === value && t.id !== formData.id)) error = 'Email already exists.';
       break;
-      case 'status':
-  if (!value || (value !== 'Active' && value !== 'Inactive')) {
-    error = 'Status is required.';
-  } else {
-    error = '';
-  }
-  break;
+    case 'status':
+      if (!value || (value !== 'Active' && value !== 'Inactive')) {
+        error = 'Status is required.';
+      } else {
+        error = '';
+      }
+      break;
 
- case 'governmentId': {
-  const trimmed = (value || '').trim();
+    case 'governmentId': {
+      const trimmed = (value || '').trim();
 
-  if (!trimmed) {
-    error = 'Government ID (Aadhaar) is required.';
-    break;
-  }
+      if (!trimmed) {
+        error = 'Government ID (Aadhaar) is required.';
+        break;
+      }
 
-  // ✅ Basic Aadhaar rule: 12 digits, starts with 2–9
-  const aadhaarRegex = /^[2-9]{1}[0-9]{11}$/;
-  if (!aadhaarRegex.test(trimmed)) {
-    error = 'Government ID (Aadhaar) must be 12 digits and cannot start with 0 or 1.';
-    break;
-  }
+      // ✅ Basic Aadhaar rule: 12 digits, starts with 2–9
+      const aadhaarRegex = /^[2-9]{1}[0-9]{11}$/;
+      if (!aadhaarRegex.test(trimmed)) {
+        error = 'Government ID (Aadhaar) must be 12 digits and cannot start with 0 or 1.';
+        break;
+      }
 
-  // ✅ Block repeated digits (e.g. 111111111111 or 999999999999)
-  if (/^(\d)\1{11}$/.test(trimmed)) {
-    error = 'Government ID (Aadhaar) cannot have all digits the same.';
-    break;
-  }
+      // ✅ Block repeated digits (e.g. 111111111111 or 999999999999)
+      if (/^(\d)\1{11}$/.test(trimmed)) {
+        error = 'Government ID (Aadhaar) cannot have all digits the same.';
+        break;
+      }
 
-  // ✅ valid
-  error = '';
-  break;
-}
-case 'medicalRegistrationNumber':
-  if (!value || value.trim() === '') {
-    error = 'Medical Registration Number is required.';
-  } else if (!/^[A-Za-z0-9\-\/]+$/.test(value)) {
-    // Allow letters, digits, hyphens, slashes
-    error = 'Medical Registration Number contains invalid characters.';
-  } else if (value.length < 3 || value.length > 20) {
-    error = 'Medical Registration Number must be between 3 and 20 characters.';
-  } else {
-    error = '';
-  }
-  break;
-case 'specialization':
-   if (value.length < 2 || value.length > 50) {
-    error = 'Specialization must be between 2 and 50 characters.';
-  } else if (/\d/.test(value)) {
-    error = 'Specialization cannot contain numbers.';
-  } else {
-    error = '';
-  }
-  break;
+      // ✅ valid
+      error = '';
+      break;
+    }
+    case 'medicalRegistrationNumber':
+      if (!value || value.trim() === '') {
+        error = 'Medical Registration Number is required.';
+      } else if (!/^[A-Za-z0-9\-\/]+$/.test(value)) {
+        // Allow letters, digits, hyphens, slashes
+        error = 'Medical Registration Number contains invalid characters.';
+      } else if (value.length < 3 || value.length > 20) {
+        error = 'Medical Registration Number must be between 3 and 20 characters.';
+      } else {
+        error = '';
+      }
+      break;
+    case 'specialization':
+      if (value.length < 2 || value.length > 50) {
+        error = 'Specialization must be between 2 and 50 characters.';
+      } else if (/\d/.test(value)) {
+        error = 'Specialization cannot contain numbers.';
+      } else {
+        error = '';
+      }
+      break;
 
 
 
@@ -148,13 +148,13 @@ case 'specialization':
     case 'dateOfJoining':
       if (!value) error = 'Date of Joining is required.';
       break;
-      case 'vaccinationStatus':
-  if (!value || value.trim() === '') {
-    error = 'Vaccination status is required.';
-  } else if (!['Not Vaccinated', 'Partially Vaccinated', 'Fully Vaccinated'].includes(value)) {
-    error = 'Invalid vaccination status.';
-  }
-  break;
+    case 'vaccinationStatus':
+      if (!value || value.trim() === '') {
+        error = 'Vaccination status is required.';
+      } else if (!['Not Vaccinated', 'Partially Vaccinated', 'Fully Vaccinated'].includes(value)) {
+        error = 'Invalid vaccination status.';
+      }
+      break;
 
 
     case 'department':
@@ -162,18 +162,16 @@ case 'specialization':
       else if (value.length < 2 || value.length > 50) error = 'Department must be between 2 and 50 characters.';
       break;
 
-      case 'nursingCouncilRegistration':
+    case 'nursingCouncilRegistration':
   if (!value || value.trim() === '') {
-    error = 'Nursing Council Registration is required.';
+    error = 'Nursing Council Registration cannot be empty.';
   } else if (value.length < 2 || value.length > 20) {
     error = 'Nursing Council Registration must be between 2 and 20 characters.';
-  } else if (/\d/.test(value)) {
-    // Disallow numbers
-    error = 'Nursing Council Registration should not contain numbers.';
   } else {
-    error = '';
+    error = ''; // ✅ accept letters, numbers, symbols, everything
   }
   break;
+
 
 
     case 'role':
@@ -189,8 +187,8 @@ case 'specialization':
       if (!value || value.trim() === '') error = 'Shift Timing / Availability is required.';
       else if (value.length < 2 || value.length > 50) error = 'Shift Timing / Availability must be between 2 and 50 characters.';
       break;
-       case 'labLicenseOrRegistration':
-     
+    case 'labLicenseOrRegistration':
+
       if (!/^[A-Za-z0-9\s\-]+$/.test(value)) {
         error = 'Lab License / Registration can contain only letters, numbers, spaces, and hyphens.';
       } else if (value.length < 3 || value.length > 50) {
@@ -200,38 +198,38 @@ case 'specialization':
       }
       break;
 
-   case 'emergencyContact':
-  if (!value || value.trim() === '') {
-    error = 'Emergency contact is required.';
-  } else if (!/^\d{10}$/.test(value)) {
-    error = 'Emergency contact must be exactly 10 digits.';
-  } else if (!/^[6-9]/.test(value)) {
-    error = 'Emergency contact must start with 6, 7, 8, or 9.';
-  } else {
-    error = '';
-  }
-  break;
-  case 'qualifications':
- if (!/^[A-Za-z\s]+$/.test(value)) {
-    error = 'Qualifications must contain letters only.';
-  } else if (value.length < 2 || value.length > 50) {
-    error = 'Qualifications must be between 2 and 50 characters.';
-  } else {
-    error = '';
-  }
-  break;
+    case 'emergencyContact':
+      if (!value || value.trim() === '') {
+        error = 'Emergency contact is required.';
+      } else if (!/^\d{10}$/.test(value)) {
+        error = 'Emergency contact must be exactly 10 digits.';
+      } else if (!/^[6-9]/.test(value)) {
+        error = 'Emergency contact must start with 6, 7, 8, or 9.';
+      } else {
+        error = '';
+      }
+      break;
+    case 'qualifications':
+      if (!/^[A-Za-z\s]+$/.test(value)) {
+        error = 'Qualifications must contain letters only.';
+      } else if (value.length < 2 || value.length > 50) {
+        error = 'Qualifications must be between 2 and 50 characters.';
+      } else {
+        error = '';
+      }
+      break;
 
 
 
     case 'emergencyContactNumber':
-  if (!/^\d{10}$/.test(value)) {
-    error = 'Emergency contact must be exactly 10 digits.';
-  } else if (!/^[6-9]/.test(value)) {
-    error = 'Emergency contact must start with 6, 7, 8, or 9.';
-  } else {
-    error = '';
-  }
-  break;
+      if (!/^\d{10}$/.test(value)) {
+        error = 'Emergency contact must be exactly 10 digits.';
+      } else if (!/^[6-9]/.test(value)) {
+        error = 'Emergency contact must start with 6, 7, 8, or 9.';
+      } else {
+        error = '';
+      }
+      break;
 
 
 
@@ -251,7 +249,7 @@ case 'specialization':
       else if (formData.address.city.length < 2 || formData.address.city.length > 50) error = 'Address: City must be between 2 and 50 characters.';
       break;
 
-   
+
 
     case 'country':
       if (!formData.address?.country || formData.address.country.trim() === '') error = 'Address: Country is required.';
@@ -259,35 +257,28 @@ case 'specialization':
       break;
 
     // 🔹 Add more fields like bank, documents, previous employment, etc. here if needed
-     case 'accountNumber':
+    case 'accountNumber':
       if (!value || value.trim() === '') error = 'Account Number is required.';
       else if (!/^\d{9,20}$/.test(value)) error = 'Account Number must be between 9 and 20 digits.';
       break;
 
-case 'accountHolderName':
-  if (!value || value.trim() === '') {
-    error = 'Account Holder Name is required.';
-  } 
-  // Only letters (both cases) and spaces allowed, no numbers or special characters
- else if (!/^[A-Za-z\s]+$/.test(value)){
-    error = 'Account Holder Name can contain only letters and spaces.';
-  } 
-  // Minimum 3 and maximum 50 characters
-  else if (value.trim().length < 3 || value.trim().length > 50) {
-    error = 'Account Holder Name must be between 3 and 50 characters.';
-  } 
-  else {
-    error = '';
-  }
-  break;
-
-
-
-
-
-
-
-   case 'departmentOrAssignedLab':
+    case 'accountHolderName':
+      if (!value || value.trim() === '') {
+        error = 'Account Holder Name is required.';
+      }
+      // Only letters (both cases) and spaces allowed, no numbers or special characters
+      else if (!/^[A-Za-z\s]+$/.test(value)) {
+        error = 'Account Holder Name can contain only letters and spaces.';
+      }
+      // Minimum 3 and maximum 50 characters
+      else if (value.trim().length < 3 || value.trim().length > 50) {
+        error = 'Account Holder Name must be between 3 and 50 characters.';
+      }
+      else {
+        error = '';
+      }
+      break;
+    case 'departmentOrAssignedLab':
       if (value.length < 3 || value.length > 50) {
         error = 'Department / Assigned Lab must be between 3 and 50 characters.';
       } else if (!/^[A-Za-z\s]+$/.test(value)) {
@@ -296,7 +287,6 @@ case 'accountHolderName':
         error = '';
       }
       break;
-
 
     case 'ifscCode':
       if (!value || value.trim() === '') error = 'IFSC Code is required.';
@@ -308,26 +298,26 @@ case 'accountHolderName':
       if (!value || value.trim() === '') error = 'PAN Card Number is required.';
       else if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(value)) error = 'Invalid PAN format (e.g., ABCDE1234F).';
       break;
-      
-        case 'profilePicture':
+
+    case 'profilePicture':
       if (!value || value.trim() === '') error = 'Profile Image is required.';
       break;
-      case 'pharmacyLicense':
-  if (!/^[A-Za-z0-9\s\-\/]+$/.test(value)) {
-    // Allow letters, numbers, spaces, hyphens, slashes
-    error = 'Pharmacy License can contain only letters, numbers, spaces, hyphens, and slashes.';
-  } else if (value.length < 3 || value.length > 50) {
-    error = 'Pharmacy License must be between 3 and 50 characters.';
-  } else {
-    error = '';
-  }
-  break;
+    case 'pharmacyLicense':
+      if (!/^[A-Za-z0-9\s\-\/]+$/.test(value)) {
+        // Allow letters, numbers, spaces, hyphens, slashes
+        error = 'Pharmacy License can contain only letters, numbers, spaces, hyphens, and slashes.';
+      } else if (value.length < 3 || value.length > 50) {
+        error = 'Pharmacy License must be between 3 and 50 characters.';
+      } else {
+        error = '';
+      }
+      break;
 
 
     case 'medicalFitnessCertificate':
       if (!value || value.trim() === '') error = 'Medical Fitness Certificate is required.';
       break;
-      case 'qualificationOrCertifications':
+    case 'qualificationOrCertifications':
       // optional field → validate only if uploaded
       if (
         formData.qualificationOrCertifications &&
@@ -343,33 +333,33 @@ case 'accountHolderName':
       break;
 
 
-      case 'previousEmployeeHistory':
+    case 'previousEmployeeHistory':
       if (!value || value.trim() === '') {
         error = 'Previous Employment History is required.'
       } else if (value.length < 5 || value.length > 500) {
         error = 'Previous Employment History must be between 5 and 500 characters.'
       }
       break
-      case 'qualificationOrNursingCertificate':
-  if (!value || value.trim() === '') {
-    error = 'Qualification/Nursing Certificate is required.';
-  } else {
-    // ✅ Allow only PDF or image files
-    const isValidFile = /^data:(application\/pdf|image\/(png|jpeg|jpg));base64,/.test(value);
-    if (!isValidFile) {
-      error = 'Only PDF or image files (png, jpeg, jpg) are allowed.';
-    } else {
-      // ✅ Clear error once valid file is selected
-      error = '';
-    }
-  }
-  break;
+    case 'qualificationOrNursingCertificate':
+      if (!value || value.trim() === '') {
+        error = 'Qualification/Nursing Certificate is required.';
+      } else {
+        // ✅ Allow only PDF or image files
+        const isValidFile = /^data:(application\/pdf|image\/(png|jpeg|jpg));base64,/.test(value);
+        if (!isValidFile) {
+          error = 'Only PDF or image files (png, jpeg, jpg) are allowed.';
+        } else {
+          // ✅ Clear error once valid file is selected
+          error = '';
+        }
+      }
+      break;
 
 
-      case 'policeVerification':
-  if (!value || value.trim() === '') error = 'Police Verification is required.';
-  else if (value.length < 2 || value.length > 50) error = 'Police Verification must be between 2 and 50 characters.';
-  break;
+    case 'policeVerification':
+      if (!value || value.trim() === '') error = 'Police Verification is required.';
+      else if (value.length < 2 || value.length > 50) error = 'Police Verification must be between 2 and 50 characters.';
+      break;
   }
 
   return error; // returns '' if valid, else error string
@@ -392,6 +382,6 @@ export const validateFormData = (formData, technicians) => {
   });
 
   return errors;
-  
+
 };
 

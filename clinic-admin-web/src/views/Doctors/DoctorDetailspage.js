@@ -261,47 +261,7 @@ const DoctorDetailsPage = () => {
     generateUpcomingDays()
   }, [])
 
-  const timeRegex = /^(0?[1-9]|1[0-2]):(00|30) ?(AM|PM)$/i
 
-  const addTimeSlot = () => {
-    const formatted = timeInput.trim().toUpperCase()
-    const timeRegex = /^(0?[1-9]|1[0-2]):(00|30) ?(AM|PM)$/i
-
-    if (!timeRegex.test(formatted)) {
-      alert('❌ Invalid format. Please use hh:mm AM/PM (e.g., 09:00 AM, 03:30 PM)')
-      return
-    }
-
-    //  Convert "hh:mm AM/PM" to 24-hour Date object
-    const [time, period] = formatted.split(' ')
-    let [hours, minutes] = time.split(':').map(Number)
-
-    if (period === 'PM' && hours !== 12) hours += 12
-    if (period === 'AM' && hours === 12) hours = 0
-
-    const slotDate = new Date(
-      `${selectedDate}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`,
-    )
-    const now = new Date()
-
-    //  Block past time if selectedDate is today
-    const isToday = selectedDate === format(now, 'yyyy-MM-dd')
-    if (isToday && slotDate <= now) {
-      alert('❌ You cannot add a time slot in the past for today.')
-      return
-    }
-
-    if (!timeSlots.includes(formatted)) {
-      setTimeSlots([...timeSlots, formatted])
-      setTimeInput('')
-    } else {
-      alert('⚠️ This time slot is already added.')
-    }
-  }
-
-  const deleteSlot = (slot) => {
-    setTimeSlots(timeSlots.filter((t) => t !== slot))
-  }
 
   const handleAddSlot = async () => {
     const newSlots = selectedSlots.filter(
@@ -428,21 +388,7 @@ const DoctorDetailsPage = () => {
     }
   }
 
-  // 🔹 Save slots via API
-  const handleSaveSlots = async (doctorId, branchId) => {
-    if (selectedSlots.length === 0) {
-      toast.error('Please select at least one slot')
-      return
-    }
-    try {
-      await addDoctorSlots(doctorId, branchId, selectedSlots)
-      toast.success('Slots saved successfully')
-      setSelectedSlots([])
-    } catch (err) {
-      toast.error('Failed to save slots')
-      console.error(err)
-    }
-  }
+ 
 
   console.log(customerDetails)
 
@@ -494,13 +440,7 @@ const DoctorDetailsPage = () => {
     if (!/^[A-Za-z\s]+$/.test(formData.qualification.trim())) {
       newErrors.qualification = 'Qualification should contain only letters.'
     }
-    // if (!/^[A-Za-z\s]+$/.test(formData.qualification.trim())) {
-    //   newErrors.qualification = 'Qualification should contain only letters.'
-    // }
-    // if (!/^[A-Za-z\s]+$/.test(formData.qualification.trim())) {
-    //   newErrors.qualification = 'Qualification should contain only letters.'
-    // }
-
+   
     // Specialization
     if (!/^[A-Za-z\s]+$/.test(formData.specialization.trim())) {
       newErrors.specialization = 'Specialization should contain only letters.'
@@ -853,7 +793,7 @@ const DoctorDetailsPage = () => {
                   {capitalizeWords(doctorData.doctorName)}
                 </strong>
               </p>
-              <p className="mb-1 text-center" style={{ color: 'var(--color-black)' }}>
+              <p className="mb-1" style={{ color: 'var(--color-black)' }}>
                 ID:
                 <strong> {doctorData.doctorId} </strong>
               </p>
@@ -945,7 +885,7 @@ const DoctorDetailsPage = () => {
 
                         <CRow className="mb-3">
                           <CCol md={12}>
-                            <strong>Sub Services:</strong>
+                            <strong>Procedures:</strong>
                             <Select
                               isMulti
                               options={subServiceOptions}
@@ -960,7 +900,7 @@ const DoctorDetailsPage = () => {
                                   })),
                                 }))
                               }}
-                              placeholder="Select SubService(s)"
+                              placeholder="Select Procedures"
                             />
                           </CCol>
                         </CRow>
@@ -1610,16 +1550,7 @@ const DoctorDetailsPage = () => {
                 </CCard>
               </CTabPane>
             </CTabContent>
-            {/* <ConfirmationModal
-              isVisible={showModal}
-              title="Delete Procedure Details"
-              message="Are you sure you want to delete this doctor? This action cannot be undone."
-              confirmText="Yes, Delete"
-              cancelText="Cancel"
-              onConfirm={handleDeleteToggleE(doctorData.doctorId)}
-              onCancel={handleClose}
-            /> */}
-
+           
             <CTabPane
               visible={activeKey === 2}
               className="pt-3"
@@ -1894,44 +1825,10 @@ const DoctorDetailsPage = () => {
                 +
               </CButton>
             </CInputGroup>
-            {/* <span color="warning" style={{ fontSize: '12px' }}>
-              {' '}
-              ⚠️ Note: Please enter a valid time in <strong>hh:mm AM/PM</strong> format (e.g., 09:00
-              AM, 03:30 PM). Only <strong>half-hour intervals</strong> are accepted.
-            </span> */}
+           
           </div>
 
-          {/* <CListGroup>
-            {timeSlots.map((slot, index) => {
-              const isSelected = selectedToDelete.includes(slot)
-
-              return (
-                <CListGroupItem
-                  key={index}
-                  onClick={() => {
-                    setSelectedToDelete((prev) =>
-                      prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot],
-                    )
-                  }}
-                  style={{
-                    backgroundColor: isSelected ? '#e0f7fa' : 'white',
-                    cursor: 'pointer',
-                  }}
-                  className="d-flex justify-content-between align-items-center"
-                >
-                  {typeof slot === 'string' ? slot : slot?.slot}
-                  <FaTrash
-                    role="button"
-                    onClick={(e) => {
-                      e.stopPropagation() // prevent item toggle on trash click
-                      deleteSlot(slot)
-                    }}
-                    style={{ color: 'gray', cursor: 'pointer' }}
-                  />
-                </CListGroupItem>
-              )
-            })}
-          </CListGroup> */}
+        
         </CModalBody>
         <CModalFooter>
           <CButton color="secondary" onClick={() => setVisible(false)}>
@@ -1945,32 +1842,6 @@ const DoctorDetailsPage = () => {
           Select Available Time Slots
         </CModalHeader>
         <CModalBody>
-          {/* <div className="d-flex flex-wrap gap-3">
-            {slots.map((slot, i) => {
-              const isSelected = selectedSlots.includes(slot)
-
-              return (
-                <div
-                  key={i}
-                  className={`slot-item px-3 py-2 border rounded ${
-                    isSelected ? 'bg-dark text-white' : 'bg-light'
-                  }`}
-                  onClick={() => {
-                    if (isSelected) {
-                      setSelectedSlots((prev) => prev.filter((s) => s !== slot))
-                    } else {
-                      setSelectedSlots((prev) => [...prev, slot])
-                    }
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {slot}
-                </div>
-              )
-            })}
-          </div>
-          Select All Slots */}
-          {/* Select All Checkbox */}
 
           {/* Slot Buttons */}
           <div>
@@ -2056,16 +1927,7 @@ const DoctorDetailsPage = () => {
                   >
                     {slot}
                   </CButton>
-                  // <div
-                  //   key={i}
-                  //   className={`slot-item px-3 py-2 border rounded ${
-                  //     isSelected ? 'var(--color-black) ' : 'bg-light'
-                  //   }`}
-                  //   onClick={() => toggleSlot(slot)}
-                  //   style={{ cursor: 'pointer' }}
-                  // >
-                  //   {slot}
-                  // </div>
+                 
                 )
               })}
             </div>

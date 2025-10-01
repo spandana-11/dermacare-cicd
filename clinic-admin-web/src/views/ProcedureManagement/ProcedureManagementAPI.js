@@ -55,22 +55,28 @@ export const serviceDataH = async () => {
   }
 }
 
-export const serviceData = async (id) => {
+const isValidHex = (id) => /^[0-9a-fA-F]{24}$/.test(id);
+
+export const serviceData = async (categoryId) => {
+  if (!isValidHex(categoryId)) {
+    console.error('Invalid categoryId, must be a 24-character Hex string');
+    return { success: false, message: 'Invalid categoryId', status: 400 };
+  }
+
   try {
-    const response = await http.get(`/${getservice}/${id}`)
-    console.log('Service response:', response.data)
-    return response.data
+    const response = await http.get(`/${getservice}/${categoryId}`);
+    console.log('Service response:', response.data);
+    return response.data;
   } catch (error) {
-    if (error.response && error.response.status === 404) {
-      console.log('No services found for this category.')
-      return error.response.data
+    if (error.response) {
+      console.error('API Error:', error.response.data);
+      return error.response.data;
     } else {
-      console.error('Unexpected error fetching services:', error.message || error)
-      throw error
+      console.error('Unexpected error fetching services:', error.message || error);
+      throw error;
     }
   }
 }
-
 export const getSubServiceById = async (hospitalId, subServiceId) => {
   try {
     const response = await http.get(`/getSubService/${hospitalId}/${subServiceId}`)
@@ -113,13 +119,13 @@ export const CategoryData = async () => {
   }
 }
 
-export const postServiceData = async (serviceData, id) => {
+export const postServiceData = async (serviceData, subServiceId) => {
   console.log('Sending data to id:', id)
 
   try {
     console.log('Sending data to API:', serviceData)
 
-    const response = await http.post(`/${AddSubService}/${id}`, serviceData, {
+    const response = await http.post(`/${AddSubService}/${subServiceId}`, serviceData, {
       headers: {
         'Content-Type': 'application/json',
       },

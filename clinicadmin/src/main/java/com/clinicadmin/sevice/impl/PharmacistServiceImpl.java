@@ -158,9 +158,9 @@ public class PharmacistServiceImpl implements PharmacistService {
 						Base64CompressionUtil.compressBase64(dto.getExperienceCertificates()));
 			if (dto.getEmergencyContactNumber() != null)
 				existing.setEmergencyContactNumber(dto.getEmergencyContactNumber());
-			if (dto.getDPharmaOrBPharmaCertificate() != null)
-				existing.setDPharmaOrBPharmaCertificate(
-						Base64CompressionUtil.compressBase64(dto.getDPharmaOrBPharmaCertificate()));
+			if (dto.getDpharmaOrBPharmaCertificate() != null)
+				existing.setDpharmaOrBPharmaCertificate(
+						Base64CompressionUtil.compressBase64(dto.getDpharmaOrBPharmaCertificate()));
 			if (dto.getProfilePicture() != null)
 				existing.setProfilePicture(Base64CompressionUtil.compressBase64(dto.getProfilePicture()));
 
@@ -282,8 +282,8 @@ public class PharmacistServiceImpl implements PharmacistService {
 		pharmacist.setStatePharmacyCouncilRegistration(
 				Base64CompressionUtil.compressBase64(dto.getStatePharmacyCouncilRegistration()));
 		pharmacist.setExperienceCertificates(Base64CompressionUtil.compressBase64(dto.getExperienceCertificates()));
-		pharmacist.setDPharmaOrBPharmaCertificate(
-				Base64CompressionUtil.compressBase64(dto.getDPharmaOrBPharmaCertificate()));
+		pharmacist.setDpharmaOrBPharmaCertificate(
+				Base64CompressionUtil.compressBase64(dto.getDpharmaOrBPharmaCertificate()));
 		return pharmacist;
 	}
 
@@ -311,8 +311,8 @@ public class PharmacistServiceImpl implements PharmacistService {
 		dto.setPreviousEmploymentHistory(pharmacist.getPreviousEmploymentHistory());
 		dto.setEmergencyContactNumber(pharmacist.getEmergencyContactNumber());
 		dto.setProfilePicture(Base64CompressionUtil.decompressBase64(pharmacist.getProfilePicture()));
-		dto.setDPharmaOrBPharmaCertificate(
-				Base64CompressionUtil.decompressBase64(pharmacist.getDPharmaOrBPharmaCertificate()));
+		dto.setDpharmaOrBPharmaCertificate(
+				Base64CompressionUtil.decompressBase64(pharmacist.getDpharmaOrBPharmaCertificate()));
 		dto.setExperienceCertificates(Base64CompressionUtil.decompressBase64(pharmacist.getExperienceCertificates()));
 		dto.setStatePharmacyCouncilRegistration(
 				Base64CompressionUtil.decompressBase64(pharmacist.getStatePharmacyCouncilRegistration()));
