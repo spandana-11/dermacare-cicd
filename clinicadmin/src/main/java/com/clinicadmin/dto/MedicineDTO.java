@@ -1,8 +1,8 @@
-package com.dermacare.doctorservice.model;
+package com.clinicadmin.dto;
+
+
 
 import java.util.List;
-import java.util.UUID;
-
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Medicine {
-    private String id = UUID.randomUUID().toString(); 
+public class MedicineDTO {
+    private String id;
     private String name;
     private String dose;
     private String duration;
@@ -21,8 +21,8 @@ public class Medicine {
     private String food;
     private String medicineType;
     private String remindWhen;
-    private String others;
     private List<String> times;
+    private String others;
     private String serialNumber;
     private String genericName;
     private String brandName;
@@ -31,4 +31,6 @@ public class Medicine {
     private String dateOfManufacturing;
     private String dateOfExpriy;
     private String ManufacturingLicenseNumber;
+
 }
+

@@ -81,6 +81,14 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                     existingMed.setRemindWhen(incomingMed.getRemindWhen());
                     existingMed.setTimes(incomingMed.getTimes());
                     existingMed.setOthers(incomingMed.getOthers());
+                    existingMed.setSerialNumber(incomingMed.getSerialNumber());
+                    existingMed.setGenericName(incomingMed.getGenericName());
+                    existingMed.setBrandName(incomingMed.getBrandName());
+                    existingMed.setNameAndAddressOfTheManufacturer(incomingMed.getNameAndAddressOfTheManufacturer());
+                    existingMed.setBatchNumber(incomingMed.getBatchNumber());               
+                    existingMed.setDateOfManufacturing(incomingMed.getDateOfManufacturing());               
+                    existingMed.setDateOfExpriy(incomingMed.getDateOfExpriy());               
+                    existingMed.setManufacturingLicenseNumber(incomingMed.getManufacturingLicenseNumber());               
 
                     updatedExistingMedicine = true;
                 } else {
@@ -96,7 +104,15 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                             incomingMed.getMedicineType(),
                             incomingMed.getRemindWhen(),
                             incomingMed.getOthers(),
-                            incomingMed.getTimes()
+                            incomingMed.getTimes(),
+                            incomingMed.getSerialNumber(),
+                            incomingMed.getGenericName(),
+                            incomingMed.getBrandName(),
+                            incomingMed.getNameAndAddressOfTheManufacturer(),
+                            incomingMed.getBatchNumber(),
+                            incomingMed.getDateOfManufacturing(),
+                            incomingMed.getDateOfExpriy(),
+                            incomingMed.getManufacturingLicenseNumber()
                     ));
                     addedNewMedicine = true;
                 }
@@ -122,7 +138,15 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                             m.getMedicineType(),
                             m.getRemindWhen(),
                             m.getTimes(),
-                            m.getOthers()
+                            m.getOthers(),
+                            m.getSerialNumber(),
+                            m.getGenericName(),
+                            m.getBrandName(),
+                            m.getNameAndAddressOfTheManufacturer(),
+                            m.getBatchNumber(),
+                            m.getDateOfManufacturing(),
+                            m.getDateOfExpriy(),
+                            m.getManufacturingLicenseNumber()
                     ))
                     .collect(Collectors.toList())
             );
@@ -167,7 +191,15 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                                 m.getMedicineType(),
                                 m.getRemindWhen(),
                                 m.getTimes(),
-                                m.getOthers()
+                                m.getOthers(),
+                                m.getSerialNumber(),
+                                m.getGenericName(),
+                                m.getBrandName(),
+                                m.getNameAndAddressOfTheManufacturer(),
+                                m.getBatchNumber(),
+                                m.getDateOfManufacturing(),
+                                m.getDateOfExpriy(),
+                                m.getManufacturingLicenseNumber()
                         ))
                         .collect(Collectors.toList());
 
@@ -205,7 +237,15 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                                 m.getMedicineType(),
                                 m.getRemindWhen(),
                                 m.getTimes(),
-                                m.getOthers()
+                                m.getOthers(),
+                                m.getSerialNumber(),
+                                m.getGenericName(),
+                                m.getBrandName(),
+                                m.getNameAndAddressOfTheManufacturer(),
+                                m.getBatchNumber(),
+                                m.getDateOfManufacturing(),
+                                m.getDateOfExpriy(),
+                                m.getManufacturingLicenseNumber()
                         ))
                         .collect(Collectors.toList());
 
@@ -241,7 +281,15 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                         m.getMedicineType(),
                         m.getRemindWhen(),
                         m.getTimes(),
-                        m.getOthers()
+                        m.getOthers(),
+                        m.getSerialNumber(),
+                        m.getGenericName(),
+                        m.getBrandName(),
+                        m.getNameAndAddressOfTheManufacturer(),
+                        m.getBatchNumber(),
+                        m.getDateOfManufacturing(),
+                        m.getDateOfExpriy(),
+                        m.getManufacturingLicenseNumber()
                 )).collect(Collectors.toList());
 
                 return new Response(true, dtos, "Medicine found", HttpStatus.OK.value());
@@ -336,7 +384,15 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                     m.getMedicineType(),
                     m.getRemindWhen(),
                     m.getTimes(),
-                    m.getOthers()
+                    m.getOthers(),
+                    m.getSerialNumber(),
+                    m.getGenericName(),
+                    m.getBrandName(),
+                    m.getNameAndAddressOfTheManufacturer(),
+                    m.getBatchNumber(),
+                    m.getDateOfManufacturing(),
+                    m.getDateOfExpriy(),
+                    m.getManufacturingLicenseNumber()
             );
 
             return new Response(true, List.of(dto), "Medicine found", HttpStatus.OK.value());
@@ -369,7 +425,15 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                                 m.getMedicineType(),
                                 m.getRemindWhen(),
                                 m.getTimes(),
-                                m.getOthers()
+                                m.getOthers(),
+                                m.getSerialNumber(),
+                                m.getGenericName(),
+                                m.getBrandName(),
+                                m.getNameAndAddressOfTheManufacturer(),
+                                m.getBatchNumber(),
+                                m.getDateOfManufacturing(),
+                                m.getDateOfExpriy(),
+                                m.getManufacturingLicenseNumber()
                         ))
                         .collect(Collectors.toList());
 

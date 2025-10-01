@@ -243,7 +243,7 @@ public class BookingServiceController {
 		}
 		
 		
-		@PutMapping("/updateAppointmentBasedOnBookingId")
+		@PutMapping("/update/bookingId")
 		public ResponseEntity<?> updateAppointmentBasedOnBookingId(@RequestBody BookingResponse bookingResponse ){
 		{
 			return service.updateAppointmentBasedOnBookingId(bookingResponse);

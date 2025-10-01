@@ -42,7 +42,6 @@ public class Pharmacist {
 	private String emergencyContactNumber;
     private String shiftTimingsOrAvailability;
 
-	
 	private String profilePicture;
 	private String statePharmacyCouncilRegistration;
 	private String dpharmaOrBPharmaCertificate;

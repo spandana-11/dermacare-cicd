@@ -55,6 +55,10 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 			return ResponseStructure.buildResponse(null, "Contact number already exists", HttpStatus.CONFLICT,
 					HttpStatus.CONFLICT.value());
 		}
+		if (credentialsRepository.existsByUsername(dto.getContactNumber())) {
+			return ResponseStructure.buildResponse(null, "Login credentials already exist for this mobile number",
+					HttpStatus.CONFLICT, HttpStatus.CONFLICT.value());
+		}
 		dto.setSecurityStaffId(IdGenerator.generateSecurityStaffId());
 
 		ResponseEntity<Response> res = adminServiceClient.getBranchById(dto.getBranchId());

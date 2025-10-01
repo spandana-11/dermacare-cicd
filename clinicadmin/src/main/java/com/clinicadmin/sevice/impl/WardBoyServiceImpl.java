@@ -59,6 +59,10 @@ public class WardBoyServiceImpl implements WardBoyService {
 					"WardBoy already exists with contact number : " + dto.getContactNumber(), HttpStatus.CONFLICT,
 					HttpStatus.CONFLICT.value());
 		}
+		if (credentialsRepository.existsByUsername(dto.getContactNumber())) {
+			return ResponseStructure.buildResponse(null, "Login credentials already exist for this mobile number",
+					HttpStatus.CONFLICT, HttpStatus.CONFLICT.value());
+		}
 		ResponseEntity<Response> res = adminServiceClient.getBranchById(dto.getBranchId());
 		Branch br = objectMapper.convertValue(res.getBody().getData(), Branch.class);
 

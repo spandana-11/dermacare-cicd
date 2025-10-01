@@ -53,6 +53,13 @@ public class NurseServiceImpl implements NurseService {
 			response.setStatus(HttpStatus.BAD_REQUEST.value());
 			return response;
 		}
+		if (credentialsRepository.existsByUsername(dto.getNurseContactNumber())) {
+		    response.setSuccess(false);
+		    response.setMessage("Login credentials already exist for this mobile number");
+		    response.setStatus(HttpStatus.BAD_REQUEST.value());
+		    return response;
+		}
+
 		ResponseEntity <Response> res=adminServiceClient.getBranchById(dto.getBranchId());
 		Branch br =objectMapper.convertValue(res.getBody().getData(), Branch.class);
 		Nurse nurse = mapNurseDtoTONurseEntity(dto);

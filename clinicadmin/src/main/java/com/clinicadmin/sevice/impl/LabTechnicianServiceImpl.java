@@ -50,6 +50,10 @@ public class LabTechnicianServiceImpl implements LabTechnicianService {
 			return ResponseStructure.buildResponse(null, "Lab Technician with this contact number already exists",
 					HttpStatus.CONFLICT, HttpStatus.CONFLICT.value());
 		}
+		if (credentialsRepository.existsByUsername(dto.getContactNumber())) {
+			return ResponseStructure.buildResponse(null, "Login credentials already exist for this mobile number",
+					HttpStatus.CONFLICT, HttpStatus.CONFLICT.value());
+		}
 
 		ResponseEntity<Response> res = adminServiceClient.getBranchById(dto.getBranchId());
 		Branch br = objectMapper.convertValue(res.getBody().getData(), Branch.class);
@@ -149,70 +153,57 @@ public class LabTechnicianServiceImpl implements LabTechnicianService {
 				HttpStatus.OK.value());
 	}
 
-	// ✅ Update
 	@Override
 	public ResponseStructure<LabTechnicianRequestDTO> updateLabTechnician(String id, LabTechnicianRequestDTO dto) {
-		Optional<LabTechnicianEntity> optional = repository.findById(id);
-		if (optional.isEmpty()) {
-			return ResponseStructure.buildResponse(null, "Lab Technician not found", HttpStatus.NOT_FOUND,
-					HttpStatus.NOT_FOUND.value());
-		}
+	    Optional<LabTechnicianEntity> optional = repository.findById(id);
+	    if (optional.isEmpty()) {
+	        return ResponseStructure.buildResponse(null, "Lab Technician not found", HttpStatus.NOT_FOUND,
+	                HttpStatus.NOT_FOUND.value());
+	    }
 
-		LabTechnicianEntity existing = optional.get();
+	    LabTechnicianEntity existing = optional.get();
 
-		// update fields if provided
-		if (dto.getHospitalName() != null)
-			existing.setHospitalName(dto.getHospitalName());
-		if (dto.getBranchId() != null)
-			existing.setBranchId(dto.getBranchId());
-		if (dto.getRole() != null)
-			existing.setRole(dto.getRole());
-		if (dto.getFullName() != null)
-			existing.setFullName(dto.getFullName());
-		if (dto.getGender() != null)
-			existing.setGender(dto.getGender());
-		if (dto.getDateOfBirth() != null)
-			existing.setDateOfBirth(dto.getDateOfBirth());
-		if (dto.getContactNumber() != null)
-			existing.setContactNumber(dto.getContactNumber());
-		if (dto.getGovernmentId() != null)
-			existing.setGovernmentId(dto.getGovernmentId());
-		if (dto.getQualificationOrCertifications() != null)
-			existing.setQualificationOrCertifications(dto.getQualificationOrCertifications());
-		if (dto.getDateOfJoining() != null)
-			existing.setDateOfJoining(dto.getDateOfJoining());
-		if (dto.getDepartmentOrAssignedLab() != null)
-			existing.setDepartmentOrAssignedLab(dto.getDepartmentOrAssignedLab());
-		if (dto.getYearOfExperience() != null)
-			existing.setYearOfExperience(dto.getYearOfExperience());
-		if (dto.getSpecialization() != null)
-			existing.setSpecialization(dto.getSpecialization());
-		if (dto.getShiftTimingsOrAvailability() != null)
-			existing.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
-		if (dto.getAddress() != null)
-			existing.setAddress(dto.getAddress());
-		if (dto.getEmergencyContact() != null)
-			existing.setEmergencyContact(dto.getEmergencyContact());
-		if (dto.getBankAccountDetails() != null)
-			existing.setBankAccountDetails(dto.getBankAccountDetails());
-		if (dto.getMedicalFitnessCertificate() != null)
-			existing.setMedicalFitnessCertificate(dto.getMedicalFitnessCertificate());
-		if (dto.getLabLicenseOrRegistration() != null)
-			existing.setLabLicenseOrRegistration(dto.getLabLicenseOrRegistration());
-		if (dto.getEmailId() != null)
-			existing.setEmailId(dto.getEmailId());
-		if (dto.getVaccinationStatus() != null)
-			existing.setVaccinationStatus(dto.getVaccinationStatus());
-		if (dto.getPreviousEmploymentHistory() != null)
-			existing.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
-		if (dto.getProfilePicture() != null)
-			existing.setProfilePicture(dto.getProfilePicture());
+	    // Update normal fields if provided
+	    if (dto.getHospitalName() != null) existing.setHospitalName(dto.getHospitalName());
+	    if (dto.getBranchId() != null) existing.setBranchId(dto.getBranchId());
+	    if (dto.getRole() != null) existing.setRole(dto.getRole());
+	    if (dto.getFullName() != null) existing.setFullName(dto.getFullName());
+	    if (dto.getGender() != null) existing.setGender(dto.getGender());
+	    if (dto.getDateOfBirth() != null) existing.setDateOfBirth(dto.getDateOfBirth());
+	    if (dto.getContactNumber() != null) existing.setContactNumber(dto.getContactNumber());
+	    if (dto.getGovernmentId() != null) existing.setGovernmentId(dto.getGovernmentId());
+	    if (dto.getQualificationOrCertifications() != null) existing.setQualificationOrCertifications(dto.getQualificationOrCertifications());
+	    if (dto.getDateOfJoining() != null) existing.setDateOfJoining(dto.getDateOfJoining());
+	    if (dto.getDepartmentOrAssignedLab() != null) existing.setDepartmentOrAssignedLab(dto.getDepartmentOrAssignedLab());
+	    if (dto.getYearOfExperience() != null) existing.setYearOfExperience(dto.getYearOfExperience());
+	    if (dto.getSpecialization() != null) existing.setSpecialization(dto.getSpecialization());
+	    if (dto.getShiftTimingsOrAvailability() != null) existing.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
+	    if (dto.getAddress() != null) existing.setAddress(dto.getAddress());
+	    if (dto.getEmergencyContact() != null) existing.setEmergencyContact(dto.getEmergencyContact());
+	    if (dto.getBankAccountDetails() != null) existing.setBankAccountDetails(dto.getBankAccountDetails());
 
-		LabTechnicianEntity updated = repository.save(existing);
+	    // ✅ Update files (Base64 strings)
+	    if (dto.getMedicalFitnessCertificate() != null)
+	        existing.setMedicalFitnessCertificate(dto.getMedicalFitnessCertificate());
+	    if (dto.getLabLicenseOrRegistration() != null)
+	        existing.setLabLicenseOrRegistration(dto.getLabLicenseOrRegistration());
+	    if (dto.getProfilePicture() != null)
+	        existing.setProfilePicture(dto.getProfilePicture());
 
-		return ResponseStructure.buildResponse(LabTechnicianMapper.toDTO(updated),
-				"Lab Technician updated successfully", HttpStatus.OK, HttpStatus.OK.value());
+	    // Update remaining fields
+	    if (dto.getEmailId() != null) existing.setEmailId(dto.getEmailId());
+	    if (dto.getVaccinationStatus() != null) existing.setVaccinationStatus(dto.getVaccinationStatus());
+	    if (dto.getPreviousEmploymentHistory() != null) existing.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
+	    if (dto.getPermissions() != null) existing.setPermissions(dto.getPermissions());
+
+	    // Save updated entity
+	    LabTechnicianEntity updated = repository.save(existing);
+
+	    // Return DTO with Base64 files intact
+	    return ResponseStructure.buildResponse(LabTechnicianMapper.toDTO(updated),
+	            "Lab Technician updated successfully", HttpStatus.OK, HttpStatus.OK.value());
 	}
+
 
 	// ✅ Delete
 	@Override

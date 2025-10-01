@@ -116,6 +116,13 @@ public class DoctorServiceImpl implements DoctorService {
 				response.setStatus(HttpStatus.BAD_REQUEST.value());
 				return response;
 			}
+			if (credentialsRepository.existsByUsername(dto.getDoctorMobileNumber())) {
+			    response.setSuccess(false);
+			    response.setMessage("Login credentials already exist for this mobile number");
+			    response.setStatus(HttpStatus.BAD_REQUEST.value());
+			    return response;
+			}
+
 
 			// -------------------- Validate clinic --------------------
 			ResponseEntity<Response> clinicRes;

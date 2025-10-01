@@ -96,10 +96,10 @@ public class BookingServiceImpl implements BookingService {
 	}
 	
 	@Override
-	public ResponseEntity<?> updateAppointmentBasedOnBookingId(BookingResponse bookingResponse) {
+	public ResponseEntity<?> updateAppointmentBasedOnBookingId(BookingResponseDTO bookingResponse) {
 	    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
 	    try {
-	        return bookingFeign.updateAppointment(bookingResponse);
+	        return bookingFeign.updateAppointmentBasedOnBookingId(bookingResponse);
 	    } catch (FeignException e) {
 	        res = new ResponseStructure<>(null, ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR, e.status());
 	        return ResponseEntity.status(res.getStatusCode()).body(res);

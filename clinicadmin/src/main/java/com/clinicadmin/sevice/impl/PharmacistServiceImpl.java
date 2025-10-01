@@ -12,16 +12,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.clinicadmin.dto.Branch;
+import com.clinicadmin.dto.DoctorPrescriptionDTO;
 import com.clinicadmin.dto.PharmacistDTO;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.entity.DoctorLoginCredentials;
 import com.clinicadmin.entity.Pharmacist;
 import com.clinicadmin.feignclient.AdminServiceClient;
+import com.clinicadmin.feignclient.DoctorServiceFeign;
 import com.clinicadmin.repository.DoctorLoginCredentialsRepository;
 import com.clinicadmin.repository.PharmacistRepository;
 import com.clinicadmin.service.PharmacistService;
 import com.clinicadmin.utils.Base64CompressionUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import feign.FeignException;
 
 @Service
 public class PharmacistServiceImpl implements PharmacistService {
@@ -39,6 +43,12 @@ public class PharmacistServiceImpl implements PharmacistService {
 
 	@Autowired
 	ObjectMapper objectMapper;
+	
+	@Autowired
+	private DoctorServiceFeign doctorServiceFeign;
+	
+	private final ObjectMapper mapper = new ObjectMapper();
+
 
 	@Override
 	public Response pharmacistOnboarding(PharmacistDTO dto) {
@@ -50,6 +60,13 @@ public class PharmacistServiceImpl implements PharmacistService {
 			response.setStatus(HttpStatus.BAD_REQUEST.value());
 			return response;
 		}
+		if (credentialsRepository.existsByUsername(dto.getContactNumber())) {
+		    response.setSuccess(false);
+		    response.setMessage("Login credentials already exist for this mobile number");
+		    response.setStatus(HttpStatus.BAD_REQUEST.value());
+		    return response;
+		}
+
 		ResponseEntity<Response> res = adminServiceClient.getBranchById(dto.getBranchId());
 		Branch br = objectMapper.convertValue(res.getBody().getData(), Branch.class);
 
@@ -339,5 +356,151 @@ public class PharmacistServiceImpl implements PharmacistService {
 			numberPart.append(digits.charAt(random.nextInt(digits.length())));
 		}
 		return capitalizedWord + specialChar + numberPart;
+	}
+	
+
+// ---------------- PRESCRIPTION APIs ----------------
+	@Override
+	public ResponseEntity<Response> createPrescription(DoctorPrescriptionDTO dto) {
+	    try {
+	        return doctorServiceFeign.createPrescription(dto);
+	    } catch (FeignException ex) {
+	        try {
+	            Response doctorResponse = mapper.readValue(ex.contentUTF8(), Response.class);
+	            return ResponseEntity.status(ex.status()).body(doctorResponse);
+	        } catch (Exception e) {
+	            Response fallback = new Response();
+	            fallback.setSuccess(false);
+	            fallback.setMessage("Doctor Service error: " + ex.getMessage());
+	            fallback.setStatus(ex.status());
+	            return ResponseEntity.status(ex.status()).body(fallback);
+	        }
+	    }
+	}
+
+	@Override
+	public ResponseEntity<Response> getAllPrescriptions() {
+	    try {
+	        return doctorServiceFeign.getAllPrescriptions();
+	    } catch (FeignException ex) {
+	        try {
+	            Response doctorResponse = mapper.readValue(ex.contentUTF8(), Response.class);
+	            return ResponseEntity.status(ex.status()).body(doctorResponse);
+	        } catch (Exception e) {
+	            Response fallback = new Response();
+	            fallback.setSuccess(false);
+	            fallback.setMessage("Doctor Service error: " + ex.getMessage());
+	            fallback.setStatus(ex.status());
+	            return ResponseEntity.status(ex.status()).body(fallback);
+	        }
+	    }
+	}
+
+	@Override
+	public ResponseEntity<Response> getPrescriptionById(String id) {
+	    try {
+	        return doctorServiceFeign.getPrescriptionById(id);
+	    } catch (FeignException ex) {
+	        try {
+	            Response doctorResponse = mapper.readValue(ex.contentUTF8(), Response.class);
+	            return ResponseEntity.status(ex.status()).body(doctorResponse);
+	        } catch (Exception e) {
+	            Response fallback = new Response();
+	            fallback.setSuccess(false);
+	            fallback.setMessage("Doctor Service error: " + ex.getMessage());
+	            fallback.setStatus(ex.status());
+	            return ResponseEntity.status(ex.status()).body(fallback);
+	        }
+	    }
+	}
+
+	@Override
+	public ResponseEntity<Response> getMedicineById(String medicineId) {
+	    try {
+	        return doctorServiceFeign.getMedicineById(medicineId);
+	    } catch (FeignException ex) {
+	        try {
+	            Response doctorResponse = mapper.readValue(ex.contentUTF8(), Response.class);
+	            return ResponseEntity.status(ex.status()).body(doctorResponse);
+	        } catch (Exception e) {
+	            Response fallback = new Response();
+	            fallback.setSuccess(false);
+	            fallback.setMessage("Doctor Service error: " + ex.getMessage());
+	            fallback.setStatus(ex.status());
+	            return ResponseEntity.status(ex.status()).body(fallback);
+	        }
+	    }
+	}
+
+	@Override
+	public ResponseEntity<Response> searchMedicines(String keyword) {
+	    try {
+	        return doctorServiceFeign.searchMedicines(keyword);
+	    } catch (FeignException ex) {
+	        try {
+	            Response doctorResponse = mapper.readValue(ex.contentUTF8(), Response.class);
+	            return ResponseEntity.status(ex.status()).body(doctorResponse);
+	        } catch (Exception e) {
+	            Response fallback = new Response();
+	            fallback.setSuccess(false);
+	            fallback.setMessage("Doctor Service error: " + ex.getMessage());
+	            fallback.setStatus(ex.status());
+	            return ResponseEntity.status(ex.status()).body(fallback);
+	        }
+	    }
+	}
+
+	@Override
+	public ResponseEntity<Response> deletePrescription(String id) {
+	    try {
+	        return doctorServiceFeign.deletePrescription(id);
+	    } catch (FeignException ex) {
+	        try {
+	            Response doctorResponse = mapper.readValue(ex.contentUTF8(), Response.class);
+	            return ResponseEntity.status(ex.status()).body(doctorResponse);
+	        } catch (Exception e) {
+	            Response fallback = new Response();
+	            fallback.setSuccess(false);
+	            fallback.setMessage("Doctor Service error: " + ex.getMessage());
+	            fallback.setStatus(ex.status());
+	            return ResponseEntity.status(ex.status()).body(fallback);
+	        }
+	    }
+	}
+
+	@Override
+	public ResponseEntity<Response> deleteMedicine(String medicineId) {
+	    try {
+	        return doctorServiceFeign.deleteMedicine(medicineId);
+	    } catch (FeignException ex) {
+	        try {
+	            Response doctorResponse = mapper.readValue(ex.contentUTF8(), Response.class);
+	            return ResponseEntity.status(ex.status()).body(doctorResponse);
+	        } catch (Exception e) {
+	            Response fallback = new Response();
+	            fallback.setSuccess(false);
+	            fallback.setMessage("Doctor Service error: " + ex.getMessage());
+	            fallback.setStatus(ex.status());
+	            return ResponseEntity.status(ex.status()).body(fallback);
+	        }
+	    }
+	}
+
+	@Override
+	public ResponseEntity<Response> getPrescriptionsByClinicId(String clinicId) {
+	    try {
+	        return doctorServiceFeign.getPrescriptionsByClinicId(clinicId);
+	    } catch (FeignException ex) {
+	        try {
+	            Response doctorResponse = mapper.readValue(ex.contentUTF8(), Response.class);
+	            return ResponseEntity.status(ex.status()).body(doctorResponse);
+	        } catch (Exception e) {
+	            Response fallback = new Response();
+	            fallback.setSuccess(false);
+	            fallback.setMessage("Doctor Service error: " + ex.getMessage());
+	            fallback.setStatus(ex.status());
+	            return ResponseEntity.status(ex.status()).body(fallback);
+	        }
+	    }
 	}
 }

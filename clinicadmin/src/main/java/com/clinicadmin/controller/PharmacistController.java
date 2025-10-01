@@ -13,9 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.clinicadmin.dto.DoctorPrescriptionDTO;
 import com.clinicadmin.dto.PharmacistDTO;
-import com.clinicadmin.dto.PharmacistLoginDTO;
-import com.clinicadmin.dto.ResetPharmacistLoginPasswordDTO;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.service.PharmacistService;
 import com.clinicadmin.validations.RequiredChecks;
@@ -81,4 +80,47 @@ public class PharmacistController {
 //		Response response = pharmacistService.resetLoginPassword(dto);
 //		return ResponseEntity.status(response.getStatus()).body(response);
 //	}
+	
+	// ---------------- PRESCRIPTION APIs ----------------
+
+    @PostMapping("/createPrescription")
+    public ResponseEntity<Response> createPrescription(@RequestBody DoctorPrescriptionDTO dto) {
+        return pharmacistService.createPrescription(dto);
+    }
+
+    @GetMapping("/getAllPrescriptions")
+    public ResponseEntity<Response> getAllPrescriptions() {
+        return pharmacistService.getAllPrescriptions();
+    }
+
+    @GetMapping("/getPrescriptionById/{id}")
+    public ResponseEntity<Response> getPrescriptionById(@PathVariable String id) {
+        return pharmacistService.getPrescriptionById(id);
+    }
+
+    @GetMapping("/getMedicineById/{medicineId}")
+    public ResponseEntity<Response> getMedicineById(@PathVariable String medicineId) {
+        return pharmacistService.getMedicineById(medicineId);
+    }
+
+    @GetMapping("/searchMedicines/{keyword}")
+    public ResponseEntity<Response> searchMedicines(@PathVariable String keyword) {
+        return pharmacistService.searchMedicines(keyword);
+    }
+
+    @DeleteMapping("/deletePrescription/{id}")
+    public ResponseEntity<Response> deletePrescription(@PathVariable String id) {
+        return pharmacistService.deletePrescription(id);
+    }
+
+    @DeleteMapping("/deleteMedicine/{medicineId}")
+    public ResponseEntity<Response> deleteMedicine(@PathVariable String medicineId) {
+        return pharmacistService.deleteMedicine(medicineId);
+    }
+
+    @GetMapping("/getPrescriptionsByClinicId/{clinicId}")
+    public ResponseEntity<Response> getPrescriptionsByClinicId(@PathVariable String clinicId) {
+        return pharmacistService.getPrescriptionsByClinicId(clinicId);
+    }
+
 }

@@ -6,6 +6,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -58,19 +59,6 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	public ResponseEntity<?> addService(BookingRequset request) {
 		ResponseStructure<BookingResponse> response = new ResponseStructure<BookingResponse>();
 		Booking entity = toEntity(request);
-		if(request.getFollowupStatus().equalsIgnoreCase("no-followup")) {
-			Booking bkng = repository.findByMobileNumberAndPatientIdAndBookingId(request.getMobileNumber(),request.getPatientId(),request.getBookingId());
-			//System.out.println(bkng);
-			if(bkng != null) {
-		    bkng.setStatus("Completed");
-			Booking res = repository.save(bkng);
-			BookingResponse bRes = new ObjectMapper().convertValue(res, BookingResponse.class);
-			response = ResponseStructure.buildResponse(bRes, "Booking updated Sucessfully",
-					HttpStatus.OK, HttpStatus.OK.value());			
-			}else{
-				response = ResponseStructure.buildResponse(null, "Booking Not Found",
-						HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value());	
-		}}else{
 		if(request.getVisitType().equalsIgnoreCase("follow-up")){
 		if(repository.findByMobileNumberAndPatientIdAndBookingId(request.getMobileNumber(),request.getPatientId(),request.getBookingId()) != null){
 		Booking b = repository.findByMobileNumberAndPatientIdAndBookingId(request.getMobileNumber(),request.getPatientId(),request.getBookingId());
@@ -128,9 +116,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		BookingResponse bRes = new ObjectMapper().convertValue(res, BookingResponse.class);
 		response = ResponseStructure.buildResponse(bRes,"Service Booked Sucessfully",
 				HttpStatus.CREATED, HttpStatus.CREATED.value());}
-		}
 		return ResponseEntity.status(response.getStatusCode()).body(response);
-		
 	}
 		
 	
@@ -1031,9 +1017,10 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		
 		public ResponseEntity<?> updateAppointmentBasedOnBookingId(BookingResponse dto){
 			try {
+				System.out.println(dto);
 				Booking entity = repository.findByBookingId(dto.getBookingId())
 						.orElseThrow(() -> new RuntimeException("Invalid Booking Id Please provide Valid Id"));
-
+                System.out.println(entity);
 			    if (dto.getBookingId() != null && !dto.getBookingId().isEmpty()) {
 			        entity.setBookingId(dto.getBookingId());
 			    }
@@ -1185,8 +1172,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			        entity.setBookedAt(dto.getBookedAt());
 			    }
 
-			    if (dto.getStatus() != null && !dto.getStatus().isEmpty()) {
-			        entity.setStatus(dto.getStatus());
+				if(dto.getFollowupStatus().equalsIgnoreCase("no-followup")) {
+			        entity.setStatus("Completed");
 			    }
 
 			    if (dto.getVisitCount() != null) {
@@ -1199,7 +1186,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			    }
 
 			    if (dto.getConsentFormPdf() != null && !dto.getConsentFormPdf().isEmpty()) {
-			        entity.setConsentFormPdf(dto.getConsentFormPdf().getBytes());
+			        entity.setConsentFormPdf(Base64.getDecoder().decode(dto.getConsentFormPdf()));
 			    }
 
 			    if (dto.getPrescriptionPdf() != null && !dto.getPrescriptionPdf().isEmpty()) {
@@ -1218,7 +1205,11 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			    if (dto.getConsultationExpiration() != null && !dto.getConsultationExpiration().isEmpty()) {
 			        entity.setConsultationExpiration(dto.getConsultationExpiration());
 			    }
-
+			    
+			    if (dto.getFollowupStatus() != null) {
+			        entity.setFollowupStatus(dto.getFollowupStatus());
+			    }
+		    
 			    Booking e = repository.save(entity);			
 				if(e != null){	
 				return new ResponseEntity<>(ResponseStructure.buildResponse(e,

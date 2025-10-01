@@ -63,4 +63,5 @@ public class Booking  {
 	private double totalFee;
 	private String doctorRefCode;
 	private String consultationExpiration;
+	private String followupStatus;
 }
