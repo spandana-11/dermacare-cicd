@@ -396,8 +396,19 @@ public class DoctorController {
 		
 
 //		---------------------------------------------Slots using branchId----------------------------------------------
-
-		
+		 // ------------------ Generate slots dynamically ------------------
+		@GetMapping("/generateDoctorSlots/{doctorId}/{branchId}/{date}/{intervalMinutes}/{openingTime}/{closingTime}")
+		public Response generateSlots(
+		        @PathVariable String doctorId,
+		        @PathVariable String branchId,
+		        @PathVariable String date,
+		        @PathVariable int intervalMinutes,
+		        @PathVariable String openingTime,
+		        @PathVariable String closingTime
+		) {
+		    return doctorService.generateDoctorSlots(doctorId, branchId, date, intervalMinutes, openingTime, closingTime);
+		}
+	
 		@PostMapping("/addDoctorSlots/{hospitalId}/{branchId}/{doctorId}")
 		public ResponseEntity<Response> addDoctorSlot(
 		        @PathVariable String hospitalId, 

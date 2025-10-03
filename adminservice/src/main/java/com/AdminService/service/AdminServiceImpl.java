@@ -2913,10 +2913,8 @@ public class AdminServiceImpl implements AdminService {
 			ResponseEntity<ResponseStructure<SubServicesDto>> response = cssFeign.addService(subServiceId, dto);
 			return ResponseEntity.status(response.getBody().getStatusCode()).body(response.getBody());
 
-		} catch (FeignClientException ex) {
-			return buildErrorResponse(ex.getMessage(), ex.status());
-		} catch (FeignException e) {
-			return buildErrorResponse(ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR.value());
+		}catch (FeignException e) {
+			return buildErrorResponse(ExtractFeignMessage.clearMessage(e),e.status());
 		}
 	}
 
@@ -2930,7 +2928,7 @@ public class AdminServiceImpl implements AdminService {
 			return ResponseEntity.status(response.getBody().getStatusCode()).body(response.getBody());}
 
 		catch (FeignException e) {
-			return buildErrorResponse(ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR.value());
+			return buildErrorResponse(ExtractFeignMessage.clearMessage(e),e.status());
 		}
 
 	}
@@ -2943,7 +2941,7 @@ public class AdminServiceImpl implements AdminService {
 			return ResponseEntity.status(response.getBody().getStatusCode()).body(response.getBody());}
 
 		catch (FeignException e) {
-			return buildErrorResponse(ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR.value());
+			return buildErrorResponse(ExtractFeignMessage.clearMessage(e), e.status());
 		}
 	}
 
@@ -2956,7 +2954,7 @@ public class AdminServiceImpl implements AdminService {
 			return ResponseEntity.status(response.getBody().getStatusCode()).body(response.getBody());
 
 		}catch (FeignException e) {
-			return buildErrorResponse(ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR.value());
+			return buildErrorResponse(ExtractFeignMessage.clearMessage(e), e.status());
 		}
 	}
 
@@ -2970,7 +2968,7 @@ public class AdminServiceImpl implements AdminService {
 			return ResponseEntity.status(HttpStatus.OK).body(response.getBody());
 
 		} catch (FeignException e) {
-			return buildErrorResponse(ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR.value());
+			return buildErrorResponse(ExtractFeignMessage.clearMessage(e), e.status());
 		}
 	}
 	
@@ -2983,7 +2981,7 @@ public class AdminServiceImpl implements AdminService {
 	        return ResponseEntity.status(HttpStatus.OK).body(response.getBody());
 
 	    } catch (FeignException e) {
-	        return buildErrorResponseList(ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR.value());
+	        return buildErrorResponseList(ExtractFeignMessage.clearMessage(e),e.status());
 	    }
 	}
 

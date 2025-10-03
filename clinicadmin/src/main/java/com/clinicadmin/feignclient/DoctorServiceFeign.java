@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.clinicadmin.dto.DoctorNotesDTO;
 import com.clinicadmin.dto.DoctorPrescriptionDTO;
+import com.clinicadmin.dto.MedicineTypeDTO;
 import com.clinicadmin.dto.Response;
 
 @FeignClient(name = "doctor-service")
@@ -48,5 +49,12 @@ public interface DoctorServiceFeign {
 
     @GetMapping("/api/doctors/getPrescriptionsByClinicId/{clinicId}")
     ResponseEntity<Response> getPrescriptionsByClinicId(@PathVariable String clinicId);
+    
+//    -------------------------------------MedicineType ----------------------------------
+    @PostMapping("/api/doctors/search-or-add")
+    public ResponseEntity<Response> searchOrAddMedicineType(@RequestBody MedicineTypeDTO dto);
+    
+    @GetMapping("/api/doctors/getMedicineTypes/{clinicId}")
+    public ResponseEntity<Response> getMedicineTypes(@PathVariable String clinicId);
 
 }

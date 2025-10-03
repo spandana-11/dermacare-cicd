@@ -27,11 +27,9 @@ public class LabTechnicianMapper {
 
     /**
      * DTO → Entity
-     * Accepts Base64 strings directly (or encode raw bytes if needed before calling this)
      */
     public static LabTechnicianEntity toEntity(LabTechnicianRequestDTO dto) {
-        if (dto == null)
-            return null;
+        if (dto == null) return null;
 
         LabTechnicianEntity entity = new LabTechnicianEntity();
 
@@ -63,16 +61,16 @@ public class LabTechnicianMapper {
         entity.setRole(dto.getRole());
         entity.setVaccinationStatus(dto.getVaccinationStatus());
         entity.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
-
         entity.setPermissions(dto.getPermissions());
 
         return entity;
     }
 
-   
+    /**
+     * Entity → DTO
+     */
     public static LabTechnicianRequestDTO toDTO(LabTechnicianEntity entity) {
-        if (entity == null)
-            return null;
+        if (entity == null) return null;
 
         LabTechnicianRequestDTO dto = new LabTechnicianRequestDTO();
 
@@ -95,7 +93,7 @@ public class LabTechnicianMapper {
         dto.setEmergencyContact(entity.getEmergencyContact());
         dto.setBankAccountDetails(entity.getBankAccountDetails());
 
-        // Return Base64 strings as-is
+        // Return Base64 strings directly
         dto.setMedicalFitnessCertificate(entity.getMedicalFitnessCertificate());
         dto.setLabLicenseOrRegistration(entity.getLabLicenseOrRegistration());
         dto.setProfilePicture(entity.getProfilePicture());
@@ -104,7 +102,6 @@ public class LabTechnicianMapper {
         dto.setRole(entity.getRole());
         dto.setVaccinationStatus(entity.getVaccinationStatus());
         dto.setPreviousEmploymentHistory(entity.getPreviousEmploymentHistory());
-
         dto.setPermissions(entity.getPermissions());
 
         return dto;

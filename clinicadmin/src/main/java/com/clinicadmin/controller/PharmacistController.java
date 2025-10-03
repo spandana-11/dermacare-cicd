@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.clinicadmin.dto.DoctorPrescriptionDTO;
+import com.clinicadmin.dto.MedicineTypeDTO;
 import com.clinicadmin.dto.PharmacistDTO;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.service.PharmacistService;
@@ -122,5 +123,15 @@ public class PharmacistController {
     public ResponseEntity<Response> getPrescriptionsByClinicId(@PathVariable String clinicId) {
         return pharmacistService.getPrescriptionsByClinicId(clinicId);
     }
+    
+    // ---------------- MEDICINE TYPE APIs ----------------
+    @PostMapping("/search-or-add")
+    public ResponseEntity<Response> searchOrAddMedicineType(@RequestBody MedicineTypeDTO dto) {
+        return pharmacistService.searchOrAddMedicineType(dto);
+    }
 
+    @GetMapping("/getMedicineTypes/{clinicId}")
+    public ResponseEntity<Response> getMedicineTypes(@PathVariable String clinicId) {
+        return pharmacistService.getMedicineTypes(clinicId);
+    }
 }

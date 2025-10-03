@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import com.clinicadmin.dto.Branch;
 import com.clinicadmin.dto.DoctorPrescriptionDTO;
+import com.clinicadmin.dto.MedicineTypeDTO;
 import com.clinicadmin.dto.PharmacistDTO;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.entity.DoctorLoginCredentials;
@@ -503,4 +504,44 @@ public class PharmacistServiceImpl implements PharmacistService {
 	        }
 	    }
 	}
+	
+	// ---------------- MEDICINE TYPE APIs (NEW) ----------------
+
+	@Override
+	public ResponseEntity<Response> searchOrAddMedicineType(MedicineTypeDTO dto) {
+	    try {
+	        return doctorServiceFeign.searchOrAddMedicineType(dto);
+	    } catch (FeignException ex) {
+	        try {
+	            Response doctorResponse = mapper.readValue(ex.contentUTF8(), Response.class);
+	            return ResponseEntity.status(ex.status()).body(doctorResponse);
+	        } catch (Exception e) {
+	            Response fallback = new Response();
+	            fallback.setSuccess(false);
+	            fallback.setMessage("Doctor Service error: " + ex.getMessage());
+	            fallback.setStatus(ex.status());
+	            return ResponseEntity.status(ex.status()).body(fallback);
+	        }
+	    }
+	}
+
+	@Override
+	public ResponseEntity<Response> getMedicineTypes(String clinicId) {
+	    try {
+	        return doctorServiceFeign.getMedicineTypes(clinicId);
+	    } catch (FeignException ex) {
+	        try {
+	            Response doctorResponse = mapper.readValue(ex.contentUTF8(), Response.class);
+	            return ResponseEntity.status(ex.status()).body(doctorResponse);
+	        } catch (Exception e) {
+	            Response fallback = new Response();
+	            fallback.setSuccess(false);
+	            fallback.setMessage("Doctor Service error: " + ex.getMessage());
+	            fallback.setStatus(ex.status());
+	            return ResponseEntity.status(ex.status()).body(fallback);
+	        }
+	    }
+	}
+
+
 }

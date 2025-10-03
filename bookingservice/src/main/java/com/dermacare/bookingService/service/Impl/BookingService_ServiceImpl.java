@@ -1017,10 +1017,10 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		
 		public ResponseEntity<?> updateAppointmentBasedOnBookingId(BookingResponse dto){
 			try {
-				System.out.println(dto);
+				//System.out.println(dto);
 				Booking entity = repository.findByBookingId(dto.getBookingId())
 						.orElseThrow(() -> new RuntimeException("Invalid Booking Id Please provide Valid Id"));
-                System.out.println(entity);
+                //System.out.println(entity);
 			    if (dto.getBookingId() != null && !dto.getBookingId().isEmpty()) {
 			        entity.setBookingId(dto.getBookingId());
 			    }
@@ -1172,7 +1172,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			        entity.setBookedAt(dto.getBookedAt());
 			    }
 
-				if(dto.getFollowupStatus().equalsIgnoreCase("no-followup")) {
+				if(dto.getFollowupStatus() != null && dto.getFollowupStatus().equalsIgnoreCase("no-followup")) {
 			        entity.setStatus("Completed");
 			    }
 

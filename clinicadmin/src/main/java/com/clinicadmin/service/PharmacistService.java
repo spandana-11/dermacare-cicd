@@ -3,6 +3,7 @@ package com.clinicadmin.service;
 import org.springframework.http.ResponseEntity;
 
 import com.clinicadmin.dto.DoctorPrescriptionDTO;
+import com.clinicadmin.dto.MedicineTypeDTO;
 import com.clinicadmin.dto.PharmacistDTO;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.PharmacistLoginDTO;
@@ -24,4 +25,6 @@ public interface PharmacistService {
 	ResponseEntity<Response> getPrescriptionById(String id);
 	ResponseEntity<Response> getAllPrescriptions();
 	ResponseEntity<Response> createPrescription(DoctorPrescriptionDTO dto);
+	ResponseEntity<Response> getMedicineTypes(String clinicId);
+	ResponseEntity<Response> searchOrAddMedicineType(MedicineTypeDTO dto);
 }

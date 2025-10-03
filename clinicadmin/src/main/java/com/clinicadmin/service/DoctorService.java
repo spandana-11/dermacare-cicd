@@ -33,9 +33,9 @@ public interface DoctorService {
 //	public Response deleteDoctorSlot(String doctorId, String date, String slotToDelete, String branchId);
 
 //Response updateDoctorSlot(String doctorId, String date, String oldSlotTime, String newSlotTime);
-	public Response updateDoctorSlot( String doctorId, String date, String oldSlot, String newSlot) ;
+	public Response updateDoctorSlot(String doctorId, String date, String oldSlot, String newSlot);
 
-	public Response deleteDoctorSlot( String doctorId, String date, String slotToDelete) ;
+	public Response deleteDoctorSlot(String doctorId, String date, String slotToDelete);
 
 	public Response deleteDoctorById(String doctorId);
 
@@ -79,8 +79,6 @@ public interface DoctorService {
 
 	Response deleteDoctorSlotbyDate(String doctorId, String date);
 
-	
-
 //	---------------------------------------------Slots using branchId----------------------------------------------
 	Response saveDoctorSlot(String hospitalId, String branchId, String doctorId, DoctorSlotDTO dto);
 
@@ -92,5 +90,7 @@ public interface DoctorService {
 
 	public Response deleteDoctorFromBranch(String doctorId, String branchId);
 
-}
+	Response generateDoctorSlots(String doctorId, String branchId, String date, int intervalMinutes, String openingTime,
+			String closingTime);
 
+}

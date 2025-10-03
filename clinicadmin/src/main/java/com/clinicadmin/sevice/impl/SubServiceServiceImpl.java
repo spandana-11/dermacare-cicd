@@ -124,11 +124,10 @@ public class SubServiceServiceImpl implements SubServiceService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<SubServicesDto>> updateBySubServiceId(String hospitalId, String serviceId,
+	public ResponseEntity<ResponseStructure<SubServicesDto>> updateBySubServiceId(String hospitalId, String subServiceId,
 			SubServicesDto domainServices) {
 		try {
-			ResponseEntity<ResponseStructure<SubServicesDto>> response = feignClient.updateBySubServiceId(hospitalId,
-					serviceId, domainServices);
+			ResponseEntity<ResponseStructure<SubServicesDto>> response = feignClient.updateBySubServiceId(hospitalId, subServiceId, domainServices);
 			return ResponseEntity.status(response.getBody().getStatusCode()).body(response.getBody());
 
 		}catch (FeignException e) {
