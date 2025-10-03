@@ -31,6 +31,7 @@ public class MedicineDTO {
     private String dateOfManufacturing;
     private String dateOfExpriy;
     private String ManufacturingLicenseNumber;
+    private String stock;
 
 }
 

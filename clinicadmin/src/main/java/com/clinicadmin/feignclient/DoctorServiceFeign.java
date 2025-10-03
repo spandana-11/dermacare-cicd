@@ -6,10 +6,12 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.clinicadmin.dto.DoctorNotesDTO;
 import com.clinicadmin.dto.DoctorPrescriptionDTO;
+import com.clinicadmin.dto.MedicineDTO;
 import com.clinicadmin.dto.MedicineTypeDTO;
 import com.clinicadmin.dto.Response;
 
@@ -49,6 +51,10 @@ public interface DoctorServiceFeign {
 
     @GetMapping("/api/doctors/getPrescriptionsByClinicId/{clinicId}")
     ResponseEntity<Response> getPrescriptionsByClinicId(@PathVariable String clinicId);
+    
+    @PutMapping("/api/doctors/updateMedicine/{medicineId}")
+    public ResponseEntity<Response> updateMedicine(@PathVariable String medicineId,
+                                                   @RequestBody MedicineDTO dto);
     
 //    -------------------------------------MedicineType ----------------------------------
     @PostMapping("/api/doctors/search-or-add")

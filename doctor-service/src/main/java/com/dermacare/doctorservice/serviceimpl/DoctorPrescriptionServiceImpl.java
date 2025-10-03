@@ -89,6 +89,7 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                     existingMed.setDateOfManufacturing(incomingMed.getDateOfManufacturing());               
                     existingMed.setDateOfExpriy(incomingMed.getDateOfExpriy());               
                     existingMed.setManufacturingLicenseNumber(incomingMed.getManufacturingLicenseNumber());               
+                    existingMed.setStock(incomingMed.getStock());               
 
                     updatedExistingMedicine = true;
                 } else {
@@ -112,7 +113,8 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                             incomingMed.getBatchNumber(),
                             incomingMed.getDateOfManufacturing(),
                             incomingMed.getDateOfExpriy(),
-                            incomingMed.getManufacturingLicenseNumber()
+                            incomingMed.getManufacturingLicenseNumber(),
+                            incomingMed.getStock()
                     ));
                     addedNewMedicine = true;
                 }
@@ -146,7 +148,8 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                             m.getBatchNumber(),
                             m.getDateOfManufacturing(),
                             m.getDateOfExpriy(),
-                            m.getManufacturingLicenseNumber()
+                            m.getManufacturingLicenseNumber(),
+                            m.getStock()
                     ))
                     .collect(Collectors.toList())
             );
@@ -199,7 +202,8 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                                 m.getBatchNumber(),
                                 m.getDateOfManufacturing(),
                                 m.getDateOfExpriy(),
-                                m.getManufacturingLicenseNumber()
+                                m.getManufacturingLicenseNumber(),
+                                m.getStock()
                         ))
                         .collect(Collectors.toList());
 
@@ -245,7 +249,8 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                                 m.getBatchNumber(),
                                 m.getDateOfManufacturing(),
                                 m.getDateOfExpriy(),
-                                m.getManufacturingLicenseNumber()
+                                m.getManufacturingLicenseNumber(),
+                                m.getStock()
                         ))
                         .collect(Collectors.toList());
 
@@ -289,7 +294,8 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                         m.getBatchNumber(),
                         m.getDateOfManufacturing(),
                         m.getDateOfExpriy(),
-                        m.getManufacturingLicenseNumber()
+                        m.getManufacturingLicenseNumber(),
+                        m.getStock()
                 )).collect(Collectors.toList());
 
                 return new Response(true, dtos, "Medicine found", HttpStatus.OK.value());
@@ -392,7 +398,8 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                     m.getBatchNumber(),
                     m.getDateOfManufacturing(),
                     m.getDateOfExpriy(),
-                    m.getManufacturingLicenseNumber()
+                    m.getManufacturingLicenseNumber(),
+                    m.getStock()
             );
 
             return new Response(true, List.of(dto), "Medicine found", HttpStatus.OK.value());
@@ -433,7 +440,8 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                                 m.getBatchNumber(),
                                 m.getDateOfManufacturing(),
                                 m.getDateOfExpriy(),
-                                m.getManufacturingLicenseNumber()
+                                m.getManufacturingLicenseNumber(),
+                                m.getStock()
                         ))
                         .collect(Collectors.toList());
 
@@ -449,4 +457,233 @@ public class DoctorPrescriptionServiceImpl implements DoctorPrescriptionService 
                     HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+    @Override
+    public Response updatePrescription(String id, DoctorPrescriptionDTO dto) {
+        try {
+            Optional<DoctorPrescription> optional = repository.findById(id);
+            if (optional.isEmpty()) {
+                return new Response(false, null,
+                        "Prescription not found with id: " + id,
+                        HttpStatus.NOT_FOUND.value());
+            }
+
+            DoctorPrescription existingPrescription = optional.get();
+
+            // Update clinicId if provided
+            if (dto.getClinicId() != null && !dto.getClinicId().isBlank()) {
+                existingPrescription.setClinicId(dto.getClinicId());
+            }
+
+            List<Medicine> updatedMedicines = new ArrayList<>();
+
+            if (dto.getMedicines() != null && !dto.getMedicines().isEmpty()) {
+                for (MedicineDTO medDto : dto.getMedicines()) {
+                    if (medDto.getId() != null) {
+                        // Try to find existing medicine
+                        Optional<Medicine> existingMedOpt = existingPrescription.getMedicines().stream()
+                                .filter(m -> m.getId().equals(medDto.getId()))
+                                .findFirst();
+
+                        if (existingMedOpt.isPresent()) {
+                            Medicine existingMed = existingMedOpt.get();
+                            existingMed.setName(medDto.getName());
+                            existingMed.setDose(medDto.getDose());
+                            existingMed.setDuration(medDto.getDuration());
+                            existingMed.setDurationUnit(medDto.getDurationUnit());
+                            existingMed.setNote(medDto.getNote());
+                            existingMed.setFood(medDto.getFood());
+                            existingMed.setMedicineType(medDto.getMedicineType());
+                            existingMed.setRemindWhen(medDto.getRemindWhen());
+                            existingMed.setTimes(medDto.getTimes());
+                            existingMed.setOthers(medDto.getOthers());
+                            existingMed.setSerialNumber(medDto.getSerialNumber());
+                            existingMed.setGenericName(medDto.getGenericName());
+                            existingMed.setBrandName(medDto.getBrandName());
+                            existingMed.setNameAndAddressOfTheManufacturer(medDto.getNameAndAddressOfTheManufacturer());
+                            existingMed.setBatchNumber(medDto.getBatchNumber());
+                            existingMed.setDateOfManufacturing(medDto.getDateOfManufacturing());
+                            existingMed.setDateOfExpriy(medDto.getDateOfExpriy());
+                            existingMed.setManufacturingLicenseNumber(medDto.getManufacturingLicenseNumber());
+                            existingMed.setStock(medDto.getStock());
+
+                            updatedMedicines.add(existingMed);
+                        } else {
+                            // If medicineId not found → treat as new medicine
+                            updatedMedicines.add(new Medicine(
+                                    medDto.getId() != null ? medDto.getId() : UUID.randomUUID().toString(),
+                                    medDto.getName(),
+                                    medDto.getDose(),
+                                    medDto.getDuration(),
+                                    medDto.getDurationUnit(),
+                                    medDto.getNote(),
+                                    medDto.getFood(),
+                                    medDto.getMedicineType(),
+                                    medDto.getRemindWhen(),
+                                    medDto.getOthers(),
+                                    medDto.getTimes(),
+                                    medDto.getSerialNumber(),
+                                    medDto.getGenericName(),
+                                    medDto.getBrandName(),
+                                    medDto.getNameAndAddressOfTheManufacturer(),
+                                    medDto.getBatchNumber(),
+                                    medDto.getDateOfManufacturing(),
+                                    medDto.getDateOfExpriy(),
+                                    medDto.getManufacturingLicenseNumber(), 
+                                    medDto.getStock() 
+                            ));
+                        }
+                    } else {
+                        // New medicine (no id provided)
+                        updatedMedicines.add(new Medicine(
+                                UUID.randomUUID().toString(),
+                                medDto.getName(),
+                                medDto.getDose(),
+                                medDto.getDuration(),
+                                medDto.getDurationUnit(),
+                                medDto.getNote(),
+                                medDto.getFood(),
+                                medDto.getMedicineType(),
+                                medDto.getRemindWhen(),
+                                medDto.getOthers(),
+                                medDto.getTimes(),
+                                medDto.getSerialNumber(),
+                                medDto.getGenericName(),
+                                medDto.getBrandName(),
+                                medDto.getNameAndAddressOfTheManufacturer(),
+                                medDto.getBatchNumber(),
+                                medDto.getDateOfManufacturing(),
+                                medDto.getDateOfExpriy(),
+                                medDto.getManufacturingLicenseNumber(),
+                                medDto.getStock()
+                        ));
+                    }
+                }
+            }
+
+            existingPrescription.setMedicines(updatedMedicines);
+            DoctorPrescription saved = repository.save(existingPrescription);
+
+            // Convert back to DTO
+            DoctorPrescriptionDTO responseDTO = new DoctorPrescriptionDTO();
+            responseDTO.setId(saved.getId());
+            responseDTO.setClinicId(saved.getClinicId());
+            responseDTO.setMedicines(saved.getMedicines().stream()
+                    .map(m -> new MedicineDTO(
+                            m.getId(),
+                            m.getName(),
+                            m.getDose(),
+                            m.getDuration(),
+                            m.getDurationUnit(),
+                            m.getNote(),
+                            m.getFood(),
+                            m.getMedicineType(),
+                            m.getRemindWhen(),
+                            m.getTimes(),
+                            m.getOthers(),
+                            m.getSerialNumber(),
+                            m.getGenericName(),
+                            m.getBrandName(),
+                            m.getNameAndAddressOfTheManufacturer(),
+                            m.getBatchNumber(),
+                            m.getDateOfManufacturing(),
+                            m.getDateOfExpriy(),
+                            m.getManufacturingLicenseNumber(),
+                            m.getStock()
+                    ))
+                    .collect(Collectors.toList())
+            );
+
+            return new Response(true, responseDTO,
+                    "Prescription updated successfully",
+                    HttpStatus.OK.value());
+
+        } catch (Exception e) {
+            return new Response(false, null,
+                    "Failed to update prescription: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+    
+    @Override
+    public Response updateMedicineById(String medicineId, MedicineDTO dto) {
+        try {
+            // Find the prescription that contains this medicine
+            Optional<DoctorPrescription> prescriptionOpt = repository.findAll().stream()
+                    .filter(p -> p.getMedicines() != null &&
+                            p.getMedicines().stream().anyMatch(m -> m.getId().equals(medicineId)))
+                    .findFirst();
+
+            if (prescriptionOpt.isEmpty()) {
+                return new Response(false, null,
+                        "Medicine not found with id: " + medicineId,
+                        HttpStatus.NOT_FOUND.value());
+            }
+
+            DoctorPrescription prescription = prescriptionOpt.get();
+
+            // find the medicine
+            Medicine medicine = prescription.getMedicines().stream()
+                    .filter(m -> m.getId().equals(medicineId))
+                    .findFirst().get();
+
+            // update fields if provided
+            if (dto.getName() != null) medicine.setName(dto.getName());
+            if (dto.getDose() != null) medicine.setDose(dto.getDose());
+            if (dto.getDuration() != null) medicine.setDuration(dto.getDuration());
+            if (dto.getDurationUnit() != null) medicine.setDurationUnit(dto.getDurationUnit());
+            if (dto.getNote() != null) medicine.setNote(dto.getNote());
+            if (dto.getFood() != null) medicine.setFood(dto.getFood());
+            if (dto.getMedicineType() != null) medicine.setMedicineType(dto.getMedicineType());
+            if (dto.getRemindWhen() != null) medicine.setRemindWhen(dto.getRemindWhen());
+            if (dto.getTimes() != null) medicine.setTimes(dto.getTimes());
+            if (dto.getOthers() != null) medicine.setOthers(dto.getOthers());
+            if (dto.getSerialNumber() != null) medicine.setSerialNumber(dto.getSerialNumber());
+            if (dto.getGenericName() != null) medicine.setGenericName(dto.getGenericName());
+            if (dto.getBrandName() != null) medicine.setBrandName(dto.getBrandName());
+            if (dto.getNameAndAddressOfTheManufacturer() != null)
+                medicine.setNameAndAddressOfTheManufacturer(dto.getNameAndAddressOfTheManufacturer());
+            if (dto.getBatchNumber() != null) medicine.setBatchNumber(dto.getBatchNumber());
+            if (dto.getDateOfManufacturing() != null) medicine.setDateOfManufacturing(dto.getDateOfManufacturing());
+            if (dto.getDateOfExpriy() != null) medicine.setDateOfExpriy(dto.getDateOfExpriy());
+            if (dto.getManufacturingLicenseNumber() != null)
+                medicine.setManufacturingLicenseNumber(dto.getManufacturingLicenseNumber());
+            if (dto.getStock() != null)
+                medicine.setStock(dto.getStock());
+
+            // save prescription
+            repository.save(prescription);
+
+            // convert to DTO for response
+            MedicineDTO updatedDto = new MedicineDTO(
+                    medicine.getId(),
+                    medicine.getName(),
+                    medicine.getDose(),
+                    medicine.getDuration(),
+                    medicine.getDurationUnit(),
+                    medicine.getNote(),
+                    medicine.getFood(),
+                    medicine.getMedicineType(),
+                    medicine.getRemindWhen(),
+                    medicine.getTimes(),
+                    medicine.getOthers(),
+                    medicine.getSerialNumber(),
+                    medicine.getGenericName(),
+                    medicine.getBrandName(),
+                    medicine.getNameAndAddressOfTheManufacturer(),
+                    medicine.getBatchNumber(),
+                    medicine.getDateOfManufacturing(),
+                    medicine.getDateOfExpriy(),
+                    medicine.getManufacturingLicenseNumber(),
+                    medicine.getStock()
+            );
+
+            return new Response(true, updatedDto, "Medicine updated successfully", HttpStatus.OK.value());
+
+        } catch (Exception e) {
+            return new Response(false, null, "Failed to update medicine: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+
 }
