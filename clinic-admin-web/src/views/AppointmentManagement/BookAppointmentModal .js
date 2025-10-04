@@ -16,145 +16,182 @@ import {
   COffcanvasHeader,
   COffcanvasTitle,
   COffcanvasBody,
+  CButton,
 } from '@coreui/react'
-import { BASE_URL, Category, getservice, subservice, wifiUrl } from '../../baseUrl'
+
+import { GetClinicBranches } from '../Doctors/DoctorAPI'
+
+import {
+  CategoryData,
+  serviceDataH,
+  subServiceData,
+  getSubServiceById,
+} from '../ProcedureManagement/ProcedureManagementAPI'
+import { BASE_URL } from '../../baseUrl'
+import axios from 'axios'
 
 const BookAppointmentModal = ({ visible, onClose }) => {
   const [visitType, setVisitType] = useState('first')
   const [appointmentType, setAppointmentType] = useState('services')
-  const [loading, setLoading] = useState([])
-  const [allSlots, setAllSlots] = useState([])
-  const [subServices, setSubServices] = useState([])
+  const [patientSearch, setPatientSearch] = useState("");
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [doctorData, setDoctorData] = useState([]); // initialize as empty array
+  const [slotsForSelectedDate, setSlotsForSelectedDate] = useState([]);
 
+
+
+
+
+  // dropdown lists
   const [categories, setCategories] = useState([])
+  const [selectedProcedure, setSelectedProcedure] = useState('')
+  const [procedures, setProcedures] = useState([]) // for sub-services
+  const [loading, setLoading] = useState([])
+
+
   const [services, setServices] = useState([])
-  const [procedures, setProcedures] = useState([])
+  const [subServices, setSubServices] = useState([])
   const [branches, setBranches] = useState([])
   const [doctors, setDoctors] = useState([])
+  const [allSlots, setAllSlots] = useState([]); // initialize as empty array
+const [loadingDoctors, setLoadingDoctors] = useState(false);
 
+
+  // selected values
   const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedService, setSelectedService] = useState('')
-  const [selectedProcedure, setSelectedProcedure] = useState('')
+  const [selectedSubService, setSelectedSubService] = useState('')
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
 
   const [bookingDetails, setBookingDetails] = useState({
     branchId: localStorage.getItem('branchId'),
     clinicId: localStorage.getItem('HospitalId'),
-
     bookingFor: 'Self',
     name: '',
-    relation: '',
     patientMobileNumber: '',
-    visitType: 'first',
-    freeFollowUpsLeft: '',
-    freeFollowUps: '',
     patientAddress: '',
     age: '',
     gender: '',
-    mobileNumber: '',
-    consultationExpiration: '',
-    problem: '',
-    symptomsDuration: '',
-    clinicName: '',
     branchname: '',
     doctorName: '',
+    categoryName: '',
+    serviceName: '',
     subServiceName: '',
     serviceDate: '',
     servicetime: '',
-    consultationType: '',
-    consultationFee: '',
-    visitCount: '',
-    reasonForCancel: '',
     notes: '',
-    BookedAt: '',
-    status: '',
-    totalFee: '',
-    attachments: [],
-    consentFormPdf: '',
-    prescriptionPdf: [],
-    doctorRefCode: '',
-    paymentType: '',
+    doctorRefCode:''
   })
+bookingDetails.address = {
+  houseNo: '',
+      street: '',
+      landmark: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: 'India',
+};
 
   const [errors, setErrors] = useState({})
+ const handlePatientSearch = (e) => {
+  const query = e.target.value;
+  setPatientSearch(query);
 
-  // Fetch categories
+  if (query.trim() === "") {
+    setFilteredPatients([]);
+    return;
+  }
+
+  const filtered = patients.filter(
+    (patient) =>
+      patient.name.toLowerCase().includes(query.toLowerCase()) ||
+      patient.patientId.toLowerCase().includes(query.toLowerCase()) ||
+      patient.mobileNumber.includes(query)
+  );
+
+  setFilteredPatients(filtered);
+};
+
+
+  // ✅ Fetch Categories
   useEffect(() => {
     if (visible) {
-      fetch(`${BASE_URL}/${Category}`)
-        .then((res) => res.json())
-        .then((data) => setCategories(Array.isArray(data.data) ? data.data : []))
+      CategoryData()
+        .then((res) => {
+          setCategories(Array.isArray(res.data) ? res.data : [])
+        })
         .catch(() => setCategories([]))
     }
   }, [visible])
 
-  // Fetch services when category changes
+  // ✅ Fetch Services when Category changes
   useEffect(() => {
     if (!selectedCategory) {
       setServices([])
       setSelectedService('')
-      setProcedures([])
-      setSelectedProcedure('')
       return
     }
 
-    fetch(`${BASE_URL}/${getservice}/${selectedCategory}`)
-      .then((res) => res.json())
-      .then((data) => {
-        const servicesData = Array.isArray(data.data) ? data.data : []
-        setServices(servicesData)
+    serviceDataH(selectedCategory)
+      .then((res) => {
+        setServices(Array.isArray(res.data) ? res.data : [])
         setSelectedService('')
-        setProcedures([])
-        setSelectedProcedure('')
+        setSubServices([])
+        setSelectedSubService('')
       })
-      .catch((err) => console.error('Error fetching services:', err))
+      .catch(() => setServices([]))
   }, [selectedCategory])
 
-  // Fetch procedures (sub-services) when service changes
-  useEffect(() => {
-    if (!selectedService) {
-      setProcedures([])
-      setSelectedProcedure('')
-      setBookingDetails((prev) => ({ ...prev, subServiceName: '' }))
-      return
+  // ✅ Fetch SubServices when Service changes
+useEffect(() => {
+  console.log("useEffect triggered with service ID:", selectedService);
+
+  if (!selectedService) {
+    setSubServices([]);
+    setSelectedSubService('');
+    return;
+  }
+
+  const fetchSubServices = async () => {
+    try {
+      const res = await subServiceData(selectedService); 
+      console.log("API response for service ID:", selectedService, res.data);
+
+      const blocks = Array.isArray(res.data) ? res.data : [];
+      const allSubServices = blocks.flatMap(block => block.subServices || []);
+
+      setSubServices(allSubServices);
+      setSelectedSubService('');
+    } catch (err) {
+      console.error("Error fetching sub-services:", err);
+      setSubServices([]);
+      setSelectedSubService('');
     }
+  };
 
-    // Correct URL: use selectedService, not selectedProcedure
-    fetch(`${wifiUrl}/api/customer/getSubServiceInfo/${selectedService}`)
-      .then((res) => res.json())
-      .then((data) => {
-        console.log('Sub-services for service', selectedService, data)
+  fetchSubServices();
+}, [selectedService]);
 
-        const subServices = Array.isArray(data.data) ? data.data : []
-        setProcedures(subServices)
 
-        // Reset selectedProcedure only if there are no sub-services
-        if (subServices.length === 0) {
-          setSelectedProcedure('')
-          setBookingDetails((prev) => ({ ...prev, subServiceName: '' }))
-        }
-      })
-      .catch((err) => console.error('Error fetching sub-services:', err))
-  }, [selectedService])
 
-  // Fetch branches
+
+
+  // ✅ Fetch Branches (when modal opens)
   useEffect(() => {
-    if (!visible) return // only fetch when modal is visible
+    if (!visible) return
 
     const fetchBranches = async () => {
       try {
         const clinicId = localStorage.getItem('HospitalId')
-        const response = await GetClinicBranches(clinicId) // ✅ call your API helper
-
+        const response = await GetClinicBranches(clinicId)
         const branchList = Array.isArray(response.data) ? response.data : []
-
         const formattedBranches = branchList.map((b) => ({
-          branchId: b.branchId || b.id || b.name,
+          branchId: b.branchId || b.id,
           branchName: b.branchName || b.name,
         }))
-
         setBranches(formattedBranches)
-      } catch (err) {
-        console.error('Error fetching branches:', err)
+      } catch {
         setBranches([])
       }
     }
@@ -162,68 +199,203 @@ const BookAppointmentModal = ({ visible, onClose }) => {
     fetchBranches()
   }, [visible])
 
-  // Fetch available slots for a doctor
+  // ✅ Example: Fetch Doctors when Branch & SubService are chosen
+  // ✅ Fetch Doctors when Branch & SubService are chosen
 
-  const handleBookingChange = (e) => {
-    const { name, value } = e.target
-    setBookingDetails((prev) => ({ ...prev, [name]: value }))
+
+
+
+useEffect(() => {
+  const fetchDoctors = async () => {
+    if (!bookingDetails.branchId || !selectedSubService) {
+      setDoctors([]);
+      return;
+    }
+
+    setLoadingDoctors(true);
+    try {
+      const clinicId = localStorage.getItem('HospitalId');
+      const branchId = bookingDetails.branchId;
+      const subServiceId = selectedSubService;
+
+      const url = `${BASE_URL}/doctors/${clinicId}/${branchId}/${subServiceId}`;
+      console.log("Doctors API URL:", url);
+
+      const response = await axios.get(url);
+      console.log("Response data:", response.data);
+
+      // ✅ Use response.data.data
+      setDoctors(Array.isArray(response.data.data) ? response.data.data : []);
+    } catch (err) {
+      console.error('Error fetching doctors:', err);
+      setDoctors([]);
+    } finally {
+      setLoadingDoctors(false);
+    }
+  };
+
+  fetchDoctors(); 
+}, [bookingDetails.branchId, selectedSubService]);
+
+ const fetchSlots = async (doctorId) => {
+  try {
+    const hospitalId = localStorage.getItem('HospitalId');
+    const branchId = bookingDetails.branchId;
+
+    const response = await axios.get(
+      `${BASE_URL}/getDoctorSlots/${hospitalId}/${branchId}/${doctorId}`
+    );
+
+    if (response.data.success) {
+      console.log('Fetched Slots Data:', response.data.data);  // ✅ Check console
+      setSlotsForSelectedDate(response.data.data);
+    } else {
+      setSlotsForSelectedDate([]);
+    }
+  } catch (error) {
+    console.error('Error fetching slots:', error);
+    setSlotsForSelectedDate([]);
+  } finally {
+    setLoadingSlots(false);
+  }
+};
+
+
+
+
+
+// Fetch available slots for a doctor
+
+ const handleBookingChange = (e) => {
+  const { name, value } = e.target;
+  console.log(`name: ${name}, value: ${value}`);
+  
+
+
+  if (name === "branchname") {
+    setBookingDetails((prev) => ({
+      ...prev,
+      branchId: value, // store branchId instead
+    }));
+  } else {
+    setBookingDetails((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }
+};
+
+
+
+ const validate = () => {
+  const newErrors = {};
+
+  // Name
+  if (!bookingDetails.name?.trim()) newErrors.name = 'Name is required.';
+  else if (!/^[A-Za-z\s]+$/.test(bookingDetails.name))
+    newErrors.name = 'Name must contain only letters.';
+  else if (bookingDetails.name.length < 3 || bookingDetails.name.length > 50)
+    newErrors.name = 'Name must be 3-50 characters.';
+
+  if (!bookingDetails.patientId?.trim()) {
+  newErrors.patientId = 'Patient ID is required.';
+} else if (bookingDetails.patientId.length < 3 || bookingDetails.patientId.length > 20) {
+  newErrors.patientId = 'Patient ID must be 3-20 characters.';
+}
+  
+
+  // Address
+  if (!bookingDetails.patientAddress?.trim())
+    newErrors.patientAddress = 'Address is required.';
+  else if (bookingDetails.patientAddress.length < 5 || bookingDetails.patientAddress.length > 200)
+    newErrors.patientAddress = 'Address must be 5-200 characters.';
+
+  // Mobile Number
+  if (!bookingDetails.patientMobileNumber?.trim())
+    newErrors.patientMobileNumber = 'Mobile number is required.';
+  else if (!/^[6-9]\d{9}$/.test(bookingDetails.patientMobileNumber))
+    newErrors.patientMobileNumber = 'Enter a valid 10-digit mobile number starting with 6-9.';
+
+  // Age
+  if (!bookingDetails.age) newErrors.age = 'Age is required.';
+  else if (bookingDetails.age < 0 || bookingDetails.age > 120)
+    newErrors.age = 'Age must be between 0 and 120.';
+
+  // Gender
+  if (!bookingDetails.gender) newErrors.gender = 'Gender is required.';
+
+  // Branch
+  if (!bookingDetails.branchname) newErrors.branchname = 'Branch selection is required.';
+
+  // Doctor Name
+  if (!bookingDetails.doctorName) newErrors.doctorName = 'Doctor name is required.';
+
+  // Service Selection
+  if (appointmentType === 'services') {
+    if (!selectedCategory) newErrors.selectedCategory = 'Category selection is required.';
+    if (!selectedService) newErrors.selectedService = 'Service selection is required.';
+    if (!selectedSubService) newErrors.subServiceName = 'Sub-service selection is required.';
   }
 
-  const validate = () => {
-    const newErrors = {}
+  // Slot Selection
+  if (!bookingDetails.slot) newErrors.slot = 'Please select a slot.';
 
-    // Name
-    if (!bookingDetails.name.trim()) newErrors.name = 'Name is required.'
-    else if (!/^[A-Za-z\s]+$/.test(bookingDetails.name))
-      newErrors.name = 'Name must contain only letters.'
-    else if (bookingDetails.name.length < 3 || bookingDetails.name.length > 50)
-      newErrors.name = 'Name must be 3-50 characters.'
 
-    // Address
-    if (!bookingDetails.patientAddress.trim()) newErrors.patientAddress = 'Address is required.'
+ 
 
-    // Mobile Number
-    if (!bookingDetails.patientMobileNumber.trim())
-      newErrors.patientMobileNumber = 'Mobile number is required.'
-    else if (!/^[6-9]\d{9}$/.test(bookingDetails.patientMobileNumber))
-      newErrors.patientMobileNumber = 'Enter a valid 10-digit mobile number starting with 6-9.'
+  // Consultation & Payment
+ // Consultation Fee
+const fee = Number(bookingDetails.consultationFee);
 
-    // Age
-    if (!bookingDetails.age) newErrors.age = 'Age is required.'
-    else if (bookingDetails.age < 0 || bookingDetails.age > 120)
-      newErrors.age = 'Age must be between 0 and 120.'
+if (!bookingDetails.consultationFee) {
+  newErrors.consultationFee = 'Consultation Fee is required.';
+} else if (isNaN(fee) || fee <= 0) {
+  newErrors.consultationFee = 'Consultation Fee must be greater than zero.';
+} else if (fee > 100000) {
+  newErrors.consultationFee = 'Consultation Fee cannot exceed 100,000.';
+}
 
-    // Gender
-    if (!bookingDetails.gender) newErrors.gender = 'Gender is required.'
 
-    // Clinic Name
-    if (!bookingDetails.clinicName.trim()) newErrors.clinicName = 'Clinic name is required.'
 
-    // Branch
-    if (!bookingDetails.branchname) newErrors.branchname = 'Branch selection is required.'
+const discountAmount = Number(bookingDetails.discountAmount);
 
-    // Doctor Name
-    if (!bookingDetails.doctorName.trim()) newErrors.doctorName = 'Doctor name is required.'
+if (bookingDetails.discountAmount === '' || bookingDetails.discountAmount === null) {
+  newErrors.discountAmount = 'Discount amount is required.';
 
-    // Sub-Service Name
-    if (!bookingDetails.subServiceName.trim())
-      newErrors.subServiceName = 'Sub-service name is required.'
+} else if (discountAmount < 0) {
+  newErrors.discountAmount = 'Discount cannot be negative.';
+} else if (discountAmount > 50000) {
+  newErrors.discountAmount = 'Discount cannot exceed 50,000.';
+}
 
-    // Service Date & Time
-    if (!bookingDetails.serviceDate) newErrors.serviceDate = 'Service date is required.'
-    if (!bookingDetails.servicetime) newErrors.servicetime = 'Service time is required.'
 
-    // Consultation Type
-    if (!bookingDetails.consultationType.trim())
-      newErrors.consultationType = 'Consultation type is required.'
+  // Total Amount Validation
+ const totalAmount = Number(bookingDetails.totalAmount);
 
-    // Status & Payment Type
-    if (!bookingDetails.status) newErrors.status = 'Status is required.'
-    if (!bookingDetails.paymentType) newErrors.paymentType = 'Payment type is required.'
+if (bookingDetails.totalAmount === '' || bookingDetails.totalAmount === null) {
+  newErrors.totalAmount = 'Total amount is required.';
+} else if (isNaN(totalAmount)) {
+  newErrors.totalAmount = 'Total amount must be a number.';
+} else if (totalAmount < 0) {
+  newErrors.totalAmount = 'Total Amount cannot be negative.';
+} else if (totalAmount > 200000) {
+  newErrors.totalAmount = 'Total Amount cannot exceed 200,000.';
+}
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+  if (!bookingDetails.paymentType) newErrors.paymentType = 'Payment type is required.';
+
+  // Optional: Doctor Referral Code
+  if (bookingDetails.doctorRefCode) {
+    if (bookingDetails.doctorRefCode.length < 4 || bookingDetails.doctorRefCode.length > 10)
+      newErrors.doctorRefCode = 'Referral code must be 4-10 characters.';
   }
+
+  setErrors(newErrors);
+
+  return Object.keys(newErrors).length === 0;
+};
+
+
 
   const handleSubmit = () => {
     if (validate()) {
@@ -231,721 +403,886 @@ const BookAppointmentModal = ({ visible, onClose }) => {
       // Submit to API
     }
   }
+  const handleServicesSubmit = () => {
+  if (validate()) {
+    console.log("Submitting Services Appointment:", bookingDetails);
+    // Call your API for services appointment
+  }
+};
 
+const handleInClinicSubmit = () => {
+  if (validate()) {
+    console.log("Submitting In-Clinic Appointment:", bookingDetails);
+    // Call your API for in-clinic appointment
+  }
+};
+
+const handleOnlineSubmit = () => {
+  if (validate()) {
+    console.log("Submitting Online Appointment:", bookingDetails);
+    // Call your API for online appointment
+  }
+};
+const handleFollowupServicesSubmit = () => {
+  if (validate()) {
+    console.log("Submitting Services for Follow-Up:", bookingDetails);
+    // Call your API for Services + Follow-Up appointment
+  }
+};
+
+
+console.log(`appointmenttype ${appointmentType}`);
   return (
-    <COffcanvas
-      placement="end" // 👈 opens from right side
-      visible={visible}
-      onHide={onClose}
-      className="w-50" // optional: control width
-    >
-      <COffcanvasHeader>
-        <COffcanvasTitle>Book Appointment</COffcanvasTitle>
-        <button className="btn-close" onClick={onClose}></button>
-      </COffcanvasHeader>
-      <COffcanvasBody>
-        {/* Visit Type */}
-        <CRow className="mb-3">
-          <CCol md={6}>
-            <CFormCheck
-              type="radio"
-              label="First Visit"
-              name="visitTypeRadio"
-              value="first"
-              checked={visitType === 'first'}
-              onChange={() => {
-                setVisitType('first')
-                setBookingDetails((prev) => ({ ...prev, visitType: 'first' }))
-              }}
-            />
-          </CCol>
-          <CCol md={6}>
-            <CFormCheck
-              type="radio"
-              label="Follow-Up"
-              name="visitTypeRadio"
-              value="followup"
-              checked={visitType === 'followup'}
-              onChange={() => {
-                setVisitType('followup')
-                setBookingDetails((prev) => ({ ...prev, visitType: 'followup' }))
-              }}
-            />
-          </CCol>
+ <COffcanvas
+  placement="end"
+  visible={visible}
+  onHide={onClose}
+  className="w-50"
+  backdrop="static"
+>
+  <COffcanvasHeader>
+    <COffcanvasTitle>📅 Book Appointment</COffcanvasTitle>
+    <button className="btn-close" onClick={onClose}></button>
+  </COffcanvasHeader>
+
+  <COffcanvasBody>
+    {/* SECTION: Visit Type */}
+    <h5 className="mb-3 border-bottom pb-2">Visit Type</h5>
+    <CRow className="mb-4">
+      <CCol md={6}>
+        <CFormCheck
+          type="radio"
+          label="First Visit"
+          name="visitTypeRadio"
+          value="first"
+          checked={visitType === 'first'}
+          onChange={() => {
+            setVisitType('first')
+            setBookingDetails((prev) => ({ ...prev, visitType: 'first' }))
+          }}
+        />
+      </CCol>
+      <CCol md={6}>
+        <CFormCheck
+          type="radio"
+          label="Follow-Up"
+          name="visitTypeRadio"
+          value="followup"
+          checked={visitType === 'followup'}
+          onChange={() => {
+            setVisitType('followup')
+            setBookingDetails((prev) => ({ ...prev, visitType: 'followup' }))
+          }}
+        />
+      </CCol>
+    </CRow>
+
+    {/* SECTION: Appointment Type */}
+    <h5 className="mb-3 border-bottom pb-2">Appointment Type</h5>
+    <CRow className="mb-4">
+      <CCol md={4}>
+        <CFormCheck
+          type="radio"
+          label="Services & Treatment"
+          name="appointmentTypeRadio"
+          value="services"
+          checked={appointmentType === 'services'}
+          onChange={() => setAppointmentType('services')}
+        />
+      </CCol>
+      <CCol md={4}>
+        <CFormCheck
+          type="radio"
+          label="In-Clinic"
+          name="appointmentTypeRadio"
+          value="inclinic"
+          checked={appointmentType === 'inclinic'}
+          onChange={() => setAppointmentType('inclinic')}
+        />
+      </CCol>
+      <CCol md={4}>
+        <CFormCheck
+          type="radio"
+          label="Online"
+          name="appointmentTypeRadio"
+          value="online"
+          checked={appointmentType === 'online'}
+          onChange={() => setAppointmentType('online')}
+        />
+      </CCol>
+    </CRow>
+    {visitType === 'followup' && (
+  <CRow className="mb-4">  {/* increased from mb-3 to mb-4 for more gap */}
+  <CCol md={10}>
+    <CFormInput
+      type="text"
+      placeholder="Search by Name / Patient ID / Mobile"
+      value={patientSearch}
+      onChange={(e) => setPatientSearch(e.target.value)}
+    />
+  </CCol>
+  <CCol md={2}>
+    <CButton color="primary" onClick={handlePatientSearch}>
+      Search
+    </CButton>
+  </CCol>
+</CRow>
+
+)}
+
+    {/* SECTION: Services Selection */}
+    {appointmentType === 'services' && visitType!=="followup" &&(
+      <>
+        <h5 className="mb-3 border-bottom pb-2">Select Service</h5>
+        <CRow className="mb-4">
+      <CCol md={4}>
+  <h6>
+    Category Name <span className="text-danger">*</span>
+  </h6>
+  <CFormSelect
+    value={selectedCategory}
+    onChange={(e) => {
+      const value = e.target.value;
+      setSelectedCategory(value);
+
+      // Remove error when a value is selected
+      setErrors((prev) => ({
+        ...prev,
+        selectedCategory: value ? '' : prev.selectedCategory,
+      }));
+    }}
+  >
+    <option value="">Select Category</option>
+    {categories.map((cat) => (
+      <option key={cat.categoryId} value={cat.categoryId}>
+        {cat.categoryName}
+      </option>
+    ))}
+  </CFormSelect>
+  {errors.selectedCategory && (
+    <div className="text-danger mt-1">{errors.selectedCategory}</div>
+  )}
+</CCol>
+
+
+
+       <CCol md={4}>
+  <h6>
+    Service <span className="text-danger">*</span>
+  </h6>
+  <CFormSelect
+  value={selectedService}
+  onChange={(e) => {
+    console.log("Selected service ID:", e.target.value); // <-- check here
+    setSelectedService(e.target.value);
+  }}
+>
+  <option value="">Select Service</option>
+  {services.map((service) => (
+    <option key={service.serviceId} value={service.serviceId}>
+      {service.serviceName}
+    </option>
+  ))}
+</CFormSelect>
+
+  {errors.selectedService && (
+    <div className="text-danger mt-1">{errors.selectedService}</div>
+  )}
+</CCol>
+
+
+   <CCol md={4}>
+  <h6>
+    Sub-Service <span className="text-danger">*</span>
+  </h6>
+ <CFormSelect
+  value={selectedSubService}
+  onChange={(e) => setSelectedSubService(e.target.value)}
+  disabled={!selectedService || subServices.length === 0}
+>
+  <option value="">Select Sub-Service</option>
+  {subServices.map((sub) => (
+    <option key={sub.subServiceId} value={sub.subServiceId}>
+      {sub.subServiceName}
+    </option>
+  ))}
+</CFormSelect>
+
+
+
+  {errors.selectedSubService && (
+    <div className="text-danger mt-1">{errors.selectedSubService}</div>
+  )}
+</CCol>
+
+
+
+
         </CRow>
+      </>
+    )}
 
-        {/* Appointment Type */}
-        <CRow className="mb-3">
-          <CCol md={4}>
-            <CFormCheck
-              type="radio"
-              label="Services & Treatment"
-              name="appointmentTypeRadio"
-              value="services"
-              checked={appointmentType === 'services'}
-              onChange={() => setAppointmentType('services')}
-            />
-          </CCol>
-          <CCol md={4}>
-            <CFormCheck
-              type="radio"
-              label="In-Clinic"
-              name="appointmentTypeRadio"
-              value="inclinic"
-              checked={appointmentType === 'inclinic'}
-              onChange={() => setAppointmentType('inclinic')}
-            />
-          </CCol>
-          <CCol md={4}>
-            <CFormCheck
-              type="radio"
-              label="Online"
-              name="appointmentTypeRadio"
-              value="online"
-              checked={appointmentType === 'online'}
-              onChange={() => setAppointmentType('online')}
-            />
-          </CCol>
-        </CRow>
+    {/* SECTION: Patient & Booking Details */}
+    <h5 className="mb-3 border-bottom pb-2">Patient & Booking Details</h5>
+  <CRow className="mb-4">
+  <CCol md={4}>
+    <h6>
+      Branch <span className="text-danger">*</span>
+    </h6>
+  <CFormSelect
+  name="branchname"
+  value={bookingDetails.branchId || ""} // use branchId as the value for selection
+  onChange={(e) => {
+    const selectedBranch = branches.find(
+      (branch) => branch.branchId === e.target.value
+    );
 
-        {/* Category / Service / Procedure */}
-        {appointmentType === 'services' && (
-          <CRow className="mb-3">
-            <CCol md={4}>
-              <CFormLabel>Category</CFormLabel>
-              <CFormSelect
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-              >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat.categoryId} value={cat.categoryId}>
-                    {cat.categoryName}
-                  </option>
-                ))}
-              </CFormSelect>
-            </CCol>
+    setBookingDetails((prev) => ({
+      ...prev,
+      branchId: selectedBranch?.branchId || "",
+      branchname: selectedBranch?.branchName || "",
+    }));
 
-            <CCol md={4}>
-              <CFormLabel>Service</CFormLabel>
-              <CFormSelect
-                value={selectedService}
-                onChange={(e) => setSelectedService(e.target.value)}
-                disabled={!selectedCategory}
-              >
-                <option value="">Select Service</option>
-                {services.map((service) => (
-                  <option key={service._id} value={service.serviceName}>
-                    {service.serviceName}
-                  </option>
-                ))}
-              </CFormSelect>
-            </CCol>
+    if (errors.branchname) {
+      setErrors((prev) => ({ ...prev, branchname: '' })); // clear error once selected
+    }
+  }}
+  required
+>
+  <option value="">Select Branch</option>
+  {branches.map((branch) => (
+    <option key={branch.branchId} value={branch.branchId}>
+      {branch.branchName} {/* Display branch name in dropdown */}
+    </option>
+  ))}
+</CFormSelect>
 
-            <CCol md={4}>
-              <CFormLabel>Sub-Service</CFormLabel>
-              <CFormSelect
-                value={selectedProcedure}
-                onChange={(e) => setSelectedProcedure(e.target.value)}
-                disabled={!selectedService}
-              >
-                <option value="">Select Sub-Service</option>
-                {procedures.map((proc) => (
-                  <option key={proc.id} value={proc.name}>
-                    {proc.name}
-                  </option>
-                ))}
-              </CFormSelect>
-            </CCol>
-          </CRow>
+    {errors.branchname && <div className="text-danger">{errors.branchname}</div>}
+  </CCol>
+
+ <CCol md={4}>
+  <h6>
+    Doctor Name <span className="text-danger">*</span>
+  </h6>
+ <CFormSelect
+  name="doctorName"
+  value={bookingDetails.doctorName || ''}
+  onChange={(e) => {
+    const selectedDoctorId = e.target.value;
+
+    setBookingDetails((prev) => ({
+      ...prev,
+      doctorName: selectedDoctorId,   // store doctorId
+    }));
+
+    // clear any slot selection
+    setBookingDetails((prev) => ({ ...prev, slot: '' }));
+
+    // fetch slots for that doctor
+    if (selectedDoctorId) {
+      fetchSlots(selectedDoctorId);
+    }
+
+    if (errors.doctorName) {
+      setErrors((prev) => ({ ...prev, doctorName: '' }));
+    }
+  }}
+  disabled={loadingDoctors}
+  required
+>
+  <option value="">Select Doctor</option>
+  {doctors.map((doc) => (
+    <option key={doc.doctorId} value={doc.doctorId}>
+      {doc.doctorName || doc.doctorEmail}
+    </option>
+  ))}
+</CFormSelect>
+
+
+  {errors.doctorName && <div className="text-danger">{errors.doctorName}</div>}
+</CCol>
+
+</CRow>
+
+
+   {/* SECTION: Available Slots */}
+<h5 className="mb-3 border-bottom pb-2">Available Slots</h5>
+<CCol md={12}>
+  <div className="row g-3">
+    {(slotsForSelectedDate || []).map((slotObj, i) => (
+      <div className="col-md-3 col-6" key={i}>
+        <CButton
+          color={
+            bookingDetails.slot === slotObj.slot
+              ? 'primary'
+              : slotObj.slotbooked
+              ? 'danger'
+              : 'outline-primary'
+          }
+          className="w-100 py-3 fw-bold"
+          disabled={slotObj.slotbooked}
+          onClick={() => setBookingDetails((prev) => ({ ...prev, slot: slotObj.slot }))}
+        >
+          {slotObj.slot}
+        </CButton>
+      </div>
+    ))}
+  </div>
+  {errors.slot && <div className="text-danger mt-2">{errors.slot}</div>}
+</CCol>
+
+
+
+
+
+    {/* SECTION: Contact Information */}
+  <h5 className="mb-3 border-bottom pb-2">Contact Information</h5>
+<CRow className="mb-4">
+  {visitType === "followup" && (
+    <>
+      {/* Patient ID */}
+      <CCol md={6}>
+        <h6>
+          Patient ID <span className="text-danger">*</span>
+        </h6>
+        <CFormInput
+          name="patientId"
+          value={bookingDetails.patientId || ""}
+          onChange={handleBookingChange}
+        />
+        {errors.patientId && <p className="text-danger">{errors.patientId}</p>}
+      </CCol>
+
+      {/* Name */}
+      <CCol md={6}>
+        <h6>
+          Name <span className="text-danger">*</span>
+        </h6>
+        <CFormInput
+          name="name"
+          value={bookingDetails.name}
+          onChange={handleBookingChange}
+          minLength={3}
+          maxLength={50}
+          required
+        />
+        {errors.name && <p className="text-danger">{errors.name}</p>}
+      </CCol>
+
+      {/* DOB */}
+      <CCol md={4}>
+        <h6>
+          Date of Birth <span className="text-danger">*</span>
+        </h6>
+        <CFormInput
+          type="date"
+          name="dob"
+          value={bookingDetails.dob || ""}
+          onChange={handleBookingChange}
+          required
+          max={new Date().toISOString().split("T")[0]}
+        />
+        {errors.dob && <p className="text-danger">{errors.dob}</p>}
+      </CCol>
+
+      {/* Age */}
+      <CCol md={2}>
+        <h6>
+          Age <span className="text-danger">*</span>
+        </h6>
+        <CFormInput
+          type="number"
+          name="age"
+          value={bookingDetails.age || ""}
+          onChange={handleBookingChange}
+          min={0}
+          max={120}
+          readOnly
+        />
+        {errors.age && <p className="text-danger">{errors.age}</p>}
+      </CCol>
+
+      {/* Gender */}
+      <CCol md={4}>
+        <h6>
+          Gender <span className="text-danger">*</span>
+        </h6>
+        <CFormSelect
+          name="gender"
+          value={bookingDetails.gender || ""}
+          onChange={handleBookingChange}
+          required
+        >
+          <option value="">Select Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </CFormSelect>
+        {errors.gender && <p className="text-danger">{errors.gender}</p>}
+      </CCol>
+
+      {/* Mobile */}
+      <CCol md={4}>
+        <h6>
+          Mobile Number <span className="text-danger">*</span>
+        </h6>
+        <CFormInput
+          type="tel"
+          name="patientMobileNumber"
+          value={bookingDetails.patientMobileNumber}
+          onChange={handleBookingChange}
+        />
+        {errors.patientMobileNumber && <p className="text-danger">{errors.patientMobileNumber}</p>}
+      </CCol>
+
+      {/* Followups Left */}
+      <CCol md={4}>
+        <h6>Followups Left</h6>
+        <CFormInput
+          type="number"
+          name="followupsLeft"
+          value={bookingDetails.followupsLeft || ""}
+          readOnly
+        />
+      </CCol>
+
+      {/* Free Followups Left */}
+      <CCol md={4}>
+        <h6>Free Followups Left</h6>
+        <CFormInput
+          type="number"
+          name="freeFollowupsLeft"
+          value={bookingDetails.freeFollowupsLeft || ""}
+          readOnly
+        />
+      </CCol>
+
+      {/* Address */}
+      <CCol md={12}>
+        <h5 className="mt-3">Address</h5>
+        {Object.keys(bookingDetails.address || {})
+          .reduce((rows, field, index) => {
+            if (index % 3 === 0) rows.push([]);
+            rows[rows.length - 1].push(field);
+            return rows;
+          }, [])
+          .map((rowFields, rowIndex) => (
+            <CRow className="mb-3" key={rowIndex}>
+              {rowFields.map((field) => (
+                <CCol md={4} key={field}>
+                  <CFormLabel className="text-capitalize">
+                    {field} <span className="text-danger">*</span>
+                  </CFormLabel>
+                  <CFormInput
+                    type="text"
+                    maxLength={field === "postalCode" ? 6 : undefined}
+                    value={bookingDetails.address[field] || ""}
+                    onChange={(e) => handleNestedChange("address", field, e.target.value)}
+                  />
+                  {errors.address?.[field] && (
+                    <div className="text-danger mt-1">{errors.address[field]}</div>
+                  )}
+                </CCol>
+              ))}
+            </CRow>
+          ))}
+      </CCol>
+    </>
+  )}
+
+  {visitType !== "followup" && (
+    <>
+      {/* Name */}
+      <CCol md={6}>
+        <h6>
+          Name <span className="text-danger">*</span>
+        </h6>
+        <CFormInput
+          name="name"
+          value={bookingDetails.name}
+          onChange={handleBookingChange}
+          minLength={3}
+          maxLength={50}
+          required
+        />
+        {errors.name && <p className="text-danger">{errors.name}</p>}
+      </CCol>
+
+      {/* DOB */}
+      <CCol md={6}>
+        <h6>
+          Date of Birth <span className="text-danger">*</span>
+        </h6>
+        <CFormInput
+          type="date"
+          name="dob"
+          value={bookingDetails.dob || ""}
+          onChange={handleBookingChange}
+          required
+          max={new Date().toISOString().split("T")[0]}
+        />
+        {errors.dob && <p className="text-danger">{errors.dob}</p>}
+      </CCol>
+
+      {/* Age */}
+      <CCol md={2}>
+        <h6>
+          Age <span className="text-danger">*</span>
+        </h6>
+        <CFormInput
+          type="number"
+          name="age"
+          value={bookingDetails.age || ""}
+          onChange={handleBookingChange}
+          min={0}
+          max={120}
+          readOnly
+        />
+        {errors.age && <p className="text-danger">{errors.age}</p>}
+      </CCol>
+
+      {/* Gender */}
+      <CCol md={4}>
+        <h6>
+          Gender <span className="text-danger">*</span>
+        </h6>
+        <CFormSelect
+          name="gender"
+          value={bookingDetails.gender || ""}
+          onChange={handleBookingChange}
+          required
+        >
+          <option value="">Select Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </CFormSelect>
+        {errors.gender && <p className="text-danger">{errors.gender}</p>}
+      </CCol>
+
+      {/* Mobile */}
+      <CCol md={6}>
+        <h6>
+          Mobile Number <span className="text-danger">*</span>
+        </h6>
+        <CFormInput
+          type="tel"
+          name="patientMobileNumber"
+          value={bookingDetails.patientMobileNumber}
+          onChange={handleBookingChange}
+        />
+        {errors.patientMobileNumber && <p className="text-danger">{errors.patientMobileNumber}</p>}
+      </CCol>
+
+      {/* Address */}
+      <CCol md={12}>
+        <h5 className="mt-3">Address</h5>
+        {Object.keys(bookingDetails.address || {})
+          .reduce((rows, field, index) => {
+            if (index % 3 === 0) rows.push([]);
+            rows[rows.length - 1].push(field);
+            return rows;
+          }, [])
+          .map((rowFields, rowIndex) => (
+            <CRow className="mb-3" key={rowIndex}>
+              {rowFields.map((field) => (
+                <CCol md={4} key={field}>
+                  <CFormLabel className="text-capitalize">
+                    {field} <span className="text-danger">*</span>
+                  </CFormLabel>
+                  <CFormInput
+                    type="text"
+                    maxLength={field === "postalCode" ? 6 : undefined}
+                    value={bookingDetails.address[field] || ""}
+                    onChange={(e) => handleNestedChange("address", field, e.target.value)}
+                  />
+                  {errors.address?.[field] && (
+                    <div className="text-danger mt-1">{errors.address[field]}</div>
+                  )}
+                </CCol>
+              ))}
+            </CRow>
+          ))}
+      </CCol>
+    </>
+  )}
+</CRow>
+
+
+
+
+    {/* SECTION: Symptoms */}
+   {/* ==================== Symptoms & Attachment Sections ==================== */}
+{visitType !== 'followup' && (
+  <>
+    {/* SECTION: Symptoms */}
+    <h5 className="mb-3 border-bottom pb-2">Symptoms (optional)</h5>
+    <CRow className="mb-4">
+    <CCol md={5}>
+  <h6>Symptoms/Problem</h6>
+  <CFormTextarea
+    name="problem"
+    value={bookingDetails.problem}
+    onChange={handleBookingChange}
+    minLength={5}   // ✅ Minimum 5 characters
+    maxLength={300} // ✅ Maximum 300 characters
+  />
+</CCol>
+
+     <CCol md={4}>
+  <h6>Symptoms/Duration</h6>
+  <CFormInput
+    type="number"
+    name="symptomsDuration"
+    value={bookingDetails.symptomsDuration}
+    onChange={(e) => {
+      const value = e.target.value;
+      // Prevent entering 0
+      if (value === "0") return;
+      setBookingDetails((prev) => ({
+        ...prev,
+        symptomsDuration: value,
+      }));
+    }}
+    min={1}
+    max={365}
+  />
+</CCol>
+
+      <CCol md={3}>
+        <h6>Unit</h6>
+        <CFormSelect
+          name="unit"
+          value={bookingDetails.unit || ''}
+          onChange={handleBookingChange}
+        >
+          <option value="">Select Unit</option>
+          <option value="Day">Day</option>
+          <option value="Week">Week</option>
+          <option value="Month">Month</option>
+          <option value="Year">Year</option>
+        </CFormSelect>
+      </CCol>
+    </CRow>
+
+    {/* SECTION: Attachment */}
+    <CRow className="mb-3">
+      <CCol md={6}>
+        <h6>Attachment</h6>
+        <CFormInput
+          type="file"
+          name="attachments"
+          multiple
+          accept=".jpg,.png,.pdf,.doc,.docx"
+          onChange={(e) => {
+            const files = Array.from(e.target.files)
+            setBookingDetails((prev) => ({
+              ...prev,
+              attachments: files,
+            }))
+          }}
+        />
+      </CCol>
+    </CRow>
+  </>
+)}
+
+
+    {/* SECTION: Consultation & Payment */}
+    {/* ==================== Consultation & Payment ==================== */}
+{visitType !== 'followup' && (
+  <>
+    <h5 className="mb-3 border-bottom pb-2">Consultation & Payment</h5>
+    <CRow className="mb-4 g-3">
+
+      {/* Consultation Fee */}
+      <CCol md={4}>
+        <h6>
+          Consultation Fee <span className="text-danger">*</span>
+        </h6>
+        <CFormInput
+          type="number"
+          name="consultationFee"
+          value={bookingDetails.consultationFee}
+          onChange={handleBookingChange}
+          min={1}
+          max={100000}
+          required
+        />
+        {errors.consultationFee && (
+          <div className="text-danger">{errors.consultationFee}</div>
         )}
+      </CCol>
 
-        {/* Basic Details */}
-        <CRow className="mb-3">
-          <CCol md={4}>
-            <CFormLabel>Branch Name</CFormLabel>
-            <CFormSelect
-              name="branchname"
-              value={bookingDetails.branchname}
-              onChange={handleBookingChange}
-            >
-              <option value="">Select Branch</option>
-              {branches.map((branch) => (
-                <option key={branch.branchId} value={branch.branchId}>
-                  {branch.branchName}
-                </option>
-              ))}
-            </CFormSelect>
-            {errors.branchname && (
-              <CFormText className="text-danger">{errors.branchname}</CFormText>
-            )}
-          </CCol>
+      {/* Discount Amount */}
+      <CCol md={4}>
+        <h6>
+          Discount Amount 
+        </h6>
+        <CFormInput
+          type="number"
+          name="discountAmount"
+          value={bookingDetails.discountAmount || ''}
+          onChange={handleBookingChange}
+          min={0}
+          max={50000}
+        />
+        {errors.discountAmount && (
+          <div className="text-danger">{errors.discountAmount}</div>
+        )}
+      </CCol>
 
-          <CCol md={4}>
-            <CFormLabel>Doctor Name</CFormLabel>
-            <CFormSelect
-              name="doctorName"
-              value={bookingDetails.doctorName}
-              onChange={handleBookingChange}
-            >
-              <option value="">Select Doctor</option>
-              {doctors.map((doc) => (
-                <option key={doc.doctorId} value={doc.doctorId}>
-                  {doc.doctorName}
-                </option>
-              ))}
-            </CFormSelect>
-            {errors.doctorName && (
-              <CFormText className="text-danger">{errors.doctorName}</CFormText>
-            )}
-          </CCol>
+      {/* Total Amount */}
+      <CCol md={4}>
+        <h6>
+          Total Amount <span className="text-danger">*</span>
+        </h6>
+        <CFormInput
+          type="number"
+          name="totalAmount"
+          value={bookingDetails.totalAmount || ''}
+          onChange={handleBookingChange}
+          min={0}
+          max={200000}
+        />
+        {errors.totalAmount && (
+          <div className="text-danger">{errors.totalAmount}</div>
+        )}
+      </CCol>
 
-          <CCol md={12} className="mt-3">
-            <CFormLabel>Available Slots</CFormLabel>
-            {loading ? (
-              <div>Loading slots...</div>
-            ) : allSlots.length > 0 ? (
-              <CRow className="g-2 flex-nowrap" style={{ overflowX: 'auto' }}>
-                {allSlots.map((slot, index) => (
-                  <CCol xs="auto" key={index}>
-                    <CButton
-                      color={bookingDetails.slot === slot ? 'primary' : 'outline-primary'}
-                      onClick={() => setBookingDetails((prev) => ({ ...prev, slot }))}
-                    >
-                      {slot}
-                    </CButton>
-                  </CCol>
-                ))}
-              </CRow>
-            ) : (
-              <div>No slots available</div>
-            )}
-            {errors.slot && <CFormText className="text-danger">{errors.slot}</CFormText>}
-          </CCol>
+      {/* Payment Type */}
+      <CCol md={5}>
+        <h6>
+          Payment Type <span className="text-danger">*</span>
+        </h6>
+        <CFormSelect
+          name="paymentType"
+          value={bookingDetails.paymentType}
+          onChange={handleBookingChange}
+          required
+        >
+          <option value="">Select Payment Type</option>
+          <option value="Cash">Cash</option>
+          <option value="Card">Card</option>
+          <option value="UPI">UPI</option>
+        </CFormSelect>
+        {errors.paymentType && (
+          <div className="text-danger">{errors.paymentType}</div>
+        )}
+      </CCol>
 
-          <CRow className="mb-3">
-            <CCol md={4}>
-              <CFormLabel>Booking For</CFormLabel>
-              <CFormSelect
-                name="bookingFor"
-                value={bookingDetails.bookingFor}
-                onChange={handleBookingChange}
-                disabled
-              >
-                <option value="Self">Self</option>
-              </CFormSelect>
-            </CCol>
-            <CCol md={4}>
-              <CFormLabel>Patient ID</CFormLabel>
-              <CFormInput
-                name="patientId"
-                value={bookingDetails.patientId}
-                readOnly // ✅ prevents editing
-              />
-            </CCol>
-            <CCol md={4}>
-              <CFormLabel>Name</CFormLabel>
-              <CFormInput
-                name="name"
-                value={bookingDetails.name}
-                onChange={(e) => {
-                  const value = e.target.value
+      {/* Doctor Referral Code */}
+      <CCol md={4}>
+        <h6>Doctor Referral Code</h6>
+        <CFormInput
+          type="text"
+          name="doctorRefCode"
+          value={bookingDetails.doctorRefCode || ''}
+          onChange={handleBookingChange}
+          minLength={4}
+          maxLength={10}
+        />
+        {errors.doctorRefCode && (
+          <div className="text-danger">{errors.doctorRefCode}</div>
+        )}
+      </CCol>
 
-                  // Allow only letters and spaces while typing
-                  if (/^[A-Za-z\s]*$/.test(value)) {
-                    setBookingDetails((prev) => ({ ...prev, name: value }))
+    </CRow>
 
-                    // Live validation: remove error if valid
-                    if (value.trim().length >= 3 && value.trim().length <= 50) {
-                      setErrors((prev) => ({ ...prev, name: '' }))
-                    } else {
-                      setErrors((prev) => ({ ...prev, name: 'Name must be 3-50 letters.' }))
-                    }
-                  }
-                }}
-              />
-              {errors.name && <CFormText className="text-danger">{errors.name}</CFormText>}
-            </CCol>
+    {/* Buttons */}
+    <div className="mt-4 text-end d-flex justify-content-end gap-2">
+      <CButton color="secondary" onClick={onClose}>
+        Cancel
+      </CButton>
+      <CButton
+        onClick={handleSubmit}
+        style={{ backgroundColor: 'var(--color-bgcolor)', color: 'var(--color-black)' }}
+      >
+        Submit
+      </CButton>
+    </div>
+  </>
+)}
 
-            <CCol md={4}>
-              <CFormLabel>Address</CFormLabel>
-              <CFormInput
-                name="patientAddress"
-                value={bookingDetails.patientAddress}
-                onChange={(e) => {
-                  const value = e.target.value
 
-                  // Update the booking details state
-                  setBookingDetails((prev) => ({ ...prev, patientAddress: value }))
 
-                  // Live validation
-                  setErrors((prev) => {
-                    const newErrors = { ...prev }
-                    if (!value.trim()) {
-                      newErrors.patientAddress = 'Address is required.'
-                    } else if (value.length < 5 || value.length > 100) {
-                      newErrors.patientAddress = 'Address must be 5-100 characters.'
-                    } else {
-                      delete newErrors.patientAddress // remove error when valid
-                    }
-                    return newErrors
-                  })
-                }}
-              />
-              {errors.patientAddress && (
-                <CFormText className="text-danger">{errors.patientAddress}</CFormText>
-              )}
-            </CCol>
-          </CRow>
-        </CRow>
+{visitType === 'followup' && (appointmentType === 'services' || appointmentType === 'inclinic') && (
+  <div className="followup-ui p-3 border rounded bg-light">
 
-        {/* Mobile / Age / Gender */}
-        <CRow className="mb-3">
-          <CCol md={4}>
-            <CFormLabel>Mobile Number</CFormLabel>
-            <CFormInput
-              name="patientMobileNumber"
-              value={bookingDetails.patientMobileNumber}
-              maxLength={10} // restrict to 10 digits
-              onChange={(e) => {
-                const value = e.target.value
+    {/* ==================== HEADER ==================== */}
+    
 
-                // Allow only digits
-                if (!/^\d*$/.test(value)) return
+    {/* ==================== SUBMIT / CANCEL BUTTONS ==================== */}
+  <div className="mt-4 text-end d-flex justify-content-end gap-2">
+  <CButton color="secondary" onClick={onClose}>
+    Cancel
+  </CButton>
 
-                // Update state
-                setBookingDetails((prev) => ({ ...prev, patientMobileNumber: value }))
+  {appointmentType === 'services' && visitType !== 'followup' && (
+    <CButton
+      onClick={handleServicesSubmit}
+      style={{ backgroundColor: 'var(--color-bgcolor)', color: 'var(--color-black)' }}
+    >
+      Submit
+    </CButton>
+  )}
+   {appointmentType === 'services' && visitType === 'followup' && (
+    <CButton
+      onClick={handleFollowupServicesSubmit }
+      style={{ backgroundColor: 'var(--color-bgcolor)', color: 'var(--color-black)' }}
+    >
+      Submit
+    </CButton>
+  )}
 
-                // Live validation
-                setErrors((prev) => {
-                  const newErrors = { ...prev }
-                  if (!value.trim()) {
-                    newErrors.patientMobileNumber = 'Mobile number is required.'
-                  } else if (!/^[6-9]\d{9}$/.test(value)) {
-                    newErrors.patientMobileNumber =
-                      'Enter a valid 10-digit mobile number starting with 6-9.'
-                  } else {
-                    delete newErrors.patientMobileNumber // remove error when valid
-                  }
-                  return newErrors
-                })
-              }}
-            />
-            {errors.patientMobileNumber && (
-              <CFormText className="text-danger">{errors.patientMobileNumber}</CFormText>
-            )}
-          </CCol>
+  {appointmentType === 'inclinic' && (
+    <CButton
+      onClick={handleInClinicSubmit}
+      style={{ backgroundColor: 'var(--color-bgcolor)', color: 'var(--color-black)' }}
+    >
+      Submit
+    </CButton>
+  )}
 
-          <CCol md={4}>
-            <CFormLabel>Age</CFormLabel>
-            <CFormInput
-              type="number"
-              name="age"
-              value={bookingDetails.age}
-              onChange={(e) => {
-                let value = e.target.value
+  {appointmentType === 'online' && (
+    <CButton
+      onClick={handleOnlineSubmit}
+      style={{ backgroundColor: 'var(--color-bgcolor)', color: 'var(--color-black)' }}
+    >
+      Submit
+    </CButton>
+  )}
+</div>
 
-                // Allow only digits and max 2 characters
-                if (!/^\d*$/.test(value)) return
-                if (value.length > 2) value = value.slice(0, 2)
+  </div>
+)}
 
-                // Update state
-                setBookingDetails((prev) => ({ ...prev, age: value }))
+ 
 
-                // Live validation
-                setErrors((prev) => {
-                  const newErrors = { ...prev }
-                  if (!value) {
-                    newErrors.age = 'Age is required.'
-                  } else if (value < 0 || value > 99) {
-                    newErrors.age = 'Age must be between 0 and 99.'
-                  } else {
-                    delete newErrors.age // remove error when valid
-                  }
-                  return newErrors
-                })
-              }}
-            />
-            {errors.age && <CFormText className="text-danger">{errors.age}</CFormText>}
-          </CCol>
 
-          <CCol md={4}>
-            <CFormLabel>Gender</CFormLabel>
-            <CFormSelect name="gender" value={bookingDetails.gender} onChange={handleBookingChange}>
-              <option value="">Select Gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
-            </CFormSelect>
-            {errors.gender && <CFormText className="text-danger">{errors.gender}</CFormText>}
-          </CCol>
-        </CRow>
 
-        {/* Problem / Symptoms / Notes */}
-        <CRow className="mb-3">
-          <CCol md={4}>
-            <CFormLabel>Problem Description</CFormLabel>
-            <CFormTextarea
-              name="problem"
-              value={bookingDetails.problem}
-              onChange={(e) => {
-                let value = e.target.value
 
-                // Limit to 200 characters
-                if (value.length > 200) value = value.slice(0, 200)
+    {/* SECTION: Submit */}
+  
 
-                // Update state
-                setBookingDetails((prev) => ({ ...prev, problem: value }))
+   
 
-                // Live validation
-                setErrors((prev) => {
-                  const newErrors = { ...prev }
-                  if (!value.trim()) {
-                    newErrors.problem = 'Problem is required.'
-                  } else if (value.length > 200) {
-                    newErrors.problem = 'Problem cannot exceed 200 characters.'
-                  } else {
-                    delete newErrors.problem // remove error when valid
-                  }
-                  return newErrors
-                })
-              }}
-            />
-            {errors.problem && <CFormText className="text-danger">{errors.problem}</CFormText>}
-          </CCol>
-          <CCol md={2}>
-            <CFormLabel>Symptoms Duration</CFormLabel>
-            <CFormInput
-              type="number"
-              name="symptomsDurationValue"
-              value={bookingDetails.symptomsDurationValue || ''}
-              min={1}
-              onChange={(e) => {
-                const value = e.target.value
-                setBookingDetails((prev) => ({ ...prev, symptomsDurationValue: value }))
+  
 
-                // Live validation
-                setErrors((prev) => {
-                  const newErrors = { ...prev }
-                  if (!value) {
-                    newErrors.symptomsDurationValue = 'Duration value is required.'
-                  } else if (value <= 0) {
-                    newErrors.symptomsDurationValue = 'Duration must be greater than 0.'
-                  } else {
-                    delete newErrors.symptomsDurationValue
-                  }
-                  return newErrors
-                })
-              }}
-            />
-            {errors.symptomsDurationValue && (
-              <CFormText className="text-danger">{errors.symptomsDurationValue}</CFormText>
-            )}
-          </CCol>
+   
 
-          <CCol md={3}>
-            <CFormLabel>&nbsp;</CFormLabel>
-            <CFormSelect
-              name="symptomsDurationUnit"
-              value={bookingDetails.symptomsDurationUnit || ''}
-              onChange={(e) => {
-                const value = e.target.value
-                setBookingDetails((prev) => ({ ...prev, symptomsDurationUnit: value }))
+   
+   
+  
 
-                // Live validation
-                setErrors((prev) => {
-                  const newErrors = { ...prev }
-                  if (!value) {
-                    newErrors.symptomsDurationUnit = 'Unit is required.'
-                  } else {
-                    delete newErrors.symptomsDurationUnit
-                  }
-                  return newErrors
-                })
-              }}
-            >
-              <option value="">Select Duration Unit</option>
-              <option value="days">Days</option>
-              <option value="weeks">Weeks</option>
-              <option value="months">Months</option>
-              <option value="years">Years</option>
-            </CFormSelect>
-            {errors.symptomsDurationUnit && (
-              <CFormText className="text-danger">{errors.symptomsDurationUnit}</CFormText>
-            )}
-          </CCol>
-          <CRow className="mb-3"></CRow>
 
-          {/* <CCol md={4}>
-            <CFormLabel>Notes</CFormLabel>
-           <CFormTextarea
-  name="notes"
-  value={bookingDetails.notes}
-  onChange={(e) => {
-    let value = e.target.value;
 
-    // Limit to 200 characters
-    if (value.length > 200) value = value.slice(0, 200);
 
-    // Update state
-    setBookingDetails((prev) => ({ ...prev, notes: value }));
+    
+  </COffcanvasBody>
+</COffcanvas>
 
-    // Live validation
-    setErrors((prev) => {
-      const newErrors = { ...prev };
-      if (!value.trim()) {
-        newErrors.notes = 'Notes are required.';
-      } else if (value.length > 200) {
-        newErrors.notes = 'Notes cannot exceed 200 characters.';
-      } else {
-        delete newErrors.notes; // remove error when valid
-      }
-      return newErrors;
-    });
-  }}
-/>
-{errors.notes && <CFormText className="text-danger">{errors.notes}</CFormText>} */}
 
-          {/* </CCol> */}
-        </CRow>
-
-        {/* Clinic / Branch / Doctor */}
-        <CRow className="mb-3">
-          {/* <CFormLabel>Clinic Name</CFormLabel> */}
-          {/* <CFormInput
-  name="clinicName"
-  value={bookingDetails.clinicName}
-  onChange={(e) => {
-    let value = e.target.value;
-
-    // Allow only letters & spaces
-    if (!/^[A-Za-z\s]*$/.test(value)) return;
-
-    // Update state
-    setBookingDetails((prev) => ({ ...prev, clinicName: value }));
-
-    // Live validation
-    setErrors((prev) => {
-      const newErrors = { ...prev };
-      if (!value.trim()) {
-        newErrors.clinicName = 'Clinic name is required.';
-      } else if (value.length < 2 || value.length > 50) {
-        newErrors.clinicName = 'Clinic name must be 2-50 characters.';
-      } else {
-        delete newErrors.clinicName; // remove error when valid
-      }
-      return newErrors;
-    });
-  }}
-/>
-{errors.clinicName && (
-  <CFormText className="text-danger">{errors.clinicName}</CFormText>
-)} */}
-        </CRow>
-
-        {/* SubService / Date / Time */}
-        <CRow className="mb-3">
-          {/* <CCol md={4}>
-            <CFormLabel>Service Date</CFormLabel>
-            <CFormInput type="date" name="serviceDate" value={bookingDetails.serviceDate} onChange={handleBookingChange} />
-            {errors.serviceDate && <CFormText className="text-danger">{errors.serviceDate}</CFormText>}
-          </CCol>
-          <CCol md={4}>
-            <CFormLabel>Service Time</CFormLabel>
-            <CFormInput type="time" name="servicetime" value={bookingDetails.servicetime} onChange={handleBookingChange} />
-            {errors.servicetime && <CFormText className="text-danger">{errors.servicetime}</CFormText>}
-          </CCol> */}
-        </CRow>
-
-        {/* Consultation / Fee / Visit Count */}
-        <CRow className="mb-3">
-          {/* <CCol md={4}>
-            <CFormLabel>Consultation Type</CFormLabel>
-            <CFormInput name="consultationType" value={bookingDetails.consultationType} onChange={handleBookingChange} />
-            {errors.consultationType && <CFormText className="text-danger">{errors.consultationType}</CFormText>}
-          </CCol> */}
-          <CCol md={4}>
-            <CFormLabel>Consultation Fee</CFormLabel>
-            <CFormInput
-              type="number"
-              name="consultationFee"
-              value={bookingDetails.consultationFee}
-              onChange={handleBookingChange}
-            />
-            {errors.consultationFee && (
-              <CFormText className="text-danger">{errors.consultationFee}</CFormText>
-            )}
-          </CCol>
-          <CCol md={4}>
-            <CFormLabel>Visit Count</CFormLabel>
-            <CFormInput
-              type="number"
-              name="visitCount"
-              value={bookingDetails.visitCount}
-              onChange={handleBookingChange}
-            />
-            {errors.visitCount && (
-              <CFormText className="text-danger">{errors.visitCount}</CFormText>
-            )}
-          </CCol>
-          <CCol md={4}>
-            <CFormLabel>Attachments</CFormLabel>
-            <CFormInput
-              type="file"
-              multiple
-              onChange={(e) => {
-                const files = Array.from(e.target.files)
-                setBookingDetails((prev) => ({ ...prev, attachments: files }))
-              }}
-            />
-          </CCol>
-          {/* Free Follow Ups */}
-          {/* <CRow className="mb-3">
-  <CCol md={4}>
-    <CFormLabel>Free Follow Ups Left</CFormLabel>
-    <CFormInput
-      type="number"
-      name="freeFollowUpsLeft"
-      value={bookingDetails.freeFollowUpsLeft}
-      onChange={(e) => {
-        let value = e.target.value
-
-        // only digits
-        if (!/^\d*$/.test(value)) return
-        if (value.length > 2) value = value.slice(0, 2) // max 2 digits
-
-        setBookingDetails((prev) => ({ ...prev, freeFollowUpsLeft: value }))
-
-        // live validation
-        setErrors((prev) => {
-          const newErrors = { ...prev }
-          if (value === '') {
-            newErrors.freeFollowUpsLeft = 'Free follow ups left is required.'
-          } else if (parseInt(value) < 0 || parseInt(value) > 50) {
-            newErrors.freeFollowUpsLeft = 'Value must be between 0 and 50.'
-          } else {
-            delete newErrors.freeFollowUpsLeft
-          }
-          return newErrors
-        })
-      }}
-    />
-    {errors.freeFollowUpsLeft && (
-      <CFormText className="text-danger">{errors.freeFollowUpsLeft}</CFormText>
-    )}
-  </CCol>
-
-  <CCol md={4}>
-    <CFormLabel>Total Free Follow Ups</CFormLabel>
-    <CFormInput
-      type="number"
-      name="freeFollowUps"
-      value={bookingDetails.freeFollowUps}
-      onChange={(e) => {
-        let value = e.target.value
-
-        // only digits
-        if (!/^\d*$/.test(value)) return
-        if (value.length > 2) value = value.slice(0, 2) // max 2 digits
-
-        setBookingDetails((prev) => ({ ...prev, freeFollowUps: value }))
-
-        // live validation
-        setErrors((prev) => {
-          const newErrors = { ...prev }
-          if (value === '') {
-            newErrors.freeFollowUps = 'Total free follow ups is required.'
-          } else if (parseInt(value) < 0 || parseInt(value) > 50) {
-            newErrors.freeFollowUps = 'Value must be between 0 and 50.'
-          } else {
-            delete newErrors.freeFollowUps
-          }
-          return newErrors
-        })
-      }}
-    />
-    {errors.freeFollowUps && (
-      <CFormText className="text-danger">{errors.freeFollowUps}</CFormText>
-    )}
-  </CCol>
-</CRow> */}
-        </CRow>
-        <CRow className="mb-3">
-          {/* Consent Form PDF */}
-          {/* <CCol md={4}>
-            <CFormLabel>Consent Form PDF</CFormLabel>
-            <CFormInput
-              type="file"
-              accept=".pdf"
-              onChange={(e) => {
-                const file = e.target.files[0]
-                setBookingDetails(prev => ({ ...prev, consentFormPdf: file || '' }))
-              }}
-            />
-          </CCol> */}
-
-          {/* Prescription PDFs */}
-          {/* <CCol md={4}>
-            <CFormLabel>Prescription PDFs</CFormLabel>
-            <CFormInput
-              type="file"
-              multiple  
-              accept=".pdf"
-              onChange={(e) => {
-                const files = Array.from(e.target.files)
-                setBookingDetails(prev => ({ ...prev, prescriptionPdf: files }))
-              }}
-            />
-          </CCol> */}
-        </CRow>
-
-        {/* Status / Payment Type */}
-        <CRow className="mb-3">
-          {/* <CCol md={6}>
-            <CFormLabel>Status</CFormLabel>
-            <CFormSelect name="status" value={bookingDetails.status} onChange={handleBookingChange}>
-              <option value="">Select Status</option>
-              <option value="Completed">Completed</option>
-              <option value="In-Progress">In-Progress</option>
-
-              <option value="Cancelled">Cancelled</option>
-            </CFormSelect>
-            {errors.status && <CFormText className="text-danger">{errors.status}</CFormText>}
-          </CCol> */}
-
-          <CCol md={4}>
-            <CFormLabel>Payment Type</CFormLabel>
-            <CFormSelect
-              name="paymentType"
-              value={bookingDetails.paymentType}
-              onChange={handleBookingChange}
-            >
-              <option value="">Select Payment Type</option>
-              <option value="Cash">Cash</option>
-              <option value="Card">Card</option>
-              <option value="UPI">UPI</option>
-            </CFormSelect>
-            {errors.paymentType && (
-              <CFormText className="text-danger">{errors.paymentType}</CFormText>
-            )}
-          </CCol>
-          <CCol md={4}>
-            <CFormLabel>Doctor Referral Code</CFormLabel>
-            <CFormInput
-              name="doctorReferralCode"
-              value={bookingDetails.doctorRefCode || ''}
-              onChange={handleBookingChange}
-            />
-          </CCol>
-        </CRow>
-
-        <div className="mt-3 text-end">
-          <button className="btn btn-primary" onClick={handleSubmit}>
-            Submit
-          </button>
-        </div>
-      </COffcanvasBody>
-    </COffcanvas>
   )
 
   // return (

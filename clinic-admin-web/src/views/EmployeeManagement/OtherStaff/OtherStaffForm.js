@@ -17,7 +17,8 @@ import { actions, features } from '../../../Constant/Features'
 import capitalizeWords from '../../../Utils/capitalizeWords'
 import UserPermissionModal from '../UserPermissionModal'
 import { validateFormData, validateField } from '../../../Utils/Validators'
-
+import { emailPattern } from '../../../Constant/Constants'
+import FilePreview from '../../../Utils/FilePreview'
 
 const OtherStaffForm = ({
   visible,
@@ -34,10 +35,10 @@ const OtherStaffForm = ({
     wardBoyId: '',
     clinicId: localStorage.getItem('HospitalId'),
     branchId: localStorage.getItem('branchId'),
-      branchName: localStorage.getItem('branchName'),
+    branchName: localStorage.getItem('branchName'),
     hospitalName: localStorage.getItem('HospitalName'),
     fullName: '',
-    gender: 'male',
+    gender: '',
     dateOfBirth: '',
     contactNumber: '',
     emailId: '',
@@ -45,8 +46,8 @@ const OtherStaffForm = ({
     dateOfJoining: '',
     department: '',
     workExprience: '',
-    yearOfExperience:'',
-    shiftTimingOrAvailability: '',
+    yearOfExperience: '',
+    shiftTimingsOrAvailability: '',
     emergencyContact: '',
     role: 'other staff',
     address: {
@@ -86,7 +87,7 @@ const OtherStaffForm = ({
   const [showPModal, setShowPModal] = useState(false)
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState({})
   // Mandatory fields
   const mandatoryFields = [
     // WardBoyDTO top-level fields
@@ -99,7 +100,7 @@ const OtherStaffForm = ({
     'clinicId',
     'medicalFitnessCertificate', // also mandatory
     'role', // if you want to enforce role as mandatory in UI
-
+    'shiftTimingsOrAvailability',
     // Address nested fields (if Address has @NotBlank on these)
     'address.houseNo',
     'address.street',
@@ -194,7 +195,15 @@ const OtherStaffForm = ({
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData)
+      setFormData((prev) => ({
+        ...prev,
+        ...initialData,
+        address: { ...emptyForm.address, ...(initialData.address || {}) },
+        bankAccountDetails: {
+          ...emptyForm.bankAccountDetails,
+          ...(initialData.bankAccountDetails || {}),
+        },
+      }))
     } else {
       setFormData(emptyForm)
     }
@@ -202,24 +211,8 @@ const OtherStaffForm = ({
 
   // 🔹 Handle text inputs (top-level fields)
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-
-    // Run validation on each change
-    const error = validateField(field, value, { ...formData, [field]: value }, technicians);
-
-    setErrors(prev => ({ ...prev, [field]: error }));
-  };
-  const handleBlur = (field, value) => {
-    const error = validateField(field, value, formData, technicians);
-    setErrors(prev => ({ ...prev, [field]: error }));
-  };
-  const handleNestedBlur = (parent, field, value) => {
-    const error = validateField(field, value, formData, technicians);
-    setErrors(prev => ({ ...prev, [field]: error }));
-  };
-
-
-
+    setFormData((prev) => ({ ...prev, [field]: value }))
+  }
 
   // 🔹 Handle nested objects (address, bankAccountDetails)
   const handleNestedChange = (parent, field, value) => {
@@ -233,6 +226,11 @@ const OtherStaffForm = ({
   const handleFileUpload = (e, field) => {
     const file = e.target.files[0]
     if (!file) return
+    // ✅ Check file size (bytes → KB)
+    if (file.size > 250 * 1024) {
+      alert('File size must be less than 250KB.')
+      return // do not proceed
+    }
 
     const reader = new FileReader()
     reader.onloadend = () => {
@@ -248,28 +246,12 @@ const OtherStaffForm = ({
 
   // 🔹 Save handler
   const handleSubmit = () => {
-    const errors = validateFormData(formData, mandatoryFields) // returns array
-
-    if (errors.length) {
-      toast.error(errors.join('\n'), { autoClose: 1000 }) // ✅ single toast
-      return
-    }
-
-    console.log(formData)
-    onSave(formData)
-    setFormData(emptyForm)
-    onClose()
-  }
-
-
-  const handleUserPermission = () => {
-    const missing = validateMandatoryFields(formData, mandatoryFields)
+    const missing = validateMandatoryFields(formData, mandatoryFields) // returns array
 
     if (missing.length > 0) {
       toast.error(`Please fill required fields: ${missing.join(', ')}`)
       return
     }
-
     if (formData.dateOfBirth) {
       const dob = new Date(formData.dateOfBirth)
       const today = new Date()
@@ -285,20 +267,27 @@ const OtherStaffForm = ({
         return
       }
     }
-
     const mobileRegex = /^[6-9]\d{9}$/
     if (!mobileRegex.test(formData.contactNumber)) {
       toast.error('Contact number must be 10 digits and start with 6-9.')
       return
     }
-
+    if (!mobileRegex.test(formData.emergencyContact)) {
+      toast.error('Emergency contact must be 10 digits and start with 6-9.')
+      return
+    }
+    // ✅ Emergency contact and Nurse contact must not be same
+    if (formData.contactNumber === formData.emergencyContact) {
+      toast.error('Contact Number and Emergency Contact cannot be the same.')
+      return
+    }
     // ✅ Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailId)) {
+
+    const email = formData.emailId.trim()
+    if (!emailPattern.test(email)) {
       toast.error('Please enter a valid email address.')
       return
     }
-
     const duplicateContact = technicians?.some(
       (t) => t.contactNumber === formData.contactNumber && t.id !== formData.id,
     )
@@ -306,7 +295,6 @@ const OtherStaffForm = ({
       toast.error('Contact number already exists!')
       return
     }
-
     const duplicateEmail = technicians?.some(
       (t) => t.emailId === formData.emailId && t.id !== formData.id,
     )
@@ -314,8 +302,10 @@ const OtherStaffForm = ({
       toast.error('Email already exists!')
       return
     }
-    console.log(formData)
-    setShowPModal(true)
+    console.log('Saving Staff data:', formData)
+    onSave(formData)
+    setFormData(emptyForm)
+    onClose()
   }
 
   // 🔹 Close Preview Modal
@@ -364,45 +354,45 @@ const OtherStaffForm = ({
   )
 
   // 🔹 File Preview with modal trigger
-  const FilePreview = ({ label, type, data }) => {
-    if (!data) return <p>{label} </p>
+  // const FilePreview = ({ label, type, data }) => {
+  //   if (!data) return <p>{label} </p>
 
-    const isImage = type?.startsWith('image/')
-    const fileUrl = data.startsWith('data:') ? data : `data:${type};base64,${data}`
+  //   const isImage = type?.startsWith('image/')
+  //   const fileUrl = data.startsWith('data:') ? data : `data:${type};base64,${data}`
 
-    return (
-      <div className="bg-white p-3 rounded-md shadow-sm">
-        <strong>{label}:</strong>
-        <div className="mt-2">
-          {isImage ? (
-            <img
-              src={fileUrl}
-              alt={label}
-              className="w-32 h-32 object-cover rounded-md border cursor-pointer"
-              onClick={() => handlePreview(fileUrl, type)}
-            />
-          ) : (
-            <button
-              type="button "
-              className=" btn text-blue-600 hover:underline block mx-2"
-              onClick={() => handlePreview(fileUrl, type)}
-              style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
-            >
-              Preview
-            </button>
-          )}
-          <a
-            href={fileUrl}
-            download={label.replace(/\s+/g, '_')}
-            className="text-green-600 hover:underline text-sm block  btn"
-            style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
-          >
-            Download
-          </a>
-        </div>
-      </div>
-    )
-  }
+  //   return (
+  //     <div className="bg-white p-3 rounded-md shadow-sm">
+  //       <strong>{label}:</strong>
+  //       <div className="mt-2">
+  //         {isImage ? (
+  //           <img
+  //             src={fileUrl}
+  //             alt={label}
+  //             className="w-32 h-32 object-cover rounded-md border cursor-pointer"
+  //             onClick={() => handlePreview(fileUrl, type)}
+  //           />
+  //         ) : (
+  //           <button
+  //             type="button "
+  //             className=" btn text-blue-600 hover:underline block mx-2"
+  //             onClick={() => handlePreview(fileUrl, type)}
+  //             style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+  //           >
+  //             Preview
+  //           </button>
+  //         )}
+  //         <a
+  //           href={fileUrl}
+  //           download={label.replace(/\s+/g, '_')}
+  //           className="text-green-600 hover:underline text-sm block  btn"
+  //           style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+  //         >
+  //           Download
+  //         </a>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   return (
     <>
@@ -513,13 +503,13 @@ const OtherStaffForm = ({
                       <Row label="Department" value={formData.department} />
                     </div>
                     <div className="col-md-4">
-                      <Row label="Experience" value={formData.yearOfExperience} />
+                      <Row label="Experience" value={formData.workExprience} />
                     </div>
                     {/* <div className="col-md-4">
                       <Row label="Specialization" value={formData.specialization} />
                     </div> */}
                     <div className="col-md-4">
-                      <Row label="Shift Timings" value={formData.shiftTimingOrAvailability} />
+                      <Row label="Shift Timings" value={formData.shiftTimingsOrAvailability} />
                     </div>
                     <div className="col-md-4">
                       <Row label="Emergency Contact" value={formData.emergencyContact} />
@@ -654,17 +644,14 @@ const OtherStaffForm = ({
                   </CFormLabel>
                   <CFormInput
                     value={formData.fullName}
-
                     onChange={(e) => {
-                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '');
+                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '')
                       handleChange('fullName', value)
                     }}
                     onBlur={() => handleBlur('fullName', formData.fullName)}
                     invalid={!!errors.fullName}
                   />
-                  {errors.fullName && (
-                    <div className="text-danger mt-1">{errors.fullName}</div>
-                  )}
+                  {errors.fullName && <div className="text-danger mt-1">{errors.fullName}</div>}
                 </div>
 
                 <div className="col-md-4">
@@ -681,12 +668,9 @@ const OtherStaffForm = ({
                     <option value="female">Female</option>
                     <option value="other">Other</option>
                   </CFormSelect>
-                  {errors.gender && (
-                    <div className="text-danger mt-1">{errors.gender}</div>
-                  )}
+                  {errors.gender && <div className="text-danger mt-1">{errors.gender}</div>}
                 </div>
               </div>
-
 
               <div className="row mb-3">
                 <div className="col-md-4">
@@ -696,20 +680,23 @@ const OtherStaffForm = ({
                   <CFormInput
                     type="date"
                     value={formData.dateOfBirth}
-                    max={new Date(new Date().setFullYear(new Date().getFullYear() - 18))
-                      .toISOString()
-                      .split('T')[0]} // only allow DOB ≤ today-18yrs
+                    max={
+                      new Date(new Date().setFullYear(new Date().getFullYear() - 18))
+                        .toISOString()
+                        .split('T')[0]
+                    } // only allow DOB ≤ today-18yrs
                     onChange={(e) => {
-                      const value = e.target.value;
-                      handleChange('dateOfBirth', value);
+                      const value = e.target.value
+                      handleChange('dateOfBirth', value)
 
                       // Live validation using your validators file
-                      const err = validateField('dateOfBirth', value);
-                      setErrors((prev) => ({ ...prev, dateOfBirth: err }));
+                      const err = validateField('dateOfBirth', value)
+                      setErrors((prev) => ({ ...prev, dateOfBirth: err }))
                     }}
                   />
-                  {errors.dateOfBirth && <div className="text-danger mt-1">{errors.dateOfBirth}</div>}
-
+                  {errors.dateOfBirth && (
+                    <div className="text-danger mt-1">{errors.dateOfBirth}</div>
+                  )}
                 </div>
 
                 <div className="col-md-4">
@@ -737,22 +724,22 @@ const OtherStaffForm = ({
                 </div>
 
                 <div className="col-md-4">
-                  <CFormLabel>Email</CFormLabel>
+                  <CFormLabel>
+                    Email <span style={{ color: 'red' }}>*</span>
+                  </CFormLabel>
                   <CFormInput
                     type="email"
                     value={formData.emailId}
                     onChange={(e) => {
                       const value = e.target.value
                       handleChange('emailId', value)
-                      // ✅ Live validation
-                      const error = validators.email(value)
-                      setErrors((prev) => ({ ...prev, emailId: error }))
+
+                      // Run live validation
+                      const err = validateField('emailId', value)
+                      setErrors((prev) => ({ ...prev, emailId: err }))
                     }}
                   />
-                  {errors.emailId && (
-                    <div className="text-danger mt-1">{errors.emailId}</div>
-                  )}
-
+                  {errors.emailId && <div className="text-danger mt-1">{errors.emailId}</div>}
                 </div>
               </div>
 
@@ -780,7 +767,6 @@ const OtherStaffForm = ({
                   )}
                 </div>
 
-
                 {/* <div className="col-md-4">
                   <CFormLabel>Lab License / Registration</CFormLabel>
                   <CFormInput
@@ -795,13 +781,14 @@ const OtherStaffForm = ({
                   <CFormInput
                     type="date"
                     value={formData.dateOfJoining}
-                    onChange={(e) => handleChange('dateOfJoining', e.target.value)}
-                    onBlur={() =>
-                      setErrors((prev) => ({
-                        ...prev,
-                        dateOfJoining: validateField('dateOfJoining', formData.dateOfJoining, formData, technicians)
-                      }))
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value
+                      handleChange('dateOfJoining', value)
+
+                      // Validate using switch case
+                      const error = validateField('dateOfJoining', value)
+                      setErrors((prev) => ({ ...prev, dateOfJoining: error }))
+                    }}
                   />
                   {errors.dateOfJoining && (
                     <div className="text-danger mt-1">{errors.dateOfJoining}</div>
@@ -813,23 +800,25 @@ const OtherStaffForm = ({
                     Department <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
-                    value={(formData.department)}
+                    value={formData.department}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '');
+                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '')
                       handleChange('department', value)
                     }}
                     onBlur={() =>
                       setErrors((prev) => ({
                         ...prev,
-                        department: validateField('department', formData.department, formData, technicians)
+                        department: validateField(
+                          'department',
+                          formData.department,
+                          formData,
+                          technicians,
+                        ),
                       }))
                     }
                   />
-                  {errors.department && (
-                    <div className="text-danger mt-1">{errors.department}</div>
-                  )}
+                  {errors.department && <div className="text-danger mt-1">{errors.department}</div>}
                 </div>
-
               </div>
 
               <div className="row mb-3">
@@ -838,8 +827,8 @@ const OtherStaffForm = ({
                   <CFormLabel>Years of Experience</CFormLabel>
                   <CFormInput
                     type="number"
-                    value={formData.yearOfExperience}
-                    onChange={(e) => handleChange('yearOfExperience', e.target.value)}
+                    value={formData.workExprience}
+                    onChange={(e) => handleChange('workExprience', e.target.value)}
                   />
                 </div>
                 <div className="col-md-4">
@@ -847,39 +836,29 @@ const OtherStaffForm = ({
                     Shift Timings / Availability <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormSelect
-                    value={formData.shiftTimingOrAvailability}
-                    onChange={(e) => { const value = e.target.value; handleChange('shiftTimingOrAvailability', value)}} 
-                    onBlur={() => {
-                      // Validate when user leaves the select field
-                      const error = validateField(
-                        'shiftTimingOrAvailability',
-                        formData.shiftTimingOrAvailability,
-                        formData,
-                        technicians
-                      );
-                      setErrors((prev) => ({ ...prev, shiftTimingOrAvailability: error }));
+                    value={formData.shiftTimingsOrAvailability}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      handleChange('shiftTimingsOrAvailability', value)
+
+                      const error = validateField('shiftTimingsOrAvailability', value)
+                      setErrors((prev) => ({ ...prev, shiftTimingsOrAvailability: error }))
                     }}
                   >
                     <option value="">Select Shift</option>
-
-                    {/* 6-Hour Shifts */}
                     <option value="06:00-12:00">Morning (06:00 AM – 12:00 PM) – 6 hrs</option>
                     <option value="12:00-18:00">Afternoon (12:00 PM – 06:00 PM) – 6 hrs</option>
                     <option value="18:00-00:00">Evening (06:00 PM – 12:00 AM) – 6 hrs</option>
                     <option value="00:00-06:00">Night (12:00 AM – 06:00 AM) – 6 hrs</option>
-
-                    {/* 9-Hour Shifts */}
                     <option value="06:00-15:00">Day Shift (06:00 AM – 03:00 PM) – 9 hrs</option>
                     <option value="15:00-00:00">Evening Shift (03:00 PM – 12:00 AM) – 9 hrs</option>
                     <option value="21:00-06:00">Night Shift (09:00 PM – 06:00 AM) – 9 hrs</option>
-
-                    {/* 12-Hour Shifts */}
                     <option value="06:00-18:00">Long Day (06:00 AM – 06:00 PM) – 12 hrs</option>
                     <option value="18:00-06:00">Long Night (06:00 PM – 06:00 AM) – 12 hrs</option>
                   </CFormSelect>
 
-                  {errors.shiftTimingOrAvailability && (
-                    <div className="text-danger mt-1">{errors.shiftTimingOrAvailability}</div>
+                  {errors.shiftTimingsOrAvailability && (
+                    <div className="text-danger mt-1">{errors.shiftTimingsOrAvailability}</div>
                   )}
                 </div>
 
@@ -887,6 +866,7 @@ const OtherStaffForm = ({
                   <CFormLabel>Emergency Contact</CFormLabel>
                   <CFormInput
                     type="text"
+                    inputMode="numeric"
                     maxLength={10} // Restrict to 10 digits
                     value={formData.emergencyContact}
                     onChange={(e) => {
@@ -896,20 +876,7 @@ const OtherStaffForm = ({
                         handleChange('emergencyContact', value)
                       }
                     }}
-                    onBlur={() => {
-                      // Validate on leaving the field
-                      const error = validateField(
-                        'emergencyContact',
-                        formData.emergencyContact,
-                        formData,
-                        technicians
-                      )
-                      setErrors((prev) => ({ ...prev, emergencyContact: error }))
-                    }}
                   />
-                  {errors.emergencyContact && (
-                    <div className="text-danger mt-1">{errors.emergencyContact}</div>
-                  )}
                 </div>
 
                 {/* <div className="col-md-4">
@@ -958,7 +925,7 @@ const OtherStaffForm = ({
                         <CFormInput
                           type="text"
                           maxLength={field === 'postalCode' ? 6 : undefined}
-                          value={(formData.address[field])}
+                          value={formData.address[field]}
                           onChange={(e) => {
                             let value = e.target.value
 
@@ -979,7 +946,12 @@ const OtherStaffForm = ({
                             }
                           }}
                           onBlur={() => {
-                            const error = validateField(field, formData.address[field], formData, technicians)
+                            const error = validateField(
+                              field,
+                              formData.address[field],
+                              formData,
+                              technicians,
+                            )
                             setErrors((prev) => ({
                               ...prev,
                               address: {
@@ -996,8 +968,6 @@ const OtherStaffForm = ({
                     ))}
                   </div>
                 ))}
-
-
 
               {/* 🔹 Bank Details */}
               <h5 className="mt-3">Bank Account Details</h5>
@@ -1060,7 +1030,11 @@ const OtherStaffForm = ({
                           }}
                           onBlur={async () => {
                             // Validate the field on blur
-                            const error = validateField(field, formData.bankAccountDetails[field], formData)
+                            const error = validateField(
+                              field,
+                              formData.bankAccountDetails[field],
+                              formData,
+                            )
                             setErrors((prev) => ({
                               ...prev,
                               bankAccountDetails: {
@@ -1070,7 +1044,10 @@ const OtherStaffForm = ({
                             }))
 
                             // PAN specific validation
-                            if (field === 'panCardNumber' && formData.bankAccountDetails[field].length === 10) {
+                            if (
+                              field === 'panCardNumber' &&
+                              formData.bankAccountDetails[field].length === 10
+                            ) {
                               const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
                               if (!panRegex.test(formData.bankAccountDetails[field])) {
                                 toast.error('Invalid PAN format (e.g., ABCDE1234F)')
@@ -1078,7 +1055,10 @@ const OtherStaffForm = ({
                             }
 
                             // IFSC specific validation & fetch bank info
-                            if (field === 'ifscCode' && formData.bankAccountDetails[field].length === 11) {
+                            if (
+                              field === 'ifscCode' &&
+                              formData.bankAccountDetails[field].length === 11
+                            ) {
                               const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
                               if (!ifscRegex.test(formData.bankAccountDetails[field])) {
                                 toast.error('Invalid IFSC format (e.g., HDFC0001234)')
@@ -1088,11 +1068,21 @@ const OtherStaffForm = ({
                               }
 
                               try {
-                                const res = await fetch(`https://ifsc.razorpay.com/${formData.bankAccountDetails[field]}`)
+                                const res = await fetch(
+                                  `https://ifsc.razorpay.com/${formData.bankAccountDetails[field]}`,
+                                )
                                 if (res.ok) {
                                   const data = await res.json()
-                                  handleNestedChange('bankAccountDetails', 'bankName', data.BANK || '')
-                                  handleNestedChange('bankAccountDetails', 'branchName', data.BRANCH || '')
+                                  handleNestedChange(
+                                    'bankAccountDetails',
+                                    'bankName',
+                                    data.BANK || '',
+                                  )
+                                  handleNestedChange(
+                                    'bankAccountDetails',
+                                    'branchName',
+                                    data.BRANCH || '',
+                                  )
                                 }
                               } catch (err) {
                                 toast.error('Error fetching bank details')
@@ -1109,8 +1099,6 @@ const OtherStaffForm = ({
                     ))}
                   </div>
                 ))}
-
-
 
               {/* 🔹 Documents */}
               <h5 className="mt-3">Documents</h5>

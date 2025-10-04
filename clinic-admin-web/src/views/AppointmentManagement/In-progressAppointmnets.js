@@ -17,29 +17,31 @@ import {
   CCardBody,
   CFormInput,
 } from '@coreui/react'
-import { Save } from 'lucide-react'
+import { Edit, Save } from 'lucide-react'
 import { format } from 'date-fns'
 import { useDispatch } from 'react-redux'
-import { GetBookingByClinicIdData } from './appointmentAPI'
+import { bookingUpdate, GetBookingByClinicIdData, GetBookingInprogress } from './appointmentAPI'
 import { http } from '../../Utils/Interceptors'
 import axios from 'axios'
 import { BASE_URL, Booking_sevice } from '../../baseUrl'
 import { toast } from 'react-toastify'
 import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
 import LoadingIndicator from '../../Utils/loader'
+import capitalizeWords from '../../Utils/capitalizeWords'
+import { getFollowOptions } from '../../APIs/FollowOptions'
 
-const followOptions = [
-  { label: 'Follow-up Required', value: 'followup' },
-  { label: 'No Follow-up Needed', value: 'no-followup' },
-  { label: 'Patient Not Responding', value: 'no-response' },
-  { label: 'Reschedule Needed (Doctor Unavailable)', value: 'reschedule-doctor' },
-  { label: 'Reschedule Needed (Patient Request)', value: 'reschedule-patient' },
-  { label: 'Request to Book', value: 'request-to-book' },
-  { label: 'Booked by Admin', value: 'booked-admin' },
-  { label: 'we will book', value: 'patient-will book' },
-  { label: 'Waiting for Patient Confirmation', value: 'waiting-patient-confirmation' },
-  { label: 'Waiting for Doctor Confirmation', value: 'waiting-doctor-confirmation' },
-]
+// const followOptions = [
+//   { label: 'Follow-up Required', value: 'followup' },
+//   { label: 'No Follow-up Needed', value: 'no-followup' },
+//   { label: 'Patient Not Responding', value: 'no-response' },
+//   { label: 'Reschedule Needed (Doctor Unavailable)', value: 'reschedule-doctor' },
+//   { label: 'Reschedule Needed (Patient Request)', value: 'reschedule-patient' },
+//   { label: 'Request to Book', value: 'request-to-book' },
+//   { label: 'Booked by Admin', value: 'booked-admin' },
+//   { label: 'we will book', value: 'patient-will book' },
+//   { label: 'Waiting for Patient Confirmation', value: 'waiting-patient-confirmation' },
+//   { label: 'Waiting for Doctor Confirmation', value: 'waiting-doctor-confirmation' },
+// ]
 
 const InProgressAppointmentsPage = () => {
   const [inprogressApt, setInprogressApt] = useState([])
@@ -63,25 +65,36 @@ const InProgressAppointmentsPage = () => {
   const { searchQuery, setSearchQuery } = useGlobalSearch()
   const [value, setValue] = useState('') // selected dropdown value
   const [custom, setCustom] = useState('')
+  const [editMode, setEditMode] = useState({})
+  const [showAllSlots, setShowAllSlots] = useState(false)
+  const [reschedule, setReschedule] = useState(false)
+  // Whenever appointments are fetched, set edit mode
+  const [followOptions, setFollowOptions] = useState([])
+  useEffect(() => {
+    fetchData()
+    const mode = {}
+    inprogressApt.forEach((apt) => {
+      // If followupStatus exists → not editable by default
+      mode[apt.bookingId] = apt.followupStatus ? false : true
+    })
+    setEditMode(mode)
+  }, [inprogressApt])
+
+  const fetchData = async () => {
+    const options = await getFollowOptions()
+    setFollowOptions(options)
+    console.log(options)
+  }
+
   const fetchAppointments = useCallback(async () => {
     setLoading(true)
     setError(null)
-    const clinicId = localStorage.getItem('HospitalId')
 
     try {
-      const response = await GetBookingByClinicIdData(clinicId)
-      if (response && Array.isArray(response.data)) {
-        const inprogreeAppointments = response.data.filter(
-          (item) => item.status.toLowerCase() === 'in-progress',
-        )
-
-        setAllAppointments(inprogreeAppointments) // ✅ store unfiltered appointments
-        // ✅ initially show only today's appointments
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        const formattedToday = format(today, 'yyyy-MM-dd')
-        // setInprogressApt(inprogreeAppointments.filter((apt) => apt.serviceDate === formattedToday))
-        setInprogressApt(inprogreeAppointments)
+      const response = await GetBookingInprogress()
+      if (response && Array.isArray(response.data.appointments)) {
+        setAllAppointments(response.data.appointments.flat()) // ✅ store unfiltered appointments
+        setInprogressApt(response.data.appointments.flat())
       } else {
         setAllAppointments([])
         setInprogressApt([])
@@ -116,13 +129,37 @@ const InProgressAppointmentsPage = () => {
     setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
   }
 
-  const handleSave = () => {
-    // If user typed something, use it, else use dropdown value
-    const status = custom.trim() ? custom : value
-    console.log(status)
-    // onSave(bookingId, status)
+  const [disabledIds, setDisabledIds] = useState({}) // Track disabled appointments
+
+  const handleSave = async (bookingId) => {
+    const selected = followStatuses[bookingId]
+    if (!selected) return alert('Select or type a reason')
+
+    const status = selected.value === 'other' ? selected.custom.trim() : selected.value
+    if (!status) return alert('Status cannot be empty')
+
+    try {
+      const payload = { bookingId, followupStatus: status }
+
+      await bookingUpdate(payload) // send to backend
+
+      // mark as saved
+      setFollowStatuses((prev) => ({
+        ...prev,
+        [bookingId]: { ...prev[bookingId], saved: status },
+      }))
+
+      // exit edit mode
+      setEditMode((prev) => ({ ...prev, [bookingId]: false }))
+
+      fetchAppointments() // refresh data if needed
+    } catch (err) {
+      console.error('Failed to save status:', err)
+      alert('Failed to save status')
+    }
   }
 
+  const currentStatus = followStatuses[inprogressApt.bookingId] || {}
   // Inside the modal body, after fetching slots and filtering for selectedDate
   const filteredSlots = slotsForSelectedDate.filter((slotObj) => {
     if (!slotObj.slot) return false
@@ -145,7 +182,10 @@ const InProgressAppointmentsPage = () => {
 
   // Booking payload and API call
   const bookSlot = async () => {
-    if (!modalData || selectedSlots.length === 0) return
+    if (!modalData || selectedSlots.length === 0) {
+      toast.warning('Please select a slot before booking.')
+      return
+    }
 
     const payload = {
       bookingId: modalData.bookingId,
@@ -157,15 +197,45 @@ const InProgressAppointmentsPage = () => {
       mobileNumber: modalData.mobileNumber,
     }
 
+    const selected = followStatuses[modalData.bookingId]
+    const status = selected?.value === 'other' ? selected.custom?.trim() : selected?.value
+
     try {
-      const response = await axios.post(`${Booking_sevice}/customer/bookService`, payload) // replace with your API
-      console.log('Booking response:', response.data)
-      toast.success(response.data.message ?? 'Booking Successfull...!')
+      const rescheduleStatuses = ['reschedule-doctor', 'reschedule-patient']
+      const shouldReschedule =
+        rescheduleStatuses.includes(status) || rescheduleStatuses.includes(modalData.followupStatus)
+
+      if (shouldReschedule) {
+        // 🔹 Only reschedule, don't book again
+        const reschedulePayload = {
+          bookingId: modalData.bookingId,
+          followupStatus: status,
+          serviceDate: selectedDate,
+          servicetime: selectedSlots[0],
+        }
+
+        await bookingUpdate(reschedulePayload)
+        toast.info('Booking has been rescheduled successfully.')
+      } else {
+        // 🔹 Normal booking flow
+        const response = await axios.post(`${Booking_sevice}/customer/bookService`, payload)
+
+        if (response?.data?.success) {
+          toast.success(response.data.message || 'Booking successful!')
+        } else {
+          toast.error(response?.data?.message || 'Booking failed. Please try again.')
+        }
+      }
+
+      // 🔹 Common clean-up for both flows
       await fetchAppointments()
       setModalVisible(false)
     } catch (error) {
-      toast.error('Booking failed:', error)
-
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Something went wrong while booking. Please try again.'
+      toast.error(msg)
       console.error('Booking failed:', error)
     }
   }
@@ -261,6 +331,16 @@ const InProgressAppointmentsPage = () => {
     setModalError(null)
     setModalData(bookingId)
   }
+  useEffect(() => {
+    if (inprogressApt && inprogressApt.length > 0) {
+      const hasReschedule = inprogressApt.some(
+        (apt) =>
+          apt.followupStatus === 'reschedule-doctor' || apt.followupStatus === 'reschedule-patient',
+      )
+
+      setReschedule(hasReschedule)
+    }
+  }, [inprogressApt])
 
   const filteredData = React.useMemo(() => {
     const q = searchQuery.toLowerCase().trim()
@@ -329,7 +409,6 @@ const InProgressAppointmentsPage = () => {
           </div> */}
         {/* </div> */}
       </div>
-
       {/* Table Section */}
       {inprogressApt.length === 0 ? (
         <div
@@ -363,36 +442,54 @@ const InProgressAppointmentsPage = () => {
             {sortedAppointments.map((apt) => (
               <CTableRow key={apt.bookingId}>
                 <CTableDataCell>{apt.patientId}</CTableDataCell>
-                <CTableDataCell>{apt.name}</CTableDataCell>
-                <CTableDataCell>{apt.doctorName}</CTableDataCell>
+                <CTableDataCell>{capitalizeWords(apt.name)}</CTableDataCell>
+                <CTableDataCell>{capitalizeWords(apt.doctorName)}</CTableDataCell>
                 <CTableDataCell>{apt.mobileNumber}</CTableDataCell>
                 <CTableDataCell>{apt.consultationType}</CTableDataCell>
 
                 <CTableDataCell>{apt.serviceDate}</CTableDataCell>
-
                 <CTableDataCell>
                   <div className="d-flex align-items-center gap-2">
-                    <div className="d-flex align-items-center gap-2">
-                      <CFormSelect
-                        size="sm"
-                        value={followStatuses[apt.bookingId]?.value || ''}
-                        onChange={(e) =>
-                          setFollowStatuses((prev) => ({
-                            ...prev,
-                            [apt.bookingId]: { value: e.target.value, custom: '' },
-                          }))
-                        }
-                      >
-                        <option value="">Select</option>
-                        {followOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                        <option value="other">Other</option>
-                      </CFormSelect>
+                    <CFormSelect
+                      size="sm"
+                      value={
+                        followStatuses[apt.bookingId]?.saved ||
+                        followStatuses[apt.bookingId]?.value ||
+                        apt.followupStatus ||
+                        ''
+                      }
+                      onChange={(e) => {
+                        const selectedValue = e.target.value
 
-                      {followStatuses[apt.bookingId]?.value === 'other' && (
+                        setFollowStatuses((prev) => ({
+                          ...prev,
+                          [apt.bookingId]: { ...prev[apt.bookingId], value: selectedValue },
+                        }))
+
+                        const rescheduleStatuses = ['reschedule-doctor', 'reschedule-patient']
+                        console.log(selectedValue)
+                        // Only open modal if user just selected reschedule status (not existing one)
+                        if (rescheduleStatuses.includes(selectedValue)) {
+                          openBookingModal(apt)
+                          setReschedule(true)
+                        } else {
+                          setReschedule(false)
+                        }
+                      }}
+                      disabled={!editMode[apt.bookingId]} // enable only in edit mode
+                    >
+                      <option value="">Select</option>
+                      {followOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                      <option value="other">Other</option>
+                    </CFormSelect>
+
+                    {(followStatuses[apt.bookingId]?.value === 'other' ||
+                      apt.followupStatus === 'other') &&
+                      editMode[apt.bookingId] && (
                         <CFormInput
                           size="sm"
                           placeholder="Type reason if needed"
@@ -400,31 +497,31 @@ const InProgressAppointmentsPage = () => {
                           onChange={(e) =>
                             setFollowStatuses((prev) => ({
                               ...prev,
-                              [apt.bookingId]: {
-                                ...prev[apt.bookingId],
-                                custom: e.target.value,
-                              },
+                              [apt.bookingId]: { ...prev[apt.bookingId], custom: e.target.value },
                             }))
                           }
                         />
                       )}
 
-                      <CButton
-                        size="sm"
-                        onClick={() => {
-                          const status =
-                            followStatuses[apt.bookingId]?.value === 'other'
-                              ? followStatuses[apt.bookingId]?.custom
-                              : followStatuses[apt.bookingId]?.value
-                          console.log('Saved status for', apt.bookingId, status)
-                          // 🔥 Call API to save here
-                        }}
-                      >
-                        <Save size={16} />
-                      </CButton>
-                    </div>
+                    <CButton
+                      size="sm"
+                      onClick={() => {
+                        if (editMode[apt.bookingId]) {
+                          handleSave(apt.bookingId) // save current selection
+                        } else {
+                          setEditMode((prev) => ({ ...prev, [apt.bookingId]: true })) // switch to edit
+                        }
+                      }}
+                    >
+                      {editMode[apt.bookingId] ? (
+                        <Save size={16} style={{ color: 'var(--color-black)' }} />
+                      ) : (
+                        <Edit size={16} style={{ color: 'var(--color-bgcolor)' }} />
+                      )}
+                    </CButton>
                   </div>
                 </CTableDataCell>
+
                 <CTableDataCell>
                   <CButton
                     style={{
@@ -461,28 +558,39 @@ const InProgressAppointmentsPage = () => {
           ))}
         </div>
       )}
-
       {/* Modal showing details without table */}
       {/* Modal for booking slots */}
-      <CModal visible={modalVisible} onClose={() => setModalVisible(false)} size="lg">
-        <CModalHeader>
-          <CModalTitle>
-            Book Slots for {modalData?.doctorName} ({modalData?.name})
+
+      <CModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        size="lg"
+        backdrop="static"
+        className="custom-modal"
+      >
+        <CModalHeader style={{ backgroundColor: '#f0f0f0', borderBottom: '1px solid #ccc' }}>
+          <CModalTitle style={{ fontWeight: 600, fontSize: '18px', color: 'var(--color-black)' }}>
+            Book Slots for {capitalizeWords(modalData?.doctorName)} (
+            {capitalizeWords(modalData?.name)})
           </CModalTitle>
         </CModalHeader>
-        <CModalBody>
+
+        <CModalBody style={{ fontSize: '14px' }}>
           {/* Patient & Doctor Info */}
           {modalData && (
-            <div className="mb-3" style={{ color: 'var(--color-black)' }}>
-              <p>
-                <strong>Patient:</strong> {modalData.name} <br />
-                <strong>Doctor:</strong> {modalData.doctorName} <br />
-                <strong>Clinic / Branch:</strong> {modalData.clinicName || modalData.branchName}{' '}
+            <CCard
+              className="mb-3"
+              style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+            >
+              <p style={{ margin: 0, lineHeight: 1.6 }}>
+                <strong>Patient:</strong> {capitalizeWords(modalData.name)} <br />
+                <strong>Doctor:</strong> {capitalizeWords(modalData.doctorName)} <br />
+                <strong>Clinic / Branch:</strong> {modalData.clinicName || modalData.branchname}{' '}
                 <br />
+                <strong>Branch:</strong> {modalData.branchname} <br />
                 <strong>Consultation:</strong> {modalData.consultationType} <br />
-                <strong>Status:</strong> {modalData.status}
               </p>
-            </div>
+            </CCard>
           )}
 
           {/* Date selection */}
@@ -492,14 +600,22 @@ const InProgressAppointmentsPage = () => {
               return (
                 <CButton
                   key={idx}
-                  onClick={() => setSelectedDate(format(dayObj.date, 'yyyy-MM-dd'))}
+                  onClick={() => {
+                    const formattedDate = format(dayObj.date, 'yyyy-MM-dd')
+                    setSelectedDate(formattedDate)
+                    fetchSlots(formattedDate) // pass the selected date if needed
+                  }}
                   style={{
                     backgroundColor: isSelected ? 'var(--color-black)' : 'white',
                     color: isSelected ? 'white' : 'var(--color-black)',
-                    border: '1px solid var(--color-black)',
+                    border: '1px solid grey',
+                    borderRadius: '6px',
+                    minWidth: '70px',
+                    padding: '6px 8px',
+                    textAlign: 'center',
                   }}
                 >
-                  <div style={{ fontSize: '14px' }}>{dayObj.dayLabel}</div>
+                  <div style={{ fontSize: '14px', fontWeight: 500 }}>{dayObj.dayLabel}</div>
                   <div style={{ fontSize: '12px' }}>{dayObj.dateLabel}</div>
                 </CButton>
               )
@@ -507,53 +623,97 @@ const InProgressAppointmentsPage = () => {
           </div>
 
           {/* Slots for selected date */}
-          <CCard>
+          <CCard style={{ borderRadius: '8px', border: '1px solid #ddd' }}>
             <CCardBody>
               {modalLoading ? (
-                <CSpinner />
+                // Show spinner while fetching slots
+                <div className="text-center py-4">
+                  <CSpinner style={{ width: '40px', height: '40px' }} />
+                  <p style={{ marginTop: '8px', color: '#666' }}>Loading available slots...</p>
+                </div>
               ) : filteredSlots.length > 0 ? (
-                <div className="d-flex flex-wrap gap-2">
-                  {filteredSlots.map((slotObj, i) => {
-                    const isSelected = selectedSlots[0] === slotObj.slot
-                    const isBooked = slotObj.slotbooked === true || slotObj.slotbooked === 'true' // <-- convert string to boolean
+                <>
+                  <div className="d-flex flex-wrap gap-2 mb-2">
+                    {filteredSlots
+                      .slice(0, showAllSlots ? filteredSlots.length : 15) // Show first 15 slots initially
+                      .map((slotObj, i) => {
+                        const isSelected = selectedSlots.includes(slotObj.slot)
+                        const isBooked =
+                          slotObj.slotbooked === true || slotObj.slotbooked === 'true'
 
-                    return (
-                      <div
-                        key={i}
-                        onClick={() => !isBooked && handleSlotClick(slotObj)} // prevent click if booked
+                        return (
+                          <div
+                            key={i}
+                            onClick={() => !isBooked && handleSlotClick(slotObj)}
+                            style={{
+                              cursor: isBooked ? 'not-allowed' : 'pointer',
+                              width: '80px',
+                              height: '40px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: '6px',
+                              border: '1px solid var(--color-black)',
+                              backgroundColor: isBooked
+                                ? '#ccc'
+                                : isSelected
+                                  ? 'var(--color-black)'
+                                  : 'white',
+                              color: isBooked || isSelected ? 'white' : 'var(--color-black)',
+                              fontWeight: 500,
+                              opacity: isBooked ? 0.6 : 1,
+                              transition: 'all 0.2s',
+                              textAlign: 'center',
+                            }}
+                          >
+                            {slotObj.slot}
+                          </div>
+                        )
+                      })}
+                  </div>
+
+                  {filteredSlots.length > 15 && (
+                    <div className="text-center mt-2">
+                      <CButton
+                        size="sm"
+                        onClick={() => setShowAllSlots((prev) => !prev)}
                         style={{
-                          cursor: isBooked ? 'not-allowed' : 'pointer',
-                          padding: '8px 12px',
-                          borderRadius: '4px',
-                          border: '1px solid var(--color-black)',
-                          backgroundColor: isBooked
-                            ? '#f44336' // red for booked
-                            : isSelected
-                              ? 'var(--color-black)' // selected slot
-                              : 'lightgray', // default
-                          color: isBooked ? 'white' : isSelected ? 'white' : 'black',
-                          opacity: isBooked ? 0.6 : 1,
+                          borderRadius: '6px',
+                          fontWeight: 500,
+                          backgroundColor: 'var(--color-bgcolor)',
+                          color: 'var(--color-black)',
                         }}
                       >
-                        {slotObj.slot}
-                      </div>
-                    )
-                  })}
-                </div>
+                        {showAllSlots ? 'Show Less' : 'Show More'}
+                      </CButton>
+                    </div>
+                  )}
+                </>
               ) : (
-                <p>No slots available for this date</p>
+                // No slots available for this date
+                <p style={{ textAlign: 'center', color: '#666', margin: 0 }}>
+                  No slots available for this date
+                </p>
               )}
             </CCardBody>
           </CCard>
 
           {/* Book Slots Button */}
-          <div className="mt-3 d-flex justify-content-end">
+          <div className="mt-4 d-flex justify-content-end">
             <CButton
-              style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+              style={{
+                backgroundColor: 'var(--color-black)',
+                color: 'white',
+                borderRadius: '6px',
+                padding: '8px 16px',
+                fontWeight: 600,
+              }}
               disabled={selectedSlots.length === 0}
               onClick={bookSlot}
             >
-              Book Selected Slot
+              {!reschedule
+                ? `Book Selected Slot ${selectedSlots[0] ? `(${selectedSlots[0]})` : ''}`
+                : 'Reschedule'}
             </CButton>
           </div>
         </CModalBody>

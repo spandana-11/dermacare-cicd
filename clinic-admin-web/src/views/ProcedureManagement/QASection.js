@@ -51,8 +51,10 @@ const QASection = ({ title, qaList = [], setQAList }) => {
         setQAList([...qaList, { [question]: answers }])
       }
 
-      setQuestion('')
-      setAnswers([])
+      // ✅ Clear all input fields after saving
+      setQuestion('') // clears Instruction
+      setAnswers([]) // clears answer list
+      setAnswerInput('') // clears Guidelines input
     }
   }
 
@@ -77,24 +79,27 @@ const QASection = ({ title, qaList = [], setQAList }) => {
     }
   }
 
-  useEffect(() => {
-    if (qaList.length > 0) {
-      const lastQA = qaList[qaList.length - 1] // or [0] depending on your UX
-      const q = Object.keys(lastQA)[0]
-      const ans = lastQA[q]
-      setQuestion(q)
-      setAnswers(ans)
-    }
-  }, [qaList])
+  // Remove the first useEffect entirely
+
   useEffect(() => {
     if ((modalMode === 'edit' || modalMode === 'view') && qaList.length > 0) {
-      const lastQA = qaList[qaList.length - 1] // or [0] based on your UI
+      const lastQA = qaList[qaList.length - 1]
       const q = Object.keys(lastQA)[0]
       const ans = lastQA[q]
       setQuestion(q)
       setAnswers(ans)
     }
   }, [qaList, modalMode])
+
+  useEffect(() => {
+    if (modalMode === 'edit' && qaList.length > 0) {
+      const lastQA = qaList[qaList.length - 1]
+      const q = Object.keys(lastQA)[0]
+      const ans = lastQA[q]
+      setQuestion(q)
+      setAnswers(ans)
+    }
+  }, [modalMode])
 
   return (
     <CCol md={12} className="mt-3">
@@ -116,7 +121,13 @@ const QASection = ({ title, qaList = [], setQAList }) => {
           <FaPlus />
         </CButton>
       </CInputGroup>
-
+      {/* 👇 Message to guide user before saving */}
+      {answerInput.trim() !== '' && (
+        <div className="text-warning mb-2">
+          Tip: Click the <FaPlus style={{ verticalAlign: 'middle' }} /> button to add your answer
+          before saving the Q&A.
+        </div>
+      )}
       {answers.length > 0 && (
         <CListGroup className="mb-3">
           {answers.map((ans, idx) => (
@@ -143,7 +154,7 @@ const QASection = ({ title, qaList = [], setQAList }) => {
       )}
 
       <CButton color="info" className="mb-3 text-white" onClick={saveCurrentQA}>
-        {editingIndex !== null ? 'Update' : 'Save'}
+        {editingIndex !== null ? 'Update Q&A' : 'Save Q&A'}
       </CButton>
 
       {qaList.length > 0 && (

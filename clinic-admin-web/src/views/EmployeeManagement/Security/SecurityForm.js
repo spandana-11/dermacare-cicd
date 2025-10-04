@@ -18,6 +18,8 @@ import { actions, features } from '../../../Constant/Features'
 import capitalizeWords from '../../../Utils/capitalizeWords'
 import UserPermissionModal from '../UserPermissionModal'
 import { validateFormData, validateField } from '../../../Utils/Validators'
+import { emailPattern } from '../../../Constant/Constants'
+import FilePreview from '../../../Utils/FilePreview'
 
 const SecurityForm = ({
   visible,
@@ -99,7 +101,7 @@ const SecurityForm = ({
     'contactNumber',
     'govermentId',
     'dateOfJoining',
- 
+
 
     // address fields (Address is @NotNull)
     'address.houseNo',                 // make sure Address DTO has these
@@ -118,7 +120,7 @@ const SecurityForm = ({
     'bankAccountDetails.panCardNumber',
 
     // extra mandatory fields in SecurityStaffDTO
-  
+
     'medicalFitnessCertificate'        // @NotBlank
   ];
 
@@ -282,8 +284,8 @@ const SecurityForm = ({
     }
 
     // ✅ Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailId)) {
+  
+    if (!emailPattern.test(formData.emailId)) {
       toast.error('Please enter a valid email address.')
       return
     }
@@ -347,8 +349,8 @@ const SecurityForm = ({
     }
 
     // ✅ Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailId)) {
+   
+    if (!emailPattern.test(formData.emailId)) {
       toast.error('Please enter a valid email address.')
       return
     }
@@ -418,45 +420,45 @@ const SecurityForm = ({
   )
 
   // 🔹 File Preview with modal trigger
-  const FilePreview = ({ label, type, data }) => {
-    if (!data) return <p>{label} </p>
+  // const FilePreview = ({ label, type, data }) => {
+  //   if (!data) return <p>{label} </p>
 
-    const isImage = type?.startsWith('image/')
-    const fileUrl = data.startsWith('data:') ? data : `data:${type};base64,${data}`
+  //   const isImage = type?.startsWith('image/')
+  //   const fileUrl = data.startsWith('data:') ? data : `data:${type};base64,${data}`
 
-    return (
-      <div className="bg-white p-3 rounded-md shadow-sm">
-        <strong>{label}:</strong>
-        <div className="mt-2">
-          {isImage ? (
-            <img
-              src={fileUrl}
-              alt={label}
-              className="w-32 h-32 object-cover rounded-md border cursor-pointer"
-              onClick={() => handlePreview(fileUrl, type)}
-            />
-          ) : (
-            <button
-              type="button "
-              className=" btn text-blue-600 hover:underline block mx-2"
-              onClick={() => handlePreview(fileUrl, type)}
-              style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
-            >
-              Preview
-            </button>
-          )}
-          <a
-            href={fileUrl}
-            download={label.replace(/\s+/g, '_')}
-            className="text-green-600 hover:underline text-sm block  btn"
-            style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
-          >
-            Download
-          </a>
-        </div>
-      </div>
-    )
-  }
+  //   return (
+  //     <div className="bg-white p-3 rounded-md shadow-sm">
+  //       <strong>{label}:</strong>
+  //       <div className="mt-2">
+  //         {isImage ? (
+  //           <img
+  //             src={fileUrl}
+  //             alt={label}
+  //             className="w-32 h-32 object-cover rounded-md border cursor-pointer"
+  //             onClick={() => handlePreview(fileUrl, type)}
+  //           />
+  //         ) : (
+  //           <button
+  //             type="button "
+  //             className=" btn text-blue-600 hover:underline block mx-2"
+  //             onClick={() => handlePreview(fileUrl, type)}
+  //             style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+  //           >
+  //             Preview
+  //           </button>
+  //         )}
+  //         <a
+  //           href={fileUrl}
+  //           download={label.replace(/\s+/g, '_')}
+  //           className="text-green-600 hover:underline text-sm block  btn"
+  //           style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+  //         >
+  //           Download
+  //         </a>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   return (
     <>
@@ -835,7 +837,7 @@ const SecurityForm = ({
                 </div>
 
                 <div className="col-md-4">
-                  <CFormLabel>Police Verification 
+                  <CFormLabel>Police Verification
 
                   </CFormLabel>
                   <CFormInput
@@ -859,7 +861,7 @@ const SecurityForm = ({
                       }));
                     }}
                   />
-               
+
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>Department <span style={{ color: 'red' }}>*</span>
@@ -900,9 +902,38 @@ const SecurityForm = ({
                   <CFormInput
                     type="date"
                     value={formData.dateOfJoining}
+                    min={new Date().toISOString().split("T")[0]} // today
+                    max={new Date(new Date().setMonth(new Date().getMonth() + 3))
+                      .toISOString()
+                      .split("T")[0]} // today + 3 months
                     onChange={(e) => handleChange('dateOfJoining', e.target.value)}
                   />
+
                 </div>
+                <div className="col-md-4">
+                  <CFormLabel>
+                    Shift Timings / Availability <span style={{ color: 'red' }}>*</span>
+                  </CFormLabel>
+                  <CFormSelect
+                    value={formData.shiftTimingsOrAvailability}
+                    onChange={(e) => handleChange('shiftTimingsOrAvailability', e.target.value)}
+                  >
+                    <option value="">Select Shift</option>
+
+                    <option value="06:00-12:00">Morning (06:00 AM – 12:00 PM) – 6 hrs</option>
+                    <option value="12:00-18:00">Afternoon (12:00 PM – 06:00 PM) – 6 hrs</option>
+                    <option value="18:00-00:00">Evening (06:00 PM – 12:00 AM) – 6 hrs</option>
+                    <option value="00:00-06:00">Night (12:00 AM – 06:00 AM) – 6 hrs</option>
+
+                    <option value="06:00-15:00">Day Shift (06:00 AM – 03:00 PM) – 9 hrs</option>
+                    <option value="15:00-00:00">Evening Shift (03:00 PM – 12:00 AM) – 9 hrs</option>
+                    <option value="21:00-06:00">Night Shift (09:00 PM – 06:00 AM) – 9 hrs</option>
+
+                    <option value="06:00-18:00">Long Day (06:00 AM – 06:00 PM) – 12 hrs</option>
+                    <option value="18:00-06:00">Long Night (06:00 PM – 06:00 AM) – 12 hrs</option>
+                  </CFormSelect>
+                </div>
+
               </div>
 
               <div className="row mb-3">
@@ -936,29 +967,6 @@ const SecurityForm = ({
               </div>
 
               <div className="row mb-3">
-                <div className="col-md-4">
-                  <CFormLabel>
-                    Shift Timings / Availability <span style={{ color: 'red' }}>*</span>
-                  </CFormLabel>
-                  <CFormSelect
-                    value={formData.shiftTimingsOrAvailability}
-                    onChange={(e) => handleChange('shiftTimingsOrAvailability', e.target.value)}
-                  >
-                    <option value="">Select Shift</option>
-
-                    <option value="06:00-12:00">Morning (06:00 AM – 12:00 PM) – 6 hrs</option>
-                    <option value="12:00-18:00">Afternoon (12:00 PM – 06:00 PM) – 6 hrs</option>
-                    <option value="18:00-00:00">Evening (06:00 PM – 12:00 AM) – 6 hrs</option>
-                    <option value="00:00-06:00">Night (12:00 AM – 06:00 AM) – 6 hrs</option>
-
-                    <option value="06:00-15:00">Day Shift (06:00 AM – 03:00 PM) – 9 hrs</option>
-                    <option value="15:00-00:00">Evening Shift (03:00 PM – 12:00 AM) – 9 hrs</option>
-                    <option value="21:00-06:00">Night Shift (09:00 PM – 06:00 AM) – 9 hrs</option>
-
-                    <option value="06:00-18:00">Long Day (06:00 AM – 06:00 PM) – 12 hrs</option>
-                    <option value="18:00-06:00">Long Night (06:00 PM – 06:00 AM) – 12 hrs</option>
-                  </CFormSelect>
-                </div>
 
                 {/* <div className="col-md-4">
                   <CFormLabel>Emergency Contact</CFormLabel>

@@ -122,10 +122,14 @@ const LabTechnicianManagement = () => {
   //decode image
   const decodeImage = (data) => {
     try {
-      // decode base64 string into normal string
-      return atob(data)
-    } catch {
-      return null
+      // First decode the outer layer (the backend double-encoded it)
+      const decoded = atob(data)
+
+      // Now decoded string itself already includes 'data:image/jpeg;base64,...'
+      return decoded
+    } catch (e) {
+      console.error('Error decoding image:', e)
+      return '/assets/images/avatars/Laboratory.png'
     }
   }
 
@@ -231,7 +235,7 @@ const LabTechnicianManagement = () => {
                   <CTableDataCell>
                     {tech.profilePicture ? (
                       <img
-                        src={decodeImage(tech.profilePicture)} // ✅ decode first
+                        src={tech.profilePicture} // ✅ use directly, no decodeImage()
                         alt={tech.fullName}
                         width="40"
                         height="40"

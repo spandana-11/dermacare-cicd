@@ -18,6 +18,7 @@ import capitalizeWords from '../../../Utils/capitalizeWords'
 import UserPermissionModal from '../UserPermissionModal'
 import { validateField } from '../../../Utils/Validators'
 import FilePreview from '../../../Utils/FilePreview'
+import { emailPattern } from '../../../Constant/Constants'
 
 const LabTechnicianForm = ({
   visible,
@@ -219,21 +220,26 @@ const LabTechnicianForm = ({
   }
 
   // 🔹 File upload → Base64
-  const handleFileUpload = (e, field) => {
-    const file = e.target.files[0]
-    if (!file) return
+ const handleFileUpload = (e, field) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: reader.result, // ✅ Full Data URL (with type prefix)
-        [`${field}Name`]: file.name,
-        [`${field}Type`]: file.type, // ✅ Actual file MIME type (image/png, application/pdf, etc.)
-      }))
-    }
-    reader.readAsDataURL(file)
+  // ✅ Check file size (bytes → KB)
+  if (file.size > 250 * 1024) {
+    alert("File size must be less than 250KB.");
+    return; // do not proceed
   }
+
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: reader.result, // Full Data URL
+   
+    }));
+  };
+  reader.readAsDataURL(file);
+};
 
   // 🔹 Save handler
   const handleSubmit = () => {
@@ -274,9 +280,14 @@ const LabTechnicianForm = ({
       return
     }
 
+  // ✅ Emergency contact and Nurse contact must not be same
+  if (formData.contactNumber === formData.emergencyContact) {
+    toast.error('Contact Number and Emergency Contact cannot be the same.');
+    return;
+  }
     // ✅ Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailId)) {
+  
+    if (!emailPattern.test(formData.emailId)) {
       toast.error('Please enter a valid email address.')
       return
     }
@@ -340,8 +351,8 @@ const LabTechnicianForm = ({
     }
 
     // ✅ Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailId)) {
+
+    if (!emailPattern.test(formData.emailId)) {
       toast.error('Please enter a valid email address.')
       return
     }
@@ -614,32 +625,7 @@ const LabTechnicianForm = ({
                 </Section>
 
                 {/* Documents */}
-                <Section title="Documents">
-                  <div className="row">
-                    {formData.qualificationOrCertifications != '' ? (
-                      <div className="col-md-6">
-                        <FilePreview
-                          label="Qualification / Certifications"
-                          type={formData.qualificationOrCertificationsType}
-                          data={formData.qualificationOrCertifications}
-                        />
-                      </div>
-                    ) : (
-                      <p className="col-md-6">Not Provided qualification/Certifications</p>
-                    )}
-                    {formData.medicalFitnessCertificate != '' ? (
-                      <div className="col-md-6">
-                        <FilePreview
-                          label="Medical Fitness Certificate"
-                          type={formData.medicalFitnessCertificateType || 'application/pdf'}
-                          data={formData.medicalFitnessCertificate}
-                        />
-                      </div>
-                    ) : (
-                      <p className="col-md-6">Not Provided medical Fitness Certificate</p>
-                    )}
-                  </div>
-                </Section>
+               
 
                 <div className="mt-4"></div>
                 {/* Other Info */}
@@ -665,6 +651,32 @@ const LabTechnicianForm = ({
                         <RowFull label="Password" value={formData.password} />
                       </div>
                     </div>
+                  </div>
+                </Section>
+                 <Section title="Documents">
+                  <div className="row">
+                    {formData.qualificationOrCertifications != '' ? (
+                      <div className="col-md-6">
+                        <FilePreview
+                          label="Qualification / Certifications"
+                          type={formData.qualificationOrCertificationsType}
+                          data={formData.qualificationOrCertifications}
+                        />
+                      </div>
+                    ) : (
+                      <p className="col-md-6">Not Provided qualification/Certifications</p>
+                    )}
+                    {formData.medicalFitnessCertificate != '' ? (
+                      <div className="col-md-6">
+                        <FilePreview
+                          label="Medical Fitness Certificate"
+                          type={formData.medicalFitnessCertificateType || 'application/pdf'}
+                          data={formData.medicalFitnessCertificate}
+                        />
+                      </div>
+                    ) : (
+                      <p className="col-md-6">Not Provided medical Fitness Certificate</p>
+                    )}
                   </div>
                 </Section>
               </div>

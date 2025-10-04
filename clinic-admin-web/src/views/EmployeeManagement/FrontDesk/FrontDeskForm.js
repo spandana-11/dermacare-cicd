@@ -17,6 +17,8 @@ import { actions, features } from '../../../Constant/Features'
 import capitalizeWords from '../../../Utils/capitalizeWords'
 import UserPermissionModal from '../UserPermissionModal'
 import { validateField } from '../../../Utils/Validators'
+import { emailPattern } from '../../../Constant/Constants'
+import FilePreview from '../../../Utils/FilePreview'
 
 const FrontDeskForm = ({
   visible,
@@ -219,21 +221,27 @@ const FrontDeskForm = ({
   }
 
   // 🔹 File upload → Base64
-  const handleFileUpload = (e, field) => {
-    const file = e.target.files[0]
-    if (!file) return
+ const handleFileUpload = (e, field) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: reader.result, // ✅ Full Data URL (with type prefix)
-        [`${field}Name`]: file.name,
-        [`${field}Type`]: file.type, // ✅ Actual file MIME type (image/png, application/pdf, etc.)
-      }))
-    }
-    reader.readAsDataURL(file)
+  // ✅ Enforce 250 KB max
+  if (file.size > 250 * 1024) {
+    alert("File size must be less than 250KB.");
+    return;
   }
+
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: reader.result,         // Base64 data
+      [`${field}Name`]: file.name,    // Original file name
+      [`${field}Type`]: file.type,    // MIME type
+    }));
+  };
+  reader.readAsDataURL(file);
+};
 
   // 🔹 Save handler
   const handleSubmit = () => {
@@ -273,10 +281,14 @@ const FrontDeskForm = ({
       toast.error('Contact number must be 10 digits and start with 6-9.')
       return
     }
-
+  // ✅ Emergency contact and Nurse contact must not be same
+  if (formData.contactNumber === formData.emergencyContact) {
+    toast.error('Contact Number and Emergency Contact cannot be the same.');
+    return;
+  }
     // ✅ Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailId)) {
+ 
+    if (!emailPattern.test(formData.emailId)) {
       toast.error('Please enter a valid email address.')
       return
     }
@@ -340,8 +352,8 @@ const FrontDeskForm = ({
     }
 
     // ✅ Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailId)) {
+ 
+    if (!emailPattern.test(formData.emailId)) {
       toast.error('Please enter a valid email address.')
       return
     }
@@ -411,45 +423,45 @@ const FrontDeskForm = ({
   )
 
   // 🔹 File Preview with modal trigger
-  const FilePreview = ({ label, type, data }) => {
-    if (!data) return <p>{label} </p>
+  // const FilePreview = ({ label, type, data }) => {
+  //   if (!data) return <p>{label} </p>
 
-    const isImage = type?.startsWith('image/')
-    const fileUrl = data.startsWith('data:') ? data : `data:${type};base64,${data}`
+  //   const isImage = type?.startsWith('image/')
+  //   const fileUrl = data.startsWith('data:') ? data : `data:${type};base64,${data}`
 
-    return (
-      <div className="bg-white p-3 rounded-md shadow-sm">
-        <strong>{label}:</strong>
-        <div className="mt-2">
-          {isImage ? (
-            <img
-              src={fileUrl}
-              alt={label}
-              className="w-32 h-32 object-cover rounded-md border cursor-pointer"
-              onClick={() => handlePreview(fileUrl, type)}
-            />
-          ) : (
-            <button
-              type="button "
-              className=" btn text-blue-600 hover:underline block mx-2"
-              onClick={() => handlePreview(fileUrl, type)}
-              style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
-            >
-              Preview
-            </button>
-          )}
-          <a
-            href={fileUrl}
-            download={label.replace(/\s+/g, '_')}
-            className="text-green-600 hover:underline text-sm block  btn"
-            style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
-          >
-            Download
-          </a>
-        </div>
-      </div>
-    )
-  }
+  //   return (
+  //     <div className="bg-white p-3 rounded-md shadow-sm">
+  //       <strong>{label}:</strong>
+  //       <div className="mt-2">
+  //         {isImage ? (
+  //           <img
+  //             src={fileUrl}
+  //             alt={label}
+  //             className="w-32 h-32 object-cover rounded-md border cursor-pointer"
+  //             onClick={() => handlePreview(fileUrl, type)}
+  //           />
+  //         ) : (
+  //           <button
+  //             type="button "
+  //             className=" btn text-blue-600 hover:underline block mx-2"
+  //             onClick={() => handlePreview(fileUrl, type)}
+  //             style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+  //           >
+  //             Preview
+  //           </button>
+  //         )}
+  //         <a
+  //           href={fileUrl}
+  //           download={label.replace(/\s+/g, '_')}
+  //           className="text-green-600 hover:underline text-sm block  btn"
+  //           style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+  //         >
+  //           Download
+  //         </a>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   return (
     <>

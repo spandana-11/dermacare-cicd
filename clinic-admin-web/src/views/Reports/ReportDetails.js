@@ -16,6 +16,7 @@ import {
   CFormLabel,
   CFormInput,
   CModalFooter,
+  CFormCheck,
 } from '@coreui/react'
 import { Get_ReportsByBookingIdData, SaveReportsData } from './reportAPI' // Assuming reportAPI.js is in the same directory
 import { FaEye, FaDownload } from 'react-icons/fa'
@@ -66,7 +67,7 @@ const ReportDetails = () => {
     customerId: appointmentInfo?.customerId,
     reportName: '',
     reportDate: '', // No prefill for date
-    reportStatus: '',
+    reportStatus: 'Normal',
     reportType: '',
     reportFile: null,
     bookingId: appointmentInfo?.bookingId || '', // Ensure bookingId is safe to access
@@ -377,7 +378,11 @@ const ReportDetails = () => {
               })
             ) : (
               <CTableRow>
-                <CTableDataCell colSpan="7" className="text-center">
+                <CTableDataCell
+                  colSpan="7"
+                  className="text-center"
+                  style={{ color: 'var(--color-black)' }}
+                >
                   No Reports Found
                 </CTableDataCell>
               </CTableRow>
@@ -417,18 +422,47 @@ const ReportDetails = () => {
       </CModal>
 
       {/* Upload Report Modal */}
-      <CModal visible={uploadModal} onClose={() => setUploadModal(false)} backdrop="static">
+      <CModal
+        visible={uploadModal}
+        onClose={() => setUploadModal(false)}
+        backdrop="static"
+        className="custom-modal"
+      >
         <CModalHeader>
           <CModalTitle>Upload Report</CModalTitle>
         </CModalHeader>
         <CModalBody>
           <CForm>
             <div className="mb-2">
-              <CFormLabel>Report Name</CFormLabel>
-              <CFormInput
-                value={newReport.reportName}
-                onChange={(e) => setNewReport({ ...newReport, reportName: e.target.value })}
-              />
+              {/* <CFormLabel>Report Status</CFormLabel> */}
+              <div className="d-flex gap-3">
+                <div className="d-flex gap-3">
+                  <CFormCheck
+                    type="radio"
+                    name="reportStatus"
+                    id="reportNormal"
+                    label="Normal"
+                    value="Normal"
+                    checked={newReport.reportStatus === 'Normal'}
+                    onChange={(e) => setNewReport({ ...newReport, reportStatus: e.target.value })}
+                    style={{
+                      accentColor: 'var(--color-black)', // ✅ custom checked color using CSS variable
+                    }}
+                  />
+                  <CFormCheck
+                    type="radio"
+                    name="reportStatus"
+                    id="reportAbnormal"
+                    label="Abnormal"
+                    value="Abnormal"
+                    checked={newReport.reportStatus === 'Abnormal'}
+                    onChange={(e) => setNewReport({ ...newReport, reportStatus: e.target.value })}
+                    style={{
+                      accentColor: 'var(--color-black)', // ✅ same color for consistency
+                    }}
+                  />
+                </div>
+              </div>
             </div>
             <div className="mb-2">
               <CFormLabel>File No.</CFormLabel>
@@ -439,6 +473,14 @@ const ReportDetails = () => {
               />
             </div>
             <div className="mb-2">
+              <CFormLabel>Report Name (File Name)</CFormLabel>
+              <CFormInput
+                value={newReport.reportName}
+                onChange={(e) => setNewReport({ ...newReport, reportName: e.target.value })}
+              />
+            </div>
+
+            <div className="mb-2">
               <CFormLabel>Report Date</CFormLabel>
               <CFormInput
                 type="date"
@@ -448,13 +490,7 @@ const ReportDetails = () => {
                 min={todayISO}
               />
             </div>
-            <div className="mb-2">
-              <CFormLabel>Report Status</CFormLabel>
-              <CFormInput
-                value={newReport.reportStatus}
-                onChange={(e) => setNewReport({ ...newReport, reportStatus: e.target.value })}
-              />
-            </div>
+
             <div className="mb-2">
               <CFormLabel>Report Type</CFormLabel>
               <CFormInput
@@ -476,7 +512,11 @@ const ReportDetails = () => {
           <CButton color="secondary" onClick={() => setUploadModal(false)}>
             Cancel
           </CButton>
-          <CButton color="primary" onClick={handleUploadSubmit}>
+          <CButton
+            color="primary"
+            onClick={handleUploadSubmit}
+            style={{ color: 'var(--color-black)', backgroundColor: 'var(--color-bgcolor)' }}
+          >
             Submit
           </CButton>
         </CModalFooter>

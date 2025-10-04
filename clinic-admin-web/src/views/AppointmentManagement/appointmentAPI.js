@@ -163,11 +163,36 @@ export const followUpBookings = async (bookingDetails) => {
     return null
   }
 }
+export const bookingUpdate = async (bookingDetails) => {
+  console.log('Request URL:', `${BASE_URL}/updateAppointmentBasedOnBookingId`)
+  console.log('Request payload:', bookingDetails)
 
-export const GetBookingInprogress = async (id) => {
-  console.log(id)
   try {
-    const response = await axios.get(`${Booking_service_Url}/customer/inprogressAppointments/${id}`) //TODO:chnage when apigetway call axios to http
+    const response = await axios.put(
+      `${BASE_URL}/updateAppointmentBasedOnBookingId`,
+      bookingDetails, // 👈 send object directly
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+
+    console.log('Response data:', response.data)
+    return response.data
+  } catch (error) {
+    console.error('Error posting booking:', error.response?.data || error.message)
+    return null
+  }
+}
+
+export const GetBookingInprogress = async () => {
+  const hID = localStorage.getItem('HospitalId')
+  const branchId = localStorage.getItem('branchId')
+  try {
+    const response = await axios.get(`${BASE_URL}/appointments/byIds/${hID}/${branchId}`) //TODO:chnage when apigetway call axios to http
+    console.log(`${BASE_URL}/appointments/byIds/${hID}/${branchId}`)
+    console.log(response)
     return response.data
   } catch (error) {
     console.error('Error fetching booking by clinicId:', error.message)

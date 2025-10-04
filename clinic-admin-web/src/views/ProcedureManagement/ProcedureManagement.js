@@ -266,18 +266,18 @@ const ServiceManagement = () => {
       subServiceId: '',
       subServiceName: '',
       price: '',
-      discount: 0,
-      gst: 0,
+      discount: '',
+      gst: '',
       gstAmount: 0,
       consultationFee: 0,
       minTime: '',
-      taxPercentage: 0,
+      taxPercentage: '',
       status: '',
       serviceImage: '',
       serviceImageFile: null,
       viewImage: '',
       viewDescription: '',
-      consentFormType: serviceData.consentFormType === 'Generic ConsentForm' ? '1' : '2',
+      consentFormType: '',
       platformFeePercentage: 0,
       descriptionQA: [],
     })
@@ -306,6 +306,17 @@ const ServiceManagement = () => {
     } catch (err) {
       console.error('Error fetching service list:', err)
     }
+
+    // Before fetching subservices and other data
+    setNewService((prev) => ({
+      ...prev,
+      serviceImage: service.subServiceImage
+        ? service.subServiceImage.startsWith('data:')
+          ? service.subServiceImage
+          : `data:image/jpeg;base64,${service.subServiceImage}`
+        : '',
+      serviceImageFile: null, // no new file yet
+    }))
 
     const selectedService = fetchedServiceOptions.find((s) => s.serviceName === service.serviceName)
     const serviceId = selectedService?.serviceId || ''
@@ -349,7 +360,9 @@ const ServiceManagement = () => {
 
     const rawImage = service.serviceImage || ''
     const fullImage = rawImage.startsWith('data:') ? rawImage : `data:image/jpeg;base64,${rawImage}`
-
+    const [timeValue, timeUnit] = service.minTime
+      ? service.minTime.split(' ') // split into ["45","minutes"]
+      : ['', '']
     // Prefill all fields
     setNewService({
       subServiceId: resolvedSubServiceId,
@@ -364,8 +377,11 @@ const ServiceManagement = () => {
       gstAmount: service.gstAmount || 0,
       consultationFee: service.consultationFee || 0,
       taxPercentage: service.taxPercentage || 0,
+      // minTime: service.minTime || '',
       minTime: service.minTime || '',
-      serviceImage: rawImage,
+      minTimeValue: timeValue || '',
+      minTimeUnit: timeUnit || '',
+      serviceImage: fullImage,
 
       serviceImageFile: null,
       status: service.status || '',
@@ -477,104 +493,109 @@ const ServiceManagement = () => {
     }
   }, [editServiceMode])
 
-  // useEffect(() => {
-  //   const handleSearch = () => {
-  //     const trimmedQuery = searchQuery.toLowerCase().trim()
-
-  //     if (!trimmedQuery) {
-  //       setFilteredData([])
-  //       return
-  //     }
-
-  //     const filtered = service.filter((item) => {
-  //       const subServiceNameMatch = item.subServiceName?.toLowerCase().startsWith(trimmedQuery)
-  //       const serviceNameMatch = item.serviceName?.toLowerCase().startsWith(trimmedQuery)
-  //       const categoryNameMatch = item.categoryName?.toLowerCase().startsWith(trimmedQuery)
-  //       // const priceMatch = item.price?.toLowerCase().startsWith(trimmedQuery)
-
-  //       return subServiceNameMatch || serviceNameMatch || categoryNameMatch
-  //     })
-
-  //     setFilteredData(filtered)
-  //   }
-
-  //   handleSearch()
-  // }, [searchQuery, service])
-
   const handleEditClick = (serviceItem) => {
     setServiceToEdit(serviceItem)
     setEditServiceMode(true)
   }
 
-
   const minTimeValue = parseFloat(newService.minTime)
+  // ------------------- VALIDATION -------------------
   const validateForm = () => {
     const newErrors = {}
 
-    if (!newService.serviceName) {
+    // Service Name
+    if (!newService.serviceName || newService.serviceName.trim() === '') {
       newErrors.serviceName = 'Service name is required.'
     }
 
-    if (!newService.categoryName) {
+    // Sub Service (Procedure)
+    if (!newService.subServiceId || newService.subServiceId.trim() === '') {
+      newErrors.subServiceName = 'Procedure is required.'
+    }
+
+    // Category Name
+    if (!newService.categoryId || newService.categoryId.trim() === '') {
       newErrors.categoryName = 'Category is required.'
     }
 
-    if (!newService.price) {
-      newErrors.price = 'price is required.'
-    } else if (isNaN(newService.price)) {
-      newErrors.price = 'price must be a valid number.'
-    } else if (parseFloat(newService.price) < 0) {
-      newErrors.price = 'price cannot be a negative number.'
+    // Procedure Price
+    if (!newService.price || !/^\d+(\.\d{1,2})?$/.test(newService.price)) {
+      newErrors.price = 'Procedure Price must be a valid number.'
+    } else if (Number(newService.price) < 100) {
+      newErrors.price = 'Procedure Price must be at least 100.'
     }
 
+    // Status validation
     if (!newService.status) {
       newErrors.status = 'Status is required.'
     }
-    if (newService.gst === '' || isNaN(newService.gst) || parseFloat(newService.gst) < 0) {
-      newErrors.gst = 'GST must be a valid number and not negative.'
-    }
-    // if (newService.gstAmount === '' || isNaN(newService.gstAmount) || parseFloat(newService.gst) < 0) {
-    //   newErrors.gstAmount = 'GST  amount must be a valid number and not negative.'
-    // }
-    if (
-      newService.consultationFee === '' ||
-      isNaN(newService.consultationFee) ||
-      parseFloat(newService.consultationFee) < 0
-    ) {
-      newErrors.consultationFee = 'Consultation fee must be a valid number and not negative.'
+
+    // Consultation Fee validation
+    // Consultation Fee
+    if (!newService.consultationFee || newService.consultationFee.trim() === '') {
+      newErrors.consultationFee = 'Consultation Fee is required.'
+    } else if (!/^\d+(\.\d{1,2})?$/.test(newService.consultationFee)) {
+      newErrors.consultationFee = 'Consultation Fee must be a valid number.'
+    } else if (Number(newService.consultationFee) <= 0) {
+      newErrors.consultationFee = 'Consultation Fee must be greater than 0.'
     }
 
-    if (!newService.discount && newService.discount !== 0) {
-      newErrors.discount = 'Discount is required.'
-    } else if (parseFloat(newService.discount) < 0) {
-      newErrors.discount = 'Discount cannot be a negative number.'
-    }
-    // if (!newService.taxPercentage && newService.taxPercentage !== 0) {
-    //   newErrors.taxPercentage = 'taxPercentage is required.'
-    // } else if (parseFloat(newService.taxPercentage) < 0) {
-    //   newErrors.taxPercentage = 'taxPercentage cannot be a negative number.'
-    // }
-    // Validation
-    if (!newService.minTimeValue || isNaN(newService.minTimeValue)) {
-      newErrors.minTime = 'Minimum time is required'
-    } else if (parseFloat(newService.minTimeValue) <= 0) {
-      newErrors.minTime = 'Minimum time must be greater than zero.'
+    // GST
+    // GST validation (optional)
+    if (newService.gst && newService.gst.trim() !== '') {
+      if (isNaN(Number(newService.gst))) {
+        newErrors.gst = 'GST must be a valid number.'
+      } else if (Number(newService.gst) < 0) {
+        newErrors.gst = 'GST cannot be negative.'
+      } else if (Number(newService.gst) > 99) {
+        newErrors.gst = 'GST cannot exceed 99.'
+      }
+    } else {
+      // If empty, no error (optional field)
+      newErrors.gst = ''
     }
 
-    if (!newService.viewDescription) {
-      newErrors.viewDescription = 'View description is Required.'
+    // Discount (optional)
+    if (newService.discount && !/^\d+(\.\d{1,2})?$/.test(newService.discount)) {
+      newErrors.discount = 'Discount must be a valid number.'
+    } else if (Number(newService.discount) < 0 || Number(newService.discount) > 99) {
+      newErrors.discount = 'Discount must be between 0 and 99.'
     }
+
+    // Min Time Value
+    if (!newService.minTimeValue || newService.minTimeValue.trim() === '') {
+      newErrors.minTimeValue = 'Enter minimum time.'
+    } else if (!/^\d+$/.test(newService.minTimeValue)) {
+      newErrors.minTimeValue = 'Minimum time must be a number.'
+    } else if (Number(newService.minTimeValue) <= 0) {
+      newErrors.minTimeValue = 'Minimum time must be greater than zero.'
+    }
+
+    // Min Time Unit
+    if (!newService.minTimeUnit) {
+      newErrors.minTimeUnit = 'Please select a time unit.'
+    }
+
+    // View Description
+    if (!newService.viewDescription || newService.viewDescription.trim() === '') {
+      newErrors.viewDescription = 'View description is required.'
+    }
+
+    // Consent Form Type
     if (!newService.consentFormType) {
-      newErrors.consentFormType = 'consentFormType is Required.'
+      newErrors.consentFormType = 'Consent form type is required.'
     }
 
+    // Service Image
     if (!newService.serviceImage) {
-      console.log('Service Image in Form:', newService.serviceImage)
       newErrors.serviceImage = 'Please upload a service image.'
     }
 
-    if (!newService.categoryId) {
-      newErrors.categoryId = 'Please select a valid category.'
+    // Other Taxes (optional)
+    if (newService.taxPercentage && !/^\d+(\.\d{1,2})?$/.test(newService.taxPercentage)) {
+      newErrors.taxPercentage = 'Tax Percentage must be a valid number.'
+    } else if (Number(newService.taxPercentage) < 0 || Number(newService.taxPercentage) > 99) {
+      newErrors.taxPercentage = 'Tax Percentage must be between 0 and 99.'
     }
 
     setErrors(newErrors)
@@ -633,7 +654,13 @@ const ServiceManagement = () => {
   const handleAddService = async () => {
     console.log('--- handleAddService START ---')
 
-    // Calculate derived values before sending
+    // 1. Validate before processing
+    if (!validateForm()) {
+      // toast.error('Validation failed', { position: 'top-right' })
+      return
+    }
+
+    // 2. Calculate derived values
     const discountAmount = (newService.price * newService.discount) / 100
     const gstAmount = (newService.price * newService.gst) / 100
     const discountedCost = newService.price - discountAmount
@@ -653,14 +680,13 @@ const ServiceManagement = () => {
       finalCost,
     })
 
-    const fullBase64String = await toBase64(newService.serviceImageFile)
-    const base64ImageToSend = fullBase64String?.split(',')[1] || ''
+    // 3. Image handling
+    // If you stored raw base64 only (without prefix), add prefix when sending
+    const base64ImageToSend = newService.serviceImage?.startsWith('data:')
+      ? newService.serviceImage.split(',')[1] // strip prefix
+      : newService.serviceImage
 
-    if (!validateForm()) {
-      toast.error('Validation failed', { position: 'top-right' })
-      return
-    }
-
+    // 4. Build payload
     const payload = {
       hospitalId: localStorage.getItem('HospitalId'),
       subServiceName: newService.subServiceName,
@@ -686,7 +712,7 @@ const ServiceManagement = () => {
 
       minTime: formattedMinTime,
       status: newService.status,
-      subServiceImage: base64ImageToSend,
+      subServiceImage: base64ImageToSend, // ✅ final base64 string only
       procedureQA: newService.procedureQA,
       preProcedureQA: newService.preProcedureQA,
       postProcedureQA: newService.postProcedureQA,
@@ -696,22 +722,25 @@ const ServiceManagement = () => {
 
     console.log('Payload ready to submit:', payload)
 
+    // 5. API call
     try {
       const response = await postServiceData(payload, newService.subServiceId)
       console.log('Response received:', response)
+
       if (response.status === 201) {
         toast.success(response.data.message, { position: 'top-right' })
         setModalVisible(false)
         fetchData()
-        serviceData()
+        // serviceData()
       }
     } catch (error) {
       console.error('Error in handleAddService:', error.response)
-      toast.error(error.response?.data?.message, { position: 'top-right' })
+      toast.error(error.response?.data?.message || 'Something went wrong', {
+        position: 'top-right',
+      })
     }
 
-    // Reset form
-    // Reset form using default object
+    // 6. Reset form
     setNewService({
       categoryName: '',
       categoryId: '',
@@ -725,7 +754,7 @@ const ServiceManagement = () => {
       gstAmount: 0,
       consultationFee: 0,
       taxPercentage: 0,
-      minTimeValue,
+      minTimeValue: '',
       minTimeUnit: '',
       status: '',
       serviceImage: '',
@@ -759,7 +788,6 @@ const ServiceManagement = () => {
 
   const handleServiceFileChange = (e) => {
     const file = e.target.files[0]
-
     if (file) {
       const reader = new FileReader()
       reader.onloadend = () => {
@@ -779,8 +807,8 @@ const ServiceManagement = () => {
       const hospitalId = localStorage.getItem('HospitalId')
 
       let base64ImageToSend = ''
-
       if (newService.serviceImageFile) {
+        // convert uploaded file
         const fullBase64String = await toBase64(newService.serviceImageFile)
         base64ImageToSend = fullBase64String.split(',')[1]
       } else if (newService.serviceImage?.startsWith('data:')) {
@@ -871,49 +899,6 @@ const ServiceManagement = () => {
     console.log('Service deletion canceled')
   }
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-
-    setNewService((prev) => {
-      // If categoryName, also update categoryId
-      if (name === 'categoryName') {
-        const selectedCategory = category.find((cat) => cat.categoryName === value)
-        return {
-          ...prev,
-          [name]: value,
-          categoryId: selectedCategory ? selectedCategory.categoryId : '',
-        }
-      }
-
-      // For numeric fields, parseFloat
-      if (
-        name === 'gst' ||
-        name === 'gstAmount' ||
-        name === 'consultationFee' ||
-        name === 'price' ||
-        name === 'discount' ||
-        name === 'taxPercentage' ||
-        name === 'minTime'
-      ) {
-        return {
-          ...prev,
-          [name]: parseFloat(value) || 0,
-        }
-      }
-
-      // Default: just update value
-      return {
-        ...prev,
-        [name]: value,
-      }
-    })
-
-    setErrors((prev) => ({
-      ...prev,
-      [name]: '',
-    }))
-  }
-
   const AddCancel = () => {
     setNewService({
       serviceName: '',
@@ -989,6 +974,131 @@ const ServiceManagement = () => {
       }))
     }
   }
+  // ------------------- HANDLERS -------------------
+  const handleChange = (e) => {
+    const { name, value, files, type } = e.target
+
+    if (type === 'file' && files && files[0]) {
+      const file = files[0]
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setNewService((prev) => ({
+          ...prev,
+          [name]: reader.result, // full base64 with prefix
+          serviceImageFile: file,
+        }))
+      }
+
+      reader.readAsDataURL(file)
+    } else {
+      const numericFields = [
+        'consultationFee',
+        'minTimeValue',
+        'price',
+        'discount',
+        'gst',
+        'taxPercentage',
+      ]
+
+      let newValue = value
+
+      if (numericFields.includes(name)) {
+        if (name === 'minTimeValue') {
+          newValue = newValue.replace(/\D/g, '') // integers only
+        } else {
+          newValue = newValue.replace(/[^0-9.]/g, '')
+          const parts = newValue.split('.')
+          if (parts.length > 2) newValue = parts[0] + '.' + parts[1]
+        }
+
+        // Inline validation
+        let error = ''
+        if (newValue === '') {
+          error = 'Must be a valid number.'
+        } else if (isNaN(Number(newValue))) {
+          error = 'Must be a valid number.'
+        } else if (Number(newValue) <= 0) {
+          error = 'Must be greater than 0.'
+        }
+
+        setErrors((prev) => ({ ...prev, [name]: error }))
+      } else {
+        setErrors((prev) => ({ ...prev, [name]: '' }))
+      }
+
+      setNewService((prev) => ({ ...prev, [name]: newValue }))
+    }
+  }
+
+  const handleCategoryChange = async (e) => {
+    const categoryId = e.target.value
+    const selectedCategory = category.find((cat) => cat.categoryId === categoryId)
+
+    setNewService((prev) => ({
+      ...prev,
+      categoryName: selectedCategory?.categoryName || '',
+      categoryId,
+      serviceName: '',
+      serviceId: '',
+      subServiceId: '',
+      subServiceName: '',
+    }))
+
+    // Only clear category error, not service/procedure yet
+    setErrors((prev) => ({
+      ...prev,
+      categoryName: '',
+    }))
+
+    try {
+      const res = await http.get(`/${getservice}/${categoryId}`)
+      setServiceOptions(res.data?.data || [])
+    } catch (err) {
+      console.error(err)
+      setServiceOptions([])
+    }
+  }
+
+  const handleServiceChange = async (e) => {
+    const serviceName = e.target.value
+    const selectedService = serviceOptions.find((s) => s.serviceName === serviceName)
+
+    setNewService((prev) => ({
+      ...prev,
+      serviceName,
+      serviceId: selectedService?.serviceId || '',
+      subServiceId: '',
+      subServiceName: '',
+      preProcedureQA: selectedService?.preProcedureQA || [],
+      procedureQA: selectedService?.procedureQA || [],
+      postProcedureQA: selectedService?.postProcedureQA || [],
+    }))
+
+    // Clear only service error
+    setErrors((prev) => ({ ...prev, serviceName: '' }))
+
+    if (selectedService?.serviceId) {
+      const subRes = await subServiceData(selectedService.serviceId)
+      const allSubServices = Array.isArray(subRes.data)
+        ? subRes.data.flatMap((item) => item.subServices || [])
+        : subRes.data?.subServices || []
+      setSubServiceOptions({ subServices: allSubServices })
+    }
+  }
+
+  const handleSubServiceChange = (e) => {
+    const selectedId = e.target.value
+    const selectedObj = subServiceOptions?.subServices?.find((s) => s.subServiceId === selectedId)
+
+    setNewService((prev) => ({
+      ...prev,
+      subServiceId: selectedId,
+      subServiceName: selectedObj?.subServiceName || '',
+    }))
+
+    // Clear procedure error
+    setErrors((prev) => ({ ...prev, subServiceName: '' }))
+  }
 
   return (
     <div style={{ overflow: 'hidden' }}>
@@ -996,52 +1106,38 @@ const ServiceManagement = () => {
 
       <div>
         <CForm className="d-flex justify-content-end mb-3">
-          {/* <CInputGroup className="mb-3" style={{ marginRight: '20px', width: '400px' }}>
-            <CFormInput
-              type="text"
-              placeholder="Search by Procedure Name, Category"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ height: '40px' }}
-            />
-            <CInputGroupText style={{ height: '40px' }}>
-              <CIcon icon={cilSearch} />
-            </CInputGroupText>
-          </CInputGroup> */}
-{can('Procedure Management', 'create') && (
-          <div
-            className=" w-100"
-            style={{
-              display: 'flex',
-              justifyContent: 'end',
-              alignContent: 'end',
-              alignItems: 'end',
-            }}
-          >
-            <CButton
+          {can('Procedure Management', 'create') && (
+            <div
+              className=" w-100"
               style={{
-                color: 'var(--color-black)',
-                backgroundColor: 'var(--color-bgcolor)',
+                display: 'flex',
+                justifyContent: 'end',
+                alignContent: 'end',
+                alignItems: 'end',
               }}
-              onClick={() => openAddModal()}
             >
-              Add Procedure Details
-            </CButton>
-          </div>
-)}
-          {/* <CButton
-            color="info"
-            className="text-white"
-            style={{ height: '40px' }}
-            onClick={() => openAddModal()}
-          >
-            Add Procedure Details
-          </CButton> */}
+              <CButton
+                style={{
+                  color: 'var(--color-black)',
+                  backgroundColor: 'var(--color-bgcolor)',
+                }}
+                onClick={() => openAddModal()}
+              >
+                Add Procedure Details
+              </CButton>
+            </div>
+          )}
         </CForm>
       </div>
 
       {viewService && (
-        <CModal visible={!!viewService} onClose={() => setViewService(null)} size="xl">
+        <CModal
+          visible={!!viewService}
+          onClose={() => setViewService(null)}
+          size="xl"
+          backdrop="static"
+          className="custom-modal"
+        >
           <CModalHeader style={{ color: 'var(--color-black)' }}>
             <CModalTitle className="w-100 text-center  fs-4">Procedure Details</CModalTitle>
           </CModalHeader>
@@ -1276,9 +1372,10 @@ const ServiceManagement = () => {
 
       <CModal
         visible={modalVisible}
-        onClose={() => setModalVisible(false)}
+        onClose={AddCancel} // reuse the same reset logic
         size="xl"
         backdrop="static"
+        className="custom-modal"
       >
         <CModalHeader>
           <CModalTitle style={{ textAlign: 'center', width: '100%' }}>
@@ -1287,16 +1384,16 @@ const ServiceManagement = () => {
         </CModalHeader>
         <CModalBody>
           <CForm>
+            {/* ---------------- CATEGORY / SERVICE / SUB-SERVICE ---------------- */}
             <CRow className="mb-4">
               <CCol md={4}>
                 <h6>
                   Category Name <span className="text-danger">*</span>
                 </h6>
                 <CFormSelect
-                  value={newService.categoryId || ''}
-                  onChange={handleChanges}
-                  aria-label="Select Category"
                   name="categoryName"
+                  value={newService.categoryId || ''}
+                  onChange={handleCategoryChange}
                   disabled={modalMode === 'edit'}
                 >
                   <option value="">Select a Category</option>
@@ -1306,11 +1403,11 @@ const ServiceManagement = () => {
                     </option>
                   ))}
                 </CFormSelect>
-
                 {errors.categoryName && (
                   <CFormText className="text-danger">{errors.categoryName}</CFormText>
                 )}
               </CCol>
+
               <CCol md={4}>
                 <h6>
                   Service Name <span className="text-danger">*</span>
@@ -1318,7 +1415,7 @@ const ServiceManagement = () => {
                 <CFormSelect
                   name="serviceName"
                   value={newService.serviceName || ''}
-                  onChange={handleChanges}
+                  onChange={handleServiceChange}
                   disabled={modalMode === 'edit'}
                 >
                   <option value="">Select Service</option>
@@ -1328,70 +1425,55 @@ const ServiceManagement = () => {
                     </option>
                   ))}
                 </CFormSelect>
-
                 {errors.serviceName && (
                   <CFormText className="text-danger">{errors.serviceName}</CFormText>
                 )}
               </CCol>
+
               <CCol md={4}>
                 <h6>
                   Procedure Name <span className="text-danger">*</span>
                 </h6>
                 <CFormSelect
                   name="subServiceId"
-                  value={selectedSubService}
-                  onChange={(e) => {
-                    const selectedId = e.target.value
-                    setSelectedSubService(selectedId)
-
-                    // Find selected sub-service object
-                    const selectedObj = subServiceOptions?.subServices?.find(
-                      (s) => s.subServiceId === selectedId,
-                    )
-
-                    setNewService((prev) => ({
-                      ...prev,
-                      subServiceId: selectedId,
-                      subServiceName: selectedObj?.subServiceName || '',
-                      preProcedureQA: service.preProcedureQA || [],
-                      procedureQA: service.procedureQA || [],
-                      postProcedureQA: service.postProcedureQA || [],
-                    }))
-                  }}
+                  value={newService.subServiceId || ''}
+                  onChange={handleSubServiceChange}
                 >
                   <option value="">Select Procedure</option>
-                  {Array.isArray(subServiceOptions.subServices) &&
+                  {Array.isArray(subServiceOptions?.subServices) &&
                     subServiceOptions.subServices.map((sub) => (
                       <option key={sub.subServiceId} value={sub.subServiceId}>
                         {sub.subServiceName}
                       </option>
                     ))}
                 </CFormSelect>
-
                 {errors.subServiceName && (
                   <CFormText className="text-danger">{errors.subServiceName}</CFormText>
                 )}
               </CCol>
             </CRow>
+
+            {/* ---------------- IMAGE / DESCRIPTION / STATUS ---------------- */}
             <CRow className="mb-4">
               <CCol md={4}>
                 <h6>
                   Procedure Image <span className="text-danger">*</span>
                 </h6>
+
                 <CFormInput
                   type="file"
                   accept="image/*"
+                  name="serviceImage"
                   onChange={(e) => {
                     const file = e.target.files[0]
                     if (file) {
                       const reader = new FileReader()
                       reader.onloadend = () => {
-                        const base64String = reader.result?.split(',')[1] || ''
-                        setNewService((prev) => ({
-                          ...prev,
-                          serviceImage: base64String,
-                          serviceImageFile: file,
-                        }))
+                        // Store full base64 string including mime type
+                        setNewService({
+                          ...newService,
+                          serviceImage: reader.result, // full data URL
+                        })
                       }
                       reader.readAsDataURL(file)
                     }
@@ -1404,12 +1486,17 @@ const ServiceManagement = () => {
                       newService.serviceImage.startsWith('data:')
                         ? newService.serviceImage
                         : `data:image/jpeg;base64,${newService.serviceImage}`
-                    }
+                    } // handle API base64
                     alt="Preview"
-                    style={{ width: 100, height: 100, marginTop: 10 }}
+                    style={{ width: 100, height: 100, marginTop: 10, objectFit: 'cover' }}
                   />
                 )}
+
+                {errors.serviceImage && (
+                  <CFormText className="text-danger">{errors.serviceImage}</CFormText>
+                )}
               </CCol>
+
               <CCol md={4}>
                 <h6>
                   View Description <span className="text-danger">*</span>
@@ -1417,10 +1504,10 @@ const ServiceManagement = () => {
                 <CFormInput
                   type="text"
                   placeholder="View Description"
-                  value={newService.viewDescription || ''}
                   name="viewDescription"
-                  onChange={handleChange}
+                  value={newService.viewDescription || ''}
                   maxLength={100}
+                  onChange={handleChange}
                 />
                 {errors.viewDescription && (
                   <CFormText className="text-danger">{errors.viewDescription}</CFormText>
@@ -1431,7 +1518,7 @@ const ServiceManagement = () => {
                 <h6>
                   Status <span className="text-danger">*</span>
                 </h6>
-                <CFormSelect value={newService.status || ''} onChange={handleChange} name="status">
+                <CFormSelect name="status" value={newService.status || ''} onChange={handleChange}>
                   <option value="">Select</option>
                   <option value="Active">Active</option>
                   <option value="InActive">Inactive</option>
@@ -1440,275 +1527,152 @@ const ServiceManagement = () => {
               </CCol>
             </CRow>
 
+            {/* ---------------- CONSENT / FEES / TIME ---------------- */}
             <CRow className="mb-4">
               <CCol md={4}>
-                <CFormLabel>
-                  ConsentFormType<span className="text-danger">*</span>
-                </CFormLabel>
+                <h6>
+                  Consent Form Type <span className="text-danger">*</span>
+                </h6>
                 <CFormSelect
-                  value={newService.consentFormType || ''} // backend value ("1" or "2")
-                  onChange={(e) =>
-                    setNewService((prev) => ({
-                      ...prev,
-                      consentFormType: e.target.value, // still "1" or "2"
-                    }))
-                  }
+                  name="consentFormType"
+                  value={newService.consentFormType || ''}
+                  onChange={handleChange}
                 >
                   <option value="">Select consentFormType</option>
                   <option value="1">Generic ConsentForm</option>
                   <option value="2">Procedure ConsentForm</option>
                 </CFormSelect>
-
                 {errors.consentFormType && (
                   <CFormText className="text-danger">{errors.consentFormType}</CFormText>
                 )}
               </CCol>
+
               <CCol md={4}>
                 <h6>
-                  Consultation Fee<span className="text-danger">*</span>
+                  Consultation Fee <span className="text-danger">*</span>
                 </h6>
                 <CFormInput
-                  type="number"
+                  type="text"
+                  name="consultationFee"
                   value={newService.consultationFee || ''}
-                  onChange={(e) =>
-                    setNewService((prev) => ({
-                      ...prev,
-                      consultationFee: Number(e.target.value),
-                    }))
-                  }
+                  onChange={handleChange}
+                  placeholder="Enter Consultation Fee"
                 />
+
+                {errors.consultationFee && (
+                  <CFormText className="text-danger">{errors.consultationFee}</CFormText>
+                )}
               </CCol>
-              <CCol>
-                <div className="mb-4">
-                  <h6>
-                    Min Time <span className="text-danger">*</span>
-                  </h6>
-                  <div className="d-flex">
-                    {/* Number Input */}
-                    <CFormInput
-                      type="number"
-                      name="minTimeValue"
-                      value={newService.minTimeValue || ''}
-                      onChange={(e) =>
-                        setNewService({ ...newService, minTimeValue: e.target.value })
-                      }
-                      placeholder="Enter time"
-                    />
 
-                    {/* Dropdown for Unit */}
-                    <CFormSelect
-                      name="minTimeUnit"
-                      className="ms-2"
-                      value={newService.minTimeUnit || ''}
-                      onChange={(e) =>
-                        setNewService({ ...newService, minTimeUnit: e.target.value })
-                      }
-                    >
-                      <option value="" disabled>
-                        Select Time
-                      </option>
-                      <option value="minutes">Minutes</option>
-                      <option value="hours">Hours</option>
-                    </CFormSelect>
-                  </div>
-
-                  {/* Validation error */}
-                  {errors.minTime && (
-                    <CFormText className="text-danger">{errors.minTime}</CFormText>
-                  )}
+              <CCol md={4}>
+                <h6>
+                  Min Time <span className="text-danger">*</span>
+                </h6>
+                <div className="d-flex">
+                  <CFormInput
+                    type="text"
+                    name="minTimeValue"
+                    placeholder="Enter time"
+                    value={newService.minTimeValue || ''} // will show 45
+                    onChange={handleChange}
+                    onInput={(e) => {
+                      e.target.value = e.target.value.replace(/[^0-9]/g, '')
+                    }}
+                  />
+                  <CFormSelect
+                    name="minTimeUnit"
+                    className="ms-2"
+                    value={newService.minTimeUnit || ''} // will show minutes
+                    onChange={handleChange}
+                  >
+                    <option value="" disabled>
+                      Select Time
+                    </option>
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                  </CFormSelect>
                 </div>
+
+                {/* Separate error messages for value and unit */}
+                {errors.minTimeValue && (
+                  <CFormText className="text-danger">{errors.minTimeValue}</CFormText>
+                )}
+                {errors.minTimeUnit && (
+                  <CFormText className="text-danger">{errors.minTimeUnit}</CFormText>
+                )}
               </CCol>
             </CRow>
+
+            {/* ---------------- PRICE / DISCOUNT / TAX ---------------- */}
             <CRow className="mb-4">
               <CCol md={3}>
                 <h6>
                   Procedure Price <span className="text-danger">*</span>
                 </h6>
-          <CFormInput
-  type="number"
-  placeholder="Procedure Price"
-  value={newService.price || ''}
-  min={100} // blocks <100 in most browsers
-  onChange={(e) => {
-    const value = e.target.value
-    setNewService((prev) => ({ ...prev, price: value }))
-
-    // Validation
-    let error = ''
-    if (!value || value.trim() === '') {
-      error = 'Price is required'
-    }
-
-    setErrors((prev) => ({ ...prev, price: error }))
-  }}
-  onKeyDown={(e) => {
-    // Prevent negative numbers, 'e', or '0' as first digit
-    if (
-      e.key === '-' ||
-      e.key === 'e' ||
-      (e.key === '0' && !newService.price)
-    ) {
-      e.preventDefault()
-    }
-  }}
-  invalid={!!errors.price}
-/>
-
-{errors.price && (
-  <CFormText className="text-danger">{errors.price}</CFormText>
-)}
-
-
-
-
+                <CFormInput
+                  type="text"
+                  placeholder="Procedure Price"
+                  name="price"
+                  value={newService.price || ''}
+                  onChange={handleChange}
+                  onInput={(e) => {
+                    e.target.value = e.target.value.replace(/[^0-9.]/g, '')
+                  }}
+                />
+                {errors.price && <CFormText className="text-danger">{errors.price}</CFormText>}
               </CCol>
+
+              <CCol md={3}>
+                <h6>Discount (%)</h6>
+                <CFormInput
+                  type="text"
+                  name="discount"
+                  placeholder="Discount"
+                  value={newService.discount || ''}
+                  onChange={handleChange}
+                  onInput={(e) => {
+                    e.target.value = e.target.value.replace(/[^0-9.]/g, '')
+                  }}
+                />
+                {errors.discount && (
+                  <CFormText className="text-danger">{errors.discount}</CFormText>
+                )}
+              </CCol>
+
               <CCol md={3}>
                 <h6>
-                  Discount (%) <span className="text-danger">*</span>
-                </h6>
-               <CFormInput
-  type="number"
-  placeholder="Discount"
-  value={newService.discount || ''}
-  name="discount"
-  onChange={(e) => {
-    let value = e.target.value;
-
-    // Remove leading zeros
-    if (value.startsWith('0')) value = value.replace(/^0+/, '');
-
-    // Optional: Limit to 2 digits
-    if (value.length > 2) value = value.slice(0, 2);
-
-    setNewService((prev) => ({ ...prev, discount: value }));
-
-    // Validation
-    let error = '';
-    if (!value) {
-      error = 'Discount is required';
-    } else if (isNaN(value) || Number(value) <= 0) {
-      error = 'Discount must be greater than 0';
-    } else if (Number(value) > 99) {
-      error = 'Discount cannot exceed 99';
-    }
-
-    setErrors((prev) => ({ ...prev, discount: error }));
-  }}
-  onKeyDown={(e) => {
-    if (e.key === '-' || e.key === 'e') e.preventDefault();
-  }}
-  invalid={!!errors.discount}
-/>
-{errors.discount && (
-  <CFormText className="text-danger">{errors.discount}</CFormText>
-)}
-
-              </CCol>
-              <CCol md={3}>
-                <h6>
-                  GST (%)<span className="text-danger">*</span>
-                </h6>
-          <CFormInput
-  type="number"
-  placeholder="GST (%)"
-  value={newService.gst || ''}
-  onChange={(e) => {
-    let value = e.target.value;
-
-    // Allow only 1-2 digits and prevent leading zero
-    if (/^\d{0,2}$/.test(value) && !(value.startsWith('0') && value.length > 1)) {
-      setNewService((prev) => ({ ...prev, gst: value }));
-
-      // Validation
-      let error = '';
-      if (!value.trim()) {
-        error = 'GST is required';
-      } else if (Number(value) <= 0) {
-        error = 'GST must be greater than 0';
-      } else if (Number(value) > 99) {
-        error = 'GST cannot exceed 99%';
-      }
-
-      setErrors((prev) => ({ ...prev, gst: error }));
-    }
-  }}
-  onKeyDown={(e) => {
-    // Prevent negative numbers, 'e', '+', or leading zero
-    if (['-', 'e', '+'].includes(e.key)) e.preventDefault();
-    if (e.key === '0' && !newService.gst) e.preventDefault(); // Prevent 0 as first digit
-  }}
-  min={1}
-  max={99}
-  invalid={!!errors.gst}
-/>
-
-{errors.gst && (
-  <CFormText className="text-danger">{errors.gst}</CFormText>
-)}
-
-
-
-              </CCol>
-              {/* <CCol md={3}>
-                <h6>
-                  GST (%)<span className="text-danger">*</span>
+                  GST (%)<span className="text-danger"></span>
                 </h6>
                 <CFormInput
-                  type="number"
-                  placeholder="GST Amount"
-                  value={newService.gstAmount || ''}
-                  onChange={(e) =>
-                    setNewService((prev) => ({ ...prev, gstAmount: Number(e.target.value) }))
-                  }
+                  type="text"
+                  name="gst"
+                  placeholder="GST (%)"
+                  value={newService.gst || ''}
+                  onChange={handleChange}
                 />
-              </CCol> */}
-              
-
+                {errors.gst && <CFormText className="text-danger">{errors.gst}</CFormText>}
+              </CCol>
 
               <CCol md={3}>
-                <h6>Other Taxes(%)</h6>
-              <CFormInput
-  type="number"
-  placeholder="Tax Percentage"
-  value={newService.taxPercentage || ''}
-  name="taxPercentage"
-  min={1}
-  max={99} // max 2 digits
-  onChange={(e) => {
-    let value = e.target.value;
-
-    // Allow only numbers up to 2 digits
-    if (/^\d{0,2}$/.test(value)) {
-      setNewService((prev) => ({ ...prev, taxPercentage: value }));
-
-      // Validation
-      let error = '';
-     if (Number(value) <= 0) {
-        error = 'Tax Percentage must be greater than 0';
-      } else if (Number(value) > 99) {
-        error = 'Tax Percentage cannot exceed 99';
-      }
-
-      setErrors((prev) => ({ ...prev, taxPercentage: error }));
-    }
-  }}
-  onKeyDown={(e) => {
-    // Prevent negative numbers, scientific notation, or typing 0 as first digit
-    if (e.key === '-' || e.key === 'e' || e.key === '+' || (e.key === '0' && !newService.taxPercentage)) {
-      e.preventDefault();
-    }
-  }}
-  invalid={!!errors.taxPercentage}
-/>
-
-{errors.taxPercentage && (
-  <CFormText className="text-danger">{errors.taxPercentage}</CFormText>
-)}
-
+                <h6>Other Taxes (%)</h6>
+                <CFormInput
+                  type="text"
+                  name="taxPercentage"
+                  placeholder="Tax Percentage"
+                  value={newService.taxPercentage || ''}
+                  onChange={handleChange}
+                  onInput={(e) => {
+                    e.target.value = e.target.value.replace(/[^0-9.]/g, '')
+                  }}
+                />
+                {errors.taxPercentage && (
+                  <CFormText className="text-danger">{errors.taxPercentage}</CFormText>
+                )}
               </CCol>
             </CRow>
-            <h6 className="m-3">Procedure (Optional)</h6>
 
+            {/* ---------------- PROCEDURE QA ---------------- */}
+            <h6 className="m-3">Procedure (Optional)</h6>
             <ProcedureQA
               preQAList={newService.preProcedureQA}
               setPreQAList={(data) => setNewService((prev) => ({ ...prev, preProcedureQA: data }))}
@@ -1723,6 +1687,7 @@ const ServiceManagement = () => {
             />
           </CForm>
         </CModalBody>
+
         <CModalFooter>
           <CButton color="secondary" onClick={AddCancel}>
             Cancel
@@ -1753,14 +1718,6 @@ const ServiceManagement = () => {
           {error}
         </div>
       ) : (
-        // <DataTable
-        //   columns={columns}
-        //   data={filteredData}
-        //   pagination
-        //   highlightOnHover
-        //   pointerOnHover
-        //   noDataComponent="No procedure found"
-        // />
         <CTable striped hover responsive>
           <CTableHead className="pink-table w-auto">
             <CTableRow>
@@ -1779,40 +1736,40 @@ const ServiceManagement = () => {
                   <CTableDataCell style={{ paddingLeft: '40px' }}>
                     {(currentPage - 1) * rowsPerPage + index + 1}
                   </CTableDataCell>
-                  <CTableDataCell>{(test.subServiceName)}</CTableDataCell>
-                  <CTableDataCell>{(test.serviceName || 'NA')}</CTableDataCell>
-                  <CTableDataCell>{(test.categoryName || 'NA')}</CTableDataCell>
+                  <CTableDataCell>{capitalizeWords(test.subServiceName)}</CTableDataCell>
+                  <CTableDataCell>{capitalizeWords(test.serviceName || 'NA')}</CTableDataCell>
+                  <CTableDataCell>{capitalizeWords(test.categoryName || 'NA')}</CTableDataCell>
                   <CTableDataCell>{test.price || 'NA'}</CTableDataCell>
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
-                     {can('Procedure Management', 'read') && (
-                      <button
-                        className="actionBtn"
-                        onClick={() => setViewService(test)}
-                        title="View"
-                      >
-                        <Eye size={18} />
-                      </button>
-                     )}
-                     {can('Procedure Management', 'update') && (
-                      <button
-                        className="actionBtn"
-                        onClick={() => openEditModal(test)}
-                        title="Edit"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                     )}
+                      {can('Procedure Management', 'read') && (
+                        <button
+                          className="actionBtn"
+                          onClick={() => setViewService(test)}
+                          title="View"
+                        >
+                          <Eye size={18} />
+                        </button>
+                      )}
+                      {can('Procedure Management', 'update') && (
+                        <button
+                          className="actionBtn"
+                          onClick={() => openEditModal(test)}
+                          title="Edit"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                      )}
 
-                     {can('Procedure Management', 'delete') && (
-                      <button
-                        className="actionBtn"
-                        onClick={() => handleServiceDelete(test)}
-                        title="Delete"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                     )}
+                      {can('Procedure Management', 'delete') && (
+                        <button
+                          className="actionBtn"
+                          onClick={() => handleServiceDelete(test)}
+                          title="Delete"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
                       <ConfirmationModal
                         isVisible={isModalVisible}
                         title="Delete Procedure"

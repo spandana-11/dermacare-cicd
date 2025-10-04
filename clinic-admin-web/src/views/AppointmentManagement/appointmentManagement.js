@@ -285,7 +285,7 @@ const appointmentManagement = () => {
         </div>
 
         <div className="d-flex gap-2 mb-3">
-           <CButton
+          <CButton
             style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
             onClick={() => {
               setSelectedServiceTypes([])
@@ -360,24 +360,20 @@ const appointmentManagement = () => {
               onChange={handleStatusChange}
               checked={statusFilters.includes('Rejected')}
             /> */}
-         
           </div>
-             <CButton
-        style={{
-          backgroundColor: 'var(--color-black)',
-          color: 'white',
-          marginLeft: '325px',
-        }}
-        onClick={() => setVisible(true)} // open modal
-      >
-        Book Appointment
-      </CButton>
+          <CButton
+            style={{
+              backgroundColor: 'var(--color-black)',
+              color: 'white',
+              marginLeft: '325px',
+            }}
+            onClick={() => setVisible(true)} // open modal
+          >
+            Book Appointment
+          </CButton>
 
-      {/* Modal imported from separate file */}
-      <BookAppointmentModal visible={visible} onClose={() => setVisible(false)} />
-    
-
-         
+          {/* Modal imported from separate file */}
+          <BookAppointmentModal visible={visible} onClose={() => setVisible(false)} />
         </div>
 
         <CTable striped hover responsive>
@@ -440,7 +436,7 @@ const appointmentManagement = () => {
                       className="text-white"
                       size="sm"
                       onClick={() =>
-                        navigate(`/appointmentDetails/${item.bookingId}`, {
+                        navigate(`/appointment-details/${item.bookingId}`, {
                           state: { appointment: item },
                         })
                       }

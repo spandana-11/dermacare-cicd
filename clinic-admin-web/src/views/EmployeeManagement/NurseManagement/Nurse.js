@@ -224,7 +224,7 @@ const NurseManagement = () => {
                   <CTableDataCell>
                     {nurse.profilePicture ? (
                       <img
-                        src={decodeImage(nurse.profilePicture)} // ✅ decode first
+                        src={nurse.profilePicture} // ✅ decode first
                         alt={nurse.fullName}
                         width="40"
                         height="40"

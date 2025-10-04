@@ -17,6 +17,8 @@ import com.clinicadmin.dto.CustomerOnbordingDTO;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.service.CustomerOnboardingService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/clinic-admin")
 //@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
@@ -26,7 +28,7 @@ public class CustomerOnboardingController {
 	private CustomerOnboardingService customerOnboardingService;
 	// ✅ Create / Onboard Customer
     @PostMapping("/customers/onboard")
-    public ResponseEntity<Response> onboardCustomer(@RequestBody CustomerOnbordingDTO dto) {
+    public ResponseEntity<Response> onboardCustomer(@Valid @RequestBody CustomerOnbordingDTO dto) {
         Response response = customerOnboardingService.onboardCustomer(dto);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
