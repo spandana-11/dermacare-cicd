@@ -1415,4 +1415,29 @@ public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingsByCli
     }
 }
 
+
+@Override
+public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingsByCustomerId(String customerId) {
+    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+    try {
+        return bookingFeign.getBookingByCustomerId(customerId);
+    } catch (FeignException e) {
+        res = new ResponseStructure<>(null, ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR, e.status());
+        return ResponseEntity.status(res.getStatusCode()).body(res);
+    }
+}
+
+
+@Override
+public ResponseEntity<?> getInprogressBookingsByCustomerId(String customerId) {
+    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+    try {
+        return bookingFeign.retrieveInprogressAppointnmentsByCustomerId(customerId);
+    } catch (FeignException e) {
+        res = new ResponseStructure<>(null, ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR, e.status());
+        return ResponseEntity.status(res.getStatusCode()).body(res);
+    }
+}
+
+
 }

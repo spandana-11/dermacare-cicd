@@ -24,10 +24,11 @@ public interface BookingServiceRepository extends MongoRepository<Booking,String
 	 public List<Booking> findByNameIgnoreCaseOrBookingIdOrPatientId(String input);
 	 public List<Booking> findByClinicIdAndDoctorId(String clinicId,String doctorId);
 	 public List<Booking> findByPatientId(String patientId);
-	public List<Booking> findByRelationIgnoreCaseAndMobileNumber(String relation, String mobileNumber);
+	public List<Booking> findByRelationIgnoreCaseAndCustomerIdAndNameIgnoreCase(String relation, String customerId,String name);
 	public Optional<Booking> findByBookingIdAndPatientIdAndMobileNumber(String bookingId, String patientId,
 			String mobileNumber);  
 	public Booking findByMobileNumberAndPatientIdAndBookingId(String mobileNumber, String patientId,String bid);
 	public List<Booking> findByClinicIdAndBranchId(String clinicId, String branchId);
 	public List<Booking> findByClinicIdAndBranchIdAndServiceDateOrderByServicetimeAsc(String clinicId,String branchId,String serviceDate);
+	public List<Booking> findByCustomerId(String customerId);
 }

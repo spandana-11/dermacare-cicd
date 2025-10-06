@@ -1,7 +1,5 @@
 package com.dermaCare.customerService.controller;
 
-
-
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -524,5 +522,18 @@ public ResponseEntity<Response> getAverageRatingByDoctorId( @PathVariable String
            @PathVariable String branchId) {
        return customerService.getBookingsByClinicIdWithBranchId(clinicId, branchId);
    }
+   
+   @GetMapping("/bookings/customerId/{customerId}")
+   public ResponseEntity<?> getBookingsByCustomerId(
+			 @PathVariable String customerId){
+	   return customerService.getBookingsByCustomerId(customerId);
+ }
+   
+   
+   @GetMapping("/bookings/Inprogress/customerId/{customerId}")
+   public ResponseEntity<?> getInprogressBookingsByCustomerId(
+			 @PathVariable String customerId){
+	   return customerService.getInprogressBookingsByCustomerId(customerId);
+ }
 
 }

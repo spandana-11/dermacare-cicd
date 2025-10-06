@@ -41,6 +41,7 @@ public class BookingResponse {
 	private String subServiceId;
 	private String subServiceName;
 	private String serviceDate;
+	private String followupDate;
 	private String servicetime;
 	private String consultationType;
 	private double consultationFee;

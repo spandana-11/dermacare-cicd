@@ -15,6 +15,8 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +27,7 @@ import com.dermacare.bookingService.dto.BookingResponse;
 import com.dermacare.bookingService.dto.DatesDTO;
 import com.dermacare.bookingService.dto.DoctorSaveDetailsDTO;
 import com.dermacare.bookingService.dto.NotificationDTO;
+import com.dermacare.bookingService.dto.RelationInfoDTO;
 import com.dermacare.bookingService.dto.TreatmentDetailsDTO;
 import com.dermacare.bookingService.dto.TtdAppointments;
 import com.dermacare.bookingService.entity.Booking;
@@ -136,16 +139,13 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			entity.setChannelId(null) ;
 		}}
 		if(request.getRelation() != null) {
-		List<Booking> existingBooking = repository.findByRelationIgnoreCaseAndMobileNumber(request.getRelation(),request.getMobileNumber());
+		List<Booking> existingBooking = repository.findByRelationIgnoreCaseAndCustomerIdAndNameIgnoreCase(request.getRelation(),request.getCustomerId(),request.getName());
 		if(existingBooking != null && !existingBooking.isEmpty()) {
 		for(Booking b : existingBooking) {
 		if(b != null) {
 			entity.setPatientId(b.getPatientId());
-		}}}
-		else {
+		}}}else {
 			entity.setPatientId(generatePatientId());}
-		}else{
-			entity.setPatientId(generatePatientId());	
 		}
 		return entity;		
 	}
@@ -481,6 +481,20 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		return toResponses(reversedBookings);
 	}
 	
+	
+	@Override
+	public List<BookingResponse> bookingByCustomerId(String customerId) {
+		List<Booking> bookings = repository.findByCustomerId(customerId);
+		List<Booking> reversedBookings = new ArrayList<>();
+		for(int i = bookings.size()-1; i >= 0; i--) {
+			reversedBookings.add(bookings.get(i));
+		}
+		if (bookings == null  || bookings.isEmpty()) {
+			return null;
+		}
+		return toResponses(reversedBookings);
+	}
+	
 
 	@Override
 	public List<BookingResponse> bookingByClinicId(String clinicId) {
@@ -686,6 +700,32 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
 			   try{
 				List<Booking> booked=repository.findByMobileNumber(number);
+				List<BookingResponse> response=new ArrayList<>();
+				if(booked!=null && !booked.isEmpty()){
+					for(Booking b:booked){
+						if(b.getStatus().equalsIgnoreCase("In-Progress")){
+							response.add(toResponse(b));}}
+					if(response!=null && !response.isEmpty()){
+						res.setStatusCode(200);
+						res.setHttpStatus(HttpStatus.OK);
+						res.setData(response);
+						res.setMessage("In-Progress appointments found");
+					}else{
+						res.setStatusCode(200);
+						res.setHttpStatus(HttpStatus.OK);
+						res.setData(response);
+						res.setMessage("In-Progress appointments not found");}}}
+			catch(Exception e){
+				res.setStatusCode(500);
+				res.setMessage(e.getMessage());}
+			return ResponseEntity.status(res.getStatusCode()).body(res);
+		}
+		
+		
+		public ResponseEntity<?> getInProgressAppointmentsByCustomerId(String customerId){
+			ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
+			   try{
+				List<Booking> booked=repository.findByCustomerId(customerId);
 				List<BookingResponse> response=new ArrayList<>();
 				if(booked!=null && !booked.isEmpty()){
 					for(Booking b:booked){
@@ -1225,5 +1265,41 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 							HttpStatus.INTERNAL_SERVER_ERROR);
 				}}
 			
-	
+		
+		public ResponseEntity<?> getRelationsByCustomerId(String customerId) {
+		    ResponseStructure<Map<String, Object>> res = new ResponseStructure<>();
+		    try {
+		        List<Booking> bookings = repository.findByCustomerId(customerId);
+
+		        // Convert the list of bookings into a map: relation -> relationInfoDTO
+		        Map<String, Object> data = bookings.stream()
+		                .collect(Collectors.toMap(
+		                        Booking::getRelation, // key = relation (e.g., father/mother)
+		                        n -> {
+		                            RelationInfoDTO dto = new RelationInfoDTO();
+		                            dto.setAddress(n.getPatientAddress());
+		                            dto.setAge(n.getAge());
+		                            dto.setFullname(n.getName());
+		                            dto.setMobileNumber(n.getMobileNumber());
+		                            dto.setRelation(n.getRelation());
+		                            dto.setGender(n.getGender());
+		                            return dto;
+		                        },
+		                        (existing, replacement) -> existing, // in case of duplicate relation
+		                        LinkedHashMap::new // preserve insertion order
+		                ));
+
+		        res.setStatusCode(200);
+		        res.setHttpStatus(HttpStatus.OK);
+		        res.setData(data);
+		        res.setMessage("Relations found successfully");
+		    } catch (Exception e) {
+		        res.setStatusCode(500);
+		        res.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+		        res.setMessage("Error: " + e.getMessage());
+		    }
+
+		    return ResponseEntity.status(res.getStatusCode()).body(res);
+		}
+
 }

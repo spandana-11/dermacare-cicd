@@ -42,6 +42,7 @@ public class BookingRequset {
 	private String subServiceName;
 	private String serviceDate;
 	private String servicetime;
+	private String followupDate;
 	private String consultationType;
 	private double consultationFee;
 	private double totalFee;
