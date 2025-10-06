@@ -29,7 +29,7 @@ export const subServiceData = async (serviceId) => {
       `${BASE_URL}/${getadminSubServicesbyserviceId}/${serviceId}`,
     )
 
-    console.log('Service response:', response.data)
+    console.log('Service response:', `${BASE_URL}/${getadminSubServicesbyserviceId}/${serviceId}`)
     return response.data
   } catch (error) {
     if (error.response && error.response.status === 404) {

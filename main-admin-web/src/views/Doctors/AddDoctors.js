@@ -47,7 +47,7 @@ import emailjs from 'emailjs-com'
     CategoryData,
   } from '../categoryManagement/CategoryAPI'
 import {GetClinicBranches} from '../Doctors/DoctorAPI'
-  const AddDoctors = ({ modalVisible, setModalVisible, clinicId, closeForm, branchId  }) => {
+  const AddDoctors = ({ modalVisible, setModalVisible, clinicId, closeForm, branchId, fetchAllDoctors  }) => {
       const navigate = useNavigate() // ✅ define navigate here
 
     const { doctorData, errorMessage, setDoctorData, fetchHospitalDetails, fetchDoctorDetails } =
@@ -130,7 +130,7 @@ import {GetClinicBranches} from '../Doctors/DoctorAPI'
       experience: '',
       qualification: '',
       associationsOrMemberships: '',
-      branch: '',
+      branch: [],
       availableDays: '', // array of selected days
       availableTimes: '', // array of selected time slots
       profileDescription: '',
@@ -310,7 +310,7 @@ import {GetClinicBranches} from '../Doctors/DoctorAPI'
           setLoading(true) // ✅ set loading true before fetch
 
           await fetchData()
-          // await serviceData()
+          await serviceData()
 
           const data = await fetchHospitalDetails(clinicId)
 
@@ -322,6 +322,7 @@ import {GetClinicBranches} from '../Doctors/DoctorAPI'
           }
            setBranchLoading(true)
         const response = await GetClinicBranches(clinicId)
+        console.log('branches response :', response.data)
         const branches = response.data || [] // ✅ get the array safely
         console.log('Branch API response:', response)
 
@@ -346,10 +347,10 @@ import {GetClinicBranches} from '../Doctors/DoctorAPI'
     }, [])
 
     useEffect(() => {
-      // const clnicId = localStorage.getItem('HospitalId')
-      // fetchHospitalDetails(clnicId)
+      const clnicId = localStorage.getItem('HospitalId')
+      fetchHospitalDetails(clnicId)
 
-      // fetchDoctorDetails(clnicId)
+      fetchDoctorDetails(clnicId)
     }, [])
 
     const validateDoctorForm = () => {
@@ -602,7 +603,7 @@ const handleSubmit = async () => {
       experience: form.experience,
       qualification: form.qualification,
       associationsOrMemberships: form.associationsOrMemberships,
-      branch: form.branch,
+        branches: form.branch,
       specialization: form.specialization,
       availableDays: form.availableDays,
       availableTimes: form.availableTimes,
@@ -647,6 +648,8 @@ const handleSubmit = async () => {
       }
 
       toast.success(response.data.message || "Doctor added successfully");
+        fetchAllDoctors();  // <- this will update BranchDetails allDoctors state
+
       resetForm();
       setModalVisible(false);
     } else {

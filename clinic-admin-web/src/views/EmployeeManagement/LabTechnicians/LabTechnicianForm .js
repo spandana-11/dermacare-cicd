@@ -220,26 +220,25 @@ const LabTechnicianForm = ({
   }
 
   // 🔹 File upload → Base64
- const handleFileUpload = (e, field) => {
-  const file = e.target.files[0];
-  if (!file) return;
+  const handleFileUpload = (e, field) => {
+    const file = e.target.files[0]
+    if (!file) return
 
-  // ✅ Check file size (bytes → KB)
-  if (file.size > 250 * 1024) {
-    alert("File size must be less than 250KB.");
-    return; // do not proceed
+    // ✅ Check file size (bytes → KB)
+    if (file.size > 250 * 1024) {
+      alert('File size must be less than 250KB.')
+      return // do not proceed
+    }
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: reader.result, // Full Data URL
+      }))
+    }
+    reader.readAsDataURL(file)
   }
-
-  const reader = new FileReader();
-  reader.onloadend = () => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: reader.result, // Full Data URL
-   
-    }));
-  };
-  reader.readAsDataURL(file);
-};
 
   // 🔹 Save handler
   const handleSubmit = () => {
@@ -280,13 +279,13 @@ const LabTechnicianForm = ({
       return
     }
 
-  // ✅ Emergency contact and Nurse contact must not be same
-  if (formData.contactNumber === formData.emergencyContact) {
-    toast.error('Contact Number and Emergency Contact cannot be the same.');
-    return;
-  }
+    // ✅ Emergency contact and Nurse contact must not be same
+    if (formData.contactNumber === formData.emergencyContact) {
+      toast.error('Contact Number and Emergency Contact cannot be the same.')
+      return
+    }
     // ✅ Email validation
-  
+
     if (!emailPattern.test(formData.emailId)) {
       toast.error('Please enter a valid email address.')
       return
@@ -502,7 +501,7 @@ const LabTechnicianForm = ({
                 <div className="text-center">
                   {formData.profilePicture ? (
                     <img
-                      src={decodeImage(formData.profilePicture)} // ✅ decode first
+                      src={formData.profilePicture} // ✅ decode first
                       alt={formData.fullName}
                       width="80"
                       height="80"
@@ -625,7 +624,6 @@ const LabTechnicianForm = ({
                 </Section>
 
                 {/* Documents */}
-               
 
                 <div className="mt-4"></div>
                 {/* Other Info */}
@@ -653,7 +651,7 @@ const LabTechnicianForm = ({
                     </div>
                   </div>
                 </Section>
-                 <Section title="Documents">
+                <Section title="Documents">
                   <div className="row">
                     {formData.qualificationOrCertifications != '' ? (
                       <div className="col-md-6">

@@ -72,7 +72,7 @@ const fetchAllDoctors = async (clinicId, branchId) => {
     const response = await axios.get(
       `${BASE_URL}/admin/getDoctorsByHospitalIdAndBranchId/${clinicId}/${branchId}`
     )
-    console.log('Doctors array for branch:', response.data)
+    console.log('Doctors array for branch:', `${BASE_URL}/admin/getDoctorsByHospitalIdAndBranchId/${clinicId}/${branchId}`)
     setAllDoctors(response.data?.data || [])
     setCurrentPage(1)
   } catch (error) {
@@ -352,20 +352,44 @@ const handleDeleteDoctor = async () => {
             {loading ? (
               <CSpinner />
             ) : branchData ? (
-              <CRow>
-                <CCol md={6}>
-                  <p><strong>Branch Name:</strong> {branchData.branchName}</p>
-                  <p><strong>Clinic ID:</strong> {branchData.clinicId}</p>
-                  <p><strong>Address:</strong> {branchData.address}</p>
-                  <p><strong>City:</strong> {branchData.city}</p>
-                </CCol>
-                <CCol md={6}>
-                  <p><strong>Contact Number:</strong> {branchData.contactNumber}</p>
-                  <p><strong>Email:</strong> {branchData.email}</p>
-                  <p><strong>Coordinates:</strong> {branchData.latitude}, {branchData.longitude}</p>
-                  <p><strong>Virtual Tour:</strong> {branchData.virtualClinicTour || 'N/A'}</p>
-                </CCol>
-              </CRow>
+   <CRow>
+  <CCol xs={12}>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '150px 1fr', // Label column fixed, value column flexible
+        rowGap: '10px',
+        columnGap: '20px',
+      }}
+    >
+      <strong>Branch Name:</strong>
+      <span>{branchData.branchName}</span>
+
+      <strong>Clinic ID:</strong>
+      <span>{branchData.clinicId}</span>
+
+      <strong>Address:</strong>
+      <span>{branchData.address}</span>
+
+      <strong>City:</strong>
+      <span>{branchData.city}</span>
+
+      <strong>Contact Number:</strong>
+      <span>{branchData.contactNumber}</span>
+
+      <strong>Email:</strong>
+      <span>{branchData.email}</span>
+
+      <strong>Coordinates:</strong>
+      <span>{branchData.latitude}, {branchData.longitude}</span>
+
+      <strong>Virtual Tour:</strong>
+      <span>{branchData.virtualClinicTour || 'N/A'}</span>
+    </div>
+  </CCol>
+</CRow>
+
+
             ) : (
               <p>No branch details available.</p>
             )}
@@ -390,9 +414,9 @@ const handleDeleteDoctor = async () => {
                     <CTabPane visible={activeTab === 1}>
   <CCardHeader>
     <div className="d-flex justify-content-between align-items-center mb-3 w-100">
-      <CButton color="secondary" onClick={() => navigate(-1)}>
+      {/* <CButton color="secondary" onClick={() => navigate(-1)}>
         Back
-      </CButton>
+      </CButton> */}
 
       <h4 className="mb-0 text-center flex-grow-1">Doctor Details</h4>
 

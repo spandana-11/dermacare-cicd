@@ -730,6 +730,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 				if(booked!=null && !booked.isEmpty()){
 					for(Booking b:booked){
 						if(b.getStatus().equalsIgnoreCase("In-Progress")){
+							
 							response.add(toResponse(b));}}
 					if(response!=null && !response.isEmpty()){
 						res.setStatusCode(200);
@@ -1267,15 +1268,17 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			
 		
 		public ResponseEntity<?> getRelationsByCustomerId(String customerId) {
-		    ResponseStructure<Map<String, Object>> res = new ResponseStructure<>();
+		    ResponseStructure<Map<String, List<RelationInfoDTO>>> res = new ResponseStructure<>();
+
 		    try {
 		        List<Booking> bookings = repository.findByCustomerId(customerId);
 
-		        // Convert the list of bookings into a map: relation -> relationInfoDTO
-		        Map<String, Object> data = bookings.stream()
-		                .collect(Collectors.toMap(
-		                        Booking::getRelation, // key = relation (e.g., father/mother)
-		                        n -> {
+		        // Group by relation → List of RelationInfoDTO
+		        Map<String, List<RelationInfoDTO>> data = bookings.stream()
+		                .collect(Collectors.groupingBy(
+		                        Booking::getRelation, // key = relation (father/mother/brother)
+		                        LinkedHashMap::new, // preserve order
+		                        Collectors.mapping(n -> {
 		                            RelationInfoDTO dto = new RelationInfoDTO();
 		                            dto.setAddress(n.getPatientAddress());
 		                            dto.setAge(n.getAge());
@@ -1284,11 +1287,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                            dto.setRelation(n.getRelation());
 		                            dto.setGender(n.getGender());
 		                            return dto;
-		                        },
-		                        (existing, replacement) -> existing, // in case of duplicate relation
-		                        LinkedHashMap::new // preserve insertion order
+		                        }, Collectors.toList())
 		                ));
-
 		        res.setStatusCode(200);
 		        res.setHttpStatus(HttpStatus.OK);
 		        res.setData(data);
@@ -1301,5 +1301,6 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 		    return ResponseEntity.status(res.getStatusCode()).body(res);
 		}
+
 
 }

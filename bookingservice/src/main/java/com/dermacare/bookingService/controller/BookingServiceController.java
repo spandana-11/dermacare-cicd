@@ -264,8 +264,8 @@ public class BookingServiceController {
 			return service.updateAppointmentBasedOnBookingId(bookingResponse);
 		}
 		
-		@GetMapping("/appointments/byCustomerId/{customerId}")
-		public ResponseEntity<?> retrieveAppointnmentsByServiceDate(@PathVariable String customerId)
+		@GetMapping("/appointments/FilterbyRelation/{customerId}")
+		public ResponseEntity<?> retrieveAppointnmentsByRelation(@PathVariable String customerId)
 		{
 			return service.getRelationsByCustomerId(customerId);
 		}

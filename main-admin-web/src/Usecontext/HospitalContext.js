@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react"
+import React, { createContext, useContext, useState, useEffect, useCallback} from "react"
 import axios from "axios"
 import { BASE_URL, GetBy_DoctorId } from "../baseUrl"
 import { GetSubServices_ByClinicId } from "../views/ProcedureManagement/ProcedureAPI"
@@ -13,6 +13,8 @@ export const HospitalProvider = ({ children }) => {
   const [errorMessage, setErrorMessage] = useState("")
   const [notificationCount, setNotificationCount] = useState("")
   const [subServices, setSubServices] = useState([])
+    const [role, setRole] = useState(localStorage.getItem('role'))
+  const [hydrated, setHydrated] = useState(false) // Track data readiness
 
   useEffect(() => {
     // Load hospitals + selected hospital from localStorage
@@ -76,10 +78,10 @@ export const HospitalProvider = ({ children }) => {
   }
 
   // Fetch doctor details
-  const fetchDoctorDetails = async (clinicId) => {
+  const fetchDoctorDetails = async (hospitalId) => {
     setLoading(true)
     try {
-      const url = `${BASE_URL}/${GetBy_DoctorId}/${clinicId}`
+      const url = `${BASE_URL}/${GetBy_DoctorId}/${hospitalId}`
       const response = await axios.get(url)
       if (response.status === 200 && response.data) {
         setDoctorData(response.data)

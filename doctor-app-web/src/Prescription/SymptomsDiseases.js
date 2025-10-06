@@ -433,49 +433,38 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
                 <div className="mt-2 d-flex align-items-start gap-2">
                   <div className="flex-grow-1">
                     <Select
-                      value={
-                        diagnosis
-                          ? { label: diagnosis, value: diagnosis }
-                          : patientData?.subServiceName && patientData.subServiceName !== 'NA'
-                            ? { label: patientData.subServiceName, value: patientData.subServiceName }
-                            : null
-                      }
-                      onChange={(selected) => {
-                        if (!selected) {
-                          if (patientData?.subServiceName && patientData.subServiceName !== 'NA') {
-                            setDiagnosis(patientData.subServiceName);
-                          } else {
-                            setDiagnosis('');
-                          }
-                          setInputValue('');
-                        } else {
-                          setDiagnosis(selected.value);
-                          setInputValue('');
-                        }
-                      }}
-                      inputValue={inputValue}
-                      onInputChange={(val, meta) => {
-                        if (meta.action === 'input-change') setInputValue(val);
-                      }}
-                      options={options}
-                      isClearable
-                      components={{ ClearIndicator: ClearInput }}
-                      placeholder="Select diagnosis..."
-                      menuPlacement="auto"          // auto decides top/bottom
-                      menuPosition="fixed"          // fix dropdown position
-                      menuPortalTarget={document.body}  // render at top-level
-                      noOptionsMessage={() =>
-                        inputValue
-                          ? `No matches. Click Add to create "${inputValue}" as a diagnosis`
-                          : 'Type to search...'
-                      }
-                      styles={{
-                        input: (provided) => ({ ...provided, color: 'black' }),
-                        singleValue: (provided) => ({ ...provided, color: 'black' }),
-                        placeholder: (provided) => ({ ...provided, color: '#000' }),
-                        menuPortal: (base) => ({ ...base, zIndex: 9999 }), // ensure dropdown is on top
-                      }}
-                    />
+  value={
+    diagnosis
+      ? { label: diagnosis, value: diagnosis }
+      : patientData?.subServiceName && patientData.subServiceName !== 'NA'
+        ? { label: patientData.subServiceName, value: patientData.subServiceName }
+        : null
+  }
+  onChange={handleDiagnosisChange}   // ✅ FIXED
+  inputValue={inputValue}
+  onInputChange={(val, meta) => {
+    if (meta.action === 'input-change') setInputValue(val);
+  }}
+  options={options}
+  isClearable
+  components={{ ClearIndicator: ClearInput }}
+  placeholder="Select diagnosis..."
+  menuPlacement="auto"
+  menuPosition="fixed"
+  menuPortalTarget={document.body}
+  noOptionsMessage={() =>
+    inputValue
+      ? `No matches. Click Add to create "${inputValue}" as a diagnosis`
+      : 'Type to search...'
+  }
+  styles={{
+    input: (provided) => ({ ...provided, color: 'black' }),
+    singleValue: (provided) => ({ ...provided, color: 'black' }),
+    placeholder: (provided) => ({ ...provided, color: '#000' }),
+    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+  }}
+/>
+
 
 
                   </div>

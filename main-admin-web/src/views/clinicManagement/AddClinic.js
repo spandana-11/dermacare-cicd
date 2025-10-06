@@ -49,6 +49,8 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
     drugLicenceCertificate: useRef(),
     drugLicenceFormType20_21: useRef(),
     tradeLicence: useRef(),
+    drugLicenseCertificate: useRef(),
+    drugLicenseFormType: useRef(),
   };
 
   const savedQuestionId = localStorage.getItem("savedQuestionId");
@@ -1619,28 +1621,16 @@ const handleClearFile = (name, inputRef) => {
                 )}
               </CCol>
               {selectedPharmacistOption === 'Yes' && (
-                <CCol md={6}>
-                  <CTooltip content="Valid Pharmacist Registration Certificate">
-                    <CFormLabel>
-                      Pharmacist Certificate <span className="text-danger">*</span>
-                    </CFormLabel>
-                  </CTooltip>
-
-                  <CFormInput
-                    type="file"
-                    id="pharmacistCert"
-                    name="pharmacistCertificate"
-                    onChange={handleFileChange} // ✅ reuse function
-                    accept=".pdf,.doc,.docx,.jpeg,.png"
-                    invalid={!!errors.pharmacistCertificate}
-                  />
-
-                  {errors.pharmacistCertificate && (
-                    <CFormFeedback invalid>{errors.pharmacistCertificate}</CFormFeedback>
-                  )}
-                </CCol>
-              )}
-
+                  <FileInput
+        label="Pharmacist Certificate"
+        name="pharmacistCertificate"
+        accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
+        formData={formData}
+        setFormData={setFormData}
+        errors={errors}
+        setErrors={setErrors}
+        inputRef={refs.pharmacistCertificate}
+      />)}
             </CRow>
             {/* ✅ Clinic Coordinates */}
             <CRow className="mb-3">

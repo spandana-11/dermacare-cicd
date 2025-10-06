@@ -416,9 +416,7 @@ const InProgressAppointmentsPage = () => {
           style={{ minHeight: '300px' }}
         >
           <h6 style={{ color: 'var(--color-black)', fontWeight: 'normal', textAlign: 'center' }}>
-            {selectedDateFilter === 'today' && 'No appointments for Today'}
-            {selectedDateFilter === 'tomorrow' && 'No appointments for Tomorrow'}
-            {selectedDateFilter === 'dayafter' && 'No appointments for Day After Tomorrow'}
+            No Active appointments
           </h6>
         </div>
       ) : (

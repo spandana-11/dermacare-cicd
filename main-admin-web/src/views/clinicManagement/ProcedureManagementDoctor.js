@@ -114,7 +114,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     serviceName: '',
     subServiceName: '',
     subServiceImage:'',
-    serviceID:'',
+    serviceId:'',
     subServiceId:'',
     viewDescription:'',
     description: '',
@@ -192,7 +192,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     const payload = {
       clinicId: clinicId,
       
-      serviceID: newService.serviceID,
+      serviceId: newService.serviceId,
       serviceName: newService.serviceName,
       categoryId: newService.categoryId,
       categoryName: newService.categoryName,
@@ -237,7 +237,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       categoryName: '',
       categoryId: '',
       serviceName: '',
-      serviceID: '',
+      serviceId: '',
       subServiceId: '',
       subServiceName: '',
       price: '',
@@ -282,13 +282,13 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     }
 
     const selectedService = fetchedServiceOptions.find((s) => s.serviceName === service.serviceName)
-    const serviceID = selectedService?.serviceID || ''
+    const serviceId = selectedService?.serviceId || ''
 
     // 3. Fetch subservices
     let subServiceList = []
-    if (serviceID) {
+    if (serviceId) {
       try {
-        const subRes = await subServiceData(serviceID)
+        const subRes = await subServiceData(serviceId)
         const subList = subRes.data
         if (Array.isArray(subList)) {
           subServiceList = subList.flatMap((item) => item.subServices || [])
@@ -329,7 +329,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       subServiceId: resolvedSubServiceId,
       subServiceName: resolvedSubServiceName,
       serviceName: service.serviceName || '',
-      serviceID: serviceID,
+      serviceId: serviceId,
       categoryName: service.categoryName || '',
       categoryId: categoryId || '',
       price: service.price || '',
@@ -370,7 +370,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
   const [errors, setErrors] = useState({
     subServiceName: '',
     serviceName: '',
-    serviceID: '',
+    serviceId: '',
     categoryName: '',
     price: '',
     status: '',
@@ -537,76 +537,11 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
                           onCancel={handleCancelDelete}
                         />
           </div>
-
-        // <div
-        //   style={{
-        //     display: 'flex',
-        //     justifyContent: 'space-between',
-        //     alignItems: 'end',
-        //     width: '250px',
-        //   }}
-        // >
-        //   <div
-        //     color="info"
-        //     onClick={() => setViewService(row)}
-        //     style={{ marginRight: '5px', width: '50px', color: 'green' }}
-        //   >
-        //     View
-        //   </div>
-        //   <div
-        //     color="info"
-        //     onClick={() => openEditModal(row)}
-        //     style={{ marginRight: '5px', width: '50px', color: 'blue' }}
-        //   >
-        //     Edit
-        //   </div>
-        //   <div
-        //     color="danger"
-        //     onClick={() => handleServiceDelete(row)}
-        //     style={{ width: '50px', color: 'red' }}
-        //   >
-        //     Delete
-        //   </div>
-
-        //   {/* <ConfirmationModal
-        //     isVisible={isModalVisible}
-        //     title="Delete Procedure Details"
-        //     message="Are you sure you want to delete this Procedure Details? This action cannot be undone."
-        //     confirmText="Yes, Delete"
-        //     cancelText="Cancel"
-        //     onConfirm={handleConfirmDelete}
-        //     onCancel={handleCancelDelete}
-        //   /> */}
-
-        //   {/* <ConfirmationModal
-        //     isVisible={isModalVisible}
-        //     message="Are you sure you want to delete this service?"
-        //     onConfirm={handleConfirmDelete}
-        //     onCancel={handleCancelDelete}
-        //   /> */}
-        // </div>
       ),
       width: '150px',
       headerStyle: { textAlign: 'center' },
     },
   ]
-
-  // const ConfirmationModal = ({ isVisible, message, onConfirm, onCancel }) => {
-  //   return (
-  //     <CModal visible={isVisible} onClose={onCancel} backdrop={false}>
-  //       <CHeader style={{ marginLeft: '200px' }}> !Alert</CHeader>
-  //       <CModalBody style={{ textAlign: 'center' }}>{message}</CModalBody>
-  //       <CModalFooter>
-  //         <CButton color="secondary" onClick={onCancel}>
-  //           Cancel
-  //         </CButton>
-  //         <CButton color="danger" onClick={onConfirm}>
-  //           Confirm
-  //         </CButton>
-  //       </CModalFooter>
-  //     </CModal>
-  //   )
-  // }
   const minTimeValue = parseFloat(newService.minTime)
   const validateForm = () => {
     const newErrors = {}
@@ -650,12 +585,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     } else if (parseFloat(newService.discount) < 0) {
       newErrors.discount = 'Discount cannot be a negative number.'
     }
-    // if (!newService.taxPercentage && newService.taxPercentage !== 0) {
-    //   newErrors.taxPercentage = 'taxPercentage is required.'
-    // } else if (parseFloat(newService.taxPercentage) < 0) {
-    //   newErrors.taxPercentage = 'taxPercentage cannot be a negative number.'
-    // }
-    // Validation
+
     if (!newService.minTimeValue || isNaN(newService.minTimeValue)) {
       newErrors.minTime = 'Minimum time is required'
     } else if (parseFloat(newService.minTimeValue) <= 0) {
@@ -754,19 +684,11 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       finalCost,
     })
 
-    // const fullBase64String = await toBase64(newService.serviceImageFile)
-    // const base64ImageToSend = fullBase64String?.split(',')[1] || ''
-
-    // if (!validateForm()) {
-    //   toast.error('Validation failed', { position: 'top-right' })
-    //   return
-    // }
-
     const payload = {
       hospitalId: clinicId,
       subServiceName: newService.subServiceName,
       subServiceId: newService.subServiceId,
-      serviceID: newService.serviceID,
+      serviceId: newService.serviceId,
       serviceName: newService.serviceName,
       categoryName: newService.categoryName,
       categoryId: newService.categoryId,
@@ -811,14 +733,12 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       toast.error(error.response?.data?.message, { position: 'top-right' })
     }
 
-    // Reset form
-    // Reset form using default object
     setNewService({
       hospitalId:'',
       categoryName: '',
       categoryId: '',
       serviceName: '',
-      serviceID: '',
+      serviceId: '',
       subServiceId: '',
       subServiceName: '',
       price: 0,
@@ -830,7 +750,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       minTimeUnit: '',
       status: '',
       subServiceImage: '',
-      subSubServiceImage:'',
+      subServiceImageFile:'',
       viewDescription: '',
       consentFormType: '',
       procedureQA: [],
@@ -878,12 +798,10 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
 
   const handleUpdateService = async () => {
     try {
-      // const hospitalId = localStorage.getItem('HospitalId')
-
       let base64ImageToSend = ''
 
-      if (newService.subServiceImageFile) {
-        const fullBase64String = await toBase64(newService.subServiceImageFile)
+      if (newService.serviceImageFile) {
+        const fullBase64String = await toBase64(newService.serviceImageFile)
         base64ImageToSend = fullBase64String.split(',')[1]
       } else if (newService.subServiceImage?.startsWith('data:')) {
         base64ImageToSend = newService.subServiceImage.split(',')[1]
@@ -945,10 +863,10 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       reader.onerror = (error) => reject(error)
     })
 
-  const handleServiceDelete = async (serviceID) => {
-    console.log(serviceID)
+  const handleServiceDelete = async (serviceId) => {
+    console.log(serviceId)
 
-    setServiceIdToDelete(serviceID.subServiceId)
+    setServiceIdToDelete(serviceId.subServiceId)
     setIsModalVisible(true)
   }
 
@@ -1048,7 +966,7 @@ const handleChanges = async (e) => {
       categoryName: selectedCategory?.categoryName || '',
       categoryId: value,
       serviceName: '',
-      serviceID: '',
+      serviceId: '',
     }))
 
     try {
@@ -1062,17 +980,17 @@ const handleChanges = async (e) => {
     }
   } else if (name === 'serviceName') {
     const selectedService = serviceOptions.find((s) => s.serviceName === value)
-    const serviceID = selectedService?.serviceID || ''
+    const serviceId = selectedService?.serviceId || ''
 
     setNewService((prev) => ({
       ...prev,
       serviceName: value,
-      serviceID,
+      serviceId,
     }))
 
-    if (serviceID) {
+    if (serviceId) {
       try {
-        const subRes = await subServiceData(serviceID)
+        const subRes = await subServiceData(serviceId)
         const subList = subRes.data
         let allSubServices = []
 
@@ -1155,7 +1073,7 @@ const handleChanges = async (e) => {
               <CCol sm={6}>
                 <strong>Service Id:</strong>
               
-                <div>{viewService.serviceID}</div>
+                <div>{viewService.serviceId}</div>
               </CCol>
             </CRow>
 
@@ -1413,7 +1331,7 @@ const handleChanges = async (e) => {
                 >
                   <option value="">Select Service</option>
                   {serviceOptions.map((service) => (
-                    <option key={service.serviceID} value={service.serviceName}>
+                    <option key={service.serviceId} value={service.serviceName}>
                       {service.serviceName}
                     </option>
                   ))}
@@ -1451,7 +1369,7 @@ const handleChanges = async (e) => {
                 >
                   <option value="">Select Procedure</option>
                   {Array.isArray(subServiceOptions?.subServices) &&
-                    subServiceOptions.map((sub) => (
+    subServiceOptions.subServices.map((sub) => (
                       <option key={sub.subServiceId} value={sub.subServiceId}>
                         {sub.subServiceName}
                       </option>

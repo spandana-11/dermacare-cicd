@@ -130,6 +130,7 @@ export const GetClinicBranches = async (clinicId) => {
   try {
     const response = await axios.get(`${BASE_URL}/${GetBranches_ByClinicId}/${clinicId}`)
     console.log(`appointdata calling ${response.data}`)
+    console.log('error in getclinicbranches:',`${BASE_URL}/${GetBranches_ByClinicId}/${clinicId}`)
 
     console.log(response.data)
 

@@ -358,8 +358,13 @@ const ServiceManagement = () => {
       ? service.postProcedureQA
       : JSON.parse(service.postProcedureQA || '[]')
 
-    const rawImage = service.serviceImage || ''
-    const fullImage = rawImage.startsWith('data:') ? rawImage : `data:image/jpeg;base64,${rawImage}`
+    const rawImage = service.subServiceImage || service.serviceImage || ''
+    const fullImage =
+      rawImage && rawImage.startsWith('data:')
+        ? rawImage
+        : rawImage
+          ? `data:image/jpeg;base64,${rawImage}`
+          : ''
     const [timeValue, timeUnit] = service.minTime
       ? service.minTime.split(' ') // split into ["45","minutes"]
       : ['', '']
@@ -1739,7 +1744,7 @@ const ServiceManagement = () => {
                   <CTableDataCell>{capitalizeWords(test.subServiceName)}</CTableDataCell>
                   <CTableDataCell>{capitalizeWords(test.serviceName || 'NA')}</CTableDataCell>
                   <CTableDataCell>{capitalizeWords(test.categoryName || 'NA')}</CTableDataCell>
-                  <CTableDataCell>{test.price || 'NA'}</CTableDataCell>
+                  <CTableDataCell>₹{test.price || 'NA'}</CTableDataCell>
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
                       {can('Procedure Management', 'read') && (

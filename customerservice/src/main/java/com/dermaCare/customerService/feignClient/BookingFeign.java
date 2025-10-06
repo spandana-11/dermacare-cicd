@@ -78,6 +78,10 @@ public interface BookingFeign {
 	public ResponseEntity<?> retrieveInprogressAppointnmentsByCustomerId(@PathVariable String customerId);
 	
 	
+	@GetMapping("/api/v1/appointments/FilterbyRelation/{customerId}")
+	public ResponseEntity<?> retrieveAppointnmentsByRelation(@PathVariable String customerId);
+	
+	
 	//FALLBACK METHODS
 	
 //		default ResponseEntity<?> bookingServiceFallBack(Exception e){		 

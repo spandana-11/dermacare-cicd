@@ -1439,5 +1439,16 @@ public ResponseEntity<?> getInprogressBookingsByCustomerId(String customerId) {
     }
 }
 
+@Override
+public ResponseEntity<?> retrieveAppointnmentsByRelation(String customerId) {
+    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+    try {
+        return bookingFeign.retrieveAppointnmentsByRelation(customerId);
+    } catch (FeignException e) {
+        res = new ResponseStructure<>(null, ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR, e.status());
+        return ResponseEntity.status(res.getStatusCode()).body(res);
+    }
+}
+
 
 }

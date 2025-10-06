@@ -125,5 +125,6 @@ public interface CustomerService {
 
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingsByCustomerId(String customerId);
 
+	public ResponseEntity<?> retrieveAppointnmentsByRelation(String customerId);
 	public ResponseEntity<?> getInprogressBookingsByCustomerId(String customerId);
 }

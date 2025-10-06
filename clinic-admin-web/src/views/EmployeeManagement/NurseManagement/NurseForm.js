@@ -516,7 +516,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                 <div className="text-center">
                   {formData.profilePicture ? (
                     <img
-                      src={decodeImage(formData.profilePicture)}
+                      src={formData.profilePicture}
                       alt={formData.fullName}
                       width="80"
                       height="80"

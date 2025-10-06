@@ -260,12 +260,12 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
     console.log("Confirm Save As Template Action:", action)
     setShowTemplateModal(false)
     try {
-      // await onSaveTemplate?.()
+      await onSaveTemplate?.()
       console.log("Template Saved Successfully")
       const ok = await uploadPrescription({ downloadAfter: action === ACTIONS.SAVE_PRINT })
       if (ok) {
         console.log("Navigation to Dashboard")
-        navigate('/appointments', { replace: true })
+        navigate('/dashboard', { replace: true })
       }
     } finally {
       setPendingAction(null)
@@ -306,7 +306,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
 
       if (resp) {
         success('Prescription saved successfully!', { title: 'Success' })
-        navigate('/appointments', { replace: true })
+        navigate('/dashboard', { replace: true })
       } else {
         warning('Saved, but got an unexpected response.')
       }
@@ -637,8 +637,8 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
               setClickedSaveTemplate(true)
               uploadPrescription({ downloadAfter: false })
 
-              // onSaveTemplate?.()
-              // info('Template saved. You can now Save or Save & Download.', { title: 'Template' })
+              onSaveTemplate?.()
+              info('Template saved. You can now Save or Save & Download.', { title: 'Template' })
             }}
           >
             {!updateTemplate ? 'Save Prescription Template' : 'Update Prescription Template'}

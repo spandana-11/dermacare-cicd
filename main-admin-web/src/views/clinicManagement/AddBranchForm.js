@@ -72,7 +72,6 @@ const [currentPage, setCurrentPage] = useState(1)
   // Load branches on component mount
   useEffect(() => {
     loadBranches();
-    console.log('jaskfaslkfjsk',loadBranches())
   }, []);
 React.useEffect(() => {
   if (clinicId) {
@@ -207,42 +206,72 @@ useEffect(() => {
       virtualClinicTour: '',
     });
   };  
-  const validateForm=()=>{
-    const errors={};
+const validateForm = () => {
+  const errors = {};
 
-    if(!formData.branchName || formData.branchName.trim().length < 3){
-      errors.branchName = "Branch name must be atleast 3 characters.";
-    }
-    if(!formData.address || formData.address.trim().length<5){
-      errors.address="Address must be at least 5 characters";
-    }
-    if(!formData.city){
-      errors.city="City is required";
-    }
-    if(!formData.contactNumber ||  !/^[0-9]{10}$/.test(formData.contactNumber)){
-      errors.contactNumber="Contact Number must be 10 digits.";
-    }
- if (!formData.email) {
-  errors.email = "Email is required.";
-} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-  errors.email = "Invalid email format.";
-}
+  // Branch Name: only letters, spaces, min 3, max 50
+  if (!formData.branchName || !/^[A-Za-z\s]{3,50}$/.test(formData.branchName.trim())) {
+    errors.branchName = "Branch Name must be 3-50 letters and spaces only.";
+  }
 
-if (!formData.latitude) {
-  errors.latitude = "Latitude is required.";
-} else if (isNaN(formData.latitude)) {
-  errors.latitude = "Latitude must be a valid Number.";
-}
+  // Clinic ID: numbers only, min 1, max 10 digits (adjust as needed)
+  if (!formData.clinicId || !/^\d{1,10}$/.test(formData.clinicId.trim())) {
+    errors.clinicId = "Clinic ID must be 1-10 digits.";
+  }
 
-if (!formData.longitude) {
-  errors.longitude = "Longitude is required.";
-} else if (isNaN(formData.longitude)) {
-  errors.longitude = "Longitude must be a valid Number.";
-}
+  // Address: letters, numbers, spaces, comma, dot, min 5, max 100
+  if (!formData.address || !/^[A-Za-z0-9\s,.-]{5,100}$/.test(formData.address.trim())) {
+    errors.address = "Address must be 5-100 characters (letters, numbers, spaces, comma, dot, hyphen).";
+  }
+
+  // City: letters and spaces only, min 2, max 50
+  if (!formData.city || !/^[A-Za-z\s]{2,50}$/.test(formData.city.trim())) {
+    errors.city = "City must be 2-50 letters and spaces only.";
+  }
+
+  // Contact Number: exactly 10 digits, cannot start with 0
+  if (!formData.contactNumber || !/^[1-9][0-9]{9}$/.test(formData.contactNumber.trim())) {
+    errors.contactNumber = "Contact Number must be exactly 10 digits and cannot start with 0.";
+  }
+
+  // Email: standard email format
+  if (!formData.email) {
+    errors.email = "Email is required.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+    errors.email = "Invalid email format.";
+  }
+
+  // Latitude: number between -90 and 90
+  const lat = parseFloat(formData.latitude);
+  if (!formData.latitude) {
+    errors.latitude = "Latitude is required.";
+  } else if (isNaN(lat) || lat < -90 || lat > 90) {
+    errors.latitude = "Latitude must be a number between -90 and 90.";
+  }
+
+  // Longitude: number between -180 and 180
+  const lng = parseFloat(formData.longitude);
+  if (!formData.longitude) {
+    errors.longitude = "Longitude is required.";
+  } else if (isNaN(lng) || lng < -180 || lng > 180) {
+    errors.longitude = "Longitude must be a number between -180 and 180.";
+  }
+
+  // Virtual Tour (URL): optional, but if present must be valid URL
+  if (formData.virtualTour) {
+    try {
+      new URL(formData.virtualTour.trim());
+    } catch (_) {
+      errors.virtualTour = "Virtual Tour must be a valid URL.";
+    }
+  }
 
   setValidationErrors(errors);
-  return Object.keys(errors).length===0;
-  }
+  return Object.keys(errors).length === 0;
+};
+
+
+
   const handleCloseModal = () => {
     setModalVisible(false);
     setEditingBranch(null);
@@ -343,19 +372,26 @@ const endIndex = Math.min(indexOfLastItem, filteredBranches.length)
         <CTableDataCell>{branch.address}</CTableDataCell>
         <CTableDataCell><CBadge color="secondary">{branch.city}</CBadge></CTableDataCell>
         <CTableDataCell>{branch.contactNumber}</CTableDataCell>
-        <CTableDataCell>
-          <CButton
-  color="primary"
-  size="sm"
-  className="me-2"
-  onClick={() => navigate(`/branch-details/${branch.branchId}`)}
->
-  View
-</CButton>
+       <CTableDataCell>
+  {/* View button always available */}
+  <CButton
+    color="primary"
+    size="sm"
+    className="me-2"
+    onClick={() => navigate(`/branch-details/${branch.branchId}`)}
+  >
+    View
+  </CButton>
 
-          <CButton color="warning" size="sm" className="me-2" onClick={() => handleEdit(branch)}>Edit</CButton>
-          <CButton color="danger" size="sm" onClick={() => { setDeletingBranch(branch); setDeleteModalVisible(true); }}>Delete</CButton>
-        </CTableDataCell>
+  {/* Only show Edit/Delete if NOT the first branch */}
+  {index !== 0 && (
+    <>
+      <CButton color="warning" size="sm" className="me-2" onClick={() => handleEdit(branch)}>Edit</CButton>
+      <CButton color="danger" size="sm" onClick={() => { setDeletingBranch(branch); setDeleteModalVisible(true); }}>Delete</CButton>
+    </>
+  )}
+</CTableDataCell>
+
       </CTableRow>
     ))
   ) : (
@@ -611,13 +647,14 @@ const endIndex = Math.min(indexOfLastItem, filteredBranches.length)
 
               </CCol>
             </CRow>
-           <CFormTextarea
+           <CFormInput
   label="Virtual Clinic Tour"
+  type="url"
   name="virtualClinicTour"
   value={formData.virtualClinicTour}
   onChange={handleChange}
   className="mb-3"
-  rows={3}
+  // rows={3}
   invalid={!!validationErrors.virtualClinicTour}   // ✅ highlight error if present
 />
 {validationErrors.virtualClinicTour && (
@@ -655,38 +692,6 @@ const endIndex = Math.min(indexOfLastItem, filteredBranches.length)
           </CButton>
         </CModalFooter>
       </CModal>
-
-      {/* View Branch Details Modal */}
-      {/* <CModal visible={viewModalVisible} onClose={() => setViewModalVisible(false)} size="lg">
-        <CModalHeader closeButton>
-          <CModalTitle>Branch Details</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          {viewingBranch ? (
-            <CRow>
-              <CCol md={6}>
-                <p><strong>Branch Name:</strong> {viewingBranch.branchName}</p>
-                <p><strong>Clinic ID:</strong> {formData.clinicId}</p>
-                <p><strong>Address:</strong> {viewingBranch.address}</p>
-                <p><strong>City:</strong> {viewingBranch.city}</p>
-              </CCol>
-              <CCol md={6}>
-                <p><strong>Contact Number:</strong> {viewingBranch.contactNumber}</p>
-                <p><strong>Email:</strong> {viewingBranch.email}</p>
-                <p><strong>Coordinates:</strong> {viewingBranch.latitude}, {viewingBranch.longitude}</p>
-                <p><strong>Virtual Tour:</strong> {viewingBranch.virtualClinicTour || 'N/A'}</p>
-              </CCol>
-            </CRow>
-          ) : (
-            <CSpinner />
-          )}
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" onClick={() => setViewModalVisible(false)}>
-            Close
-          </CButton>
-        </CModalFooter>
-      </CModal> */}
     </div>
   );
 };

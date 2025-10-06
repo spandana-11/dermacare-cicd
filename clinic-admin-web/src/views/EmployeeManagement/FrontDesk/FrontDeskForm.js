@@ -501,7 +501,7 @@ const FrontDeskForm = ({
                 <div className="text-center">
                   {formData.profilePicture ? (
                     <img
-                      src={decodeImage(formData.profilePicture)} // ✅ decode first
+                      src={formData.profilePicture} // ✅ decode first
                       alt={formData.fullName}
                       width="80"
                       height="80"

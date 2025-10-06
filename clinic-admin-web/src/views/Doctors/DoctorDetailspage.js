@@ -194,11 +194,12 @@ const DoctorDetailsPage = () => {
     try {
       const payload = {
         ...formData,
-        branch:
+        branches:
           formData.branch?.map((b) => ({
             branchId: b.branchId,
             branchName: b.branchName,
           })) || [],
+
         category: formData.category || [], // already an array from useEffect
 
         subCategory: formData.subCategory
@@ -220,11 +221,10 @@ const DoctorDetailsPage = () => {
         setDoctorData(res.data.updatedDoctor)
         setFormData(res.data.updatedDoctor)
         setIsEditing(false)
-       
 
         navigate(`/doctor`)
         await fetchDoctors()
-         toast.success(res.data.message || 'Doctor updated successfully')
+        toast.success(res.data.message || 'Doctor updated successfully')
       } else {
         toast.error('Failed to update doctor')
       }
@@ -233,6 +233,19 @@ const DoctorDetailsPage = () => {
       toast.error('Error while updating doctor')
     }
   }
+
+  useEffect(() => {
+    if (doctorData && !isEditing) {
+      setFormData({
+        ...doctorData,
+        branch:
+          doctorData.branches?.map((b) => ({
+            branchId: b.branchId || b.id,
+            branchName: b.branchName || b.name,
+          })) || [],
+      })
+    }
+  }, [doctorData, isEditing])
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0] // Format: YYYY-MM-DD
@@ -740,6 +753,11 @@ const DoctorDetailsPage = () => {
       setServiceOptions([])
     }
   }
+
+  // const branchOptions = allBranches.map((b) => ({
+  //   value: b.branchId,
+  //   label: b.branchName,
+  // }))
 
   const handleServiceChange = async (selectedServices) => {
     // ✅ remove duplicates from user selections
@@ -1284,17 +1302,18 @@ const DoctorDetailsPage = () => {
                               value={branchOptions.filter(
                                 (opt) =>
                                   Array.isArray(formData.branch) &&
-                                  formData.branch.some((b) => b.branchId === opt.value),
+                                  formData.branch.some(
+                                    (b) => b.branchId.toString() === opt.value.toString(),
+                                  ),
                               )}
-                              onChange={(selected) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  branch: selected.map((opt) => ({
-                                    branchId: opt.value,
-                                    branchName: opt.label,
-                                  })),
+                              onChange={(selected) => {
+                                const updatedBranches = selected.map((opt) => ({
+                                  branchId: opt.value,
+                                  branchName: opt.label,
                                 }))
-                              }
+                                setFormData((prev) => ({ ...prev, branch: updatedBranches }))
+                                console.log('Updated branches:', updatedBranches) // ✅ Verify length
+                              }}
                               placeholder="Select branches..."
                             />
 
