@@ -31,10 +31,8 @@ jobs:
             echo "🧹 Stopping existing containers..."
             docker compose down
 
-            echo "🔑 Creating firebase-key.json in services..."
-            mkdir -p notification-service/src/main/resources
+            echo "🔑 Updating firebase-key.json in services..."
             echo "${{ secrets.FIREBASE_KEY }}" > notification-service/src/main/resources/firebase-key.json
-            mkdir -p customerservice/src/main/resources
             echo "${{ secrets.FIREBASE_KEY }}" > customerservice/src/main/resources/firebase-key.json
 
             echo "🚀 Building Docker containers..."
