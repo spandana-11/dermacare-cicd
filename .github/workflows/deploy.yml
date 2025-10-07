@@ -1,42 +1,3 @@
-# name: CI/CD - Deploy to Lightsail (No Docker Hub)
-
-# on:
-#   push:
-#     branches:
-#       - main
-
-# jobs:
-#   deploy:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       - name: Checkout Code
-#         uses: actions/checkout@v4
-
-#       - name: Deploy to Lightsail via SSH
-#         uses: appleboy/ssh-action@v1.2.0
-#         with:
-#           host: ${{ secrets.HOST }}
-#           username: ${{ secrets.USERNAME }}
-#           key: ${{ secrets.SSH_KEY }}
-#           script: |
-#             cd /home/ubuntu/dermacare-cicd
-
-#             echo "📦 Pulling latest changes..."
-#             git pull origin main
-
-#             echo "🧹 Stopping existing containers..."
-#             docker compose down
-
-#             echo "🔑 Creating firebase-key.json in services..."
-#             echo "${{ secrets.FIREBASE_KEY }}" > notification-service/src/main/resources/firebase-key.json
-#             echo "${{ secrets.FIREBASE_KEY }}" > customerservice/src/main/resources/firebase-key.json
-
-#             echo "🚀 Building and starting containers..."
-#             docker compose build
-#             docker compose up -d
-
-#             echo "✅ Deployment completed successfully!"
 name: CI/CD - Deploy to Lightsail (No Docker Hub)
 
 on:
@@ -49,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the latest code
+      # Step 1: Checkout code
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -57,11 +18,11 @@ jobs:
       - name: Deploy to Lightsail via SSH
         uses: appleboy/ssh-action@v0.1.8
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ubuntu
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          port: 22
           script: |
-            # Go to project directory
             cd /home/ubuntu/dermacare-cicd || exit 1
 
             echo "📦 Pulling latest changes..."
