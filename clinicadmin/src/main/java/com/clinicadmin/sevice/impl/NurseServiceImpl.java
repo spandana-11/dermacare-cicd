@@ -160,8 +160,6 @@ public class NurseServiceImpl implements NurseService {
         });
     }
 
-    // ------------------- Update Nurse ----------------------
-
     @Override
     public Response updateNurse(String nurseId, NurseDTO dto) {
         Response response = new Response();
@@ -176,7 +174,7 @@ public class NurseServiceImpl implements NurseService {
 
         return nurseRepository.findByNurseId(nurseId).map(existingNurse -> {
 
-            // ✅ Update normal fields
+            // ✅ Update basic fields safely using Optional
             Optional.ofNullable(dto.getHospitalId()).ifPresent(existingNurse::setHospitalId);
             Optional.ofNullable(dto.getHospitalName()).ifPresent(existingNurse::setHospitalName);
             Optional.ofNullable(dto.getBranchId()).ifPresent(existingNurse::setBranchId);
@@ -196,48 +194,30 @@ public class NurseServiceImpl implements NurseService {
             Optional.ofNullable(dto.getQualifications()).ifPresent(existingNurse::setQualifications);
             Optional.ofNullable(dto.getShiftTimingOrAvailability()).ifPresent(existingNurse::setShiftTimingOrAvailability);
             Optional.ofNullable(dto.getPermissions()).ifPresent(existingNurse::setPermissions);
+            Optional.ofNullable(dto.getVaccinationStatus()).ifPresent(existingNurse::setVaccinationStatus);
 
-            if (dto.getVaccinationStatus() != null) {
-                existingNurse.setVaccinationStatus(dto.getVaccinationStatus());
-            }
-
-            // ✅ Encode new Base64 content before saving
+            // ✅ Update Base64 documents and images (store as-is)
             if (dto.getNursingLicense() != null)
-                existingNurse.setNursingLicense(Base64.getEncoder().encodeToString(dto.getNursingLicense().getBytes()));
+                existingNurse.setNursingLicense(dto.getNursingLicense());
 
             if (dto.getNursingCouncilRegistration() != null)
-                existingNurse.setNursingCouncilRegistration(Base64.getEncoder().encodeToString(dto.getNursingCouncilRegistration().getBytes()));
+                existingNurse.setNursingCouncilRegistration(dto.getNursingCouncilRegistration());
 
             if (dto.getNursingDegreeOrDiplomaCertificate() != null)
-                existingNurse.setNursingDegreeOrDiplomaCertificate(Base64.getEncoder().encodeToString(dto.getNursingDegreeOrDiplomaCertificate().getBytes()));
+                existingNurse.setNursingDegreeOrDiplomaCertificate(dto.getNursingDegreeOrDiplomaCertificate());
 
             if (dto.getMedicalFitnessCertificate() != null)
-                existingNurse.setMedicalFitnessCertificate(Base64.getEncoder().encodeToString(dto.getMedicalFitnessCertificate().getBytes()));
+                existingNurse.setMedicalFitnessCertificate(dto.getMedicalFitnessCertificate());
 
             if (dto.getProfilePicture() != null)
-                existingNurse.setProfilePicture(Base64.getEncoder().encodeToString(dto.getProfilePicture().getBytes()));
+                existingNurse.setProfilePicture(dto.getProfilePicture());
 
-            // ✅ Save the updated nurse
+            // ✅ Save updated record
             Nurse updated = nurseRepository.save(existingNurse);
 
-            // ✅ Decode Base64 fields before sending response back
+            // ✅ Map to DTO for response (no need to decode Base64)
             NurseDTO updatedDTO = mapNurseEntityToNurseDTO(updated);
-            if (updated.getNursingLicense() != null)
-                updatedDTO.setNursingLicense(new String(Base64.getDecoder().decode(updated.getNursingLicense())));
 
-            if (updated.getNursingCouncilRegistration() != null)
-                updatedDTO.setNursingCouncilRegistration(new String(Base64.getDecoder().decode(updated.getNursingCouncilRegistration())));
-
-            if (updated.getNursingDegreeOrDiplomaCertificate() != null)
-                updatedDTO.setNursingDegreeOrDiplomaCertificate(new String(Base64.getDecoder().decode(updated.getNursingDegreeOrDiplomaCertificate())));
-
-            if (updated.getMedicalFitnessCertificate() != null)
-                updatedDTO.setMedicalFitnessCertificate(new String(Base64.getDecoder().decode(updated.getMedicalFitnessCertificate())));
-
-            if (updated.getProfilePicture() != null)
-                updatedDTO.setProfilePicture(new String(Base64.getDecoder().decode(updated.getProfilePicture())));
-
-            // ✅ Build final response
             response.setSuccess(true);
             response.setData(updatedDTO);
             response.setMessage("Nurse updated successfully");
@@ -251,7 +231,6 @@ public class NurseServiceImpl implements NurseService {
             return response;
         });
     }
-
 
 
     // ------------------- Delete ----------------------

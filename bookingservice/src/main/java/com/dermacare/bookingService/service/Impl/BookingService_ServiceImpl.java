@@ -24,6 +24,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import com.dermacare.bookingService.dto.BookingInfoByInput;
 import com.dermacare.bookingService.dto.BookingRequset;
 import com.dermacare.bookingService.dto.BookingResponse;
 import com.dermacare.bookingService.dto.DatesDTO;
@@ -514,42 +516,51 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	
 	
 	@Override
-	public List<BookingResponse> bookingByInput(String input) {
+	public List<BookingInfoByInput> bookingByInput(String input) {
+		   List<BookingInfoByInput> outpt = new ArrayList<>();
 	    try {
 	        List<Booking> bookings = repository.findByPatientId(input);
-
+System.out.println(bookings);
 	        // If not found by patientId, try mobileNumber
 	        if (bookings == null || bookings.isEmpty()) {
 	            bookings = repository.findByMobileNumber(input);
+	            System.out.println(bookings);
 	        }
 
 	        // If still not found, try customerId
 	        if (bookings == null || bookings.isEmpty()) {
 	            bookings = repository.findByCustomerId(input);
+	            System.out.println(bookings);
 	        }
 
 	        if (bookings == null || bookings.isEmpty()) {
 	            bookings = repository.findByNameIgnoreCase(input);
+	            System.out.println(bookings);
 	        }
 	        
 	        // If no records found at all
 	        if (bookings == null || bookings.isEmpty()) {
-	            return Collections.emptyList(); // return empty list instead of null
-	        }
-	        
-	        // Reverse the list (most recent first)
-	        List<Booking> reversedBookings = new ArrayList<>(bookings);
-	        for(int i = bookings.size()-1; i >= 0; i--) {
-				if(bookings.get(i).getStatus().equalsIgnoreCase("In-Progress")) {
-				reversedBookings.add(bookings.get(i));
-			}}
-	       
-	        return toResponses(reversedBookings);
-
-	    } catch (Exception e) {
+	        	  bookings = Collections.emptyList(); // return empty list instead of null
+	        }	        
+	        for(Booking b : bookings) {
+	        	System.out.println(b);
+	        BookingInfoByInput bkng = new BookingInfoByInput() ;	
+	        bkng.setAge(b.getAge());
+	        bkng.setClinicId(b.getClinicId());
+	        bkng.setCustomerId(b.getCustomerId());
+	        bkng.setGender(b.getGender());
+	        bkng.setMobileNumber(b.getMobileNumber());
+	        bkng.setName(b.getName());
+	        bkng.setPatientAddress(b.getPatientAddress());
+	        bkng.setPatientId(b.getPatientId());
+	        bkng.setPatientMobileNumber(b.getPatientMobileNumber());
+	        bkng.setRelation(b.getRelation());
+	        outpt.add(bkng);
+	    }}catch (Exception e) {
 	        //System.err.println("Error fetching bookings: " + e.getMessage());
-	        return Collections.emptyList(); // safe fallback
+	        System.out.println(e.getMessage());; // safe fallback
 	    }
+	    return outpt;
 	}
 
 

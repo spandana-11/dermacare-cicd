@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 
+import com.dermacare.bookingService.dto.BookingInfoByInput;
 import com.dermacare.bookingService.dto.BookingRequset;
 import com.dermacare.bookingService.dto.BookingResponse;
 import com.dermacare.bookingService.util.Response;
@@ -36,7 +37,7 @@ public interface BookingService_Service {
 	public ResponseEntity<?> getRelationsByCustomerId(String customerId);
 	public List<BookingResponse> bookingByCustomerId(String customerId);
 	public List<BookingResponse> bookingByPatientId(String patientId);
-	public List<BookingResponse> bookingByInput(String input);
+	public List<BookingInfoByInput> bookingByInput(String input);
 	public ResponseEntity<?> getInProgressAppointmentsByCustomerId(String customerId);
 		
 }
