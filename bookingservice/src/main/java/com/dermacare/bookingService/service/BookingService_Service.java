@@ -39,5 +39,5 @@ public interface BookingService_Service {
 	public List<BookingResponse> bookingByPatientId(String patientId);
 	public List<BookingInfoByInput> bookingByInput(String input);
 	public ResponseEntity<?> getInProgressAppointmentsByCustomerId(String customerId);
-		
+	public ResponseEntity<?> getInProgressAppointmentsByPatientId(String patientId);	
 }

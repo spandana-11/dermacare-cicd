@@ -16,6 +16,7 @@ import com.clinicadmin.entity.CustomerOnbording;
 import com.clinicadmin.repository.CustomerCredentialsRepository;
 import com.clinicadmin.repository.CustomerOnboardingRepository;
 import com.clinicadmin.service.CustomerOnboardingService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class CustomerOnboardingServiceImpl implements CustomerOnboardingService {
@@ -257,6 +258,32 @@ public class CustomerOnboardingServiceImpl implements CustomerOnboardingService 
 	    return response;
 	}
 
+	
+	@Override
+	public Response getCustomersByPatientId(String patientId) {
+	    Response response = new Response();
+	    try {
+	        CustomerOnbording customers = onboardingRepository.findByPatientId(patientId);
+	        if(customers != null) {      
+	        response.setSuccess(true);
+	        response.setMessage("Customers retrieved successfully");
+	        response.setData(new ObjectMapper().convertValue(customers,CustomerOnbordingDTO.class ));
+	        response.setStatus(200);
+	    }else {
+	    	 response.setSuccess(false);
+		        response.setMessage("Customers Object Not Found");
+		        response.setStatus(200);
+	    }}catch(Exception e) {
+	        response.setSuccess(false);
+	        response.setMessage("Error fetching customers: " + e.getMessage());
+	        response.setStatus(500);
+	    }
+	    return response;
+	}
+
+	
+	
+	
 	@Override
 	public Response getCustomersByBranchId(String branchId) {
 	    Response response = new Response();

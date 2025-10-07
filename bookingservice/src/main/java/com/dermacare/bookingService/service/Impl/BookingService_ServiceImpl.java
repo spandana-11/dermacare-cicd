@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import com.dermacare.bookingService.dto.BookingInfoByInput;
 import com.dermacare.bookingService.dto.BookingRequset;
 import com.dermacare.bookingService.dto.BookingResponse;
+import com.dermacare.bookingService.dto.CustomerOnbordingDTO;
 import com.dermacare.bookingService.dto.DatesDTO;
 import com.dermacare.bookingService.dto.DoctorSaveDetailsDTO;
 import com.dermacare.bookingService.dto.NotificationDTO;
@@ -36,6 +37,7 @@ import com.dermacare.bookingService.dto.TreatmentDetailsDTO;
 import com.dermacare.bookingService.dto.TtdAppointments;
 import com.dermacare.bookingService.entity.Booking;
 import com.dermacare.bookingService.entity.ReportsList;
+import com.dermacare.bookingService.feign.ClinicAdminFeign;
 import com.dermacare.bookingService.feign.DoctorFeign;
 import com.dermacare.bookingService.feign.NotificationFeign;
 import com.dermacare.bookingService.producer.KafkaProducer;
@@ -61,6 +63,9 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	
 	@Autowired
 	private DoctorFeign doctorFeign;
+	
+	@Autowired
+	private ClinicAdminFeign clinicAdminFeign;
 
 	@Override
 	public ResponseEntity<?> addService(BookingRequset request) {
@@ -518,32 +523,55 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	@Override
 	public List<BookingInfoByInput> bookingByInput(String input) {
 		   List<BookingInfoByInput> outpt = new ArrayList<>();
-	    try {
-	        List<Booking> bookings = repository.findByPatientId(input);
-System.out.println(bookings);
-	        // If not found by patientId, try mobileNumber
-	        if (bookings == null || bookings.isEmpty()) {
+	       try {
+	    	List<Booking> bookings = repository.findByPatientId(input);
+	    	if( bookings != null && !bookings.isEmpty()) {
+		        Booking b = bookings.get(bookings.size()-1);	
+		        BookingInfoByInput bkng = new BookingInfoByInput() ;	
+		        bkng.setAge(b.getAge());
+		        bkng.setClinicId(b.getClinicId());
+		        bkng.setCustomerId(b.getCustomerId());
+		        bkng.setGender(b.getGender());
+		        bkng.setMobileNumber(b.getMobileNumber());
+		        bkng.setName(b.getName());
+		        bkng.setPatientAddress(b.getPatientAddress());
+		        bkng.setPatientId(b.getPatientId());
+		        bkng.setPatientMobileNumber(b.getPatientMobileNumber());
+		        bkng.setRelation(b.getRelation());
+		        outpt.add(bkng); 
+		        }else{
+		      Response res = clinicAdminFeign.getCustomerByPatientId(input).getBody();
+		     // System.out.println(res);
+		      CustomerOnbordingDTO bg = new ObjectMapper().convertValue(res.getData(), CustomerOnbordingDTO.class);
+		      //System.out.println(bg);
+		      BookingInfoByInput bkng = new BookingInfoByInput() ;	
+		        bkng.setAge(bg.getAge());
+		        bkng.setClinicId(null);
+		        bkng.setCustomerId(bg.getCustomerId());
+		        bkng.setGender(bg.getGender());
+		        bkng.setMobileNumber(bg.getMobileNumber());
+		        bkng.setName(bg.getFullName());
+		        bkng.setPatientAddress(bg.getAddress().toString());
+		        bkng.setPatientId(bg.getPatientId());
+		        bkng.setPatientMobileNumber(bg.getMobileNumber());
+		        bkng.setRelation(null);
+		        outpt.add(bkng);}	 
+	    	if(bookings == null || bookings.isEmpty()) {
 	            bookings = repository.findByMobileNumber(input);
-	            System.out.println(bookings);
-	        }
-
+	           /// System.out.println(bookings);
+	         }
 	        // If still not found, try customerId
-	        if (bookings == null || bookings.isEmpty()) {
+	    	else if(bookings == null || bookings.isEmpty()) {
 	            bookings = repository.findByCustomerId(input);
-	            System.out.println(bookings);
-	        }
-
-	        if (bookings == null || bookings.isEmpty()) {
+	           // System.out.println(bookings);
+	    	}else{  
+        	 if(bookings == null || bookings.isEmpty()) {
 	            bookings = repository.findByNameIgnoreCase(input);
-	            System.out.println(bookings);
-	        }
-	        
-	        // If no records found at all
-	        if (bookings == null || bookings.isEmpty()) {
-	        	  bookings = Collections.emptyList(); // return empty list instead of null
-	        }	        
+	           // System.out.println(bookings);
+	        }}  
+	    	if(outpt == null || outpt.isEmpty()) {
 	        for(Booking b : bookings) {
-	        	System.out.println(b);
+	        	//System.out.println(b);
 	        BookingInfoByInput bkng = new BookingInfoByInput() ;	
 	        bkng.setAge(b.getAge());
 	        bkng.setClinicId(b.getClinicId());
@@ -556,7 +584,7 @@ System.out.println(bookings);
 	        bkng.setPatientMobileNumber(b.getPatientMobileNumber());
 	        bkng.setRelation(b.getRelation());
 	        outpt.add(bkng);
-	    }}catch (Exception e) {
+	        }}}catch (Exception e) {
 	        //System.err.println("Error fetching bookings: " + e.getMessage());
 	        System.out.println(e.getMessage());; // safe fallback
 	    }
@@ -877,6 +905,91 @@ System.out.println(bookings);
 		}
 		
 	
+		public ResponseEntity<?> getInProgressAppointmentsByPatientId(String patientId) {
+		    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+		    List<BookingResponse> finalList = new ArrayList<>();
+		   Response response = new Response();
+		    DoctorSaveDetailsDTO saveDetails = new DoctorSaveDetailsDTO();
+		    try {
+		        List<Booking> booked = repository.findByPatientId(patientId);
+		        if (booked == null || booked.isEmpty()) {
+		            res.setStatusCode(200);
+		            res.setHttpStatus(HttpStatus.OK);
+		            res.setMessage("No bookings found for customer");
+		            res.setData(finalList);
+		            return ResponseEntity.ok(res);
+		        }
+		        LocalDate today = LocalDate.now();
+		        //System.out.println(today);
+		        LocalDate sixthDate = today.plusDays(6);
+		        //System.out.println(sixthDate);
+
+		        for (Booking booking : booked) {
+		            if ("In-Progress".equalsIgnoreCase(booking.getStatus())) {
+		            if(booking.getServiceDate().equals(today.toString())) {
+			           finalList.add(toResponse(booking));}
+                    try {
+		            response = doctorFeign.getDoctorSaveDetailsByBookingId(booking.getBookingId()).getBody();
+                    }catch(Exception e) {}
+		            saveDetails = new ObjectMapper().convertValue(response.getData(),DoctorSaveDetailsDTO.class );
+                   // System.out.println(saveDetails);
+		           if(saveDetails != null) {	       
+		            // 1️⃣ Check if treatments exist
+		            if(saveDetails.getTreatments() != null &&
+		                saveDetails.getTreatments().getGeneratedData() != null &&
+		                !saveDetails.getTreatments().getGeneratedData().isEmpty()) {
+
+		                for (TreatmentDetailsDTO details : saveDetails.getTreatments().getGeneratedData().values()) {
+		                	//System.out.println(details);
+		                    if (details.getDates() != null) {
+		                        for (DatesDTO d : details.getDates()) {
+		                        	//System.out.println(d);
+		                            LocalDate treatmentDate = LocalDate.parse(d.getDate());
+		                           // System.out.println(treatmentDate);
+		                            if (!treatmentDate.isBefore(today) && !treatmentDate.isAfter(sixthDate)) {
+		                            	Booking bkng = new Booking(booking);		                            	
+		                            	bkng.setFollowupDate(treatmentDate.toString());
+		                            	//System.out.println(bkng);
+		                            	bkng.setStatus("In-Progress");
+		                                finalList.add(toResponse(bkng));                         
+		                            }}}}
+		            }else if(saveDetails.getFollowUp() != null &&
+		                    saveDetails.getFollowUp().getNextFollowUpDate() != null) {
+		                LocalDate followDate = LocalDate.parse(saveDetails.getFollowUp().getNextFollowUpDate());
+		               // System.out.println("followDate"+ followDate);
+		                if (!followDate.isBefore(today) && !followDate.isAfter(sixthDate)) {
+		                	Booking bkng = new Booking(booking);		                            	
+                        	bkng.setFollowupDate(followDate.toString());
+                        	bkng.setStatus("In-Progress");
+                            finalList.add(toResponse(bkng));}
+		            }else{		           
+		            if( booking.getConsultationExpiration() != null) {
+		                String expStr = booking.getConsultationExpiration(); // e.g. "04 Days"
+		                int days = Integer.parseInt(expStr.replaceAll("\\D+", "")); // extract number
+		                //System.out.println(days);
+		                LocalDate expDate = today.plusDays(days);
+		                for (int i = 1; i <= 6; i++) {
+		                    LocalDate date = today.plusDays(i);
+		                    if (!date.isAfter(sixthDate) && date.isBefore(expDate) || date.equals(expDate) ) {
+		                    	Booking bkng = new Booking(booking);		                            	
+	                        	bkng.setFollowupDate(date.toString());
+	                        	bkng.setStatus("In-Progress");
+	                            finalList.add(toResponse(bkng));
+		                    }}}}}}}
+		        res.setStatusCode(200);
+		        res.setHttpStatus(HttpStatus.OK);
+		        res.setMessage(finalList.isEmpty() ? "No In-Progress or Today appointments Not found" : "In-Progress appointments found");
+		        res.setData(finalList);
+		    }catch(Exception e) {
+		        res.setStatusCode(500);
+		        res.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+		        res.setMessage("Error: " + e.getMessage());
+		    }
+
+		    return ResponseEntity.status(res.getStatusCode()).body(res);
+		}
+		
+		
 		
 		public ResponseEntity<?> getDoctorFutureAppointments(String doctorId){
 			ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();

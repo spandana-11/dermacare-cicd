@@ -274,6 +274,12 @@ public class BookingServiceController {
 			return service.getInProgressAppointmentsByCustomerId(customerId);
 		}
 		
+		@GetMapping("/appointments/Inprogress/patientId/{patientId}")
+		public ResponseEntity<?> getInprogressAppointmentsByPatientId(@PathVariable String patientId)
+		{
+			return service.getInProgressAppointmentsByPatientId(patientId);
+		}
+		
 		@GetMapping("/appointments/byIdsAndDate/{clinicId}/{branchId}/{date}")
 		public ResponseEntity<?> retrieveAppointnmentsByServiceDate(@PathVariable String clinicId,@PathVariable String branchId,@PathVariable String date)
 		{
