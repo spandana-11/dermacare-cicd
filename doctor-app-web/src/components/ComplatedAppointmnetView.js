@@ -59,21 +59,21 @@ const CompletedAppointmentsView = ({ defaultTab, tabs, fromDoctorTemplate = fals
   )
 
   const onNextMap = {
-    Symptoms: (data) => {
+    Diagnosis: (data) => {
       setFormData((prev) => ({ ...prev, symptoms: { ...prev.symptoms, ...data } }))
-      goToNext('Symptoms')
+      goToNext('Diagnosis')
     },
-    Tests: (data) => {
+    Investigations: (data) => {
       setFormData((prev) => ({ ...prev, tests: { ...prev.tests, ...data } }))
-      goToNext('Tests')
+      goToNext('Investigations')
     },
     Medication: (data) => {
       setFormData((prev) => ({ ...prev, prescription: { ...prev.prescription, ...data } }))
       goToNext('Medication')
     },
-    Treatments: (data) => {
+    Procedures: (data) => {
       setFormData((prev) => ({ ...prev, treatments: { ...prev.treatments, ...data } }))
-      goToNext('Treatments')
+      goToNext('Procedures')
     },
     'Follow-up': (data) => {
       setFormData((prev) => ({ ...prev, followUp: { ...prev.followUp, ...data } }))
@@ -97,9 +97,9 @@ const CompletedAppointmentsView = ({ defaultTab, tabs, fromDoctorTemplate = fals
 
   const counts = useMemo(
     () => ({
-      Tests: formData?.tests?.selectedTests?.length || 0,
+      Investigations: formData?.tests?.selectedTests?.length || 0,
       Prescription: formData.prescription?.medicines?.length || 0,
-      Treatments: formData.treatments?.selectedTreatments?.length || 0,
+      Procedures: formData.treatments?.selectedTreatments?.length || 0,
       Images: formData.ClinicImages?.items?.length || 0,
     }),
     [formData],
@@ -109,10 +109,10 @@ const savePrescriptionTemplate = async () => {
   try {
     const diagnosis = formData.symptoms?.diagnosis?.trim() || ''
     
-    if (!diagnosis) {
-      alert('Diagnosis is missing. Cannot save template.')
-      return
-    }
+    // if (!diagnosis) {
+    //   alert('Diagnosis is missing. Cannot save template.')
+    //   return
+    // }
 
     const clinicId = localStorage.getItem('hospitalId')
     const template = {
@@ -174,7 +174,7 @@ const savePrescriptionTemplate = async () => {
                         <span
                           style={{
                             fontSize: '16px',
-                            color: active ? COLORS.bgcolor : COLORS.black,
+                            color: active ? COLORS.black : COLORS.black,
                             fontWeight: active ? '700' : '500',
                             backgroundColor: "transparent"
                           }}

@@ -115,11 +115,13 @@ import { BASE_URL, SBASE_URL } from '../baseUrl'
 /* --------------------- Axios instances --------------------- */
 export const http = axios.create({
   baseURL: BASE_URL, // 🔒 Secured APIs
+  withCredentials: true,
   timeout: 20000,
 })
 
 export const httpPublic = axios.create({
   baseURL: BASE_URL, // 🌐 Public APIs
+  withCredentials: true,
   timeout: 20000,
 })
 

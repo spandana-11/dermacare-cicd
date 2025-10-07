@@ -22,7 +22,7 @@ import male from '../assets/images/male.png'
 import female from '../assets/images/female.png'
 import { useDoctorContext } from '../Context/DoctorContext'
 import { getClinicDetails, getDoctorDetails, averageRatings, getPatientVitals } from '../Auth/Auth'
-import { capitalizeFirst, capitalizeWords } from '../utils/CaptalZeWord'
+import { capitalizeEachWord, capitalizeFirst, capitalizeWords } from '../utils/CaptalZeWord'
 
 const AppSidebar = () => {
   const dispatch = useDispatch()
@@ -34,7 +34,13 @@ const AppSidebar = () => {
   const hasPatient = !!patientData
   const [ratings, setRatings] = useState([])
   const [showModal, setShowModal] = useState(false)
-  const [vitals, setVitals] = useState({ height: '—', weight: '—', bloodPressure: '—', temperature: '—', bmi: '—' });
+  const [vitals, setVitals] = useState({
+    height: null,
+    weight: null,
+    bloodPressure: null,
+    temperature: null,
+    bmi: null,
+  });
   useEffect(() => {
     const fetchData = async () => {
       const doctor = await getDoctorDetails()
@@ -42,19 +48,19 @@ const AppSidebar = () => {
       setDoctorDetails(doctor)
       setClinicDetails(clinic)
 
-      if (doctor?.doctorId && clinic?.hospitalId) {
-        const ratingData = await averageRatings(clinic.hospitalId, doctor.doctorId)
+      if (doctor?.doctorId) {
+        const ratingData = await averageRatings(doctor.doctorId) // <-- only doctorId
 
         if (ratingData?.ratingStats?.length > 0) {
           setRatings(ratingData.ratingStats)
         } else {
-          // store a "no ratings" message when data is empty
           setRatings([{ category: ratingData.message || 'No reviews found', percentage: 0 }])
         }
       }
     }
     fetchData()
   }, [])
+
 
   // Load patient vitals whenever patientData changes
   useEffect(() => {
@@ -74,6 +80,8 @@ const AppSidebar = () => {
     };
   }, [hasPatient, patientData]);
 
+  // const seed = patientData?.name || "guest"; // patient-specific seed
+  // const genderImg = https://api.dicebear.com/6.x/avataaars/png?seed=${encodeURIComponent(seed)}&clothingColor=pink;
   const genderImg = (patientData?.gender || '').toString().toLowerCase() === 'male' ? male : female
 
   const display = {
@@ -81,9 +89,12 @@ const AppSidebar = () => {
     age: patientData?.age || '—',
     gender: patientData?.gender || '—',
     mobile: patientData?.mobileNumber || '—',
-    visitType: patientData?.consultationType || '—',
-    visitCount: patientData?.visitCount || '—',
-    followUp: patientData?.freeFollowUps || '—',
+    visitType: patientData?.consultationType === null
+      ? 0
+      : patientData?.consultationType ?? '—',
+
+    visitCount: patientData?.visitCount === null ? 0 : patientData?.visitCount ?? '—',
+    followUp: patientData?.freeFollowUpsLeft || '—',
     symptom: patientData?.problem || '—',
     patientId: patientData?.patientId || '—',
     clinicName: patientData?.clinicName || '—',
@@ -156,53 +167,76 @@ const AppSidebar = () => {
                   style={{ borderWidth: 2, padding: 5, color: COLORS.gray }}
                 />
                 <h4
-                  className=" mb-2 mt-2"
-                  style={{ color: COLORS.black, fontWeight: 'bold', fontSize: SIZES.large }}
+                  className="mb-2 mt-2"
+                  style={{
+                    color: COLORS.black,
+                    fontWeight: 'bold',
+                    fontSize: SIZES.large,
+                    textAlign: 'center',        // horizontally center
+                    display: 'block',
+                    lineHeight: '1.2',          // adjust spacing between lines
+                    wordWrap: 'break-word',     // allow breaking long words
+                    overflowWrap: 'break-word',
+                    maxWidth: '100%',           // optional, restrict width
+                    whiteSpace: 'normal',       // allow wrapping
+                  }}
                 >
-                  {capitalizeFirst(display.name)}
+                  {capitalizeEachWord(display.name)}
                 </h4>
-                <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                  {display.age} Years / {display.gender}
-                </h6>
-                <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                  {display.mobile}
-                </h6>
-                <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                  Visit Type: {display.visitType}
-                </h6>
-                <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                  Visit Count: {display.visitCount}
-                </h6>
-                <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                  FollowUp Count: {display.followUp}
-                </h6>
+                <div style={{ height: "12px" }}></div>
 
+                <div style={{ textAlign: "left", width: "100%", marginLeft: "15px" }}>
+                  <h6 style={{ color: COLORS.black, fontSize: SIZES.small, marginBottom: "6px" }}>
+                    <strong>Age / Gender:</strong>{" "}
+                    <span>
+                     {display.age
+  ? display.age.toString().toLowerCase().includes("year") || 
+    display.age.toString().toLowerCase().includes("yr")
+    ? display.age
+    : `${display.age} Years`
+  : "-"}
+
+                      / {display.gender || "-"}
+                    </span>
+                  </h6>
+                  <h6 style={{ color: COLORS.black, fontSize: SIZES.small, marginBottom: "6px" }}>
+                    <strong>Mobile:</strong> <span>{display.mobile}</span>
+                  </h6>
+                  <h6 style={{ color: COLORS.black, fontSize: SIZES.small, marginBottom: "6px" }}>
+                    <strong>Visit Type:</strong> <span>{display.visitType}</span>
+                  </h6>
+                  <h6 style={{ color: COLORS.black, fontSize: SIZES.small, marginBottom: "6px" }}>
+                    <strong>Visit Count:</strong> <span>{display.visitCount === '—' ? 0 : display.visitCount}</span>
+                  </h6>
+                  <h6 style={{ color: COLORS.black, fontSize: SIZES.small, marginBottom: "6px" }}>
+                    <strong>FollowUp Count:</strong> <span>{display.followUp === '—' ? 0 : display.followUp}</span>
+                  </h6>
+                </div>
                 <hr className="w-100 my-2" />
-
                 <div className="w-100 px-2">
                   <h4
-                    className=" mb-2 mt-2"
+                    className="mb-2 mt-2"
                     style={{ color: COLORS.black, fontWeight: 'bold', fontSize: SIZES.large }}
                   >
                     Vitals
                   </h4>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Height: {display.vitals.height} cm
+                    <strong>Height:</strong> <span>{display.vitals.height === '—' ? 0 : display.vitals.height} cm</span>
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Weight: {display.vitals.weight} kg
+                    <strong>Weight:</strong> <span>{display.vitals.weight === '—' ? 0 : display.vitals.weight} kg</span>
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Blood Pressure: {display.vitals.bloodPressure} mmHg
+                    <strong>Blood Pressure:</strong> <span>{display.vitals.bloodPressure === '—' ? 0 : display.vitals.bloodPressure} mmHg</span>
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    Temperature: {display.vitals.temperature} °C
+                    <strong>Temperature:</strong> <span>{display.vitals.temperature === '—' ? 0 : display.vitals.temperature} °C</span>
                   </h6>
                   <h6 className="mb-1" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    BMI: {display.vitals.bmi} kg/m²
+                    <strong>BMI:</strong> <span>{display.vitals.bmi === '—' ? 0 : display.vitals.bmi} kg/m²</span>
                   </h6>
-
                 </div>
+
               </>
             ) : (
               <>
@@ -230,7 +264,7 @@ const AppSidebar = () => {
 
                   {/*                  
 <CImage
-  src={`data:image/png;base64,${doctorDetails?.doctorPicture }`}
+  src={data:image/png;base64,${doctorDetails?.doctorPicture }}
   alt="Doctor"
   width={100}
   className="rounded-circle border"
@@ -262,70 +296,66 @@ const AppSidebar = () => {
         </CSidebarHeader>
 
         {/* Show navigation/footer only when NOT loading and no patient selected */}
-  {/* Show navigation only when NOT loading and no patient selected */}
+        {/* Show navigation only when NOT loading and no patient selected */}
         {!isPatientLoading && !hasPatient && <AppSidebarNav items={navigation} />}
 
         {/* Show Patient Reviews only if ratings exist */}
-{!isPatientLoading && !hasPatient && ratings.length > 0 && (
-  <CSidebarFooter className="border-top d-none d-lg-flex flex-column mt-2">
-    <h6 style={{ color: COLORS.black, fontWeight: 600, marginBottom: '0.5rem' }}>
-      Patient Reviews
-    </h6>
+        {!isPatientLoading && !hasPatient && ratings.length > 0 && (
+          <CSidebarFooter className="border-top d-none d-lg-flex flex-column mt-2" style={{ paddingLeft: 10, paddingRight: 10 }}>
+            <h6 style={{ color: COLORS.black, fontWeight: 'bold', marginBottom: '0.5rem' }}>
+              Patient Reviews
+            </h6>
 
-    {ratings.map((item, index) => (
-      <div
-        key={index}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          marginBottom: 8,
-          width: '100%',
-        }}
-      >
-        {/* Fixed label width */}
-        <div
-          style={{
-            width: 100,
-            flexShrink: 0,
-            textAlign: 'right',
-            marginRight: 10,
-          }}
-        >
-          <small style={{ color: COLORS.black, fontSize: SIZES.small }}>
-            {item.category}
-          </small>
-        </div>
-
-        {/* Only show progress bar if percentage > 0 */}
-        {item.percentage > 0 && (
-          <div style={{ flexGrow: 1 }}>
-            <div
-              className="progress"
-              style={{ height: 8, borderRadius: 4, backgroundColor: '#e9ecef' }}
-            >
+            {ratings.map((item, index) => (
               <div
-                className={`progress-bar ${
-                  item.category.toLowerCase().includes('excellent')
-                    ? 'bg-success'
-                    : item.category.toLowerCase().includes('good')
-                    ? 'bg-primary'
-                    : item.category.toLowerCase().includes('average')
-                    ? 'bg-warning'
-                    : 'bg-secondary'
-                }`}
-                role="progressbar"
-                style={{ width: `${item.percentage}%`, borderRadius: 4 }}
-                aria-valuenow={item.percentage}
-                aria-valuemin="0"
-                aria-valuemax="100"
-              />
-            </div>
-          </div>
+                key={index}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  marginBottom: 8,
+                  width: '100%',
+                }}
+              >
+                {/* Label */}
+                <div style={{ minWidth: 100 }}>
+                  <small style={{ color: COLORS.black, fontSize: SIZES.small, fontWeight: 'bold' }}>
+                    {item.category}
+                  </small>
+                </div>
+
+                {/* Progress bar */}
+                {item.percentage > 0 && (
+                  <div style={{ flex: 1 }}>
+                    <div
+                      className="progress"
+                      style={{ height: 8, borderRadius: 4, backgroundColor: '#e9ecef' }}
+                    >
+                      <div
+                        className={`progress-bar ${item.category.toLowerCase().includes('excellent')
+                          ? 'bg-success'
+                          : item.category.toLowerCase().includes('good')
+                            ? 'bg-primary'
+                            : item.category.toLowerCase().includes('average')
+                              ? 'bg-warning'
+                              : 'bg-secondary'
+                          }`}
+                        role="progressbar"
+                        style={{ width: `${item.percentage}%`, borderRadius: 4 }}
+                        aria-valuenow={item.percentage}
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </CSidebarFooter>
+
+
+
         )}
-      </div>
-    ))}
-  </CSidebarFooter>
-)}
+
 
       </CSidebar>
 
@@ -352,7 +382,7 @@ const AppSidebar = () => {
                   </h5>
                   <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
                     <div>
-                      Age/Gender: {display.age} / {display.gender}
+                      <strong style={{ fontWeight: "bold" }}>Age/Gender:</strong> {display.age} / {display.gender}
                     </div>
                     <div>Mobile: {display.mobile}</div>
                     <div>Booking For: {display.bookingFor}</div>

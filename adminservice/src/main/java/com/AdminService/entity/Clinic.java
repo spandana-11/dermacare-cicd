@@ -30,7 +30,6 @@ public class Clinic {
 
     
     private byte[] hospitalLogo;
-
     private String emailAddress;
     private String website;
     private String licenseNumber;
@@ -104,10 +103,6 @@ public class Clinic {
     private List<Branch> branches;
     private String role;    
     private Map<String, List<String>> permissions;
-
-
-
- 
 
     private String instagramHandle;
     private String twitterHandle;

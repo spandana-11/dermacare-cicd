@@ -8,7 +8,7 @@ import {
   Image,
   StyleSheet,
 } from "@react-pdf/renderer";
-import { capitalizeFirst } from "./CaptalZeWord";
+import { capitalizeEachWord, capitalizeFirst } from "./CaptalZeWord";
 
 
 const styles = StyleSheet.create({
@@ -44,15 +44,6 @@ const styles = StyleSheet.create({
   patientName: {
     fontWeight: "bold",
   },
-  hospitalInfo: {
-    marginVertical: 10,
-  },
-
-  hospitalName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 4,
-  },
 
   hospitalDetail: {
     fontSize: 14,
@@ -62,7 +53,48 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
+  patientInfo: {
+    fontSize: 10,
+    marginBottom: 2,
+    flexWrap: "wrap",       // ✅ allow wrapping
+    maxWidth: "100%",       // ✅ prevent overflow
+    wordBreak: "break-word" // ✅ break long words (like URLs)
+  },
+  hospitalInfo: {
+    flex: 1,
 
+    marginLeft: 20,   // moves whole block right
+    paddingLeft: 5,
+  },
+  hospitalName: {
+    fontSize: 12,
+    fontWeight: "bold",
+    marginBottom: 6,
+    flexWrap: "wrap",   // ✅ wrap long names
+    flexShrink: 1,      // ✅ shrink text if needed
+  },
+  infoRow: {
+    flexDirection: "row",
+    marginBottom: 3,
+    flexWrap: "wrap",   // ✅ allows multiple lines
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: "bold",
+    color: "#444"   // 👈 dark gray (dim black)
+  },
+  value: {
+    fontSize: 10,
+    flexShrink: 1,
+    flexWrap: "wrap",   // ✅ wrap onto next line
+    color: "#222"       // optional: make values slightly lighter than pure black too
+  },
+  hospitalInfoText: {
+    fontSize: 10,
+    marginBottom: 2,
+    flexWrap: "wrap",
+    maxWidth: "90%",   // or a fixed number like 250–300
+  },
   // Section
   section: { marginBottom: 22 },
   sectionTitle: {
@@ -114,7 +146,10 @@ const styles = StyleSheet.create({
     borderRight: "1px solid #ccc",
     fontSize: 9,
   },
-
+  wrapText: {
+    flexWrap: "wrap",
+    flexShrink: 1,
+  },
   // Signature
   signatureBlock: {
     marginTop: 32,
@@ -171,46 +206,79 @@ const PrescriptionPDF = ({
     f === 'day' ? 'Daily' : f === 'week' ? 'Weekly' : f === 'month' ? 'Monthly' : f || '—'
   const hospitalLogo =
     clicniData?.hospitalLogo ? `data:image/png;base64,${clicniData.hospitalLogo}` : logoSrc;
-
+  const cleanAddress = (clicniData?.address ?? "—")
+    .split(",")                // split by comma
+    .map((part) => part.trim()) // trim spaces
+    .filter(Boolean)            // remove empty parts
+    .join(", ");
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         {/* Header */}
+        {/* Header */}
         <View style={styles.header}>
-          {/* Left side - Logo + Patient info */}
+          {/* Left side - Logo + Hospital info */}
           <View style={styles.leftBlock}>
             {hospitalLogo && <Image style={styles.logo} src={hospitalLogo} />}
-            <View style={styles.patientInfoBlock}>
-              <Text style={styles.patientName}>
-                Patient Name: {capitalizeFirst(patientData?.name ?? "—")}
+            <View style={styles.hospitalInfo}>
+              {/* Name */}
+              <Text style={styles.hospitalName}>
+                {clicniData?.name ?? "—"}
               </Text>
-              <Text style={styles.patientInfo}>
-                Age/Gender: {patientData?.age ?? "—"} yrs / {patientData?.gender ?? "—"}
-              </Text>
-              <Text style={[styles.patientInfo, { flexWrap: "wrap" }]}>
-                Address: {patientData?.patientAddress ?? "—"}
-              </Text>
-              <Text style={styles.patientInfo}>
-                Mobile number: {patientData?.mobileNumber ?? "—"}
-              </Text>
+
+              {/* Address */}
+              <Text style={styles.hospitalInfoText}>{cleanAddress}</Text>
+
+              {/* Branch */}
+              {clicniData?.branch && (
+                <Text style={styles.hospitalInfoText}>Branch: {clicniData.branch}</Text>
+              )}
+
+              {/* Contact */}
+              {clicniData?.contactNumber && (
+                <Text style={styles.hospitalInfoText}>Contact: {clicniData.contactNumber}</Text>
+              )}
+
+              {/* Website */}
+              {clicniData?.website && (
+                <Text style={styles.hospitalInfoText}>Website: {clicniData.website}</Text>
+              )}
             </View>
           </View>
 
-          {/* Right side - Hospital info */}
-          <View style={styles.hospitalInfo}>
-            <Text style={styles.hospitalName}>
-              {clicniData?.name ?? "—"}
-            </Text>
-
-            <Text>📍 {clicniData?.address ?? "—"}</Text>
-            <Text>🏢 Branch: {clicniData?.branch ?? "—"}</Text>
-            <Text>📞 Contact: {clicniData?.contactNumber ?? "—"}</Text>
-            <Text>🌐 Website: {clicniData?.website ?? "—"}</Text>
-          </View>
 
         </View>
+        {/* Patient Details */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Patient Details</Text>
 
+          <Text style={styles.note}>
+            <Text style={{ fontWeight: "bold" }}>Patient Name: </Text>
+            {capitalizeEachWord(patientData?.name ?? "—")}
+          </Text>
 
+          <Text style={styles.note}>
+            <Text style={{ fontWeight: "bold" }}>Age / Gender: </Text>
+            {patientData?.age
+  ? (patientData.age.toString().toLowerCase().includes("yr") || 
+     patientData.age.toString().toLowerCase().includes("year")
+      ? patientData.age
+      : `${patientData.age} yrs`)
+  : "—"} 
+/ {patientData?.gender ?? "—"}
+
+          </Text>
+
+          <Text style={styles.note}>
+            <Text style={{ fontWeight: "bold" }}>Mobile number: </Text>
+            {patientData?.mobileNumber ?? "—"}
+          </Text>
+
+          <Text style={styles.note}>
+            <Text style={{ fontWeight: "bold" }}>Address: </Text>
+            {patientData?.patientAddress ?? "—"}
+          </Text>
+        </View>
 
         {/* Symptoms */}
         <View style={styles.section}>
@@ -220,7 +288,7 @@ const PrescriptionPDF = ({
             {symptomsDetails}
           </Text>
           <Text style={styles.note}>
-            <Text style={{ fontWeight: "bold" }}>Probable Diagnosis / Disease: </Text>
+            <Text style={{ fontWeight: "bold" }}>Probable Disease: </Text>
             {formData?.symptoms?.diagnosis ?? "NA"}
           </Text>
           <Text style={styles.note}>
@@ -326,10 +394,10 @@ const PrescriptionPDF = ({
             ))}
 
             {/* Legend */}
-            <Text style={{ marginTop: 6 }}>
-              Legend:
-              <Text style={{ fontWeight: "normal" }}>
-                {" "}M – Morning, A – Afternoon, E – Evening, N – Night
+            <Text style={{ marginTop: 6, color: '#777' }}>
+              Legend:{" "}
+              <Text style={{ fontWeight: "normal", color: '#777' }}>
+                M – Morning, A – Afternoon, E – Evening, N – Night
               </Text>
             </Text>
 
@@ -340,7 +408,7 @@ const PrescriptionPDF = ({
         {/* Tests */}
         {(tests.length > 0 || testsReason) && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Tests</Text>
+            <Text style={styles.sectionTitle}>Investigations</Text>
 
             {/* Selected Tests */}
             {tests.length > 0 ? (
@@ -457,13 +525,12 @@ const PrescriptionPDF = ({
         {/* Signature */}
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           {/* Doctor Info - Left */}
-          <View style={styles.patientInfoBlock}>
+          <View style={styles.DoctorInfoBlock}>
             <Text style={styles.patientName}> Doctor Name: {doctorData?.doctorName ?? "—"}
             </Text>
             <Text style={styles.patientInfo}> Specialization: {doctorData?.qualification ?? ""}{" "}
               {doctorData?.specialization ?? ""} </Text>
-            <Text style={[styles.patientInfo, { flexWrap: "wrap" }]}>
-              Address: {patientData?.patientAddress ?? "—"} </Text>
+            <Text style={[styles.patientInfo, { flexWrap: "wrap" }]}> Address: {patientData?.patientAddress ?? "—"} </Text>
             <Text style={styles.patientInfo}> Licence: {doctorData?.doctorLicence ?? "—"} </Text>
           </View> {/* Doctor Signature - Right */}
           <View style={styles.signatureSection}>

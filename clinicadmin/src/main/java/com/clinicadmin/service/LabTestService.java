@@ -13,4 +13,5 @@ public interface LabTestService {
 	Response deleteLabTestById(String id, String hospitalId);
 	Response updateLabTestById(String id, String hospitalId, LabTestDTO dto);
 	Response getAllLabTestsByHospitalId(String hospitalId);
+	Response addOrGetLabTest(LabTestDTO dto);
 }

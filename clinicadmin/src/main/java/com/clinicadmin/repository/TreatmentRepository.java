@@ -11,6 +11,9 @@ import com.clinicadmin.entity.Treatment;
 
 @Repository
 public interface TreatmentRepository extends MongoRepository<Treatment, ObjectId> {
-	public Optional<Treatment> findByIdAndHospitalId(ObjectId id,String hospitalId);
-	 List<Treatment> findByHospitalId(String hospitalId);
+	public Optional<Treatment> findByIdAndHospitalId(ObjectId id, String hospitalId);
+
+	List<Treatment> findByHospitalId(String hospitalId);
+
+	Optional<Treatment> findByHospitalIdAndTreatmentName(String hospitalId, String treatmentName);
 }

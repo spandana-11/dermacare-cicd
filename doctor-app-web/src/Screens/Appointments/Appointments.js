@@ -60,31 +60,31 @@ const Appointments = ({ searchTerm = '' }) => {
     return ''
   }
 
-useEffect(() => {
-  let isMounted = true;
+  useEffect(() => {
+    let isMounted = true;
 
-  const fetchData = async () => {
-    const tabNumber = tabToNumberMap[activeTab];
-    try {
-      // Add cache-buster to ensure fresh data
-      const appointmentsData = await getAppointments(`${tabNumber}?_=${new Date().getTime()}`);
-      if (isMounted) setAppointments(appointmentsData || []);
-    } catch (err) {
-      console.error('Error fetching appointments:', err);
-    }
-  };
+    const fetchData = async () => {
+      const tabNumber = tabToNumberMap[activeTab];
+      try {
+        // Add cache-buster to ensure fresh data
+        const appointmentsData = await getAppointments(`${tabNumber}?_=${new Date().getTime()}`);
+        if (isMounted) setAppointments(appointmentsData || []);
+      } catch (err) {
+        console.error('Error fetching appointments:', err);
+      }
+    };
 
-  fetchData(); // initial fetch
+    fetchData(); // initial fetch
 
-  const interval = setInterval(() => {
-    fetchData(); // auto-fetch every 10 seconds
-  }, 10000); // adjust interval as needed
+    const interval = setInterval(() => {
+      fetchData(); // auto-fetch every 10 seconds
+    }, 10000); // adjust interval as needed
 
-  return () => {
-    isMounted = false;
-    clearInterval(interval); // clean up interval on unmount
-  };
-}, [activeTab]);
+    return () => {
+      isMounted = false;
+      clearInterval(interval); // clean up interval on unmount
+    };
+  }, [activeTab]);
 
 
   // Filtering + Sorting
@@ -210,16 +210,21 @@ useEffect(() => {
                           color: COLORS.black,
                         }}
                       >
-                        {selectedBranch ? selectedBranch.branchName : 'Select Branch'}
+                        {selectedBranch ? selectedBranch.branchName : 'All Branches'}
                       </CDropdownToggle>
                       <CDropdownMenu>
+                        {/* All Branches option */}
+                        <CDropdownItem onClick={() => setSelectedBranch(null)}>
+                          All Branches
+                        </CDropdownItem>
+
                         {branches.length > 0 ? (
                           branches.map((branch) => (
                             <CDropdownItem
                               key={branch.branchId}
                               onClick={() => setSelectedBranch(branch)}
                             >
-                              {branch.branchName} ({branch.branchId})
+                              {branch.branchName} 
                             </CDropdownItem>
                           ))
                         ) : (
@@ -228,6 +233,7 @@ useEffect(() => {
                       </CDropdownMenu>
                     </CDropdown>
                   </div>
+
                 </div>
               </CCol>
             </CRow>
@@ -256,6 +262,7 @@ useEffect(() => {
                       'Date',
                       'Time',
                       'Consultation',
+                      'Branch',
                       'Status',
                       'Action',
                     ].map((header) => (
@@ -275,7 +282,7 @@ useEffect(() => {
                 <CTableBody>
                   {loading ? (
                     <CTableRow>
-                      <CTableDataCell colSpan={9} className="text-center py-4">
+                      <CTableDataCell colSpan={10} className="text-center py-4">
                         Loading...
                       </CTableDataCell>
                     </CTableRow>
@@ -301,6 +308,9 @@ useEffect(() => {
                         <CTableDataCell>{p.serviceDate}</CTableDataCell>
                         <CTableDataCell>{p.servicetime}</CTableDataCell>
                         <CTableDataCell>{p.consultationType}</CTableDataCell>
+                        <CTableDataCell style={{ whiteSpace: 'normal', wordBreak: 'break-word', maxWidth: '150px' }}>
+                          {branches.find((b) => b.branchId === p.branchId)?.branchName || 'N/A'}
+                        </CTableDataCell>
                         <CTableDataCell>
                           <span
                             className="px-2 py-1 rounded"

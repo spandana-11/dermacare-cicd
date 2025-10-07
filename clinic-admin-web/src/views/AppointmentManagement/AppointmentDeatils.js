@@ -11,7 +11,12 @@ import {
   CModalBody,
   CForm,
   CFormInput,
+  CAccordionItem,
+  CAccordion,
+  CAccordionHeader,
+  CAccordionBody,
 } from '@coreui/react'
+
 import jsPDF from 'jspdf'
 import { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
@@ -19,6 +24,7 @@ import { deleteBookingData } from './appointmentAPI' // adjust this path as per 
 import { GetdoctorsByClinicIdData } from './appointmentAPI'
 import { FaEye, FaDownload } from 'react-icons/fa'
 import { deleteVitalsData, postVitalsData, updateVitalsData, VitalsDataById } from './VitalsAPI'
+import { Download, Eye } from 'lucide-react'
 const AppointmentDetails = () => {
   const { id } = useParams()
   const location = useLocation()
@@ -57,6 +63,7 @@ const AppointmentDetails = () => {
   const showCompletedOrActive = ['completed', 'active'].includes(normalizedStatus)
   const showVitalsCard = ['completed', 'active', 'confirmed'].includes(normalizedStatus) && vitals
   const showConfirmedOrCompleted = ['confirmed', 'completed', 'active'].includes(normalizedStatus)
+
   const [validationErrors, setValidationErrors] = useState({})
 
   useEffect(() => {
@@ -77,44 +84,24 @@ const AppointmentDetails = () => {
   }, [normalizedStatus, appointment?.doctorId])
 
   useEffect(() => {
-    if (['confirmed', 'completed', 'active'].includes(normalizedStatus)) {
+    if (['confirmed', 'active', 'completed'].includes(normalizedStatus)) {
       fetchVitals()
     }
   }, [appointment?.bookingId, appointment?.patientId, normalizedStatus])
-  // useEffect(() => {
-  //   const fetchDoctorDetails = async () => {
-  //     if (
-  //       ['confirmed', 'completed', 'active'].includes(appointment?.status?.toLowerCase()) &&
-  //       appointment?.doctorId
-  //     ) {
-  //       try {
-  //         const res = await GetdoctorsByClinicIdData(appointment.doctorId)
-  //         setDoctor(res.data.data)
-  //       } catch (error) {
-  //         console.error('Failed to fetch doctor details:', error)
-  //       }
-  //     }
-  //   }
-  //   fetchDoctorDetails()
-  // }, [appointment])
 
   const getDoctorImage = (picture) => {
     if (!picture) return '/default-doctor.png'
     return picture.startsWith('data:image') ? picture : `data:image/jpeg;base64,${picture}`
   }
 
-  // const showConfirmedOrCompleted = ['confirmed', 'completed', 'active'].includes(
-  //   appointment?.status?.toLowerCase(),
-  // )
-
-  useEffect(() => {
-    if (
-      appointment?.status &&
-      ['completed', 'in-progress', 'confirmed'].includes(appointment.status.toLowerCase())
-    ) {
-      fetchVitals()
-    }
-  }, [appointment?.bookingId, appointment?.patientId, appointment?.status])
+  // useEffect(() => {
+  //   if (
+  //     appointment?.status &&
+  //     ['completed', 'in-progress', 'confirmed'].includes(appointment.status.toLowerCase())
+  //   ) {
+  //     fetchVitals()
+  //   }
+  // }, [appointment?.bookingId, appointment?.patientId, appointment?.status])
 
   const fetchVitals = async () => {
     try {
@@ -130,47 +117,46 @@ const AppointmentDetails = () => {
   }
 
   // Handle vitals form input
-const handleChange = (e) => {
-  const { name, value } = e.target
+  const handleChange = (e) => {
+    const { name, value } = e.target
 
-  // update form data
-  setFormData((prev) => ({
-    ...prev,
-    [name]: value,
-  }))
+    // update form data
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
 
-  // validate this specific field immediately
-  let error = ''
+    // validate this specific field immediately
+    let error = ''
 
-  if (!regexRules[name].test(value)) {
-    switch (name) {
-      case 'height':
-        error = 'Height must be a number between 10 and 999 cm'
-        break
-      case 'weight':
-        error = 'Weight must be a number between 1 and 999 kg'
-        break
-      case 'bloodPressure':
-        error = 'Blood Pressure must be in format: 120/80'
-        break
-      case 'temperature':
-        error = 'Temperature must be a valid number (e.g., 98.6)'
-        break
-      case 'bmi':
-        error = 'BMI must be a valid number (e.g., 24.5)'
-        break
-      default:
-        error = ''
+    if (!regexRules[name].test(value)) {
+      switch (name) {
+        case 'height':
+          error = 'Height must be a number between 10 and 999 cm'
+          break
+        case 'weight':
+          error = 'Weight must be a number between 1 and 999 kg'
+          break
+        case 'bloodPressure':
+          error = 'Blood Pressure must be in format: 120/80'
+          break
+        case 'temperature':
+          error = 'Temperature must be a valid number (e.g., 98.6)'
+          break
+        case 'bmi':
+          error = 'BMI must be a valid number (e.g., 24.5)'
+          break
+        default:
+          error = ''
+      }
     }
+
+    // update validation errors state dynamically
+    setValidationErrors((prev) => ({
+      ...prev,
+      [name]: error,
+    }))
   }
-
-  // update validation errors state dynamically
-  setValidationErrors((prev) => ({
-    ...prev,
-    [name]: error,
-  }))
-}
-
 
   const handleSubmitVitals = async () => {
     if (!validateVitals()) {
@@ -214,35 +200,134 @@ const handleChange = (e) => {
     temperature: /^(?:\d{2,3})(?:\.\d{1,2})?$/, // 2-3 digits with optional decimals
     bmi: /^\d{1,2}(?:\.\d{1,2})?$/, // 0-99 with optional decimals
   }
-const validateVitals = () => {
-  let errors = {}
-  Object.keys(formData).forEach((field) => {
-    if (!regexRules[field].test(formData[field])) {
-      switch (field) {
-        case 'height':
-          errors.height = 'Height must be a number between 10 and 999 cm'
-          break
-        case 'weight':
-          errors.weight = 'Weight must be a number between 1 and 999 kg'
-          break
-        case 'bloodPressure':
-          errors.bloodPressure = 'Blood Pressure must be in format: 120/80'
-          break
-        case 'temperature':
-          errors.temperature = 'Temperature must be a valid number (e.g., 98.6)'
-          break
-        case 'bmi':
-          errors.bmi = 'BMI must be a valid number (e.g., 24.5)'
-          break
-        default:
-          break
+  const validateVitals = () => {
+    let errors = {}
+    Object.keys(formData).forEach((field) => {
+      if (!regexRules[field].test(formData[field])) {
+        switch (field) {
+          case 'height':
+            errors.height = 'Height must be a number between 10 and 999 cm'
+            break
+          case 'weight':
+            errors.weight = 'Weight must be a number between 1 and 999 kg'
+            break
+          case 'bloodPressure':
+            errors.bloodPressure = 'Blood Pressure must be in format: 120/80'
+            break
+          case 'temperature':
+            errors.temperature = 'Temperature must be a valid number (e.g., 98.6)'
+            break
+          case 'bmi':
+            errors.bmi = 'BMI must be a valid number (e.g., 24.5)'
+            break
+          default:
+            break
+        }
       }
-    }
-  })
+    })
 
-  setValidationErrors(errors)
-  return Object.keys(errors).length === 0
-}
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const base64toBlob = (base64, mimeType) => {
+    try {
+      const byteCharacters = atob(base64)
+      const byteNumbers = new Array(byteCharacters.length)
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i)
+      }
+      const byteArray = new Uint8Array(byteNumbers)
+      return new Blob([byteArray], { type: mimeType })
+    } catch (e) {
+      console.error('Base64 decoding failed:', e)
+      // You can use a more user-friendly alert here
+      alert('Failed to decode file data. It may be corrupted or in an invalid format.')
+      return null
+    }
+  }
+  // const getMimeTypeFromBase64 = (base64String) => {
+  //   if (base64String.startsWith('JVBERi0')) {
+  //     return 'application/pdf' // PDF
+  //   }
+  //   if (base64String.startsWith('/9j/')) {
+  //     return 'image/jpeg' // JPEG
+  //   }
+  //   if (base64String.startsWith('iVBORw0KGgo')) {
+  //     return 'image/png' // PNG
+  //   }
+  //   if (base64String.startsWith('data:')) {
+  //     // If it's already a data URL, extract the MIME type
+  //     const mimeMatch = base64String.match(/^data:(.*?);base64/)
+  //     return mimeMatch ? mimeMatch[1] : 'application/octet-stream'
+  //   }
+  //   // Default to a generic binary type if the type cannot be determined
+  //   return 'application/octet-stream'
+  // }
+
+  const getMimeTypeFromBase64 = (base64String) => {
+    if (base64String.startsWith('JVBERi0')) return 'application/pdf' // PDF
+    if (base64String.startsWith('/9j/')) return 'image/jpeg' // JPG
+    if (base64String.startsWith('iVBORw0')) return 'image/png' // PNG
+    if (base64String.startsWith('R0lGOD')) return 'image/gif' // GIF
+    return 'application/octet-stream' // fallback
+  }
+
+  const handlePreview = (base64String) => {
+    console.log(base64String)
+    if (!base64String || typeof base64String !== 'string') {
+      alert('No valid file data available for preview.')
+      return
+    }
+
+    const mimeType = getMimeTypeFromBase64(base64String)
+    const blob = base64toBlob(base64String, mimeType)
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank')
+  }
+
+  const handleDownload = (base64String, fileName) => {
+    if (!base64String || typeof base64String !== 'string') {
+      alert('No valid file data available for download.')
+      return
+    }
+
+    const mimeType = getMimeTypeFromBase64(base64String)
+    const blob = base64toBlob(base64String, mimeType)
+    const url = URL.createObjectURL(blob)
+
+    const link = document.createElement('a')
+    link.href = url
+    link.download = fileName || 'file.pdf'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  // const handleDownload = (base64String, fileName) => {
+  //   if (!base64String) {
+  //     alert('No file data available for download.')
+  //     return
+  //   }
+
+  //   const mimeType = getMimeTypeFromBase64(base64String)
+  //   const blob = base64toBlob(base64String, mimeType)
+
+  //   if (blob) {
+  //     const url = URL.createObjectURL(blob)
+  //     const link = document.createElement('a')
+  //     link.href = url
+  //     link.download = fileName
+  //     document.body.appendChild(link)
+  //     link.click()
+  //     document.body.removeChild(link)
+  //     URL.revokeObjectURL(url)
+  //   }
+  // }
+  const showAccordion = ['confirmed', 'active', 'completed'].includes(normalizedStatus)
+  const showPrescription =
+    ['active', 'completed'].includes(normalizedStatus) && appointment?.prescriptionPdf
 
   return (
     <div className="container mt-4">
@@ -290,19 +375,6 @@ const validateVitals = () => {
             >
               {normalizedStatus}
             </span>
-
-            {/* Show Add Vitals for Confirmed, Vitals for Completed/Active */}
-
-            {/* {showCompletedOrActive && (
-              <CButton
-                color="info"
-                size="sm"
-                className="text-white"
-                onClick={() => setShowModal(true)}
-              >
-                Vitals
-              </CButton>
-            )} */}
           </div>
         </div>
 
@@ -450,86 +522,221 @@ const validateVitals = () => {
         </div>
 
         {/* vitals */}
-        {vitals && (
+        {/* Vitals Card */}
+        {/* Vitals Card */}
+        {showVitalsCard && (
           <div className="card shadow-sm p-3 mb-3 mt-4" style={{ color: 'var(--color-black)' }}>
             <div className="d-flex justify-content-between align-items-center">
               <h5>Vitals Card</h5>
-              {/* <div>
+              {showConfirmed && !vitals && (
                 <CButton
-                  size="sm"
-                  color="primary"
-                  className="me-2"
-                  onClick={() => {
-                    setFormData(vitals) // preload values
-                    setShowModal(true) // open modal for editing
-                  }}
+                  style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+                  onClick={() => setShowModal(true)}
                 >
-                  Edit
+                  Add Vitals
                 </CButton>
-                <CButton size="sm" color="danger" onClick={handleDeleteVitals}>
-                  Delete
-                </CButton>
-              </div> */}
+              )}
             </div>
-            <div className="row mt-3">
-              <div className="col-md-4">
-                <strong>Height:</strong> {vitals.height} cm
+            {vitals ? (
+              <div className="row mt-3">
+                <div className="col-md-4">
+                  <strong>Height:</strong> {vitals.height} cm
+                </div>
+                <div className="col-md-4">
+                  <strong>Weight:</strong> {vitals.weight} kg
+                </div>
+                <div className="col-md-4">
+                  <strong>Blood Pressure:</strong> {vitals.bloodPressure}
+                </div>
+                <div className="col-md-4">
+                  <strong>Temperature:</strong> {vitals.temperature} °C
+                </div>
+                <div className="col-md-4">
+                  <strong>BMI:</strong> {vitals.bmi}
+                </div>
               </div>
-              <div className="col-md-4">
-                <strong>Weight:</strong> {vitals.weight} kg
-              </div>
-              <div className="col-md-4">
-                <strong>Blood Pressure:</strong> {vitals.bloodPressure}
-              </div>
-              <div className="col-md-4">
-                <strong>Temperature:</strong> {vitals.temperature} °C
-              </div>
-              <div className="col-md-4">
-                <strong>BMI:</strong> {vitals.bmi}
-              </div>
-            </div>
+            ) : (
+              !showConfirmed && (
+                <div className="row mt-3">
+                  <div className="col-12">No vitals data available.</div>
+                </div>
+              )
+            )}
           </div>
         )}
 
-        {/*  Doctor Details only if confirmed/completed */}
         {showConfirmedOrCompleted && doctor && (
           <>
-            <h6 className="fw-bold mt-4">Doctor Details</h6>
-            <div className="d-flex align-items-center gap-3 border rounded p-3 shadow-sm">
+            <div className="mt-4">
+              <CAccordion activeItemKey={1}>
+                {/* Consent Form Accordion */}
+                {/* {appointment?.consentFormPdf != '' && ( */}
+                {appointment?.consentFormPdf ? (
+                  <CAccordionItem itemKey={1}>
+                    <CAccordionHeader>Consent Form</CAccordionHeader>
+                    <CAccordionBody>
+                      <div className="d-flex gap-2 align-items-start justify-content-between">
+                        <div>{appointment?.subServiceName}</div>
+                        <div className="row">
+                          <div className="col-6">
+                            <CButton
+                              style={{
+                                backgroundColor: 'var(--color-bgcolor)',
+                                color: 'var(--color-black)',
+                              }}
+                              onClick={() => handlePreview(appointment?.consentFormPdf)}
+                              className="d-flex align-items-center gap-1"
+                            >
+                              <Eye size={16} />
+                            </CButton>
+                          </div>
+                          <div className="col-6">
+                            <CButton
+                              style={{
+                                backgroundColor: 'var(--color-bgcolor)',
+                                color: 'var(--color-black)',
+                              }}
+                              onClick={() =>
+                                handleDownload(appointment?.consentFormPdf, 'consent_form.pdf')
+                              }
+                              className="d-flex align-items-center gap-1 "
+                            >
+                              <Download size={16} />
+                            </CButton>
+                          </div>
+                        </div>
+                      </div>
+                    </CAccordionBody>
+                  </CAccordionItem>
+                ) : null}
+
+                {/* ) */}
+                {/* } */}
+
+                {/* Past Reports Accordion */}
+                <CAccordionItem itemKey={2}>
+                  <CAccordionHeader>Past Reports</CAccordionHeader>
+                  <CAccordionBody>
+                    {appointment?.attachments && appointment.attachments.length > 0 ? (
+                      appointment.attachments.map((attachment, index) => (
+                        // <div key={index} className="d-flex gap-2 mb-2">
+                        <div
+                          key={index}
+                          className="d-flex gap-2 align-items-strat justify-content-between"
+                        >
+                          <div>
+                            <h6>Attachment_{index + 1}</h6>
+                            <small style={{ color: 'GrayText' }}>{appointment?.serviceDate}</small>
+                          </div>
+
+                          <div className="row">
+                            <div className="col-6">
+                              <CButton
+                                color="primary"
+                                onClick={() =>
+                                  handlePreview(attachment, `attachment_${index + 1}.pdf`)
+                                }
+                                className="d-flex align-items-center gap-1"
+                              >
+                                <Eye size={16} /> Preview
+                              </CButton>
+                            </div>
+                            <div className="col-6">
+                              <CButton
+                                color="success"
+                                onClick={() =>
+                                  handleDownload(attachment, `attachment_${index + 1}.pdf`)
+                                }
+                                className="d-flex align-items-center gap-1 text-white"
+                              >
+                                <Download size={16} /> Download
+                              </CButton>
+                            </div>
+                          </div>
+                        </div>
+                        // </div>
+                      ))
+                    ) : (
+                      <p>No past reports available.</p>
+                    )}
+                  </CAccordionBody>
+                </CAccordionItem>
+
+                {/* Prescription Accordion - only for in-progress and completed */}
+                {showPrescription && (
+                  <CAccordionItem itemKey={3}>
+                    <CAccordionHeader>Prescription</CAccordionHeader>
+                    <CAccordionBody>
+                      {appointment.prescriptionPdf.map((pdf, index) => (
+                        <div
+                          key={index}
+                          className="d-flex gap-2 align-items-start justify-content-between mb-2"
+                        >
+                          <div>Prescription {index + 1}</div>
+                          <div className="row">
+                            <div className="col-6">
+                              <CButton
+                                color="primary"
+                                onClick={() => handlePreview(pdf)}
+                                className="d-flex align-items-center gap-1"
+                              >
+                                <Eye size={16} />
+                              </CButton>
+                            </div>
+                            <div className="col-6">
+                              <CButton
+                                color="success"
+                                onClick={() => handleDownload(pdf, `prescription_${index + 1}.pdf`)}
+                                className="d-flex align-items-center gap-1 text-white"
+                              >
+                                <Download size={16} />
+                              </CButton>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </CAccordionBody>
+                  </CAccordionItem>
+                )}
+              </CAccordion>
+            </div>
+            <h6 className="fw-bold mt-4">Doctor Details</h6>{' '}
+            <div className="d-flex align-items-center gap-3 border rounded ps-2 shadow-sm">
+              {' '}
               <img
                 src={getDoctorImage(doctor.doctorPicture)}
                 alt={doctor.doctorName}
                 width={80}
                 height={80}
                 className="rounded-circle border"
-              />
-              <div>
-                <h6 className="  fw-bold mb-1">{doctor.doctorName}</h6>
+              />{' '}
+              <div className="p-3  ">
+                <h4 className="fw-bold mb-2">{doctor.doctorName}</h4>
+
+                <p className="mb-1 text-muted">{doctor.specialization}</p>
                 <p className="mb-1">
-                  <strong>Specialization:</strong> {doctor.specialization}
+                  <strong>Qualification:</strong> {doctor.qualification}
                 </p>
                 <p className="mb-1">
                   <strong>Experience:</strong> {doctor.experience} years
                 </p>
-                <p className="mb-1">
-                  <strong>Qualification:</strong> {doctor.qualification}
-                </p>
+
                 <p className="mb-0">
                   <strong>Languages:</strong> {doctor.languages?.join(', ')}
                 </p>
               </div>
-              <div className="ms-auto">
+              <div className="ms-auto  px-2">
                 <CButton
                   style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
                   size="sm"
-                  className="px-3 text-white"
+                  className="px-3 text-white text-center"
                   onClick={() =>
-                    navigate(`/Doctor/${doctor.doctorId}`, {
+                    navigate(`/doctor/${doctor.doctorId}`, {
                       state: { doctor },
                     })
                   }
                 >
-                  View Details
+                    View Details
                 </CButton>
               </div>
             </div>

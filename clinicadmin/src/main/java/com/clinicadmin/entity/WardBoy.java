@@ -25,6 +25,7 @@ public class WardBoy {
 	private String clinicId;
 	private String hospitalName;
 	private String branchId;
+	private String branchName;
 	private String fullName;
 	private String dateOfBirth;
 
@@ -51,6 +52,9 @@ public class WardBoy {
 	private String policeVerification;
 	private String policeVerificationCertificate;
 	private String role;
+	
+    private String shiftTimingsOrAvailability;
+
 
 	private Map<String, List<String>> permissions;
 

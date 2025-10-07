@@ -27,6 +27,7 @@ public class NurseDTO {
 	private String hospitalId;
 	private String hospitalName;
 	private String branchId;
+	private String branchName;
 
 	private String role;
 

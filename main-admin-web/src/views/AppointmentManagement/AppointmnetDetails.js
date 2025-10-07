@@ -4,8 +4,8 @@ import { CButton, CCard, CCardBody, CModalFooter, CModalHeader, CModalTitle } fr
 
 import { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
-import { deleteBookingData } from './appointmentAPI' // adjust this path as per your project
-import { getBookingBy_DoctorId } from './appointmentAPI'
+import { deleteBookingData } from './AppointmentAPI' // adjust this path as per your project
+import { getBookingBy_DoctorId } from './AppointmentAPI'
 
 const AppointmentDetails = () => {
   const { id } = useParams()

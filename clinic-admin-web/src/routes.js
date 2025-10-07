@@ -1,7 +1,6 @@
 import React from 'react'
 
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
-
 const Doctors = React.lazy(() => import('./views/Doctors/DoctorManagement'))
 const ConsentForms = React.lazy(() => import('./views/ConsentForms/ConsentForms'))
 const Nurse = React.lazy(() => import('./views/EmployeeManagement/NurseManagement/Nurse'))
@@ -10,19 +9,17 @@ const EmployeeManagement = React.lazy(() => import('./views/EmployeeManagement/E
 const Disease = React.lazy(() => import('./views/DiseaseManagement/DiseaseManagement'))
 const Tests = React.lazy(() => import('./views/TestsManagement/TestsManagement'))
 const Treatments = React.lazy(() => import('./views/TreatmentsManagement/TreatmentsManagement'))
-const DoctorNotofications = React.lazy(
+const DoctorNotifications = React.lazy(
   () => import('./views/DoctorNotifications/DoctorNotificationsManagement'),
 )
 const ConsentFormPage = React.lazy(() => import('./views/AppointmentManagement/ConsentForm'))
-
-const Procedure = React.lazy(() => import('./views/ProcedureManagement/ProcedureManagement'))
-// const Patients = React.lazy(() => import('./views/Patients/Patientmanagement'))
+const ProcedureManagement = React.lazy(
+  () => import('./views/ProcedureManagement/ProcedureManagement'),
+)
 const Payouts = React.lazy(() => import('./views/Payouts/Payoutmanagement'))
 const Help = React.lazy(() => import('./views/Help/Help'))
 const Resetpassword = React.lazy(() => import('./views/Resetpassword'))
-// const Logout = React.lazy(() => import('./views/Logout/Logout'))
 const DoctorDetailspage = React.lazy(() => import('./views/Doctors/DoctorDetailspage'))
-
 const AppointmentManagement = React.lazy(
   () => import('./views/AppointmentManagement/appointmentManagement'),
 )
@@ -31,7 +28,6 @@ const AppointmentDetailsPage = React.lazy(
 )
 const Reports = React.lazy(() => import('./views/Reports/reportManagement'))
 const ReportsDetails = React.lazy(() => import('./views/Reports/ReportDetails'))
-
 const CustomerViewDetails = React.lazy(
   () => import('./views/customerManagement/CustomerViewDetails'),
 )
@@ -45,65 +41,70 @@ const FrontDeskManagement = React.lazy(
 const PharmacistManagement = React.lazy(
   () => import('./views/EmployeeManagement/Pharmacist/PharmacistManagement'),
 )
-const ProcedureManagement = React.lazy(
-  () => import('./views/ProcedureManagement/ProcedureManagement'),
-)
-
-const RefferDoctorManagement = React.lazy(
-  () => import('./views/EmployeeManagement/RefferDoctor/RefferDoctorManagement'),
+const ReferDoctorManagement = React.lazy(
+  () => import('./views/EmployeeManagement/ReferDoctor/ReferDoctorManagement'),
 )
 const SecurityManagement = React.lazy(
   () => import('./views/EmployeeManagement/Security/SecurityManagement'),
 )
-
-const otherStaffManagement = React.lazy(
+const OtherStaffManagement = React.lazy(
   () => import('./views/EmployeeManagement/OtherStaff/OtherStaffManagement'),
+)
+const PharmacyManagement = React.lazy(
+  () => import('./components/PharmacyManagement/PharmacyManagement'),
+)
+const ActiveAppointmentsScreen = React.lazy(
+  () => import('./views/AppointmentManagement/In-progressAppointmnets'),
 )
 
 const routes = [
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
-  // { path: '/doctor-notifications', name: 'Doctor Notifications', element: DoctorNotofications },
-  { path: '/Doctor', name: 'Doctors', element: Doctors },
-  { path: '/ConsentForms', name: 'ConsentForms', element: ConsentForms },
+  { path: '/doctor', name: 'Doctors', element: Doctors },
+  { path: '/consent-forms', name: 'Consent Forms', element: ConsentForms },
 
-  { path: '/Nurse', name: 'Nurse', element: Nurse },
-  { path: '/refDoctor', name: 'Reffer Doctor', element: RefferDoctorManagement },
-  { path: '/Security', name: 'Security', element: SecurityManagement },
-  { path: '/OtherStaff', name: 'Other Staff', element: otherStaffManagement },
-  { path: '/FrontDesk', name: 'Receptionist', element: FrontDeskManagement },
+  { path: '/employee-management/nurse', name: 'Nurse', element: Nurse },
+  { path: '/ref-doctor', name: 'Ref Doctor', element: ReferDoctorManagement },
+  { path: '/employee-management/security', name: 'Security', element: SecurityManagement },
+  { path: '/employee-management/otherstaff', name: 'Other Staff', element: OtherStaffManagement },
+  { path: '/employee-management/frontdesk', name: 'Front Desk', element: FrontDeskManagement },
   {
-    path: '/Lab-Technician',
+    path: '/employee-management/lab-technician',
     name: 'Lab Technician',
     element: LabTechnicianManagement,
   },
+  { path: '/employee-management/pharmacist', name: 'Pharmacist', element: PharmacistManagement },
+  { path: '/employee-management', name: 'Employee Management', element: EmployeeManagement },
 
-  {
-    path: '/Pharmacist',
-    name: 'pharmacist',
-    element: PharmacistManagement,
-  },
+  { path: '/pharmacy-management', name: 'Pharmacy Management', element: PharmacyManagement },
+  { path: '/receptionist', name: 'Receptionist', element: Receptionist },
 
-  { path: '/Receptionist', name: 'Receptionist', element: Receptionist },
-  { path: '/Employee-management', name: 'Employee management', element: EmployeeManagement },
-  { path: '/Disease', name: 'Disease-Management', element: Disease },
-  { path: '/Tests', name: 'Tests', element: Tests },
-  { path: '/Treatments', name: 'Treatments', element: Treatments },
-  { path: '/Procedure-Management', name: 'Procedure Management', element: ProcedureManagement },
-  // { path: '/patients', name: 'Patients', element: Patients },
+  { path: '/disease', name: 'Disease Management', element: Disease },
+  { path: '/tests', name: 'Tests', element: Tests },
+  { path: '/treatments', name: 'Treatments', element: Treatments },
+  { path: '/procedure-management', name: 'Procedure Management', element: ProcedureManagement },
+
   { path: '/payouts', name: 'Payouts', element: Payouts },
   { path: '/help', name: 'Help', element: Help },
-  { path: '/reset-password', name: 'Reset-Password', element: Resetpassword },
-  {
-    path: '/Doctor/:id',
-    name: 'DoctorDetailspage',
-    element: DoctorDetailspage,
-  },
+  { path: '/reset-password', name: 'Reset Password', element: Resetpassword },
+
+  { path: '/doctor/:id', name: 'Doctor Details', element: DoctorDetailspage },
   { path: '/consent-form', name: 'Consent Form', element: ConsentFormPage },
 
-  { path: '/Appointment-Management', name: 'Appointments', element: AppointmentManagement },
-  { path: '/appointmentDetails/:id', name: 'Appointment Details', element: AppointmentDetailsPage },
-  { path: '/reportManagement', name: 'Reports', element: Reports },
-  { path: '/reportDetails/:id', name: 'Report Details', element: ReportsDetails }, // { path: '/logout', name: 'Logout', element: Logout },
+  { path: '/appointment-management', name: 'Appointments', element: AppointmentManagement },
+  {
+    path: '/appointment-details/:id',
+    name: 'Appointment Details',
+    element: AppointmentDetailsPage,
+  },
+
+  {
+    path: '/in-progress',
+    name: 'Active Appointments',
+    element: ActiveAppointmentsScreen,
+  },
+  { path: '/report-management', name: 'Reports', element: Reports },
+  { path: '/report-details/:id', name: 'Report Details', element: ReportsDetails },
+
   {
     path: '/customer-management/:customerId',
     name: 'Customer View Details',

@@ -14,4 +14,6 @@ public interface LabTestRepository extends MongoRepository<LabTest, ObjectId> {
 	public Optional<LabTest> findByIdAndHospitalId(ObjectId id, String hospitalId);
 
 	List<LabTest> findByHospitalId(String hospitalId);
+
+	Optional<LabTest> findByHospitalIdAndTestNameIgnoreCase(String hospitalId, String testName);
 }

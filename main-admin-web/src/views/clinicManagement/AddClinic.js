@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import 'bootstrap/dist/css/bootstrap.min.css'
+import FileInput from './FileInput'
 import {
   CCard,
   CCardHeader,
@@ -30,33 +31,30 @@ import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import FileInputWithRemove from './FileInputWithRemove'
 import { getClinicTimings } from './AddClinicAPI'
-// 🛠️ Add this array at the top of your component
-// const nabhQuestions = [
-//   "Are patient rights displayed prominently in the clinic?",
-//   "Is informed consent taken for all procedures?",
-//   "Is there a documented infection control policy?",
-//   "Are hand hygiene practices followed by staff?",
-//   "Is biomedical waste segregated and disposed of properly?",
-//   "Are emergency exits clearly marked and accessible?",
-//   "Is fire safety training conducted for staff?",
-//   "Are patient records maintained and kept confidential?",
-//   "Is staff trained in CPR and Basic Life Support?",
-//   "Is there a system for handling patient complaints?",
-//   "Are medicines stored as per guidelines with temperature monitoring?",
-//   "Is there a valid pharmacist present in the clinic?",
-//   "Are all medical equipment calibrated and maintained?",
-//   "Are staff health checks done periodically?",
-//   "Is there a documented disaster management plan?",
-//   "Are safety drills conducted regularly?",
-//   "Is there a system for continuous quality improvement (CQI)?",
-//   "Are internal audits carried out and documented?",
-//   "Are patients informed about estimated treatment costs?",
-//   "Is data backup done regularly for patient records?",
-// ];
 
 const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
-  const navigate = useNavigate()
+    const refs = {
+    contractorDocuments: useRef(),
+    hospitalDocuments: useRef(),
+    clinicalEstablishmentCertificate: useRef(),
+    businessRegistrationCertificate: useRef(),
+    // drugLicenseCertificate: useRef(),
+    pharmacistCertificate: useRef(),
+    biomedicalWasteManagementAuth: useRef(),
+    fireSafetyCertificate: useRef(),
+    professionalIndemnityInsurance: useRef(),
+    gstRegistrationCertificate: useRef(),
+    hospitalLogo: useRef(),
+    clinicContract: useRef(),
+    drugLicenceCertificate: useRef(),
+    drugLicenceFormType20_21: useRef(),
+    tradeLicence: useRef(),
+    drugLicenseCertificate: useRef(),
+    drugLicenseFormType: useRef(),
+  };
+
   const savedQuestionId = localStorage.getItem("savedQuestionId");
+  const navigate = useNavigate(); // ✅ add this
 
   const [errors, setErrors] = useState({})
   const [backendErrors, setBackendErrors] = ''
@@ -179,25 +177,25 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
     }
 
   }
-const handleWebsiteBlur = () => {
-  const website = formData.website.trim()
+  const handleWebsiteBlur = () => {
+    const website = formData.website.trim()
 
-  if (!website) {
-    setErrors((prev) => ({ ...prev, website: 'Website is required' }))
-  } else if (!/^https?:\/\//i.test(website)) {
-    setErrors((prev) => ({
-      ...prev,
-      website: 'Website must start with http:// or https://',
-    }))
-  } else if (!/^https?:\/\/\S+$/i.test(website)) {  // 👈 updated regex
-    setErrors((prev) => ({
-      ...prev,
-      website: 'Enter a valid website URL (no spaces allowed)',
-    }))
-  } else {
-    setErrors((prev) => ({ ...prev, website: '' }))
+    if (!website) {
+      setErrors((prev) => ({ ...prev, website: 'Website is required' }))
+    } else if (!/^https?:\/\//i.test(website)) {
+      setErrors((prev) => ({
+        ...prev,
+        website: 'Website must start with http:// or https://',
+      }))
+    } else if (!/^https?:\/\/\S+$/i.test(website)) {  // 👈 updated regex
+      setErrors((prev) => ({
+        ...prev,
+        website: 'Enter a valid website URL (no spaces allowed)',
+      }))
+    } else {
+      setErrors((prev) => ({ ...prev, website: '' }))
+    }
   }
-}
 
 
 
@@ -207,7 +205,7 @@ const handleWebsiteBlur = () => {
 
 
 
-  
+
   const validateForm = () => {
     const newErrors = {}
 
@@ -230,13 +228,13 @@ const handleWebsiteBlur = () => {
       newErrors.city = 'City name must contain only letters'
     }
     // Email validation-
- if (!formData.emailAddress?.trim()) {
-  newErrors.emailAddress = 'Email is required';
-} else if (formData.emailAddress.includes(' ')) {
-  newErrors.emailAddress = 'Email cannot contain spaces';
-} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailAddress)) {
-  newErrors.emailAddress = 'Email must contain "@" and "." in a valid format';
-}
+    if (!formData.emailAddress?.trim()) {
+      newErrors.emailAddress = 'Email is required';
+    } else if (formData.emailAddress.includes(' ')) {
+      newErrors.emailAddress = 'Email cannot contain spaces';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailAddress)) {
+      newErrors.emailAddress = 'Email must contain "@" and "." in a valid format';
+    }
 
     // Contact Number
     const phoneRegex = /^[5-9][0-9]{9}$/ // This regex checks if the number starts with 5-9 and is followed by 9 digits
@@ -358,13 +356,13 @@ const handleWebsiteBlur = () => {
     }
 
     if (!formData.website.trim()) {
-  newErrors.website = 'Website is required.'
-} else {
-  const cleanedWebsite = formData.website.replace(/\s+/g, '') // remove all spaces
-  if (!websiteRegex.test(normalizeWebsite(cleanedWebsite))) {
-    newErrors.website = 'Website must start with http:// or https:// and be a valid URL'
-  }
-}
+      newErrors.website = 'Website is required.'
+    } else {
+      const cleanedWebsite = formData.website.replace(/\s+/g, '') // remove all spaces
+      if (!websiteRegex.test(normalizeWebsite(cleanedWebsite))) {
+        newErrors.website = 'Website must start with http:// or https:// and be a valid URL'
+      }
+    }
 
     if (!formData.subscription || formData.subscription.trim() === '') {
       newErrors.subscription = 'Please select a subscription type'
@@ -394,12 +392,6 @@ const handleWebsiteBlur = () => {
       }
     }
 
-
-
-    // if (!formData.walkthrough?.trim()) {
-    //   newErrors.walkthrough = "Walkthrough URL is required"
-    // }
-
     if (!formData.branch?.trim()) {
       newErrors.branch = "Branch name is required"
     }
@@ -426,12 +418,7 @@ const handleWebsiteBlur = () => {
     return true // all good
   }
 
-  // const downloadFile = (base64, filename, mime = 'application/pdf') => {
-  //   const link = document.createElement('a')
-  //   link.href = `data:${mime};base64,${base64}`
-  //   link.download = filename
-  //   link.click()
-  // }
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -445,46 +432,53 @@ const handleWebsiteBlur = () => {
       [name]: '',
     }))
   }
- // ✅ File change handler
+  // ✅ File change handler
 const handleHospitalLogoChange = async (e) => {
   const file = e.target.files?.[0];
 
   if (!file) {
     setErrors((prev) => ({ ...prev, hospitalLogo: "" }));
-    setFormData((prev) => ({ ...prev, hospitalLogo: null }));
+    setFormData((prev) => ({ ...prev, hospitalLogo: null, hospitalLogoFileName: null }));
     return;
   }
+
+  // Always store the filename for X button
+  setFormData((prev) => ({ ...prev, hospitalLogoFileName: file.name }));
 
   const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
   const allowedExtensions = ["jpeg", "jpg", "png"];
   const fileExtension = file.name.split(".").pop().toLowerCase();
 
+  // Invalid type
   if (!allowedTypes.includes(file.type) || !allowedExtensions.includes(fileExtension)) {
     setErrors((prev) => ({
       ...prev,
       hospitalLogo: "Invalid file type (only JPEG, JPG, PNG allowed)",
     }));
-    setFormData((prev) => ({ ...prev, hospitalLogo: null }));
+    setFormData((prev) => ({ ...prev, hospitalLogo: null })); // do not store base64
     return;
   }
 
   const MAX_SIZE = 100 * 1024; // 100 KB
+
+  // Invalid size
   if (file.size >= MAX_SIZE) {
     setErrors((prev) => ({
       ...prev,
-      hospitalLogo: `File must be < 100 KB`,
+      hospitalLogo: "File must be < 100 KB",
     }));
-    setFormData((prev) => ({ ...prev, hospitalLogo: null }));
+    setFormData((prev) => ({ ...prev, hospitalLogo: null })); // do not store base64
     return;
   }
 
+  // Valid file → read base64
   try {
     const base64 = await new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.readAsDataURL(file); // gives "data:image/png;base64,..."
+      reader.readAsDataURL(file);
       reader.onload = () => {
         const result = reader.result;
-        const pureBase64 = result.split(",")[1]; // ✅ remove "data:image/...;base64,"
+        const pureBase64 = result.split(",")[1];
         resolve(pureBase64);
       };
       reader.onerror = (err) => reject(err);
@@ -492,9 +486,8 @@ const handleHospitalLogoChange = async (e) => {
 
     setFormData((prev) => ({
       ...prev,
-      hospitalLogo: base64, // ✅ only base64 string
+      hospitalLogo: base64,
     }));
-
     setErrors((prev) => ({ ...prev, hospitalLogo: "" }));
   } catch (err) {
     setErrors((prev) => ({ ...prev, hospitalLogo: "Failed to read file" }));
@@ -505,108 +498,81 @@ const handleHospitalLogoChange = async (e) => {
 
 
 
-  const handleFileChange = async (e) => {
-    const { name, files } = e.target;
-    if (!files || !files[0]) return;
+const handleFileChange = async (e) => {
+  const { name, files } = e.target;
 
-    const file = files[0];
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'application/zip',
-    ];
-    const allowedExtensions = ['pdf','doc','docx','jpeg','jpg','png','zip'];
-    const fileExtension = file.name.split('.').pop().toLowerCase();
+  // User cancels file selection
+  if (!files || !files[0]) {
+    setFormData((prev) => ({ ...prev, [name]: null, [`${name}FileName`]: null }));
+    setErrors((prev) => ({ ...prev, [name]: '' }));
+    return;
+  }
 
-    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
-      setErrors((prev) => ({ ...prev, [name]: 'Invalid file type' }));
-      return;
-    }
+  const file = files[0];
 
-    if (file.size > 102400) {
-      setErrors((prev) => ({ ...prev, [name]: 'File must be < 100 KB' }));
-      return;
-    }
+  // Always store the filename for X button
+  setFormData((prev) => ({ ...prev, [`${name}FileName`]: file.name }));
 
-    try {
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = (err) => reject(err);
-      });
+  const allowedTypes = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'application/zip',
+  ];
+  const allowedExtensions = ['pdf', 'doc', 'docx', 'jpeg', 'jpg', 'png', 'zip'];
+  const fileExtension = file.name.split('.').pop().toLowerCase();
 
-     setFormData((prev) => ({
-  ...prev,
-  [name]: base64,   // ✅ only raw base64 string
-}));
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    } catch (err) {
-      setErrors((prev) => ({ ...prev, [name]: 'Failed to read file' }));
-    }
-  };
+  // Invalid type
+  if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+    setErrors((prev) => ({ ...prev, [name]: 'Invalid file type' }));
+    setFormData((prev) => ({ ...prev, [name]: null })); // do not store base64
+    return;
+  }
 
-// ✅ Clear handler (X button click)
+  const MAX_SIZE = 100 * 1024; // 100 KB
+
+  // Invalid size
+  if (file.size > MAX_SIZE) {
+    setErrors((prev) => ({ ...prev, [name]: 'File must be < 100 KB' }));
+    setFormData((prev) => ({ ...prev, [name]: null })); // do not store base64
+    return;
+  }
+
+  // Valid file → read base64
+  try {
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = (err) => reject(err);
+    });
+
+    setFormData((prev) => ({ ...prev, [name]: base64 }));
+    setErrors((prev) => ({ ...prev, [name]: '' }));
+  } catch (err) {
+    setErrors((prev) => ({ ...prev, [name]: 'Failed to read file' }));
+    setFormData((prev) => ({ ...prev, [name]: null }));
+  }
+};
+  
+
+
+  // ✅ Clear handler (X button click)
 const handleClearFile = (name, inputRef) => {
   if (inputRef?.current) {
-    inputRef.current.value = '' // clear actual input
+    inputRef.current.value = ""; // clear actual input
   }
   setFormData((prev) => ({
     ...prev,
-    [name]: { fileName: '', base64: '' },
-  }))
-  setErrors((prev) => ({ ...prev, [name]: '' }))
-}
+    [name]: null,
+    [`${name}FileName`]: null,
+  }));
+  setErrors((prev) => ({ ...prev, [name]: "" }));
+};
 
-
-
-
-  // const convertIfExists = async (file) => {
-  //   if (!file) return ''                  // nothing selected
-  //   if (file instanceof Blob) return await convertFileToBase64(file) // new file
-  //   return file                            // already Base64 string
-  // }
-
-  // const convertMultipleIfExists = async (files) => {
-  //   if (!Array.isArray(files) || files.length === 0) return [];
-  //   return await Promise.all(
-  //     files.map(async (file) => {
-  //       if (!allowedTypes.includes(file.type)) {
-  //         throw new Error(`Invalid file type: ${file.name}`);
-  //       }
-  //       if (file.size > 102400) {
-  //         throw new Error(`File must be < 100 KB: ${file.name}`);
-  //       }
-  //       return await convertFileToBase64(file);
-  //     })
-  //   );
-
-
-  //   const selectedFiles = Array.from(files)
-
-  //   // Validate files
-  //   for (let file of selectedFiles) {
-  //     if (!allowedTypes.includes(file.type)) {
-  //       setErrors((prev) => ({ ...prev, [name]: 'Invalid file type' }))
-  //       return
-  //     }
-  //     if (file.size > 102400) { // 100 KB
-  //       setErrors((prev) => ({ ...prev, [name]: 'File must be < 100 KB' }))
-  //       return
-  //     }
-  //   }
-
-  //   // Save files
-  //   const value = multiple ? selectedFiles : selectedFiles[0]
-  //   setFormData((prev) => ({ ...prev, [name]: value }))
-
-  //   // Clear errors
-  //   setErrors((prev) => ({ ...prev, [name]: '' }))
-  // }
   const handleProfessionalIndemnityFiles = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
@@ -664,46 +630,6 @@ const handleClearFile = (name, inputRef) => {
   };
 
 
-
-  // const handleMultipleFilesChange = async (e) => {
-  //   const { name, files } = e.target
-  //   if (!files || files.length === 0) return
-
-  //   const allowedTypes = [
-  //     'application/pdf',
-  //     'application/msword',
-  //     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  //     'image/jpeg',
-  //     'image/jpg',
-  //     'image/png',
-  //     'application/zip',
-  //   ]
-
-  //   const base64Files = []
-
-  //   for (const file of files) {
-  //     if (!allowedTypes.includes(file.type)) {
-  //       setErrors(prev => ({ ...prev, [name]: 'Invalid file type in selection' }))
-  //       return
-  //     }
-  //     if (file.size > 102400) {
-  //       setErrors(prev => ({ ...prev, [name]: 'Each file must be < 100 KB' }))
-  //       return
-  //     }
-
-  //     const base64 = await new Promise((resolve, reject) => {
-  //       const reader = new FileReader()
-  //       reader.readAsDataURL(file)
-  //       reader.onload = () => resolve(reader.result)
-  //       reader.onerror = (err) => reject(err)
-  //     })
-  //     base64Files.push(base64)
-  //   }
-
-  //   setFormData(prev => ({ ...prev, [name]: base64Files }))
-  //   setErrors(prev => ({ ...prev, [name]: '' }))
-  // }
-
   const handleAppendFiles = async (e, fieldName, maxFiles = 6) => {
     const selectedFiles = Array.from(e.target.files || [])
     if (!selectedFiles.length) return
@@ -740,7 +666,8 @@ const handleClearFile = (name, inputRef) => {
           reader.onload = () => {
             // Strip the prefix: "data:application/pdf;base64,"
             const rawBase64 = reader.result.split(',')[1]
-resolve({ name: file.name, base64: rawBase64 })          }
+            resolve({ name: file.name, base64: rawBase64 })
+          }
           reader.onerror = err => reject(err)
         })
       )
@@ -880,165 +807,172 @@ resolve({ name: file.name, base64: rawBase64 })          }
   console.log('📦 Loaded from localStorage for preview:', previewFromLocalStorage)
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const isValid = validateForm();
-  if (!isValid) return;
+    const isValid = validateForm();
+    if (!isValid) return;
 
-  setIsSubmitting(true);
+    setIsSubmitting(true);
 
-  const { emailAddress, contactNumber } = formData;
-  const safeExistingDoctors = Array.isArray(existingDoctors) ? existingDoctors : [];
+    const { emailAddress, contactNumber, licenseNumber } = formData;
+    const safeExistingDoctors = Array.isArray(existingDoctors) ? existingDoctors : [];
 
-  const isEmailDuplicate = safeExistingDoctors.some(
-    (doc) => doc.emailAddress?.toLowerCase() === emailAddress?.toLowerCase()
-  );
-  const isMobileDuplicate = safeExistingDoctors.some(
-    (doc) => doc.contactNumber === contactNumber
-  );
+    const isEmailDuplicate = safeExistingDoctors.some(
+      (doc) => doc.emailAddress?.toLowerCase() === emailAddress?.toLowerCase()
+    );
+    const isMobileDuplicate = safeExistingDoctors.some(
+      (doc) => doc.contactNumber === contactNumber
+    );
+    const isLicenseDuplicate = safeExistingDoctors.some(
+      (doc) => doc.licenseNumber?.toLowerCase() === licenseNumber?.toLowerCase()
+    );
 
-  if (isEmailDuplicate || isMobileDuplicate) {
-    const newErrors = {};
-    if (isEmailDuplicate) {
-      toast.error("Email already exists");
-      newErrors.emailAddress = "Email already exists";
+    if (isEmailDuplicate || isMobileDuplicate || isLicenseDuplicate) {
+      const newErrors = {};
+
+      if (isEmailDuplicate) {
+        newErrors.emailAddress = "Email already exists";
+      }
+      if (isMobileDuplicate) {
+        newErrors.contactNumber = "Mobile number already exists";
+      }
+      if (isLicenseDuplicate) {
+        newErrors.licenseNumber = "License Number already exists";
+      }
+
+      setErrors((prev) => ({ ...prev, ...newErrors }));
+      setIsSubmitting(false);
+      return;
     }
-    if (isMobileDuplicate) {
-      toast.error("Mobile number already exists");
-      newErrors.contactNumber = "Mobile number already exists";
-    }
-    setErrors((prev) => ({ ...prev, ...newErrors }));
-    setIsSubmitting(false);
-    return;
-  }
 
-  try {
-    // 🔹 Helper functions
-    const convertIfExists = async (file) => {
-      if (!file) return "";
-      if (file instanceof Blob) return await convertFileToBase64(file);
-      return file; // already Base64
-    };
 
-    const convertMultipleIfExists = async (files) => {
-      if (!Array.isArray(files)) return [];
-      return Promise.all(
-        files.map(async (file) => {
-          if (file?.base64) return file.base64;
-          if (file instanceof Blob) return await convertFileToBase64(file);
-          return file;
-        })
+    try {
+      // 🔹 Helper functions
+      const convertIfExists = async (file) => {
+        if (!file) return "";
+        if (file instanceof Blob) return await convertFileToBase64(file);
+        return file; // already Base64
+      };
+
+      const convertMultipleIfExists = async (files) => {
+        if (!Array.isArray(files)) return [];
+        return Promise.all(
+          files.map(async (file) => {
+            if (file?.base64) return file.base64;
+            if (file instanceof Blob) return await convertFileToBase64(file);
+            return file;
+          })
+        );
+      };
+
+      // 🔹 Convert files
+      const hospitalLogoBase64 = await convertIfExists(formData.hospitalLogo);
+      const hospitalDocumentsBase64 = await convertIfExists(formData.hospitalDocuments);
+      const hospitalContractBase64 = await convertIfExists(formData.hospitalContract);
+      const clinicalEstablishmentCertificateBase64 = await convertIfExists(
+        formData.clinicalEstablishmentCertificate
       );
-    };
+      const businessRegistrationCertificateBase64 = await convertIfExists(
+        formData.businessRegistrationCertificate
+      );
+      const drugLicenseCertificateBase64 = await convertIfExists(formData.drugLicenseCertificate);
+      const drugLicenseFormTypeBase64 = await convertIfExists(formData.drugLicenseFormType);
+      const pharmacistCertificateBase64 = await convertIfExists(formData.pharmacistCertificate);
+      const biomedicalWasteManagementAuthBase64 = await convertIfExists(
+        formData.biomedicalWasteManagementAuth
+      );
+      const tradeLicenseBase64 = await convertIfExists(formData.tradeLicense);
+      const fireSafetyCertificateBase64 = await convertIfExists(formData.fireSafetyCertificate);
+      const professionalIndemnityInsuranceBase64 = await convertIfExists(
+        formData.professionalIndemnityInsurance
+      );
+      const gstRegistrationCertificateBase64 = await convertIfExists(
+        formData.gstRegistrationCertificate
+      );
+      const othersBase64 = await convertMultipleIfExists(formData.others);
 
-    // 🔹 Convert files
-    const hospitalLogoBase64 = await convertIfExists(formData.hospitalLogo);
-    const hospitalDocumentsBase64 = await convertIfExists(formData.hospitalDocuments);
-    const hospitalContractBase64 = await convertIfExists(formData.hospitalContract);
-    const clinicalEstablishmentCertificateBase64 = await convertIfExists(
-      formData.clinicalEstablishmentCertificate
-    );
-    const businessRegistrationCertificateBase64 = await convertIfExists(
-      formData.businessRegistrationCertificate
-    );
-    const drugLicenseCertificateBase64 = await convertIfExists(formData.drugLicenseCertificate);
-    const drugLicenseFormTypeBase64 = await convertIfExists(formData.drugLicenseFormType);
-    const pharmacistCertificateBase64 = await convertIfExists(formData.pharmacistCertificate);
-    const biomedicalWasteManagementAuthBase64 = await convertIfExists(
-      formData.biomedicalWasteManagementAuth
-    );
-    const tradeLicenseBase64 = await convertIfExists(formData.tradeLicense);
-    const fireSafetyCertificateBase64 = await convertIfExists(formData.fireSafetyCertificate);
-    const professionalIndemnityInsuranceBase64 = await convertIfExists(
-      formData.professionalIndemnityInsurance
-    );
-    const gstRegistrationCertificateBase64 = await convertIfExists(
-      formData.gstRegistrationCertificate
-    );
-    const othersBase64 = await convertMultipleIfExists(formData.others);
+      // 🔹 Prepare payload
+      const clinicData = {
+        name: formData.name,
+        address: formData.address,
+        city: formData.city,
+        contactNumber: formData.contactNumber,
+        openingTime: formData.openingTime,
+        closingTime: formData.closingTime,
+        hospitalLogo: hospitalLogoBase64,
+        emailAddress: formData.emailAddress,
+        website: normalizeWebsite(formData.website.trim()),
+        licenseNumber: formData.licenseNumber,
+        issuingAuthority: formData.issuingAuthority,
+        hospitalDocuments: hospitalDocumentsBase64,
+        contractorDocuments: hospitalContractBase64,
+        clinicalEstablishmentCertificate: clinicalEstablishmentCertificateBase64,
+        businessRegistrationCertificate: businessRegistrationCertificateBase64,
+        clinicType: clinicTypeOption,
+        medicinesSoldOnSite: selectedOption,
+        drugLicenseCertificate: drugLicenseCertificateBase64,
+        drugLicenseFormType: drugLicenseFormTypeBase64,
+        hasPharmacist: selectedPharmacistOption,
+        pharmacistCertificate: pharmacistCertificateBase64,
+        biomedicalWasteManagementAuth: biomedicalWasteManagementAuthBase64,
+        tradeLicense: tradeLicenseBase64,
+        fireSafetyCertificate: fireSafetyCertificateBase64,
+        professionalIndemnityInsurance: professionalIndemnityInsuranceBase64,
+        gstRegistrationCertificate: gstRegistrationCertificateBase64,
+        others: othersBase64,
+        freeFollowUps: formData.freeFollowUps,
+        instagramHandle: formData.instagramHandle,
+        twitterHandle: formData.twitterHandle,
+        facebookHandle: formData.facebookHandle,
+        recommended: !!formData.recommended,
+        consultationExpiration: formData.consultationExpiration
+          ? `${formData.consultationExpiration} days`
+          : "",
+        subscription: formData.subscription,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        walkthrough: formData.walkthrough,
+        nabhScore: formData.nabhScore,
+        branch: formData.branch,
+      };
 
-    // 🔹 Prepare payload
-    const clinicData = {
-      name: formData.name,
-      address: formData.address,
-      city: formData.city,
-      contactNumber: formData.contactNumber,
-      openingTime: formData.openingTime,
-      closingTime: formData.closingTime,
-      hospitalLogo: hospitalLogoBase64,
-      emailAddress: formData.emailAddress,
-      website: normalizeWebsite(formData.website.trim()),
-      licenseNumber: formData.licenseNumber,
-      issuingAuthority: formData.issuingAuthority,
-      hospitalDocuments: hospitalDocumentsBase64,
-      contractorDocuments: hospitalContractBase64,
-      clinicalEstablishmentCertificate: clinicalEstablishmentCertificateBase64,
-      businessRegistrationCertificate: businessRegistrationCertificateBase64,
-      clinicType: clinicTypeOption,
-      medicinesSoldOnSite: selectedOption,
-      drugLicenseCertificate: drugLicenseCertificateBase64,
-      drugLicenseFormType: drugLicenseFormTypeBase64,
-      hasPharmacist: selectedPharmacistOption,
-      pharmacistCertificate: pharmacistCertificateBase64,
-      biomedicalWasteManagementAuth: biomedicalWasteManagementAuthBase64,
-      tradeLicense: tradeLicenseBase64,
-      fireSafetyCertificate: fireSafetyCertificateBase64,
-      professionalIndemnityInsurance: professionalIndemnityInsuranceBase64,
-      gstRegistrationCertificate: gstRegistrationCertificateBase64,
-      others: othersBase64,
-      freeFollowUps: formData.freeFollowUps,
-      instagramHandle: formData.instagramHandle,
-      twitterHandle: formData.twitterHandle,
-      facebookHandle: formData.facebookHandle,
-      recommended: !!formData.recommended,
-      consultationExpiration: formData.consultationExpiration
-        ? `${formData.consultationExpiration} days`
-        : "",
-      subscription: formData.subscription,
-      latitude: formData.latitude,
-      longitude: formData.longitude,
-      walkthrough: formData.walkthrough,
-      nabhScore: formData.nabhScore,
-      branch: formData.branch,
-    };
+      // 🔹 API Call
+      const response = await axios.post(`${BASE_URL}/admin/CreateClinic`, clinicData);
+      const savedClinicData = response.data;
 
-    // 🔹 API Call
-    const response = await axios.post(`${BASE_URL}/admin/CreateClinic`, clinicData);
-    const savedClinicData = response.data;
-
-    if (savedClinicData.success) {
-      toast.success(savedClinicData.message || "Clinic Added Successfully", {
-        position: "top-right",
-      });
-
-      // 🔹 Send onboarding email + navigate after small delay
-      setTimeout(() => {
-        sendDermaCareOnboardingEmail({
-          name: formData.name,
-          email: formData.emailAddress,
-          password: savedClinicData.data.clinicTemporaryPassword,
-          userID: savedClinicData.data.clinicUsername,
+      if (savedClinicData.success) {
+        toast.success(savedClinicData.message || "Clinic Added Successfully", {
+          position: "top-right",
         });
 
-        navigate("/clinic-management", {
-          state: {
-            refresh: true,
-            newClinic: savedClinicData,
-          },
+        // 🔹 Send onboarding email + navigate after small delay
+        setTimeout(() => {
+          sendDermaCareOnboardingEmail({
+            name: formData.name,
+            email: formData.emailAddress,
+            password: savedClinicData.data.clinicTemporaryPassword,
+            userID: savedClinicData.data.clinicUsername,
+          });
+
+          navigate("/clinic-management", {
+            state: {
+              refresh: true,
+              newClinic: savedClinicData,
+            },
+          });
+        }, 1000);
+      } else {
+        toast.error(savedClinicData.message || "Something went wrong", {
+          position: "top-right",
         });
-      }, 1000);
-    } else {
-      toast.error(savedClinicData.message || "Something went wrong", {
-        position: "top-right",
-      });
+      }
+    } catch (error) {
+      console.error("Error submitting clinic data:", error);
+      toast.error(error.message || "Something went wrong", { position: "top-right" });
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (error) {
-    console.error("Error submitting clinic data:", error);
-    toast.error(error.message || "Something went wrong", { position: "top-right" });
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
 
   return (
@@ -1079,76 +1013,80 @@ resolve({ name: file.name, base64: rawBase64 })          }
                 />
                 {errors.name && <CFormFeedback invalid>{errors.name}</CFormFeedback>}
               </CCol>
-               <CCol md={6}>
-  <CFormInput
-    type="email"
-    name="emailAddress"
-    label="Email Address"
-    value={formData.emailAddress}
-    onChange={(e) => {
-      const { name, value } = e.target;
-      setFormData((prev) => ({ ...prev, [name]: value }));
-      setErrors((prev)=>({...prev, [name]:''}))
-    }}
-    // onBlur={EmailBlur}
-    invalid={!!errors.emailAddress}
-  />
-  {errors.emailAddress && (
-    <CFormFeedback invalid>{errors.emailAddress}</CFormFeedback>
-  )}
-</CCol>
+              <CCol md={6}>
+                <CFormLabel>
+                  Email Address<span style={{ color: 'red' }}>*</span>
+                </CFormLabel>
+
+                <CFormInput
+                  type="email"
+                  name="emailAddress"
+
+                  value={formData.emailAddress}
+                  onChange={(e) => {
+                    const { name, value } = e.target;
+                    setFormData((prev) => ({ ...prev, [name]: value }));
+                    setErrors((prev) => ({ ...prev, [name]: '' }))
+                  }}
+                  // onBlur={EmailBlur}
+                  invalid={!!errors.emailAddress}
+                />
+                {errors.emailAddress && (
+                  <CFormFeedback invalid>{errors.emailAddress}</CFormFeedback>
+                )}
+              </CCol>
 
             </CRow>
             <CRow className="mb-3">
-           <CCol md={6}>
-  <CFormLabel>
-    Contact Number<span style={{ color: 'red' }}>*</span>
-  </CFormLabel>
-<CFormInput
-  type="tel"
-  name="contactNumber"
-  value={formData.contactNumber}
-  onChange={(e) => {
-    const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
-    handleInputChange({ target: { name: 'contactNumber', value } });
-  }}
-  maxLength={10}
-  invalid={!!errors.contactNumber}
-/>
-  {errors.contactNumber && (
-    <CFormFeedback invalid>{errors.contactNumber}</CFormFeedback>
-  )}
-</CCol>
+              <CCol md={6}>
+                <CFormLabel>
+                  Contact Number<span style={{ color: 'red' }}>*</span>
+                </CFormLabel>
+                <CFormInput
+                  type="tel"
+                  name="contactNumber"
+                  value={formData.contactNumber}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                    handleInputChange({ target: { name: 'contactNumber', value } });
+                  }}
+                  maxLength={10}
+                  invalid={!!errors.contactNumber}
+                />
+                {errors.contactNumber && (
+                  <CFormFeedback invalid>{errors.contactNumber}</CFormFeedback>
+                )}
+              </CCol>
 
               <CCol md={6}>
                 <CFormLabel>
                   Website<span style={{ color: 'red' }}>*</span>
                 </CFormLabel>
-              <CFormInput
-  type="text"
-  name="website"
-  value={formData.website}
-  onChange={(e) => {
-    const { name, value } = e.target;
+                <CFormInput
+                  type="text"
+                  name="website"
+                  value={formData.website}
+                  onChange={(e) => {
+                    const { name, value } = e.target;
 
-    // Update form data
-    setFormData((prev) => ({ ...prev, [name]: value }));
+                    // Update form data
+                    setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Real-time validation
-    let error = '';
-    if (!value.trim()) {
-      error = 'Website is required';
-    } else if (!/^https?:\/\/[^\s]+$/.test(value.trim())) {
-      error = 'Website must start with http:// or https:// and contain no spaces';
-    }
+                    // Real-time validation
+                    let error = '';
+                    if (!value.trim()) {
+                      error = 'Website is required';
+                    } else if (!/^https?:\/\/[^\s]+$/.test(value.trim())) {
+                      error = 'Website must start with http:// or https:// and contain no spaces';
+                    }
 
-    setErrors((prev) => ({ ...prev, [name]: error || undefined }));
-  }}
-  invalid={!!errors.website}
-/>
-{errors.website && (
-  <div style={{ color: 'red', fontSize: '0.9rem' }}>{errors.website}</div>
-)}
+                    setErrors((prev) => ({ ...prev, [name]: error || undefined }));
+                  }}
+                  invalid={!!errors.website}
+                />
+                {errors.website && (
+                  <div style={{ color: 'red', fontSize: '0.9rem' }}>{errors.website}</div>
+                )}
 
               </CCol>
             </CRow>
@@ -1285,143 +1223,63 @@ resolve({ name: file.name, base64: rawBase64 })          }
                 {errors.city && <CFormFeedback invalid>{errors.city}</CFormFeedback>}
               </CCol>
 
-              <CCol md={6}>
-                <CTooltip content="Issued by Local Fire Department">
-                  <CFormLabel>
-                    Clinic Contract<span style={{ color: 'red' }}>*</span>
-                  </CFormLabel>
-                </CTooltip>
-                <CFormInput
-                  type="file"
-                  name="hospitalContract"
-                  onChange={handleFileChange}
-                  accept=".pdf,.doc,.docx,.jpeg,.png"
-                  invalid={!!errors.hospitalContract}
-                />
-                {errors.hospitalContract && (
-                  <CFormFeedback invalid>{errors.hospitalContract}</CFormFeedback>
-                )}
-              </CCol>
+       <FileInput
+  label="Clinic Contract"
+  name="hospitalContract"
+  formData={formData}
+  setFormData={setFormData}
+  errors={errors}
+  setErrors={setErrors}
+  inputRef={refs.clinicContract} // ✅ should match ref name
+/>
             </CRow>
-            <CRow className="mb-3">
-              {/* <CCol md={6}>
-    <CFormLabel>
-      Hospital Logo<span className="text-danger">*</span>
-    </CFormLabel>
-    <FileInputWithRemove
-      name="hospitalLogo"
-      file={formData.hospitalLogo}
-      error={errors.hospitalLogo}
-      onChange={handleFileChange}
-      accept=".pdf,.doc,.docx,.jpeg,.png"
-      onRemove={(name) => {
-        setFormData((prev) => ({ ...prev, [name]: '' }))  // 👈 clear the field
-        setErrors((prev) => ({ ...prev, [name]: '' }))
-      }}
-     
-      invalid={!!errors.hospitalLogo}
-    />
-  </CCol> */}
-               
-<CCol md={6} className="position-relative">
-  <CFormLabel>
-    Clinic Logo<span className="text-danger">*</span>
-  </CFormLabel>
-  <div className="position-relative">
-    <CFormInput
-      type="file"
-      name="hospitalLogo"
-      onChange={handleHospitalLogoChange}
-      accept=".jpeg,.jpg,.png"
-      invalid={!!errors.hospitalLogo} // red border
-      ref={fileInputRef}
-    />
+          <CRow className="mb-3">
+  <FileInput
+    label="Clinic Logo"
+    name="hospitalLogo"
+    accept=".jpeg,.jpg,.png"
+    formData={formData}
+    setFormData={setFormData}
+    errors={errors}
+    setErrors={setErrors}
+    inputRef={refs.hospitalLogo}
+  />
 
-    {formData?.hospitalLogo?.fileName && (
-      <CButton
-        type="button"
-        size="sm"
-        color="danger"
-        className="position-absolute end-0 top-50 translate-middle-y me-2"
-        onClick={() => handleClearFile('hospitalLogo', fileInputRef)}
-      >
-        ✕
-      </CButton>
-    )}
-  </div>
-
-  {/* Red error text explicitly */}
-  {errors.hospitalLogo && (
-    <div style={{ color: 'red', marginTop: '0.25rem', fontSize: '0.875rem' }}>
-      {errors.hospitalLogo}
-    </div>
-  )}
-</CCol>
-
-
-
-
-              <CCol md={6}>
-                <CTooltip content="Issued by Local Fire Department">
-                  <CFormLabel>
-                    Clinic Documents<span className="text-danger">*</span>
-                  </CFormLabel>
-                </CTooltip>
-                <CFormInput
-                  type="file"
-                  name="hospitalDocuments"
-                  onChange={handleFileChange}
-                  accept=".pdf,.doc,.docx,.jpeg,.png"
-                  invalid={!!errors.hospitalDocuments}
-                />
-                {errors.hospitalDocuments && (
-                  <CFormFeedback invalid>{errors.hospitalDocuments}</CFormFeedback>
-                )}
-              </CCol>
-            </CRow>
+  <FileInput
+    label="Clinic Documents"
+    name="hospitalDocuments"
+    accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
+    tooltip="Issued by Local Fire Department"
+    formData={formData}
+    setFormData={setFormData}
+    errors={errors}
+    setErrors={setErrors}
+    inputRef={refs.hospitalDocuments}
+  />
+</CRow>
 
             <CRow className="mb-3">
-              <CCol md={6} className="mb-2">
-                <CTooltip content="Issued by Registrar of Companies or local municipal body">
-                  <CFormLabel>
-                    Clinical Establishment Registration Certificate
-                    <span className="text-danger">*</span>
-                  </CFormLabel>
-                </CTooltip>
-                <CFormInput
-                  type="file"
-                  name="clinicalEstablishmentCertificate"
-                  id="clinicalReg"
-                  onChange={handleFileChange}   // 🔥 reuse one function
-                  accept=".pdf,.doc,.docx,.jpeg,.png"
-                  invalid={!!errors.clinicalEstablishmentCertificate}
-                />
-                {errors.clinicalEstablishmentCertificate && (
-                  <CFormFeedback invalid>{errors.clinicalEstablishmentCertificate}</CFormFeedback>
-                )}
-              </CCol>
+             <FileInput
+        label="Clinical Establishment Registration Certificate"
+        name="clinicalEstablishmentCertificate"
+        accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
+        formData={formData}
+        setFormData={setFormData}
+        errors={errors}
+        setErrors={setErrors}
+        inputRef={refs.clinicalEstablishmentCertificate}
+      />
 
-              <CCol md={6}>
-                <CTooltip content="Issued by Registrar of Companies or local municipal body">
-                  <CFormLabel>
-                    Business Registration Certificate <span className="text-danger">*</span>
-                  </CFormLabel>
-                </CTooltip>
-                <CFormInput
-                  type="file"
-                  id="businessReg"
-                  name="businessRegistrationCertificate"
-                  onChange={handleFileChange}   // 🔥 reuse one handler
-                  accept=".pdf,.doc,.docx,.jpeg,.png"
-                  invalid={!!errors.businessRegistrationCertificate}
-                />
-                {errors.businessRegistrationCertificate && (
-                  <CFormFeedback invalid>
-                    {errors.businessRegistrationCertificate}
-                  </CFormFeedback>
-                )}
-
-              </CCol>
+              <FileInput
+        label="Business Registration Certificate"
+        name="businessRegistrationCertificate"
+        accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
+        formData={formData}
+        setFormData={setFormData}
+        errors={errors}
+        setErrors={setErrors}
+        inputRef={refs.businessRegistrationCertificate}
+      />
             </CRow>
 
             <CRow className="mb-3">
@@ -1448,29 +1306,16 @@ resolve({ name: file.name, base64: rawBase64 })          }
                 {errors.clinicType && <CFormFeedback invalid>{errors.clinicType}</CFormFeedback>}
               </CCol>
 
-              <CCol>
-                <CTooltip content="Issued by Insurance Companies">
-                  <CFormLabel>
-                    Professional Indemnity Insurance
-                  </CFormLabel>
-                </CTooltip>
-                <CFormInput
-                  type="file"
-                  id="indemnity"
-                  name="professionalIndemnityInsurance"
-                  onChange={handleFileChange} // ✅ single-file handler
-                  accept=".pdf,.doc,.docx,.jpeg,.png" // no `multiple`
-                  invalid={!!errors.professionalIndemnityInsurance}
-                />
-
-                {errors.professionalIndemnityInsurance && (
-                  <CFormFeedback invalid>
-                    {errors.professionalIndemnityInsurance}
-                  </CFormFeedback>
-                )}
-
-
-              </CCol>
+             <FileInput
+  label="Professional Indemnity Insurance"
+  name="professionalIndemnityInsurance"
+  formData={formData}
+  setFormData={setFormData}
+  errors={errors}
+  setErrors={setErrors}
+  inputRef={refs.professionalIndemnityInsurance}
+  required={false}  // <-- makes it optional
+/>
             </CRow>
 
             <CRow className="mb-3">
@@ -1496,144 +1341,89 @@ resolve({ name: file.name, base64: rawBase64 })          }
                   <CFormFeedback invalid>{errors.medicinesSoldOnSite}</CFormFeedback>
                 )}
               </CCol>
-              <CCol md={6}>
-                <CTooltip content="Issued by State Pollution Control Board (SPCB)">
-                  <CFormLabel>
-                    Biomedical Waste Management Authorization
-                    <span className="text-danger">*</span>
-                  </CFormLabel>
-                </CTooltip>
-                <CFormInput
-                  type="file"
-                  id="biomedicalWaste"
-                  name="biomedicalWasteManagementAuth"
-                  onChange={handleFileChange}
-                  accept=".pdf,.doc,.docx,.jpeg,.png"
-                  invalid={!!errors.biomedicalWasteManagementAuth}
-                />
-                {errors.biomedicalWasteManagementAuth && (
-                  <CFormFeedback invalid>{errors.biomedicalWasteManagementAuth}</CFormFeedback>
-                )}
-
-              </CCol>
+             <FileInput
+  label="Biomedical Waste Management Authorization"
+  name="biomedicalWasteManagementAuth"
+  tooltip="Issued by State Pollution Control Board (SPCB)"
+  accept=".pdf,.doc,.docx,.jpeg,.png"
+  formData={formData}
+  setFormData={setFormData}
+  errors={errors}
+  setErrors={setErrors}
+  inputRef={refs.biomedicalWasteManagementAuth}
+/>
             </CRow>
 
             {selectedOption === 'Yes' && (
               <CRow className="mb-3">
-                <CCol md={6}>
-                  <CTooltip content="Issued by State Drug Control Department">
-                    <CFormLabel>Drug License Certificate <span className="text-danger">*</span></CFormLabel>
-                  </CTooltip>
-                  <CFormInput
-                    type="file"
-                    id="drugLicenseCertificate"
-                    name="drugLicenseCertificate"
-                    onChange={handleFileChange}   // 🔥 universal handler
-                    accept=".pdf,.doc,.docx,.jpeg,.png"
-                    invalid={!!errors.drugLicenseCertificate}
-                  />
-                  {errors.drugLicenseCertificate && (
-                    <CFormFeedback invalid>{errors.drugLicenseCertificate}</CFormFeedback>
-                  )}
+          <FileInput
+  label="Drug Licence Certificate"
+  name="drugLicenseCertificate"
+  formData={formData}
+  setFormData={setFormData}
+  errors={errors}
+  setErrors={setErrors}
+  inputRef={refs.drugLicenseCertificate}
+/>
 
-                </CCol>
-
-                <CCol md={6}>
-                  <CTooltip content="Issued by State Drug Control Department">
-                    <CFormLabel>DrugLicenseFormType 20/21 <span className="text-danger">*</span></CFormLabel>
-                  </CTooltip>
-                  <CFormInput
-                    type="file"
-                    id="Form20/21"
-                    name="drugLicenseFormType"
-                    onChange={handleFileChange}   // 🔥 reuse one function
-                    accept=".pdf,.doc,.docx,.jpeg,.png"
-                    invalid={!!errors.drugLicenseFormType}
-                  />
-                  {errors.drugLicenseFormType && (
-                    <CFormFeedback invalid>{errors.drugLicenseFormType}</CFormFeedback>
-                  )}
-
-                </CCol>
+             <FileInput
+  label="Drug Licence Form Type 20/21"
+  name="drugLicenseFormType"
+  formData={formData}
+  setFormData={setFormData}
+  errors={errors}
+  setErrors={setErrors}
+  inputRef={refs.drugLicenseFormType}
+/>
               </CRow>
             )}
             <CRow className="mb-3">
-              <CCol md={6}>
-                <CTooltip content="Issued by Local Municipality">
-                  <CFormLabel>
-                    Trade License / Shop & Establishment License
-                    <span className="text-danger">*</span>
-                  </CFormLabel>
-                </CTooltip>
-                <CFormInput
-                  type="file"
-                  name="tradeLicense"
-                  onChange={handleFileChange}   // 🔥 centralized handler
-                  accept=".pdf,.doc,.docx,.jpeg,.png"
-                  invalid={!!errors.tradeLicense}
-                />
-                {errors.tradeLicense && (
-                  <CFormFeedback invalid>{errors.tradeLicense}</CFormFeedback>
-                )}
+            <FileInput
+  label="Trade Licence / Shop & Establishment Certificate"
+  name="tradeLicense"
+  formData={formData}
+  setFormData={setFormData}
+  errors={errors}
+  setErrors={setErrors}
+  inputRef={refs.tradeLicence}
+/>
 
-              </CCol>
-
-              <CCol md={6}>
-                <CTooltip content="Issued by Local Fire Department">
-                  <CFormLabel>
-                    Fire Safety Certificate
-                    <span className="text-danger">*</span>
-                  </CFormLabel>
-                </CTooltip>
-                <CFormInput
-                  type="file"
-                  id="fireSafety"
-                  name="fireSafetyCertificate"
-                  onChange={handleFileChange}   // 🔥 centralized handler
-                  accept=".pdf,.doc,.docx,.jpeg,.png"
-                  invalid={!!errors.fireSafetyCertificate}
-                />
-                {errors.fireSafetyCertificate && (
-                  <CFormFeedback invalid>{errors.fireSafetyCertificate}</CFormFeedback>
-                )}
-
-              </CCol>
+             <FileInput
+        label="Fire Safety Certificate"
+        name="fireSafetyCertificate"
+        accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
+        formData={formData}
+        setFormData={setFormData}
+        errors={errors}
+        setErrors={setErrors}
+        inputRef={refs.fireSafetyCertificate}
+      />
             </CRow>
 
             <CRow className="mb-3">
-              <CCol md={6}>
-                <CTooltip content="Issued by GST Department">
-                  <CFormLabel>
-                    GST Registration Certificate
-                    <span className="text-danger">*</span>
-                  </CFormLabel>
-                </CTooltip>
-                <CFormInput
-                  type="file"
-                  id="gstCert"
-                  name="gstRegistrationCertificate"
-                  onChange={handleFileChange}   // 🔥 centralized handler
-                  accept=".pdf,.doc,.docx,.jpeg,.png"
-                  invalid={!!errors.gstRegistrationCertificate}
-                />
-                {errors.gstRegistrationCertificate && (
-                  <CFormFeedback invalid>{errors.gstRegistrationCertificate}</CFormFeedback>
-                )}
-
-              </CCol>
+              <FileInput
+        label="GST Registration Certificate"
+        name="gstRegistrationCertificate"
+        accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
+        formData={formData}
+        setFormData={setFormData}
+        errors={errors}
+        setErrors={setErrors}
+        inputRef={refs.gstRegistrationCertificate}
+      />
 
               <CCol md={6}>
                 <CTooltip content="NABH Accreditation / Aesthetic Procedure Training Certificate">
                   <CFormLabel>Others (NABH / Aesthetic Training)</CFormLabel>
                 </CTooltip>
-          <CFormInput
-  type="file"
-  name="others"
-  multiple
-  onChange={(e) => handleAppendFiles(e, 'others', 6)}
-  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.zip"
-  invalid={!!errors.others}
-/>
+                <CFormInput
+                  type="file"
+                  name="others"
+                  multiple
+                  onChange={(e) => handleAppendFiles(e, 'others', 6)}
+                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.zip"
+                  invalid={!!errors.others}
+                />
 
 
                 {errors.others && <CFormFeedback invalid>{errors.others}</CFormFeedback>}
@@ -1831,28 +1621,16 @@ resolve({ name: file.name, base64: rawBase64 })          }
                 )}
               </CCol>
               {selectedPharmacistOption === 'Yes' && (
-                <CCol md={6}>
-                  <CTooltip content="Valid Pharmacist Registration Certificate">
-                    <CFormLabel>
-                      Pharmacist Certificate <span className="text-danger">*</span>
-                    </CFormLabel>
-                  </CTooltip>
-
-                  <CFormInput
-                    type="file"
-                    id="pharmacistCert"
-                    name="pharmacistCertificate"
-                    onChange={handleFileChange} // ✅ reuse function
-                    accept=".pdf,.doc,.docx,.jpeg,.png"
-                    invalid={!!errors.pharmacistCertificate}
-                  />
-
-                  {errors.pharmacistCertificate && (
-                    <CFormFeedback invalid>{errors.pharmacistCertificate}</CFormFeedback>
-                  )}
-                </CCol>
-              )}
-
+                  <FileInput
+        label="Pharmacist Certificate"
+        name="pharmacistCertificate"
+        accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
+        formData={formData}
+        setFormData={setFormData}
+        errors={errors}
+        setErrors={setErrors}
+        inputRef={refs.pharmacistCertificate}
+      />)}
             </CRow>
             {/* ✅ Clinic Coordinates */}
             <CRow className="mb-3">
@@ -1944,42 +1722,38 @@ resolve({ name: file.name, base64: rawBase64 })          }
                 <CFormLabel>
                   Virtual Clinic Tour <span className="text-danger"></span>
                 </CFormLabel>
-               <CFormInput
-  type="url"
-  placeholder="https://example.com/VirtualClinicTour"
-  value={formData.walkthrough || ""}
-  onChange={(e) => {
-    const { value } = e.target;
+                <CFormInput
+                  type="url"
+                  placeholder="https://example.com/VirtualClinicTour"
+                  value={formData.walkthrough || ""}
+                  onChange={(e) => {
+                    const { value } = e.target;
 
-    // Update form data
-    setFormData((prev) => ({ ...prev, walkthrough: value }));
+                    // Update form data
+                    setFormData((prev) => ({ ...prev, walkthrough: value }));
 
-    // Real-time validation
-    let error = "";
+                    // Real-time validation
+                    let error = "";
 
-    if (!value.trim()) {
-      error = "Walkthrough URL is required";
-    } else if (value.includes(" ")) {
-      error = "URL cannot contain spaces";
-    } else {
-      try {
-        new URL(value); // throws if invalid
-      } catch {
-        error = "Enter a valid URL (e.g. https://example.com)";
-      }
-    }
+                    if (value.trim()) {
+                      try {
+                        new URL(value); // throws if invalid
+                      } catch {
+                        error = "Enter a valid URL (e.g. https://example.com)";
+                      }
+                    }
 
-    // Set or clear error
-    setErrors((prev) => ({
-      ...prev,
-      walkthrough: error || undefined,
-    }));
-  }}
-  invalid={!!errors.walkthrough}
-/>
-{errors.walkthrough && (
-  <div style={{ color: 'red', fontSize: '0.9rem' }}>{errors.walkthrough}</div>
-)}
+                    // Set or clear error
+                    setErrors((prev) => ({
+                      ...prev,
+                      walkthrough: error || undefined,
+                    }));
+                  }}
+                  invalid={!!errors.walkthrough}
+                />
+                {errors.walkthrough && (
+                  <div style={{ color: 'red', fontSize: '0.9rem' }}>{errors.walkthrough}</div>
+                )}
 
 
               </CCol>

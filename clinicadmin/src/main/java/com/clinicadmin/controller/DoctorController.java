@@ -140,6 +140,15 @@ public class DoctorController {
 		return ResponseEntity.status(response.getStatus()).body(response);
 
 	}
+	// Delete doctor from a specific branch
+		@DeleteMapping("/delete-doctor/{doctorId}/branch/{branchId}")
+		public ResponseEntity<Response> deleteDoctorFromBranch(
+		        @PathVariable String doctorId,
+		        @PathVariable String branchId) {
+
+		    Response response = doctorService.deleteDoctorFromBranch(doctorId, branchId);
+		    return ResponseEntity.status(response.getStatus()).body(response);
+		}
 	
 	@DeleteMapping("/delete-doctors-by-clinic/{clinicId}")
 	public ResponseEntity<Response> deleteDoctorsByClinic(@PathVariable String clinicId) {
@@ -387,8 +396,19 @@ public class DoctorController {
 		
 
 //		---------------------------------------------Slots using branchId----------------------------------------------
-
-		
+		 // ------------------ Generate slots dynamically ------------------
+		@GetMapping("/generateDoctorSlots/{doctorId}/{branchId}/{date}/{intervalMinutes}/{openingTime}/{closingTime}")
+		public Response generateSlots(
+		        @PathVariable String doctorId,
+		        @PathVariable String branchId,
+		        @PathVariable String date,
+		        @PathVariable int intervalMinutes,
+		        @PathVariable String openingTime,
+		        @PathVariable String closingTime
+		) {
+		    return doctorService.generateDoctorSlots(doctorId, branchId, date, intervalMinutes, openingTime, closingTime);
+		}
+	
 		@PostMapping("/addDoctorSlots/{hospitalId}/{branchId}/{doctorId}")
 		public ResponseEntity<Response> addDoctorSlot(
 		        @PathVariable String hospitalId, 

@@ -15,6 +15,7 @@ import {
 import { AppointmentData } from '../AppointmentManagement/appointmentAPI'
 import { useNavigate } from 'react-router-dom'
 import LoadingIndicator from '../../Utils/loader'
+import { useHospital } from '../Usecontext/HospitalContext'
 const ReportsManagement = () => {
   // const [viewService, setViewService] = useState(null)
   const [filteredData, setFilteredData] = useState([])
@@ -27,6 +28,7 @@ const ReportsManagement = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 7
   const [availableServiceTypes, setAvailableServiceTypes] = useState([])
+  const [selectedAppointment, setSelectedAppointment] = useState([])
   const [availableConsultationTypes, setAvailableConsultationTypes] = useState([])
   const [selectedServiceTypes, setSelectedServiceTypes] = useState([])
   const [selectedConsultationTypes, setSelectedConsultationTypes] = useState([])
@@ -37,6 +39,9 @@ const ReportsManagement = () => {
     'Tele Consultation': 'tele consultation',
     'In-clinic': 'in-clinic consultation',
   }
+
+  const { user } = useHospital()
+  const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
 
   const fetchAppointments = async (hospitalId) => {
     // Added hospitalId parameter
@@ -70,66 +75,64 @@ const ReportsManagement = () => {
     }
   }, [])
 
-const handleStatusChange = (e) => {
-  const value = e.target.value // "Completed" or "Active"
+  const handleStatusChange = (e) => {
+    const value = e.target.value // "Completed" or "Active"
 
-  if (statusFilters.includes(value)) {
-    setStatusFilters([]) // remove if clicked again
-  } else {
-    setStatusFilters([value]) // only one selection at a time
-  }
-}
-
-
-useEffect(() => {
-  let currentFiltered = bookings
-
-  // Only include Completed + Active(In-Progress) from backend
-  currentFiltered = currentFiltered.filter((booking) =>
-    ['completed', 'in-progress', 'active'].includes(normalize(booking.status)),
-  )
-
-  // Apply user-selected status filters
-  if (statusFilters.length > 0) {
-    currentFiltered = currentFiltered.filter((booking) => {
-      const status = normalize(booking.status)
-
-      if (statusFilters.includes('Completed')) {
-        return status === 'completed'
-      }
-
-      if (statusFilters.includes('Active')) {
-        // Treat both active + in-progress as Active
-        return status === 'active' || status === 'in-progress'
-      }
-
-      return true
-    })
-  }
-
-  // Consultation type filter
-  if (filterTypes.length === 1) {
-    const selectedType = filterTypes[0]
-
-    if (selectedType === 'Tele Consultation') {
-      currentFiltered = currentFiltered.filter(
-        (item) =>
-          normalize(item.consultationType) === 'tele consultation' ||
-          normalize(item.consultationType) === 'online consultation',
-      )
+    if (statusFilters.includes(value)) {
+      setStatusFilters([]) // remove if clicked again
     } else {
-      const mappedType = consultationTypeMap[selectedType]
-      if (mappedType) {
-        currentFiltered = currentFiltered.filter(
-          (item) => normalize(item.consultationType) === mappedType,
-        )
-      }
+      setStatusFilters([value]) // only one selection at a time
     }
   }
 
-  setFilteredData(currentFiltered)
-}, [bookings, filterTypes, statusFilters])
+  useEffect(() => {
+    let currentFiltered = bookings
 
+    // Only include Completed + Active(In-Progress) from backend
+    currentFiltered = currentFiltered.filter((booking) =>
+      ['completed', 'in-progress', 'active'].includes(normalize(booking.status)),
+    )
+
+    // Apply user-selected status filters
+    if (statusFilters.length > 0) {
+      currentFiltered = currentFiltered.filter((booking) => {
+        const status = normalize(booking.status)
+
+        if (statusFilters.includes('Completed')) {
+          return status === 'completed'
+        }
+
+        if (statusFilters.includes('Active')) {
+          // Treat both active + in-progress as Active
+          return status === 'active' || status === 'in-progress'
+        }
+
+        return true
+      })
+    }
+
+    // Consultation type filter
+    if (filterTypes.length === 1) {
+      const selectedType = filterTypes[0]
+
+      if (selectedType === 'Tele Consultation') {
+        currentFiltered = currentFiltered.filter(
+          (item) =>
+            normalize(item.consultationType) === 'tele consultation' ||
+            normalize(item.consultationType) === 'online consultation',
+        )
+      } else {
+        const mappedType = consultationTypeMap[selectedType]
+        if (mappedType) {
+          currentFiltered = currentFiltered.filter(
+            (item) => normalize(item.consultationType) === mappedType,
+          )
+        }
+      }
+    }
+
+    setFilteredData(currentFiltered)
+  }, [bookings, filterTypes, statusFilters])
 
   useEffect(() => {
     const serviceTypes = [...new Set(bookings.map((item) => item.servicename).filter(Boolean))]
@@ -274,34 +277,35 @@ useEffect(() => {
                     <CTableDataCell>{item.serviceDate}</CTableDataCell>
                     <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
                     <CTableDataCell>
-  {normalize(item.status) === 'in-progress' ? 'Active' : item.status}
-</CTableDataCell>
-    <CTableDataCell>
-                      <CButton
-                       style={{backgroundColor:'var(--color-black)',color:'white'}}
-                        className="text-white"
-                        size="sm"
-                        onClick={() =>
-                        navigate(`/reportDetails/${item.bookingId}`, {
-  state: {
-    report: item,
-    appointmentInfo: {
-      name: item.name,
-      age: item.age,
-      gender: item.gender,
-      problem: item.problem,
-      bookingId: item.bookingId,
-      patientId: item.patientId || selectedAppointment?.patientId, // ✅ Use correct path
-      item: item,
-      selectedAppointment: selectedAppointment
-    },
-  },
-})
-
-                        }
-                      >
-                        View
-                      </CButton>
+                      {normalize(item.status) === 'in-progress' ? 'Active' : item.status}
+                    </CTableDataCell>
+                    <CTableDataCell>
+                      {can('Appointments', 'read') && (
+                        <CButton
+                          style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+                          className="text-white"
+                          size="sm"
+                          onClick={() =>
+                            navigate(`/report-details/${item.bookingId}`, {
+                              state: {
+                                report: item,
+                                appointmentInfo: {
+                                  name: item.name,
+                                  age: item.age,
+                                  gender: item.gender,
+                                  problem: item.problem,
+                                  bookingId: item.bookingId,
+                                  patientId: item.patientId || selectedAppointment?.patientId, // ✅ Use correct path
+                                  item: item,
+                                  selectedAppointment: selectedAppointment,
+                                },
+                              },
+                            })
+                          }
+                        >
+                          View
+                        </CButton>
+                      )}
                     </CTableDataCell>
                   </CTableRow>
                 ))

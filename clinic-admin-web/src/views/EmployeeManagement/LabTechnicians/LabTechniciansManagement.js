@@ -41,7 +41,7 @@ const LabTechnicianManagement = () => {
   const [deleteId, setDeleteId] = useState(null)
 
   // ✅ Load from localStorage on mount
-const [modalData, setModalData] = useState(null) // store username & password
+  const [modalData, setModalData] = useState(null) // store username & password
   const [modalTVisible, setModalTVisible] = useState(false)
   const fetchTechs = async () => {
     setLoading(true)
@@ -55,7 +55,7 @@ const [modalData, setModalData] = useState(null) // store username & password
         setTechnicians(res.data?.data || [])
       }
     } catch (err) {
-      console.error('❌ Error fetching lab technicians:', err)
+      console.error('❌ Error fetching Laboratorys:', err)
       setTechnicians([])
       setLoading(false)
     } finally {
@@ -76,7 +76,7 @@ const [modalData, setModalData] = useState(null) // store username & password
         // setTechnicians((prev) => [...prev, res.data.data])
         toast.success('Technician updated successfully!')
       } else {
-       const res = await addLabTechnician(formData)
+        const res = await addLabTechnician(formData)
         await fetchTechs() // refresh from API
         console.log(res)
         setModalData({
@@ -85,7 +85,8 @@ const [modalData, setModalData] = useState(null) // store username & password
         })
         setModalVisible(false)
         setModalTVisible(true)
-        toast.success('Technician added successfully!')}
+        toast.success('Technician added successfully!')
+      }
     } catch (err) {
       toast.error('❌ Failed to save technician.')
       console.error('API error:', err)
@@ -121,10 +122,14 @@ const [modalData, setModalData] = useState(null) // store username & password
   //decode image
   const decodeImage = (data) => {
     try {
-      // decode base64 string into normal string
-      return atob(data)
-    } catch {
-      return null
+      // First decode the outer layer (the backend double-encoded it)
+      const decoded = atob(data)
+
+      // Now decoded string itself already includes 'data:image/jpeg;base64,...'
+      return decoded
+    } catch (e) {
+      console.error('Error decoding image:', e)
+      return '/assets/images/avatars/Laboratory.png'
     }
   }
 
@@ -170,9 +175,10 @@ const [modalData, setModalData] = useState(null) // store username & password
         <CModalFooter>
           <CButton
             color="primary"
-            onClick={() =>{ setModalTVisible(false)
+            onClick={() => {
+              setModalTVisible(false)
               setModalData(null)
-            }} 
+            }}
           >
             Close
           </CButton>
@@ -229,7 +235,7 @@ const [modalData, setModalData] = useState(null) // store username & password
                   <CTableDataCell>
                     {tech.profilePicture ? (
                       <img
-                        src={decodeImage(tech.profilePicture)} // ✅ decode first
+                        src={tech.profilePicture} // ✅ use directly, no decodeImage()
                         alt={tech.fullName}
                         width="40"
                         height="40"
@@ -312,7 +318,7 @@ const [modalData, setModalData] = useState(null) // store username & password
                   className="text-center"
                   style={{ color: 'var(--color-black)' }}
                 >
-                  No lab technician found.
+                  No Laboratory found.
                 </CTableDataCell>
               </CTableRow>
               //   <CTableRow>

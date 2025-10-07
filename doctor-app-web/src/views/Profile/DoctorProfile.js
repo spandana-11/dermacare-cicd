@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import '../Profile/DoctorProfile.css'
 
 import { formatDistanceToNow } from 'date-fns'
-import { format, addDays, startOfToday } from 'date-fns'
+import { format, addDays, startOfToday, parse } from 'date-fns'
 import {
   CCard,
   CCardBody,
@@ -20,7 +20,7 @@ import {
 } from '@coreui/react'
 import { averageRatings, getAvailableSlots } from '../../Auth/Auth'
 import { COLORS } from '../../Themes'
-import { capitalizeWords } from '../../utils/CaptalZeWord'
+import { capitalizeEachWord, capitalizeWords } from '../../utils/CaptalZeWord'
 
 const DoctorProfile = () => {
   const [doctorDetails, setDoctorDetails] = useState(null)
@@ -93,31 +93,32 @@ const DoctorProfile = () => {
 
   useEffect(() => {
     const fetchRatings = async () => {
-      const doctorId = localStorage.getItem('doctorId')
-      const hospitalId = localStorage.getItem('hospitalId')
+      const doctorId = localStorage.getItem('doctorId');
 
-      if (!doctorId || !hospitalId) {
-        console.warn('⚠️ Missing doctorId or hospitalId in localStorage')
-        return
+      if (!doctorId) {
+        console.warn('⚠️ Missing doctorId in localStorage');
+        return;
       }
 
       try {
-        const response = await averageRatings(hospitalId, doctorId)
+        const response = await averageRatings(doctorId);
 
-        console.log('✅ Ratings API raw response:', response) // 👈 log what comes back
+        console.log('✅ Ratings API raw response:', response);
 
         if (response) {
-          setRatingsData(response)
+          setRatingsData(response);
+
         } else {
-          console.warn('⚠️ No ratings data returned')
+          console.warn('⚠️ No ratings data returned');
         }
       } catch (error) {
-        console.error('❌ Error fetching ratings in DoctorProfile:', error)
+        console.error('❌ Error fetching ratings in DoctorProfile:', error);
       }
     }
 
-    fetchRatings()
-  }, [])
+    fetchRatings();
+  }, []); // Ratings
+
 
 
   const handleDateClick = (dayObj, idx) => {
@@ -157,7 +158,7 @@ const DoctorProfile = () => {
             </span>
           </CNavLink>
         </CNavItem>
-        <CNavItem>
+        {/* <CNavItem>
           <CNavLink
             style={{
               padding: '.5rem .850rem',
@@ -181,7 +182,7 @@ const DoctorProfile = () => {
               Doctor Slots
             </span>
           </CNavLink>
-        </CNavItem>
+        </CNavItem> */}
         <CNavItem>
           <CNavLink
             style={{
@@ -275,7 +276,7 @@ const DoctorProfile = () => {
                   )}
                 </div>
                 <div>
-                  <h3 className="fw-bold mb-1">{capitalizeWords(doctorDetails?.doctorName) || 'Doctor Name'}</h3>
+                  <h5 className="fw-bold mb-1">{capitalizeEachWord(doctorDetails?.doctorName) || 'Doctor Name'}</h5>
                   <p className="mb-1"><strong>Qualification:</strong> {doctorDetails?.qualification || "Qualification"}</p>
                   <p className="mb-1"><strong>License No:</strong> {doctorDetails?.doctorLicence || "DoctorLicence"}</p>
                   <p className="mb-0"><strong>Experience:</strong> {doctorDetails?.experience ? `${doctorDetails.experience} Years` : "Experience"}</p>
@@ -330,9 +331,6 @@ const DoctorProfile = () => {
                   </div>
                 </CCol>
               </CRow>
-
-
-
               {/* Signature in new row */}
               <CRow className="mt-3">
                 <CCol md={12}>
@@ -356,56 +354,63 @@ const DoctorProfile = () => {
           {/* Profile Info */}
           <CCard className="mb-4 shadow-sm border-0 rounded-3">
             <CCardBody>
-              <h6 className="fw-bold mb-3 border-bottom pb-2 " style={{ color: COLORS.black }}>📝 Profile Information</h6>
+              <h6 className="fw-bold mb-4 border-bottom pb-2" style={{ color: COLORS.black }}>
+                📝 Profile Information
+              </h6>
 
-              <CRow className="mt-3">
-                {/* Column 1 - Description */}
-                <CCol md={3}>
-                  <div className="mb-3">
-                    <p className="mb-1 text-muted"><strong>Description:</strong></p>
-                    <p className="fw-semibold">
-                      {doctorDetails?.profileDescription || "No description available"}
-                    </p>
-                  </div>
-                </CCol>
+              {/* Description */}
+              <div className="mb-4">
+                <p className="fw-semibold mb-1" style={{ color: COLORS.black }}>
+                  Description
+                </p>
+                <p className="ps-4 fw-medium" style={{ color: COLORS.gray }}>
+                  {doctorDetails?.profileDescription || "No description available"}
+                </p>
+              </div>
 
-                {/* Column 2 - Achievements */}
-                <CCol md={3}>
-                  <div className="mb-3">
-                    <p className="mb-1 text-muted"><strong>🏅 Achievements</strong></p>
+              {/* Achievements */}
+              <div className="mb-4">
+                <p className="fw-semibold mb-1" style={{ color: COLORS.black }}>
+                  🏅 Achievements
+                </p>
+                {Array.isArray(doctorDetails?.highlights) && doctorDetails.highlights.length > 0 ? (
+                  <ul className="list-unstyled ps-4 fw-medium">
+                    {doctorDetails.highlights.map((item, idx) => (
+                      <li key={idx} style={{ color: COLORS.gray }}>
+                        * {item.replace(/^•\s*/, "")}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="ps-2 mb-0 fw-medium" style={{ color: COLORS.gray }}>
+                    No achievements added
+                  </p>
+                )}
 
-                    {Array.isArray(doctorDetails?.highlights) && doctorDetails.highlights.length > 0 ? (
-                      <ul className="list-unstyled mb-0 ps-3">
-                        {doctorDetails.highlights.map((item, idx) => (
-                          <li key={idx}>• {item.replace(/^•\s*/, "")}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-muted mb-0">No achievements added</p>
-                    )}
-                  </div>
-                </CCol>
+              </div>
 
-                {/* Column 3 - Area of Expertise */}
-                <CCol md={3}>
-                  <div className="mb-3">
-                    <p className="mb-1 text-muted"><strong>🔍 Area of Expertise</strong></p>
-                    {Array.isArray(doctorDetails?.focusAreas) && doctorDetails.focusAreas.length > 0 ? (
-                      <ul className="list-unstyled mb-0 ps-3">
-                        {doctorDetails.focusAreas.map((area, idx) => (
-                          <li key={idx}>• {area.replace(/^•\s*/, "")}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-muted mb-0">No focus areas listed</p>
-                    )}
-                  </div>
-                </CCol>
-              </CRow>
+              {/* Area of Expertise */}
+              <div>
+                <p className="fw-semibold mb-1" style={{ color: COLORS.black }}>
+                  🔍 Area of Expertise
+                </p>
+                {Array.isArray(doctorDetails?.focusAreas) && doctorDetails.focusAreas.length > 0 ? (
+                  <ul className="list-unstyled ps-4 fw-medium">
+                    {doctorDetails.focusAreas.map((area, idx) => (
+                      <li key={idx} style={{ color: COLORS.gray }}>
+                        * {area.replace(/^•\s*/, "")}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="ps-2 mb-0 fw-medium" style={{ color: COLORS.gray }}>
+                    No focus areas listed
+                  </p>
+                )}
+
+              </div>
             </CCardBody>
           </CCard>
-
-
 
           {/* Professional Info */}
           <CCard className="mb-4 shadow-sm border-0 rounded-3">
@@ -540,7 +545,7 @@ const DoctorProfile = () => {
                       <div>
                         <p className="mb-1 text-muted fw-medium">
                           Doctor Overall Rating: {ratingsData?.doctorRating ?? 'N/A'}
-                          <span className="text-warning"> / 5 ⭐</span>
+                          <span > / 5 </span>
                         </p>
                       </div>
                     </div>
@@ -550,7 +555,8 @@ const DoctorProfile = () => {
                       <div>
                         <p className="mb-1 text-muted fw-medium">
                           Hospital Overall Rating: {ratingsData?.hospitalRating ?? 'N/A'}
-                          <span className="text-warning"> / 5 ⭐</span>
+
+                          <span> / 5 </span>
                         </p>
                       </div>
                     </div>
@@ -563,16 +569,6 @@ const DoctorProfile = () => {
 
               {ratingsData?.comments?.length ? (
                 ratingsData.comments.map((feedback, idx) => {
-                  let fullDateTime;
-                  if (feedback.dateAndTimeAtRating) {
-                    const parsedDate = new Date(feedback.dateAndTimeAtRating);
-                    if (!isNaN(parsedDate)) fullDateTime = parsedDate;
-                    else {
-                      const today = new Date().toISOString().split('T')[0];
-                      fullDateTime = new Date(`${today} ${feedback.dateAndTimeAtRating}`);
-                    }
-                  }
-
                   return (
                     <div
                       key={idx}
@@ -591,19 +587,20 @@ const DoctorProfile = () => {
                         <div className="flex-grow-1">
                           <div className="d-flex justify-content-between align-items-start mb-2">
                             <div>
-                              <h6 className="mb-0 fw-semibold">
-                                {feedback.patientName || "N/A"}
-                              </h6>
+                              <h6 className="mb-0 fw-semibold">{feedback.patientName || "N/A"}</h6>
                               <small className="text-muted">
-                                {fullDateTime
-                                  ? formatDistanceToNow(fullDateTime, { addSuffix: true })
+                                {feedback.dateAndTimeAtRating
+                                  ? formatDistanceToNow(
+                                    parse(feedback.dateAndTimeAtRating, 'dd-MM-yyyy hh:mm:ss a', new Date()),
+                                    { addSuffix: true }
+                                  )
                                   : 'Unknown time'}
                               </small>
                             </div>
-                            <div className="fw-bold text-warning fs-5">⭐ {feedback.doctorRating}</div>
+                            <div className="fs-5">{feedback.doctorRating ?? 'N/A'}</div>
                           </div>
                           <p className="mt-1 mb-0 text-dark">
-                            {feedback.feedback?.trim() ? feedback.feedback : 'No feedback provided'}
+                            {feedback.feedback?.trim() || 'No feedback provided'}
                           </p>
                         </div>
                       </div>

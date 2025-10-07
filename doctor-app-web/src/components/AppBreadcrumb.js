@@ -129,7 +129,7 @@ const AppBreadcrumb = () => {
               backgroundColor: 'transparent',
             }}
           >
-            ← Back
+            Back
           </button>
         )}
         <small style={{ fontWeight: 600, color: COLORS.black, fontSize: '0.9rem' }}>

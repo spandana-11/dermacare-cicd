@@ -16,6 +16,7 @@ import {
   CFormLabel,
   CFormInput,
   CModalFooter,
+  CFormCheck,
 } from '@coreui/react'
 import { Get_ReportsByBookingIdData, SaveReportsData } from './reportAPI' // Assuming reportAPI.js is in the same directory
 import { FaEye, FaDownload } from 'react-icons/fa'
@@ -24,6 +25,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
+import { useHospital } from '../Usecontext/HospitalContext'
 
 const ReportDetails = () => {
   const { id } = useParams()
@@ -51,22 +53,27 @@ const ReportDetails = () => {
   const [pageNumber, setPageNumber] = useState(1)
 
   const [uploadModal, setUploadModal] = useState(false)
-const patientId =
-  appointmentInfo?.patientId ||
-  appointmentInfo?.item?.patientId ||
-  appointmentInfo?.selectedAppointment?.patientId ||
-  ''
+  const patientId =
+    appointmentInfo?.patientId ||
+    appointmentInfo?.item?.patientId ||
+    appointmentInfo?.selectedAppointment?.patientId ||
+    ''
+
+  const { user } = useHospital()
+  const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
 
   // Initial state for new report, with reportDate not prefilled
   const [newReport, setNewReport] = useState({
+    customerId: appointmentInfo?.customerId,
     reportName: '',
     reportDate: '', // No prefill for date
-    reportStatus: '',
+    reportStatus: 'Normal',
     reportType: '',
     reportFile: null,
     bookingId: appointmentInfo?.bookingId || '', // Ensure bookingId is safe to access
     patientId: appointmentInfo?.patientId || '',
   })
+  console.info(appointmentInfo?.customerId)
 
   // ✅ This correctly sets the PDF worker for Vite
   pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -180,14 +187,31 @@ const patientId =
 
     try {
       const payload = {
+        customerId: newReport.customerId,
         reportsList: [
           {
             ...newReport,
-             patientId: patientId,
+            patientId: patientId,
+
             reportFile: [newReport.reportFile], // API expects an array of base64 strings
           },
         ],
       }
+
+      // const payload = {
+      //   customerId: newReport.customerId,  // Moved outside reportsList
+      //   reportsList: [
+      //     {
+      //       bookingId: newReport.bookingId,
+      //       patientId: newReport.patientId,
+      //       reportName: newReport.reportName,
+      //       reportDate: newReport.reportDate,
+      //       reportStatus: newReport.reportStatus,
+      //       reportType: newReport.reportType,
+      //       reportFile: [newReport.reportFile], // API expects array
+      //     },
+      //   ],
+      // };
 
       const response = await SaveReportsData(payload)
       console.log('Report uploaded:', response)
@@ -263,14 +287,16 @@ const patientId =
           <CButton color="secondary" size="sm" onClick={() => navigate(-1)}>
             Back
           </CButton>
-          <CButton
-            color="success"
-            size="sm"
-            onClick={() => setUploadModal(true)}
-            style={{ backgroundColor: 'var(--color-black)', color: 'white', border: 'none' }}
-          >
-            Upload Report
-          </CButton>
+          {can('Reports', 'create') && (
+            <CButton
+              color="success"
+              size="sm"
+              onClick={() => setUploadModal(true)}
+              style={{ backgroundColor: 'var(--color-black)', color: 'white', border: 'none' }}
+            >
+              Upload Report
+            </CButton>
+          )}
         </div>
       </div>
 
@@ -319,6 +345,7 @@ const patientId =
                       {base64File ? (
                         <div className="d-flex gap-2">
                           {/* 👁️ Preview Button */}
+                          {/* {can('Reports', 'read') && ( */}
                           <CButton
                             className="bg-info text-white border-0"
                             size="sm"
@@ -331,7 +358,7 @@ const patientId =
                           >
                             <FaEye />
                           </CButton>
-
+                          {/* )} */}
                           {/* ⬇️ Download Button */}
                           <a
                             href={fileUrl}
@@ -351,7 +378,11 @@ const patientId =
               })
             ) : (
               <CTableRow>
-                <CTableDataCell colSpan="7" className="text-center">
+                <CTableDataCell
+                  colSpan="7"
+                  className="text-center"
+                  style={{ color: 'var(--color-black)' }}
+                >
                   No Reports Found
                 </CTableDataCell>
               </CTableRow>
@@ -391,18 +422,47 @@ const patientId =
       </CModal>
 
       {/* Upload Report Modal */}
-      <CModal visible={uploadModal} onClose={() => setUploadModal(false)} backdrop="static">
+      <CModal
+        visible={uploadModal}
+        onClose={() => setUploadModal(false)}
+        backdrop="static"
+        className="custom-modal"
+      >
         <CModalHeader>
           <CModalTitle>Upload Report</CModalTitle>
         </CModalHeader>
         <CModalBody>
           <CForm>
             <div className="mb-2">
-              <CFormLabel>Report Name</CFormLabel>
-              <CFormInput
-                value={newReport.reportName}
-                onChange={(e) => setNewReport({ ...newReport, reportName: e.target.value })}
-              />
+              {/* <CFormLabel>Report Status</CFormLabel> */}
+              <div className="d-flex gap-3">
+                <div className="d-flex gap-3">
+                  <CFormCheck
+                    type="radio"
+                    name="reportStatus"
+                    id="reportNormal"
+                    label="Normal"
+                    value="Normal"
+                    checked={newReport.reportStatus === 'Normal'}
+                    onChange={(e) => setNewReport({ ...newReport, reportStatus: e.target.value })}
+                    style={{
+                      accentColor: 'var(--color-black)', // ✅ custom checked color using CSS variable
+                    }}
+                  />
+                  <CFormCheck
+                    type="radio"
+                    name="reportStatus"
+                    id="reportAbnormal"
+                    label="Abnormal"
+                    value="Abnormal"
+                    checked={newReport.reportStatus === 'Abnormal'}
+                    onChange={(e) => setNewReport({ ...newReport, reportStatus: e.target.value })}
+                    style={{
+                      accentColor: 'var(--color-black)', // ✅ same color for consistency
+                    }}
+                  />
+                </div>
+              </div>
             </div>
             <div className="mb-2">
               <CFormLabel>File No.</CFormLabel>
@@ -413,6 +473,14 @@ const patientId =
               />
             </div>
             <div className="mb-2">
+              <CFormLabel>Report Name (File Name)</CFormLabel>
+              <CFormInput
+                value={newReport.reportName}
+                onChange={(e) => setNewReport({ ...newReport, reportName: e.target.value })}
+              />
+            </div>
+
+            <div className="mb-2">
               <CFormLabel>Report Date</CFormLabel>
               <CFormInput
                 type="date"
@@ -422,13 +490,7 @@ const patientId =
                 min={todayISO}
               />
             </div>
-            <div className="mb-2">
-              <CFormLabel>Report Status</CFormLabel>
-              <CFormInput
-                value={newReport.reportStatus}
-                onChange={(e) => setNewReport({ ...newReport, reportStatus: e.target.value })}
-              />
-            </div>
+
             <div className="mb-2">
               <CFormLabel>Report Type</CFormLabel>
               <CFormInput
@@ -450,7 +512,11 @@ const patientId =
           <CButton color="secondary" onClick={() => setUploadModal(false)}>
             Cancel
           </CButton>
-          <CButton color="primary" onClick={handleUploadSubmit}>
+          <CButton
+            color="primary"
+            onClick={handleUploadSubmit}
+            style={{ color: 'var(--color-black)', backgroundColor: 'var(--color-bgcolor)' }}
+          >
             Submit
           </CButton>
         </CModalFooter>

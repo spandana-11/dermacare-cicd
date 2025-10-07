@@ -63,6 +63,22 @@ public interface BookingFeign {
 	
 	@GetMapping("/api/v1/getInProgressAppointments/{mobilenumber}")
 	public ResponseEntity<?> inProgressAppointments(@PathVariable String mobilenumber);
-
-
+	
+	@GetMapping("/api/v1/getAllBookedServicesByBranchId/{branchId}")
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getAllBookedServicesByBranchId(@PathVariable String branchId);
+	
+	@GetMapping("/api/v1/getBookedServicesByClinicIdWithBranchId/{clinicId}/{branchId}")
+	public ResponseEntity<ResponseStructure<List<BookingResponseDTO>>> getBookedServicesByClinicIdWithBranchId(
+	        @PathVariable String clinicId,
+	        @PathVariable String branchId);
+	
+	@GetMapping("/api/v1/appointments/byIds/{clinicId}/{branchId}")
+	public ResponseEntity<?> retrieveTodayAndTomorrowAndDayAfterTomorrowAppointments(@PathVariable String clinicId,@PathVariable String branchId);
+	
+	@GetMapping("/api/v1/appointments/byIdsAndDate/{clinicId}/{branchId}/{date}")
+	public ResponseEntity<?> retrieveAppointnmentsByServiceDate(@PathVariable String clinicId,@PathVariable String branchId,@PathVariable String date);
+	
+	@PutMapping("/api/v1/update/bookingId")
+	public ResponseEntity<?> updateAppointmentBasedOnBookingId(@RequestBody BookingResponseDTO bookingResponse );
+	
 }

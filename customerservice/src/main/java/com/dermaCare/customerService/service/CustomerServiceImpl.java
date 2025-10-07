@@ -986,6 +986,38 @@ public Response getReportsAndDoctorSaveDetails(String customerId) {
 			}
 		}
 	   
+	   
+	   @Override
+	   public Response getRatingForServiceBydoctorId( String doctorId) {
+			Response response = new Response();
+			try {
+			    List<CustomerRatingDomain> listDto = new ArrayList<>();
+				List<CustomerRating> ratings = customerRatingRepository.findByDoctorId(doctorId);
+				System.out.println(ratings); 
+				if (ratings.isEmpty()) {
+					response.setStatus(200);
+					response.setMessage("Rating Not Found");
+					response.setSuccess(true);
+					return response;}
+				for(CustomerRating rating : ratings){
+				CustomerRatingDomain c = new CustomerRatingDomain(rating.getDoctorRating(), rating.getBranchRating(),
+						rating.getFeedback(), rating.getHospitalId(),rating.getBranchId(), rating.getDoctorId(), rating.getCustomerMobileNumber(),rating.getPatientId(),
+						rating.getPatientName(),rating.getAppointmentId(), rating.getRated(),rating.getDateAndTimeAtRating());
+				 listDto.add(c);}
+				response.setStatus(200);
+				response.setData(listDto);
+				response.setMessage("Rating fetched successfully");
+				response.setSuccess(true);
+				return response;
+			} catch (Exception e) {
+				response.setStatus(500);
+				response.setMessage(e.getMessage());
+				response.setSuccess(false);
+				return response;
+			}
+		}
+	   
+	   
 	   	   
 	   
 	   public Response getAverageRating(String branchId, String doctorId) {
@@ -1007,6 +1039,27 @@ public Response getReportsAndDoctorSaveDetails(String customerId) {
 			}
 		}
 	   
+	   @Override
+	   public Response getAverageRatingByDoctorId( String doctorId) {
+			Response response = new Response();
+			try {
+		ResponseEntity<Response> ratings = clinicAdminFeign.getAverageRatingsByDoctorId(doctorId);
+				if (!ratings.hasBody()) {
+					response.setStatus(200);
+					response.setMessage("Rating Not Found");
+					response.setSuccess(true);
+					return response;}
+				else {
+					return ratings.getBody();}
+			  }catch (FeignException e) {
+				response.setStatus(e.status());
+				response.setMessage(ExtractFeignMessage.clearMessage(e));
+				response.setSuccess(false);
+				return response;
+			}
+		}
+	   
+
 
     //GETDOCTORSBYSUBSERVICEID
 
@@ -1337,5 +1390,65 @@ try {
 	res.setSuccess(false);
 	return ResponseEntity.status(e.status()).body(res);		
 }}
+
+
+public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingsByBranchId(String branchId){
+	ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
+	try {		
+	return bookingFeign.getAllBookedServicesByBranchId(branchId);		
+}catch(FeignException e) {
+	res = new ResponseStructure<List<BookingResponse>>(null,ExtractFeignMessage.clearMessage(e),HttpStatus.INTERNAL_SERVER_ERROR,e.status());
+}
+	return ResponseEntity.status(res.getStatusCode()).body(res);
+}
+
+
+
+@Override
+public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingsByClinicIdWithBranchId(String clinicId, String branchId) {
+    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+    try {
+        return bookingFeign.getBookedServicesByClinicIdWithBranchId(clinicId, branchId);
+    } catch (FeignException e) {
+        res = new ResponseStructure<>(null, ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR, e.status());
+        return ResponseEntity.status(res.getStatusCode()).body(res);
+    }
+}
+
+
+@Override
+public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingsByCustomerId(String customerId) {
+    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+    try {
+        return bookingFeign.getBookingByCustomerId(customerId);
+    } catch (FeignException e) {
+        res = new ResponseStructure<>(null, ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR, e.status());
+        return ResponseEntity.status(res.getStatusCode()).body(res);
+    }
+}
+
+
+@Override
+public ResponseEntity<?> getInprogressBookingsByCustomerId(String customerId) {
+    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+    try {
+        return bookingFeign.retrieveInprogressAppointnmentsByCustomerId(customerId);
+    } catch (FeignException e) {
+        res = new ResponseStructure<>(null, ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR, e.status());
+        return ResponseEntity.status(res.getStatusCode()).body(res);
+    }
+}
+
+@Override
+public ResponseEntity<?> retrieveAppointnmentsByRelation(String customerId) {
+    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+    try {
+        return bookingFeign.retrieveAppointnmentsByRelation(customerId);
+    } catch (FeignException e) {
+        res = new ResponseStructure<>(null, ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR, e.status());
+        return ResponseEntity.status(res.getStatusCode()).body(res);
+    }
+}
+
 
 }

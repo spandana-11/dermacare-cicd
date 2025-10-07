@@ -183,7 +183,28 @@ public class BranchServiceImpl implements BranchService {
                 branch.setLongitude(branchDto.getLongitude() != null ? branchDto.getLongitude() : branch.getLongitude());
                 branch.setVirtualClinicTour(branchDto.getVirtualClinicTour() != null ? branchDto.getVirtualClinicTour() : branch.getVirtualClinicTour());
                 branch.setBranchOverallRating(branchDto.getBranchOverallRating());
+
                 Branch updatedBranch = branchRepository.save(branch);
+
+                // ------------------ Update branch in clinic ------------------
+                Clinic clinic = clinicRep.findByHospitalId(branch.getClinicId());
+                if (clinic != null && clinic.getBranches() != null) {
+                    for (Branch b : clinic.getBranches()) {
+                        if (b.getBranchId().equals(branchId)) {
+                            b.setBranchName(updatedBranch.getBranchName());
+                            b.setAddress(updatedBranch.getAddress());
+                            b.setCity(updatedBranch.getCity());
+                            b.setContactNumber(updatedBranch.getContactNumber());
+                            b.setEmail(updatedBranch.getEmail());
+                            b.setLatitude(updatedBranch.getLatitude());
+                            b.setLongitude(updatedBranch.getLongitude());
+                            b.setVirtualClinicTour(updatedBranch.getVirtualClinicTour());
+                            b.setBranchOverallRating(updatedBranch.getBranchOverallRating());
+                            break;
+                        }
+                    }
+                    clinicRep.save(clinic);
+                }
 
                 response.setMessage("Branch updated successfully");
                 response.setSuccess(true);
@@ -201,7 +222,6 @@ public class BranchServiceImpl implements BranchService {
         }
         return response;
     }
-
     // ---------------------- DELETE BRANCH ----------------------
     @Override
     public Response deleteBranch(String branchId) {

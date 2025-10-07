@@ -1,5 +1,4 @@
 package com.AdminService.dto;
-
 import java.util.List;
 import java.util.Map;
 
@@ -18,7 +17,7 @@ public class SubServicesDto {
 
 	private String subServiceName;
 
-	private String serviceID;
+	private String serviceId;
 
 	private String serviceName;
 

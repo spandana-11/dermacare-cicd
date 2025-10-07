@@ -24,6 +24,7 @@ public class DoctorLoginDTO {
 	private String hospitalName;
 	private String hospitalId;
 	private String branchId;
+	private String branchName;
 	private Map<String, List<String>> permissions;
 
 

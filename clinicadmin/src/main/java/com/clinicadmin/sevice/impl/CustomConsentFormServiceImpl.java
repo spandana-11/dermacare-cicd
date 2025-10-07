@@ -184,7 +184,7 @@ public class CustomConsentFormServiceImpl implements CustomConsentFormService {
 			            .orElse(null);
 
 			    if (form == null) {
-			        return buildErrorResponse("Generic Consent Form not found for this hospital", 404);
+			        return buildErrorResponse("Generic Consent Form not found for this hospital", 200);
 			    }
 
 			    return buildSuccessResponse(mapToDTO(form), "Generic Consent Form retrieved successfully");
@@ -194,7 +194,7 @@ public class CustomConsentFormServiceImpl implements CustomConsentFormService {
 			            .findAllByHospitalIdAndConsentFormType(hospitalId, "2");
 
 			    if (formsList.isEmpty()) {
-			        return buildErrorResponse("Procedure Consent Forms not found for this hospital", 404);
+			        return buildErrorResponse("Procedure Consent Forms not found for this hospital", 200);
 			    }
 
 			    List<CustomConsentFormDTO> formsListDTO =

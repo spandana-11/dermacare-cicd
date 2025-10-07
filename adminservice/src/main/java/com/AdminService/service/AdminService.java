@@ -84,9 +84,6 @@ public Response getAllSubServicesFromClincAdmin();
 
 //BOOKINGS
 
-public ResponseStructure<List<BookingResponse>> getAllBookedServices();
-public Response deleteBookedService(String id);
-public Response getBookingByDoctorId(String doctorId);
 
 //DOCTORS
 public Response getDoctorInfoByDoctorId(String doctorId);

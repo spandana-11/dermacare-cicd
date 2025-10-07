@@ -1,12 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import classNames from 'classnames'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import {
   CCard,
-  CCardBody,
-  CCardHeader,
-  CCol,
-  CRow,
   CTable,
   CTableBody,
   CTableDataCell,
@@ -21,34 +16,61 @@ import {
 
 import Button from '../../components/CustomButton/CustomButton'
 import TooltipButton from '../../components/CustomButton/TooltipButton'
-
 import { COLORS, SIZES } from '../../Themes'
 import { useDoctorContext } from '../../Context/DoctorContext'
 import { getTodayAppointments } from '../../Auth/Auth'
 import CalendarModal from '../../utils/CalenderModal'
+import { useNavigate } from 'react-router-dom'
 
 // Helper function
-const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1)
+const capitalizeFirst = (str) => str?.charAt(0).toUpperCase() + str?.slice(1)
 
 const Dashboard = () => {
+  const navigate = useNavigate()
   const {
     setPatientData,
-    doctorId,
     setTodayAppointments,
-    todayAppointments, doctorDetails
+    todayAppointments,
+    doctorDetails,
   } = useDoctorContext()
 
   const [selectedType, setSelectedType] = useState(null)
   const [selectedBranch, setSelectedBranch] = useState(null)
   const [showCalendar, setShowCalendar] = useState(false)
-  const [branches, setBranches] = useState([]) // Fetch from backend if needed
+  const [branches, setBranches] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
+
   const allBranches = doctorDetails?.branches || []
-  // Filtered patients based on type and branch
+
+  // Fetch appointments
+  const fetchAppointments = async () => {
+    try {
+      const response = await getTodayAppointments()
+      if (response.statusCode === 200) {
+        setTodayAppointments(response.data)
+        setBranches(allBranches)
+      }
+    } catch (error) {
+      console.error('❌ Error fetching appointments:', error)
+    }
+  }
+
+  useEffect(() => {
+    setPatientData(null)
+    fetchAppointments()
+
+    const interval = setInterval(() => {
+      fetchAppointments()
+    }, 10000)
+
+    return () => clearInterval(interval)
+  }, [doctorDetails])
+
+  // Filter patients based on type and branch
   const filteredPatients = todayAppointments.filter((item) => {
-    let typeMatch = selectedType ? item.consultationType === selectedType : true
-    let branchMatch = selectedBranch ? item.branchId === selectedBranch.branchId : true
+    const typeMatch = selectedType ? item.consultationType === selectedType : true
+    const branchMatch = selectedBranch ? item.branchId === selectedBranch.branchId : true
     return typeMatch && branchMatch
   })
 
@@ -58,42 +80,18 @@ const Dashboard = () => {
     currentPage * itemsPerPage
   )
 
-  // Count consultations for buttons
+  // Count consultations
   const consultationCounts = todayAppointments.reduce((acc, item) => {
     acc[item.consultationType] = (acc[item.consultationType] || 0) + 1
     return acc
   }, {})
 
-
-
-  const fetchAppointments = async () => {
-    const response = await getTodayAppointments()
-    if (response.statusCode === 200) {
-      setTodayAppointments(response.data)
-
-      // Extract unique branchIds from appointments
-      const uniqueBranchIds = [...new Set(response.data.map((item) => item.branchId))]
-
-      // Match with doctorDetails branches to get branchName
-      const matchedBranches = allBranches.filter((b) => uniqueBranchIds.includes(b.branchId))
-
-      setBranches(matchedBranches)
-    }
+  // Handle calendar click (simple navigation)
+  const handleCalendarClick = (appointment) => {
+    if (!appointment) return
+    setPatientData(appointment)
+    navigate(`/tab-content/${appointment.patientId}`, { state: { patient: appointment } })
   }
-
-
-useEffect(() => {
-  setPatientData(null); // Clear patient context
-  fetchAppointments();   // Fetch initially
-
-  // Auto-fetch every 10 seconds
-  const interval = setInterval(() => {
-    fetchAppointments();
-  }, 10000); // Adjust time (ms) as needed
-
-  return () => clearInterval(interval); // Cleanup interval on unmount
-}, []);
-
 
   return (
     <div className="container-fluid mt-3">
@@ -111,7 +109,10 @@ useEffect(() => {
                 variant={selectedType === null ? 'primary' : 'outline'}
                 customColor={COLORS.bgcolor}
                 color={COLORS.black}
-                onClick={() => setSelectedType(null)}
+                onClick={() => {
+                  setSelectedType(null)
+                  setSelectedBranch(null) // 🔥 reset branch too
+                }}
                 size="small"
               >
                 All ({todayAppointments.length})
@@ -129,7 +130,6 @@ useEffect(() => {
                 </Button>
               ))}
             </div>
-
             <div className="d-flex gap-2">
               {/* Branch Dropdown */}
               <CDropdown>
@@ -142,16 +142,22 @@ useEffect(() => {
                     textAlign: 'left',
                   }}
                 >
-                  {selectedBranch ? selectedBranch.branchName : 'Select Branch'}
+                  {selectedBranch ? selectedBranch.branchName : 'All Branches'}
                 </CDropdownToggle>
+
                 <CDropdownMenu>
+                  {/* All Branches option */}
+                  <CDropdownItem onClick={() => setSelectedBranch(null)}>
+                    All Branches
+                  </CDropdownItem>
+
                   {branches.length > 0 ? (
                     branches.map((branch) => (
                       <CDropdownItem
                         key={branch.branchId}
                         onClick={() => setSelectedBranch(branch)}
                       >
-                        {branch.branchName}({branch.branchId})
+                        {branch.branchName}
                       </CDropdownItem>
                     ))
                   ) : (
@@ -170,30 +176,41 @@ useEffect(() => {
                 My Calendar
               </Button>
             </div>
+
           </div>
 
           {/* Appointments Table */}
-          <div style={{ maxHeight: 'calc(100vh - 250px)', overflowY: 'auto', borderRadius: '8px' }}>
+          <div
+            style={{ maxHeight: 'calc(100vh - 250px)', overflowY: 'auto', borderRadius: '8px' }}
+          >
             <CTable className="border">
               <CTableHead>
                 <CTableRow>
-                  {['S.No', 'Patient ID', 'Name', 'Mobile', 'Date', 'Time', 'Consultation', 'Action'].map(
-                    (header, i) => (
-                      <CTableHeaderCell
-                        key={i}
-                        className={header === 'Action' ? 'text-center' : ''}
-                        style={{ backgroundColor: COLORS.bgcolor, color: COLORS.black }}
-                      >
-                        {header}
-                      </CTableHeaderCell>
-                    )
-                  )}
+                  {[
+                    'S.No',
+                    'Patient ID',
+                    'Name',
+                    'Mobile',
+                    'Date',
+                    'Time',
+                    'Consultation',
+                    'Branch',
+                    'Action',
+                  ].map((header, i) => (
+                    <CTableHeaderCell
+                      key={i}
+                      className={header === 'Action' ? 'text-center' : ''}
+                      style={{ backgroundColor: COLORS.bgcolor, color: COLORS.black }}
+                    >
+                      {header}
+                    </CTableHeaderCell>
+                  ))}
                 </CTableRow>
               </CTableHead>
               <CTableBody>
                 {currentPatients.length === 0 ? (
                   <CTableRow>
-                    <CTableDataCell colSpan="8" className="text-center py-4 text-muted">
+                    <CTableDataCell colSpan="9" className="text-center py-4 text-muted">
                       No Appointments Available
                     </CTableDataCell>
                   </CTableRow>
@@ -207,6 +224,9 @@ useEffect(() => {
                       <CTableDataCell>{item.serviceDate}</CTableDataCell>
                       <CTableDataCell>{item.servicetime}</CTableDataCell>
                       <CTableDataCell>{item.consultationType}</CTableDataCell>
+                      <CTableDataCell style={{ whiteSpace: 'normal', wordBreak: 'break-word', maxWidth: '150px' }}>
+                        {branches.find((b) => b.branchId === item.branchId)?.branchName || 'N/A'}
+                      </CTableDataCell>
                       <CTableDataCell className="text-center">
                         <TooltipButton patient={item} tab={item.status} />
                       </CTableDataCell>
@@ -257,17 +277,21 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Calendar Modal */}
       {showCalendar && (
         <CalendarModal
           visible={showCalendar}
           onClose={() => setShowCalendar(false)}
-          todayAppointments={todayAppointments}
+          todayAppointments={
+            selectedBranch
+              ? todayAppointments.filter((a) => a.branchId === selectedBranch.branchId)
+              : todayAppointments
+          }
           defaultBookedSlots={[]}
-          handleClick={() => { }}
+          handleClick={handleCalendarClick} // simple navigation
           fetchAppointments={fetchAppointments}
         />
       )}
+
     </div>
   )
 }

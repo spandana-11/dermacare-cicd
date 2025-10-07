@@ -16,4 +16,7 @@ public interface PrivacyPolicyService {
     Response updatePolicy(PrivacyPolicyDTO dto);
 
     Response deletePolicy(String id);
+
+
+	Response getPoliciesByClinicId(String clinicId);
 }

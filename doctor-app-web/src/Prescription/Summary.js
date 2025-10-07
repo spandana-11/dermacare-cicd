@@ -25,7 +25,7 @@ import { createDoctorSaveDetails, getClinicDetails, getDoctorDetails } from '../
 import { useDoctorContext } from '../Context/DoctorContext'
 import PrescriptionPDF from '../utils/PdfGenerator'
 import { pdf } from '@react-pdf/renderer'
-import { capitalizeFirst } from '../utils/CaptalZeWord'
+import { capitalizeEachWord, capitalizeFirst } from '../utils/CaptalZeWord'
 
 /**
  * Props:
@@ -39,7 +39,7 @@ import { capitalizeFirst } from '../utils/CaptalZeWord'
  *   }
  */
 
-const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formData = {},fromPage = 'dashboard' }) => {
+const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formData = {}, fromPage }) => {
   const { doctorDetails, setDoctorDetails, setClinicDetails, clinicDetails, updateTemplate } =
     useDoctorContext()
 
@@ -180,12 +180,14 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
 
   // Package all data + pdf (base64) and send it
   // Upload prescription
-  const uploadPrescription = async ({ downloadAfter = false } = {}) => {
+  const uploadPrescription = async ({ downloadAfter = false } = {}) => { //TODO:change uploadPrescription to onSaveTemplate
+
     try {
       // ✅ Check diagnosis first
       const diagnosis = formData?.symptoms?.diagnosis?.trim() || ''
       if (!diagnosis) {
         //  alert('Diagnosis is missing. Cannot save or upload the prescription.')
+        warning('"Diagnosis" is missing. Cannot save or upload the prescription.', { title: 'Warning' })
         return false
       }
 
@@ -270,19 +272,52 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
     }
   }
 
-const skipTemplate = () => {
-  console.log("Skipped saving template. Navigating back to", fromPage);
-  setShowTemplateModal(false);
-  setPendingAction(null);
+  const skipTemplate = async () => {
+    try {
+      console.log("Preparing to upload prescription...")
+      const blob = await renderPrescriptionPdfBlob()
+      console.log("PDF Blob Generated:", blob)
 
-  if (fromPage === 'appointments') {
-    navigate('/appointments', { replace: true });
-  } else {
-    navigate('/dashboard', { replace: true });
+      const base64 = await blobToBase64(blob)
+      console.log("Base64 PDF length:", base64.length)
+
+      const safeName = (patientData?.name || 'Prescription').replace(/[^\w\-]+/g, '_')
+      const filename = `${safeName}.pdf`
+
+      const payload = {
+        bookingId: patientData?.bookingId,
+        clinicName: clinicDetails?.name,
+        customerId: patientData?.customerId,
+        clinicId: clinicDetails?.hospitalId,
+        patientId: patientData?.patientId,
+        doctorId: doctorDetails?.doctorId,
+        symptoms: formData?.symptoms,
+        tests: formData?.tests,
+        treatments: formData?.treatments,
+        followUp: formData?.followUp,
+        prescription: formData?.prescription,
+        prescriptionPdf: [base64],
+        visitType: patientData?.visitType || "OFFLINE",
+      }
+      console.log("Final Payload to Upload:", payload)
+
+      const resp = await createDoctorSaveDetails(payload)
+      console.log("API Response:", resp)
+
+      if (resp) {
+        success('Prescription saved successfully!', { title: 'Success' })
+        navigate('/dashboard', { replace: true })
+      } else {
+        warning('Saved, but got an unexpected response.')
+      }
+
+      return true
+    } catch (e) {
+      console.error("Upload Prescription Error:", e)
+      error('Failed to generate or send the PDF.', { title: 'Error' })
+      return false
+    }
   }
-};
-
-
 
   // ---------------- Render ----------------
   return (
@@ -297,14 +332,19 @@ const skipTemplate = () => {
             <CRow className="g-3">
               <CCol xs={12} md={4}>
                 <div>
-                  <span className="fw-semibold">Name:</span> {capitalizeFirst(patientData?.name || '—')}
+                  <span className="fw-semibold">Name:</span> {capitalizeEachWord(patientData?.name || '—')}
 
                 </div>
               </CCol>
               <CCol xs={12} md={3}>
                 <div>
-                  <span className="fw-semibold">Age/Sex:</span>{' '}
-                  {patientData?.age ? `${patientData.age} Years` : '—'}
+                  <span className="fw-semibold">Age / Gender:</span>{' '}
+                  {patientData?.age
+                    ? (patientData.age.toString().toLowerCase().includes("yr") ||
+                      patientData.age.toString().toLowerCase().includes("year")
+                      ? patientData.age
+                      : `${patientData.age} yrs`)
+                    : "—"}
                   {patientData?.gender ? ` / ${patientData.gender}` : ''}
                 </div>
               </CCol>
@@ -327,7 +367,7 @@ const skipTemplate = () => {
             <CCardBody>
               <CRow className="g-3">
                 <CCol xs={12} md={8}>
-                  <h6 className="mb-2">Patient-Provided Symptoms</h6>
+                  <h6 className="mb-2">Symptoms Complaints</h6>
                   <div style={{ whiteSpace: 'pre-wrap' }}>{symptomsDetails}</div>
                   <h6 className="mb-2 mt-2">
                     Doctor Observations <span className="text-body-secondary">(if any)</span>
@@ -356,7 +396,7 @@ const skipTemplate = () => {
         {diagnosis && (
           <CCard className="shadow-sm mb-3">
             <CCardHeader className="py-2">
-              <strong style={{ color: COLORS.black }}>Probable Diagnosis / Disease</strong>
+              <strong style={{ color: COLORS.black }}>Probable Disease</strong>
             </CCardHeader>
             <CCardBody>
               <div className="fs-6">{diagnosis}</div>
@@ -390,13 +430,13 @@ const skipTemplate = () => {
                   {medicines.map((med, index) => {
                     const durationValue = parseInt(med.duration, 10);
                     const durationUnit =
-                      med.durationUnit && med.durationUnit !== "NA"
-                        ? med.durationUnit.trim()
+                      med.duration_unit && med.duration_unit !== "NA"
+                        ? med.duration_unit.trim()
                         : "";
 
                     const displayDuration =
-                      durationValue > 0 && durationUnit
-                        ? `${durationValue} ${durationUnit}${durationValue > 1 ? "s" : ""}`
+                      durationValue > 0 && med.durationUnit
+                        ? `${durationValue} ${med.durationUnit}${durationValue > 1 ? "s" : ""}`
                         : durationValue > 0
                           ? `${durationValue}`
                           : "NA";
@@ -439,7 +479,7 @@ const skipTemplate = () => {
         {(tests.length > 0 || testsReason) && (
           <CCard className="shadow-sm mb-3">
             <CCardHeader className="py-2">
-              <strong style={{ color: COLORS.black }}>Tests</strong>
+              <strong style={{ color: COLORS.black }}>Investigations</strong>
             </CCardHeader>
             <CCardBody>
               {tests.length > 0 ? (
@@ -471,7 +511,7 @@ const skipTemplate = () => {
         {treatments.length > 0 && (
           <CCard className="shadow-sm mb-3">
             <CCardHeader className="py-2">
-              <strong style={{ color: COLORS.black }}>Treatments</strong>
+              <strong style={{ color: COLORS.black }}>Procedures</strong>
             </CCardHeader>
             <CCardBody>
               <ul className="mb-2">
@@ -595,8 +635,10 @@ const skipTemplate = () => {
             customColor={COLORS.bgcolor}
             onClick={() => {
               setClickedSaveTemplate(true)
+              uploadPrescription({ downloadAfter: false })
+
               onSaveTemplate?.()
-              // info('Template saved. You can now Save or Save & Download.', { title: 'Template' })
+              info('Template saved. You can now Save or Save & Download.', { title: 'Template' })
             }}
           >
             {!updateTemplate ? 'Save Prescription Template' : 'Update Prescription Template'}
@@ -644,15 +686,15 @@ const skipTemplate = () => {
                 </p>
                 <div className="d-flex gap-2 justify-content-end">
                   <Button
-  onClick={() => {
-    setPendingAction(ACTIONS.SAVE);
-    skipTemplate(); // just navigate back
-  }}
-  customColor={COLORS.bgcolor}
-  color={COLORS.black}
->
-  No, just continue
-</Button>
+                    onClick={() => {
+                      setPendingAction(ACTIONS.SAVE);
+                      skipTemplate(); // just navigate back
+                    }}
+                    customColor={COLORS.bgcolor}
+                    color={COLORS.black}
+                  >
+                    No, just continue
+                  </Button>
 
                   <Button customColor={COLORS.bgcolor} onClick={confirmSaveAsTemplate}>
                     Yes, save as template

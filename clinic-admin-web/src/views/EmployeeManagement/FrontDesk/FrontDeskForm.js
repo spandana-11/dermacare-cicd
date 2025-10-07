@@ -15,6 +15,10 @@ import {
 import { toast } from 'react-toastify'
 import { actions, features } from '../../../Constant/Features'
 import capitalizeWords from '../../../Utils/capitalizeWords'
+import UserPermissionModal from '../UserPermissionModal'
+import { validateField } from '../../../Utils/Validators'
+import { emailPattern } from '../../../Constant/Constants'
+import FilePreview from '../../../Utils/FilePreview'
 
 const FrontDeskForm = ({
   visible,
@@ -23,14 +27,16 @@ const FrontDeskForm = ({
   initialData,
   viewMode,
   receptionist,
+  technicians,
   fetchTechs,
 }) => {
   const emptyPermissions = {} // ✅ no feature is selected by default
 
   const emptyForm = {
     clinicId: localStorage.getItem('HospitalId'),
-    branchId:localStorage.getItem('branchId'),
-    hospitalName:localStorage.getItem('HospitalName'),
+    branchId: localStorage.getItem('branchId'),
+      branchName: localStorage.getItem('branchName'),
+    hospitalName: localStorage.getItem('HospitalName'),
     fullName: '',
     dateOfBirth: '',
     contactNumber: '',
@@ -46,10 +52,10 @@ const FrontDeskForm = ({
     previousEmploymentHistory: '',
     role: 'receptionist',
 
-    gender: 'male',
+    gender: '',
     yearOfExperience: '',
     // specialization: '',
-    vaccinationStatus: 'Fully Vaccinated',
+    vaccinationStatus: '',
 
     address: {
       houseNo: '',
@@ -80,6 +86,8 @@ const FrontDeskForm = ({
   const [showPModal, setShowPModal] = useState(false)
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
+  const [errors, setErrors] = useState({});
+
 
   // Mandatory fields
   const mandatoryFields = [
@@ -198,10 +206,13 @@ const FrontDeskForm = ({
 
   // 🔹 Handle text inputs (top-level fields)
   const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData(prev => ({ ...prev, [field]: value }));
 
-  // 🔹 Handle nested objects (address, bankAccountDetails)
+    // Run validation on each change
+    const error = validateField(field, value, { ...formData, [field]: value }, technicians);
+
+    setErrors(prev => ({ ...prev, [field]: error }));
+  };
   const handleNestedChange = (parent, field, value) => {
     setFormData((prev) => ({
       ...prev,
@@ -210,21 +221,27 @@ const FrontDeskForm = ({
   }
 
   // 🔹 File upload → Base64
-  const handleFileUpload = (e, field) => {
-    const file = e.target.files[0]
-    if (!file) return
+ const handleFileUpload = (e, field) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: reader.result, // ✅ Full Data URL (with type prefix)
-        [`${field}Name`]: file.name,
-        [`${field}Type`]: file.type, // ✅ Actual file MIME type (image/png, application/pdf, etc.)
-      }))
-    }
-    reader.readAsDataURL(file)
+  // ✅ Enforce 250 KB max
+  if (file.size > 250 * 1024) {
+    alert("File size must be less than 250KB.");
+    return;
   }
+
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: reader.result,         // Base64 data
+      [`${field}Name`]: file.name,    // Original file name
+      [`${field}Type`]: file.type,    // MIME type
+    }));
+  };
+  reader.readAsDataURL(file);
+};
 
   // 🔹 Save handler
   const handleSubmit = () => {
@@ -264,10 +281,14 @@ const FrontDeskForm = ({
       toast.error('Contact number must be 10 digits and start with 6-9.')
       return
     }
-
+  // ✅ Emergency contact and Nurse contact must not be same
+  if (formData.contactNumber === formData.emergencyContact) {
+    toast.error('Contact Number and Emergency Contact cannot be the same.');
+    return;
+  }
     // ✅ Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailId)) {
+ 
+    if (!emailPattern.test(formData.emailId)) {
       toast.error('Please enter a valid email address.')
       return
     }
@@ -331,8 +352,8 @@ const FrontDeskForm = ({
     }
 
     // ✅ Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailId)) {
+ 
+    if (!emailPattern.test(formData.emailId)) {
       toast.error('Please enter a valid email address.')
       return
     }
@@ -402,45 +423,45 @@ const FrontDeskForm = ({
   )
 
   // 🔹 File Preview with modal trigger
-  const FilePreview = ({ label, type, data }) => {
-    if (!data) return <p>{label} </p>
+  // const FilePreview = ({ label, type, data }) => {
+  //   if (!data) return <p>{label} </p>
 
-    const isImage = type?.startsWith('image/')
-    const fileUrl = data.startsWith('data:') ? data : `data:${type};base64,${data}`
+  //   const isImage = type?.startsWith('image/')
+  //   const fileUrl = data.startsWith('data:') ? data : `data:${type};base64,${data}`
 
-    return (
-      <div className="bg-white p-3 rounded-md shadow-sm">
-        <strong>{label}:</strong>
-        <div className="mt-2">
-          {isImage ? (
-            <img
-              src={fileUrl}
-              alt={label}
-              className="w-32 h-32 object-cover rounded-md border cursor-pointer"
-              onClick={() => handlePreview(fileUrl, type)}
-            />
-          ) : (
-            <button
-              type="button "
-              className=" btn text-blue-600 hover:underline block mx-2"
-              onClick={() => handlePreview(fileUrl, type)}
-              style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
-            >
-              Preview
-            </button>
-          )}
-          <a
-            href={fileUrl}
-            download={label.replace(/\s+/g, '_')}
-            className="text-green-600 hover:underline text-sm block  btn"
-            style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
-          >
-            Download
-          </a>
-        </div>
-      </div>
-    )
-  }
+  //   return (
+  //     <div className="bg-white p-3 rounded-md shadow-sm">
+  //       <strong>{label}:</strong>
+  //       <div className="mt-2">
+  //         {isImage ? (
+  //           <img
+  //             src={fileUrl}
+  //             alt={label}
+  //             className="w-32 h-32 object-cover rounded-md border cursor-pointer"
+  //             onClick={() => handlePreview(fileUrl, type)}
+  //           />
+  //         ) : (
+  //           <button
+  //             type="button "
+  //             className=" btn text-blue-600 hover:underline block mx-2"
+  //             onClick={() => handlePreview(fileUrl, type)}
+  //             style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+  //           >
+  //             Preview
+  //           </button>
+  //         )}
+  //         <a
+  //           href={fileUrl}
+  //           download={label.replace(/\s+/g, '_')}
+  //           className="text-green-600 hover:underline text-sm block  btn"
+  //           style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+  //         >
+  //           Download
+  //         </a>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   return (
     <>
@@ -480,7 +501,7 @@ const FrontDeskForm = ({
                 <div className="text-center">
                   {formData.profilePicture ? (
                     <img
-                      src={decodeImage(formData.profilePicture)} // ✅ decode first
+                      src={formData.profilePicture} // ✅ decode first
                       alt={formData.fullName}
                       width="80"
                       height="80"
@@ -633,9 +654,9 @@ const FrontDeskForm = ({
                 {/* Other Info */}
                 <Section title="Other Information ">
                   <div className="row mb-2">
-                    <div className="col-md-6">
+                    {/* <div className="col-md-6">
                       <Row label="Lab License" value={formData.computerSkillsProof} />
-                    </div>
+                    </div> */}
                     {/* <div className="col-md-6">
                       <Row label="Vaccination Status" value={formData.vaccinationStatus} />
                     </div> */}
@@ -686,8 +707,18 @@ const FrontDeskForm = ({
                   </CFormLabel>
                   <CFormInput
                     value={formData.fullName}
-                    onChange={(e) => handleChange('fullName', e.target.value)}
+                    onChange={(e) => {
+                      // Remove numbers and special characters immediately
+                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '');
+                      handleChange('fullName', value);
+                    }}
+                   // onBlur={() => handleBlur('fullName', formData.fullName)}
                   />
+                  {errors.fullName && (
+                    <div className="text-danger mt-1">{errors.fullName}</div>
+                  )}
+
+
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>
@@ -728,16 +759,25 @@ const FrontDeskForm = ({
                   </CFormLabel>
                   <CFormInput
                     type="text"
-                    maxLength={10} // ✅ Restrict to 10 digits
+                    maxLength={10} // Restrict to 10 digits
                     value={formData.contactNumber}
                     onChange={(e) => {
-                      const value = e.target.value
-                      // ✅ Allow only digits
+                      const value = e.target.value;
+
+                      // Allow only digits
                       if (/^\d*$/.test(value)) {
-                        handleChange('contactNumber', value)
+                        handleChange('contactNumber', value);
+
+                        // Run live validation
+                        const err = validateField('contactNumber', value, formData);
+                        setErrors((prev) => ({ ...prev, contactNumber: err }));
                       }
                     }}
                   />
+                  {errors.contactNumber && (
+                    <div className="text-danger mt-1">{errors.contactNumber}</div>
+                  )}
+
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>
@@ -746,8 +786,21 @@ const FrontDeskForm = ({
                   <CFormInput
                     type="email"
                     value={formData.emailId}
-                    onChange={(e) => handleChange('emailId', e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+
+                      // Update value
+                      handleChange('emailId', value);
+
+                      // Run live validation
+                      const err = validateField('emailId', value, formData);
+                      setErrors((prev) => ({ ...prev, emailId: err }));
+                    }}
                   />
+                  {errors.emailId && (
+                    <div className="text-danger mt-1">{errors.emailId}</div>
+                  )}
+
                 </div>
               </div>
 
@@ -760,13 +813,21 @@ const FrontDeskForm = ({
                     maxLength={12}
                     value={formData.governmentId}
                     onChange={(e) => {
-                      const value = e.target.value
-                      // ✅ Only numbers allowed, max 12
+                      const value = e.target.value;
+                      // ✅ Only digits allowed, max 12
                       if (/^\d*$/.test(value)) {
-                        handleChange('governmentId', value)
+                        handleChange('governmentId', value);
+
+                        // Run live validation
+                        const err = validateField('governmentId', value, formData);
+                        setErrors((prev) => ({ ...prev, governmentId: err }));
                       }
                     }}
                   />
+                  {errors.governmentId && (
+                    <div className="text-danger mt-1">{errors.governmentId}</div>
+                  )}
+
                 </div>
 
                 {/* <div className="col-md-4">
@@ -783,22 +844,46 @@ const FrontDeskForm = ({
                   <CFormInput
                     type="date"
                     value={formData.dateOfJoining}
-                    onChange={(e) => handleChange('dateOfJoining', e.target.value)}
+                    onChange={(e) => {
+                      handleChange('dateOfJoining', e.target.value);
+
+                      // Live validation
+                      const err = validateField('dateOfJoining', e.target.value, formData);
+                      setErrors((prev) => ({ ...prev, dateOfJoining: err }));
+                    }}
                   />
+                  {errors.dateOfJoining && (
+                    <div className="text-danger mt-1">{errors.dateOfJoining}</div>
+                  )}
                 </div>
+
                 <div className="col-md-4">
+
+
                   <CFormLabel>
                     Vaccination Status <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormSelect
                     value={formData.vaccinationStatus}
-                    onChange={(e) => handleChange('vaccinationStatus', e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      handleChange('vaccinationStatus', value);
+
+                      // ✅ Live validation
+                      const error = value ? '' : 'Vaccination Status is required.';
+                      setErrors((prev) => ({ ...prev, vaccinationStatus: error }));
+                    }}
                   >
                     <option value="">Select Status</option>
                     <option value="Not Vaccinated">Not Vaccinated</option>
                     <option value="Partially Vaccinated">Partially Vaccinated</option>
                     <option value="Fully Vaccinated">Fully Vaccinated</option>
                   </CFormSelect>
+                  {errors.vaccinationStatus && (
+                    <div className="text-danger mt-1">{errors.vaccinationStatus}</div>
+                  )}
+
+
                 </div>
               </div>
 
@@ -807,9 +892,22 @@ const FrontDeskForm = ({
                   {' '}
                   <CFormLabel>Department</CFormLabel>
                   <CFormInput
-                    value={capitalizeWords(formData.department)}
-                    onChange={(e) => handleChange('department', e.target.value)}
-                  />{' '}
+                    value={(formData.department)}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '');
+
+                      // Update value
+                      handleChange('department', value);
+
+                      // Run live validation
+                      const err = validateField('department', value); // assuming 'department' validation exists in validators.js
+                      setErrors((prev) => ({ ...prev, department: err }));
+                    }}
+                  />
+                  {errors.department && (
+                    <div className="text-danger mt-1">{errors.department}</div>
+                  )}
+
                 </div>
                 <div className="col-md-4">
                   {' '}
@@ -819,8 +917,21 @@ const FrontDeskForm = ({
                   <CFormInput
                     type="number"
                     value={formData.yearOfExperience}
-                    onChange={(e) => handleChange('yearOfExperience', e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+
+                      // Update value
+                      handleChange('yearOfExperience', value);
+
+                      // Live validation
+                      const err = validateField('yearOfExperience', value); // ensure this exists in your validators.js
+                      setErrors((prev) => ({ ...prev, yearOfExperience: err }));
+                    }}
                   />
+                  {errors.yearOfExperience && (
+                    <div className="text-danger mt-1">{errors.yearOfExperience}</div>
+                  )}
+
                 </div>
 
                 {/* <div className="col-md-4">
@@ -842,8 +953,12 @@ const FrontDeskForm = ({
                   {' '}
                   <CFormLabel>Qualification</CFormLabel>
                   <CFormInput
-                    value={capitalizeWords(formData.qualification)}
-                    onChange={(e) => handleChange('qualification', e.target.value)}
+                    value={(formData.qualification)}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '');
+                      handleChange('qualification', value)
+                    }
+                    }
                   />
                 </div>
               </div>
@@ -872,9 +987,9 @@ const FrontDeskForm = ({
 
               {Object.keys(formData.address)
                 .reduce((rows, field, index) => {
-                  if (index % 3 === 0) rows.push([]) // start new row every 3 fields
-                  rows[rows.length - 1].push(field)
-                  return rows
+                  if (index % 3 === 0) rows.push([]);
+                  rows[rows.length - 1].push(field);
+                  return rows;
                 }, [])
                 .map((rowFields, rowIndex) => (
                   <div className="row mb-3" key={rowIndex}>
@@ -884,31 +999,61 @@ const FrontDeskForm = ({
                           {field} <span style={{ color: 'red' }}>*</span>
                         </CFormLabel>
                         <CFormInput
-                          type={field === 'postalCode' ? 'text' : 'text'}
+                          type="text"
                           maxLength={field === 'postalCode' ? 6 : undefined}
-                          value={capitalizeWords(formData.address[field])}
+                          value={(formData.address[field])}
                           onChange={(e) => {
-                            let value = e.target.value
+                            let value = e.target.value;
+
+                            // Postal Code → digits only
                             if (field === 'postalCode') {
-                              // ✅ Allow only digits
-                              if (/^\d*$/.test(value)) {
-                                handleNestedChange('address', field, value)
-                              }
-                            } else {
-                              handleNestedChange('address', field, value)
+                              if (/^\d*$/.test(value)) handleNestedChange('address', field, value);
                             }
+                            // City, State, Country → letters and spaces only
+                            else if (['city', 'state', 'country'].includes(field)) {
+                              value = value.replace(/[^A-Za-z\s]/g, '');
+                              handleNestedChange('address', field, value);
+                            }
+                            // Other fields → allow all
+                            else {
+                              handleNestedChange('address', field, value);
+                            }
+
+                            // Live validation
+                            const error = validateField(field, value, formData);
+                            setErrors((prev) => ({
+                              ...prev,
+                              address: {
+                                ...prev.address,
+                                [field]: error,
+                              },
+                            }));
+                          }}
+                          onBlur={() => {
+                            const error = validateField(field, formData.address[field], formData);
+                            setErrors((prev) => ({
+                              ...prev,
+                              address: {
+                                ...prev.address,
+                                [field]: error,
+                              },
+                            }));
                           }}
                         />
+                        {errors.address?.[field] && (
+                          <div className="text-danger mt-1">{errors.address[field]}</div>
+                        )}
                       </div>
                     ))}
                   </div>
                 ))}
 
+
               {/* 🔹 Bank Details */}
               <h5 className="mt-3">Bank Account Details</h5>
               {Object.keys(formData.bankAccountDetails)
                 .reduce((rows, field, index) => {
-                  if (index % 3 === 0) rows.push([]) // start new row every 3 fields
+                  if (index % 3 === 0) rows.push([])
                   rows[rows.length - 1].push(field)
                   return rows
                 }, [])
@@ -919,6 +1064,7 @@ const FrontDeskForm = ({
                         <CFormLabel className="text-capitalize">
                           {field} <span style={{ color: 'red' }}>*</span>
                         </CFormLabel>
+
                         <CFormInput
                           value={formData.bankAccountDetails[field]}
                           maxLength={
@@ -928,99 +1074,104 @@ const FrontDeskForm = ({
                                 ? 10
                                 : field === 'ifscCode'
                                   ? 11
-                                  : undefined
+                                  : field === 'accountHolderName'
+                                    ? 50
+                                    : undefined
                           }
                           onChange={async (e) => {
                             let value = e.target.value
+                            let err = ''
 
-                            // ✅ Account Number → only numbers
-                            if (field === 'accountNumber') {
-                              if (/^\d*$/.test(value)) {
+                            // Account Holder Name → letters and spaces only
+                            if (field === 'accountHolderName') {
+                              if (/^[A-Za-z\s]*$/.test(value)) {
                                 handleNestedChange('bankAccountDetails', field, value)
                               }
-                              return
+                              if (!value.trim()) {
+                                err = 'Account Holder Name is required.'
+                              } else if (!/^[A-Za-z\s]+$/.test(value)) {
+                                err = 'Account Holder Name can contain only letters and spaces.'
+                              } else if (value.length < 3 || value.length > 50) {
+                                err = 'Account Holder Name must be between 3 and 50 characters.'
+                              } else {
+                                err = ''
+                              }
                             }
 
-                            // ✅ PAN Card → must be uppercase, follow exact format
-                            // ✅ PAN Card → must be uppercase, follow exact format
+                            // Account Number → digits only
+                            if (field === 'accountNumber') {
+                              if (/^\d*$/.test(value)) handleNestedChange('bankAccountDetails', field, value)
+                              err = value ? '' : 'Account Number is required.'
+                            }
+
+                            // PAN → uppercase, correct format
                             if (field === 'panCardNumber') {
                               value = value.toUpperCase()
-
-                              // Allow only letters/digits in correct order
                               if (/^[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}$/.test(value)) {
                                 handleNestedChange('bankAccountDetails', field, value)
                               }
-
-                              // Validate final 10 characters
                               if (value.length === 10) {
                                 const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
-                                if (!panRegex.test(value)) {
-                                  toast.error('Invalid PAN format (e.g., ABCDE1234F)')
-                                }
+                                err = panRegex.test(value) ? '' : 'Invalid PAN format (ABCDE1234F)'
+                              } else {
+                                err = 'PAN must be 10 characters.'
                               }
-                              return
                             }
 
-                            // ✅ IFSC Code → must be uppercase, follow exact format
+                            // IFSC → uppercase, correct format
                             if (field === 'ifscCode') {
                               value = value.toUpperCase()
-
-                              // Allow only alphanumeric
-                              if (!/^[A-Z0-9]*$/.test(value)) return
-
-                              // Save only valid characters
-                              handleNestedChange('bankAccountDetails', field, value)
-
+                              if (/^[A-Z0-9]*$/.test(value)) handleNestedChange('bankAccountDetails', field, value)
                               if (value.length === 11) {
                                 const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
-                                if (!ifscRegex.test(value)) {
-                                  toast.error('Invalid IFSC format (e.g., HDFC0001234)')
-                                  handleNestedChange('bankAccountDetails', 'bankName', '')
-                                  handleNestedChange('bankAccountDetails', 'branchName', '')
-                                  return
-                                }
-
-                                // Fetch bank details
-                                try {
-                                  const res = await fetch(`https://ifsc.razorpay.com/${value}`)
-                                  if (res.ok) {
-                                    const data = await res.json()
-                                    handleNestedChange(
-                                      'bankAccountDetails',
-                                      'bankName',
-                                      data.BANK || '',
-                                    )
-                                    handleNestedChange(
-                                      'bankAccountDetails',
-                                      'branchName',
-                                      data.BRANCH || '',
-                                    )
-                                  } else {
-                                    toast.error('Invalid IFSC Code')
+                                err = ifscRegex.test(value) ? '' : 'Invalid IFSC format (HDFC0001234)'
+                                if (!err) {
+                                  try {
+                                    const res = await fetch(`https://ifsc.razorpay.com/${value}`)
+                                    if (res.ok) {
+                                      const data = await res.json()
+                                      handleNestedChange('bankAccountDetails', 'bankName', data.BANK || '')
+                                      handleNestedChange('bankAccountDetails', 'branchName', data.BRANCH || '')
+                                    }
+                                  } catch {
                                     handleNestedChange('bankAccountDetails', 'bankName', '')
                                     handleNestedChange('bankAccountDetails', 'branchName', '')
                                   }
-                                } catch (err) {
-                                  toast.error('Error fetching bank details')
+                                } else {
                                   handleNestedChange('bankAccountDetails', 'bankName', '')
                                   handleNestedChange('bankAccountDetails', 'branchName', '')
                                 }
                               } else {
-                                // Clear while incomplete
                                 handleNestedChange('bankAccountDetails', 'bankName', '')
                                 handleNestedChange('bankAccountDetails', 'branchName', '')
+                                err = 'IFSC must be 11 characters.'
                               }
-                              return
                             }
 
-                            // ✅ Other Fields
-                            handleNestedChange('bankAccountDetails', field, value)
+                            // Other fields → required
+                            if (!['accountNumber', 'panCardNumber', 'ifscCode', 'accountHolderName'].includes(field)) {
+                              handleNestedChange('bankAccountDetails', field, value)
+                              err = value ? '' : `${field} is required.`
+                            }
+
+                            setErrors((prev) => ({
+                              ...prev,
+                              bankAccountDetails: {
+                                ...prev.bankAccountDetails,
+                                [field]: err,
+                              },
+                            }))
                           }}
                         />
+
+                        {errors.bankAccountDetails && errors.bankAccountDetails[field] && (
+                          <div className="text-danger mt-1">{errors.bankAccountDetails[field]}</div>
+                        )}
                       </div>
                     ))}
                   </div>
                 ))}
+
 
               {/* 🔹 Documents */}
               <h5 className="mt-3">Documents</h5>
@@ -1087,95 +1238,20 @@ const FrontDeskForm = ({
                 </CButton>
               </div>
 
-              {showPModal && (
-                <div className="modal fade show d-block" tabIndex="-1">
-                  <div className="modal-dialog modal-lg">
-                    <div className="modal-content">
-                      <div className="modal-header">
-                        <h5 className="modal-title">Set User Permissions</h5>
-                        <button
-                          type="button"
-                          className="btn-close"
-                          onClick={() => setShowPModal(false)}
-                        ></button>
-                      </div>
-                      <div className="modal-body">
-                        <div className="row">
-                          {features.map((feature) => {
-                            const isFeatureChecked = !!formData.permissions[feature]
-                            const allSelected =
-                              isFeatureChecked &&
-                              formData.permissions[feature].length === actions.length
-
-                            return (
-                              <div key={feature} className="col-md-5 mb-3 border p-2 rounded mx-4">
-                                {/* Feature Checkbox */}
-                                <div className="d-flex justify-content-between align-items-center">
-                                  <label className="fw-bold">
-                                    <input
-                                      type="checkbox"
-                                      checked={isFeatureChecked}
-                                      onChange={() => toggleFeature(feature)}
-                                    />{' '}
-                                    {feature}
-                                  </label>
-
-                                  {/* Select All */}
-                                  <label>
-                                    <input
-                                      type="checkbox"
-                                      disabled={!isFeatureChecked}
-                                      checked={allSelected}
-                                      onChange={() => toggleAllActions(feature)}
-                                    />{' '}
-                                    Select All
-                                  </label>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="d-flex flex-wrap gap-3 mt-2">
-                                  {actions.map((action) => (
-                                    <label key={action} className="d-flex align-items-center gap-1">
-                                      <input
-                                        type="checkbox"
-                                        disabled={!isFeatureChecked}
-                                        checked={
-                                          formData.permissions[feature]?.includes(action) || false
-                                        }
-                                        onChange={() => togglePermission(feature, action)}
-                                      />
-                                      {action}
-                                    </label>
-                                  ))}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                      <div className="modal-footer">
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={() => setShowPModal(false)}
-                        >
-                          Close
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          onClick={() => setShowPModal(false)}
-                        >
-                          Save Permissions
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* backdrop */}
-              {showPModal && <div className="modal-backdrop fade show"></div>}
+              <UserPermissionModal
+                show={showPModal}
+                onClose={() => setShowPModal(false)}
+                features={features}
+                actions={actions}
+                permissions={formData.permissions}
+                toggleFeature={toggleFeature}
+                toggleAllActions={toggleAllActions}
+                togglePermission={togglePermission}
+                onSave={() => {
+                  console.log('Saved Permissions', formData.permissions)
+                  setShowPModal(false)
+                }}
+              />
             </CForm>
           )}
         </CModalBody>

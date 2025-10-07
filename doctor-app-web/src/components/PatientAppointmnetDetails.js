@@ -32,10 +32,10 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
 
   // Tabs (with default fallback)
   const ALL_TABS = tabs || [
-    'Symptoms',
-    'Tests',
+    'Diagnosis',
+    'Investigations',
     'Medication',
-    'Treatments',
+    'Procedures',
     'Follow-up',
     'Prescription',
     'Images',
@@ -72,21 +72,21 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
 
   // Tab-specific next actions
   const onNextMap = {
-    Symptoms: (data) => {
+    Diagnosis: (data) => {
       setFormData((prev) => ({ ...prev, symptoms: { ...prev.symptoms, ...data } }))
-      goToNext('Symptoms')
+      goToNext('Diagnosis')
     },
-    Tests: (data) => {
+    Investigations: (data) => {
       setFormData((prev) => ({ ...prev, tests: { ...prev.tests, ...data } }))
-      goToNext('Tests')
+      goToNext('Investigations')
     },
     Medication: (data) => {
       setFormData((prev) => ({ ...prev, prescription: { ...prev.prescription, ...data } }))
       goToNext('Medication')
     },
-    Treatments: (data) => {
+    Procedures: (data) => {
       setFormData((prev) => ({ ...prev, treatments: { ...prev.treatments, ...data } }))
-      goToNext('Treatments')
+      goToNext('Procedures')
     },
     'Follow-up': (data) => {
       setFormData((prev) => ({ ...prev, followUp: { ...prev.followUp, ...data } }))
@@ -116,15 +116,15 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
       formData?.symptoms?.diagnosis && formData.symptoms.diagnosis.trim() !== ''
 
     if (hasDisease) return ALL_TABS
-    return ['Symptoms']
+    return ['Diagnosis']
   }, [ALL_TABS, fromDoctorTemplate, formData?.symptoms?.diagnosis])
 
   // Badge counts
   const counts = useMemo(
     () => ({
-      Tests: formData?.tests?.selectedTests?.length || 0,
+      Investigations: formData?.tests?.selectedTests?.length || 0,
       Prescription: formData.prescription?.medicines?.length || 0,
-      Treatments: formData.treatments?.selectedTreatments?.length || 0,
+      Procedures: formData.treatments?.selectedTreatments?.length || 0,
       Images: formData.ClinicImages?.items?.length || 0,
     }),
     [formData],
@@ -135,10 +135,10 @@ const savePrescriptionTemplate = async () => {
   try {
     const diagnosis = formData.symptoms?.diagnosis?.trim() || ''
 
-    if (!diagnosis) {
-      alert('Diagnosis is missing. Cannot save template.')
-      return
-    }
+    // if (!diagnosis) {
+    //   alert('Diagnosis is missing. Cannot save template.')
+    //   return
+    // }
 
     const clinicId = localStorage.getItem('hospitalId')
     const template = {
@@ -182,7 +182,7 @@ const savePrescriptionTemplate = async () => {
               <CNav variant="tabs" role="tablist" style={{ whiteSpace: 'nowrap' }}>
                 {TABS.map((t) => {
                   const active = t === activeTab
-                  const label = fromDoctorTemplate && t === 'Symptoms' ? 'Diseases' : t
+                  const label = fromDoctorTemplate && t === 'Diagnosis' ? 'Diseases' : t
 
                   return (
                     <CNavItem key={t}>

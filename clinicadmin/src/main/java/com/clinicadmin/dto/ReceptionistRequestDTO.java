@@ -23,6 +23,7 @@ public class ReceptionistRequestDTO {
 
 	private String hospitalName;
 	private String branchId;
+	private String branchName;
 
 	@NotBlank(message = "Full name is required")
 	private String fullName;
@@ -68,6 +69,8 @@ public class ReceptionistRequestDTO {
 	private String gender;
 	private String yearOfExperience;
 	private String vaccinationStatus;
+    private String shiftTimingsOrAvailability;
+
 
 	// ---------- Optional ----------
 	@Email(message = "Invalid email format")

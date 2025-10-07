@@ -83,6 +83,8 @@ import {
 import { http } from '../../Utils/Interceptors'
 
 export const AppointmentData = async () => {
+  const hospitalId = localStorage.getItem('HospitalId')
+  const branchId = localStorage.getItem('branchId')
   try {
     const response = await axios.get(`${Booking_service_Url}/${getAllBookedServices}`) //TODO:chnage when apigetway call axios to http
     return response.data
@@ -116,11 +118,81 @@ export const GetdoctorsByClinicIdData = async (doctorId) => {
 }
 
 export const GetBookingByClinicIdData = async (id) => {
+  const hID = localStorage.getItem('HospitalId')
+  const branchId = localStorage.getItem('branchId')
   console.log(id)
   try {
     const response = await axios.get(
-      `${Booking_service_Url}/customer/getAllBookedServicesByClinicId/${id}`,
+      `${BASE_URL}/getAllbookingsDetailsByClinicAndBranchId/${hID}/${branchId}`,
     ) //TODO:chnage when apigetway call axios to http
+    return response.data
+  } catch (error) {
+    console.error('Error fetching booking by clinicId:', error.message)
+    throw error
+  }
+}
+
+// Assume `bookingDetails` is a JS object with the same structure as your Dart model
+
+export const followUpBookings = async (bookingDetails) => {
+  console.log('Request URL:', BASE_URL)
+  console.log('Request payload:', bookingDetails)
+
+  try {
+    const response = await axios.post(BASE_URL, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(bookingDetails),
+    })
+
+    const responseBody = await response.text()
+    console.log('Response body:', responseBody)
+
+    if (response.ok) {
+      console.log('Booking posted successfully!')
+      // Parse JSON if available
+      const responseData = responseBody ? JSON.parse(responseBody) : null
+      return responseData
+    } else {
+      console.log('Failed to post booking. Status code:', response.status)
+      return null
+    }
+  } catch (error) {
+    console.log('Error posting booking:', error)
+    return null
+  }
+}
+export const bookingUpdate = async (bookingDetails) => {
+  console.log('Request URL:', `${BASE_URL}/updateAppointmentBasedOnBookingId`)
+  console.log('Request payload:', bookingDetails)
+
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/updateAppointmentBasedOnBookingId`,
+      bookingDetails, // 👈 send object directly
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+
+    console.log('Response data:', response.data)
+    return response.data
+  } catch (error) {
+    console.error('Error posting booking:', error.response?.data || error.message)
+    return null
+  }
+}
+
+export const GetBookingInprogress = async () => {
+  const hID = localStorage.getItem('HospitalId')
+  const branchId = localStorage.getItem('branchId')
+  try {
+    const response = await axios.get(`${BASE_URL}/appointments/byIds/${hID}/${branchId}`) //TODO:chnage when apigetway call axios to http
+    console.log(`${BASE_URL}/appointments/byIds/${hID}/${branchId}`)
+    console.log(response)
     return response.data
   } catch (error) {
     console.error('Error fetching booking by clinicId:', error.message)

@@ -115,4 +115,16 @@ public interface CustomerService {
 
 	public ResponseEntity<Response> getRecommendedClinicsAndOnDoctors(String keyPoints);
 
+	Response getRatingForServiceBydoctorId(String doctorId);
+
+	Response getAverageRatingByDoctorId(String doctorId);
+	
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingsByBranchId(String branchId);
+
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingsByClinicIdWithBranchId(String clinicId, String branchId);
+
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingsByCustomerId(String customerId);
+
+	public ResponseEntity<?> retrieveAppointnmentsByRelation(String customerId);
+	public ResponseEntity<?> getInprogressBookingsByCustomerId(String customerId);
 }

@@ -130,7 +130,7 @@ const [modalData, setModalData] = useState(null) // store username & password
 
   return (
     <div>
-      {can('Laboratory', 'create') && (
+      {can('OtherStaff', 'create') && (
         <div
           className="mb-3 w-100"
           style={{ display: 'flex', justifyContent: 'end', alignContent: 'end', alignItems: 'end' }}
@@ -148,7 +148,7 @@ const [modalData, setModalData] = useState(null) // store username & password
       )}
       <CModal visible={modalTVisible} backdrop="static" keyboard={false}>
         <CModalHeader>
-          <h5>Technician Credentials</h5>
+          <h5>OtherStaff Credentials</h5>
         </CModalHeader>
         <CModalBody>
           {modalData ? (
@@ -216,7 +216,7 @@ const [modalData, setModalData] = useState(null) // store username & password
               <CTableHeaderCell>Name</CTableHeaderCell>
               <CTableHeaderCell>Contact</CTableHeaderCell>
               <CTableHeaderCell>Sex</CTableHeaderCell>
-              <CTableHeaderCell>Specialization</CTableHeaderCell>
+              <CTableHeaderCell>Department</CTableHeaderCell>
               <CTableHeaderCell>Date Of Joining</CTableHeaderCell>
               <CTableHeaderCell className="text-end">Actions</CTableHeaderCell>
             </CTableRow>
@@ -257,13 +257,13 @@ const [modalData, setModalData] = useState(null) // store username & password
                   <CTableDataCell>{capitalizeWords(tech.fullName)}</CTableDataCell>
                   <CTableDataCell>{capitalizeWords(tech.contactNumber)}</CTableDataCell>
                   <CTableDataCell>{capitalizeWords(tech.gender)}</CTableDataCell>
-                  <CTableDataCell>{tech.specialization || 'NA'}</CTableDataCell>
+                  <CTableDataCell>{tech.department || 'NA'}</CTableDataCell>
 
                   <CTableDataCell>{tech.dateOfJoining}</CTableDataCell>
 
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
-                      {can('Laboratory', 'read') && (
+                      {can('OtherStaff', 'read') && (
                         <button
                           className="actionBtn"
                           onClick={() => {
@@ -276,7 +276,7 @@ const [modalData, setModalData] = useState(null) // store username & password
                           <Eye size={18} />
                         </button>
                       )}
-                      {can('Laboratory', 'update') && (
+                      {can('OtherStaff', 'update') && (
                         <button
                           className="actionBtn"
                           onClick={() => {
@@ -289,7 +289,7 @@ const [modalData, setModalData] = useState(null) // store username & password
                           <Edit2 size={18} />
                         </button>
                       )}
-                      {can('Laboratory', 'delete') && (
+                      {can('OtherStaff', 'delete') && (
                         <button
                           className="actionBtn"
                           onClick={() => {

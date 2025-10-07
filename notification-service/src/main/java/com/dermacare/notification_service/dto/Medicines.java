@@ -2,8 +2,6 @@ package com.dermacare.notification_service.dto;
 import java.util.List;
 import java.util.UUID;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,12 +11,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class Medicines {
 
+public class Medicines {
+    private UUID id = UUID.randomUUID();
     private String name;
     private String dose;
     private String duration;
+    private String durationUnit;
     private String food;
     private String medicineType;
     private String note;

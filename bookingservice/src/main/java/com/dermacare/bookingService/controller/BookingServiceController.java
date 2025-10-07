@@ -98,6 +98,22 @@ public class BookingServiceController {
 				HttpStatus.OK);
 
 	}
+	
+	
+	@GetMapping("/getAllBookedServicesByBranchId/{branchId}")
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getAllBookedServicesByBranchId(@PathVariable String branchId) {
+
+		List<BookingResponse> response = service.bookingByBranchId(branchId);
+		if (response == null || response.isEmpty()) {
+			return new ResponseEntity<>(ResponseStructure.buildResponse(null,
+					"unable to find any Bookings yet ", HttpStatus.OK, HttpStatus.OK.value()),
+					HttpStatus.OK);
+		}
+		return new ResponseEntity<>(ResponseStructure.buildResponse(response,
+				"Booked Service Fetched Sucessfully on branchId : " + branchId, HttpStatus.OK, HttpStatus.OK.value()),
+				HttpStatus.OK);
+
+	}
 
 	@GetMapping("/getBookedServicesByServiceId/{serviceId}")
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingByServiceId(@PathVariable String serviceId) {
@@ -129,8 +145,40 @@ public class BookingServiceController {
 				HttpStatus.OK);
 
 	}
-
 	
+	
+	@GetMapping("/booking/customerId/{customerId}")
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingByCustomerId(@PathVariable String customerId) {
+
+		List<BookingResponse> response = service.bookingByCustomerId(customerId);
+		if (response == null || response.isEmpty()) {
+			return new ResponseEntity<>(ResponseStructure.buildResponse(null,
+					"Clinic  Does not have any booking yet" + customerId, HttpStatus.OK, HttpStatus.OK.value()),
+					HttpStatus.OK);
+		}
+		return new ResponseEntity<>(ResponseStructure.buildResponse(response,
+				"Booking fetched sucessfully on clinicId" + customerId, HttpStatus.OK, HttpStatus.OK.value()),
+				HttpStatus.OK);
+
+	}
+
+	@GetMapping("/getBookedServicesByClinicIdWithBranchId/{clinicId}/{branchId}")
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookedServicesByClinicIdWithBranchId(
+	        @PathVariable String clinicId,
+	        @PathVariable String branchId) {
+
+	    List<BookingResponse> response = service.getBookedServicesByClinicIdWithBranchId(clinicId, branchId);
+	    if (response == null || response.isEmpty()) {
+	        return new ResponseEntity<>(ResponseStructure.buildResponse(null,
+	                "No bookings found for clinicId: " + clinicId + " and branchId: " + branchId,
+	                HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
+	    }
+
+	    return new ResponseEntity<>(ResponseStructure.buildResponse(response,
+	            "Bookings fetched successfully for clinicId: " + clinicId + " and branchId: " + branchId,
+	            HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
+	}
+
 	@PutMapping("/updateAppointment")
 	public ResponseEntity<?> updateAppointment(@RequestBody BookingResponse bookingResponse ){
 		return service.updateAppointment(bookingResponse);
@@ -195,4 +243,40 @@ public class BookingServiceController {
 		{
 			return service.getDoctorFutureAppointments(doctorId);
 		}	
-}
+		
+		
+		@GetMapping("/appointments/byIds/{clinicId}/{branchId}")
+		public ResponseEntity<?> retrieveTodayAndTomorrowAndDayAfterTomorrowAppointments(@PathVariable String clinicId,@PathVariable String branchId)
+		{
+			return service.retrieveTodayAndTomorrowAndDayAfterTomorrowAppointments(clinicId, branchId);
+		}
+		
+		
+		@GetMapping("/appointments/byIdsAndDate/{clinicId}/{branchId}/{date}")
+		public ResponseEntity<?> retrieveAppointnmentsByServiceDate(@PathVariable String clinicId,@PathVariable String branchId,@PathVariable String date)
+		{
+			return service.retrieveAppointments(clinicId, branchId, date);
+		}
+		
+		
+		@PutMapping("/update/bookingId")
+		public ResponseEntity<?> updateAppointmentBasedOnBookingId(@RequestBody BookingResponse bookingResponse ){
+			return service.updateAppointmentBasedOnBookingId(bookingResponse);
+		}
+		
+		@GetMapping("/appointments/FilterbyRelation/{customerId}")
+		public ResponseEntity<?> retrieveAppointnmentsByRelation(@PathVariable String customerId)
+		{
+			return service.getRelationsByCustomerId(customerId);
+		}
+		
+		
+		@GetMapping("/appointments/customerId/{customerId}")
+		public ResponseEntity<?> retrieveInprogressAppointnmentsByCustomerId(@PathVariable String customerId)
+		{
+			return service.getInProgressAppointmentsByCustomerId(customerId);
+		}
+		
+		
+		}
+

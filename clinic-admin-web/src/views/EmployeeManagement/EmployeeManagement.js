@@ -8,17 +8,18 @@ import {
   faUserNurse,
   faPills,
   faVials,
-  faUserTie,
-  faConciergeBell,
+  faUserAlt,
   faShieldHalved,
   faUsers,
-  faUserAlt,
+  faUserTie,
 } from '@fortawesome/free-solid-svg-icons'
-import { FaUserTie } from 'react-icons/fa'
+import { useHospital } from '../Usecontext/HospitalContext'
 
 const EmployeeManagement = () => {
   const navigate = useNavigate()
+  const { user } = useHospital() // get user & permissions from context
 
+  // Map employee types to icons
   const iconMap = {
     doctor: faUserDoctor,
     nurse: faUserNurse,
@@ -30,22 +31,32 @@ const EmployeeManagement = () => {
     otherStaff: faUsers,
   }
 
+  // All possible employees
   const employees = [
-    { title: 'Doctor', type: 'doctor', path: '/Doctor' },
-    { title: 'Nurse', type: 'nurse', path: '/Nurse' },
-    { title: 'Pharmacist', type: 'pharmacist', path: '/Pharmacist' },
-    { title: 'Lab Technician', type: 'laboratory', path: '/Lab-Technician' },
-    { title: 'Administrator', type: 'admin', path: '/Admin' },
-    { title: 'FrontDesk', type: 'frontDesk', path: '/FrontDesk' },
-    { title: 'Security', type: 'security', path: '/Security' },
-    { title: 'OtherStaff', type: 'otherStaff', path: '/OtherStaff' },
+    { title: 'Doctors', type: 'doctor', path: '/doctor' },
+    { title: 'Nurses', type: 'nurse', path: '/employee-management/nurse' },
+    { title: 'Pharmacist', type: 'pharmacist', path: '/employee-management/pharmacist' },
+    { title: 'Laboratory', type: 'laboratory', path: '/employee-management/lab-technician' },
+    { title: 'FrontDesk', type: 'frontDesk', path: '/employee-management/frontdesk' },
+    { title: 'Security', type: 'security', path: '/employee-management/security' },
+    { title: 'OtherStaff', type: 'otherStaff', path: '/employee-management/otherstaff' },
+    { title: 'Admin', type: 'admin', path: '/Admin' }, //TODO: Administrator
   ]
 
+  // ✅ Permission check function
+  const can = (feature) => {
+    // feature is the employee title matching your permissions object keys
+    const actions = user?.permissions?.[feature] || []
+    return actions.length > 0 // show if any permission exists
+  }
+
+  // Filter employees based on user permissions
+  const visibleEmployees = employees.filter((emp) => can(emp.title))
+
   return (
-    <CContainer className="mt-5">
+    <CContainer>
       <style>
         {`
-        
           .card-zoom {
             transition: transform 0.3s ease-in-out;
           }
@@ -54,10 +65,11 @@ const EmployeeManagement = () => {
           }
         `}
       </style>
+
       <h2 className="text-center mb-4">Employee Management</h2>
 
       <CRow className="g-4 justify-content-start">
-        {employees.map((emp, index) => (
+        {visibleEmployees.map((emp, index) => (
           <CCol xs={12} sm={6} md={3} key={index}>
             <CCard
               className="text-center shadow-lg p-3 card-zoom"
@@ -66,7 +78,7 @@ const EmployeeManagement = () => {
             >
               <CCardBody>
                 <FontAwesomeIcon
-                  icon={iconMap[emp.type]} // dynamically pick icon
+                  icon={iconMap[emp.type]}
                   style={{ fontSize: '70px', color: 'var(--color-black)' }}
                   className="mb-3"
                 />

@@ -3,6 +3,7 @@ package com.dermacare.doctorservice.service;
 
 import com.dermacare.doctorservice.dto.Response;
 import com.dermacare.doctorservice.dto.DoctorPrescriptionDTO;
+import com.dermacare.doctorservice.dto.MedicineDTO;
 
 public interface DoctorPrescriptionService {
     Response createPrescription(DoctorPrescriptionDTO dto);
@@ -13,5 +14,7 @@ public interface DoctorPrescriptionService {
     Response searchMedicinesByName(String keyword);
     Response deleteMedicineById(String medicineId);
     Response getPrescriptionsByClinicId(String clinicId);
+	Response updatePrescription(String id, DoctorPrescriptionDTO dto);
+	Response updateMedicineById(String medicineId, MedicineDTO dto);
 
 }

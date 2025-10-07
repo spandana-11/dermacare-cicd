@@ -76,7 +76,7 @@ const DoctorCard = ({ doctor }) => {
       <div className="doctor-action d-flex flex-column align-items-center gap-2 p-2 border rounded shadow-sm">
         <button
           className="btn btn-info w-100"
-          onClick={() => navigate(`/Doctor/${doctor.doctorId}`, { state: { doctor } })}
+          onClick={() => navigate(`/doctor/${doctor.doctorId}`, { state: { doctor } })}
           aria-label={`View details of Dr. ${doctor.doctorName}`}
         >
           View Details

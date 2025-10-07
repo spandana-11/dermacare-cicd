@@ -30,6 +30,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { GetBookingByClinicIdData } from './appointmentAPI'
 import { GetBookingBy_ClinicId } from '../../baseUrl'
+import BookAppointmentModal from './BookAppointmentModal '
 
 import { COLORS } from '../../Constant/Themes'
 import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
@@ -51,6 +52,7 @@ const appointmentManagement = () => {
   const [statusFilters, setStatusFilters] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [visible, setVisible] = useState(false)
 
   const itemsPerPage = 7
   const navigate = useNavigate()
@@ -283,13 +285,24 @@ const appointmentManagement = () => {
         </div>
 
         <div className="d-flex gap-2 mb-3">
+          <CButton
+            style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
+            onClick={() => {
+              setSelectedServiceTypes([])
+              setSelectedConsultationTypes([])
+              setFilterTypes([])
+              setStatusFilters([])
+            }}
+          >
+            All
+          </CButton>
           <button
             onClick={() => toggleFilter('Service & Treatment')}
             className={`btn ${
               filterTypes.includes('Service & Treatment') ? 'btn-selected' : 'btn-unselected'
             }`}
           >
-            Service & Treatment
+            Services & Treatment
           </button>
 
           <button
@@ -349,16 +362,18 @@ const appointmentManagement = () => {
             /> */}
           </div>
           <CButton
-            style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
-            onClick={() => {
-              setSelectedServiceTypes([])
-              setSelectedConsultationTypes([])
-              setFilterTypes([])
-              setStatusFilters([])
+            style={{
+              backgroundColor: 'var(--color-black)',
+              color: 'white',
+              marginLeft: '325px',
             }}
+            onClick={() => setVisible(true)} // open modal
           >
-            Reset Filters
+            Book Appointment
           </CButton>
+
+          {/* Modal imported from separate file */}
+          <BookAppointmentModal visible={visible} onClose={() => setVisible(false)} />
         </div>
 
         <CTable striped hover responsive>
@@ -421,7 +436,7 @@ const appointmentManagement = () => {
                       className="text-white"
                       size="sm"
                       onClick={() =>
-                        navigate(`/appointmentDetails/${item.bookingId}`, {
+                        navigate(`/appointment-details/${item.bookingId}`, {
                           state: { appointment: item },
                         })
                       }

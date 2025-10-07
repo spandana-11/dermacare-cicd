@@ -70,11 +70,11 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
   const [previewImage, setPreviewImage] = useState(null)
 
   const [serviceToEdit, setServiceToEdit] = useState({
-    serviceImage: '',
+    subServiceImage: '',
     viewImage: '',
     subServiceName: '',
     serviceName: '',
-    serviceImageFile: null,
+    subServiceImageFile: null,
   })
   const [qaPreProcedure, setQaPreProcedure] = useState([])
   const [qaProcedure, setQaProcedure] = useState([])
@@ -113,6 +113,10 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     categoryId: '',
     serviceName: '',
     subServiceName: '',
+    subServiceImage:'',
+    serviceId:'',
+    subServiceId:'',
+    viewDescription:'',
     description: '',
     price: '',
     gst: 0,
@@ -243,8 +247,8 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       minTime: '',
       taxPercentage: 0,
       status: '',
-      serviceImage: '',
-      serviceImageFile: null,
+      subServiceImage: '',
+      subServiceImageFile: null,
       viewImage: '',
       viewDescription: '',
       consentFormType: serviceData.consentFormType === 'Generic ConsentForm' ? '1' : '2',
@@ -317,7 +321,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       ? service.postProcedureQA
       : JSON.parse(service.postProcedureQA || '[]')
 
-    const rawImage = service.serviceImage || ''
+    const rawImage = service.subServiceImage || ''
     const fullImage = rawImage.startsWith('data:') ? rawImage : `data:image/jpeg;base64,${rawImage}`
 
     // Prefill all fields
@@ -334,9 +338,9 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       consultationFee: service.consultationFee || 0,
       taxPercentage: service.taxPercentage || 0,
       minTime: service.minTime || '',
-      serviceImage: rawImage,
+      subServiceImage: rawImage,
 
-      serviceImageFile: null,
+      subServiceImageFile: null,
       status: service.status || '',
       viewDescription: service.viewDescription || '',
       consentFormType: service.consentFormType ? String(service.consentFormType) : '',
@@ -377,7 +381,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     discount: '',
     viewDescription: '',
     consentFormType: '',
-    serviceImage: '',
+    subServiceImage: '',
     bannerImage: '',
   })
 
@@ -404,7 +408,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       if (clinicId) {
         // console.log("clinic ID SUb ", subServiceId)
         const subServiceData = await GetSubServices_ByClinicId(clinicId)
-        // console.log('hi tehre ', selectedSubServiceObj?.subServiceId)
+        console.log('hi tehre ', subServiceData)
         if (Array.isArray(subServiceData)) {
           // you might need to flatten if response is nested
           // but usually GetSubServices_ByClinicId should return a clean array
@@ -533,76 +537,11 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
                           onCancel={handleCancelDelete}
                         />
           </div>
-
-        // <div
-        //   style={{
-        //     display: 'flex',
-        //     justifyContent: 'space-between',
-        //     alignItems: 'end',
-        //     width: '250px',
-        //   }}
-        // >
-        //   <div
-        //     color="info"
-        //     onClick={() => setViewService(row)}
-        //     style={{ marginRight: '5px', width: '50px', color: 'green' }}
-        //   >
-        //     View
-        //   </div>
-        //   <div
-        //     color="info"
-        //     onClick={() => openEditModal(row)}
-        //     style={{ marginRight: '5px', width: '50px', color: 'blue' }}
-        //   >
-        //     Edit
-        //   </div>
-        //   <div
-        //     color="danger"
-        //     onClick={() => handleServiceDelete(row)}
-        //     style={{ width: '50px', color: 'red' }}
-        //   >
-        //     Delete
-        //   </div>
-
-        //   {/* <ConfirmationModal
-        //     isVisible={isModalVisible}
-        //     title="Delete Procedure Details"
-        //     message="Are you sure you want to delete this Procedure Details? This action cannot be undone."
-        //     confirmText="Yes, Delete"
-        //     cancelText="Cancel"
-        //     onConfirm={handleConfirmDelete}
-        //     onCancel={handleCancelDelete}
-        //   /> */}
-
-        //   {/* <ConfirmationModal
-        //     isVisible={isModalVisible}
-        //     message="Are you sure you want to delete this service?"
-        //     onConfirm={handleConfirmDelete}
-        //     onCancel={handleCancelDelete}
-        //   /> */}
-        // </div>
       ),
       width: '150px',
       headerStyle: { textAlign: 'center' },
     },
   ]
-
-  // const ConfirmationModal = ({ isVisible, message, onConfirm, onCancel }) => {
-  //   return (
-  //     <CModal visible={isVisible} onClose={onCancel} backdrop={false}>
-  //       <CHeader style={{ marginLeft: '200px' }}> !Alert</CHeader>
-  //       <CModalBody style={{ textAlign: 'center' }}>{message}</CModalBody>
-  //       <CModalFooter>
-  //         <CButton color="secondary" onClick={onCancel}>
-  //           Cancel
-  //         </CButton>
-  //         <CButton color="danger" onClick={onConfirm}>
-  //           Confirm
-  //         </CButton>
-  //       </CModalFooter>
-  //     </CModal>
-  //   )
-  // }
   const minTimeValue = parseFloat(newService.minTime)
   const validateForm = () => {
     const newErrors = {}
@@ -646,12 +585,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     } else if (parseFloat(newService.discount) < 0) {
       newErrors.discount = 'Discount cannot be a negative number.'
     }
-    // if (!newService.taxPercentage && newService.taxPercentage !== 0) {
-    //   newErrors.taxPercentage = 'taxPercentage is required.'
-    // } else if (parseFloat(newService.taxPercentage) < 0) {
-    //   newErrors.taxPercentage = 'taxPercentage cannot be a negative number.'
-    // }
-    // Validation
+
     if (!newService.minTimeValue || isNaN(newService.minTimeValue)) {
       newErrors.minTime = 'Minimum time is required'
     } else if (parseFloat(newService.minTimeValue) <= 0) {
@@ -665,9 +599,9 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       newErrors.consentFormType = 'consentFormType is Required.'
     }
 
-    if (!newService.serviceImage) {
+    if (!newService.subServiceImage) {
       console.log('Service Image in Form:', newService.serviceImage)
-      newErrors.serviceImage = 'Please upload a service image.'
+      newErrors.subServiceImage = 'Please upload a service image.'
     }
 
     if (!newService.categoryId) {
@@ -750,14 +684,6 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       finalCost,
     })
 
-    // const fullBase64String = await toBase64(newService.serviceImageFile)
-    // const base64ImageToSend = fullBase64String?.split(',')[1] || ''
-
-    // if (!validateForm()) {
-    //   toast.error('Validation failed', { position: 'top-right' })
-    //   return
-    // }
-
     const payload = {
       hospitalId: clinicId,
       subServiceName: newService.subServiceName,
@@ -782,7 +708,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
 
       minTime: formattedMinTime,
       status: newService.status,
-      subServiceImage: newService.serviceImage,
+      subServiceImage: newService.subServiceImage,
 
       procedureQA: newService.procedureQA,
       preProcedureQA: newService.preProcedureQA,
@@ -807,8 +733,6 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       toast.error(error.response?.data?.message, { position: 'top-right' })
     }
 
-    // Reset form
-    // Reset form using default object
     setNewService({
       hospitalId:'',
       categoryName: '',
@@ -825,7 +749,8 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       minTimeValue,
       minTimeUnit: '',
       status: '',
-      serviceImage: '',
+      subServiceImage: '',
+      subServiceImageFile:'',
       viewDescription: '',
       consentFormType: '',
       procedureQA: [],
@@ -863,8 +788,8 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
         const base64String = reader.result?.split(',')[1] || ''
         setNewService((prev) => ({
           ...prev,
-          serviceImage: base64String,
-          serviceImageFile: file,
+          subServiceImage: base64String,
+          subServiceImageFile: file,
         }))
       }
       reader.readAsDataURL(file)
@@ -873,17 +798,15 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
 
   const handleUpdateService = async () => {
     try {
-      // const hospitalId = localStorage.getItem('HospitalId')
-
       let base64ImageToSend = ''
 
       if (newService.serviceImageFile) {
         const fullBase64String = await toBase64(newService.serviceImageFile)
         base64ImageToSend = fullBase64String.split(',')[1]
-      } else if (newService.serviceImage?.startsWith('data:')) {
-        base64ImageToSend = newService.serviceImage.split(',')[1]
+      } else if (newService.subServiceImage?.startsWith('data:')) {
+        base64ImageToSend = newService.subServiceImage.split(',')[1]
       } else {
-        base64ImageToSend = newService.serviceImage || ''
+        base64ImageToSend = newService.subServiceImage || ''
       }
 
       // Ensure numeric values are numbers, not empty strings or null
@@ -1021,7 +944,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       minTimeValue: '', //reset value
       minTimeUnit: 'minutes', // reset unit
       status: '',
-      serviceImage: '',
+      subServiceImage: '',
       viewImage: '',
       viewDescription: '',
       consentFormType: '',
@@ -1326,7 +1249,7 @@ const handleChanges = async (e) => {
 
             <CRow>
               <CCol sm={6}>
-                <strong>Service Image:</strong>
+                <strong>Sub Service Image:</strong>
                 {viewService.subServiceImage ? (
                   <div className="mt-2">
                     <img
@@ -1445,8 +1368,8 @@ const handleChanges = async (e) => {
                   }}
                 >
                   <option value="">Select Procedure</option>
-                  {Array.isArray(subServiceOptions.subServices) &&
-                    subServiceOptions.subServices.map((sub) => (
+                  {Array.isArray(subServiceOptions?.subServices) &&
+    subServiceOptions.subServices.map((sub) => (
                       <option key={sub.subServiceId} value={sub.subServiceId}>
                         {sub.subServiceName}
                       </option>
@@ -1474,8 +1397,8 @@ const handleChanges = async (e) => {
                         const base64String = reader.result?.split(',')[1] || ''
                         setNewService((prev) => ({
                           ...prev,
-                          serviceImage: base64String,
-                          serviceImageFile: file,
+                          subServiceImage: base64String,
+                          subServiceImageFile: file,
                         }))
                       }
                       reader.readAsDataURL(file)
@@ -1483,12 +1406,12 @@ const handleChanges = async (e) => {
                   }}
                 />
 
-                {newService?.serviceImage && (
+                {newService?.subServiceImage && (
                   <img
                     src={
-                      newService.serviceImage.startsWith('data:')
-                        ? newService.serviceImage
-                        : `data:image/jpeg;base64,${newService.serviceImage}`
+                      newService.subServiceImage.startsWith('data:')
+                        ? newService.subServiceImage
+                        : `data:image/jpeg;base64,${newService.subServiceImage}`
                     }
                     alt="Preview"
                     style={{ width: 100, height: 100, marginTop: 10 }}

@@ -13,6 +13,7 @@ import MultiImageUpload from './ClinicImages'
 import { COLORS } from '../Themes'
 import ReportDetails from '../components/Reports/Reports'
 import ImageGallery from './RetiveImages'
+import Investigations from './Tests'
 
 const TabContent = ({
   activeTab,
@@ -28,7 +29,7 @@ const TabContent = ({
   let content = null
 
   switch (activeTab) {
-    case 'Symptoms':
+    case 'Diagnosis':
       content = fromDoctorTemplate ? (
         <DoctorSymptoms seed={formData.symptoms || {}} onNext={onNext} sidebarWidth={260} patientData={patientData} setFormData={setFormData} formData={formData} />
       ) : (
@@ -36,15 +37,15 @@ const TabContent = ({
       )
       break
 
-    case 'Tests':
-      content = <Tests seed={formData.tests || {}} onNext={onNext} sidebarWidth={260} formData={formData} />
+    case 'Investigations':
+      content = <Investigations seed={formData.tests || {}} onNext={onNext} sidebarWidth={260} formData={formData} />
       break
 
     case 'Medication':
       content = <PrescriptionTab seed={formData.prescription || {}} onNext={onNext} formData={formData} />
       break
 
-    case 'Treatments':
+    case 'Procedures':
       content = <TestsTreatments seed={formData.treatments || {}} onNext={onNext} formData={formData} />
       break
 

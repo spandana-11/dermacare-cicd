@@ -25,6 +25,7 @@ public class SecurityStaff {
     private String clinicId;
 	private String hospitalName;
 	private String branchId;
+	private String branchName;
 	private String role;
 	private String fullName;
 	private String dateOfBirth;
@@ -44,6 +45,8 @@ public class SecurityStaff {
 	private String previousEmployeeHistory;
     private String profilePicture;
     private Map<String, List<String>> permissions;
+    private String shiftTimingsOrAvailability;
+
 
 	
 	

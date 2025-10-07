@@ -436,11 +436,6 @@ const DoctorManagement = () => {
       isValid = false
     }
 
-    // if (!form.languages || form.languages.length === 0) {
-    //   errors.languages = 'Please add at least one language.'
-    //   isValid = false
-    // }
-
     if (!startDay || !endDay) {
       errors.availableDays = 'Start and end days are required'
       isValid = false
@@ -464,7 +459,17 @@ const DoctorManagement = () => {
       errors.availableTimes = 'Start time must be before end time'
       isValid = false
     }
+    // ✅ Gender validation
+    if (!form.gender) {
+      errors.gender = 'Please select gender'
+      isValid = false
+    }
 
+    // ✅ Branch validation
+    if (!form.branch || form.branch.length === 0) {
+      errors.branch = 'Please select at least one branch'
+      isValid = false
+    }
     setFormErrors(errors)
     return isValid
   }
@@ -820,9 +825,14 @@ const DoctorManagement = () => {
         onClose={() => setModalVisible(false)}
         size="lg"
         backdrop="static"
+        className="custom-modal"
       >
         <CModalHeader>
-          <strong>Add Doctor</strong>
+          <FontAwesomeIcon
+            icon={faUserDoctor}
+            style={{ color: 'var(--color-black)', paddingRight: '10px' }}
+          />
+          <strong style={{ color: 'var(--color-black)' }}> Add Doctor</strong>
         </CModalHeader>
         <CModalBody>
           <CRow className="g-4 mb-4">
@@ -975,28 +985,30 @@ const DoctorManagement = () => {
               <CFormInput
                 value={form.doctorLicence}
                 onChange={(e) => {
-                  const value = e.target.value
+                  let value = e.target.value
+
+                  // Remove invalid characters (allow only letters, digits, spaces, dashes)
+                  value = value.replace(/[^A-Za-z0-9\s-]/g, '')
+
                   setForm((prev) => ({ ...prev, doctorLicence: value }))
 
-                  if (value.trim()) {
-                    // ✅ Check duplicate
+                  // Validation
+                  let error = ''
+                  if (!value.trim()) {
+                    error = 'License Number is required.'
+                  } else if (value.trim().length < 3 || value.trim().length > 20) {
+                    error = 'License Number must be between 3 and 20 characters.'
+                  } else {
+                    // Check duplicate
                     const isDuplicate = doctorData?.data?.some(
                       (doctor) => doctor.doctorLicence === value.trim(),
                     )
-
                     if (isDuplicate) {
-                      setFormErrors((prev) => ({
-                        ...prev,
-                        doctorLicence: 'This License Number already exists',
-                      }))
-                    } else {
-                      setFormErrors((prev) => {
-                        const updated = { ...prev }
-                        delete updated.doctorLicence
-                        return updated
-                      })
+                      error = 'This License Number already exists.'
                     }
                   }
+
+                  setFormErrors((prev) => ({ ...prev, doctorLicence: error }))
                 }}
                 invalid={!!formErrors?.doctorLicence}
               />
@@ -1005,16 +1017,31 @@ const DoctorManagement = () => {
               )}
             </CCol>
             <CCol md={6}>
-              <CFormLabel>Gender</CFormLabel>
+              <CFormLabel>
+                Gender
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <CFormSelect
                 value={form.gender}
-                onChange={(e) => setForm((p) => ({ ...p, gender: e.target.value }))}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setForm((p) => ({ ...p, gender: value }))
+
+                  // ✅ Validation
+                  let error = ''
+                  if (!value || value.trim() === '') {
+                    error = 'Gender is required.'
+                  }
+                  setFormErrors((prev) => ({ ...prev, gender: error }))
+                }}
+                className={formErrors.gender ? 'is-invalid' : ''}
               >
-                <option value="">Select Gender</option> {/* Add this line */}
-                <option>Female</option>
-                <option>Male</option>
-                <option>Other</option>
+                <option value="">Select Gender</option>
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+                <option value="Other">Other</option>
               </CFormSelect>
+              {formErrors.gender && <div className="text-danger">{formErrors.gender}</div>}
             </CCol>
             <CCol md={6}>
               <CFormLabel>
@@ -1025,12 +1052,21 @@ const DoctorManagement = () => {
                 type="number"
                 value={form.experience}
                 onChange={(e) => {
-                  const value = e.target.value
-                  setForm((p) => ({ ...p, experience: value }))
+                  let value = e.target.value
 
-                  // Clear error if value is a valid number >= 0
-                  if (!isNaN(value) && Number(value) >= 0) {
-                    setFormErrors((prev) => ({ ...prev, experience: '' }))
+                  // ✅ Allow only numbers and max 2 digits
+                  if (/^\d{0,2}$/.test(value)) {
+                    setForm((p) => ({ ...p, experience: value }))
+
+                    // Validation
+                    let error = ''
+                    if (!value) {
+                      error = 'Experience is required.'
+                    } else if (Number(value) < 0) {
+                      error = 'Experience must be a non-negative number.'
+                    }
+
+                    setFormErrors((prev) => ({ ...prev, experience: error }))
                   }
                 }}
                 invalid={!!formErrors.experience}
@@ -1047,16 +1083,29 @@ const DoctorManagement = () => {
               <CFormInput
                 value={form.qualification}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/[0-9]/g, '') // remove numbers
-                  setForm((p) => ({ ...p, qualification: value }))
-                  setFormErrors((prev) => ({
-                    ...prev,
-                    qualification: value.trim() ? '' : 'Qualification is required',
-                  }))
+                  let value = e.target.value
+
+                  // ✅ Remove digits
+                  value = value.replace(/[0-9]/g, '')
+
+                  // ✅ Update form
+                  setForm((prev) => ({ ...prev, qualification: value }))
+
+                  // ✅ Validation
+                  let error = ''
+                  const trimmedValue = value.trim()
+                  if (!trimmedValue) {
+                    error = 'Qualification is required.'
+                  } else if (!/^[A-Za-z\s]+$/.test(trimmedValue)) {
+                    error = 'Qualification can contain only letters and spaces.'
+                  } else if (trimmedValue.length < 2 || trimmedValue.length > 50) {
+                    error = 'Qualification must be between 2 and 50 characters.'
+                  }
+
+                  setFormErrors((prev) => ({ ...prev, qualification: error }))
                 }}
                 invalid={!!formErrors.qualification}
               />
-
               {formErrors.qualification && (
                 <div className="text-danger mt-1">{formErrors.qualification}</div>
               )}
@@ -1069,16 +1118,29 @@ const DoctorManagement = () => {
               <CFormInput
                 value={form.specialization}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/[0-9]/g, '') // remove numbers
-                  setForm((p) => ({ ...p, specialization: value }))
-                  setFormErrors((prev) => ({
-                    ...prev,
-                    specialization: value.trim() ? '' : 'Specialization is required',
-                  }))
+                  let value = e.target.value
+
+                  // ✅ Remove digits
+                  value = value.replace(/[0-9]/g, '')
+
+                  // ✅ Update form state
+                  setForm((prev) => ({ ...prev, specialization: value }))
+
+                  // ✅ Validation
+                  let error = ''
+                  const trimmedValue = value.trim()
+                  if (!trimmedValue) {
+                    error = 'Specialization is required.'
+                  } else if (!/^[A-Za-z\s]+$/.test(trimmedValue)) {
+                    error = 'Specialization can contain only letters and spaces.'
+                  } else if (trimmedValue.length < 2 || trimmedValue.length > 50) {
+                    error = 'Specialization must be between 2 and 50 characters.'
+                  }
+
+                  setFormErrors((prev) => ({ ...prev, specialization: error }))
                 }}
                 invalid={!!formErrors.specialization}
               />
-
               {formErrors.specialization && (
                 <div className="text-danger mt-1">{formErrors.specialization}</div>
               )}
@@ -1091,12 +1153,28 @@ const DoctorManagement = () => {
               <CFormTextarea
                 value={form.profileDescription}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/[0-9]/g, '') // remove numbers
-                  setForm((p) => ({ ...p, profileDescription: value }))
-                  setFormErrors((prev) => ({
-                    ...prev,
-                    profileDescription: value.trim() ? '' : 'Profile description is required',
-                  }))
+                  let value = e.target.value
+
+                  // ✅ Remove digits (optional, if you don't want numbers)
+                  value = value.replace(/[0-9]/g, '')
+
+                  // ✅ Update form state
+                  setForm((prev) => ({ ...prev, profileDescription: value }))
+
+                  // ✅ Validation
+                  let error = ''
+                  const trimmedValue = value.trim()
+                  if (!trimmedValue) {
+                    error = 'Profile description is required.'
+                  } else if (!/^[A-Za-z\s.,'-]+$/.test(trimmedValue)) {
+                    // Allow letters, spaces, periods, commas, apostrophes, hyphens
+                    error = 'Profile description can contain only letters and common punctuation.'
+                  } else if (trimmedValue.length < 10 || trimmedValue.length > 500) {
+                    // Minimum 10, maximum 500 characters
+                    error = 'Profile description must be between 10 and 500 characters.'
+                  }
+
+                  setFormErrors((prev) => ({ ...prev, profileDescription: error }))
                 }}
                 invalid={!!formErrors.profileDescription}
                 rows={4}
@@ -1116,37 +1194,46 @@ const DoctorManagement = () => {
                 accept="image/jpeg, image/png"
                 onChange={(e) => {
                   const file = e.target.files[0]
-                  if (file) {
-                    // ✅ Only allow JPEG and PNG
-                    const validTypes = ['image/jpeg', 'image/png']
-                    if (!validTypes.includes(file.type)) {
-                      setFormErrors((prev) => ({
-                        ...prev,
-                        doctorPicture: 'Only JPG and PNG images are allowed',
-                      }))
-                      return
-                    }
-
-                    const reader = new FileReader()
-                    reader.onloadend = () => {
-                      setForm((p) => ({ ...p, doctorPicture: reader.result }))
-                      setFormErrors((prev) => ({
-                        ...prev,
-                        doctorPicture: '', // clear error
-                      }))
-                    }
-                    reader.readAsDataURL(file)
-                  } else {
+                  if (!file) {
                     setFormErrors((prev) => ({
                       ...prev,
                       doctorPicture: 'Profile picture is required',
                     }))
+                    setForm((prev) => ({ ...prev, doctorPicture: '' }))
+                    return
                   }
+
+                  const validTypes = ['image/jpeg', 'image/png']
+                  if (!validTypes.includes(file.type)) {
+                    setFormErrors((prev) => ({
+                      ...prev,
+                      doctorPicture: 'Only JPG and PNG images are allowed',
+                    }))
+                    setForm((prev) => ({ ...prev, doctorPicture: '' }))
+                    return
+                  }
+
+                  const MAX_SIZE = 2 * 1024 * 1024 // 2 MB
+                  if (file.size > MAX_SIZE) {
+                    setFormErrors((prev) => ({
+                      ...prev,
+                      doctorPicture: 'File size must be less than 2 MB',
+                    }))
+                    setForm((prev) => ({ ...prev, doctorPicture: '' }))
+                    return
+                  }
+
+                  // If everything is okay
+                  const reader = new FileReader()
+                  reader.onloadend = () => {
+                    setForm((prev) => ({ ...prev, doctorPicture: reader.result }))
+                    setFormErrors((prev) => ({ ...prev, doctorPicture: '' }))
+                  }
+                  reader.readAsDataURL(file)
                 }}
-                invalid={!!formErrors.doctorPicture}
               />
               {formErrors.doctorPicture && (
-                <div className="text-danger mt-1">{formErrors.doctorPicture}</div>
+                <div className="text-danger">{formErrors.doctorPicture}</div>
               )}
             </CCol>
           </CRow>
@@ -1358,15 +1445,26 @@ const DoctorManagement = () => {
                 value={form.doctorMobileNumber}
                 onChange={(e) => {
                   const value = e.target.value
+
+                  // ✅ Allow only digits and max 10
                   if (/^\d{0,10}$/.test(value)) {
                     setForm((prev) => ({ ...prev, doctorMobileNumber: value }))
-                    if (/^\d{10}$/.test(value)) {
-                      setFormErrors((prev) => ({ ...prev, doctorMobileNumber: '' }))
+
+                    // ✅ Run validator and update error
+                    let error = ''
+                    if (!value) {
+                      error = 'Mobile number is required.'
+                    } else if (!/^\d{10}$/.test(value)) {
+                      error = 'Mobile number must be exactly 10 digits.'
                     }
+
+                    setFormErrors((prev) => ({ ...prev, doctorMobileNumber: error }))
                   }
                 }}
                 placeholder="Enter 10-digit number"
+                invalid={!!formErrors.doctorMobileNumber}
               />
+
               {formErrors.doctorMobileNumber && (
                 <div className="text-danger">{formErrors.doctorMobileNumber}</div>
               )}
@@ -1383,20 +1481,22 @@ const DoctorManagement = () => {
                   const value = e.target.value
                   setForm((prev) => ({ ...prev, doctorEmail: value }))
 
-                  // Email validation
-                  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-                  if (emailPattern.test(value)) {
-                    setFormErrors((prev) => ({ ...prev, doctorEmail: '' }))
+                  let error = ''
+                  if (!value.trim()) {
+                    error = 'Email is required.'
                   } else {
-                    setFormErrors((prev) => ({
-                      ...prev,
-                      doctorEmail: 'Enter a valid email address',
-                    }))
+                    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+                    if (!emailPattern.test(value.trim())) {
+                      error = 'Enter a valid email address.'
+                    }
                   }
+
+                  setFormErrors((prev) => ({ ...prev, doctorEmail: error }))
                 }}
                 placeholder="Enter doctor email"
                 invalid={!!formErrors.doctorEmail}
               />
+
               {formErrors.doctorEmail && (
                 <div className="text-danger">{formErrors.doctorEmail}</div>
               )}
@@ -1412,21 +1512,41 @@ const DoctorManagement = () => {
               <CFormInput
                 value={form.associationsOrMemberships}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/[0-9]/g, '')
+                  let value = e.target.value
+                  // Remove numbers
+                  value = value.replace(/[0-9]/g, '')
                   setForm((p) => ({ ...p, associationsOrMemberships: value }))
+
+                  // Validation
+                  let error = ''
+                  if (!value.trim()) {
+                    error = 'Associations or Memberships is required.'
+                  } else if (value.trim().length < 2 || value.trim().length > 100) {
+                    error = 'Must be between 2 and 100 characters.'
+                  }
+
+                  setFormErrors((prev) => ({ ...prev, associationsOrMemberships: error }))
                 }}
+                invalid={!!formErrors.associationsOrMemberships}
               />
+
+              {formErrors.associationsOrMemberships && (
+                <div className="text-danger mt-1">{formErrors.associationsOrMemberships}</div>
+              )}
             </CCol>
             <CCol md={6}>
-              <CFormLabel>Branch</CFormLabel>
+              <CFormLabel>
+                Branch
+                <span className="text-danger">*</span>
+              </CFormLabel>
               <Select
                 isMulti
-                options={branchOptions} // [{ value: 'H_1-B_1', label: 'punjagutta' }, ...]
+                options={branchOptions}
                 value={branchOptions.filter(
                   (opt) =>
                     Array.isArray(form.branch) && form.branch.some((b) => b.branchId === opt.value),
                 )}
-                onChange={(selected) =>
+                onChange={(selected) => {
                   setForm((prev) => ({
                     ...prev,
                     branch: selected.map((opt) => ({
@@ -1434,28 +1554,56 @@ const DoctorManagement = () => {
                       branchName: opt.label,
                     })),
                   }))
-                }
+
+                  // Validation: At least one branch must be selected
+                  setFormErrors((prev) => ({
+                    ...prev,
+                    branch: selected.length > 0 ? '' : 'Please select at least one branch',
+                  }))
+                }}
                 placeholder="Select branches..."
+                className={formErrors.branch ? 'is-invalid' : ''}
               />
+              {formErrors.branch && <div className="text-danger">{formErrors.branch}</div>}
             </CCol>
           </CRow>
           <ChipSection
             label="Area of Expertise"
             items={form.focusAreas}
-            onAdd={(items) => setForm((prev) => ({ ...prev, focusAreas: items }))}
+            onAdd={(items) => {
+              // update form state
+              setForm((prev) => ({ ...prev, focusAreas: items }))
+
+              // validation: must have at least one item
+              setFormErrors((prev) => ({
+                ...prev,
+                focusAreas:
+                  items && items.length > 0
+                    ? '' // clear error
+                    : 'Please add at least one focus area',
+              }))
+            }}
           />
+
+          {/* show error */}
+          {formErrors.focusAreas && <div className="text-danger mt-1">{formErrors.focusAreas}</div>}
+
           <div className="mb-3">
             {/* <label label="Language">Languages Known</label> */}
             <ChipSection
-              label="Languages known"
+              label="Languages Known"
               items={form.languages}
               onAdd={(items) => {
                 setForm((prev) => ({ ...prev, languages: items }))
-                if (items.length > 0) {
-                  setFormErrors((prev) => ({ ...prev, languages: '' }))
-                }
+
+                // ✅ Validation: At least one language should be added
+                setFormErrors((prev) => ({
+                  ...prev,
+                  languages: items.length > 0 ? '' : 'Please add at least one language',
+                }))
               }}
             />
+            {formErrors.languages && <div className="text-danger mt-1">{formErrors.languages}</div>}
 
             {/* {formErrors.languages && <div className="text-danger mt-1">{formErrors.languages}</div>} */}
           </div>
@@ -1463,13 +1611,22 @@ const DoctorManagement = () => {
           <ChipSection
             label="Achievements / Awards"
             items={form.highlights}
-            onAdd={(items) => setForm((prev) => ({ ...prev, highlights: items }))}
+            onAdd={(items) => {
+              setForm((prev) => ({ ...prev, highlights: items }))
+
+              // ✅ Validation: Optional, but you can enforce at least one achievement if required
+              setFormErrors((prev) => ({
+                ...prev,
+                highlights: items.length > 0 ? '' : 'Please add at least one achievement',
+              }))
+            }}
           />
+          {formErrors.highlights && <div className="text-danger mt-1">{formErrors.highlights}</div>}
           <CCol md={6} className="d-flex align-items-center" style={{ gap: '20px' }}>
-            {/* The container for the custom file input and label */}
             <div style={{ flex: 1 }}>
               <CFormLabel htmlFor="doctorSignature">
-                Doctor Signature(to add in the E-Prescription)<span className="text-danger">*</span>
+                Doctor Signature (to add in the E-Prescription)
+                <span className="text-danger">*</span>
               </CFormLabel>
               <div
                 style={{
@@ -1478,7 +1635,7 @@ const DoctorManagement = () => {
                   gap: '10px',
                   border: '1px solid #ccc',
                   borderRadius: '4px',
-                  padding: '4px', // Reduced padding
+                  padding: '4px',
                   backgroundColor: '#f8f9fa',
                 }}
               >
@@ -1494,42 +1651,53 @@ const DoctorManagement = () => {
                   {form.doctorSignatureFileName || 'No file selected'}
                 </span>
               </div>
+
               <CFormInput
                 id="file-input-doctor-signature"
                 type="file"
                 accept="image/jpeg, image/png"
-                style={{ display: 'none' }} // Hide the native file input
+                style={{ display: 'none' }}
                 onChange={(e) => {
                   const file = e.target.files[0]
-                  if (file) {
-                    const validTypes = ['image/jpeg', 'image/png']
-                    if (!validTypes.includes(file.type)) {
-                      setFormErrors((prev) => ({
-                        ...prev,
-                        doctorSignature: 'Only JPG and PNG images are allowed',
-                      }))
-                      return
-                    }
-                    const reader = new FileReader()
-                    reader.onloadend = () => {
-                      setForm((p) => ({
-                        ...p,
-                        doctorSignature: reader.result,
-                        doctorPictureFileName: file.name,
-                      }))
-                      setFormErrors((prev) => ({
-                        ...prev,
-                        doctorSignature: '',
-                      }))
-                    }
-                    reader.readAsDataURL(file)
-                  } else {
+                  if (!file) {
                     setForm((p) => ({ ...p, doctorSignature: null, doctorSignatureFileName: null }))
                     setFormErrors((prev) => ({
                       ...prev,
                       doctorSignature: 'Profile picture is required',
                     }))
+                    return
                   }
+
+                  const validTypes = ['image/jpeg', 'image/png']
+                  if (!validTypes.includes(file.type)) {
+                    setFormErrors((prev) => ({
+                      ...prev,
+                      doctorSignature: 'Only JPG and PNG images are allowed',
+                    }))
+                    setForm((p) => ({ ...p, doctorSignature: null, doctorSignatureFileName: null }))
+                    return
+                  }
+
+                  const MAX_SIZE = 250 * 1024 // 250 KB
+                  if (file.size > MAX_SIZE) {
+                    setFormErrors((prev) => ({
+                      ...prev,
+                      doctorSignature: 'File size must be less than 250 KB',
+                    }))
+                    setForm((p) => ({ ...p, doctorSignature: null, doctorSignatureFileName: null }))
+                    return
+                  }
+
+                  const reader = new FileReader()
+                  reader.onloadend = () => {
+                    setForm((p) => ({
+                      ...p,
+                      doctorSignature: reader.result,
+                      doctorSignatureFileName: file.name,
+                    }))
+                    setFormErrors((prev) => ({ ...prev, doctorSignature: '' }))
+                  }
+                  reader.readAsDataURL(file)
                 }}
                 invalid={!!formErrors.doctorSignature}
               />
@@ -1538,7 +1706,6 @@ const DoctorManagement = () => {
               )}
             </div>
 
-            {/* Image Preview on the right side */}
             <div style={{ minWidth: '150px' }}>
               {form.doctorSignature ? (
                 <img
@@ -1546,17 +1713,17 @@ const DoctorManagement = () => {
                   alt="Doctor Signature Preview"
                   style={{
                     width: '150px',
-                    height: 'auto', // Changed to 'auto'
+                    height: 'auto',
                     border: '1px solid #ccc',
                     borderRadius: '4px',
-                    objectFit: 'contain', // Changed to 'contain'
+                    objectFit: 'contain',
                   }}
                 />
               ) : (
                 <div
                   style={{
                     width: '150px',
-                    height: '80px', // Reduced height
+                    height: '80px',
                     border: '1px dashed #ccc',
                     borderRadius: '4px',
                     display: 'flex',

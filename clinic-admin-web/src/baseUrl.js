@@ -1,11 +1,15 @@
 // export const BASE_URL = 'http://alb-dev-sc-197990416.ap-south-1.elb.amazonaws.com/api'
-export let wifiUrl = '3.6.119.57:9090'
+// export let wifiUrl = 'localhost'
+export let wifiUrl = 'http://3.6.119.57:9090'
 // export let wifiUrl = '192.168.1.5'
-
-export const SBASE_URL = `http://${wifiUrl}/clinicadminpublicapis`
-export const BASE_URL = `http://${wifiUrl}/clinic-admin`
-export const MainAdmin_URL = `http://${wifiUrl}/admin`
+// http://3.6.119.57:9090
+//https://api.aesthetech.life
+export const SBASE_URL = `${wifiUrl}/clinicadminpublicapis`
+export const BASE_URL = `${wifiUrl}/clinic-admin`
+export const MainAdmin_URL = `${wifiUrl}/admin`
 export const subService_URL = `${BASE_URL}/api/v1`
+
+export const baseUrlmedicine = `${wifiUrl}/api/doctors`
 
 // END POINTS
 // login
@@ -20,7 +24,8 @@ export const DeleteBookings = `customer/deleteService`
 export const GetBookingBy_ClinicId = `customer/getAllBookedServicesByClinicId`
 export const GetBookingBy_DoctorId = `customer/getBookingByDoctorId`
 //appointments
-export const Booking_sevice = `http://${wifiUrl}/api`
+export const Booking_sevice = `${wifiUrl}/api`
+
 export const allBooking_sevices = `getAllBookedServices`
 
 // Appointment Management
@@ -35,13 +40,13 @@ export const doctorAvailableUrl = 'doctorId'
 export const getDoctorByClinicId = 'getDoctorsByHospitalIdAndBranchId'
 
 export const getAllBookedServices = `customer/getAllBookedServices`
-export const Booking_service_Url = `http://${wifiUrl}/api`
+export const Booking_service_Url = `${wifiUrl}/api`
 export const deleteBookings = `customer/deleteService`
 export const geteBookingBy_ClinicId = `customer/getAllBookedServicesByClinicId`
 
 export const GetBy_DoctorId = 'doctor'
 //Doctor Notifications
-export const Doctor_Url = `http://${wifiUrl}/api`
+export const Doctor_Url = `${wifiUrl}/api`
 export const getAllDCtrNotifications = 'doctors/notificationToDoctor'
 export const getDoctorIdAndNotifications = 'doctors/hospitalById'
 
@@ -181,13 +186,13 @@ export const ClinicAllData = 'v1/clinic/getAllClinics'
 export const clinicPost = 'v1/clinic/addClinic'
 
 //payouts
-export const Customer_Url = `http://${wifiUrl}/api`
+export const Customer_Url = `${wifiUrl}/api`
 export const getAllPayouts = 'payments/getallpayments'
 export const addPayouts = 'payments/addpayment'
 
 //** Customer Management- main **
 export const AddCustomer = 'customers/onboard'
-export const GetAllCustomers = 'customers/getAllCustomers'
+export const GetAllCustomers = 'customers/hospital'
 // export const UpdateCustomer = 'customers'
 // export const DeleteCustomer = 'customers'
 // export const GetCustomerByCustomerId = 'customers'

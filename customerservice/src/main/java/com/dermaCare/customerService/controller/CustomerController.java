@@ -1,7 +1,5 @@
 package com.dermaCare.customerService.controller;
 
-
-
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -355,10 +353,29 @@ public ResponseEntity<Response> getRatingInfo(@PathVariable String branchlId, @P
 		}
 }
 
+@GetMapping("/getRatingInfoByDoctorId/{doctorId}")
+public ResponseEntity<Response> getRatingInfoByDoctorId(@PathVariable String doctorId) {
+	 Response response = customerService.getRatingForServiceBydoctorId(doctorId);
+	 if(response != null && response.getStatus() != 0) {
+		 return ResponseEntity.status(response.getStatus()).body(response);
+	 }else {
+			return null;
+		}
+}
 
 @GetMapping("/getAverageRating/{branchId}/{doctorId}")
 public ResponseEntity<Response> getRatingAverageRating(@PathVariable String branchId, @PathVariable String doctorId) {
 	 Response response = customerService.getAverageRating(branchId,doctorId);
+	 if(response != null && response.getStatus() != 0) {
+		 return ResponseEntity.status(response.getStatus()).body(response);
+	 }else {
+			return null;
+		}
+}
+
+@GetMapping("/getAverageRatingByDoctorId/{doctorId}")
+public ResponseEntity<Response> getAverageRatingByDoctorId( @PathVariable String doctorId) {
+	 Response response = customerService.getAverageRatingByDoctorId(doctorId);
 	 if(response != null && response.getStatus() != 0) {
 		 return ResponseEntity.status(response.getStatus()).body(response);
 	 }else {
@@ -491,6 +508,38 @@ public ResponseEntity<Response> getRatingAverageRating(@PathVariable String bran
 			 @PathVariable String keyPoints){
 	   return customerService.getRecommendedClinicsAndOnDoctors(keyPoints);
  }
+   
+   
+   @GetMapping("/getBookingsByBranchId/{branchId}")
+   public ResponseEntity<?> getBookingsByBranchId(
+			 @PathVariable String branchId){
+	   return customerService.getBookingsByBranchId(branchId);
+ }
 
- 
+   @GetMapping("/getBookingsByClinicIdWithBranchId/{clinicId}/{branchId}")
+   public ResponseEntity<?> getBookingsByClinicIdWithBranchId(
+           @PathVariable String clinicId,
+           @PathVariable String branchId) {
+       return customerService.getBookingsByClinicIdWithBranchId(clinicId, branchId);
+   }
+   
+   @GetMapping("/bookings/customerId/{customerId}")
+   public ResponseEntity<?> getBookingsByCustomerId(
+			 @PathVariable String customerId){
+	   return customerService.getBookingsByCustomerId(customerId);
+ }
+   
+   
+   @GetMapping("/bookings/Inprogress/customerId/{customerId}")
+   public ResponseEntity<?> getInprogressBookingsByCustomerId(
+			 @PathVariable String customerId){
+	   return customerService.getInprogressBookingsByCustomerId(customerId);
+ }
+   
+   @GetMapping("/bookings/byRelation/{customerId}")
+   public ResponseEntity<?> getInprogressBookingsByRelation(
+			 @PathVariable String customerId){
+	   return customerService.retrieveAppointnmentsByRelation(customerId);
+ }
+
 }

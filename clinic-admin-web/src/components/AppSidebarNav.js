@@ -63,8 +63,9 @@ export const AppSidebarNav = ({ items }) => {
 
   return (
     <CSidebarNav as={SimpleBar}>
-      {items &&
-        items.map((item, index) => (item.items ? navGroup(item, index) : navItem(item, index)))}
+      {Array.isArray(items) && items.length
+        ? items.map((item, index) => (item.items ? navGroup(item, index) : navItem(item, index)))
+        : null}
     </CSidebarNav>
   )
 }

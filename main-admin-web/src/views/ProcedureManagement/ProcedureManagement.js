@@ -12,6 +12,7 @@ import {
   CModalFooter,
   CModalTitle,
   CTable,
+  CCard,
   CTableHead,
   CTableRow,
   CTableHeaderCell,
@@ -19,15 +20,21 @@ import {
   CTableDataCell,
   CPagination,
   CPaginationItem,
-  CForm
+  CForm,
+  CCardHeader,
+  CInputGroup,
+  CInputGroupText,  
 } from '@coreui/react'
 import Select from 'react-select'
+import CIcon from '@coreui/icons-react'
+import { cilSearch } from '@coreui/icons'
+
 
 import { CategoryData } from '../categoryManagement/CategoryAPI'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { BASE_URL, subService_URL, updateSubservices, getService } from '../../baseUrl'
-import { postSubService, getAllSubServices, deleteSubServiceData } from './ProcedureAPI'
+import { postSubService, getAllSubServices, deleteSubServiceData, getSubServiceId } from './ProcedureAPI'
 import { getServiceByCategoryId } from '../servicesManagement/ServiceAPI'
 import { ConfirmationModal } from '../../Utils/ConfirmationDelete'
 
@@ -35,6 +42,7 @@ const ProcedureManagement = () => {
   const [category, setCategory] = useState([])
   const [serviceOptions, setServiceOptions] = useState([])
   const [selectedSubServices, setSelectedSubServices] = useState([])
+  const [selectSubService, setSelectSubService]=useState(false)
   const [subServiceInput, setSubServiceInput] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [removeShowModal, setRemoveShowModal] = useState(false)
@@ -45,6 +53,10 @@ const ProcedureManagement = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteServiceId, setDeleteServiceId] = useState(null)
   const [selectedSub, setSelectedSub] = useState(null)
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState(null)
+    const [viewModalVisible, setViewModalVisible] = useState(false)
+  
   const [errors, setErrors] = useState({
     category: '',
     service: '',
@@ -126,6 +138,21 @@ const ProcedureManagement = () => {
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
+const handleViewService = async (subServiceId) => {
+  console.log("👀 handleViewService called with:", subServiceId)
+  try {
+    const res = await getSubServiceId(subServiceId)
+    console.log("🔎 Full API Response:", res)
+
+    // ✅ set the actual data object
+   
+    setSelectSubService(res.data)
+    setViewModalVisible(true)
+  } catch (error) {
+    console.error("❌ Failed to fetch SubService details:", error)
+    toast.error("Failed to fetch SubService details")
+  }
+}
 
   const handleRemoveClick = (sub) => {
     setSelectedSub(sub)
@@ -375,7 +402,8 @@ const ProcedureManagement = () => {
   return (
     <div className="container-fluid p-4">
       <ToastContainer />
-      <CRow>
+      <CCard>
+      {/* <CRow>
         <CCol md={6}>
           <div className="d-flex justify-content-start mb-3">
             <CFormInput
@@ -392,11 +420,22 @@ const ProcedureManagement = () => {
             />
           </div>
         </CCol>
-      </CRow>
+      </CRow> */}
 
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h4>Procedure Management</h4>
-        <CButton
+      <CCardHeader className="d-flex justify-content-between align-items-center">
+        <h4 className="mb-0">Procedure Management</h4>
+            <div className="d-flex" style={{gap:'1rem'}}>
+              <CInputGroup style={{width:'300px'}}>
+                <CFormInput
+                placeholder="Search Service..."
+                value={searchQuery}
+                onChange={(e)=>setSearchQuery(e.target.value)}
+                />
+                <CInputGroupText>
+                  <CIcon icon={cilSearch} />
+                </CInputGroupText>
+              </CInputGroup>
+              <CButton
           color="primary"
           onClick={() => {
             setEditMode(false)
@@ -414,10 +453,16 @@ const ProcedureManagement = () => {
         >
           + Add New Procedure
         </CButton>
-      </div>
+            </div> 
+      </CCardHeader>
 
-      {/* CTable Implementation */}
-      <CTable striped hover responsive>
+      {loading?(
+        <div>Loading...</div>
+      ):error? (
+        <div>{error}</div>
+      ):(
+        <>
+         <CTable striped hover responsive>
         <CTableHead>
           <CTableRow>
             <CTableHeaderCell style={{ width: '120px' }}>S.No</CTableHeaderCell>
@@ -427,7 +472,7 @@ const ProcedureManagement = () => {
             <CTableHeaderCell>Actions</CTableHeaderCell>
           </CTableRow>
         </CTableHead>
-        <CTableBody>
+          <CTableBody>
           {currentItems && currentItems.length > 0 ? (
             currentItems.map((row, index) => (
               <CTableRow key={row.id}>
@@ -444,17 +489,29 @@ const ProcedureManagement = () => {
                       width: '230px',
                     }}
                   >
+                   <CButton
+  color="primary"
+  className="ms-2"
+  size="sm"
+    onClick={() => handleViewService(row.id)} // ✅ pass row.id directly
+
+  style={{ width: '80px' }}
+>
+  View
+</CButton>
                     <CButton
-                      color="link"
-                      className="text-success p-0"
+                      color="warning"
+                      className="ms-2"
+                      size="sm"
                       onClick={() => handleCategoryEdit(row)}
-                      style={{ marginRight: '10px', width: '80px' }}
+                      style={{ width: '80px' }}
                     >
                       Edit
                     </CButton>
                     <CButton
-                      color="link"
-                      className="text-danger p-0"
+                      color="danger"
+                      className="ms-2"
+                      size="sm"
                       onClick={() => confirmDelete(row.id)}
                       style={{ width: '80px' }}
                     >
@@ -478,7 +535,7 @@ const ProcedureManagement = () => {
       {filteredSubServices.length > 0 && (
         <div className="d-flex justify-content-between align-items-center mt-3">
           <div>
-            <span className="me-2">Rows per page:</span>
+            <span className="me-2 ms-2">Rows per page:</span>
             <CFormSelect
               value={itemsPerPage}
               onChange={(e) => {
@@ -522,7 +579,11 @@ const ProcedureManagement = () => {
             </CPagination>
           </div>
         </div>
+      )}  
+        </>
       )}
+     
+      
 
       <CModal visible={showModal} onClose={handleCloseForm} size="lg" backdrop="static">
         <CForm 
@@ -751,6 +812,41 @@ const ProcedureManagement = () => {
           </CModalFooter>
         </CForm>
       </CModal>
+      {/* View Sub Service Modal */}
+  <CModal visible={viewModalVisible} onClose={() => setViewModalVisible(false)}>
+          <CModalHeader>
+            <CModalTitle>Sub Service Details</CModalTitle>
+          </CModalHeader>
+          <CModalBody>
+            {selectSubService?.subServices?.length > 0 ? (
+              selectSubService.subServices.map((item) => (
+                <div key={item.subServiceId} style={{ marginBottom: '1rem' }}>
+                  <p>
+                    <strong>Category Name:</strong> {selectSubService.categoryName || '-'}
+                  </p>
+                  <p>
+                    <strong>Sub Service Name:</strong> {item.subServiceName || '-'}
+                  </p>
+                  <p>
+                    <strong>Service Name:</strong> {item.serviceName || '-'}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p>No sub-services found</p>
+            )}
+          </CModalBody>
+          <CModalFooter>
+            <CButton color="secondary" onClick={() => setViewModalVisible(false)}>
+              Close
+            </CButton>
+          </CModalFooter>
+        </CModal>
+
+
+
+
+
 
       {showDeleteModal && (
         <ConfirmationModal
@@ -760,6 +856,7 @@ const ProcedureManagement = () => {
           onCancel={() => setShowDeleteModal(false)}
         />
       )}
+      </CCard>
     </div>
   )
 }

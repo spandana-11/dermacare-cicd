@@ -13,20 +13,19 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL) 
 public class Response {
-	
-		private boolean success;
-		private Object data;
-		private String message;
-		private int status;
-		private String hospitalName;
-		private String hospitalId; 
-	    private String branchId;
-		private String Role;
-	    private Map<String, List<String>>  permissions;
+    
+    private boolean success;
+    private Object data;
+    private String message;
+    private int status;
+
+    private String hospitalName;
+    private String hospitalId; 
+    private String branchId;
 
 
-			
-			
-		}
-	
+    private String branchName;
 
+    private String role; 
+    private Map<String, List<String>> permissions;
+}

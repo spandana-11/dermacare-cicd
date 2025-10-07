@@ -63,7 +63,7 @@ const ClinicDetails = () => {
   const [isEditingAdditional, setIsEditingAdditional] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [showBranchForm, setShowBranchForm]=useState(false)
-  const tabList = ['Basic Details', 'Additional Details', 'Branches', 'Doctors', 'Appointments', 'Procedures']
+  const tabList = ['Basic Details', 'Additional Details', 'Branches', 'Procedures']
   const [currentPage, setCurrentPage] = useState(1)
 const [itemsPerPage, setItemsPerPage] = useState(10)
   const documentFields = [
@@ -250,46 +250,12 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
 
   return (
     <CCard className="mt-4">
-    <CCardHeader>
-  <div className="d-flex justify-content-between align-items-center mb-3 w-100">
-    {/* Left: Back Button */}
-    <CButton color="secondary" onClick={() => navigate(-1)}>
-      Back
-    </CButton>
-
-    {/* Center: Title */}
-    <h4 className="mb-0 text-center flex-grow-1">Clinic Details</h4>
-
-    {/* Right: Add Doctor Button */}
-    {activeTab === 3 && (
-      <button
-        className="btn btn-info text-white d-flex align-items-center gap-2 shadow-sm rounded-pill px-4 py-2"
-        onClick={() => {
-          setFormErrors({});
-          setModalVisible(true);
-        }}
-        style={{
-          background: 'linear-gradient(90deg, #0072CE 0%, #00AEEF 100%)',
-          border: 'none',
-          fontWeight: '600',
-          fontSize: '16px',
-        }}
-      >
-        <CIcon icon={cilUser} size="lg" />
-        <span>Add Doctor</span>
-      </button>
-    )}
-  </div>
-
- {modalVisible && (
-  <AddDoctors
-    modalVisible={modalVisible}
-    setModalVisible={setModalVisible}
-    clinicId={hospitalId}
-    closeForm={() => setModalVisible(false)} // closes modal
-  />
-)}
-</CCardHeader>
+      <CCardHeader className="d-flex justify-content-between align-items-center">
+            <h3 className="mb-0">Branch Details</h3>
+            <CButton color="secondary" onClick={() => navigate(-1)}>
+              Back
+            </CButton>
+          </CCardHeader>
 
 
       <CCardBody>
@@ -313,18 +279,14 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
             Branch Details
           </CNavLink>
         </CNavItem>
-        <CNavItem>
-          <CNavLink active={activeTab === 3} onClick={() => handleTabChange(3)}>
-            Doctors
-          </CNavLink>
-        </CNavItem>
-        <CNavItem>
-          <CNavLink active={activeTab === 4} onClick={() => handleTabChange(4)}>
+ {/* <CNavItem>
+     
+          <CNavLink active={activeTab === 3} onClick={() => handleTabChange(4)}>
             Appointments
           </CNavLink>
-        </CNavItem>
+        </CNavItem>  */}
         <CNavItem>
-          <CNavLink active={activeTab === 5} onClick={() => handleTabChange(5)}>
+          <CNavLink active={activeTab === 3} onClick={() => handleTabChange(3)}>
             Procedures
           </CNavLink>
         </CNavItem>
@@ -464,7 +426,7 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
         }
       }}
     >
-      Update
+      Save
     </CButton>
 
     <CButton
@@ -667,8 +629,6 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
     }
   />
 </CCol>
-
-
                     <CCol md={6}>
   <CFormLabel>Free Follow-Ups (count) <span className="text-danger">*</span></CFormLabel>
   <CFormInput
@@ -718,10 +678,10 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
                         }}
                       >
                         <option value="">Select Subscription</option> 
-                        <option value="Basic">Basic</option>
-                        <option value="Free">Free</option>
-                        <option value="Standard">Standard</option>
-                        <option value="Premium">Premium</option>
+                         <option value="Free">Free</option>
+                  <option value="Basic">Basic</option>
+                  <option value="Standard">Standard</option>
+                  <option value="Premium">Premium</option>
                       </CFormSelect>
 
                       {formErrors.subscription && (
@@ -1653,7 +1613,7 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
         }
       }}
     >
-      Update
+      Save
     </CButton>
 
     <CButton
@@ -1683,140 +1643,8 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
 <CTabPane visible={activeTab=== 2}>
   <AddBranchForm clinicId={hospitalId}/>
 </CTabPane>
-              {/* Tab 3: Doctors */}
-              <CTabPane visible={activeTab === 3}>              
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>S.No</th>
-                      <th>Doctor Name</th>
-                      <th>Contact</th>
-                      <th>Specialization</th>
-                      <th>Sub Services</th> {/* 👈 Added */}
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allDoctors.length > 0 ? (
-currentItems.map((doc, idx) => (
-                          <tr key={idx}>
-                          <td>{indexOfFirstItem +idx + 1}</td> 
-                          <td>{capitalizeWords(doc.doctorName)}</td>
-                          <td>{doc.doctorMobileNumber}</td>
-                          <td>{doc.specialization}</td>
-                          <td>
-                            {doc.subServices && doc.subServices.length > 0
-                              ? doc.subServices.map((sub) => sub.subServiceName).join(', ')
-                              : 'No Sub Services'}
-                          </td>
-                          <td>{doc.status || 'Active'}</td>
-                          <td>
-                            <CButton
-                              className="btn btn-primary me-2"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedDoctor(doc)
-                                setShowDoctorModal(true)
-                              }}
-                            >
-                              View
-                            </CButton>
-                             <CButton
-                              className="btn btn-warning me-2"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedDoctor(doc)
-                                setShowDoctorModal(true)
-                              }}
-                            >
-                              Edit
-                            </CButton>
-                             <CButton
-                              className="btn btn-danger me-2"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedDoctor(doc)
-                                setShowDoctorModal(true)
-                              }}
-                            >
-                              Delete
-                            </CButton>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="6" className="text-center">
-                          No Doctors Available
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-
-                {allDoctors.length>0 &&(
-                  <div className="d-flex justify-content-between align-items-center mt-3">
-                    <div className="d-flex align-items-center">
-                      <span className="me-2">Rows per page:</span>
-                      <CFormSelect
-                      value={itemsPerPage}
-                      onChange={(e)=>{
-                        setItemsPerPage(Number(e.target.value))
-                        setCurrentPage(1)
-                      }}
-                      style={{width:'auto'}}
-                      >
-                        <option value={5}>5</option>
-                        <option value={10}>10</option>
-                        <option value={15}>25</option>
-                      </CFormSelect>
-                    </div>
-                    <CPagination className="mb-0">
-                      <CPaginationItem
-                      disabled={currentPage===1}
-                      onClick={()=>setCurrentPage(currentPage-1)}
-                      >
-                        Previous
-                      </CPaginationItem>
-                      {Array.from({length:totalPages},(_,index)=>{
-                        <CPaginationItem
-                        key={index}
-                        active={currentPage===index+1}
-                        onClick={()=>setCurrentPage(index+1)}
-                        >
-                          {index+1}
-                        </CPaginationItem>
-                      })}
-                      <CPaginationItem  
-                      disabled={currentPage===totalPages}
-                      onClick={()=>setCurrentPage(currentPage+1)}
-                      >
-                        Next
-                      </CPaginationItem>
-                    </CPagination>
-                  </div>
-                )}
-              </CTabPane>
-
-              {/* Tab 4: Appointments */}
-              <CTabPane visible={activeTab === 4}>
-                {['Past', 'Active', 'Upcoming'].map((group) => (
-                  <div key={group} className="mb-4">
-                    <h5>{group} Appointments</h5>
-                    <ul>
-                      {clinicData?.appointments
-                        ?.filter((a) => a.status === group)
-                        ?.map((appt, idx) => (
-                          <li key={idx}>
-                            {appt.date} - {appt.patientName} with {appt.doctorName}
-                          </li>
-                        ))}
-                    </ul>
-                  </div>
-                ))}
-              </CTabPane>
-             <CTabPane visible={activeTab === 5}>
+           
+             <CTabPane visible={activeTab === 3}>
         <ProcedureManagementDoctor clinicId={hospitalId} />
       </CTabPane>
             </CTabContent>

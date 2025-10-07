@@ -16,6 +16,7 @@ public class PharmacistDTO {
 	private String hospitalId;
 	private String hospitalName;
 	private String branchId;
+	private String branchName;
 	private String role ;
 	private String pharmacistId;
 	private String fullName;
@@ -35,9 +36,11 @@ public class PharmacistDTO {
 	private String emergencyContactNumber;
     private String profilePicture;
     private String statePharmacyCouncilRegistration;
-    private String dPharmaOrBPharmaCertificate;
+    private String dpharmaOrBPharmaCertificate;
     private String experienceCertificates;
     private Map<String, List<String>> permissions;
+    private String shiftTimingsOrAvailability;
+
 	
 	private String userName;
 	private String password;

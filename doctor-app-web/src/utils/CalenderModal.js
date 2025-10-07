@@ -73,7 +73,7 @@ const CalendarModal = ({
   start = "08:00",
   end = "22:00",
   interval = 30,
-  handleClick = () => {},
+  handleClick = () => { },
   fetchAppointments, // <-- pass from parent
   intervalMs = 60000, // refresh every 60s
 }) => {
@@ -141,7 +141,9 @@ const CalendarModal = ({
   return (
     <CModal visible={visible} onClose={onClose} size="xl">
       <CModalHeader closeButton>
-        <CModalTitle>My Calendar</CModalTitle>
+        <CModalTitle className="w-100 text-center" style={{ color: COLORS.black }}>
+          My Calendar
+        </CModalTitle>
       </CModalHeader>
 
       <CModalBody style={{ padding: 0 }}>
@@ -189,7 +191,7 @@ const CalendarModal = ({
                     padding: "8px",
                     fontWeight: "bold",
                     backgroundColor: COLORS?.bgcolor || "#e9eef6",
-                    color:COLORS?.black,
+                    color: COLORS?.black,
                     textAlign: "center",
                     borderBottom: "1px solid #dbdada",
                     position: "sticky",

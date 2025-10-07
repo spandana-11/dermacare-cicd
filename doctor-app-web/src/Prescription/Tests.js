@@ -20,9 +20,9 @@ import {
   CContainer,
 } from '@coreui/react'
 import GradientTextCard from '../components/GradintColorText'
-import { getLabTests } from '../../src/Auth/Auth'
+import { addLabTest, getLabTests } from '../../src/Auth/Auth'
 import { useDoctorContext } from '../Context/DoctorContext'
-
+import CreatableSelect from 'react-select/creatable'
 /**
  * Props:
  * - onNext?: (payload) => void
@@ -30,7 +30,7 @@ import { useDoctorContext } from '../Context/DoctorContext'
  * - patientName?: string
  * - doctor?: { name?: string, regNo?: string, clinic?: string, phone?: string }
  */
-const Tests = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
+const Investigations = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
   const [selectedTests, setSelectedTests] = useState(seed.selectedTests ?? [])
   const [testReason, setTestReason] = useState(seed.testReason ?? '')
   const [selectedTestOption, setSelectedTestOption] = useState('')
@@ -56,22 +56,22 @@ const Tests = ({ seed = {}, onNext, sidebarWidth = 0, formData }) => {
     doctorDetails,
   } = useDoctorContext()
 
-const handleAddTest = (e) => {
-  const value = e.target.value
-  if (!value) return
+  const handleAddTest = (e) => {
+    const value = e.target.value
+    if (!value) return
 
-  if (selectedTests.includes(value)) {
-    showSnackbar('Test already added', 'warning')
-  } else {
-    setSelectedTests((prev) => [...prev, value])
-    setSelectedTestOption(null) // reset after add
+    if (selectedTests.includes(value)) {
+      showSnackbar('Test already added', 'warning')
+    } else {
+      setSelectedTests((prev) => [...prev, value])
+      setSelectedTestOption(null) // reset after add
+    }
   }
-}
 
-const clearAllTests = () => {
-  setSelectedTests([])
-  setSelectedTestOption(null) // reset dropdown
-}
+  const clearAllTests = () => {
+    setSelectedTests([])
+    setSelectedTestOption(null) // reset dropdown
+  }
 
 
   useEffect(() => {
@@ -301,7 +301,17 @@ const clearAllTests = () => {
       <div>Generated on ${escapeHtml(dateStr)}</div>
       <div>${escapeHtml(clinicDetails.name)}</div>
     </div>
-
+<!-- Signature -->
+<div class="signature-block">
+  <div style="text-align:right; margin-top:40px;">
+    <img src="${doctorDetails?.doctorSignature}" 
+         alt="Doctor's Signature"
+         style="max-height:60px;" />
+    <div style="font-size: 12px; color:#374151; margin-top:4px;">
+      Doctor's Signature
+    </div>
+  </div>
+</div>
     <div class="no-print" style="margin-top: 12px; text-align:right;">
       <button onclick="window.print()" style="
         background: var(--accent);
@@ -375,28 +385,46 @@ const clearAllTests = () => {
                         <GradientTextCard text={'Recommended Test (Optional)'} />
                       </CFormLabel>
 
-                      <Select
-  options={availableTests
-    .filter((t) => !selectedTests.includes(t.testName))
-    .map((t) => ({ label: t.testName, value: t.testName }))
-  }
-  placeholder="Select Tests..."
-  value={
-    selectedTestOption
-      ? { label: selectedTestOption, value: selectedTestOption }
-      : null
-  }
-  onChange={(selected) => {
-    if (selected) {
-      handleAddTest({ target: { value: selected.value } })
-    } else {
-      // Clear case
-      setSelectedTestOption(null)   // 👈 reset state
-    }
-  }}
-  isClearable
-  isSearchable
-/>
+                      <CreatableSelect
+                        options={availableTests.map((t) => ({ label: t.testName, value: t.testName }))}
+                        placeholder="Select or add tests..."
+                        value={selectedTestOption ? { label: selectedTestOption, value: selectedTestOption } : null}
+                        isClearable
+                        isSearchable
+                        formatCreateLabel={(inputValue) => `Add "${inputValue}"`}
+                        onChange={(selected) => {
+                          if (!selected) {
+                            setSelectedTestOption(null);
+                            return;
+                          }
+
+                          const value = selected.value;
+
+                          if (!selectedTests.includes(value)) {
+                            setSelectedTests((prev) => [...prev, value]);
+                          }
+
+                          setSelectedTestOption(null);
+                        }}
+                        onCreateOption={async (inputValue) => {
+                          if (!inputValue) return;
+
+                          // Call your API to add the test
+                          const addedTest = await addLabTest(inputValue);
+
+                          // Update available tests so it shows in dropdown
+                          setAvailableTests((prev) => [...prev, { testName: addedTest }]);
+
+                          // Select the new test
+                          setSelectedTests((prev) => [...prev, addedTest]);
+
+                          // Reset input
+                          setSelectedTestOption(null);
+
+                          showSnackbar(`Added new test: ${addedTest}`, 'success');
+                        }}
+                      />
+
 
                     </CCol>
 
@@ -559,4 +587,4 @@ const clearAllTests = () => {
   )
 }
 
-export default Tests
+export default Investigations

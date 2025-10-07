@@ -24,7 +24,6 @@ public class DoctorSaveDetailsDTO {
 	private String doctorId;
 	private String doctorName;
 	private String clinicId;
-
 	private String clinicName;
 	private String customerId;
 	private String bookingId;
@@ -37,5 +36,5 @@ public class DoctorSaveDetailsDTO {
 	private FollowUpDetailsDTO followUp;
 	private PrescriptionDetailsDTO prescription;
 	private List<String> prescriptionPdf;
-//    private int visitNumber;
+//  private int visitNumber;
 }

@@ -1,4 +1,5 @@
 package com.dermacare.doctorservice.serviceimpl;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -231,10 +232,13 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
                                                 .name(m.getName())
                                                 .dose(m.getDose())
                                                 .duration(m.getDuration())
+                                                .durationUnit(m.getDurationUnit())
+                                                .medicineType(m.getMedicineType())
                                                 .note(m.getNote())
                                                 .food(m.getFood())
                                                 .remindWhen(m.getRemindWhen())
                                                 .times(m.getTimes())
+                                                .others(m.getOthers())
                                                 .build())
                                         .collect(Collectors.toList())
                                     : new ArrayList<>())
@@ -262,7 +266,7 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
                     .anyMatch(t -> !t.getId().equals(id) && t.getTitle() != null &&
                             t.getTitle().trim().replaceAll("\\s+", " ").toLowerCase().equals(newTitleNormalized));
 
-                if (titleExists) {
+                if(titleExists) {
                     Response conflictResponse = Response.builder()
                             .success(false)
                             .status(HttpStatus.CONFLICT.value())
@@ -475,10 +479,13 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
                                     .name(med.getName())
                                     .dose(med.getDose())
                                     .duration(med.getDuration())
+                                    .durationUnit(med.getDurationUnit())
+                                    .medicineType(med.getMedicineType())
                                     .note(med.getNote())
                                     .food(med.getFood())
                                     .remindWhen(med.getRemindWhen())
                                     .times(med.getTimes())
+                                    .others(med.getOthers())
                                     .build())
                             .collect(Collectors.toList()))
                         .build()
@@ -523,6 +530,7 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
             throw new RuntimeException("Error encoding file to Base64", e);
         }
     }
+    
     @Override
     public Response getTemplatesByClinicIdAndTitle(String clinicId, String title) {
         try {
@@ -542,13 +550,12 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
                     .stream()
                     .filter(t -> t.getTitle() != null &&
                             t.getTitle().trim().replaceAll("\\s+", " ").toLowerCase()
-                                    .equals(normalizedTitle)) // ✅ exact match
+                                    .equals(normalizedTitle)) 
                     .collect(Collectors.toList());
-
             if (templates.isEmpty()) {
                 return Response.builder()
                         .success(false)
-                        .status(HttpStatus.NOT_FOUND.value())
+                        .status(HttpStatus.OK.value())
                         .message("No templates found for clinicId: " + clinicId + " and exact title: " + title)
                         .data(null)
                         .build();
@@ -574,10 +581,6 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
                     .build();
         }
     }
-
-
-
-
 
 
 }

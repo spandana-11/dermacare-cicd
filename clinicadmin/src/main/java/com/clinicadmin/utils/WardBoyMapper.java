@@ -1,13 +1,9 @@
 package com.clinicadmin.utils;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-
 import com.clinicadmin.dto.WardBoyDTO;
 import com.clinicadmin.entity.WardBoy;
-
 public class WardBoyMapper {
-
 	private static String encodeIfNotBase64(String input) {
 		if (input == null || input.isBlank())
 			return input;
@@ -72,7 +68,7 @@ public class WardBoyMapper {
 		wardBoy.setAddress(dto.getAddress());
 		wardBoy.setGender(dto.getGender());
 		wardBoy.setWorkExprience(dto.getWorkExprience());
-		wardBoy.setShiftTimingOrAvailability(dto.getShiftTimingOrAvailability());
+		wardBoy.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
 		wardBoy.setEmergencyContact(dto.getEmergencyContact());
 		wardBoy.setProfilePicture(encodeIfNotBase64(dto.getProfilePicture()));
 //        wardBoy.setUsername(dto.getUserName());
@@ -109,9 +105,10 @@ public class WardBoyMapper {
 		dto.setGovernmentId(entity.getGovernmentId());
 		dto.setDateOfJoining(entity.getDateOfJoining());
 		dto.setDepartment(entity.getDepartment());
-		dto.setShiftTimingOrAvailability(entity.getShiftTimingOrAvailability());
 		dto.setAddress(entity.getAddress());
 		dto.setEmergencyContact(entity.getEmergencyContact());
+		dto.setShiftTimingsOrAvailability(entity.getShiftTimingsOrAvailability());
+		
 		dto.setWorkExprience(entity.getWorkExprience());
 		dto.setBankAccountDetails(entity.getBankAccountDetails());
 //        dto.setUserName(entity.getUsername());

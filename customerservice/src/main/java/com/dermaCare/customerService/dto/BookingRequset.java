@@ -42,6 +42,7 @@ public class BookingRequset {
 	private String subServiceName;
 	private String serviceDate;
 	private String servicetime;
+	private String followupDate;
 	private String consultationType;
 	private double consultationFee;
 	private double totalFee;
@@ -50,5 +51,6 @@ public class BookingRequset {
 	private String consentFormPdf;
 	private String doctorRefCode;
 	private String bookedAt;
+	private String followupStatus;
 
 }

@@ -43,12 +43,22 @@ public class LabTestServiceImpl implements LabTestService {
 	        return response;
 	    }
 
+	    // Check if test name already exists for the given hospital
+	    Optional<LabTest> existingTest = labTestRepository.findByHospitalIdAndTestNameIgnoreCase(dto.getHospitalId(), dto.getTestName());
+	    if (existingTest.isPresent()) {
+	        response.setSuccess(false);
+	        response.setMessage("Lab Test with name '" + dto.getTestName() + "' already exists in this hospital.");
+	        response.setStatus(HttpStatus.CONFLICT.value()); // 409 Conflict
+	        return response;
+	    }
+
 	    // Proceed with adding the lab test
 	    LabTest test = new LabTest();
 	    test.setTestName(dto.getTestName());
 	    test.setHospitalId(dto.getHospitalId());
 	    test.setDescription(dto.getDescription());
 	    test.setPurpose(dto.getPurpose());
+
 	    LabTest saved = labTestRepository.save(test);
 
 	    LabTestDTO resDto = new LabTestDTO();
@@ -57,7 +67,7 @@ public class LabTestServiceImpl implements LabTestService {
 	    resDto.setTestName(saved.getTestName());
 	    resDto.setDescription(saved.getDescription());
 	    resDto.setPurpose(saved.getPurpose());
-	    
+
 	    response.setSuccess(true);
 	    response.setData(resDto);
 	    response.setMessage("Lab Test added successfully");
@@ -200,5 +210,71 @@ public class LabTestServiceImpl implements LabTestService {
 	    }
 	    return response;
 	}
+	@Override
+	public Response addOrGetLabTest(LabTestDTO dto) {
+	    Response response = new Response();
+	    try {
+	        // First check hospital exists via Admin Service
+	        ResponseEntity<Response> clinicResponseEntity = adminServiceClient.getClinicById(dto.getHospitalId());
+	        Response clinicResponse = clinicResponseEntity.getBody();
+
+	        if (clinicResponse == null || !clinicResponse.isSuccess() || clinicResponse.getData() == null) {
+	            response.setSuccess(false);
+	            response.setMessage("Hospital with ID " + dto.getHospitalId() + " does not exist.");
+	            response.setStatus(HttpStatus.NOT_FOUND.value());
+	            return response;
+	        }
+
+	        // Search if test already exists
+	        Optional<LabTest> existingTest = labTestRepository
+	                .findByHospitalIdAndTestNameIgnoreCase(dto.getHospitalId(), dto.getTestName());
+
+	        if (existingTest.isPresent()) {
+	            LabTest test = existingTest.get();
+	            LabTestDTO resDto = new LabTestDTO(
+	                    test.getId().toString(),
+	                    test.getTestName(),
+	                    test.getHospitalId(),
+	                    test.getDescription(),
+	                    test.getPurpose()
+	            );
+	            response.setSuccess(true);
+	            response.setData(resDto);
+	            response.setMessage("Lab Test already exists, returning existing record.");
+	            response.setStatus(HttpStatus.OK.value());
+	            return response;
+	        }
+
+	        // If not present → Add new test
+	        LabTest newTest = new LabTest();
+	        newTest.setTestName(dto.getTestName());
+	        newTest.setHospitalId(dto.getHospitalId());
+	        newTest.setDescription(dto.getDescription());
+	        newTest.setPurpose(dto.getPurpose());
+
+	        LabTest saved = labTestRepository.save(newTest);
+
+	        LabTestDTO resDto = new LabTestDTO(
+	                saved.getId().toString(),
+	                saved.getTestName(),
+	                saved.getHospitalId(),
+	                saved.getDescription(),
+	                saved.getPurpose()
+	        );
+
+	        response.setSuccess(true);
+	        response.setData(resDto);
+	        response.setMessage("Lab Test added successfully.");
+	        response.setStatus(HttpStatus.CREATED.value()); // 201
+	        return response;
+
+	    } catch (Exception e) {
+	        response.setSuccess(false);
+	        response.setMessage("Exception in addOrGetLabTest: " + e.getMessage());
+	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	        return response;
+	    }
+	}
+
 
 }

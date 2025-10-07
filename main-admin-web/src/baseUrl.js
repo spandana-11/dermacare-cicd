@@ -1,14 +1,14 @@
 // export const BASE_URL = 'http://alb-dev-sc-197990416.ap-south-1.elb.amazonaws.com/api'
-const ipUrl = '3.6.119.57:9090'
+const ipUrl = 'http://3.6.119.57:9090'
 //const ipUrl = '13.127.106.17'
-export const BASE_URL = `http://${ipUrl}`
-export const CLINIC_ADMIN_URL = `http://${ipUrl}`
+export const BASE_URL = `${ipUrl}`
+export const CLINIC_ADMIN_URL = `${ipUrl}`
 export const MainAdmin_URL = `${BASE_URL}/admin`
-export const Procedure_URL=`http://${ipUrl}`
+export const Procedure_URL=`${ipUrl}`
 // export let wifiUrl = '192.168.1.7'
 
 // export const CUSTOMER_SERVICE_URL = `http://${ipUrl}:8083/api`
-export const Booking_service_Url = `http://${ipUrl}/api`
+export const Booking_service_Url = `${ipUrl}/api`
 
 // export const BOOKING_SERVICE_URL = `http://${ipUrl}:8087/api/v1`
 // export const BASE_URLS = `http://${ipUrl}:8080/api/v1`
@@ -16,13 +16,14 @@ export const Booking_service_Url = `http://${ipUrl}/api`
 export const SERVICE_URL = `admin/updateByServiceId`
 
 //sub-service
-export const subService_URL = `http://${ipUrl}/admin`
+export const subService_URL = `${ipUrl}/admin`
 export const ADD_SERVICE = 'addService'
 export const GET_ALL_SERVICES = 'getAllServices'
 export const DELETE_SERVICE_URL = `deleteService`
 export const updateService = 'updateByServiceId'
 
 export const getService = 'getServiceById'
+// export const getServiceByServiceId='getServiceByServiceId'
 export const Category = 'category/getServices'
  
 // login
@@ -53,9 +54,12 @@ export const postAllQuestionsAndAnswers='admin/clinicQA/postQuestionsAndAnswer'
 export const DoctorAllData = '/clinic-admin/doctors/hospitalById'
 export const AddDoctor = 'clinic-admin/addDoctor'
 
-export const UpdateDoctor = 'clinic-admin/updateClinic'
+export const UpdateDoctor = 'admin/updateDoctor'
 
-export const deleteDoctor = 'clinic-admin/deleteClinic'
+export const deleteDoctor = 'admin/deleteDoctor'
+export const GetBranches_ByClinicId = 'admin/getBranchByClinicId'
+
+export const getDoctorsByHospitalIdAndBranchId='admin/getDoctorsByHospitalIdAndBranchId'
 
 // Customer Management
 export const CustomerAllData = 'admin/getAllCustomers'
@@ -132,7 +136,7 @@ export const postData = 'admin/providerReassign'
 // export const GetBookingBy_ClinicId = 'customer/getAllBookedServicesByClinicId'
 // export const GetBookingBy_DoctorId = 'admin/getBookingByDoctorId'
 //appointments
-export const GetBy_DoctorId = 'clinic-admin/doctor'
+export const GetBy_DoctorId = 'admin/getDoctorById'
 export const getAllBookedServices = 'admin/getAllBookedServices'
 export const DeleteBookings = 'admin/deleteServiceByBookedId'
 
@@ -163,7 +167,7 @@ export const getDoctorByClinicId = 'doctors/hospitalById'
 export const subservice = 'getSubServicesByServiceId'
 export const getSubServicesbyserviceId = 'serviceId'
 export const getadminSubServicesbyserviceId = `admin/getSubServicesByServiceId`
-export const getSubServiceDetailsBySubServiceId = `admin/getSubServiceDetailsBySubServiceId`
+export const getSubServiceBySubServiceId = `admin/getSubServiceBySubServiceId`
 export const getservice = 'admin/getServiceById'
 
 export const addDoctorUrl=`admin/addDoctor`
@@ -189,6 +193,8 @@ export const getBranchById='admin/getBranchById'
 export const getAllBranches='admin/getAllBranches'
 
 export const updateBranches='admin/updateBranch'
+
+// export const getBranchByClinicAndBranchId='admin/getBranchByClinicAndBranchId'
 
 //Procedure CRUD
 

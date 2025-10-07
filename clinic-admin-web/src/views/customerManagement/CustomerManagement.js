@@ -41,6 +41,18 @@ import { Edit2, Eye, Trash2 } from 'lucide-react'
 import LoadingIndicator from '../../Utils/loader'
 import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
 import ConfirmationModal from '../../components/ConfirmationModal'
+import { useHospital } from '../Usecontext/HospitalContext'
+import {
+  FaBirthdayCake,
+  FaCalendarAlt,
+  FaEnvelope,
+  FaHashtag,
+  FaMapMarkerAlt,
+  FaPhone,
+  FaTransgender,
+  FaUser,
+} from 'react-icons/fa'
+import { emailPattern } from '../../Constant/Constants'
 const CustomerManagement = () => {
   const navigate = useNavigate()
   const [customerData, setCustomerData] = useState([])
@@ -57,11 +69,15 @@ const CustomerManagement = () => {
   const [formErrors, setFormErrors] = useState({})
   const { searchQuery, setSearchQuery } = useGlobalSearch()
   const [isAdding, setIsAdding] = useState(false)
+  const [isViewing, setIsViewing] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [isViewModalVisible, setIsViewModalVisible] = useState(false)
-const [viewCustomerData, setViewCustomerData] = useState(null)
+  const [viewCustomerData, setViewCustomerData] = useState(null)
 
   const [formData, setFormData] = useState({
+    hospitalId: localStorage.getItem('HospitalId') || '',
+    hospitalName: localStorage.getItem('HospitalName') || '',
+    branchId: localStorage.getItem('branchId') || '',
     customerId: '',
     title: '',
     firstName: '',
@@ -71,11 +87,9 @@ const [viewCustomerData, setViewCustomerData] = useState(null)
     gender: '',
     email: '',
     dateOfBirth: '',
-    referralCode: '',
+    referredBy: '',
     age: '',
-    hospitalId: localStorage.getItem('HospitalId') || '',
-    hospitalName: localStorage.getItem('HospitalName') || '',
-    branchId: localStorage.getItem('branchId') || '',
+
     address: {
       // ✅ Always keep this object ready
       houseNo: '',
@@ -89,129 +103,88 @@ const [viewCustomerData, setViewCustomerData] = useState(null)
   })
 
   // ======= state for states + helper refs =======
-  const [states, setStates] = useState([])
-  const [statesLoading, setStatesLoading] = useState(false)
+
+  const [postOffices, setPostOffices] = useState([])
+  const [selectedPO, setSelectedPO] = useState(null)
   const pincodeTimer = useRef(null)
 
-  // Fallback list of Indian states + UTs (used if remote fetch fails / CORS)
-  const staticStates = [
-    'Andhra Pradesh',
-    'Arunachal Pradesh',
-    'Assam',
-    'Bihar',
-    'Chhattisgarh',
-    'Goa',
-    'Gujarat',
-    'Haryana',
-    'Himachal Pradesh',
-    'Jharkhand',
-    'Karnataka',
-    'Kerala',
-    'Madhya Pradesh',
-    'Maharashtra',
-    'Manipur',
-    'Meghalaya',
-    'Mizoram',
-    'Nagaland',
-    'Odisha',
-    'Punjab',
-    'Rajasthan',
-    'Sikkim',
-    'Tamil Nadu',
-    'Telangana',
-    'Tripura',
-    'Uttar Pradesh',
-    'Uttarakhand',
-    'West Bengal',
-    'Andaman and Nicobar Islands',
-    'Chandigarh',
-    'Dadra and Nagar Haveli and Daman & Diu',
-    'Delhi',
-    'Jammu and Kashmir',
-    'Ladakh',
-    'Lakshadweep',
-    'Puducherry',
-  ]
-
-  // fetch states on mount (try public API, fallback to static list)
-  useEffect(() => {
-    let mounted = true
-    // Fetch states globally
-    // const fetchStates = async (country) => {
-    //   const res = await fetch("https://countriesnow.space/api/v0.1/countries/states", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({ country }),
-    //   });
-    //   const data = await res.json();
-    //   return data.data.states.map((s) => s.name);
-    // };
-
-    // Fetch cities globally
-    const fetchCities = async (country, state) => {
-      const res = await fetch('https://countriesnow.space/api/v0.1/countries/state/cities', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ country, state }),
-      })
-      const data = await res.json()
-      return data.data
-    }
-
-    // fetchStates()
-    return () => {
-      mounted = false
-    }
-  }, [])
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      firstName: '',
+      lastName: '',
+      dateOfBirth: '',
+      age: '',
+      email: '',
+      mobileNumber: '',
+      gender: '',
+      referredBy: '',
+      address: {
+        houseNo: '',
+        street: '',
+        landmark: '',
+        city: '',
+        state: '',
+        country: 'India',
+        postalCode: '',
+      },
+    })
+    setFormErrors({})
+    setSelectedPO(null) // ✅ reset post office selection
+    setPostOffices([]) // ✅ clear post office list
+  }
 
   // ======= nested change handler (if you haven't already) =======
-  const handleNestedChange = (parent, field, value) => {
+  const handleNestedChange = (parentKey, childKey, value) => {
     setFormData((prev) => ({
       ...prev,
-      [parent]: {
-        ...prev[parent],
-        [field]: value,
+      [parentKey]: {
+        ...prev[parentKey],
+        [childKey]: value,
       },
+    }))
+
+    // Clear the error for this field if it exists
+    setFormErrors((prev) => ({
+      ...prev,
+      [childKey]: '', // clear error for this specific field
     }))
   }
 
+  const { user } = useHospital()
+  const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
+
   // ======= pincode handler with debounce + postal API =======
   const handlePincodeChange = (value) => {
-    // only allow digits
+    // Only allow digits
     if (!/^\d*$/.test(value)) return
-    // always update postalCode immediately
+
     handleNestedChange('address', 'postalCode', value)
 
-    // clear any pending timer
-    if (pincodeTimer.current) {
-      clearTimeout(pincodeTimer.current)
-    }
+    // Clear previous timer
+    if (pincodeTimer.current) clearTimeout(pincodeTimer.current)
 
-    // only call API when exactly 6 digits
+    // Only call API when exactly 6 digits
     if (value.length === 6) {
       pincodeTimer.current = setTimeout(async () => {
         try {
           const res = await fetch(`https://api.postalpincode.in/pincode/${value}`)
           if (!res.ok) throw new Error(`pincode API ${res.status}`)
           const data = await res.json()
-          if (
-            data?.[0]?.Status === 'Success' &&
-            Array.isArray(data[0].PostOffice) &&
-            data[0].PostOffice.length
-          ) {
-            const po = data[0].PostOffice[0]
 
-            handleNestedChange('address', 'street', po.Name || '')
-            handleNestedChange('address', 'city', po.Region || '')
-            handleNestedChange('address', 'landmark', po.Block || '')
-            handleNestedChange('address', 'state', po.State || '')
+          if (data?.[0]?.Status === 'Success' && Array.isArray(data[0].PostOffice)) {
+            setPostOffices(data[0].PostOffice) // save all PO entries
           } else {
             console.warn('No PostOffice data returned for pincode', value, data)
+            setPostOffices([])
           }
         } catch (err) {
           console.warn('Error fetching pincode data:', err)
+          setPostOffices([])
         }
-      }, 300) // 300ms debounce
+      }, 300) // debounce
+    } else {
+      setPostOffices([]) // clear if PIN < 6 digits
     }
   }
 
@@ -236,6 +209,7 @@ const [viewCustomerData, setViewCustomerData] = useState(null)
   const fetchCustomers = useCallback(async () => {
     setLoading(true)
     setError(null)
+
     try {
       const data = await CustomerData()
       const safeData = Array.isArray(data)
@@ -315,57 +289,55 @@ const [viewCustomerData, setViewCustomerData] = useState(null)
         }
       }
 
- let title = ''
-    let firstName = ''
-    let lastName = ''
+      let title = ''
+      let firstName = ''
+      let lastName = ''
 
-    if (customer.fullName) {
-      const parts = customer.fullName.trim().split(' ')
-      if (parts.length >= 3) {
-        title = parts[0]
-        firstName = parts[1]
-        lastName = parts.slice(2).join(' ') // handles middle/last names
-      } else if (parts.length === 2) {
-        title = parts[0]
-        firstName = parts[1]
-      } else if (parts.length === 1) {
-        firstName = parts[0]
+      if (customer.fullName) {
+        const parts = customer.fullName.trim().split(' ')
+        if (parts.length >= 3) {
+          title = parts[0]
+          firstName = parts[1]
+          lastName = parts.slice(2).join(' ') // handles middle/last names
+        } else if (parts.length === 2) {
+          title = parts[0]
+          firstName = parts[1]
+        } else if (parts.length === 1) {
+          firstName = parts[0]
+        }
       }
-    }
 
-    setFormData({
-      customerId: customer.customerId || '',
-      title,
-      firstName,
-      lastName,
-      fullName: customer.fullName || '',
-      mobileNumber: customer.mobileNumber || '',
-      gender: customer.gender || '',
-      email: customer.email || '',
-      dateOfBirth: formattedDate,
-      referralCode: customer.referralCode || '',
-      age: customer.age || '',
-      hospitalId: localStorage.getItem('HospitalId') || '',
-      hospitalName: localStorage.getItem('HospitalName') || '',
-      branchId: localStorage.getItem('branchId') || '',
-      address: {
-        houseNo: customer.address?.houseNo || '',
-        street: customer.address?.street || '',
-        landmark: customer.address?.landmark || '',
-        city: customer.address?.city || '',
-        state: customer.address?.state || '',
-        country: customer.address?.country || 'India',
-        postalCode: customer.address?.postalCode || '',
-      },
-    })
-
+      setFormData({
+        customerId: customer.customerId || '',
+        title,
+        firstName,
+        lastName,
+        fullName: customer.fullName || '',
+        mobileNumber: customer.mobileNumber || '',
+        gender: customer.gender || '',
+        email: customer.email || '',
+        dateOfBirth: formattedDate,
+        referredBy: customer.referredBy || '',
+        age: customer.age || '',
+        hospitalId: localStorage.getItem('HospitalId') || '',
+        hospitalName: localStorage.getItem('HospitalName') || '',
+        branchId: localStorage.getItem('branchId') || '',
+        address: {
+          houseNo: customer.address?.houseNo || '',
+          street: customer.address?.street || '',
+          landmark: customer.address?.landmark || '',
+          city: customer.address?.city || '',
+          state: customer.address?.state || '',
+          country: 'India',
+          postalCode: customer.address?.postalCode || '',
+        },
+      })
 
       setIsAdding(true)
       setIsEditing(true)
       setCurrentMobile(customer.mobileNumber)
       setViewCustomerData(customer)
-// setIsViewModalVisible(true)
-
+      // setIsViewModalVisible(true)
     } catch (error) {
       console.error('Failed to fetch customer:', error)
       toast.error('Failed to load customer data')
@@ -376,14 +348,25 @@ const [viewCustomerData, setViewCustomerData] = useState(null)
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
 
-    const errors = { ...formErrors }
-    if (errors[name]) {
-      delete errors[name]
-      setFormErrors(errors)
+    let newValue = value
+    if (name === 'referredBy') {
+      // Allow letters, numbers, and underscore
+      newValue = newValue.replace(/[^a-zA-Z0-9_]/g, '')
+    }
+
+    setFormData({ ...formData, [name]: newValue })
+
+    // Clear error
+    if (formErrors[name]) {
+      setFormErrors((prev) => {
+        const updated = { ...prev }
+        delete updated[name]
+        return updated
+      })
     }
   }
+
   useEffect(() => {
     if (isEditing && formData.address.postalCode) {
       handlePincodeChange(formData.address.postalCode)
@@ -393,15 +376,20 @@ const [viewCustomerData, setViewCustomerData] = useState(null)
   const handleFormSubmit = async (e) => {
     e.preventDefault()
     console.log('Submitting form', formData)
+
     // ✅ Validate the form first
     if (!validateForm()) return
 
     try {
-      const updatedFormData = { ...formData }
-
-      // Combine Title + First Name + Last Name
-      updatedFormData.fullName =
-        `${formData.title} ${formData.firstName} ${formData.lastName}`.trim()
+      const updatedFormData = {
+        ...formData,
+        // Ensure fullName is combined
+        fullName: `${formData.title} ${formData.firstName} ${formData.lastName}`.trim(),
+        // Include hospital info from localStorage
+        hospitalId: localStorage.getItem('HospitalId') || '',
+        hospitalName: localStorage.getItem('HospitalName') || '',
+        branchId: localStorage.getItem('branchId') || '',
+      }
 
       // Format DOB to DD-MM-YYYY
       if (updatedFormData.dateOfBirth) {
@@ -415,14 +403,36 @@ const [viewCustomerData, setViewCustomerData] = useState(null)
       }
 
       if (isEditing) {
+        // ✅ Update customer
         await updateCustomerData(formData.customerId, updatedFormData)
         toast.success('Customer updated successfully')
       } else {
+        // ✅ Add customer
         await addCustomer(updatedFormData)
         toast.success('Customer added successfully')
+        setFormData({
+          title: '',
+          firstName: '',
+          lastName: '',
+          fullName: '',
+          dateOfBirth: '',
+          email: '',
+          mobileNumber: '',
+          gender: '',
+          address: {
+            houseNo: '',
+            postalCode: '',
+            street: '',
+            landmark: '',
+            city: '',
+            state: '',
+            country: '',
+          },
+          referredBy: '',
+        })
       }
 
-      await fetchCustomers()
+      fetchCustomers()
       handleCancel()
     } catch (error) {
       console.error('Error submitting customer:', error)
@@ -434,46 +444,43 @@ const [viewCustomerData, setViewCustomerData] = useState(null)
     }
   }
 
-const handleCancel = () => {
-  // Reset editing and adding state
-  setIsAdding(false)
-  setIsEditing(false)
-  setCurrentMobile(null)
+  const handleCancel = () => {
+    // Reset editing and adding state
+    setIsAdding(false)
+    setIsEditing(false)
+    setCurrentMobile(null)
 
-  // Close view modal only if we are canceling from "view" mode, 
-  // not when canceling from "edit"
-  if (!isEditing) {
-    setIsViewing(false)
+    // Close view modal only if we are canceling from "view" mode,
+    // not when canceling from "edit"
+    if (!isEditing) {
+      setIsViewing(false)
+    }
+
+    // Reset form
+    setFormData({
+      customerId: '',
+      title: '',
+      firstName: '',
+      lastName: '',
+      fullName: '',
+      mobileNumber: '',
+      gender: '',
+      email: '',
+      dateOfBirth: '',
+      referredBy: '',
+      age: '',
+
+      address: {
+        houseNo: '',
+        street: '',
+        landmark: '',
+        city: '',
+        state: '',
+        country: 'India',
+        postalCode: '',
+      },
+    })
   }
-
-  // Reset form
-  setFormData({
-    customerId: '',
-    title: '',
-    firstName: '',
-    lastName: '',
-    fullName: '',
-    mobileNumber: '',
-    gender: '',
-    email: '',
-    dateOfBirth: '',
-    referralCode: '',
-    age: '',
-    hospitalId: localStorage.getItem('HospitalId') || '',
-    hospitalName: localStorage.getItem('HospitalName') || '',
-    branchId: localStorage.getItem('branchId') || '',
-    address: {
-      houseNo: '',
-      street: '',
-      landmark: '',
-      city: '',
-      state: '',
-      country: 'India',
-      postalCode: '',
-    },
-  })
-}
-
 
   const filteredData = React.useMemo(() => {
     const q = searchQuery.toLowerCase().trim()
@@ -495,6 +502,16 @@ const handleCancel = () => {
     }
     return ''
   }
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      hospitalId: localStorage.getItem('HospitalId') || '',
+      hospitalName: localStorage.getItem('HospitalName') || '',
+      branchId: localStorage.getItem('branchId') || '',
+    }))
+  }, []) // run once on mount
+
   useEffect(() => {
     if (formData.dateOfBirth) {
       const dateObj = new Date(formData.dateOfBirth)
@@ -554,11 +571,11 @@ const handleCancel = () => {
       errors.mobileNumber = 'Mobile number must be 10 digits (starting from 1-9)'
     }
 
-    // ✅ Email validation — make it required
+    // Email
     if (!formData.email.trim()) {
       errors.email = 'Email is required'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Email must be valid and contain @'
+    } else if (!emailPattern.test(formData.email)) {
+      errors.email = 'Email must be valid and contain at least one letter'
     }
 
     // Date of Birth
@@ -589,9 +606,27 @@ const handleCancel = () => {
       errors.gender = 'Gender is required'
     }
 
-    // Referral Code (optional)
-    if (formData.referralCode && /[^a-zA-Z0-9]/.test(formData.referralCode)) {
-      errors.referralCode = 'Refer code must contain only letters and numbers'
+    // Referral code (optional, limited characters)
+    const referral = formData.referredBy?.trim()
+    if (referral && /[^a-zA-Z0-9-_@#]/.test(referral)) {
+      errors.referredBy = 'Referral code can only contain letters, numbers, and - _ @ #'
+    }
+
+    // ===================== ADDRESS VALIDATION =====================
+    const address = formData.address || {}
+    if (!address.houseNo?.trim()) errors.houseNo = 'House number is required'
+    if (!address.street?.trim()) errors.street = 'Street is required'
+
+    if (!address.city?.trim()) errors.city = 'City is required'
+    if (!address.state?.trim()) errors.state = 'State is required'
+    if (!address.postalCode?.trim()) {
+      errors.postalCode = 'Postal code is required'
+    } else if (!/^\d{6}$/.test(address.postalCode)) {
+      errors.postalCode = 'Postal code must be 6 digits'
+    }
+    // Post Office (optional, only if postal code is valid)
+    if (address.postalCode?.trim() && !selectedPO) {
+      errors.postOffice = 'Please select a Post Office'
     }
 
     setFormErrors(errors)
@@ -600,30 +635,35 @@ const handleCancel = () => {
 
   return (
     <>
-    
       {!isAdding ? (
         <>
           <CRow className="d-flex align-items-center mb-3">
             <ToastContainer />
-            <div
-              className="mb-3 w-100"
-              style={{
-                display: 'flex',
-                justifyContent: 'end',
-                alignContent: 'end',
-                alignItems: 'end',
-              }}
-            >
-              <CButton
+
+            {can('Customer Management', 'create') && (
+              <div
+                className="mb-3 w-100"
                 style={{
-                  color: 'var(--color-black)',
-                  backgroundColor: 'var(--color-bgcolor)',
+                  display: 'flex',
+                  justifyContent: 'end',
+                  alignContent: 'end',
+                  alignItems: 'end',
                 }}
-                onClick={() => setIsAdding(true)}
               >
-                Add New Customer
-              </CButton>
-            </div>
+                <CButton
+                  style={{
+                    color: 'var(--color-black)',
+                    backgroundColor: 'var(--color-bgcolor)',
+                  }}
+                  onClick={() => {
+                    setIsAdding(true)
+                    resetForm() // ✅ Reset form including selectedPO and postOffices
+                  }}
+                >
+                  Add New Customer
+                </CButton>
+              </div>
+            )}
 
             {/* <div className="col-md-3 d-flex justify-content-end">
               <CButton className="btn btn-primary w-auto" onClick={() => setIsAdding(true)}>
@@ -679,9 +719,11 @@ const handleCancel = () => {
                 <CTableHead className="pink-table  w-auto">
                   <CTableRow>
                     <CTableHeaderCell>S.No</CTableHeaderCell>
+                    <CTableHeaderCell>Customer Id</CTableHeaderCell>
                     <CTableHeaderCell>Full Name</CTableHeaderCell>
                     <CTableHeaderCell>Mobile Number</CTableHeaderCell>
                     <CTableHeaderCell>Gender</CTableHeaderCell>
+                    <CTableHeaderCell>City</CTableHeaderCell>
                     <CTableHeaderCell className="text-end">Actions</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
@@ -693,79 +735,46 @@ const handleCancel = () => {
                           {' '}
                           {(currentPage - 1) * rowsPerPage + index + 1}
                         </CTableDataCell>
+                        <CTableDataCell>{customer?.customerId || '-'}</CTableDataCell>
                         <CTableDataCell>{customer?.fullName || '-'}</CTableDataCell>
                         <CTableDataCell>{customer?.mobileNumber || '-'}</CTableDataCell>
                         <CTableDataCell>{customer?.gender || '-'}</CTableDataCell>
+                        <CTableDataCell>{customer?.address?.city || '-'}</CTableDataCell>
 
                         <CTableDataCell className="text-end">
                           <div className="d-flex justify-content-end gap-2  ">
-                            <button
-                              className="actionBtn"
-                              onClick={() => handleCustomerViewDetails(customer?.customerId)}
-                              title="View"
-                            >
-                              <Eye size={18} />
-                            </button>
-
-                            <button
-                              className="actionBtn"
-                              onClick={() => handleEditCustomer(customer?.customerId)}
-                              title="Edit"
-                            >
-                              <Edit2 size={18} />
-                            </button>
-
-                            <button
-                              className="actionBtn"
-                              onClick={() => {
-                                setCustomerIdToDelete(customer?.customerId)
-                                setIsModalVisible(true)
-                              }}
-                              title="Delete"
-                            >
-                              <Trash2 size={18} />
-                            </button>
+                            {can('Customer Management', 'read') && (
+                              <button
+                                className="actionBtn"
+                                onClick={() => handleCustomerViewDetails(customer?.customerId)}
+                                title="View"
+                              >
+                                <Eye size={18} />
+                              </button>
+                            )}
+                            {can('Customer Management', 'update') && (
+                              <button
+                                className="actionBtn"
+                                onClick={() => handleEditCustomer(customer?.customerId)}
+                                title="Edit"
+                              >
+                                <Edit2 size={18} />
+                              </button>
+                            )}
+                            {can('Customer Management', 'delete') && (
+                              <button
+                                className="actionBtn"
+                                onClick={() => {
+                                  setCustomerIdToDelete(customer?.customerId)
+                                  setIsModalVisible(true)
+                                }}
+                                title="Delete"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
                           </div>
                         </CTableDataCell>
-
-                        {/* <CTableDataCell>
-                        <CButton
-                          color="primary"
-                          size="sm"
-                          onClick={() => handleCustomerViewDetails(customer?.mobileNumber)}
-                        >
-                          View
-                        </CButton>
-                        <CButton
-                          className="ms-3 text-white"
-                          color="warning"
-                          size="sm"
-                          onClick={() => handleEditCustomer(customer?.mobileNumber)}
-                        >
-                          Edit
-                        </CButton>
-                        <CButton
-                          className="ms-3 text-white"
-                          color="danger"
-                          size="sm"
-                          onClick={() => {
-                            setCustomerIdToDelete(customer?.mobileNumber)
-                            setIsModalVisible(true)
-                          }}
-                        >
-                          Delete
-                        </CButton>
-
-                        <ConfirmationModal
-                          isVisible={isModalVisible}
-                          message="Are you sure you want to delete this customer?"
-                          onConfirm={confirmDeleteCustomer}
-                          onCancel={() => {
-                            setIsModalVisible(false)
-                            setCustomerIdToDelete(null)
-                          }}
-                        />
-                      </CTableDataCell> */}
                       </CTableRow>
                     ))
                   ) : (
@@ -777,60 +786,87 @@ const handleCancel = () => {
                   )}
                 </CTableBody>
               </CTable>
-<CModal
-  visible={isViewModalVisible}
-  onClose={() => setIsViewModalVisible(false)}
-  size="lg"
->
-  <CModalHeader>
-    <CModalTitle>Customer Details</CModalTitle>
-  </CModalHeader>
-  <CModalBody>
-    {loading ? (
-      <div className="text-center">Loading...</div>
-    ) : viewCustomerData ? (
-      <CRow className="mb-2">
-        <CCol md={6}>
-          <strong>Full Name:</strong> {viewCustomerData.fullName || "-"}
-        </CCol>
-        <CCol md={6}>
-          <strong>Mobile:</strong> {viewCustomerData.mobileNumber || "-"}
-        </CCol>
-        <CCol md={6}>
-          <strong>Email:</strong> {viewCustomerData.email || "-"}
-        </CCol>
-        <CCol md={6}>
-          <strong>Gender:</strong> {viewCustomerData.gender || "-"}
-        </CCol>
-        <CCol md={6}>
-          <strong>DOB:</strong> {viewCustomerData.dateOfBirth || "-"}
-        </CCol>
-        <CCol md={6}>
-          <strong>Age:</strong> {viewCustomerData.age || "-"}
-        </CCol>
-        <CCol md={12} className="mt-3">
-          <h6>Address</h6>
-          <p>
-            {viewCustomerData.address?.houseNo || ""},{" "}
-            {viewCustomerData.address?.street || ""},{" "}
-            {viewCustomerData.address?.landmark || ""},{" "}
-            {viewCustomerData.address?.city || ""},{" "}
-            {viewCustomerData.address?.state || ""},{" "}
-            {viewCustomerData.address?.postalCode || ""},{" "}
-            {viewCustomerData.address?.country || ""}
-          </p>
-        </CCol>
-      </CRow>
-    ) : (
-      <p>No customer data available.</p>
-    )}
-  </CModalBody>
-  <CModalFooter>
-    <CButton color="secondary" onClick={() => setIsViewModalVisible(false)}>
-      Close
-    </CButton>
-  </CModalFooter>
-</CModal>
+              <CModal
+                visible={isViewModalVisible}
+                onClose={() => setIsViewModalVisible(false)}
+                size="lg"
+              >
+                <CModalHeader>
+                  <CModalTitle>Customer Details</CModalTitle>
+                </CModalHeader>
+                <CModalBody style={{ color: 'var(--color-black)' }}>
+                  {loading ? (
+                    <div className="text-center py-5">Loading...</div>
+                  ) : viewCustomerData ? (
+                    <CRow className="mb-3 g-3">
+                      <CCol md={6}>
+                        <strong>
+                          <FaHashtag className="me-1" />
+                        </strong>{' '}
+                        {viewCustomerData.customerId || '-'}
+                      </CCol>
+                      <CCol md={6}>
+                        <strong>
+                          <FaUser className="me-1" />
+                        </strong>{' '}
+                        {viewCustomerData.fullName || '-'}
+                      </CCol>
+                      <CCol md={6}>
+                        <strong>
+                          <FaPhone className="me-1" />
+                        </strong>{' '}
+                        {viewCustomerData.mobileNumber || '-'}
+                      </CCol>
+                      <CCol md={6}>
+                        <strong>
+                          <FaEnvelope className="me-1" />
+                        </strong>{' '}
+                        {viewCustomerData.email || '-'}
+                      </CCol>
+                      <CCol md={6}>
+                        <strong>
+                          <FaTransgender className="me-1" />
+                        </strong>{' '}
+                        {viewCustomerData.gender || '-'}
+                      </CCol>
+                      <CCol md={6}>
+                        <strong>
+                          <FaBirthdayCake className="me-1" />
+                        </strong>{' '}
+                        {viewCustomerData.dateOfBirth || '-'}
+                      </CCol>
+                      <CCol md={6}>
+                        <strong>
+                          <FaCalendarAlt className="me-1" />
+                        </strong>{' '}
+                        {viewCustomerData.age || '-'} Yrs
+                      </CCol>
+
+                      <CCol md={12} className="mt-3">
+                        <h6>
+                          <FaMapMarkerAlt className="me-1" />
+                        </h6>
+                        <p className="ms-3">
+                          {viewCustomerData.address?.houseNo || ''},{' '}
+                          {viewCustomerData.address?.street || ''},{' '}
+                          {viewCustomerData.address?.landmark || ''},<br />
+                          {viewCustomerData.address?.city || ''},{' '}
+                          {viewCustomerData.address?.state || ''},{' '}
+                          {viewCustomerData.address?.postalCode || ''},{' '}
+                          {viewCustomerData.address?.country || ''}
+                        </p>
+                      </CCol>
+                    </CRow>
+                  ) : (
+                    <p className="text-center text-muted py-4">No customer data available.</p>
+                  )}
+                </CModalBody>
+                <CModalFooter>
+                  <CButton color="secondary" onClick={() => setIsViewModalVisible(false)}>
+                    Close
+                  </CButton>
+                </CModalFooter>
+              </CModal>
 
               {!loading && (
                 <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
@@ -865,7 +901,7 @@ const handleCancel = () => {
           <CForm onSubmit={handleFormSubmit}>
             <CRow className="mb-3">
               {/* Title Dropdown */}
-              <CCol md={2}>
+              <CCol md={3}>
                 <CFormLabel>
                   Title <span className="text-danger">*</span>
                 </CFormLabel>
@@ -902,14 +938,18 @@ const handleCancel = () => {
               </CCol>
 
               {/* First Name */}
-              <CCol md={4}>
+              <CCol md={3}>
                 <CFormLabel>
                   First Name <span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormInput
                   name="firstName"
                   value={formData.firstName}
-                  onChange={handleInputChange}
+                  onChange={(e) => {
+                    // Remove numbers and special characters, allow only letters and spaces
+                    const value = e.target.value.replace(/[^A-Za-z\s]/g, '')
+                    handleInputChange({ target: { name: 'firstName', value } })
+                  }}
                   invalid={!!formErrors.firstName}
                 />
                 {formErrors.firstName && (
@@ -923,7 +963,11 @@ const handleCancel = () => {
                 <CFormInput
                   name="lastName"
                   value={formData.lastName}
-                  onChange={handleInputChange}
+                  onChange={(e) => {
+                    // Remove numbers and special characters, allow only letters and spaces
+                    const value = e.target.value.replace(/[^A-Za-z\s]/g, '')
+                    handleInputChange({ target: { name: 'lastName', value } })
+                  }}
                 />
               </CCol>
               <CCol md={3}>
@@ -957,11 +1001,11 @@ const handleCancel = () => {
 
             <CRow className="mb-3">
               {/* Age (same row, not downside) */}
-              <CCol md={2}>
+              <CCol md={3}>
                 <CFormLabel>Age</CFormLabel>
                 <CFormInput name="age" value={formData.age || ''} readOnly />
               </CCol>
-              <CCol md={4}>
+              <CCol md={3}>
                 <CFormLabel>
                   Email <span className="text-danger">*</span>
                 </CFormLabel>
@@ -972,9 +1016,7 @@ const handleCancel = () => {
                   onChange={handleInputChange}
                   invalid={!!formErrors.email}
                 />
-                {formErrors.email && (
-                  <div className="text-danger small">{formErrors.email}</div>
-                )}
+                {formErrors.email && <div className="text-danger small">{formErrors.email}</div>}
               </CCol>
               <CCol md={3}>
                 <CFormLabel>
@@ -984,14 +1026,14 @@ const handleCancel = () => {
                 <CFormInput
                   name="mobileNumber"
                   value={formData.mobileNumber}
-                  onChange={handleInputChange}
-                  // disabled
-                  onKeyDown={(e) => {
-                    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete') {
-                      e.preventDefault()
+                  onChange={(e) => {
+                    const value = e.target.value
+                    // allow only digits
+                    if (/^[0-9]*$/.test(value)) {
+                      handleInputChange(e)
                     }
                   }}
-                  onPaste={(e) => e.preventDefault()}
+                  onPaste={(e) => e.preventDefault()} // block pasting
                   maxLength={10}
                   invalid={!!formErrors.mobileNumber}
                   disabled={isEditing}
@@ -1021,112 +1063,150 @@ const handleCancel = () => {
               </CCol>
             </CRow>
 
-            <CRow className="mt-3">
-              {/* <h5 className="mb-3">Address</h5> */}
-              {/* House No */}
-              <CCol md={2}>
-                <CFormLabel>
-                  House No <span style={{ color: 'red' }}>*</span>
-                </CFormLabel>
-                <CFormInput
-                  type="text"
-                  value={formData.address?.houseNo || ''}
-                  onChange={(e) => handleNestedChange('address', 'houseNo', e.target.value)}
-                />
-              </CCol>
-              <CCol md={4}>
-                <CFormLabel>
-                  Postal Code <span style={{ color: 'red' }}>*</span>
-                </CFormLabel>
-                <CFormInput
-                  type="text"
-                  maxLength={6}
-                  value={formData.address?.postalCode || ''}
-                  onChange={(e) => handlePincodeChange(e.target.value)}
-                  placeholder="6-digit PIN"
-                />
-              </CCol>
-
-              {/* Street */}
+            <CRow className="mb-3">
               <CCol md={3}>
                 <CFormLabel>
-                  Street <span style={{ color: 'red' }}>*</span>
+                  House/Bldg./Apt <span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormInput
-                  type="text"
-                  value={capitalizeWords(formData.address.street)}
-                  onChange={(e) => handleNestedChange('address', 'street', e.target.value)}
+                  value={formData.address.houseNo}
+                  onChange={(e) => handleNestedChange('address', 'houseNo', e.target.value)}
+                  invalid={!!formErrors.houseNo}
                 />
+                {formErrors.houseNo && (
+                  <div className="text-danger small">{formErrors.houseNo}</div>
+                )}
               </CCol>
 
-              {/* Landmark */}
+              <CCol md={3}>
+                <CFormLabel>
+                  Postal Code <span className="text-danger">*</span>
+                </CFormLabel>
+                <CFormInput
+                  value={formData.address.postalCode}
+                  onChange={(e) => handlePincodeChange(e.target.value)}
+                  maxLength={6}
+                  placeholder="6-digit PIN"
+                  invalid={!!formErrors.postalCode}
+                />
+                {formErrors.postalCode && (
+                  <div className="text-danger small">{formErrors.postalCode}</div>
+                )}
+              </CCol>
+
+              <CCol md={3}>
+                <CFormLabel>
+                  PO Address <span className="text-danger">*</span>
+                </CFormLabel>
+                <CFormSelect
+                  value={selectedPO?.Name || ''}
+                  onChange={(e) => {
+                    const po = postOffices.find((po) => po.Name === e.target.value)
+                    setSelectedPO(po)
+                    if (po) {
+                      handleNestedChange('address', 'city', po.Block || '')
+                      handleNestedChange('address', 'state', po.State || '')
+                    }
+                  }}
+                >
+                  <option value="">-- Select Post Office --</option>
+                  {postOffices.map((po) => (
+                    <option key={po.Name} value={po.Name}>
+                      {po.Name}
+                    </option>
+                  ))}
+                </CFormSelect>
+                {formErrors.postOffice && (
+                  <div className="text-danger small">{formErrors.postOffice}</div>
+                )}
+              </CCol>
+
               <CCol md={3}>
                 <CFormLabel>Landmark</CFormLabel>
                 <CFormInput
-                  type="text"
-                  value={capitalizeWords(formData.address.landmark)}
+                  value={formData.address.landmark}
                   onChange={(e) => handleNestedChange('address', 'landmark', e.target.value)}
                 />
               </CCol>
             </CRow>
-            <CRow>
-              {/* City */}
-              <CCol md={2}>
+
+            <CRow className="mb-3">
+              <CCol md={3}>
                 <CFormLabel>
-                  City <span style={{ color: 'red' }}>*</span>
+                  Street/Road/Lane <span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormInput
-                  type="text"
-                  value={capitalizeWords(formData.address.city)}
-                  onChange={(e) => handleNestedChange('address', 'city', e.target.value)}
+                  value={formData.address.street}
+                  onChange={(e) => handleNestedChange('address', 'street', e.target.value)}
+                  invalid={!!formErrors.street}
                 />
+                {formErrors.street && <div className="text-danger small">{formErrors.street}</div>}
               </CCol>
-              {/* State */}
-              <CCol md={4}>
+
+              <CCol md={3}>
                 <CFormLabel>
-                  State <span style={{ color: 'red' }}>*</span>
+                  Village/Town/City <span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormInput
-                  type="text"
-                  value={capitalizeWords(formData.address.state)}
-                  onChange={(e) => handleNestedChange('address', 'state', e.target.value)}
+                  value={formData.address.city}
+                  onChange={(e) => {
+                    if (/^[a-zA-Z\s]*$/.test(e.target.value))
+                      handleNestedChange('address', 'city', e.target.value)
+                  }}
+                  invalid={!!formErrors.city}
                 />
-                {/* <CFormSelect
+                {formErrors.city && <div className="text-danger small">{formErrors.city}</div>}
+              </CCol>
+
+              <CCol md={3}>
+                <CFormLabel>
+                  State <span className="text-danger">*</span>
+                </CFormLabel>
+                <CFormInput
                   value={formData.address.state}
-                  onChange={(e) => handleNestedChange('address', 'state', e.target.value)}
-                > */}
-                {/* <option value="">Select State</option>
-                  {states.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))} */}
-                {/* </CFormSelect> */}
+                  onChange={(e) => {
+                    if (/^[a-zA-Z\s]*$/.test(e.target.value))
+                      handleNestedChange('address', 'state', e.target.value)
+                  }}
+                  invalid={!!formErrors.state}
+                />
+                {formErrors.state && <div className="text-danger small">{formErrors.state}</div>}
               </CCol>
-
-              {/* Country */}
               <CCol md={3}>
                 <CFormLabel>
-                  Country <span style={{ color: 'red' }}>*</span>
+                  Country <span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormInput
-                  type="text"
-                  value={capitalizeWords(formData.address.country)}
-                  onChange={(e) => handleNestedChange('address', 'country', e.target.value)}
+                  value={formData.address.country}
+                  onChange={(e) => {
+                    if (/^[a-zA-Z\s]*$/.test(e.target.value))
+                      handleNestedChange('address', 'country', e.target.value)
+                  }}
+                  invalid={!!formErrors.country}
                 />
-              </CCol>
-
-              {/* Referral Code */}
-              <CCol md={3}>
-                <CFormLabel>Referral Code</CFormLabel>
-                <CFormInput
-                  name="referralCode"
-                  value={formData.referralCode}
-                  onChange={handleInputChange}
-                />
-                {formErrors.referralCode && <div className="text-danger">{formErrors.referralCode}</div>}
+                {formErrors.country && (
+                  <div className="text-danger small">{formErrors.country}</div>
+                )}
               </CCol>
             </CRow>
+
+            <CRow className="mb-3">
+              <CCol md={3}>
+                <CFormLabel>Referral Code (optional)</CFormLabel>
+                <CFormInput
+                  name="referredBy"
+                  value={formData.referredBy}
+                  onChange={handleInputChange}
+                  placeholder="Enter referral code"
+                  disabled={isEditing}
+                  invalid={!!formErrors.referredBy}
+                />
+                {formErrors.referredBy && (
+                  <div className="text-danger small">{formErrors.referredBy}</div>
+                )}
+              </CCol>
+            </CRow>
+
             <br />
             <div className="d-flex justify-content-end">
               <CButton color="secondary" className="me-2" onClick={handleCancel}>
@@ -1141,10 +1221,8 @@ const handleCancel = () => {
               </CButton>
             </div>
           </CForm>
-       {/* ====== VIEW CUSTOMER MODAL ====== */}
-
+          {/* ====== VIEW CUSTOMER MODAL ====== */}
         </>
-        
       )}
     </>
   )

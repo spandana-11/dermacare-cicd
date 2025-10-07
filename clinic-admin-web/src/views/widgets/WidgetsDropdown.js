@@ -65,7 +65,9 @@ const WidgetsDropdown = (props) => {
   const [statusFilters, setStatusFilters] = useState([])
   const [selectedServiceTypes, setSelectedServiceTypes] = useState([])
   const [selectedConsultationTypes, setSelectedConsultationTypes] = useState([])
+  const [inprogressApt, setInprogressApt] = useState([])
 
+  const [showAppointments, setShowAppointments] = useState(false)
   const statusLabelMap = {
     'In-Progress': 'Active',
     Completed: 'Completed',
@@ -155,11 +157,15 @@ const WidgetsDropdown = (props) => {
           const allAppointments = response.data
           setTotalAppointmentsCount(allAppointments.length)
 
+          const inprogreeAppointments = allAppointments.filter((item) => {
+            const itemDate = item.status.toLowerCase()
+            return itemDate === 'in-progress'
+          })
           const filteredAppointments = allAppointments.filter((item) => {
             const itemDate = item.serviceDate ? convertToISODate(item.serviceDate) : ''
             return itemDate === todayISO && item.clinicId === clinicId
           })
-
+          setInprogressApt(inprogreeAppointments)
           setTodayBookings(filteredAppointments)
         } else {
           setTodayBookings([])
@@ -180,8 +186,8 @@ const WidgetsDropdown = (props) => {
     setLoadingDoctors(true)
     setDoctorError(null)
     try {
-      const branchId=localStorage.getItem("branchId")
-      const response = await getDoctorByClinicIdData(clinicId,branchId)
+      const branchId = localStorage.getItem('branchId')
+      const response = await getDoctorByClinicIdData(clinicId, branchId)
       console.log('Raw Doctors Data:', response)
 
       // ✅ Access the inner data array
@@ -277,11 +283,11 @@ const WidgetsDropdown = (props) => {
       clearInterval(intervalRef.current)
     }
   }, [slides])
- const consultationTypeMap = {
+  const consultationTypeMap = {
     'Service & Treatment': 'services & treatments',
     'Tele Consultation': ['tele consultation', 'online consultation'], // Map a single button to multiple backend values
     'In-clinic': 'in-clinic consultation',
-}
+  }
   const getMediaSrc = (src) => {
     if (!src) return ''
     if (src.startsWith('data:') || src.startsWith('http') || src.startsWith('blob:')) return src
@@ -379,7 +385,7 @@ const WidgetsDropdown = (props) => {
                   <CIcon icon={cilOptions} className="text-high-emphasis-inverse" />
                 </CDropdownToggle>
                 <CDropdownMenu>
-                  <CDropdownItem onClick={() => navigate('/Appointment-Management')}>
+                  <CDropdownItem onClick={() => navigate('/appointment-management')}>
                     View All Appointments
                   </CDropdownItem>{' '}
                   {/* Link to your appointments page */}
@@ -418,14 +424,7 @@ const WidgetsDropdown = (props) => {
         <CCol sm={6} xl={4}>
           <CWidgetStatsA
             color="success"
-            value={
-              <>
-                10{' '}
-                {/* <span className="fs-6 fw-normal">
-                (+2.8%) <CIcon icon={cilArrowTop} />
-              </span> */}
-              </>
-            }
+            value={totalAppointmentsCount}
             title="Total Patients"
             action={
               <CDropdown alignment="end">
@@ -526,45 +525,73 @@ const WidgetsDropdown = (props) => {
       {/*to display today Appointments Table */}
       <div className="container mt-4 ">
         <h5 className="mb-4">Today Appointments</h5>
-        <div className="d-flex gap-2 mb-3">
-          <button
-            onClick={() => toggleFilter('Service & Treatment')}
-            className={`btn ${
-              filterTypes.includes('Service & Treatment') ? 'btn-selected' : 'btn-unselected'
-            }`}
-          >
-            Service & Treatment
-          </button>
+        <div className="row">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            {/* Left side buttons */}
+            <div className="d-flex gap-2">
+              <CButton
+                style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
+                onClick={() => {
+                  setSelectedServiceTypes([])
+                  setSelectedConsultationTypes([])
+                  setFilterTypes([])
+                  setStatusFilters([])
+                }}
+              >
+                All
+              </CButton>
 
-          <button
-            onClick={() => toggleFilter('In-clinic')}
-            className={`btn ${
-              filterTypes.includes('In-clinic') ? 'btn-selected' : 'btn-unselected'
-            }`}
-          >
-            In-Clinic Consultation
-          </button>
+              <button
+                onClick={() => toggleFilter('Service & Treatment')}
+                className={`btn ${
+                  filterTypes.includes('Service & Treatment') ? 'btn-selected' : 'btn-unselected'
+                }`}
+              >
+                Service & Treatment
+              </button>
 
-          <button
-            onClick={() => toggleFilter('Tele Consultation')}
-            className={`btn ${
-              filterTypes.includes('Tele Consultation') ? 'btn-selected' : 'btn-unselected'
-            }`}
-          >
-            Tele Consultation
-          </button>
-          <CButton
-            className="ms-5"
-            style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
-            onClick={() => {
-              setSelectedServiceTypes([])
-              setSelectedConsultationTypes([])
-              setFilterTypes([])
-              setStatusFilters([])
-            }}
-          >
-            Reset Filters
-          </CButton>
+              <button
+                onClick={() => toggleFilter('In-clinic')}
+                className={`btn ${
+                  filterTypes.includes('In-clinic') ? 'btn-selected' : 'btn-unselected'
+                }`}
+              >
+                In-Clinic Consultation
+              </button>
+
+              <button
+                onClick={() => toggleFilter('Tele Consultation')}
+                className={`btn ${
+                  filterTypes.includes('Tele Consultation') ? 'btn-selected' : 'btn-unselected'
+                }`}
+              >
+                Tele Consultation
+              </button>
+            </div>
+            {/* Right side reset button */}
+            {/* {!showAppointments && (
+              <CButton
+                style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+                onClick={() => setShowAppointments(true)}
+              >
+                Active Appointments ({inprogressApt?.length || 0})
+              </CButton>
+            )} */}
+
+            {/* Conditionally render table inside dashboard */}
+            {/* {showAppointments && (
+              <ActiveAppointmentsScreen
+                inprogressApt={inprogressApt}
+                onBack={() => setShowAppointments(false)}
+              />
+            )} */}
+            <CButton
+              style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
+              onClick={() => navigate('/in-progress')}
+            >
+              Active Appointments
+            </CButton>
+          </div>
         </div>
 
         <CTable striped hover responsive>
@@ -611,20 +638,20 @@ const WidgetsDropdown = (props) => {
                 )
 
                 // 2. Filter by consultation type
-              const filteredByTypes = confirmed.filter((item) => {
-    if (filterTypes.length === 0) {
-        return true;
-    }
-    const itemType = item.consultationType?.toLowerCase().trim();
-    return filterTypes.some((type) => {
-        const mappedValues = consultationTypeMap[type];
-        if (Array.isArray(mappedValues)) {
-            return mappedValues.some(val => itemType === val.toLowerCase().trim());
-        } else {
-            return itemType === mappedValues.toLowerCase().trim();
-        }
-    });
-});
+                const filteredByTypes = confirmed.filter((item) => {
+                  if (filterTypes.length === 0) {
+                    return true
+                  }
+                  const itemType = item.consultationType?.toLowerCase().trim()
+                  return filterTypes.some((type) => {
+                    const mappedValues = consultationTypeMap[type]
+                    if (Array.isArray(mappedValues)) {
+                      return mappedValues.some((val) => itemType === val.toLowerCase().trim())
+                    } else {
+                      return itemType === mappedValues.toLowerCase().trim()
+                    }
+                  })
+                })
 
                 // 3. Apply global search filter to the result
                 const finalFilteredData = filteredByTypes.filter((item) => {
@@ -676,7 +703,7 @@ const WidgetsDropdown = (props) => {
                         className="text-white"
                         size="sm"
                         onClick={() =>
-                          navigate(`/appointmentDetails/${item.bookingId}`, {
+                          navigate(`/appointment-details/${item.bookingId}`, {
                             state: { appointment: item },
                           })
                         }

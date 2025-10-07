@@ -2,6 +2,7 @@ package com.AdminService.dto;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -97,7 +98,8 @@ public class DoctorsDTO {
 
     @Size(max = 10, message = "Maximum 10 highlights allowed")
     private List<@NotBlank(message = "Highlight cannot be blank") String> highlights;
-   
+    
+	private List<DoctorBranches> branches;
     private boolean doctorAvailabilityStatus;
     private boolean recommendation;
     private double doctorAverageRating;

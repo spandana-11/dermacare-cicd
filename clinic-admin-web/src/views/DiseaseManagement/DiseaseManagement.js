@@ -38,6 +38,7 @@ import capitalizeWords from '../../Utils/capitalizeWords'
 import { Eye, Edit2, Trash2 } from 'lucide-react' // modern icons
 import { Button } from 'bootstrap'
 import LoadingIndicator from '../../Utils/loader'
+import { useHospital } from '../Usecontext/HospitalContext'
 const DiseasesManagement = () => {
   // const [searchQuery, setSearchQuery] = useState('')
   const [diseases, setDiseases] = useState([])
@@ -69,6 +70,8 @@ const DiseasesManagement = () => {
       notes: item.notes || '',
       hospitalId: item.hospitalId,
     }))
+  const { user } = useHospital()
+  const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
 
   const fetchData = async () => {
     setLoading(true)
@@ -133,7 +136,8 @@ const DiseasesManagement = () => {
     return Object.keys(newErrors).length === 0
   }
 
-  const nameRegex = /^[A-Za-z\s.]+$/
+  // Allow letters, spaces, ., (, ), -, /, '
+  const nameRegex = /^[A-Za-z\s.\-()/']+$/
 
   const handleAddDisease = async () => {
     const trimmedName = newDisease.diseaseName.trim()
@@ -146,11 +150,13 @@ const DiseasesManagement = () => {
 
     // Regex validation
     if (!nameRegex.test(trimmedName)) {
-      setErrors({ diseaseName: 'Only alphabets, spaces, and "." are allowed.' })
+      setErrors({
+        diseaseName: 'Only alphabets, spaces, ".", "(", ")", "-", "/", and "\'" are allowed.',
+      })
       return
     }
 
-    // ✅ Duplicate check before API call
+    // Duplicate check
     const duplicate = diseases.some(
       (t) => t.diseaseName.trim().toLowerCase() === trimmedName.toLowerCase(),
     )
@@ -162,6 +168,7 @@ const DiseasesManagement = () => {
       return
     }
 
+    // Proceed with API call
     try {
       const payload = {
         diseaseName: trimmedName,
@@ -171,7 +178,6 @@ const DiseasesManagement = () => {
       }
 
       const response = await postDiseaseData(payload)
-
       const newDiseaseRow = {
         id: response.data.id || response.id,
         diseaseName: response.data.diseaseName,
@@ -257,23 +263,26 @@ const DiseasesManagement = () => {
   return (
     <div>
       <ToastContainer />
-      <div
-        className="mb-3 w-100"
-        style={{ display: 'flex', justifyContent: 'end', alignContent: 'end', alignItems: 'end' }}
-      >
-        <CButton
-          style={{
-            color: 'var(--color-black)',
-            backgroundColor: 'var(--color-bgcolor)',
-          }}
-          onClick={() => {
-            setErrors({})
-            setModalVisible(true)
-          }}
+
+      {can('Disease-Management', 'create') && (
+        <div
+          className="mb-3 w-100"
+          style={{ display: 'flex', justifyContent: 'end', alignContent: 'end', alignItems: 'end' }}
         >
-          Add Disease
-        </CButton>
-      </div>
+          <CButton
+            style={{
+              color: 'var(--color-black)',
+              backgroundColor: 'var(--color-bgcolor)',
+            }}
+            onClick={() => {
+              setErrors({})
+              setModalVisible(true)
+            }}
+          >
+            Add Disease
+          </CButton>
+        </div>
+      )}
 
       {viewDisease && (
         <CModal visible={!!viewDisease} onClose={() => setViewDisease(null)} backdrop="static">
@@ -304,7 +313,15 @@ const DiseasesManagement = () => {
       )}
 
       {/* Add Disease Modal */}
-      <CModal visible={modalVisible} onClose={() => setModalVisible(false)} backdrop="static">
+      <CModal
+        visible={modalVisible}
+        onClose={() => {
+          setModalVisible(false)
+          setNewDisease({ diseaseName: '', probableSymptoms: '', notes: '' })
+          setErrors({})
+        }}
+        backdrop="static"
+      >
         <CModalHeader>
           <CModalTitle>Add New Disease</CModalTitle>
         </CModalHeader>
@@ -461,38 +478,42 @@ const DiseasesManagement = () => {
               displayData.map((disease, index) => (
                 <CTableRow key={disease.id}>
                   <CTableDataCell>{(currentPage - 1) * rowsPerPage + index + 1}</CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(disease.diseaseName)}</CTableDataCell>
+                  <CTableDataCell>{(disease.diseaseName)}</CTableDataCell>
                   <CTableDataCell>
-                    {capitalizeWords(disease.probableSymptoms || 'NA')}
+                    {(disease.probableSymptoms || 'NA')}
                   </CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(disease.notes || 'NA')}</CTableDataCell>
+                  <CTableDataCell>{(disease.notes || 'NA')}</CTableDataCell>
 
                   {/* Actions */}
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
-                      <button
-                        className="actionBtn"
-                        onClick={() => setViewDisease(disease)}
-                        title="View"
-                      >
-                        <Eye size={18} />
-                      </button>
-
-                      <button
-                        className="actionBtn"
-                        onClick={() => handleDiseaseEdit(disease)}
-                        title="Edit"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-
-                      <button
-                        className="actionBtn"
-                        onClick={() => handleDiseaseDelete(disease)}
-                        title="Delete"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      {can('Disease-Management', 'read') && (
+                        <button
+                          className="actionBtn"
+                          onClick={() => setViewDisease(disease)}
+                          title="View"
+                        >
+                          <Eye size={18} />
+                        </button>
+                      )}
+                      {can('Disease-Management', 'update') && (
+                        <button
+                          className="actionBtn"
+                          onClick={() => handleDiseaseEdit(disease)}
+                          title="Edit"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                      )}
+                      {can('Disease-Management', 'delete') && (
+                        <button
+                          className="actionBtn"
+                          onClick={() => handleDiseaseDelete(disease)}
+                          title="Delete"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
                     </div>
                   </CTableDataCell>
                 </CTableRow>

@@ -89,12 +89,12 @@ const _nav = [
     to:'/ads-management',
     icon: <CIcon icon={cibGoogleAds} customClassName="nav-icon" />,
   },
-  {
-    component: CNavItem,
-    to: '/ads-management',
-    name: 'Category Ads Management',
-    icon: <CIcon icon={cilTag} customClassName="nav-icon" />,
-  },
+  // {
+  //   component: CNavItem,
+  //   to: '/ads-management',
+  //   name: 'Category Ads Management',
+  //   icon: <CIcon icon={cilTag} customClassName="nav-icon" />,
+  // },
   {
     component: CNavItem,
     to: '/ads-service-management',

@@ -47,7 +47,7 @@ public class RatingCalculationService {
             if (allRatings.isEmpty()) {
                 response.setSuccess(true);
                 response.setStatus(200);
-                response.setMessage("No ratings found for the given hospitalId and doctorId.");
+                response.setMessage("No ratings found");
                 return response;
             }
 
@@ -129,4 +129,90 @@ public class RatingCalculationService {
             return response;
 		}
 	}
+
+
+    
+    public Response calculateAverageRatingByDoctorId(String doctorId) {
+        Response response = new Response();
+
+        try {
+            // Call Feign client to get ratings from customer service
+            ResponseEntity<Response> responseEntity =
+                    customerServiceFeignClient.getRatingInfoByDoctorId(doctorId);
+
+            Object ratings = responseEntity.getBody().getData();
+            List<CustomerRatingDomain> allRatings = new ArrayList<>();
+            ObjectMapper mapper = new ObjectMapper();
+
+            // Convert response into a List<CustomerRatingDomain>
+            if (ratings instanceof List) {
+                allRatings = mapper.convertValue(ratings, new TypeReference<List<CustomerRatingDomain>>() {});
+            } else if (ratings != null) {
+                CustomerRatingDomain single = mapper.convertValue(ratings, CustomerRatingDomain.class);
+                allRatings.add(single);
+            }
+
+            // Check if there are ratings for this doctor
+            List<CustomerRatingDomain> matchedRatings = allRatings.stream()
+                    .filter(r -> r.getDoctorId().equals(doctorId))
+                    .toList();
+
+            if (matchedRatings.isEmpty()) {
+                response.setSuccess(false);
+                response.setStatus(404);
+                response.setMessage("Invalid or no ratings found for doctorId: " + doctorId);
+                return response;
+            }
+
+            // Compute averages
+            double totalDoctorRating = matchedRatings.stream()
+                    .mapToDouble(CustomerRatingDomain::getDoctorRating)
+                    .sum();
+            double totalBranchRating = matchedRatings.stream()
+                    .mapToDouble(CustomerRatingDomain::getBranchRating)
+                    .sum();
+
+            double avgDoctorRating = totalDoctorRating / matchedRatings.size();
+            double avgBranchRating = totalBranchRating / matchedRatings.size();
+
+            long total = matchedRatings.size();
+
+            // Doctor Rating Classification
+            long excellent = matchedRatings.stream().filter(r -> r.getDoctorRating() >= 4.5).count();
+            long good = matchedRatings.stream().filter(r -> r.getDoctorRating() >= 3.5 && r.getDoctorRating() < 4.5).count();
+            long average = matchedRatings.stream().filter(r -> r.getDoctorRating() >= 2.5 && r.getDoctorRating() < 3.5).count();
+            long belowAverage = matchedRatings.stream().filter(r -> r.getDoctorRating() < 2.5).count();
+
+            List<RatingCategoryStats> categoryStats = new ArrayList<>();
+            categoryStats.add(new RatingCategoryStats("Excellent", excellent, (excellent * 100.0) / total));
+            categoryStats.add(new RatingCategoryStats("Good", good, (good * 100.0) / total));
+            categoryStats.add(new RatingCategoryStats("Average", average, (average * 100.0) / total));
+            categoryStats.add(new RatingCategoryStats("Below Average", belowAverage, (belowAverage * 100.0) / total));
+
+            // Prepare DTO
+            RatingsDTO data = new RatingsDTO();
+            data.setDoctorId(doctorId);
+            data.setOverallDoctorRating(avgDoctorRating);
+            data.setOverallBranchRating(avgBranchRating);
+            data.setCount(total);
+            data.setComments(matchedRatings);
+            data.setRatingCategoryStats(categoryStats);
+
+            // Build response
+            response.setSuccess(true);
+            response.setData(data);
+            response.setMessage("Ratings fetched successfully.");
+            response.setStatus(200);
+            return response;
+
+        } catch (FeignException e) {
+            response.setSuccess(false);
+            response.setMessage(ExtractFeignMessage.clearMessage(e));
+            response.setStatus(e.status());
+            return response;
+        }
+    }
+
+
+
 }

@@ -23,4 +23,13 @@ public class Medicine {
     private String remindWhen;
     private String others;
     private List<String> times;
+    private String serialNumber;
+    private String genericName;
+    private String brandName;
+    private String nameAndAddressOfTheManufacturer;
+    private String batchNumber;
+    private String dateOfManufacturing;
+    private String dateOfExpriy;
+    private String ManufacturingLicenseNumber;
+    private String stock;
 }

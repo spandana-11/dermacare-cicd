@@ -20,7 +20,9 @@ import {
   adminBaseUrl,
   treatmentUrl,
   labtestsbase,
-  baseUrl
+  baseUrl,
+  labtestsupdatedbase,
+  addtreatmentUrl
 } from './BaseUrl'
 
 export const postLogin = async (payload, endpoint) => {
@@ -282,6 +284,20 @@ export const getLabTests = async () => {
   }
 };
 
+export const addLabTest = async (testName) => {
+  const hospitalId = localStorage.getItem("hospitalId");
+  if (!hospitalId || !testName) return null;
+
+  try {
+    const response = await api.post(`${labtestsupdatedbase}`, { hospitalId, testName });
+    return response.data?.data?.[0] || testName;
+  } catch (error) {
+    console.error("Error adding lab test:", error);
+    return testName;
+  }
+};
+
+
 
 // Get all diseases
 export const getAllDiseases = async () => {
@@ -369,10 +385,24 @@ export const getAllTreatmentsByHospital = async () => {
   }
 };
 
-//Ratings
-export const averageRatings = async (hospitalId, doctorId) => {
+//Add new treatments
+export const addTreatmentByHospital = async (treatmentName) => {
+  const hospitalId = localStorage.getItem("hospitalId");
+  if (!hospitalId || !treatmentName) return null;
+
   try {
-    const response = await api.get(`${ratingsbaseUrl}/${hospitalId}/${doctorId}`);
+    const response = await api.post(`${addtreatmentUrl}`, { hospitalId, treatmentName });
+    return response.data?.data?.[0] || treatmentName;
+  } catch (error) {
+    console.error("Error adding treatment:", error);
+    return treatmentName;
+  }
+};
+
+//Ratings
+export const averageRatings = async (doctorId) => {
+  try {
+    const response = await api.get(`${ratingsbaseUrl}/${doctorId}`);
 
     if (response.data?.success && response.data?.data) {
       const {
@@ -781,4 +811,73 @@ export const getBookedSlots = async (doctorId) => {
 };
 
 
+
+export const getAllMedicines = async () => {
+  const clinicId = localStorage.getItem("hospitalId");
+
+  if (!clinicId) {
+    console.warn("⚠️ No hospitalId found in localStorage");
+    return [];
+  }
+
+  try {
+    const url = `${baseUrl}/getListOfMedicinesByClinicId/${clinicId}`;
+    console.log("📡 Fetching medicines from:", url);
+
+    const response = await api.get(url);
+    console.log("✅ Raw Medicines Response:", response.data);
+
+    if (response?.data?.success && Array.isArray(response.data.data)) {
+      const medicines = response.data.data[0]?.listOfMedicines || [];
+
+      // Convert array of strings → array of objects with id + name
+      const normalized = medicines.map((name, index) => ({
+        id: index, // you can replace with a UUID if needed
+        name,
+      }));
+
+      console.log("📋 Extracted Medicines:", normalized);
+      return normalized;
+    } else {
+      console.error("❌ Failed to fetch medicines:", response?.data?.message);
+      return [];
+    }
+  } catch (error) {
+    console.error("❌ Error fetching medicines:", error.response?.data || error.message);
+    return [];
+  }
+};
+
+// ✅ Add or Search Medicine
+export const addOrSearchMedicine = async (medicineName) => {
+  const clinicId = localStorage.getItem("hospitalId");
+
+  if (!clinicId) {
+    console.warn("⚠️ No hospitalId found in localStorage");
+    return null;
+  }
+
+  try {
+    const url = `${baseUrl}/addOrSearchListOfMedicine`;
+    const payload = {
+      clinicId,
+      listOfMedicines: [medicineName], // 👈 always send as array
+    };
+
+    console.log("📡 Adding medicine:", payload);
+
+    const response = await api.post(url, payload);
+
+    if (response?.data?.success) {
+      console.log("✅ Medicine added:", response.data);
+      return true;
+    } else {
+      console.error("❌ Failed to add medicine:", response?.data?.message);
+      return false;
+    }
+  } catch (error) {
+    console.error("❌ Error adding medicine:", error.response?.data || error.message);
+    return false;
+  }
+};
 

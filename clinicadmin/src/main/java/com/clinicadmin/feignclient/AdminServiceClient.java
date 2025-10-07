@@ -50,5 +50,7 @@ public interface AdminServiceClient {
 	@GetMapping("/admin/getBranchByClinicAndBranchId/{clinicId}/{branchId}")
 	public ResponseEntity<Response> getBranchByClinicAndBranchId(@PathVariable String clinicId,
 	                                                      @PathVariable String branchId);
+	@GetMapping("/admin/getBranchById/{branchId}")
+	public ResponseEntity<Response> getBranchById(@PathVariable String branchId);
 
 }

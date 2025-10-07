@@ -28,4 +28,14 @@ public class RatingsController {
 		}
 		return null;
 	}
+	
+	@GetMapping("/getAverageRatingsByDoctorId/{doctorId}")
+	public ResponseEntity<Response> getAverageRatingsByDoctorId( @PathVariable String doctorId) {
+
+		Response response = ratingCalculationService.calculateAverageRatingByDoctorId(doctorId);
+		if (response != null) {
+			return ResponseEntity.status(response.getStatus()).body(response);
+		}
+		return null;
+	}
 }

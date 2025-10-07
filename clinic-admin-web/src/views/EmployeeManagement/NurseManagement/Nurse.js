@@ -12,15 +12,16 @@ import {
   CModalBody,
   CModalFooter,
 } from '@coreui/react'
+import { Edit2, Eye, Trash2 } from 'lucide-react'
+import { toast } from 'react-toastify'
+
 import NurseForm from './NurseForm'
 import capitalizeWords from '../../../Utils/capitalizeWords'
 import { useGlobalSearch } from '../../Usecontext/GlobalSearchContext'
 import ConfirmationModal from '../../../components/ConfirmationModal'
 import LoadingIndicator from '../../../Utils/loader'
 import { addNurse, deleteNurse, getAllNurses, updateNurse } from './NurseAPI'
-import { toast } from 'react-toastify'
 import { useHospital } from '../../Usecontext/HospitalContext'
-import { Edit2, Eye, Trash2 } from 'lucide-react'
 
 const NurseManagement = () => {
   const [nurses, setNurses] = useState([])
@@ -29,32 +30,32 @@ const NurseManagement = () => {
   const [viewMode, setViewMode] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage] = useState(10)
-  const { searchQuery } = useGlobalSearch()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [isConfirmationModalVisible, setIsConfirmationModalVisible] = useState(false)
-  const [deleteId, setDeleteId] = useState(null)
 
+  const [isModalVisible, setIsModalVisible] = useState(false)
+  const [deleteId, setDeleteId] = useState(null)
+  const [modalData, setModalData] = useState(null)
+  const [modalTVisible, setModalTVisible] = useState(false)
+
+  const { searchQuery } = useGlobalSearch()
   const { user } = useHospital()
+  const hospitalId = localStorage.getItem('HospitalId')
+
   const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
 
-  // New state for credentials modal
-  const [credentialsModalVisible, setCredentialsModalVisible] = useState(false)
-  const [credentials, setCredentials] = useState(null)
-
-  // Fetch nurses
+  // ---------------- Fetch Nurses ----------------
   const fetchNurses = async () => {
     setLoading(true)
     try {
-      const clinicID = localStorage.getItem('HospitalId')
-      if (clinicID) {
-        const res = await getAllNurses(clinicID)
+      if (hospitalId) {
+        const res = await getAllNurses(hospitalId)
         setNurses(res.data?.data || [])
       }
     } catch (err) {
       console.error('Error fetching nurses:', err)
       setNurses([])
-      setError('Failed to load nurses.')
+      setError('Failed to fetch nurses.')
     } finally {
       setLoading(false)
     }
@@ -64,62 +65,50 @@ const NurseManagement = () => {
     fetchNurses()
   }, [])
 
-  // Save nurse (Add / Edit)
+  // ---------------- Save Nurse (Add / Edit) ----------------
   const handleSave = async (formData) => {
-    setLoading(true)
     try {
-      const hospitalId = localStorage.getItem('HospitalId')
       if (selectedNurse) {
         // Update nurse
         await updateNurse(hospitalId, selectedNurse.nurseId, formData)
         toast.success('Nurse updated successfully!')
       } else {
         // Add new nurse
-        const res = await addNurse(formData)
-        if (res.data?.data?.userName && res.data?.data?.password) {
-          setCredentials({
-            username: res.data.data.userName,
-            password: res.data.data.password,
-          })
-          setCredentialsModalVisible(true) // Open credentials modal
-        }
+        const res = await addNurse({ ...formData, hospitalId: hospitalId })
         toast.success('Nurse added successfully!')
+        setModalData({
+          username: res.data.data.userName,
+          password: res.data.data.password,
+        })
+        setModalTVisible(true)
       }
-      fetchNurses() // Refresh the list
-      setModalVisible(false) // Close the form modal
-      setSelectedNurse(null) // Reset selected nurse
-      setViewMode(false) // Reset view mode
+      setModalVisible(false)
+      fetchNurses()
+      setSelectedNurse(null)
+      setViewMode(false)
     } catch (err) {
-      if (err.response) {
-        toast.error(err.response.data?.message || 'Failed to save nurse.')
-      } else {
-        toast.error('Failed to save nurse.')
-      }
-    } finally {
-      setLoading(false)
+      console.error('API error:', err)
+      toast.error('❌ Failed to save nurse.')
     }
   }
 
-  // Delete nurse
+  // ---------------- Delete Nurse ----------------
   const handleDelete = async (nurseId) => {
+    const hospitalId = localStorage.getItem('HospitalId')
     try {
-      const hospitalId = localStorage.getItem('HospitalId')
-      if (!hospitalId || !nurseId) {
-        toast.error('Missing hospitalId or nurseId')
-        return
-      }
       await deleteNurse(hospitalId, nurseId)
       setNurses((prev) => prev.filter((n) => n.nurseId !== nurseId))
       toast.success('Nurse deleted successfully!')
     } catch (err) {
-      toast.error('Failed to delete nurse.')
       console.error('Delete error:', err)
+      toast.error('Failed to delete nurse.')
     } finally {
-      setIsConfirmationModalVisible(false)
+      setIsModalVisible(false)
+      setDeleteId(null)
     }
   }
 
-  // Filter & search
+  // ---------------- Filter & Search ----------------
   const filteredData = React.useMemo(() => {
     const q = searchQuery.toLowerCase().trim()
     if (!q) return nurses
@@ -132,12 +121,12 @@ const NurseManagement = () => {
 
   const decodeImage = (data) => {
     try {
+      // decode base64 string into normal string
       return atob(data)
     } catch {
       return null
     }
   }
-
   return (
     <div>
       {/* Add Nurse Button */}
@@ -145,11 +134,7 @@ const NurseManagement = () => {
         <div className="mb-3 d-flex justify-content-end">
           <CButton
             style={{ color: 'var(--color-black)', backgroundColor: 'var(--color-bgcolor)' }}
-            onClick={() => {
-              setSelectedNurse(null)
-              setViewMode(false)
-              setModalVisible(true)
-            }}
+            onClick={() => setModalVisible(true)}
           >
             Add Nurse
           </CButton>
@@ -157,18 +142,18 @@ const NurseManagement = () => {
       )}
 
       {/* Credentials Modal */}
-      <CModal visible={credentialsModalVisible} backdrop="static" keyboard={false}>
+      <CModal visible={modalTVisible} backdrop="static" keyboard={false}>
         <CModalHeader>
           <h5>Nurse Credentials</h5>
         </CModalHeader>
         <CModalBody>
-          {credentials ? (
+          {modalData ? (
             <div>
               <p>
-                <strong>Username:</strong> {credentials.username}
+                <strong>Username:</strong> {modalData.username}
               </p>
               <p>
-                <strong>Password:</strong> {credentials.password}
+                <strong>Password:</strong> {modalData.password}
               </p>
               <small className="text-danger">
                 ⚠️ Please save these credentials securely. They will not be shown again.
@@ -179,22 +164,21 @@ const NurseManagement = () => {
           )}
         </CModalBody>
         <CModalFooter>
-         <CButton
-  color="primary"
-  onClick={() => {
-    setCredentialsModalVisible(false)
-    setCredentials(null) // Clear credentials after showing
-  }}
->
-  Close
-</CButton>
-
+          <CButton
+            color="primary"
+            onClick={() => {
+              setModalTVisible(false)
+              setModalData(null)
+            }}
+          >
+            Close
+          </CButton>
         </CModalFooter>
       </CModal>
 
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
-        isVisible={isConfirmationModalVisible}
+        isVisible={isModalVisible}
         title="Delete Nurse"
         message="Are you sure you want to delete this nurse? This action cannot be undone."
         confirmText="Yes, Delete"
@@ -202,7 +186,7 @@ const NurseManagement = () => {
         confirmColor="danger"
         cancelColor="secondary"
         onConfirm={() => handleDelete(deleteId)}
-        onCancel={() => setIsConfirmationModalVisible(false)}
+        onCancel={() => setIsModalVisible(false)}
       />
 
       {/* Loading / Error / Table */}
@@ -211,7 +195,10 @@ const NurseManagement = () => {
           <LoadingIndicator message="Loading nurses..." />
         </div>
       ) : error ? (
-        <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
+        <div
+          className="d-flex justify-content-center align-items-center"
+          style={{ height: '50vh' }}
+        >
           {error}
         </div>
       ) : (
@@ -229,15 +216,15 @@ const NurseManagement = () => {
             </CTableRow>
           </CTableHead>
 
-          <CTableBody>
+          <CTableBody style={{ color: 'var(--color-black)' }}>
             {displayData.length > 0 ? (
               displayData.map((nurse, index) => (
-                <CTableRow key={nurse.nurseId}>
+                <CTableRow key={nurse.nurseId} style={{ color: 'var(--color-black)' }}>
                   <CTableDataCell>{(currentPage - 1) * rowsPerPage + index + 1}</CTableDataCell>
                   <CTableDataCell>
                     {nurse.profilePicture ? (
                       <img
-                        src={decodeImage(nurse.profilePicture)}
+                        src={nurse.profilePicture} // ✅ decode first
                         alt={nurse.fullName}
                         width="40"
                         height="40"
@@ -261,11 +248,21 @@ const NurseManagement = () => {
                       />
                     )}
                   </CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(nurse.fullName)}</CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(nurse.nurseContactNumber)}</CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(nurse.gender)}</CTableDataCell>
-                  <CTableDataCell>{nurse.qualifications || 'NA'}</CTableDataCell>
-                  <CTableDataCell>{nurse.dateOfJoining}</CTableDataCell>
+                  <CTableDataCell style={{ color: 'var(--color-black)' }}>
+                    {capitalizeWords(nurse.fullName)}
+                  </CTableDataCell>
+                  <CTableDataCell style={{ color: 'var(--color-black)' }}>
+                    {capitalizeWords(nurse.nurseContactNumber)}
+                  </CTableDataCell>
+                  <CTableDataCell style={{ color: 'var(--color-black)' }}>
+                    {capitalizeWords(nurse.gender)}
+                  </CTableDataCell>
+                  <CTableDataCell style={{ color: 'var(--color-black)' }}>
+                    {nurse.qualifications || 'NA'}
+                  </CTableDataCell>
+                  <CTableDataCell style={{ color: 'var(--color-black)' }}>
+                    {nurse.dateOfJoining}
+                  </CTableDataCell>
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2">
                       {can('Nurses', 'read') && (
@@ -299,7 +296,7 @@ const NurseManagement = () => {
                           className="actionBtn"
                           onClick={() => {
                             setDeleteId(nurse.nurseId)
-                            setIsConfirmationModalVisible(true)
+                            setIsModalVisible(true)
                           }}
                           title="Delete"
                         >
@@ -353,6 +350,8 @@ const NurseManagement = () => {
         }}
         onSave={handleSave}
         initialData={selectedNurse}
+        nurses={nurses}
+        fetchNurses={fetchNurses}
         viewMode={viewMode}
       />
     </div>

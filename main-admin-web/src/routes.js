@@ -26,10 +26,11 @@ const PatientViewDetails = React.lazy(
   () => import('./views/providerManagement/ProviderViewDetails'),
 )
 
-const AddDoctor = React.lazy(() => import('./views/clinicManagement/AddDoctors'))
+// const AddDoctor = React.lazy(() => import('./views/clinicManagement/AddDoctors'))
+// const DoctorDetailsPage=React.lazy(()=>import('./views/clinicManagement/Doctor'))
 const BranchManagement=React.lazy(()=>import('./views/clinicManagement/AddBranchForm'))
 const AppointmentManagement = React.lazy(
-  () => import('./views/AppointmentManagement/appointmentManagement'),
+  () => import('./views/AppointmentManagement/AppointmentManagement'),
 )
 const AppointmentDetails = React.lazy(
   () => import('./views/AppointmentManagement/AppointmnetDetails'),
@@ -42,6 +43,7 @@ const AdsManagement = React.lazy(() => import('./views/AdsManagement/AdsManageme
 const AdsServiceManagement = React.lazy(
   () => import('./views/AdsServiceManagement/AdsServiceManagement'),
 )
+const DoctorDetailsPage = React.lazy(() => import('./views/Doctors/DoctorDetailsPage'))
 
 const routes = [
   { path: '/', exact: true, name: 'Home' },
@@ -65,9 +67,9 @@ const routes = [
   { path: '/clinic-Management', name: 'Clinic Management ', element: ClinicManagement },
   { path: '/add-clinic', name: 'Add Clinic', element: AddClinic },
   {
-    path: '/clinic-Management/:hospitalId',
-    name: 'Clinic Details',
-    element: ClinicManagementDetails,
+    path: '/doctor/:doctorId',
+    name: 'Doctor Details',
+    element: DoctorDetailsPage,
   },
 
   // { path: '/add-doctor', name: 'Add Doctor', element: AddDoctors },
@@ -84,7 +86,16 @@ const routes = [
     name: 'Appointment Details',
     element: AppointmentDetails,
   },
-  
+    {
+    path: '/clinic-Management/:hospitalId',
+    name: 'Clinic Details',
+    element: ClinicManagementDetails,
+  },
+  {
+  path: '/branch-details/:branchId',
+  name: 'Branch Details',
+  element: React.lazy(() => import('./views/clinicManagement/BranchDetails')),
+},
   // AppointmentDetails
   { path: '/reassign-Appointment', name: 'Reassign Appointment', element: ReassignAppointment },
 
@@ -92,9 +103,53 @@ const routes = [
   { path: '/ads-service-management', name: 'Ads Management', element: AdsServiceManagement },
   { path: '/provider-management/:id', name: 'Patient View Details', element: PatientViewDetails },
 
-  {path:'/addDoctor', name:'AddDoctor', element:AddDoctor},
+  // {path:'/addDoctor', name:'AddDoctor', element:AddDoctor},  
   {path:'/clinicDetails', name:'ClinicDetails', element:ClinicManagementDetails},
   {path:'/branchManagement', name:'BranchManagement', element:BranchManagement},
 ]
 
 export default routes
+
+
+
+
+
+//   {
+//     path: '/clinic-Management/:hospitalId',
+//     name: 'Clinic Details',
+//     element: ClinicManagementDetails,
+//   },
+
+//   // { path: '/add-doctor', name: 'Add Doctor', element: AddDoctors },
+
+//   { path: '/patients-management', name: 'Patient Management', element: PatientManagement },
+//   // { path: '/Doctors-Management', name: 'Doctor Management', element: DoctorManagement },
+//   {
+//     path: '/appointment-management',
+//     name: 'Appointment Management',
+//     element: AppointmentManagement,
+//   },
+//   {
+//     path: '/appointmentDetails/:id',
+//     name: 'Appointment Details',
+//     element: AppointmentDetails,
+//   },
+//   {
+//   path: '/branch-details/:branchId',
+//   name: 'Branch Details',
+//   element: React.lazy(() => import('./views/clinicManagement/BranchDetails')),
+// },
+//   // AppointmentDetails
+//   { path: '/reassign-Appointment', name: 'Reassign Appointment', element: ReassignAppointment },
+
+//   { path: '/ads-management', name: 'Ads Management', element: AdsManagement },
+//   { path: '/ads-service-management', name: 'Ads Management', element: AdsServiceManagement },
+//   { path: '/provider-management/:id', name: 'Patient View Details', element: PatientViewDetails },
+
+//   // {path:'/addDoctor', name:'AddDoctor', element:AddDoctor},  
+//   {path:'/clinicDetails', name:'ClinicDetails', element:ClinicManagementDetails},
+//   {path:'/branchManagement', name:'BranchManagement', element:BranchManagement},
+// ]
+
+// export default routes
+

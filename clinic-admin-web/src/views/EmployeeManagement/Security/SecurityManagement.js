@@ -131,7 +131,7 @@ const [modalData, setModalData] = useState(null) // store username & password
 
   return (
     <div>
-      {can('Laboratory', 'create') && (
+      {can('Security', 'create') && (
         <div
           className="mb-3 w-100"
           style={{ display: 'flex', justifyContent: 'end', alignContent: 'end', alignItems: 'end' }}
@@ -149,7 +149,7 @@ const [modalData, setModalData] = useState(null) // store username & password
       )}
       <CModal visible={modalTVisible} backdrop="static" keyboard={false}>
         <CModalHeader>
-          <h5>Technician Credentials</h5>
+          <h5>Security Credentials</h5>
         </CModalHeader>
         <CModalBody>
           {modalData ? (
@@ -264,7 +264,7 @@ const [modalData, setModalData] = useState(null) // store username & password
 
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
-                      {can('Laboratory', 'read') && (
+                      {can('Security', 'read') && (
                         <button
                           className="actionBtn"
                           onClick={() => {
@@ -277,7 +277,7 @@ const [modalData, setModalData] = useState(null) // store username & password
                           <Eye size={18} />
                         </button>
                       )}
-                      {can('Laboratory', 'update') && (
+                      {can('Security', 'update') && (
                         <button
                           className="actionBtn"
                           onClick={() => {
@@ -290,7 +290,7 @@ const [modalData, setModalData] = useState(null) // store username & password
                           <Edit2 size={18} />
                         </button>
                       )}
-                      {can('Laboratory', 'delete') && (
+                      {can('Security', 'delete') && (
                         <button
                           className="actionBtn"
                           onClick={() => {

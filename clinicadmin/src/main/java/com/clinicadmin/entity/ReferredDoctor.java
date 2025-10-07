@@ -1,16 +1,17 @@
 package com.clinicadmin.entity;
 
+import java.util.Date;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.clinicadmin.dto.Address;
 import com.clinicadmin.dto.BankAccountDetails;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
-import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -19,6 +20,7 @@ public class ReferredDoctor {
 
     @Id
     private String id;
+    private String clinicId;
     private String fullName;
     private String gender;
     private Date dateOfBirth;
@@ -34,13 +36,14 @@ public class ReferredDoctor {
 
     private String mobileNumber;
     private String email;
-    private String address;
+    private Address address;
 
      private String referralId; 
-    private Date firstReferralDate;
-    private int totalReferrals;
-    private List<String> referredPatients;
-    private String preferredCommunicationMethod;
+     
+//    private Date firstReferralDate;
+//    private int totalReferrals;
+//    private List<String> referredPatients;
+//    private String preferredCommunicationMethod;
 
    
     private BankAccountDetails bankAccountNumber;

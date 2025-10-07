@@ -11,11 +11,14 @@ import {
   CModalFooter,
   CFormTextarea,
   CFormSelect,
-  
 } from '@coreui/react'
 import { toast } from 'react-toastify'
 import { actions, features } from '../../../Constant/Features'
 import capitalizeWords from '../../../Utils/capitalizeWords'
+import UserPermissionModal from '../UserPermissionModal'
+import { validateFormData, validateField } from '../../../Utils/Validators'
+import { emailPattern } from '../../../Constant/Constants'
+import FilePreview from '../../../Utils/FilePreview'
 
 const OtherStaffForm = ({
   visible,
@@ -29,48 +32,52 @@ const OtherStaffForm = ({
   const emptyPermissions = {} // ✅ no feature is selected by default
 
   const emptyForm = {
-  wardBoyId: '',
-  clinicId: localStorage.getItem('HospitalId'),
-  branchId: localStorage.getItem('branchId'),
-  hospitalName: localStorage.getItem('HospitalName'),
-  fullName: '',
-  gender: 'male',
-  dateOfBirth: '',
-  contactNumber: '',
-  emailId: '',
-  governmentId: '',
-  dateOfJoining: '',
-  department: '',
-  workExprience: '',
-  shiftTimingOrAvailability: '',
-  emergencyContact:'',
-  role: 'other staff',
-  address: {
-    houseNo: '',
-    street: '',
-    landmark: '',
-    city: '',
-    state: '',
-    postalCode: '',
-    country: 'India',
-  },
-  bankAccountDetails: {
-    accountNumber: '',
-    accountHolderName: '',
-    ifscCode: '',
-    bankName: '',
-    branchName: '',
-    panCardNumber: '',
-  },
-  medicalFitnessCertificate: '',
-  profilePicture: '',
-  basicHealthFirstAidTrainingCertificate: '',
-  previousEmploymentHistory: '',
-  policeVerification: '',
-  userName: '',
-  password: '',
-  permissions: {}, // empty Map equivalent
-};
+    wardBoyId: '',
+    clinicId: localStorage.getItem('HospitalId'),
+    branchId: localStorage.getItem('branchId'),
+    branchName: localStorage.getItem('branchName'),
+    hospitalName: localStorage.getItem('HospitalName'),
+    fullName: '',
+    gender: '',
+    dateOfBirth: '',
+    contactNumber: '',
+    emailId: '',
+    governmentId: '',
+    dateOfJoining: '',
+    department: '',
+    workExprience: '',
+    yearOfExperience: '',
+    shiftTimingsOrAvailability: '',
+    emergencyContact: '',
+    role: 'other staff',
+    address: {
+      houseNo: '',
+      street: '',
+      landmark: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: 'India',
+    },
+    // emergencyContact: '',
+    bankAccountDetails: {
+      accountNumber: '',
+      accountHolderName: '',
+      ifscCode: '',
+      bankName: '',
+      branchName: '',
+      panCardNumber: '',
+    },
+    medicalFitnessCertificate: '',
+    profilePicture: '',
+    basicHealthFirstAidTrainingCertificate: '',
+    previousEmploymentHistory: '',
+    policeVerification: '',
+    policeVerificationCertificate: '',
+    userName: '',
+    password: '',
+    permissions: {}, // empty Map equivalent
+  }
 
   // 🔹 State
   const [formData, setFormData] = useState(emptyForm)
@@ -80,36 +87,36 @@ const OtherStaffForm = ({
   const [showPModal, setShowPModal] = useState(false)
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
-
+  const [errors, setErrors] = useState({})
   // Mandatory fields
- const mandatoryFields = [
-  // WardBoyDTO top-level fields
-  'fullName',
-  'dateOfBirth',
-  'contactNumber',
-  'governmentId',
-  'dateOfJoining',
-  'department',
-  'clinicId',
-  'medicalFitnessCertificate', // also mandatory
-  'role', // if you want to enforce role as mandatory in UI
+  const mandatoryFields = [
+    // WardBoyDTO top-level fields
+    'fullName',
+    'dateOfBirth',
+    'contactNumber',
+    'governmentId',
+    'dateOfJoining',
+    'department',
+    'clinicId',
+    'medicalFitnessCertificate', // also mandatory
+    'role', // if you want to enforce role as mandatory in UI
+    'shiftTimingsOrAvailability',
+    // Address nested fields (if Address has @NotBlank on these)
+    'address.houseNo',
+    'address.street',
+    'address.city',
+    'address.state',
+    'address.postalCode',
+    'address.country',
 
-  // Address nested fields (if Address has @NotBlank on these)
-  'address.houseNo',
-  'address.street',
-  'address.city',
-  'address.state',
-  'address.postalCode',
-  'address.country',
-
-  // BankAccountDetails nested fields (if @NotBlank on these)
-  'bankAccountDetails.accountNumber',
-  'bankAccountDetails.accountHolderName',
-  'bankAccountDetails.bankName',
-  'bankAccountDetails.branchName',
-  'bankAccountDetails.ifscCode',
-  'bankAccountDetails.panCardNumber'
-];
+    // BankAccountDetails nested fields (if @NotBlank on these)
+    'bankAccountDetails.accountNumber',
+    'bankAccountDetails.accountHolderName',
+    'bankAccountDetails.bankName',
+    'bankAccountDetails.branchName',
+    'bankAccountDetails.ifscCode',
+    'bankAccountDetails.panCardNumber',
+  ]
 
   function validateMandatoryFields(formData, mandatoryFields) {
     const missingFields = []
@@ -188,7 +195,15 @@ const OtherStaffForm = ({
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData)
+      setFormData((prev) => ({
+        ...prev,
+        ...initialData,
+        address: { ...emptyForm.address, ...(initialData.address || {}) },
+        bankAccountDetails: {
+          ...emptyForm.bankAccountDetails,
+          ...(initialData.bankAccountDetails || {}),
+        },
+      }))
     } else {
       setFormData(emptyForm)
     }
@@ -211,6 +226,11 @@ const OtherStaffForm = ({
   const handleFileUpload = (e, field) => {
     const file = e.target.files[0]
     if (!file) return
+    // ✅ Check file size (bytes → KB)
+    if (file.size > 250 * 1024) {
+      alert('File size must be less than 250KB.')
+      return // do not proceed
+    }
 
     const reader = new FileReader()
     reader.onloadend = () => {
@@ -226,86 +246,12 @@ const OtherStaffForm = ({
 
   // 🔹 Save handler
   const handleSubmit = () => {
-    const missing = validateMandatoryFields(formData, mandatoryFields)
+    const missing = validateMandatoryFields(formData, mandatoryFields) // returns array
 
     if (missing.length > 0) {
       toast.error(`Please fill required fields: ${missing.join(', ')}`)
       return
     }
-
-    //     const missing = validateMandatoryFields(formData, mandatoryFields)
-
-    // if (missing.length > 0) {
-    //   toast.error(`Please fill required fields: ${missing.join(', ')}`)
-    //   return
-    // }
-
-    if (formData.dateOfBirth) {
-      const dob = new Date(formData.dateOfBirth)
-      const today = new Date()
-      const age = today.getFullYear() - dob.getFullYear()
-      const isBeforeBirthday =
-        today.getMonth() < dob.getMonth() ||
-        (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())
-
-      const actualAge = isBeforeBirthday ? age - 1 : age
-
-      if (actualAge < 18) {
-        toast.error('Staff must be at least 18 years old.')
-        return
-      }
-    }
-
-    // ✅ Mobile validation (10 digits, starting with 6-9)
-    const mobileRegex = /^[6-9]\d{9}$/
-    if (!mobileRegex.test(formData.contactNumber)) {
-      toast.error('Contact number must be 10 digits and start with 6-9.')
-      return
-    }
-
-    // ✅ Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailId)) {
-      toast.error('Please enter a valid email address.')
-      return
-    }
-
-    // ✅ Check duplicate contact number
-    const duplicateContact = technicians?.some(
-      (t) => t.contactNumber === formData.contactNumber && t.id !== formData.id,
-    )
-    if (duplicateContact) {
-      toast.error('Contact number already exists!')
-      return
-    }
-
-    // ✅ Check duplicate email
-    const duplicateEmail = technicians?.some(
-      (t) => t.emailId === formData.emailId && t.id !== formData.id,
-    )
-    if (duplicateEmail) {
-      toast.error('Email already exists!')
-      return
-    }
-    if (Object.keys(formData.permissions).length === 0) {
-      toast.error('Please assign at least one user permission before saving.')
-      return
-    }
-
-    console.log(formData)
-    onSave(formData)
-    setFormData(emptyForm)
-    onClose()
-  }
-
-  const handleUserPermission = () => {
-    const missing = validateMandatoryFields(formData, mandatoryFields)
-
-    if (missing.length > 0) {
-      toast.error(`Please fill required fields: ${missing.join(', ')}`)
-      return
-    }
-
     if (formData.dateOfBirth) {
       const dob = new Date(formData.dateOfBirth)
       const today = new Date()
@@ -321,20 +267,27 @@ const OtherStaffForm = ({
         return
       }
     }
-
     const mobileRegex = /^[6-9]\d{9}$/
     if (!mobileRegex.test(formData.contactNumber)) {
       toast.error('Contact number must be 10 digits and start with 6-9.')
       return
     }
-
+    if (!mobileRegex.test(formData.emergencyContact)) {
+      toast.error('Emergency contact must be 10 digits and start with 6-9.')
+      return
+    }
+    // ✅ Emergency contact and Nurse contact must not be same
+    if (formData.contactNumber === formData.emergencyContact) {
+      toast.error('Contact Number and Emergency Contact cannot be the same.')
+      return
+    }
     // ✅ Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailId)) {
+
+    const email = formData.emailId.trim()
+    if (!emailPattern.test(email)) {
       toast.error('Please enter a valid email address.')
       return
     }
-
     const duplicateContact = technicians?.some(
       (t) => t.contactNumber === formData.contactNumber && t.id !== formData.id,
     )
@@ -342,7 +295,6 @@ const OtherStaffForm = ({
       toast.error('Contact number already exists!')
       return
     }
-
     const duplicateEmail = technicians?.some(
       (t) => t.emailId === formData.emailId && t.id !== formData.id,
     )
@@ -350,8 +302,10 @@ const OtherStaffForm = ({
       toast.error('Email already exists!')
       return
     }
-    console.log(formData)
-    setShowPModal(true)
+    console.log('Saving Staff data:', formData)
+    onSave(formData)
+    setFormData(emptyForm)
+    onClose()
   }
 
   // 🔹 Close Preview Modal
@@ -400,45 +354,45 @@ const OtherStaffForm = ({
   )
 
   // 🔹 File Preview with modal trigger
-  const FilePreview = ({ label, type, data }) => {
-    if (!data) return <p>{label} </p>
+  // const FilePreview = ({ label, type, data }) => {
+  //   if (!data) return <p>{label} </p>
 
-    const isImage = type?.startsWith('image/')
-    const fileUrl = data.startsWith('data:') ? data : `data:${type};base64,${data}`
+  //   const isImage = type?.startsWith('image/')
+  //   const fileUrl = data.startsWith('data:') ? data : `data:${type};base64,${data}`
 
-    return (
-      <div className="bg-white p-3 rounded-md shadow-sm">
-        <strong>{label}:</strong>
-        <div className="mt-2">
-          {isImage ? (
-            <img
-              src={fileUrl}
-              alt={label}
-              className="w-32 h-32 object-cover rounded-md border cursor-pointer"
-              onClick={() => handlePreview(fileUrl, type)}
-            />
-          ) : (
-            <button
-              type="button "
-              className=" btn text-blue-600 hover:underline block mx-2"
-              onClick={() => handlePreview(fileUrl, type)}
-              style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
-            >
-              Preview
-            </button>
-          )}
-          <a
-            href={fileUrl}
-            download={label.replace(/\s+/g, '_')}
-            className="text-green-600 hover:underline text-sm block  btn"
-            style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
-          >
-            Download
-          </a>
-        </div>
-      </div>
-    )
-  }
+  //   return (
+  //     <div className="bg-white p-3 rounded-md shadow-sm">
+  //       <strong>{label}:</strong>
+  //       <div className="mt-2">
+  //         {isImage ? (
+  //           <img
+  //             src={fileUrl}
+  //             alt={label}
+  //             className="w-32 h-32 object-cover rounded-md border cursor-pointer"
+  //             onClick={() => handlePreview(fileUrl, type)}
+  //           />
+  //         ) : (
+  //           <button
+  //             type="button "
+  //             className=" btn text-blue-600 hover:underline block mx-2"
+  //             onClick={() => handlePreview(fileUrl, type)}
+  //             style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+  //           >
+  //             Preview
+  //           </button>
+  //         )}
+  //         <a
+  //           href={fileUrl}
+  //           download={label.replace(/\s+/g, '_')}
+  //           className="text-green-600 hover:underline text-sm block  btn"
+  //           style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+  //         >
+  //           Download
+  //         </a>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   return (
     <>
@@ -450,9 +404,7 @@ const OtherStaffForm = ({
         backdrop="static"
       >
         <CModalHeader>
-          <CModalTitle>
-            {viewMode ? 'Personal Information' : 'Add / Edit Other Staff'}
-          </CModalTitle>
+          <CModalTitle>{viewMode ? 'Personal Information' : 'Add / Edit Other Staff'}</CModalTitle>
         </CModalHeader>
         <CModalBody>
           {viewMode ? (
@@ -480,7 +432,7 @@ const OtherStaffForm = ({
                 <div className="text-center">
                   {formData.profilePicture ? (
                     <img
-                      src={decodeImage(formData.profilePicture)} // ✅ decode first
+                      src={formData.profilePicture} // ✅ decode first
                       alt={formData.fullName}
                       width="80"
                       height="80"
@@ -511,7 +463,7 @@ const OtherStaffForm = ({
                       fontWeight: '500',
                     }}
                   >
-                    ID: {formData.id}
+                    ID: {formData.wardBoyId}
                   </div>
                 </div>
               </div>
@@ -551,7 +503,7 @@ const OtherStaffForm = ({
                       <Row label="Department" value={formData.department} />
                     </div>
                     <div className="col-md-4">
-                      <Row label="Experience" value={formData.yearOfExperience} />
+                      <Row label="Experience" value={formData.workExprience} />
                     </div>
                     {/* <div className="col-md-4">
                       <Row label="Specialization" value={formData.specialization} />
@@ -633,12 +585,12 @@ const OtherStaffForm = ({
                 {/* Other Info */}
                 <Section title="Other Information ">
                   <div className="row mb-2">
-                    <div className="col-md-6">
-                      <Row label="Lab License" value={formData.labLicenseOrRegistration} />
-                    </div>
-                    <div className="col-md-6">
+                    {/* <div className="col-md-6">
+                      <Row label="Police Verification" value={formData.policeVerification} />
+                    </div> */}
+                    {/* <div className="col-md-6">
                       <Row label="Vaccination Status" value={formData.vaccinationStatus} />
-                    </div>
+                    </div> */}
                     <div className="col-md-12">
                       <RowFull
                         label="Previous Employment"
@@ -664,52 +616,59 @@ const OtherStaffForm = ({
               <h5>Basic Information</h5>
 
               <div className="row mb-3">
-                <div className="col-md-4">
-                  <div className="row">
-                    <div className="col-md-5">
-                      <CFormLabel>
-                        ClinicID <span style={{ color: 'red' }}>*</span>
-                      </CFormLabel>
-                      <CFormInput
-                        value={clinicId}
-                        disabled
-                        onChange={(e) => handleChange('clinicId', e.target.value)}
-                      />
-                    </div>
-                    <div className="col-md-7">
-                      <CFormLabel>
-                        Role <span style={{ color: 'red' }}>*</span>
-                      </CFormLabel>
-                      <CFormInput
-                        value={formData.role}
-                        disabled
-                        onChange={(e) => handleChange('role', e.target.value)}
-                      />
-                    </div>
-                  </div>
+                <div className="col-md-2">
+                  <CFormLabel>
+                    ClinicID <span style={{ color: 'red' }}>*</span>
+                  </CFormLabel>
+                  <CFormInput
+                    value={clinicId}
+                    disabled
+                    onChange={(e) => handleChange('clinicId', e.target.value)}
+                  />
                 </div>
+
+                <div className="col-md-2">
+                  <CFormLabel>
+                    Role <span style={{ color: 'red' }}>*</span>
+                  </CFormLabel>
+                  <CFormInput
+                    value={formData.role}
+                    disabled
+                    onChange={(e) => handleChange('role', e.target.value)}
+                  />
+                </div>
+
                 <div className="col-md-4">
                   <CFormLabel>
                     Full Name <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
                     value={formData.fullName}
-                    onChange={(e) => handleChange('fullName', e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '')
+                      handleChange('fullName', value)
+                    }}
+                    onBlur={() => handleBlur('fullName', formData.fullName)}
+                    invalid={!!errors.fullName}
                   />
+                  {errors.fullName && <div className="text-danger mt-1">{errors.fullName}</div>}
                 </div>
+
                 <div className="col-md-4">
                   <CFormLabel>
-                    Gender 
+                    Gender <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormSelect
                     value={formData.gender}
                     onChange={(e) => handleChange('gender', e.target.value)}
+                    invalid={!!errors.gender}
                   >
                     <option value="">Select Gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
                     <option value="other">Other</option>
                   </CFormSelect>
+                  {errors.gender && <div className="text-danger mt-1">{errors.gender}</div>}
                 </div>
               </div>
 
@@ -725,9 +684,19 @@ const OtherStaffForm = ({
                       new Date(new Date().setFullYear(new Date().getFullYear() - 18))
                         .toISOString()
                         .split('T')[0]
-                    } // ✅ only allow DOB ≤ today-18yrs
-                    onChange={(e) => handleChange('dateOfBirth', e.target.value)}
+                    } // only allow DOB ≤ today-18yrs
+                    onChange={(e) => {
+                      const value = e.target.value
+                      handleChange('dateOfBirth', value)
+
+                      // Live validation using your validators file
+                      const err = validateField('dateOfBirth', value)
+                      setErrors((prev) => ({ ...prev, dateOfBirth: err }))
+                    }}
                   />
+                  {errors.dateOfBirth && (
+                    <div className="text-danger mt-1">{errors.dateOfBirth}</div>
+                  )}
                 </div>
 
                 <div className="col-md-4">
@@ -743,38 +712,59 @@ const OtherStaffForm = ({
                       // ✅ Allow only digits
                       if (/^\d*$/.test(value)) {
                         handleChange('contactNumber', value)
+                        // ✅ Live validation
+                        const error = validators.contactNumber(value)
+                        setErrors((prev) => ({ ...prev, contactNumber: error }))
                       }
                     }}
                   />
+                  {errors.contactNumber && (
+                    <div className="text-danger mt-1">{errors.contactNumber}</div>
+                  )}
                 </div>
+
                 <div className="col-md-4">
                   <CFormLabel>
-                    Email 
+                    Email <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
                     type="email"
                     value={formData.emailId}
-                    onChange={(e) => handleChange('emailId', e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      handleChange('emailId', value)
+
+                      // Run live validation
+                      const err = validateField('emailId', value)
+                      setErrors((prev) => ({ ...prev, emailId: err }))
+                    }}
                   />
+                  {errors.emailId && <div className="text-danger mt-1">{errors.emailId}</div>}
                 </div>
               </div>
 
               <div className="row mb-3">
                 <div className="col-md-4">
                   <CFormLabel>
-                    GovernmentID(AadharCard No) <span style={{ color: 'red' }}>*</span>
+                    GovernmentID (AadharCard No) <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
                     maxLength={12}
                     value={formData.governmentId}
                     onChange={(e) => {
                       const value = e.target.value
-                      // ✅ Only numbers allowed, max 12
+                      // Only digits allowed, max 12
                       if (/^\d*$/.test(value)) {
                         handleChange('governmentId', value)
+                        // ✅ Live validation
+                        const error = validators.aadhar(value) // from your validator file
+                        setErrors((prev) => ({ ...prev, governmentId: error }))
                       }
                     }}
                   />
+                  {errors.governmentId && (
+                    <div className="text-danger mt-1">{errors.governmentId}</div>
+                  )}
                 </div>
 
                 {/* <div className="col-md-4">
@@ -791,76 +781,104 @@ const OtherStaffForm = ({
                   <CFormInput
                     type="date"
                     value={formData.dateOfJoining}
-                    onChange={(e) => handleChange('dateOfJoining', e.target.value)}
-                  />
-                </div>
-                 <div className="col-md-4">
-                  {' '}
-                  <CFormLabel>Department <span style={{ color: 'red' }}>*</span>
+                    onChange={(e) => {
+                      const value = e.target.value
+                      handleChange('dateOfJoining', value)
 
+                      // Validate using switch case
+                      const error = validateField('dateOfJoining', value)
+                      setErrors((prev) => ({ ...prev, dateOfJoining: error }))
+                    }}
+                  />
+                  {errors.dateOfJoining && (
+                    <div className="text-danger mt-1">{errors.dateOfJoining}</div>
+                  )}
+                </div>
+
+                <div className="col-md-4">
+                  <CFormLabel>
+                    Department <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
-                    value={capitalizeWords(formData.department)}
-                    onChange={(e) => handleChange('department', e.target.value)}
-                  />{' '}
+                    value={formData.department}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '')
+                      handleChange('department', value)
+                    }}
+                    onBlur={() =>
+                      setErrors((prev) => ({
+                        ...prev,
+                        department: validateField(
+                          'department',
+                          formData.department,
+                          formData,
+                          technicians,
+                        ),
+                      }))
+                    }
+                  />
+                  {errors.department && <div className="text-danger mt-1">{errors.department}</div>}
                 </div>
               </div>
 
               <div className="row mb-3">
-               
                 <div className="col-md-4">
                   {' '}
-                  <CFormLabel>
-                    Years of Experience 
-                  </CFormLabel>
+                  <CFormLabel>Years of Experience</CFormLabel>
                   <CFormInput
                     type="number"
-                    value={formData.yearOfExperience}
-                    onChange={(e) => handleChange('yearOfExperience', e.target.value)}
+                    value={formData.workExprience}
+                    onChange={(e) => handleChange('workExprience', e.target.value)}
                   />
                 </div>
-                 <div className="col-md-4">
+                <div className="col-md-4">
                   <CFormLabel>
                     Shift Timings / Availability <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormSelect
                     value={formData.shiftTimingsOrAvailability}
-                    onChange={(e) => handleChange('shiftTimingsOrAvailability', e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      handleChange('shiftTimingsOrAvailability', value)
+
+                      const error = validateField('shiftTimingsOrAvailability', value)
+                      setErrors((prev) => ({ ...prev, shiftTimingsOrAvailability: error }))
+                    }}
                   >
                     <option value="">Select Shift</option>
-
-                    {/* 6-Hour Shifts */}
                     <option value="06:00-12:00">Morning (06:00 AM – 12:00 PM) – 6 hrs</option>
                     <option value="12:00-18:00">Afternoon (12:00 PM – 06:00 PM) – 6 hrs</option>
                     <option value="18:00-00:00">Evening (06:00 PM – 12:00 AM) – 6 hrs</option>
                     <option value="00:00-06:00">Night (12:00 AM – 06:00 AM) – 6 hrs</option>
-
-                    {/* 9-Hour Shifts */}
                     <option value="06:00-15:00">Day Shift (06:00 AM – 03:00 PM) – 9 hrs</option>
                     <option value="15:00-00:00">Evening Shift (03:00 PM – 12:00 AM) – 9 hrs</option>
                     <option value="21:00-06:00">Night Shift (09:00 PM – 06:00 AM) – 9 hrs</option>
-
-                    {/* 12-Hour Shifts */}
                     <option value="06:00-18:00">Long Day (06:00 AM – 06:00 PM) – 12 hrs</option>
                     <option value="18:00-06:00">Long Night (06:00 PM – 06:00 AM) – 12 hrs</option>
                   </CFormSelect>
-                </div>
-                 <div className="col-md-4">
-                  <CFormLabel>Emergency Contact</CFormLabel>
 
+                  {errors.shiftTimingsOrAvailability && (
+                    <div className="text-danger mt-1">{errors.shiftTimingsOrAvailability}</div>
+                  )}
+                </div>
+
+                <div className="col-md-4">
+                  <CFormLabel>Emergency Contact</CFormLabel>
                   <CFormInput
                     type="text"
-                    maxLength={10} // ✅ Restrict to 10 digits
+                    inputMode="numeric"
+                    maxLength={10} // Restrict to 10 digits
                     value={formData.emergencyContact}
                     onChange={(e) => {
                       const value = e.target.value
-                      // ✅ Allow only digits
+                      // Allow only digits
                       if (/^\d*$/.test(value)) {
-                        handleChange('emergencyContact', e.target.value)
+                        handleChange('emergencyContact', value)
                       }
                     }}
                   />
                 </div>
+
                 {/* <div className="col-md-4">
                   {' '}
                   <CFormLabel>Specialization</CFormLabel>
@@ -872,9 +890,6 @@ const OtherStaffForm = ({
               </div>
 
               <div className="row mb-3">
-               
-
-               
                 {/* <div className="col-md-4">
                   <CFormLabel>
                     Vaccination Status <span style={{ color: 'red' }}>*</span>
@@ -908,21 +923,47 @@ const OtherStaffForm = ({
                           {field} <span style={{ color: 'red' }}>*</span>
                         </CFormLabel>
                         <CFormInput
-                          type={field === 'postalCode' ? 'text' : 'text'}
+                          type="text"
                           maxLength={field === 'postalCode' ? 6 : undefined}
-                          value={capitalizeWords(formData.address[field])}
+                          value={formData.address[field]}
                           onChange={(e) => {
                             let value = e.target.value
+
+                            // Postal code → digits only
                             if (field === 'postalCode') {
-                              // ✅ Allow only digits
                               if (/^\d*$/.test(value)) {
                                 handleNestedChange('address', field, value)
                               }
-                            } else {
+                            }
+                            // City, state, country → letters & spaces only
+                            else if (['city', 'state', 'country'].includes(field)) {
+                              value = value.replace(/[^A-Za-z\s]/g, '') // remove numbers & special characters
+                              handleNestedChange('address', field, value)
+                            }
+                            // Other fields → accept any input
+                            else {
                               handleNestedChange('address', field, value)
                             }
                           }}
+                          onBlur={() => {
+                            const error = validateField(
+                              field,
+                              formData.address[field],
+                              formData,
+                              technicians,
+                            )
+                            setErrors((prev) => ({
+                              ...prev,
+                              address: {
+                                ...prev.address,
+                                [field]: error,
+                              },
+                            }))
+                          }}
                         />
+                        {errors.address?.[field] && (
+                          <div className="text-danger mt-1">{errors.address[field]}</div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -956,8 +997,12 @@ const OtherStaffForm = ({
                           }
                           onChange={async (e) => {
                             let value = e.target.value
-
-                            // ✅ Account Number → only numbers
+                            // Account Holder Name → letters & spaces only
+                            if (field === 'accountHolderName') {
+                              value = value.replace(/[^A-Za-z\s]/g, '') // remove numbers/special chars
+                              handleNestedChange('bankAccountDetails', field, value)
+                              return
+                            }
                             if (field === 'accountNumber') {
                               if (/^\d*$/.test(value)) {
                                 handleNestedChange('bankAccountDetails', field, value)
@@ -965,82 +1010,91 @@ const OtherStaffForm = ({
                               return
                             }
 
-                            // ✅ PAN Card → must be uppercase, follow exact format
-                            // ✅ PAN Card → must be uppercase, follow exact format
                             if (field === 'panCardNumber') {
                               value = value.toUpperCase()
-
-                              // Allow only letters/digits in correct order
                               if (/^[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}$/.test(value)) {
                                 handleNestedChange('bankAccountDetails', field, value)
                               }
+                              return
+                            }
 
-                              // Validate final 10 characters
-                              if (value.length === 10) {
-                                const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
-                                if (!panRegex.test(value)) {
-                                  toast.error('Invalid PAN format (e.g., ABCDE1234F)')
-                                }
+                            if (field === 'ifscCode') {
+                              value = value.toUpperCase()
+                              if (/^[A-Z0-9]*$/.test(value)) {
+                                handleNestedChange('bankAccountDetails', field, value)
                               }
                               return
                             }
 
-                            // ✅ IFSC Code → must be uppercase, follow exact format
-                            if (field === 'ifscCode') {
-                              value = value.toUpperCase()
+                            handleNestedChange('bankAccountDetails', field, value)
+                          }}
+                          onBlur={async () => {
+                            // Validate the field on blur
+                            const error = validateField(
+                              field,
+                              formData.bankAccountDetails[field],
+                              formData,
+                            )
+                            setErrors((prev) => ({
+                              ...prev,
+                              bankAccountDetails: {
+                                ...prev.bankAccountDetails,
+                                [field]: error,
+                              },
+                            }))
 
-                              // Allow only alphanumeric
-                              if (!/^[A-Z0-9]*$/.test(value)) return
+                            // PAN specific validation
+                            if (
+                              field === 'panCardNumber' &&
+                              formData.bankAccountDetails[field].length === 10
+                            ) {
+                              const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
+                              if (!panRegex.test(formData.bankAccountDetails[field])) {
+                                toast.error('Invalid PAN format (e.g., ABCDE1234F)')
+                              }
+                            }
 
-                              // Save only valid characters
-                              handleNestedChange('bankAccountDetails', field, value)
+                            // IFSC specific validation & fetch bank info
+                            if (
+                              field === 'ifscCode' &&
+                              formData.bankAccountDetails[field].length === 11
+                            ) {
+                              const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
+                              if (!ifscRegex.test(formData.bankAccountDetails[field])) {
+                                toast.error('Invalid IFSC format (e.g., HDFC0001234)')
+                                handleNestedChange('bankAccountDetails', 'bankName', '')
+                                handleNestedChange('bankAccountDetails', 'branchName', '')
+                                return
+                              }
 
-                              if (value.length === 11) {
-                                const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
-                                if (!ifscRegex.test(value)) {
-                                  toast.error('Invalid IFSC format (e.g., HDFC0001234)')
-                                  handleNestedChange('bankAccountDetails', 'bankName', '')
-                                  handleNestedChange('bankAccountDetails', 'branchName', '')
-                                  return
+                              try {
+                                const res = await fetch(
+                                  `https://ifsc.razorpay.com/${formData.bankAccountDetails[field]}`,
+                                )
+                                if (res.ok) {
+                                  const data = await res.json()
+                                  handleNestedChange(
+                                    'bankAccountDetails',
+                                    'bankName',
+                                    data.BANK || '',
+                                  )
+                                  handleNestedChange(
+                                    'bankAccountDetails',
+                                    'branchName',
+                                    data.BRANCH || '',
+                                  )
                                 }
-
-                                // Fetch bank details
-                                try {
-                                  const res = await fetch(`https://ifsc.razorpay.com/${value}`)
-                                  if (res.ok) {
-                                    const data = await res.json()
-                                    handleNestedChange(
-                                      'bankAccountDetails',
-                                      'bankName',
-                                      data.BANK || '',
-                                    )
-                                    handleNestedChange(
-                                      'bankAccountDetails',
-                                      'branchName',
-                                      data.BRANCH || '',
-                                    )
-                                  } else {
-                                    toast.error('Invalid IFSC Code')
-                                    handleNestedChange('bankAccountDetails', 'bankName', '')
-                                    handleNestedChange('bankAccountDetails', 'branchName', '')
-                                  }
-                                } catch (err) {
-                                  toast.error('Error fetching bank details')
-                                  handleNestedChange('bankAccountDetails', 'bankName', '')
-                                  handleNestedChange('bankAccountDetails', 'branchName', '')
-                                }
-                              } else {
-                                // Clear while incomplete
+                              } catch (err) {
+                                toast.error('Error fetching bank details')
                                 handleNestedChange('bankAccountDetails', 'bankName', '')
                                 handleNestedChange('bankAccountDetails', 'branchName', '')
                               }
-                              return
                             }
-
-                            // ✅ Other Fields
-                            handleNestedChange('bankAccountDetails', field, value)
                           }}
                         />
+                        {errors.bankAccountDetails?.[field] && (
+                          <div className="text-danger mt-1">{errors.bankAccountDetails[field]}</div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1067,8 +1121,8 @@ const OtherStaffForm = ({
                   />
                 </div>
                 <div className="col-md-4">
-                  <CFormLabel>Medical Fitness Certificate  <span style={{ color: 'red' }}>*</span>
-
+                  <CFormLabel>
+                    Medical Fitness Certificate <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
                     type="file"
@@ -1102,7 +1156,7 @@ const OtherStaffForm = ({
                   alignItems: 'end',
                 }}
               >
-                <CButton
+                {/* <CButton
                   style={{
                     color: 'var(--color-black)',
                     backgroundColor: 'var(--color-bgcolor)',
@@ -1110,98 +1164,23 @@ const OtherStaffForm = ({
                   onClick={handleUserPermission}
                 >
                   User Permissions
-                </CButton>
+                </CButton> */}
               </div>
 
-              {showPModal && (
-                <div className="modal fade show d-block" tabIndex="-1">
-                  <div className="modal-dialog modal-lg">
-                    <div className="modal-content">
-                      <div className="modal-header">
-                        <h5 className="modal-title">Set User Permissions</h5>
-                        <button
-                          type="button"
-                          className="btn-close"
-                          onClick={() => setShowPModal(false)}
-                        ></button>
-                      </div>
-                      <div className="modal-body">
-                        <div className="row">
-                          {features.map((feature) => {
-                            const isFeatureChecked = !!formData.permissions[feature]
-                            const allSelected =
-                              isFeatureChecked &&
-                              formData.permissions[feature].length === actions.length
-
-                            return (
-                              <div key={feature} className="col-md-5 mb-3 border p-2 rounded mx-4">
-                                {/* Feature Checkbox */}
-                                <div className="d-flex justify-content-between align-items-center">
-                                  <label className="fw-bold">
-                                    <input
-                                      type="checkbox"
-                                      checked={isFeatureChecked}
-                                      onChange={() => toggleFeature(feature)}
-                                    />{' '}
-                                    {feature}
-                                  </label>
-
-                                  {/* Select All */}
-                                  <label>
-                                    <input
-                                      type="checkbox"
-                                      disabled={!isFeatureChecked}
-                                      checked={allSelected}
-                                      onChange={() => toggleAllActions(feature)}
-                                    />{' '}
-                                    Select All
-                                  </label>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="d-flex flex-wrap gap-3 mt-2">
-                                  {actions.map((action) => (
-                                    <label key={action} className="d-flex align-items-center gap-1">
-                                      <input
-                                        type="checkbox"
-                                        disabled={!isFeatureChecked}
-                                        checked={
-                                          formData.permissions[feature]?.includes(action) || false
-                                        }
-                                        onChange={() => togglePermission(feature, action)}
-                                      />
-                                      {action}
-                                    </label>
-                                  ))}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                      <div className="modal-footer">
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={() => setShowPModal(false)}
-                        >
-                          Close
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          onClick={() => setShowPModal(false)}
-                        >
-                          Save Permissions
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* backdrop */}
-              {showPModal && <div className="modal-backdrop fade show"></div>}
+              <UserPermissionModal
+                show={showPModal}
+                onClose={() => setShowPModal(false)}
+                features={features}
+                actions={actions}
+                permissions={formData.permissions}
+                toggleFeature={toggleFeature}
+                toggleAllActions={toggleAllActions}
+                togglePermission={togglePermission}
+                onSave={() => {
+                  console.log('Saved Permissions', formData.permissions)
+                  setShowPModal(false)
+                }}
+              />
             </CForm>
           )}
         </CModalBody>

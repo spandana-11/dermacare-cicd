@@ -33,7 +33,11 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
   const { setUpdateTemplate } = useDoctorContext()
 
   const [doctorObs, setDoctorObs] = useState(seed.doctorObs ?? '')
-  const [diagnosis, setDiagnosis] = useState(seed.diagnosis ?? '')
+  const [diagnosis, setDiagnosis] = useState(
+    seed.diagnosis ?? (patientData?.subServiceName && patientData.subServiceName !== 'NA'
+      ? patientData.subServiceName
+      : '')
+  )
   const [duration, setDuration] = useState(patientData?.symptomsDuration ?? '')
   const [attachments, setAttachments] = useState(
     Array.isArray(seed.attachments)
@@ -52,7 +56,7 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
   const [probableSymptoms, setProbableSymptoms] = useState('')
   const [keyNotes, setKeyNotes] = useState('')
   const [modalOpen, setmodalOpen] = useState(false)
-
+  const [clearDiagnosis, setClearDiagnosis] = useState(false);
   // Update probableSymptoms and keyNotes whenever diagnosis changes
   useEffect(() => {
     if (!diagnosis) {
@@ -90,7 +94,18 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
   const [hasTemplate, setHasTemplate] = useState(false)
 
   const handleNext = () => {
-    const payload = { symptomDetails, doctorObs, diagnosis, duration, }
+    const payload = {
+      symptomDetails,
+      doctorObs,
+      diagnosis,
+      duration,
+      attachments,
+      prescription: templateData.prescription, // include current template medicines
+      tests: templateData.tests,
+      treatments: templateData.treatments,
+      followUp: templateData.followUp,
+
+    }
     console.log('🚀 Submitting payload:', payload)
     onNext?.(payload)
   }
@@ -119,7 +134,6 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
         diseaseName: d.diseaseName || '',
         probableSymptoms: d.probableSymptoms || '',
         notes: d.notes || '',
-
         hospitalId: d.hospitalId,
 
       }))
@@ -210,7 +224,7 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
       diagnosis: dx,
       duration,
       attachments,
-      prescription: merged.prescription,   // 👈 now medicineType, duration, food, note will come
+      prescription: merged.prescription,
       tests: merged.tests,
       treatments: merged.treatments,
       followUp: merged.followUp,
@@ -300,25 +314,37 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
     const testReason = t?.tests?.testReason ?? ''
 
     // ---- Prescription (map 'food' -> remindWhen)
-  const medicines = Array.isArray(t?.prescription?.medicines)
-  ? t.prescription.medicines.map((m) => ({
-    id: m?.id ?? `tmp-${Date.now()}-${Math.random()}`,
-    name: m?.name ?? '',
-    medicineType: m?.medicineType ?? 'NA',
-    dose: m?.dose ?? '',
-    duration: m?.duration && m?.durationUnit
-      ? `${m.duration} ${m.durationUnit}`
-      : m?.duration ?? '',
-    frequency: m?.remindWhen ?? 'NA',        // use remindWhen for table
-    remindWhen: m?.remindWhen ?? '',
-    note: m?.note?.trim() || 'NA',
-    instruction: m?.instruction?.trim() || 'NA',  // show NA if empty
-    others: m?.others ?? '',
-    times: typeof m?.times === 'string' ? m.times : Array.isArray(m?.times) ? m.times.filter(Boolean).join(', ') : '',
-  }))
-  : []
+    const medicines = Array.isArray(t?.prescription?.medicines)
+      ? t.prescription.medicines.map((m) => {
+        const dur = m?.duration ? `${m.duration}`.trim() : "NA";
+        let unit = m?.durationUnit ? m.durationUnit.trim() : "";
 
+        // 🔹 Auto pluralize if duration > 1
+        if (dur !== "NA" && unit) {
+          const num = parseInt(dur, 10);
+          if (!isNaN(num) && num > 1 && !unit.endsWith("s")) {
+            unit = `${unit}s`;
+          }
+        }
 
+        return {
+          id: m?.id ?? `tmp-${Date.now()}-${Math.random()}`,
+          medicineType: m?.medicineType?.trim() || "NA",
+          name: m?.name || "",
+          dose: m?.dose || "",
+          remindWhen: m?.remindWhen || "Once A Day",
+          others: m?.others || "",
+          duration: dur !== "NA" && unit ? `${dur} ${unit}` : dur, // 👈 duration + unit (with plural if needed)
+          food: m?.food || "",
+          note: m?.note || "",
+          times: Array.isArray(m?.times)
+            ? m.times.map((t) => `${t}`.trim()).filter(Boolean)
+            : m?.times && typeof m.times === "string"
+              ? m.times.split(",").map((t) => t.trim()).filter(Boolean)
+              : [],
+        };
+      })
+      : [];
 
 
 
@@ -370,7 +396,7 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
           <CCol lg={6}>
             <CCardBody>
               <div className="mb-3">
-                <GradientTextCard text="Patient-Provided Symptoms" />
+                <GradientTextCard text="Patient Complaints" />
                 <CFormTextarea
                   className="mt-2"
                   rows={3}
@@ -402,68 +428,103 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
               </div>
 
               <div className="mb-0">
-                <GradientTextCard text="Probable Diagnosis / Disease" />
+                <GradientTextCard text="Probable Disease" />
 
-                {/* Field + right-side Add button */}
                 <div className="mt-2 d-flex align-items-start gap-2">
                   <div className="flex-grow-1">
                     <Select
-                      value={diagnosis ? { label: diagnosis, value: diagnosis } : null}
-                      onChange={handleDiagnosisChange}
-                      inputValue={inputValue}
-                      onInputChange={(val, meta) => {
-                        if (meta.action === 'input-change') setInputValue(val)
-                      }}
-                      options={options}
-                      isClearable   // ✅ enables clear functionality
-                      components={{ ClearIndicator: ClearInput }}
-                      placeholder="Select diagnosis..."
-                      menuPlacement="bottom"
-                      noOptionsMessage={() =>
-                        inputValue
-                          ? `No matches. Click Add to create "${inputValue}" as a diagnosis`
-                          : 'Type to search...'
-                      }
-                      styles={{
-                        input: (provided) => ({ ...provided, color: 'black' }),
-                        singleValue: (provided) => ({ ...provided, color: 'black' }),
-                        placeholder: (provided) => ({ ...provided, color: '#000' }),
-                      }}
-                    />
+  value={
+    diagnosis
+      ? { label: diagnosis, value: diagnosis }
+      : patientData?.subServiceName && patientData.subServiceName !== 'NA'
+        ? { label: patientData.subServiceName, value: patientData.subServiceName }
+        : null
+  }
+  onChange={handleDiagnosisChange}   // ✅ FIXED
+  inputValue={inputValue}
+  onInputChange={(val, meta) => {
+    if (meta.action === 'input-change') setInputValue(val);
+  }}
+  options={options}
+  isClearable
+  components={{ ClearIndicator: ClearInput }}
+  placeholder="Select diagnosis..."
+  menuPlacement="auto"
+  menuPosition="fixed"
+  menuPortalTarget={document.body}
+  noOptionsMessage={() =>
+    inputValue
+      ? `No matches. Click Add to create "${inputValue}" as a diagnosis`
+      : 'Type to search...'
+  }
+  styles={{
+    input: (provided) => ({ ...provided, color: 'black' }),
+    singleValue: (provided) => ({ ...provided, color: 'black' }),
+    placeholder: (provided) => ({ ...provided, color: '#000' }),
+    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+  }}
+/>
+
+
+
                   </div>
 
-                  <div className="pt-1">
-                    <button
-                      type="button"
-                      disabled={!canShowAdd || adding}
-                      onClick={openMadal}
-                      style={{
-                        backgroundColor: !canShowAdd || adding ? "#a5c4d4ff" : "#7e3a93",
-                        color: !canShowAdd || adding ? "#7e3a93" : "#fff",
-                        cursor: !canShowAdd || adding ? "not-allowed" : "pointer",
-                        border: "none",
-                        padding: "6px 14px",
-                        borderRadius: "6px",
-                        fontWeight: "600",
-                        transition: "all 0.3s ease",
-                      }}
-                      title={canShowAdd ? "Add new disease" : "Type a new disease name"}
-                    >
-                      {adding ? "Adding…" : "Add"}
-                    </button>
-                  </div>
+                <div className="pt-1 d-flex gap-2">
+  {/* ADD button */}
+  <button
+    type="button"
+    disabled={!canShowAdd || adding}
+    onClick={openMadal}
+    style={{
+      backgroundColor: !canShowAdd || adding ? "#a5c4d4ff" : "#7e3a93",
+      color: !canShowAdd || adding ? "#7e3a93" : "#fff",
+      cursor: !canShowAdd || adding ? "not-allowed" : "pointer",
+      border: "none",
+      padding: "6px 14px",
+      borderRadius: "6px",
+      fontWeight: "600",
+      transition: "all 0.3s ease",
+    }}
+    title={canShowAdd ? "Add new disease" : "Type a new disease name"}
+  >
+    {adding ? "Adding…" : "Add"}
+  </button>
+
+  {/* AI button */}
+  <button
+    type="button"
+    // onClick={handleAISuggest}
+    style={{
+      backgroundColor: "#a5c4d4ff",
+      color: "#7e3a93",
+      border: "none",
+      padding: "6px 14px",
+      borderRadius: "6px",
+      fontWeight: "600",
+      cursor: "pointer",
+      transition: "all 0.3s ease",
+    }}
+    title="AI Suggestion"
+  >
+    AI
+  </button>
+</div>
+
+
                   <SymptomsModal
                     visible={modalOpen}
                     onClose={() => setmodalOpen(false)}
                     addDisease={addDisease}
                     fetchDiseases={fetchDiseases}
-                    setDiagnosis={setDiagnosis}
+                    setDiagnosis={(val) => {
+                      setDiagnosis(val);
+                      setClearDiagnosis(false);
+                    }}
                     success={success}
                     info={info}
                     error={error}
-                    defaultDiseaseName={inputValue} // <-- pass the typed disease name here
+                    defaultDiseaseName={inputValue}
                   />
-
                 </div>
               </div>
               {/* Display probableSymptoms and keyNotes automatically */}

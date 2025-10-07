@@ -26,6 +26,12 @@ public class PrivacyPolicyController {
     public ResponseEntity<Response> getAllPolicies() {
         return ResponseEntity.ok(service.getAllPolicies());
     }
+    
+    @GetMapping("/getPoliciesByClinicId/{clinicId}")
+    public ResponseEntity<Response> getPoliciesByClinicId(@PathVariable String clinicId) {
+        return ResponseEntity.ok(service.getPoliciesByClinicId(clinicId));
+    }
+
 
 
     @GetMapping("/getPolicyById/{id}")

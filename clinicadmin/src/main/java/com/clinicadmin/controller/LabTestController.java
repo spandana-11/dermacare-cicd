@@ -59,5 +59,11 @@ public class LabTestController {
          return ResponseEntity.status(response.getStatus()).body(response);
        
     }
+    @PostMapping("/addOrGetTest")
+    public ResponseEntity<Response> addOrGetLabTest(@RequestBody LabTestDTO dto) {
+        Response response = labTestService.addOrGetLabTest(dto);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
 
 }

@@ -15,6 +15,10 @@ import {
 import { toast } from 'react-toastify'
 import { actions, features } from '../../../Constant/Features'
 import capitalizeWords from '../../../Utils/capitalizeWords'
+import UserPermissionModal from '../UserPermissionModal'
+import { validateField } from '../../../Utils/Validators'
+import { emailPattern } from '../../../Constant/Constants'
+import FilePreview from '../../../Utils/FilePreview'
 
 const PharmacistForm = ({
   visible,
@@ -34,21 +38,24 @@ const PharmacistForm = ({
 
   const emptyForm = {
     hospitalId: localStorage.getItem('HospitalId'),
-    branchId:localStorage.getItem('branchId'),
-    hospitalName:localStorage.getItem('HospitalName'),
+    branchId: localStorage.getItem('branchId'),
+    branchName: localStorage.getItem('branchName'),
+    hospitalName: localStorage.getItem('HospitalName'),
     fullName: '',
-    gender: 'male',
+    gender: '',
     dateOfBirth: '',
     contactNumber: '',
     emailID: '',
     governmentId: '',
-    dPharmaOrBPharmaCertificate: '',
+    dpharmaOrBPharmaCertificate: '',
+    shiftTimingsOrAvailability: '',
+
     experienceCertificates: '',
     statePharmacyCouncilRegistration: '',
     dateOfJoining: '',
     department: '',
     qualification: '',
-
+    // specialization: '',
     role: 'pharmacist',
     address: {
       houseNo: '',
@@ -69,6 +76,7 @@ const PharmacistForm = ({
       panCardNumber: '',
     },
     profilePicture: '',
+
     pharmacyLicense: '',
     previousEmploymentHistory: '',
     permissions: emptyPermissions,
@@ -82,6 +90,8 @@ const PharmacistForm = ({
   const [showPModal, setShowPModal] = useState(false)
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
+  const [pharmacist, setPharmacist] = useState([]) // ✅ correct name
+  const [errors, setErrors] = useState({})
 
   // Mandatory fields
   const mandatoryFields = [
@@ -96,7 +106,9 @@ const PharmacistForm = ({
     'hospitalId',
     'profilePicture',
     'role',
-   
+    'qualification',
+
+    'shiftTimingsOrAvailability',
     // address fields
     'address.houseNo',
     'address.street',
@@ -188,20 +200,22 @@ const PharmacistForm = ({
       reader.onload = () => resolve(reader.result)
       reader.onerror = (error) => reject(error)
     })
-useEffect(() => {
-  if (initialData) {
-    setFormData({
-      ...emptyForm,
-      ...initialData,
-      address: { ...emptyForm.address, ...initialData.address },
-      bankAccountDetails: { ...emptyForm.bankAccountDetails, ...initialData.bankAccountDetails },
-      permissions: { ...emptyForm.permissions, ...initialData.permissions },
-    })
-  } else {
-    setFormData(emptyForm)
-  }
-}, [initialData])
-
+  useEffect(() => {
+    if (initialData) {
+      setFormData((prev) => ({
+        ...prev,
+        ...initialData,
+        address: { ...emptyForm.address, ...(initialData.address || {}) },
+        bankAccountDetails: {
+          ...emptyForm.bankAccountDetails,
+          ...(initialData.bankAccountDetails || {}),
+        },
+        permissions: { ...emptyPermissions, ...(initialData.permissions || {}) },
+      }))
+    } else {
+      setFormData(emptyForm)
+    }
+  }, [initialData])
 
   // 🔹 Handle text inputs (top-level fields)
   const handleChange = (field, value) => {
@@ -217,17 +231,23 @@ useEffect(() => {
   }
 
   // 🔹 File upload → Base64
- const handleFileUpload = (e, field) => {
+  const handleFileUpload = (e, field) => {
     const file = e.target.files[0]
     if (!file) return
+
+    // ✅ Check file size (bytes → KB)
+    if (file.size > 250 * 1024) {
+      alert('File size must be less than 250KB.')
+      return // do not proceed
+    }
 
     const reader = new FileReader()
     reader.onloadend = () => {
       setFormData((prev) => ({
         ...prev,
-        [field]: reader.result, // ✅ Full Data URL (with type prefix)
+        [field]: reader.result, // Full Data URL
         [`${field}Name`]: file.name,
-        [`${field}Type`]: file.type, // ✅ Actual file MIME type (image/png, application/pdf, etc.)
+        [`${field}Type`]: file.type, // image/png, application/pdf, etc.
       }))
     }
     reader.readAsDataURL(file)
@@ -236,19 +256,12 @@ useEffect(() => {
   // 🔹 Save handler
   const handleSubmit = () => {
     const missing = validateMandatoryFields(formData, mandatoryFields)
-
     if (missing.length > 0) {
       toast.error(`Please fill required fields: ${missing.join(', ')}`)
       return
     }
 
-    //     const missing = validateMandatoryFields(formData, mandatoryFields)
-
-    // if (missing.length > 0) {
-    //   toast.error(`Please fill required fields: ${missing.join(', ')}`)
-    //   return
-    // }
-
+    // Age validation
     if (formData.dateOfBirth) {
       const dob = new Date(formData.dateOfBirth)
       const today = new Date()
@@ -256,54 +269,69 @@ useEffect(() => {
       const isBeforeBirthday =
         today.getMonth() < dob.getMonth() ||
         (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())
-
       const actualAge = isBeforeBirthday ? age - 1 : age
-
       if (actualAge < 18) {
         toast.error('Technician must be at least 18 years old.')
         return
       }
     }
 
-    // ✅ Mobile validation (10 digits, starting with 6-9)
+    // Mobile validation
     const mobileRegex = /^[6-9]\d{9}$/
     if (!mobileRegex.test(formData.contactNumber)) {
       toast.error('Contact number must be 10 digits and start with 6-9.')
       return
     }
+    if (!mobileRegex.test(formData.emergencyContactNumber)) {
+      toast.error('Emergency contact must be 10 digits and start with 6-9.')
+      return
+    }
+    // ✅ Emergency contact and Nurse contact must not be same
+    if (formData.contactNumber === formData.emergencyContactNumber) {
+      toast.error('Contact Number and Emergency Contact cannot be the same.')
+      return
+    }
+    // Email validation
 
-    // ✅ Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailID)) {
+    if (!emailPattern.test(formData.emailID)) {
       toast.error('Please enter a valid email address.')
       return
     }
 
-    // ✅ Check duplicate contact number
+    // Duplicate checks
     const duplicateContact = pharmacists?.some(
-      (t) => t.contactNumber === formData.contactNumber && t.id !== formData.id,
+      (t) => t.contactNumber === formData.contactNumber && t.pharmacistId !== formData.pharmacistId,
     )
     if (duplicateContact) {
       toast.error('Contact number already exists!')
       return
     }
 
-    // ✅ Check duplicate email
-    const duplicateEmail = pharmacists?.some(
+    const duplicateEmail = pharmacist.some(
       (t) => t.emailID === formData.emailID && t.pharmacistId !== formData.pharmacistId,
     )
     if (duplicateEmail) {
       toast.error('Email already exists!')
       return
     }
-    if (Object.keys(formData.permissions).length === 0) {
-      toast.error('Please assign at least one user permission before saving.')
-      return
+    // Permissions check
+    // Permissions check (Mandatory only for Add, optional for Edit)
+    if (!formData.pharmacistId) {
+      const hasAtLeastOnePermission = Object.values(formData.permissions || {}).some((value) => {
+        if (Array.isArray(value)) return value.length > 0
+        return Boolean(value)
+      })
+
+      if (!hasAtLeastOnePermission) {
+        toast.error('Please assign at least one user permission before saving.')
+        return
+      }
     }
 
-    console.log(formData)
+    // Save
+    console.log('Saving pharmacist data:', formData)
     onSave(formData)
-    setFormData(emptyForm)
+    if (!formData.pharmacistId) setFormData(emptyForm)
     onClose()
   }
 
@@ -338,8 +366,8 @@ useEffect(() => {
     }
 
     // ✅ Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.emailID)) {
+
+    if (!emailPattern.test(formData.emailID)) {
       toast.error('Please enter a valid email address.')
       return
     }
@@ -375,13 +403,13 @@ useEffect(() => {
     setIsPreviewPdf(type?.includes('pdf'))
     setShowModal(true)
   }
-const previewPdf = (base64String) => {
-  if (!base64String) return
-  const pdfData = `data:application/pdf;base64,${base64String.split(',')[1] || base64String}`
-  setPreviewFileUrl(pdfData)
-  setIsPreviewPdf(true)
-  setShowModal(true)
-}
+  const previewPdf = (base64String) => {
+    if (!base64String) return
+    const pdfData = `data:application/pdf;base64,${base64String.split(',')[1] || base64String}`
+    setPreviewFileUrl(pdfData)
+    setIsPreviewPdf(true)
+    setShowModal(true)
+  }
 
   //decode image
   const decodeImage = (data) => {
@@ -415,45 +443,45 @@ const previewPdf = (base64String) => {
     </div>
   )
 
- const FilePreview = ({ label, type, data }) => {
-    if (!data) return <p>{label} </p>
+  // const FilePreview = ({ label, type, data }) => {
+  //   if (!data) return <p>{label} </p>
 
-    const isImage = type?.startsWith('image/')
-    const fileUrl = data.startsWith('data:') ? data : `data:${type};base64,${data}`
+  //   const isImage = type?.startsWith('image/')
+  //   const fileUrl = data.startsWith('data:') ? data : `data:${type};base64,${data}`
 
-    return (
-      <div className="bg-white p-3 rounded-md shadow-sm">
-        <strong>{label}:</strong>
-        <div className="mt-2">
-          {isImage ? (
-            <img
-              src={fileUrl}
-              alt={label}
-              className="w-32 h-32 object-cover rounded-md border cursor-pointer"
-              onClick={() => handlePreview(fileUrl, type)}
-            />
-          ) : (
-            <button
-              type="button "
-              className=" btn text-blue-600 hover:underline block mx-2"
-              onClick={() => handlePreview(fileUrl, type)}
-              style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
-            >
-              Preview
-            </button>
-          )}
-          <a
-            href={fileUrl}
-            download={label.replace(/\s+/g, '_')}
-            className="text-green-600 hover:underline text-sm block  btn"
-            style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
-          >
-            Download
-          </a>
-        </div>
-      </div>
-    )
-  }
+  //   return (
+  //     <div className="bg-white p-3 rounded-md shadow-sm">
+  //       <strong>{label}:</strong>
+  //       <div className="mt-2">
+  //         {isImage ? (
+  //           <img
+  //             src={fileUrl}
+  //             alt={label}
+  //             className="w-32 h-32 object-cover rounded-md border cursor-pointer"
+  //             onClick={() => handlePreview(fileUrl, type)}
+  //           />
+  //         ) : (
+  //           <button
+  //             type="button "
+  //             className=" btn text-blue-600 hover:underline block mx-2"
+  //             onClick={() => handlePreview(fileUrl, type)}
+  //             style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+  //           >
+  //             Preview
+  //           </button>
+  //         )}
+  //         <a
+  //           href={fileUrl}
+  //           download={label.replace(/\s+/g, '_')}
+  //           className="text-green-600 hover:underline text-sm block  btn"
+  //           style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+  //         >
+  //           Download
+  //         </a>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   return (
     <>
@@ -465,9 +493,7 @@ const previewPdf = (base64String) => {
         backdrop="static"
       >
         <CModalHeader>
-          <CModalTitle>
-            {viewMode ? 'Personal Information' : 'Add / Edit Pharmacist '}
-          </CModalTitle>
+          <CModalTitle>{viewMode ? 'Personal Information' : 'Add / Edit Pharmacist '}</CModalTitle>
         </CModalHeader>
         <CModalBody>
           {viewMode ? (
@@ -485,7 +511,7 @@ const previewPdf = (base64String) => {
                     <span className="fw-bold ">Email : </span>
                     <span>{formData.emailID}</span>
                   </div>
-             
+
                   <div>
                     <span className="fw-bold">Contact : </span>
                     <span>{formData.contactNumber}</span>
@@ -495,14 +521,17 @@ const previewPdf = (base64String) => {
                 {/* Right Side: Image + ID */}
                 <div className="text-center">
                   {formData.profilePicture ? (
-                   <img
-  src={formData.profilePicture || "/assets/images/default-avatar.png"}
-  alt={formData.fullName}
-  width="80"
-  height="80"
-  style={{ borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--color-black)' }}
-/>
-
+                    <img
+                      src={formData.profilePicture || '/assets/images/default-avatar.png'}
+                      alt={formData.fullName}
+                      width="80"
+                      height="80"
+                      style={{
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: '1px solid var(--color-black)',
+                      }}
+                    />
                   ) : (
                     <img
                       src="/assets/images/default-avatar.png"
@@ -563,13 +592,16 @@ const previewPdf = (base64String) => {
                     <div className="col-md-4">
                       <Row label="Department" value={formData.department} />
                     </div>
-       
+
                     <div className="col-md-4">
-                      <Row label="Specialization" value={formData.qualification} />
+                      <Row label="Qualification" value={formData.qualification} />
                     </div>
-                  
+
                     <div className="col-md-4">
                       <Row label="Emergency Contact" value={formData.emergencyContactNumber} />
+                    </div>
+                    <div className="col-md-4">
+                      <Row label="Shift Timings" value={formData.shiftTimingsOrAvailability} />
                     </div>
                   </div>
                 </Section>
@@ -596,7 +628,7 @@ const previewPdf = (base64String) => {
                         value={formData.bankAccountDetails.accountHolderName}
                       />
                     </div>
-                    
+
                     <div className="col-md-4">
                       <Row label="Bank Name" value={formData.bankAccountDetails.bankName} />
                     </div>
@@ -610,19 +642,18 @@ const previewPdf = (base64String) => {
                 </Section>
 
                 {/* Documents */}
-                 <Section title="Documents">
+                <Section title="Documents">
                   <div className="row">
-                    {formData.dPharmaOrBPharmaCertificate != '' ? (
+                    {formData.dpharmaOrBPharmaCertificate != '' ? (
                       <div className="col-md-6">
-                       <FilePreview
-  label="dPharmaOrBPharmaCertificate"
-  type={formData.dPharmaOrBPharmaCertificateType || 'application/pdf'}
-  data={formData.dPharmaOrBPharmaCertificate}
-/>
-
+                        <FilePreview
+                          label="dpharmaOrBPharmaCertificate"
+                          type={formData.dpharmaOrBPharmaCertificateType || 'application/pdf'}
+                          data={formData.dpharmaOrBPharmaCertificate}
+                        />
                       </div>
                     ) : (
-                      <p className="col-md-6">Not Provided dPharmaOrBPharmaCertificate</p>
+                      <p className="col-md-6">Not Provided dpharmaOrBPharmaCertificate</p>
                     )}
                     {formData.statePharmacyCouncilRegistration != '' ? (
                       <div className="col-md-6">
@@ -653,8 +684,8 @@ const previewPdf = (base64String) => {
                 <Section title="Other Information ">
                   <div className="row mb-2">
                     <div className="col-md-4">
-                    <Row label="Pharmacy License" value={formData.pharmacyLicense} />
-                  </div>
+                      <Row label="Pharmacy License" value={formData.pharmacyLicense} />
+                    </div>
                     <div className="col-md-12">
                       <RowFull
                         label="Previous Employment"
@@ -702,8 +733,21 @@ const previewPdf = (base64String) => {
                   </CFormLabel>
                   <CFormInput
                     value={formData.fullName}
-                    onChange={(e) => handleChange('fullName', e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+
+                      // Allow only letters and spaces
+                      if (/^[A-Za-z\s]*$/.test(value)) {
+                        handleChange('fullName', value)
+
+                        // Run validation
+                        const error = validateField('fullName', value)
+                        setErrors((prev) => ({ ...prev, fullName: error }))
+                      }
+                    }}
                   />
+
+                  {errors.fullName && <div className="text-danger mt-1">{errors.fullName}</div>}
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>
@@ -744,16 +788,24 @@ const previewPdf = (base64String) => {
                   </CFormLabel>
                   <CFormInput
                     type="text"
-                    maxLength={10} // ✅ Restrict to 10 digits
+                    maxLength={10} // Restrict to 10 digits
                     value={formData.contactNumber}
                     onChange={(e) => {
                       const value = e.target.value
-                      // ✅ Allow only digits
+
+                      // Allow only digits
                       if (/^\d*$/.test(value)) {
                         handleChange('contactNumber', value)
+
+                        // Live validation using your existing function
+                        const err = validateField('contactNumber', value)
+                        setErrors((prev) => ({ ...prev, contactNumber: err }))
                       }
                     }}
                   />
+                  {errors.contactNumber && (
+                    <div className="text-danger mt-1">{errors.contactNumber}</div>
+                  )}
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>
@@ -761,9 +813,17 @@ const previewPdf = (base64String) => {
                   </CFormLabel>
                   <CFormInput
                     type="email"
-                    value={formData.emailID}
-                    onChange={(e) => handleChange('emailID', e.target.value)}
+                    value={formData.emailId}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      handleChange('emailId', value)
+
+                      // Run live validation
+                      const err = validateField('emailId', value)
+                      setErrors((prev) => ({ ...prev, emailId: err }))
+                    }}
                   />
+                  {errors.emailId && <div className="text-danger mt-1">{errors.emailId}</div>}
                 </div>
               </div>
 
@@ -780,20 +840,35 @@ const previewPdf = (base64String) => {
                       // ✅ Only numbers allowed, max 12
                       if (/^\d*$/.test(value)) {
                         handleChange('governmentId', value)
+
+                        // Run live validation
+                        const err = validateField('governmentId', value)
+                        setErrors((prev) => ({ ...prev, governmentId: err }))
                       }
                     }}
                   />
+                  {errors.governmentId && (
+                    <div className="text-danger mt-1">{errors.governmentId}</div>
+                  )}
                 </div>
-      <div className="col-md-4">
-  <CFormLabel>Pharmacy License</CFormLabel>
-  <CFormInput
-    type="text"
-    placeholder="Enter Pharmacy License"
-    value={formData.pharmacyLicense}
-    onChange={(e) => handleChange('pharmacyLicense', e.target.value)}
-  />
-</div>
+                <div className="col-md-4">
+                  <CFormLabel>Pharmacy License</CFormLabel>
+                  <CFormInput
+                    type="text"
+                    value={formData.pharmacyLicense}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      handleChange('pharmacyLicense', value)
 
+                      // ✅ Inline validation
+                      const error = validateField('pharmacyLicense', value)
+                      setErrors((prev) => ({ ...prev, pharmacyLicense: error })) // store error in state
+                    }}
+                  />
+                  {errors.pharmacyLicense && (
+                    <div className="text-danger mt-1">{errors.pharmacyLicense}</div>
+                  )}
+                </div>
 
                 <div className="col-md-4">
                   <CFormLabel>
@@ -802,6 +877,12 @@ const previewPdf = (base64String) => {
                   <CFormInput
                     type="date"
                     value={formData.dateOfJoining}
+                    min={new Date().toISOString().split('T')[0]} // today
+                    max={
+                      new Date(new Date().setMonth(new Date().getMonth() + 3))
+                        .toISOString()
+                        .split('T')[0]
+                    } // today + 3 months
                     onChange={(e) => handleChange('dateOfJoining', e.target.value)}
                   />
                 </div>
@@ -810,41 +891,116 @@ const previewPdf = (base64String) => {
               <div className="row mb-3">
                 <div className="col-md-4">
                   {' '}
-                  <CFormLabel>Department</CFormLabel>
+                  <CFormLabel>
+                    Department<span style={{ color: 'red' }}>*</span>
+                  </CFormLabel>
                   <CFormInput
-                    value={capitalizeWords(formData.department)}
-                    onChange={(e) => handleChange('department', e.target.value)}
-                  />{' '}
+                    value={formData.department}
+                    onChange={(e) => {
+                      const value = e.target.value
+
+                      // Allow only letters and spaces
+                      if (/^[A-Za-z\s]*$/.test(value)) {
+                        handleChange('department', value)
+
+                        // Run validation
+                        const error = validateField('department', value)
+                        setErrors((prev) => ({ ...prev, department: error }))
+                      }
+                    }}
+                  />
+                  {errors.department && <div className="text-danger mt-1">{errors.department}</div>}
                 </div>
-        
+
                 <div className="col-md-4">
                   {' '}
-                  <CFormLabel>Specialization</CFormLabel>
+                  <CFormLabel>
+                    Qualification<span style={{ color: 'red' }}>*</span>
+                  </CFormLabel>
                   <CFormInput
-                    value={capitalizeWords(formData.qualification)}
-                    onChange={(e) => handleChange('qualification', e.target.value)}
-                  />
-                </div>
-              </div>
+                    value={formData.qualification}
+                    onChange={(e) => {
+                      const value = e.target.value
 
-              <div className="row mb-3">            
+                      // Allow only letters and spaces
+                      if (/^[A-Za-z\s]*$/.test(value)) {
+                        handleChange('qualification', value)
+                        const error = validateField('qualification', value)
+                        setErrors((prev) => ({ ...prev, qualification: error }))
+                      }
+                    }}
+                  />
+                  {errors.qualification && (
+                    <div className="text-danger mt-1">{errors.qualification}</div>
+                  )}
+                </div>
                 <div className="col-md-4">
                   <CFormLabel>Emergency Contact</CFormLabel>
 
                   <CFormInput
                     type="text"
-                    maxLength={10} // ✅ Restrict to 10 digits
+                    maxLength={10}
                     value={formData.emergencyContactNumber}
                     onChange={(e) => {
                       const value = e.target.value
-                      // ✅ Allow only digits
+                      // Allow only digits
                       if (/^\d*$/.test(value)) {
-                        handleChange('emergencyContactNumber', e.target.value)
+                        handleChange('emergencyContactNumber', value)
                       }
+                      // Validate on change
                     }}
                   />
+                  {errors.emergencyContactNumber && (
+                    <small className="text-danger">{errors.emergencyContactNumber}</small>
+                  )}
                 </div>
-                
+              </div>
+
+              <div className="row mb-3">
+                <div className="col-md-4">
+                  <CFormLabel>
+                    Shift Timings / Availability <span style={{ color: 'red' }}>*</span>
+                  </CFormLabel>
+                  <CFormSelect
+                    value={formData.shiftTimingsOrAvailability}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      handleChange('shiftTimingsOrAvailability', value)
+
+                      const error = validateField('shiftTimingsOrAvailability', value)
+                      setErrors((prev) => ({ ...prev, shiftTimingsOrAvailability: error }))
+                    }}
+                  >
+                    <option value="">Select Shift</option>
+                    <option value="06:00-12:00">Morning (06:00 AM – 12:00 PM) – 6 hrs</option>
+                    <option value="12:00-18:00">Afternoon (12:00 PM – 06:00 PM) – 6 hrs</option>
+                    <option value="18:00-00:00">Evening (06:00 PM – 12:00 AM) – 6 hrs</option>
+                    <option value="00:00-06:00">Night (12:00 AM – 06:00 AM) – 6 hrs</option>
+                    <option value="06:00-15:00">Day Shift (06:00 AM – 03:00 PM) – 9 hrs</option>
+                    <option value="15:00-00:00">Evening Shift (03:00 PM – 12:00 AM) – 9 hrs</option>
+                    <option value="21:00-06:00">Night Shift (09:00 PM – 06:00 AM) – 9 hrs</option>
+                    <option value="06:00-18:00">Long Day (06:00 AM – 06:00 PM) – 12 hrs</option>
+                    <option value="18:00-06:00">Long Night (06:00 PM – 06:00 AM) – 12 hrs</option>
+                  </CFormSelect>
+
+                  {errors.shiftTimingsOrAvailability && (
+                    <div className="text-danger mt-1">{errors.shiftTimingsOrAvailability}</div>
+                  )}
+                </div>
+                {/* <div className="col-md-4">
+                  <CFormLabel>
+                    Vaccination Status <span style={{ color: 'red' }}>*</span>
+                  </CFormLabel>
+                  <CFormSelect
+                    value={formData.vaccinationStatus}
+                    onChange={(e) => handleChange('vaccinationStatus', e.target.value)}
+                  >
+                    <option value="">Select Status</option>
+                    <option value="Not Vaccinated">Not Vaccinated</option>
+                    <option value="Partially Vaccinated">Partially Vaccinated</option>
+                    <option value="Fully Vaccinated">Fully Vaccinated</option>
+                  </CFormSelect>
+                </div> */}
               </div>
 
               {/* 🔹 Address */}
@@ -864,21 +1020,48 @@ const previewPdf = (base64String) => {
                           {field} <span style={{ color: 'red' }}>*</span>
                         </CFormLabel>
                         <CFormInput
-                          type={field === 'postalCode' ? 'text' : 'text'}
+                          type="text"
                           maxLength={field === 'postalCode' ? 6 : undefined}
-                          value={capitalizeWords(formData.address[field])}
+                          value={formData.address[field]}
                           onChange={(e) => {
                             let value = e.target.value
+
+                            // Postal Code → only digits
                             if (field === 'postalCode') {
-                              // ✅ Allow only digits
                               if (/^\d*$/.test(value)) {
                                 handleNestedChange('address', field, value)
+                                const err = validateField(field, value, formData)
+                                setErrors((prev) => ({
+                                  ...prev,
+                                  address: { ...prev.address, [field]: err },
+                                }))
                               }
-                            } else {
+                            }
+                            // City, State, Country → letters and spaces only
+                            else if (field === 'city' || field === 'state' || field === 'country') {
+                              if (/^[A-Za-z\s]*$/.test(value)) {
+                                handleNestedChange('address', field, value)
+                                const err = validateField(field, value, formData)
+                                setErrors((prev) => ({
+                                  ...prev,
+                                  address: { ...prev.address, [field]: err },
+                                }))
+                              }
+                            }
+                            // Other fields → accept anything
+                            else {
                               handleNestedChange('address', field, value)
+                              const err = validateField(field, value, formData)
+                              setErrors((prev) => ({
+                                ...prev,
+                                address: { ...prev.address, [field]: err },
+                              }))
                             }
                           }}
                         />
+                        {errors.address?.[field] && (
+                          <div className="text-danger mt-1">{errors.address[field]}</div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -913,54 +1096,69 @@ const previewPdf = (base64String) => {
                           onChange={async (e) => {
                             let value = e.target.value
 
-                            // ✅ Account Number → only numbers
+                            // Account Number → only digits
                             if (field === 'accountNumber') {
-                              if (/^\d*$/.test(value)) {
+                              if (/^\d*$/.test(value))
                                 handleNestedChange('bankAccountDetails', field, value)
-                              }
-                              return
                             }
-
-                            // ✅ PAN Card → must be uppercase, follow exact format
-                            // ✅ PAN Card → must be uppercase, follow exact format
-                            if (field === 'panCardNumber') {
+                            // PAN → uppercase, specific format
+                            else if (field === 'panCardNumber') {
                               value = value.toUpperCase()
-
-                              // Allow only letters/digits in correct order
-                              if (/^[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}$/.test(value)) {
+                              if (/^[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}$/.test(value))
                                 handleNestedChange('bankAccountDetails', field, value)
-                              }
-
-                              // Validate final 10 characters
-                              if (value.length === 10) {
-                                const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
-                                if (!panRegex.test(value)) {
-                                  toast.error('Invalid PAN format (e.g., ABCDE1234F)')
-                                }
-                              }
-                              return
                             }
-
-                            // ✅ IFSC Code → must be uppercase, follow exact format
-                            if (field === 'ifscCode') {
+                            // IFSC → uppercase, alphanumeric
+                            else if (field === 'ifscCode') {
                               value = value.toUpperCase()
-
-                              // Allow only alphanumeric
-                              if (!/^[A-Z0-9]*$/.test(value)) return
-
-                              // Save only valid characters
+                              if (/^[A-Z0-9]*$/.test(value))
+                                handleNestedChange('bankAccountDetails', field, value)
+                            }
+                            // Account Holder Name → letters and spaces only
+                            else if (field === 'accountHolderName') {
+                              if (/^[A-Za-z\s]*$/.test(value))
+                                handleNestedChange('bankAccountDetails', field, value)
+                            }
+                            // Other fields → accept anything
+                            else {
                               handleNestedChange('bankAccountDetails', field, value)
+                            }
 
-                              if (value.length === 11) {
-                                const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
-                                if (!ifscRegex.test(value)) {
-                                  toast.error('Invalid IFSC format (e.g., HDFC0001234)')
-                                  handleNestedChange('bankAccountDetails', 'bankName', '')
-                                  handleNestedChange('bankAccountDetails', 'branchName', '')
-                                  return
-                                }
+                            // Live validation
+                            const error = validateField(field, value, formData)
+                            setErrors((prev) => ({
+                              ...prev,
+                              bankAccountDetails: {
+                                ...prev.bankAccountDetails,
+                                [field]: error,
+                              },
+                            }))
+                          }}
+                          onBlur={async () => {
+                            const value = formData.bankAccountDetails[field]
+                            const error = validateField(field, value, formData)
+                            setErrors((prev) => ({
+                              ...prev,
+                              bankAccountDetails: {
+                                ...prev.bankAccountDetails,
+                                [field]: error,
+                              },
+                            }))
 
-                                // Fetch bank details
+                            // PAN validation
+                            if (field === 'panCardNumber' && value.length === 10) {
+                              const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
+                              if (!panRegex.test(value))
+                                toast.error('Invalid PAN format (e.g., ABCDE1234F)')
+                            }
+
+                            // IFSC validation
+                            if (field === 'ifscCode' && value.length === 11) {
+                              const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
+                              if (!ifscRegex.test(value)) {
+                                toast.error('Invalid IFSC format (e.g., HDFC0001234)')
+                                handleNestedChange('bankAccountDetails', 'bankName', '')
+                                handleNestedChange('bankAccountDetails', 'branchName', '')
+                              } else {
                                 try {
                                   const res = await fetch(`https://ifsc.razorpay.com/${value}`)
                                   if (res.ok) {
@@ -975,108 +1173,101 @@ const previewPdf = (base64String) => {
                                       'branchName',
                                       data.BRANCH || '',
                                     )
-                                  } else {
-                                    toast.error('Invalid IFSC Code')
-                                    handleNestedChange('bankAccountDetails', 'bankName', '')
-                                    handleNestedChange('bankAccountDetails', 'branchName', '')
                                   }
                                 } catch (err) {
                                   toast.error('Error fetching bank details')
                                   handleNestedChange('bankAccountDetails', 'bankName', '')
                                   handleNestedChange('bankAccountDetails', 'branchName', '')
                                 }
-                              } else {
-                                // Clear while incomplete
-                                handleNestedChange('bankAccountDetails', 'bankName', '')
-                                handleNestedChange('bankAccountDetails', 'branchName', '')
                               }
-                              return
                             }
-
-                            // ✅ Other Fields
-                            handleNestedChange('bankAccountDetails', field, value)
                           }}
                         />
+                        {errors.bankAccountDetails?.[field] && (
+                          <div className="text-danger mt-1">{errors.bankAccountDetails[field]}</div>
+                        )}
                       </div>
                     ))}
                   </div>
                 ))}
 
               {/* 🔹 Documents */}
-             <h5 className="mt-3">Documents</h5>
+              <h5 className="mt-3">Documents</h5>
 
-<div className="row mb-3">
-  {/* Profile Picture */}
-  <div className="col-md-4">
-    <CFormLabel>Profile Picture</CFormLabel>
-    {formData.profilePicture && (
-      <div className="mb-2">
-        <img
-          src={formData.profilePicture}
-          alt="Profile"
-          width="80"
-          height="80"
-          style={{
-            borderRadius: '50%',
-            objectFit: 'cover',
-            border: '1px solid var(--color-black)',
-          }}
-        />
-        <br />
-        <a
-          href={formData.profilePicture}
-          download="profile-picture"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Download
-        </a>
-      </div>
-    )}
-    <CFormInput
-      type="file"
-      accept="image/*"
-      onChange={async (e) => {
-        const file = e.target.files[0]
-        if (file) {
-          const base64 = await toBase64(file)
-          handleChange('profilePicture', base64) // update state
-        }
-      }}
-    />
-  </div>
+              <div className="row mb-3">
+                {/* Profile Picture */}
+                <div className="col-md-4">
+                  <CFormLabel>
+                    Profile Picture
+                    <span className="text-danger">*</span>
+                  </CFormLabel>
+                  {/* {formData.profilePicture && (
+                    <div className="mb-2">
+                      <img
+                        src={formData.profilePicture}
+                        alt="Profile"
+                        width="80"
+                        height="80"
+                        style={{
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '1px solid var(--color-black)',
+                        }}
+                      />
+                      <br />
+                      <a
+                        href={formData.profilePicture}
+                        download="profile-picture"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Download
+                      </a>
+                    </div>
+                  )} */}
+                  <CFormInput
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files[0]
+                      if (file) {
+                        const base64 = await toBase64(file)
+                        handleChange('profilePicture', base64) // update state
+                      }
+                    }}
+                  />
+                </div>
 
-  {/* State Pharmacy Council Registration */}
-  <div className="col-md-4">
-                    <CFormLabel>dPharma/BPharma Certificate</CFormLabel>
-                    <CFormInput
-                      type="file"
-                      onChange={(e) => handleFileUpload(e, 'dPharmaOrBPharmaCertificate')}
-                    />
-                  </div>
-  <div className="col-md-4">
-                    <CFormLabel>statePharmacyCouncilRegistration</CFormLabel>
-                    <CFormInput
-                      type="file"
-                      onChange={(e) => handleFileUpload(e, 'statePharmacyCouncilRegistration')}
-                    />
-                  </div>
-  <div className="col-md-4">
-                    <CFormLabel>experience Certificate</CFormLabel>
-                    <CFormInput
-                      type="file"
-                      onChange={(e) => handleFileUpload(e, 'experienceCertificates')}
-                    />
-                  </div>
+                {/* State Pharmacy Council Registration */}
+                <div className="col-md-4">
+                  <CFormLabel>dPharma/BPharma Certificate</CFormLabel>
+                  <CFormInput
+                    type="file"
+                    onChange={(e) => handleFileUpload(e, 'dpharmaOrBPharmaCertificate')}
+                  />
+                </div>
+                <div className="col-md-4">
+                  <CFormLabel>statePharmacyCouncilRegistration</CFormLabel>
+                  <CFormInput
+                    type="file"
+                    onChange={(e) => handleFileUpload(e, 'statePharmacyCouncilRegistration')}
+                  />
+                </div>
 
-  {/* D Pharma / B Pharma Certificate */}
-  
-</div>
+                {/* D Pharma / B Pharma Certificate */}
+              </div>
+              <div className="col-md-4">
+                <CFormLabel>Experience Certificate</CFormLabel>
+                <CFormInput
+                  type="file"
+                  onChange={(e) => handleFileUpload(e, 'experienceCertificates')}
+                />
+              </div>
 
               <CFormLabel>Previous Employment History</CFormLabel>
               <CFormTextarea
                 rows={3} // you can adjust height
-                value={formData.previousEmploymentHistoryType}
+                value={formData.previousEmploymentHistory}
                 onChange={(e) => handleChange('previousEmploymentHistory', e.target.value)}
                 placeholder="Enter previous employment history"
               />
@@ -1100,100 +1291,20 @@ const previewPdf = (base64String) => {
                   User Permissions
                 </CButton>
               </div>
-
-              {showPModal && (
-                <div className="modal fade show d-block" tabIndex="-1">
-                  <div className="modal-dialog modal-lg">
-                    <div className="modal-content">
-                      <div className="modal-header">
-                        <h5 className="modal-title">Set User Permissions</h5>
-                        <button
-                          type="button"
-                          className="btn-close"
-                          onClick={() => setShowPModal(false)}
-                        ></button>
-                      </div>
-                      <div className="modal-body">
-                        <div className="row">
-                          {features.map((feature) => {
-                            const isFeatureChecked = !!formData.permissions[feature]
-                            const allSelected =
-                              isFeatureChecked &&
-                              formData.permissions[feature].length === actions.length
-
-                            return (
-                              <div key={feature} className="col-md-5 mb-3 border p-2 rounded mx-4">
-                                {/* Feature Checkbox */}
-                                <div className="d-flex justify-content-between align-items-center">
-                                  <label className="fw-bold">
-                                    <input
-                                      type="checkbox"
-                                      checked={isFeatureChecked}
-                                      onChange={() => toggleFeature(feature)}
-                                    />{' '}
-                                    {feature}
-                                  </label>
-
-                                  {/* Select All */}
-                                  <label>
-                                    <input
-                                      type="checkbox"
-                                      disabled={!isFeatureChecked}
-                                      checked={allSelected}
-                                      onChange={() => toggleAllActions(feature)}
-                                    />{' '}
-                                    Select All
-                                  </label>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="d-flex flex-wrap gap-3 mt-2">
-                                  {actions.map((action) => (
-                                    <label key={action} className="d-flex align-items-center gap-1">
-                                      <input
-                                        type="checkbox"
-                                        disabled={!isFeatureChecked}
-                                        checked={
-                                          formData.permissions[feature]?.includes(action) || false
-                                        }
-                                        onChange={() => togglePermission(feature, action)}
-                                      />
-                                      {action}
-                                    </label>
-                                  ))}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                      <div className="modal-footer">
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={() => setShowPModal(false)}
-                        >
-                          Close
-                        </button>
-                        <button
-  type="button"
-  className="btn btn-primary"
-  onClick={() => {
-    toast.success("Permissions saved");
-    setShowPModal(false);
-  }}
->
-  Save Permissions
-</button>
-
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* backdrop */}
-              {showPModal && <div className="modal-backdrop fade show"></div>}
+              <UserPermissionModal
+                show={showPModal}
+                onClose={() => setShowPModal(false)}
+                features={features}
+                actions={actions}
+                permissions={formData.permissions}
+                toggleFeature={toggleFeature}
+                toggleAllActions={toggleAllActions}
+                togglePermission={togglePermission}
+                onSave={() => {
+                  console.log('Saved Permissions', formData.permissions)
+                  setShowPModal(false)
+                }}
+              />
             </CForm>
           )}
         </CModalBody>

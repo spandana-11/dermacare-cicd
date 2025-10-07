@@ -16,20 +16,26 @@ import Select from 'react-select'
 import GradientTextCard from '../components/GradintColorText'
 import Button from '../components/CustomButton/CustomButton'
 import { COLORS } from '../Themes'
-import { getAllTreatments, getAllTreatmentsByHospital } from '../../src/Auth/Auth'
+import { addTreatmentByHospital, getAllTreatments, getAllTreatmentsByHospital } from '../../src/Auth/Auth'
 import CIcon from '@coreui/icons-react'
 import { cilTrash } from '@coreui/icons'
 import './TestsTreatments.css'
+import CreatableSelect from 'react-select/creatable';
+
 const DEFAULT_CFG = { frequency: 'day', sittings: 1, startDate: '', reason: '' }
 
-const TestTreatments = ({ seed = {}, onNext }) => {
+const TestTreatments = ({ seed = {}, onNext, formData }) => {
   const [selectedTestTreatments, setSelectedTestTreatments] = useState(
     seed.selectedTestTreatments ?? [],
   )
   const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
+  const [activeIdx, setActiveIdx] = useState(-1);
   // at the top of the component, before any return
-  const [activeIdx, setActiveIdx] = React.useState(0) // open first by default
-  const [selectedTreatmentOption, setSelectedTreatmentOption] = useState(null)
+  const [selectedTreatmentOption, setSelectedTreatmentOption] = useState(
+    formData?.symptoms?.diagnosis
+      ? { label: formData.symptoms.diagnosis, value: formData.symptoms.diagnosis }
+      : null
+  )
 
   // Per-treatment inputs (now includes reason)
   const [treatmentConfigs, setTreatmentConfigs] = useState(
@@ -186,8 +192,12 @@ const TestTreatments = ({ seed = {}, onNext }) => {
     const cfg = treatmentConfigs[t] || DEFAULT_CFG
     const { frequency, sittings, startDate, reason } = cfg
 
-    if (!startDate || !sittings || sittings < 1) {
-      showSnackbar(`Fill start date and sittings for "${t}"`, 'danger')
+    const missingFields = []
+    if (!startDate) missingFields.push("start date")
+    if (!sittings || sittings < 1) missingFields.push("sittings")
+
+    if (missingFields.length > 0) {
+      showSnackbar(`Please fill ${missingFields.join(" and ")} for "${t}"`, 'danger')
       return
     }
 
@@ -201,18 +211,18 @@ const TestTreatments = ({ seed = {}, onNext }) => {
       dates.push({ date: next.toISOString().split('T')[0], sitting: i + 1 })
     }
 
-    // Save only this treatment’s schedule
     setGeneratedData((prev) => ({
       ...prev,
       [t]: { frequency, sittings, startDate, reason, dates },
     }))
 
-    // Clear inputs and hide the card (card is hidden because we conditionally render it when no table exists)
+    // Clear inputs for this treatment
     setTreatmentConfigs((prev) => ({
       ...prev,
       [t]: { ...DEFAULT_CFG },
     }))
   }
+
 
   const deleteSchedule = (t) => {
     // remove table
@@ -260,21 +270,54 @@ const TestTreatments = ({ seed = {}, onNext }) => {
             <CFormLabel>
               <GradientTextCard text="Recommended Treatments" />
             </CFormLabel>
-            <Select
-              options={optionsToShow.map((name) => ({ label: name, value: name }))}
-              placeholder="Select Treatments..."
+            <CreatableSelect
+              options={availableTreatments.map((t) => ({ label: t.treatmentName, value: t.treatmentName }))}
+              placeholder="Select or add treatments..."
               value={selectedTreatmentOption}
-              onChange={(selected) => {
-                if (selected) {
-                  handleAddTreatment({ target: { value: selected.value } })
-                  setSelectedTreatmentOption(null) // reset after adding
-                } else {
-                  setSelectedTreatmentOption(null)
-                }
-              }}
               isClearable
               isSearchable
+              formatCreateLabel={(inputValue) => `Add "${inputValue}"`}
+              onChange={(selected) => {
+                if (!selected) {
+                  setSelectedTreatmentOption(null)
+                  return
+                }
+
+                const pending = selectedTestTreatments.some(t => !generatedData[t])
+                if (pending) {
+                  showSnackbar("You must generate the schedule for existing treatments before adding a new one.", "error")
+                  setSelectedTreatmentOption(null)
+                  return
+                }
+
+                const value = selected.value
+                if (!selectedTestTreatments.includes(value)) {
+                  setSelectedTestTreatments((prev) => [...prev, value])
+                  setTreatmentConfigs((prev) => ({ ...prev, [value]: { ...DEFAULT_CFG } }))
+                }
+
+                setSelectedTreatmentOption(null)
+              }}
+              onCreateOption={async (inputValue) => {
+                if (!inputValue) return
+
+                // ✅ Check for pending tables
+                const pending = selectedTestTreatments.some(t => !generatedData[t])
+                if (pending) {
+                  showSnackbar("Please generate tables for all selected treatments before adding a new one.", "error")
+                  setSelectedTreatmentOption(null)
+                  return
+                }
+
+                const addedTreatment = await addTreatmentByHospital(inputValue)
+                setAvailableTreatments((prev) => [...prev, { treatmentName: addedTreatment }])
+                setSelectedTestTreatments((prev) => [...prev, addedTreatment])
+                setTreatmentConfigs((prev) => ({ ...prev, [addedTreatment]: { ...DEFAULT_CFG } }))
+                setSelectedTreatmentOption(null)
+                showSnackbar(`Added new treatment: ${addedTreatment}`, 'success')
+              }}
             />
+
 
           </CCol>
 
