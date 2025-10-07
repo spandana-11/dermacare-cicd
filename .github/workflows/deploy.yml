@@ -55,13 +55,13 @@ jobs:
 
       # Step 2: Deploy via SSH to Lightsail
       - name: Deploy to Lightsail via SSH
-        uses: appleboy/ssh-action@v1.6.0
+        uses: appleboy/ssh-action@v0.1.8
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            # Go to your project directory
+            # Go to project directory
             cd /home/ubuntu/dermacare-cicd || exit 1
 
             echo "📦 Pulling latest changes..."
