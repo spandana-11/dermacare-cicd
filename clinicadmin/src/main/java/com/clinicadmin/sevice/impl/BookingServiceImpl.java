@@ -73,10 +73,10 @@ public class BookingServiceImpl implements BookingService {
 	}
 	
 	@Override
-	public ResponseEntity<?> retrieveTodayAndTomorrowAndDayAfterTomorrowAppointments(String clinicId, String branchId) {
+	public ResponseEntity<?> retrieveOneWeekAppointments(String clinicId, String branchId) {
 	    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
 	    try {
-	        return bookingFeign.retrieveTodayAndTomorrowAndDayAfterTomorrowAppointments(clinicId, branchId);
+	        return bookingFeign.retrieveOneWeekAppointments(clinicId, branchId);
 	    } catch (FeignException e) {
 	        res = new ResponseStructure<>(null, ExtractFeignMessage.clearMessage(e),null, e.status());
 	        return ResponseEntity.status(res.getStatusCode()).body(res);

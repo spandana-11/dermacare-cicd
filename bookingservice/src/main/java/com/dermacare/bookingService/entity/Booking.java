@@ -26,6 +26,7 @@ public class Booking  {
 	private String patientId;
 	private Integer freeFollowUpsLeft;
 	private Integer freeFollowUps;
+	private String followupDate;
 	private String visitType;
 	private String name;
 	private String age;
@@ -54,7 +55,7 @@ public class Booking  {
 	private String notes;
 	private List<ReportsList> reports;
 	private String channelId;
-	private String BookedAt;
+	private String bookedAt;
 	private String status;
 	private Integer visitCount;
 	private List<byte[]> attachments;
@@ -64,4 +65,55 @@ public class Booking  {
 	private String doctorRefCode;
 	private String consultationExpiration;
 	private String followupStatus;
+	
+	
+	 public Booking(Booking booking) {
+	        this.bookingId = booking.getBookingId();
+	        this.bookingFor = booking.getBookingFor();
+	        this.relation = booking.getRelation();
+	        this.patientMobileNumber = booking.getPatientMobileNumber();
+	        this.patientAddress = booking.getPatientAddress();
+	        this.patientId = booking.getPatientId();
+	        this.freeFollowUpsLeft = booking.getFreeFollowUpsLeft();
+	        this.freeFollowUps = booking.getFreeFollowUps();
+	        this.followupDate = booking.getFollowupDate();
+	        this.visitType = booking.getVisitType();
+	        this.name = booking.getName();
+	        this.age = booking.getAge();
+	        this.gender = booking.getGender();
+	        this.mobileNumber = booking.getMobileNumber();
+	        this.customerId = booking.getCustomerId();
+	        this.customerDeviceId = booking.getCustomerDeviceId();
+	        this.problem = booking.getProblem();
+	        this.symptomsDuration = booking.getSymptomsDuration();
+	        this.clinicId = booking.getClinicId();
+	        this.clinicName = booking.getClinicName();
+	        this.branchId = booking.getBranchId();
+	        this.branchname = booking.getBranchname();
+	        this.clinicDeviceId = booking.getClinicDeviceId();
+	        this.doctorId = booking.getDoctorId();
+	        this.doctorName = booking.getDoctorName();
+	        this.doctorDeviceId = booking.getDoctorDeviceId();
+	        this.doctorWebDeviceId = booking.getDoctorWebDeviceId();
+	        this.subServiceId = booking.getSubServiceId();
+	        this.subServiceName = booking.getSubServiceName();
+	        this.serviceDate = booking.getServiceDate();
+	        this.servicetime = booking.getServicetime();
+	        this.consultationType = booking.getConsultationType();
+	        this.consultationFee = booking.getConsultationFee();
+	        this.reasonForCancel = booking.getReasonForCancel();
+	        this.notes = booking.getNotes();
+	        this.reports = booking.getReports();
+	        this.channelId = booking.getChannelId();
+	        this.bookedAt = booking.getBookedAt();
+	        this.status = booking.getStatus();
+	        this.visitCount = booking.getVisitCount();
+	        this.attachments = booking.getAttachments();
+	        this.consentFormPdf = booking.getConsentFormPdf();
+	        this.prescriptionPdf = booking.getPrescriptionPdf();
+	        this.totalFee = booking.getTotalFee();
+	        this.doctorRefCode = booking.getDoctorRefCode();
+	        this.consultationExpiration = booking.getConsultationExpiration();
+	        this.followupStatus = booking.getFollowupStatus();
+	    }
 }

@@ -7,6 +7,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -495,7 +497,63 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		return toResponses(reversedBookings);
 	}
 	
+	
+	@Override
+	public List<BookingResponse> bookingByPatientId(String patientId) {
+		List<Booking> bookings = repository.findByPatientId(patientId);
+		List<Booking> reversedBookings = new ArrayList<>();
+		for(int i = bookings.size()-1; i >= 0; i--) {
+			if(bookings.get(i).getStatus().equalsIgnoreCase("In-Progress")) {
+			reversedBookings.add(bookings.get(i));
+		}}
+		if (bookings == null  || bookings.isEmpty()) {
+			return null;
+		}
+		return toResponses(reversedBookings);
+	}
+	
+	
+	@Override
+	public List<BookingResponse> bookingByInput(String input) {
+	    try {
+	        List<Booking> bookings = repository.findByPatientId(input);
 
+	        // If not found by patientId, try mobileNumber
+	        if (bookings == null || bookings.isEmpty()) {
+	            bookings = repository.findByMobileNumber(input);
+	        }
+
+	        // If still not found, try customerId
+	        if (bookings == null || bookings.isEmpty()) {
+	            bookings = repository.findByCustomerId(input);
+	        }
+
+	        if (bookings == null || bookings.isEmpty()) {
+	            bookings = repository.findByNameIgnoreCase(input);
+	        }
+	        
+	        // If no records found at all
+	        if (bookings == null || bookings.isEmpty()) {
+	            return Collections.emptyList(); // return empty list instead of null
+	        }
+	        
+	        // Reverse the list (most recent first)
+	        List<Booking> reversedBookings = new ArrayList<>(bookings);
+	        for(int i = bookings.size()-1; i >= 0; i--) {
+				if(bookings.get(i).getStatus().equalsIgnoreCase("In-Progress")) {
+				reversedBookings.add(bookings.get(i));
+			}}
+	       
+	        return toResponses(reversedBookings);
+
+	    } catch (Exception e) {
+	        //System.err.println("Error fetching bookings: " + e.getMessage());
+	        return Collections.emptyList(); // safe fallback
+	    }
+	}
+
+
+	
 	@Override
 	public List<BookingResponse> bookingByClinicId(String clinicId) {
 		List<Booking> bookings = repository.findByClinicId(clinicId);
@@ -722,33 +780,92 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		}
 		
 		
-		public ResponseEntity<?> getInProgressAppointmentsByCustomerId(String customerId){
-			ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
-			   try{
-				List<Booking> booked=repository.findByCustomerId(customerId);
-				List<BookingResponse> response=new ArrayList<>();
-				if(booked!=null && !booked.isEmpty()){
-					for(Booking b:booked){
-						if(b.getStatus().equalsIgnoreCase("In-Progress")){
-							
-							response.add(toResponse(b));}}
-					if(response!=null && !response.isEmpty()){
-						res.setStatusCode(200);
-						res.setHttpStatus(HttpStatus.OK);
-						res.setData(response);
-						res.setMessage("In-Progress appointments found");
-					}else{
-						res.setStatusCode(200);
-						res.setHttpStatus(HttpStatus.OK);
-						res.setData(response);
-						res.setMessage("In-Progress appointments not found");}}}
-			catch(Exception e){
-				res.setStatusCode(500);
-				res.setMessage(e.getMessage());}
-			return ResponseEntity.status(res.getStatusCode()).body(res);
+		
+		public ResponseEntity<?> getInProgressAppointmentsByCustomerId(String customerId) {
+		    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+		    List<BookingResponse> finalList = new ArrayList<>();
+		   Response response = new Response();
+		    DoctorSaveDetailsDTO saveDetails = new DoctorSaveDetailsDTO();
+		    try {
+		        List<Booking> booked = repository.findByCustomerId(customerId);
+		        if (booked == null || booked.isEmpty()) {
+		            res.setStatusCode(200);
+		            res.setHttpStatus(HttpStatus.OK);
+		            res.setMessage("No bookings found for customer");
+		            res.setData(finalList);
+		            return ResponseEntity.ok(res);
+		        }
+		        LocalDate today = LocalDate.now();
+		        //System.out.println(today);
+		        LocalDate sixthDate = today.plusDays(6);
+		        //System.out.println(sixthDate);
+
+		        for (Booking booking : booked) {
+		            if ("In-Progress".equalsIgnoreCase(booking.getStatus())) {
+		            if(booking.getServiceDate().equals(today.toString())) {
+			           finalList.add(toResponse(booking));}
+                    try {
+		            response = doctorFeign.getDoctorSaveDetailsByBookingId(booking.getBookingId()).getBody();
+                    }catch(Exception e) {}
+		            saveDetails = new ObjectMapper().convertValue(response.getData(),DoctorSaveDetailsDTO.class );
+                   // System.out.println(saveDetails);
+		           if(saveDetails != null) {	       
+		            // 1️⃣ Check if treatments exist
+		            if(saveDetails.getTreatments() != null &&
+		                saveDetails.getTreatments().getGeneratedData() != null &&
+		                !saveDetails.getTreatments().getGeneratedData().isEmpty()) {
+
+		                for (TreatmentDetailsDTO details : saveDetails.getTreatments().getGeneratedData().values()) {
+		                	//System.out.println(details);
+		                    if (details.getDates() != null) {
+		                        for (DatesDTO d : details.getDates()) {
+		                        	//System.out.println(d);
+		                            LocalDate treatmentDate = LocalDate.parse(d.getDate());
+		                           // System.out.println(treatmentDate);
+		                            if (!treatmentDate.isBefore(today) && !treatmentDate.isAfter(sixthDate)) {
+		                            	Booking bkng = new Booking(booking);		                            	
+		                            	bkng.setFollowupDate(treatmentDate.toString());
+		                            	//System.out.println(bkng);
+		                            	bkng.setStatus("In-Progress");
+		                                finalList.add(toResponse(bkng));                         
+		                            }}}}
+		            }else if(saveDetails.getFollowUp() != null &&
+		                    saveDetails.getFollowUp().getNextFollowUpDate() != null) {
+		                LocalDate followDate = LocalDate.parse(saveDetails.getFollowUp().getNextFollowUpDate());
+		               // System.out.println("followDate"+ followDate);
+		                if (!followDate.isBefore(today) && !followDate.isAfter(sixthDate)) {
+		                	Booking bkng = new Booking(booking);		                            	
+                        	bkng.setFollowupDate(followDate.toString());
+                        	bkng.setStatus("In-Progress");
+                            finalList.add(toResponse(bkng));}
+		            }else{		           
+		            if( booking.getConsultationExpiration() != null) {
+		                String expStr = booking.getConsultationExpiration(); // e.g. "04 Days"
+		                int days = Integer.parseInt(expStr.replaceAll("\\D+", "")); // extract number
+		                //System.out.println(days);
+		                LocalDate expDate = today.plusDays(days);
+		                for (int i = 1; i <= 6; i++) {
+		                    LocalDate date = today.plusDays(i);
+		                    if (!date.isAfter(sixthDate) && date.isBefore(expDate) || date.equals(expDate) ) {
+		                    	Booking bkng = new Booking(booking);		                            	
+	                        	bkng.setFollowupDate(date.toString());
+	                        	bkng.setStatus("In-Progress");
+	                            finalList.add(toResponse(bkng));
+		                    }}}}}}}
+		        res.setStatusCode(200);
+		        res.setHttpStatus(HttpStatus.OK);
+		        res.setMessage(finalList.isEmpty() ? "No In-Progress or Today appointments Not found" : "In-Progress appointments found");
+		        res.setData(finalList);
+		    }catch(Exception e) {
+		        res.setStatusCode(500);
+		        res.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+		        res.setMessage("Error: " + e.getMessage());
+		    }
+
+		    return ResponseEntity.status(res.getStatusCode()).body(res);
 		}
 		
-		
+	
 		
 		public ResponseEntity<?> getDoctorFutureAppointments(String doctorId){
 			ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
@@ -968,68 +1085,75 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 					               }}
 		
 		
-		public ResponseEntity<?> retrieveTodayAndTomorrowAndDayAfterTomorrowAppointments(String cinicId,String branchId){			
-			ResponseStructure<TtdAppointments> res = new ResponseStructure<TtdAppointments>();		  
-			try {	
-				 LocalDate todayDate = LocalDate.now();
-				 LocalDate firstday = todayDate.plusDays(1);
-				 LocalDate secondday = firstday.plusDays(1);
-				 LocalDate thirdday = secondday.plusDays(1);
-				 LocalDate fourthday = thirdday.plusDays(1);
-				 LocalDate fifthday = fourthday.plusDays(1);
-				 LocalDate sixthday = fifthday.plusDays(1);
-				String tDate = todayDate.toString();
-				//System.out.println(tDate);
-				String fst = firstday.toString();
-				//System.out.println(tmrw);
-				String scnd = secondday.toString();
-				String third = thirdday.toString();
-				String fourth = fourthday.toString();
-				String fifth = fifthday.toString();
-				String sixth = sixthday.toString();
-				 List<Booking> todayBookings = repository.findByClinicIdAndBranchIdAndServiceDateOrderByServicetimeAsc(cinicId, branchId, tDate);
-				// System.out.println(todayBookings);
-				 todayBookings = todayBookings.stream().filter(n->n.getStatus().equalsIgnoreCase("In-Progress")).toList();
-				 List<BookingResponse> todayBookingsDto = toResponses(todayBookings);
-				 List<Booking> tomorrowBookings = repository.findByClinicIdAndBranchIdAndServiceDateOrderByServicetimeAsc(cinicId, branchId, fst);
-				 tomorrowBookings =  tomorrowBookings.stream().filter(n->n.getStatus().equalsIgnoreCase("In-Progress")).toList();
-				 List<BookingResponse>tomorrowBookingsDto = toResponses(tomorrowBookings);
-				 List<Booking> dayAftertomorrowBookings = repository.findByClinicIdAndBranchIdAndServiceDateOrderByServicetimeAsc(cinicId, branchId, scnd);
-				 dayAftertomorrowBookings =  dayAftertomorrowBookings.stream().filter(n->n.getStatus().equalsIgnoreCase("In-Progress")).toList();
-				 List<BookingResponse> dayAftertomorrowBookingsDto = toResponses(dayAftertomorrowBookings);
-				 List<Booking> fouthBookings = repository.findByClinicIdAndBranchIdAndServiceDateOrderByServicetimeAsc(cinicId, branchId, third);
-				 fouthBookings =  fouthBookings.stream().filter(n->n.getStatus().equalsIgnoreCase("In-Progress")).toList();
-				 List<BookingResponse> fouthBookingsDto = toResponses(fouthBookings);
-				 List<Booking> fifthBookings = repository.findByClinicIdAndBranchIdAndServiceDateOrderByServicetimeAsc(cinicId, branchId, fourth);
-				 fifthBookings =  fifthBookings.stream().filter(n->n.getStatus().equalsIgnoreCase("In-Progress")).toList();
-				 List<BookingResponse> fifthBookingsDto = toResponses(fifthBookings);
-				 List<Booking> sixthBookings = repository.findByClinicIdAndBranchIdAndServiceDateOrderByServicetimeAsc(cinicId, branchId, fifth);
-				 sixthBookings =  sixthBookings.stream().filter(n->n.getStatus().equalsIgnoreCase("In-Progress")).toList();
-				 List<BookingResponse> sixthBookingsDto = toResponses(sixthBookings);
-				 List<Booking> seventhBookings = repository.findByClinicIdAndBranchIdAndServiceDateOrderByServicetimeAsc(cinicId, branchId, sixth);
-				 seventhBookings =  seventhBookings.stream().filter(n->n.getStatus().equalsIgnoreCase("In-Progress")).toList();
-				 List<BookingResponse> seventhBookingsDto = toResponses(seventhBookings);
-				List<List<BookingResponse>> lsts = new ArrayList<>();
-				lsts.add(todayBookingsDto);
-				lsts.add(tomorrowBookingsDto);
-				lsts.add(dayAftertomorrowBookingsDto);
-				lsts.add(fouthBookingsDto);
-				lsts.add(fifthBookingsDto);
-				lsts.add(sixthBookingsDto);
-				lsts.add(seventhBookingsDto);
-				 TtdAppointments appointments =  new TtdAppointments();
-				 appointments.setAppointments(lsts);
-				 res.setStatusCode(200);
-					res.setHttpStatus(HttpStatus.OK);
-					res.setData(appointments);
-					res.setMessage("appointments found");
-			}catch(Exception e) {
-				res.setStatusCode(500);
-				res.setMessage(e.getMessage());
-			}			
-			return ResponseEntity.status(res.getStatusCode()).body(res);	
-}
-		
+		public ResponseEntity<?> retrieveOneWeekAppointments(String cinicId,String branchId){						
+		ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+	    List<BookingResponse> finalList = new ArrayList<>();
+	   Response response = new Response();
+	    DoctorSaveDetailsDTO saveDetails = new DoctorSaveDetailsDTO();
+	    try {
+	        List<Booking> booked = repository.findByClinicIdAndBranchId(cinicId, branchId);
+	        if (booked == null || booked.isEmpty()) {
+	            res.setStatusCode(200);
+	            res.setHttpStatus(HttpStatus.OK);
+	            res.setMessage("No bookings found for customer");
+	            res.setData(finalList);
+	            return ResponseEntity.ok(res);
+	        }
+	        LocalDate today = LocalDate.now();
+	        //System.out.println(today);
+	        LocalDate sixthDate = today.plusDays(6);
+	       // System.out.println(sixthDate);
+
+	        for (Booking booking : booked) {
+	            if ("In-Progress".equalsIgnoreCase(booking.getStatus())){
+	            if(booking.getServiceDate().equals(today.toString())) {
+	            	 finalList.add(toResponse(booking));}
+                try {
+	            response = doctorFeign.getDoctorSaveDetailsByBookingId(booking.getBookingId()).getBody();
+                }catch(Exception e) {}
+	            saveDetails = new ObjectMapper().convertValue(response.getData(),DoctorSaveDetailsDTO.class );
+               // System.out.println(saveDetails);
+	           if(saveDetails != null) {	       
+	            // 1️⃣ Check if treatments exist
+	            if(saveDetails.getTreatments() != null &&
+	                saveDetails.getTreatments().getGeneratedData() != null &&
+	                !saveDetails.getTreatments().getGeneratedData().isEmpty()) {
+	                for (TreatmentDetailsDTO details : saveDetails.getTreatments().getGeneratedData().values()) {
+	                	//System.out.println(details);
+	                    if (details.getDates() != null) {
+	                        for (DatesDTO d : details.getDates()) {
+	                        	//System.out.println(d);
+	                            LocalDate treatmentDate = LocalDate.parse(d.getDate());
+	                           // System.out.println(treatmentDate);
+	                            if (!treatmentDate.isBefore(today) && !treatmentDate.isAfter(sixthDate)) {
+	                            	Booking bkng = new Booking(booking);		                            	
+	                            	bkng.setFollowupDate(treatmentDate.toString());
+	                            	//System.out.println(bkng);
+	                            	bkng.setStatus("In-Progress");
+	                                finalList.add(toResponse(bkng));                         
+	                }}}}}else{
+	            	if(saveDetails.getFollowUp() != null &&
+	                    saveDetails.getFollowUp().getNextFollowUpDate() != null) {
+	                LocalDate followDate = LocalDate.parse(saveDetails.getFollowUp().getNextFollowUpDate());
+	                //System.out.println("followDate"+ followDate);
+	                if (!followDate.isBefore(today) && !followDate.isAfter(sixthDate)) {
+	                	Booking bkng = new Booking(booking);		                            	
+                    	bkng.setFollowupDate(followDate.toString());
+                    	bkng.setStatus("In-Progress");
+                        finalList.add(toResponse(bkng));}
+	                    }}}}}
+	        res.setStatusCode(200);
+	        res.setHttpStatus(HttpStatus.OK);
+	        res.setMessage(finalList.isEmpty() ? "No In-Progress or Today appointments Not found" : "In-Progress appointments found");
+	        res.setData(finalList);
+	    }catch(Exception e) {
+	        res.setStatusCode(500);
+	        res.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+	        res.setMessage("Error: " + e.getMessage());
+	    }
+
+	    return ResponseEntity.status(res.getStatusCode()).body(res);
+	}
 		
 		
 		public ResponseEntity<?> retrieveAppointments(String cinicId,String branchId,String date){			

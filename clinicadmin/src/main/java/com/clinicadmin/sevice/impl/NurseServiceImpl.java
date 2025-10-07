@@ -163,18 +163,20 @@ public class NurseServiceImpl implements NurseService {
     // ------------------- Update Nurse ----------------------
 
     @Override
-    public Response updateNurse(String hospitalId, String nurseId, NurseDTO dto) {
+    public Response updateNurse(String nurseId, NurseDTO dto) {
         Response response = new Response();
 
-        if (hospitalId == null || hospitalId.isBlank() || nurseId == null || nurseId.isBlank()) {
+        // ✅ Validate nurseId
+        if (nurseId == null || nurseId.isBlank()) {
             response.setSuccess(false);
-            response.setMessage("Hospital ID and Nurse ID must not be empty");
+            response.setMessage("Nurse ID must not be empty");
             response.setStatus(HttpStatus.BAD_REQUEST.value());
             return response;
         }
 
-        return nurseRepository.findByHospitalIdAndNurseId(hospitalId, nurseId).map(existingNurse -> {
+        return nurseRepository.findByNurseId(nurseId).map(existingNurse -> {
 
+            // ✅ Update normal fields
             Optional.ofNullable(dto.getHospitalId()).ifPresent(existingNurse::setHospitalId);
             Optional.ofNullable(dto.getHospitalName()).ifPresent(existingNurse::setHospitalName);
             Optional.ofNullable(dto.getBranchId()).ifPresent(existingNurse::setBranchId);
@@ -186,7 +188,6 @@ public class NurseServiceImpl implements NurseService {
             Optional.ofNullable(dto.getNurseContactNumber()).ifPresent(existingNurse::setNurseContactNumber);
             Optional.ofNullable(dto.getGovernmentId()).ifPresent(existingNurse::setGovernmentId);
             Optional.ofNullable(dto.getBankAccountDetails()).ifPresent(existingNurse::setBankAccountDetails);
-            Optional.ofNullable(dto.getInsuranceOrESIdetails()).ifPresent(existingNurse::setInsuranceOrESIdetails);
             Optional.ofNullable(dto.getPreviousEmploymentHistory()).ifPresent(existingNurse::setPreviousEmploymentHistory);
             Optional.ofNullable(dto.getAddress()).ifPresent(existingNurse::setAddress);
             Optional.ofNullable(dto.getGender()).ifPresent(existingNurse::setGender);
@@ -200,32 +201,58 @@ public class NurseServiceImpl implements NurseService {
                 existingNurse.setVaccinationStatus(dto.getVaccinationStatus());
             }
 
-            // Base64 file fields
-            updateBase64Field(dto.getNursingLicense(), existingNurse::setNursingLicense);
-            updateBase64Field(dto.getNursingCouncilRegistration(), existingNurse::setNursingCouncilRegistration);
-            updateBase64Field(dto.getNursingDegreeOrDiplomaCertificate(), existingNurse::setNursingDegreeOrDiplomaCertificate);
-            updateBase64Field(dto.getMedicalFitnessCertificate(), existingNurse::setMedicalFitnessCertificate);
-            updateBase64Field(dto.getExperienceCertificates(), existingNurse::setExperienceCertificates);
-            updateBase64Field(dto.getProfilePicture(), existingNurse::setProfilePicture);
+            // ✅ Encode new Base64 content before saving
+            if (dto.getNursingLicense() != null)
+                existingNurse.setNursingLicense(Base64.getEncoder().encodeToString(dto.getNursingLicense().getBytes()));
 
+            if (dto.getNursingCouncilRegistration() != null)
+                existingNurse.setNursingCouncilRegistration(Base64.getEncoder().encodeToString(dto.getNursingCouncilRegistration().getBytes()));
+
+            if (dto.getNursingDegreeOrDiplomaCertificate() != null)
+                existingNurse.setNursingDegreeOrDiplomaCertificate(Base64.getEncoder().encodeToString(dto.getNursingDegreeOrDiplomaCertificate().getBytes()));
+
+            if (dto.getMedicalFitnessCertificate() != null)
+                existingNurse.setMedicalFitnessCertificate(Base64.getEncoder().encodeToString(dto.getMedicalFitnessCertificate().getBytes()));
+
+            if (dto.getProfilePicture() != null)
+                existingNurse.setProfilePicture(Base64.getEncoder().encodeToString(dto.getProfilePicture().getBytes()));
+
+            // ✅ Save the updated nurse
             Nurse updated = nurseRepository.save(existingNurse);
-            NurseDTO updatedDTO = mapNurseEntityToNurseDTO(updated);
 
-            Response successResponse = new Response();
-            successResponse.setSuccess(true);
-            successResponse.setData(updatedDTO);
-            successResponse.setMessage("Nurse updated successfully");
-            successResponse.setStatus(HttpStatus.OK.value());
-            return successResponse;
+            // ✅ Decode Base64 fields before sending response back
+            NurseDTO updatedDTO = mapNurseEntityToNurseDTO(updated);
+            if (updated.getNursingLicense() != null)
+                updatedDTO.setNursingLicense(new String(Base64.getDecoder().decode(updated.getNursingLicense())));
+
+            if (updated.getNursingCouncilRegistration() != null)
+                updatedDTO.setNursingCouncilRegistration(new String(Base64.getDecoder().decode(updated.getNursingCouncilRegistration())));
+
+            if (updated.getNursingDegreeOrDiplomaCertificate() != null)
+                updatedDTO.setNursingDegreeOrDiplomaCertificate(new String(Base64.getDecoder().decode(updated.getNursingDegreeOrDiplomaCertificate())));
+
+            if (updated.getMedicalFitnessCertificate() != null)
+                updatedDTO.setMedicalFitnessCertificate(new String(Base64.getDecoder().decode(updated.getMedicalFitnessCertificate())));
+
+            if (updated.getProfilePicture() != null)
+                updatedDTO.setProfilePicture(new String(Base64.getDecoder().decode(updated.getProfilePicture())));
+
+            // ✅ Build final response
+            response.setSuccess(true);
+            response.setData(updatedDTO);
+            response.setMessage("Nurse updated successfully");
+            response.setStatus(HttpStatus.OK.value());
+            return response;
 
         }).orElseGet(() -> {
-            Response notFoundResponse = new Response();
-            notFoundResponse.setSuccess(false);
-            notFoundResponse.setMessage("Nurse not found for update");
-            notFoundResponse.setStatus(HttpStatus.NOT_FOUND.value());
-            return notFoundResponse;
+            response.setSuccess(false);
+            response.setMessage("Nurse not found for update");
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            return response;
         });
     }
+
+
 
     // ------------------- Delete ----------------------
 
@@ -260,6 +287,7 @@ public class NurseServiceImpl implements NurseService {
         nurse.setHospitalId(dto.getHospitalId());
         nurse.setHospitalName(dto.getHospitalName());
         nurse.setBranchId(dto.getBranchId());
+        nurse.setBranchName(dto.getBranchName());
         nurse.setRole(dto.getRole());
         nurse.setFullName(dto.getFullName());
         nurse.setDateOfBirth(dto.getDateOfBirth());
@@ -275,10 +303,10 @@ public class NurseServiceImpl implements NurseService {
         nurse.setMedicalFitnessCertificate(dto.getMedicalFitnessCertificate());
         nurse.setEmailId(dto.getEmailId());
         nurse.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
-        nurse.setExperienceCertificates(dto.getExperienceCertificates());
+//        nurse.setExperienceCertificates(dto.getExperienceCertificates());
         nurse.setProfilePicture(dto.getProfilePicture());
         nurse.setVaccinationStatus(dto.getVaccinationStatus());
-        nurse.setInsuranceOrESIdetails(dto.getInsuranceOrESIdetails());
+//        nurse.setInsuranceOrESIdetails(dto.getInsuranceOrESIdetails());
 
         nurse.setAddress(dto.getAddress());
         nurse.setGender(dto.getGender());
@@ -298,6 +326,7 @@ public class NurseServiceImpl implements NurseService {
         dto.setHospitalId(nurse.getHospitalId());
         dto.setHospitalName(nurse.getHospitalName());
         dto.setBranchId(nurse.getBranchId());
+        dto.setBranchName(nurse.getBranchName());
         dto.setRole(nurse.getRole());
         dto.setFullName(nurse.getFullName());
         dto.setDateOfBirth(nurse.getDateOfBirth());
@@ -314,8 +343,8 @@ public class NurseServiceImpl implements NurseService {
         dto.setEmailId(nurse.getEmailId());
         dto.setPreviousEmploymentHistory(nurse.getPreviousEmploymentHistory());
         dto.setVaccinationStatus(nurse.getVaccinationStatus());
-        dto.setInsuranceOrESIdetails(nurse.getInsuranceOrESIdetails());
-        dto.setExperienceCertificates(nurse.getExperienceCertificates());
+//        dto.setInsuranceOrESIdetails(nurse.getInsuranceOrESIdetails());
+//        dto.setExperienceCertificates(nurse.getExperienceCertificates());
         dto.setProfilePicture(nurse.getProfilePicture());
 
         dto.setAddress(nurse.getAddress());
