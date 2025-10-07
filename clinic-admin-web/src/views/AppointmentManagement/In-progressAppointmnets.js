@@ -92,9 +92,12 @@ const InProgressAppointmentsPage = () => {
 
     try {
       const response = await GetBookingInprogress()
-      if (response && Array.isArray(response.data.appointments)) {
-        setAllAppointments(response.data.appointments.flat()) // ✅ store unfiltered appointments
-        setInprogressApt(response.data.appointments.flat())
+        console.log('In-progress appointments:', response)
+
+      if (response && Array.isArray(response)) {
+        setAllAppointments(response) // ✅ store unfiltered appointments
+        setInprogressApt(response)
+        console.log('In-progress appointments:', response)
       } else {
         setAllAppointments([])
         setInprogressApt([])

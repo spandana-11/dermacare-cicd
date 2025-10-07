@@ -33,7 +33,7 @@ const EmployeeManagement = () => {
 
   // All possible employees
   const employees = [
-    { title: 'Doctors', type: 'doctor', path: '/doctor' },
+    { title: 'Doctors', type: 'doctor', path: '/employee-management/doctor' },
     { title: 'Nurses', type: 'nurse', path: '/employee-management/nurse' },
     { title: 'Pharmacist', type: 'pharmacist', path: '/employee-management/pharmacist' },
     { title: 'Laboratory', type: 'laboratory', path: '/employee-management/lab-technician' },

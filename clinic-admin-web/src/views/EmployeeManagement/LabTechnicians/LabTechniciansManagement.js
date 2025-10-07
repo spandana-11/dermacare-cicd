@@ -83,9 +83,11 @@ const LabTechnicianManagement = () => {
           username: res.data.data.userName,
           password: res.data.data.password,
         })
-        setModalVisible(false)
-        setModalTVisible(true)
-        toast.success('Technician added successfully!')
+        if (res.status == 200) {
+          setModalVisible(false)
+          setModalTVisible(true)
+          toast.success('Technician added successfully!')
+        }
       }
     } catch (err) {
       toast.error('❌ Failed to save technician.')

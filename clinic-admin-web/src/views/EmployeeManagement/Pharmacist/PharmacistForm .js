@@ -798,7 +798,7 @@ const PharmacistForm = ({
                         handleChange('contactNumber', value)
 
                         // Live validation using your existing function
-                        const err = validateField('contactNumber', value)
+                        const err = validateField('contactNumber', value, formData, pharmacists)
                         setErrors((prev) => ({ ...prev, contactNumber: err }))
                       }
                     }}
@@ -813,17 +813,17 @@ const PharmacistForm = ({
                   </CFormLabel>
                   <CFormInput
                     type="email"
-                    value={formData.emailId}
+                    value={formData.emailID}
                     onChange={(e) => {
                       const value = e.target.value
-                      handleChange('emailId', value)
+                      handleChange('emailID', value)
 
                       // Run live validation
-                      const err = validateField('emailId', value)
-                      setErrors((prev) => ({ ...prev, emailId: err }))
+                      const err = validateField('emailID', value)
+                      setErrors((prev) => ({ ...prev, emailID: err }))
                     }}
                   />
-                  {errors.emailId && <div className="text-danger mt-1">{errors.emailId}</div>}
+                  {errors.emailID && <div className="text-danger mt-1">{errors.emailID}</div>}
                 </div>
               </div>
 

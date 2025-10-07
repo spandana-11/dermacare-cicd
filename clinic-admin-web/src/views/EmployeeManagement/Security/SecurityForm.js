@@ -11,7 +11,6 @@ import {
   CModalFooter,
   CFormTextarea,
   CFormSelect,
-
 } from '@coreui/react'
 import { toast } from 'react-toastify'
 import { actions, features } from '../../../Constant/Features'
@@ -89,9 +88,7 @@ const SecurityForm = ({
   const [showPModal, setShowPModal] = useState(false)
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
-  const [errors, setErrors] = useState({});
-
-
+  const [errors, setErrors] = useState({})
 
   // Mandatory fields
   const mandatoryFields = [
@@ -102,9 +99,8 @@ const SecurityForm = ({
     'govermentId',
     'dateOfJoining',
 
-
     // address fields (Address is @NotNull)
-    'address.houseNo',                 // make sure Address DTO has these
+    'address.houseNo', // make sure Address DTO has these
     'address.street',
     'address.city',
     'address.state',
@@ -121,8 +117,8 @@ const SecurityForm = ({
 
     // extra mandatory fields in SecurityStaffDTO
 
-    'medicalFitnessCertificate'        // @NotBlank
-  ];
+    'medicalFitnessCertificate', // @NotBlank
+  ]
 
   function validateMandatoryFields(formData, mandatoryFields) {
     const missingFields = []
@@ -209,13 +205,13 @@ const SecurityForm = ({
 
   // 🔹 Handle text inputs (top-level fields)
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }))
 
     // Run validation on each change
-    const error = validateField(field, value, { ...formData, [field]: value }, technicians);
+    const error = validateField(field, value, { ...formData, [field]: value }, technicians)
 
-    setErrors(prev => ({ ...prev, [field]: error }));
-  };
+    setErrors((prev) => ({ ...prev, [field]: error }))
+  }
   const handleNestedChange = (parent, field, value) => {
     setFormData((prev) => ({
       ...prev,
@@ -223,9 +219,9 @@ const SecurityForm = ({
     }))
   }
   const handleBlur = (field, value) => {
-    const error = validateField(field, value, formData, technicians);
-    setErrors(prev => ({ ...prev, [field]: error }));
-  };
+    const error = validateField(field, value, formData, technicians)
+    setErrors((prev) => ({ ...prev, [field]: error }))
+  }
 
   // 🔹 File upload → Base64
   const handleFileUpload = (e, field) => {
@@ -284,7 +280,7 @@ const SecurityForm = ({
     }
 
     // ✅ Email validation
-  
+
     if (!emailPattern.test(formData.emailId)) {
       toast.error('Please enter a valid email address.')
       return
@@ -349,7 +345,7 @@ const SecurityForm = ({
     }
 
     // ✅ Email validation
-   
+
     if (!emailPattern.test(formData.emailId)) {
       toast.error('Please enter a valid email address.')
       return
@@ -470,9 +466,7 @@ const SecurityForm = ({
         backdrop="static"
       >
         <CModalHeader>
-          <CModalTitle>
-            {viewMode ? 'Personal Information' : 'Add / Edit Security'}
-          </CModalTitle>
+          <CModalTitle>{viewMode ? 'Personal Information' : 'Add / Edit Security'}</CModalTitle>
         </CModalHeader>
         <CModalBody>
           {viewMode ? (
@@ -716,16 +710,13 @@ const SecurityForm = ({
                     value={formData.fullName}
                     onChange={(e) => {
                       // Remove numbers and special characters immediately
-                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '');
-                      handleChange('fullName', value);
+                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '')
+                      handleChange('fullName', value)
                     }}
                     onBlur={() => handleBlur('fullName', formData.fullName)}
                   />
 
-                  {errors.fullName && (
-                    <div className="text-danger mt-1">{errors.fullName}</div>
-                  )}
-
+                  {errors.fullName && <div className="text-danger mt-1">{errors.fullName}</div>}
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>
@@ -774,8 +765,8 @@ const SecurityForm = ({
                       if (/^\d*$/.test(value)) {
                         handleChange('contactNumber', value)
                         // ✅ Live validation
-                        const err = validateField('contactNumber', value);
-                        setErrors((prev) => ({ ...prev, contactNumber: err }));
+                        const err = validateField('contactNumber', value, formData, technicians)
+                        setErrors((prev) => ({ ...prev, contactNumber: err }))
                       }
                     }}
                   />
@@ -784,9 +775,7 @@ const SecurityForm = ({
                   )}
                 </div>
                 <div className="col-md-4">
-                  <CFormLabel>
-                    Email
-                  </CFormLabel>
+                  <CFormLabel>Email</CFormLabel>
                   <CFormInput
                     type="email"
                     value={formData.emailId}
@@ -794,14 +783,11 @@ const SecurityForm = ({
                       const value = e.target.value
                       handleChange('emailId', value)
                       // ✅ Live validation
-                      const err = validateField('emailId', value);
-                      setErrors((prev) => ({ ...prev, emailId: err }));
+                      const err = validateField('emailId', value)
+                      setErrors((prev) => ({ ...prev, emailId: err }))
                     }}
                   />
-                  {errors.emailId && (
-                    <div className="text-danger mt-1">{errors.emailId}</div>
-                  )}
-
+                  {errors.emailId && <div className="text-danger mt-1">{errors.emailId}</div>}
                 </div>
               </div>
 
@@ -832,68 +818,67 @@ const SecurityForm = ({
                   />
 
                   {/* Show error */}
-                  {errors.govermentId && <div className="text-danger mt-1">{errors.govermentId}</div>}
-
+                  {errors.govermentId && (
+                    <div className="text-danger mt-1">{errors.govermentId}</div>
+                  )}
                 </div>
 
                 <div className="col-md-4">
-                  <CFormLabel>Police Verification
-
-                  </CFormLabel>
+                  <CFormLabel>Police Verification</CFormLabel>
                   <CFormInput
-                    value={(formData.policeVerification)}
+                    value={formData.policeVerification}
                     onChange={(e) => {
-                      handleChange('policeVerification', e.target.value);
+                      handleChange('policeVerification', e.target.value)
 
                       // ✅ Live validation
-                      const error = validateField('policeVerification', e.target.value, formData);
+                      const error = validateField('policeVerification', e.target.value, formData)
                       setErrors((prev) => ({
                         ...prev,
                         policeVerification: error,
-                      }));
+                      }))
                     }}
                     onBlur={() => {
                       // ✅ Validation on leaving the field
-                      const error = validateField('policeVerification', formData.policeVerification, formData);
+                      const error = validateField(
+                        'policeVerification',
+                        formData.policeVerification,
+                        formData,
+                      )
                       setErrors((prev) => ({
                         ...prev,
                         policeVerification: error,
-                      }));
+                      }))
                     }}
                   />
-
                 </div>
                 <div className="col-md-4">
-                  <CFormLabel>Department <span style={{ color: 'red' }}>*</span>
-
+                  <CFormLabel>
+                    Department <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
-                    value={(formData.department)}
+                    value={formData.department}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '');
-                      handleChange('department', value);
+                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '')
+                      handleChange('department', value)
 
                       // Live validation while typing
-                      const error = validateField('department', value, formData);
+                      const error = validateField('department', value, formData)
                       setErrors((prev) => ({
                         ...prev,
                         department: error,
-                      }));
+                      }))
                     }}
                     onBlur={() => {
                       // Validate when user leaves the field
-                      const error = validateField('department', formData.department, formData);
+                      const error = validateField('department', formData.department, formData)
                       setErrors((prev) => ({
                         ...prev,
                         department: error,
-                      }));
+                      }))
                     }}
                   />
 
-                  {errors.department && (
-                    <div className="text-danger mt-1">{errors.department}</div>
-                  )}
-
+                  {errors.department && <div className="text-danger mt-1">{errors.department}</div>}
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>
@@ -902,13 +887,14 @@ const SecurityForm = ({
                   <CFormInput
                     type="date"
                     value={formData.dateOfJoining}
-                    min={new Date().toISOString().split("T")[0]} // today
-                    max={new Date(new Date().setMonth(new Date().getMonth() + 3))
-                      .toISOString()
-                      .split("T")[0]} // today + 3 months
+                    min={new Date().toISOString().split('T')[0]} // today
+                    max={
+                      new Date(new Date().setMonth(new Date().getMonth() + 3))
+                        .toISOString()
+                        .split('T')[0]
+                    } // today + 3 months
                     onChange={(e) => handleChange('dateOfJoining', e.target.value)}
                   />
-
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>
@@ -933,7 +919,6 @@ const SecurityForm = ({
                     <option value="18:00-06:00">Long Night (06:00 PM – 06:00 AM) – 12 hrs</option>
                   </CFormSelect>
                 </div>
-
               </div>
 
               <div className="row mb-3">
@@ -967,7 +952,6 @@ const SecurityForm = ({
               </div>
 
               <div className="row mb-3">
-
                 {/* <div className="col-md-4">
                   <CFormLabel>Emergency Contact</CFormLabel>
 
@@ -1005,9 +989,9 @@ const SecurityForm = ({
 
               {Object.keys(formData.address)
                 .reduce((rows, field, index) => {
-                  if (index % 3 === 0) rows.push([]); // start new row every 3 fields
-                  rows[rows.length - 1].push(field);
-                  return rows;
+                  if (index % 3 === 0) rows.push([]) // start new row every 3 fields
+                  rows[rows.length - 1].push(field)
+                  return rows
                 }, [])
                 .map((rowFields, rowIndex) => (
                   <div className="row mb-3" key={rowIndex}>
@@ -1019,43 +1003,43 @@ const SecurityForm = ({
                         <CFormInput
                           type="text"
                           maxLength={field === 'postalCode' ? 6 : undefined}
-                          value={(formData.address[field])}
+                          value={formData.address[field]}
                           onChange={(e) => {
-                            let value = e.target.value;
+                            let value = e.target.value
 
                             // Postal Code → only digits
                             if (field === 'postalCode') {
-                              if (/^\d*$/.test(value)) handleNestedChange('address', field, value);
+                              if (/^\d*$/.test(value)) handleNestedChange('address', field, value)
                             }
                             // City, State, Country → letters and spaces only
                             else if (['city', 'state', 'country'].includes(field)) {
-                              value = value.replace(/[^A-Za-z\s]/g, '');
-                              handleNestedChange('address', field, value);
+                              value = value.replace(/[^A-Za-z\s]/g, '')
+                              handleNestedChange('address', field, value)
                             }
                             // Other fields → normal
                             else {
-                              handleNestedChange('address', field, value);
+                              handleNestedChange('address', field, value)
                             }
 
                             // Live validation
-                            const error = validateField(field, value, formData);
+                            const error = validateField(field, value, formData)
                             setErrors((prev) => ({
                               ...prev,
                               address: {
                                 ...prev.address,
                                 [field]: error,
                               },
-                            }));
+                            }))
                           }}
                           onBlur={() => {
-                            const error = validateField(field, formData.address[field], formData);
+                            const error = validateField(field, formData.address[field], formData)
                             setErrors((prev) => ({
                               ...prev,
                               address: {
                                 ...prev.address,
                                 [field]: error,
                               },
-                            }));
+                            }))
                           }}
                         />
                         {errors.address?.[field] && (
@@ -1066,15 +1050,13 @@ const SecurityForm = ({
                   </div>
                 ))}
 
-
-
               {/* 🔹 Bank Details */}
               <h5 className="mt-3">Bank Account Details</h5>
               {Object.keys(formData.bankAccountDetails)
                 .reduce((rows, field, index) => {
-                  if (index % 3 === 0) rows.push([]); // start new row every 3 fields
-                  rows[rows.length - 1].push(field);
-                  return rows;
+                  if (index % 3 === 0) rows.push([]) // start new row every 3 fields
+                  rows[rows.length - 1].push(field)
+                  return rows
                 }, [])
                 .map((rowFields, rowIndex) => (
                   <div className="row mb-3" key={rowIndex}>
@@ -1097,50 +1079,54 @@ const SecurityForm = ({
                                     : undefined
                           }
                           onChange={async (e) => {
-                            let value = e.target.value;
-                            let err = '';
+                            let value = e.target.value
+                            let err = ''
 
                             // Account Holder Name → letters and spaces only
                             if (field === 'accountHolderName') {
-                              value = value.replace(/[^A-Za-z\s]/g, ''); // remove numbers & special chars
-                              handleNestedChange('bankAccountDetails', field, value);
+                              value = value.replace(/[^A-Za-z\s]/g, '') // remove numbers & special chars
+                              handleNestedChange('bankAccountDetails', field, value)
 
-                              if (!value.trim()) err = 'Account Holder Name is required.';
+                              if (!value.trim()) err = 'Account Holder Name is required.'
                               else if (value.length < 3 || value.length > 50)
-                                err = 'Account Holder Name must be between 3 and 50 characters.';
+                                err = 'Account Holder Name must be between 3 and 50 characters.'
                             }
 
                             // Account Number → digits only
                             else if (field === 'accountNumber') {
-                              if (/^\d*$/.test(value)) handleNestedChange('bankAccountDetails', field, value);
-                              err = value ? '' : 'Account Number is required.';
+                              if (/^\d*$/.test(value))
+                                handleNestedChange('bankAccountDetails', field, value)
+                              err = value ? '' : 'Account Number is required.'
                             }
 
                             // PAN → uppercase, correct format
                             else if (field === 'panCardNumber') {
-                              value = value.toUpperCase();
+                              value = value.toUpperCase()
                               if (/^[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}$/.test(value))
-                                handleNestedChange('bankAccountDetails', field, value);
+                                handleNestedChange('bankAccountDetails', field, value)
                               if (value.length === 10) {
-                                const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
-                                err = panRegex.test(value) ? '' : 'Invalid PAN format (ABCDE1234F)';
-                              } else err = 'PAN must be 10 characters.';
+                                const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
+                                err = panRegex.test(value) ? '' : 'Invalid PAN format (ABCDE1234F)'
+                              } else err = 'PAN must be 10 characters.'
                             }
 
                             // IFSC → uppercase, correct format
                             else if (field === 'ifscCode') {
-                              value = value.toUpperCase();
-                              if (/^[A-Z0-9]*$/.test(value)) handleNestedChange('bankAccountDetails', field, value);
+                              value = value.toUpperCase()
+                              if (/^[A-Z0-9]*$/.test(value))
+                                handleNestedChange('bankAccountDetails', field, value)
                               if (value.length === 11) {
-                                const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
-                                err = ifscRegex.test(value) ? '' : 'Invalid IFSC format (HDFC0001234)';
-                              } else err = 'IFSC must be 11 characters.';
+                                const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
+                                err = ifscRegex.test(value)
+                                  ? ''
+                                  : 'Invalid IFSC format (HDFC0001234)'
+                              } else err = 'IFSC must be 11 characters.'
                             }
 
                             // Other fields → required
                             else {
-                              handleNestedChange('bankAccountDetails', field, value);
-                              err = value ? '' : `${field} is required.`;
+                              handleNestedChange('bankAccountDetails', field, value)
+                              err = value ? '' : `${field} is required.`
                             }
 
                             setErrors((prev) => ({
@@ -1149,44 +1135,53 @@ const SecurityForm = ({
                                 ...prev.bankAccountDetails,
                                 [field]: err,
                               },
-                            }));
+                            }))
                           }}
                           onBlur={async () => {
-                            const value = formData.bankAccountDetails[field];
-                            const error = validateField(field, value, formData);
+                            const value = formData.bankAccountDetails[field]
+                            const error = validateField(field, value, formData)
                             setErrors((prev) => ({
                               ...prev,
                               bankAccountDetails: {
                                 ...prev.bankAccountDetails,
                                 [field]: error,
                               },
-                            }));
+                            }))
 
                             // PAN validation
                             if (field === 'panCardNumber' && value.length === 10) {
-                              const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
-                              if (!panRegex.test(value)) toast.error('Invalid PAN format (e.g., ABCDE1234F)');
+                              const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
+                              if (!panRegex.test(value))
+                                toast.error('Invalid PAN format (e.g., ABCDE1234F)')
                             }
 
                             // IFSC validation & fetch bank/branch names
                             if (field === 'ifscCode' && value.length === 11) {
-                              const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+                              const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
                               if (!ifscRegex.test(value)) {
-                                toast.error('Invalid IFSC format (e.g., HDFC0001234)');
-                                handleNestedChange('bankAccountDetails', 'bankName', '');
-                                handleNestedChange('bankAccountDetails', 'branchName', '');
+                                toast.error('Invalid IFSC format (e.g., HDFC0001234)')
+                                handleNestedChange('bankAccountDetails', 'bankName', '')
+                                handleNestedChange('bankAccountDetails', 'branchName', '')
                               } else {
                                 try {
-                                  const res = await fetch(`https://ifsc.razorpay.com/${value}`);
+                                  const res = await fetch(`https://ifsc.razorpay.com/${value}`)
                                   if (res.ok) {
-                                    const data = await res.json();
-                                    handleNestedChange('bankAccountDetails', 'bankName', data.BANK || '');
-                                    handleNestedChange('bankAccountDetails', 'branchName', data.BRANCH || '');
+                                    const data = await res.json()
+                                    handleNestedChange(
+                                      'bankAccountDetails',
+                                      'bankName',
+                                      data.BANK || '',
+                                    )
+                                    handleNestedChange(
+                                      'bankAccountDetails',
+                                      'branchName',
+                                      data.BRANCH || '',
+                                    )
                                   }
                                 } catch (err) {
-                                  toast.error('Error fetching bank details');
-                                  handleNestedChange('bankAccountDetails', 'bankName', '');
-                                  handleNestedChange('bankAccountDetails', 'branchName', '');
+                                  toast.error('Error fetching bank details')
+                                  handleNestedChange('bankAccountDetails', 'bankName', '')
+                                  handleNestedChange('bankAccountDetails', 'branchName', '')
                                 }
                               }
                             }
@@ -1199,8 +1194,6 @@ const SecurityForm = ({
                     ))}
                   </div>
                 ))}
-
-
 
               {/* 🔹 Documents */}
               <h5 className="mt-3">Documents</h5>
@@ -1223,8 +1216,8 @@ const SecurityForm = ({
                   />
                 </div>
                 <div className="col-md-4">
-                  <CFormLabel>Medical Fitness Certificate <span style={{ color: 'red' }}>*</span>
-
+                  <CFormLabel>
+                    Medical Fitness Certificate <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
                     type="file"

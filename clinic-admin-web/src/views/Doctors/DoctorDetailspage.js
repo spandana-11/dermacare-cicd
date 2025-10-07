@@ -114,7 +114,7 @@ const DoctorDetailsPage = () => {
     const isDeleted = await handleDeleteToggle(id)
     console.log(isDeleted)
     if (isDeleted) {
-      navigate('/doctor')
+      navigate('/employee-management/doctor')
       fetchDoctor()
       toast.success('Doctor deleted successfully')
     } else {
@@ -222,7 +222,7 @@ const DoctorDetailsPage = () => {
         setFormData(res.data.updatedDoctor)
         setIsEditing(false)
 
-        navigate(`/doctor`)
+        navigate(`/employee-management/doctor`)
         await fetchDoctors()
         toast.success(res.data.message || 'Doctor updated successfully')
       } else {

@@ -476,7 +476,7 @@ const WidgetsDropdown = (props) => {
                   <CIcon icon={cilOptions} className="text-high-emphasis-inverse" />
                 </CDropdownToggle>
                 <CDropdownMenu>
-                  <CDropdownItem onClick={() => navigate('/doctor')}>
+                  <CDropdownItem onClick={() => navigate('/employee-management/doctor')}>
                     View All Doctors
                   </CDropdownItem>{' '}
                   <CDropdownItem>Export</CDropdownItem>

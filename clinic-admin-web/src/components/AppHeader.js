@@ -32,6 +32,7 @@ import { HospitalProvider } from '../views/Usecontext/HospitalContext'
 import { useHospital } from '../views/Usecontext/HospitalContext'
 import { COLORS } from '../Constant/Themes'
 import { useGlobalSearch } from '../views/Usecontext/GlobalSearchContext'
+import BackButton from '../views/widgets/BackButton'
 
 const AppHeader = () => {
   const headerRef = useRef()
@@ -90,7 +91,7 @@ const AppHeader = () => {
             }}
           />
         </div>
-
+      
         {/* Notification Icons */}
         <div className="d-flex align-items-center ms-auto">
           {/* Bell icon with badge */}

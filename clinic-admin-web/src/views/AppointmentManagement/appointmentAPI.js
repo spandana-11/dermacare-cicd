@@ -192,8 +192,8 @@ export const GetBookingInprogress = async () => {
   try {
     const response = await axios.get(`${BASE_URL}/appointments/byIds/${hID}/${branchId}`) //TODO:chnage when apigetway call axios to http
     console.log(`${BASE_URL}/appointments/byIds/${hID}/${branchId}`)
-    console.log(response)
-    return response.data
+    console.log(response.data.data)
+    return response.data.data
   } catch (error) {
     console.error('Error fetching booking by clinicId:', error.message)
     throw error

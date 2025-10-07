@@ -1,7 +1,6 @@
 import { BASE_URL } from '../../../baseUrl'
 import { http } from '../../../Utils/Interceptors'
 
-
 // ------------------- Add Nurse -------------------
 export const addNurse = (data) => {
   return http.post(`${BASE_URL}/addNurse`, data)
@@ -20,8 +19,8 @@ export const getNurse = (hospitalId, nurseId) => {
 // ------------------- Update Nurse -------------------
 
 export const updateNurse = (hospitalId, nurseId, data) => {
-  return http.put(`${BASE_URL}/updateNurse/${hospitalId}/${nurseId}`, data);
-};
+  return http.put(`${BASE_URL}/updateNurse/${nurseId}`, data, {})
+}
 
 // ------------------- Delete Nurse -------------------
 export const deleteNurse = (hospitalId, nurseId) => {

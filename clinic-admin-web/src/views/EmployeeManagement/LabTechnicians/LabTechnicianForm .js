@@ -641,14 +641,14 @@ const LabTechnicianForm = ({
                         value={formData.previousEmploymentHistory}
                       />
                     </div>
-                    <div className="row mb-2">
+                    {/* <div className="row mb-2">
                       <div className="col-md-6">
                         <RowFull label="User Name" value={formData.userName} />
                       </div>
                       <div className="col-md-6">
                         <RowFull label="Password" value={formData.password} />
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 </Section>
                 <Section title="Documents">
@@ -799,7 +799,7 @@ const LabTechnicianForm = ({
                         handleChange('contactNumber', value)
 
                         // Live validation using your existing function
-                        const err = validateField('contactNumber', value)
+                        const err = validateField('contactNumber', value, formData, technicians)
                         setErrors((prev) => ({ ...prev, contactNumber: err }))
                       }
                     }}

@@ -35,7 +35,7 @@ const FrontDeskForm = ({
   const emptyForm = {
     clinicId: localStorage.getItem('HospitalId'),
     branchId: localStorage.getItem('branchId'),
-      branchName: localStorage.getItem('branchName'),
+    branchName: localStorage.getItem('branchName'),
     hospitalName: localStorage.getItem('HospitalName'),
     fullName: '',
     dateOfBirth: '',
@@ -86,8 +86,7 @@ const FrontDeskForm = ({
   const [showPModal, setShowPModal] = useState(false)
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
-  const [errors, setErrors] = useState({});
-
+  const [errors, setErrors] = useState({})
 
   // Mandatory fields
   const mandatoryFields = [
@@ -99,6 +98,7 @@ const FrontDeskForm = ({
     'governmentId',
     'dateOfJoining',
     'department',
+    'qualification',
     // 'yearOfExperience',
     'clinicId',
     // 'vaccinationStatus',
@@ -206,13 +206,13 @@ const FrontDeskForm = ({
 
   // 🔹 Handle text inputs (top-level fields)
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }))
 
     // Run validation on each change
-    const error = validateField(field, value, { ...formData, [field]: value }, technicians);
+    const error = validateField(field, value, { ...formData, [field]: value }, technicians)
 
-    setErrors(prev => ({ ...prev, [field]: error }));
-  };
+    setErrors((prev) => ({ ...prev, [field]: error }))
+  }
   const handleNestedChange = (parent, field, value) => {
     setFormData((prev) => ({
       ...prev,
@@ -221,27 +221,27 @@ const FrontDeskForm = ({
   }
 
   // 🔹 File upload → Base64
- const handleFileUpload = (e, field) => {
-  const file = e.target.files[0];
-  if (!file) return;
+  const handleFileUpload = (e, field) => {
+    const file = e.target.files[0]
+    if (!file) return
 
-  // ✅ Enforce 250 KB max
-  if (file.size > 250 * 1024) {
-    alert("File size must be less than 250KB.");
-    return;
+    // ✅ Enforce 250 KB max
+    if (file.size > 250 * 1024) {
+      alert('File size must be less than 250KB.')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: reader.result, // Base64 data
+        [`${field}Name`]: file.name, // Original file name
+        [`${field}Type`]: file.type, // MIME type
+      }))
+    }
+    reader.readAsDataURL(file)
   }
-
-  const reader = new FileReader();
-  reader.onloadend = () => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: reader.result,         // Base64 data
-      [`${field}Name`]: file.name,    // Original file name
-      [`${field}Type`]: file.type,    // MIME type
-    }));
-  };
-  reader.readAsDataURL(file);
-};
 
   // 🔹 Save handler
   const handleSubmit = () => {
@@ -281,13 +281,13 @@ const FrontDeskForm = ({
       toast.error('Contact number must be 10 digits and start with 6-9.')
       return
     }
-  // ✅ Emergency contact and Nurse contact must not be same
-  if (formData.contactNumber === formData.emergencyContact) {
-    toast.error('Contact Number and Emergency Contact cannot be the same.');
-    return;
-  }
+    // ✅ Emergency contact and Nurse contact must not be same
+    if (formData.contactNumber === formData.emergencyContact) {
+      toast.error('Contact Number and Emergency Contact cannot be the same.')
+      return
+    }
     // ✅ Email validation
- 
+
     if (!emailPattern.test(formData.emailId)) {
       toast.error('Please enter a valid email address.')
       return
@@ -352,7 +352,7 @@ const FrontDeskForm = ({
     }
 
     // ✅ Email validation
- 
+
     if (!emailPattern.test(formData.emailId)) {
       toast.error('Please enter a valid email address.')
       return
@@ -709,16 +709,12 @@ const FrontDeskForm = ({
                     value={formData.fullName}
                     onChange={(e) => {
                       // Remove numbers and special characters immediately
-                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '');
-                      handleChange('fullName', value);
+                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '')
+                      handleChange('fullName', value)
                     }}
-                   // onBlur={() => handleBlur('fullName', formData.fullName)}
+                    // onBlur={() => handleBlur('fullName', formData.fullName)}
                   />
-                  {errors.fullName && (
-                    <div className="text-danger mt-1">{errors.fullName}</div>
-                  )}
-
-
+                  {errors.fullName && <div className="text-danger mt-1">{errors.fullName}</div>}
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>
@@ -762,22 +758,21 @@ const FrontDeskForm = ({
                     maxLength={10} // Restrict to 10 digits
                     value={formData.contactNumber}
                     onChange={(e) => {
-                      const value = e.target.value;
+                      const value = e.target.value
 
                       // Allow only digits
                       if (/^\d*$/.test(value)) {
-                        handleChange('contactNumber', value);
+                        handleChange('contactNumber', value)
 
                         // Run live validation
-                        const err = validateField('contactNumber', value, formData);
-                        setErrors((prev) => ({ ...prev, contactNumber: err }));
+                        const err = validateField('contactNumber', value, formData, receptionist)
+                        setErrors((prev) => ({ ...prev, contactNumber: err }))
                       }
                     }}
                   />
                   {errors.contactNumber && (
                     <div className="text-danger mt-1">{errors.contactNumber}</div>
                   )}
-
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>
@@ -787,20 +782,17 @@ const FrontDeskForm = ({
                     type="email"
                     value={formData.emailId}
                     onChange={(e) => {
-                      const value = e.target.value;
+                      const value = e.target.value
 
                       // Update value
-                      handleChange('emailId', value);
+                      handleChange('emailId', value)
 
                       // Run live validation
-                      const err = validateField('emailId', value, formData);
-                      setErrors((prev) => ({ ...prev, emailId: err }));
+                      const err = validateField('emailId', value, formData)
+                      setErrors((prev) => ({ ...prev, emailId: err }))
                     }}
                   />
-                  {errors.emailId && (
-                    <div className="text-danger mt-1">{errors.emailId}</div>
-                  )}
-
+                  {errors.emailId && <div className="text-danger mt-1">{errors.emailId}</div>}
                 </div>
               </div>
 
@@ -813,21 +805,20 @@ const FrontDeskForm = ({
                     maxLength={12}
                     value={formData.governmentId}
                     onChange={(e) => {
-                      const value = e.target.value;
+                      const value = e.target.value
                       // ✅ Only digits allowed, max 12
                       if (/^\d*$/.test(value)) {
-                        handleChange('governmentId', value);
+                        handleChange('governmentId', value)
 
                         // Run live validation
-                        const err = validateField('governmentId', value, formData);
-                        setErrors((prev) => ({ ...prev, governmentId: err }));
+                        const err = validateField('governmentId', value, formData)
+                        setErrors((prev) => ({ ...prev, governmentId: err }))
                       }
                     }}
                   />
                   {errors.governmentId && (
                     <div className="text-danger mt-1">{errors.governmentId}</div>
                   )}
-
                 </div>
 
                 {/* <div className="col-md-4">
@@ -845,11 +836,11 @@ const FrontDeskForm = ({
                     type="date"
                     value={formData.dateOfJoining}
                     onChange={(e) => {
-                      handleChange('dateOfJoining', e.target.value);
+                      handleChange('dateOfJoining', e.target.value)
 
                       // Live validation
-                      const err = validateField('dateOfJoining', e.target.value, formData);
-                      setErrors((prev) => ({ ...prev, dateOfJoining: err }));
+                      const err = validateField('dateOfJoining', e.target.value, formData)
+                      setErrors((prev) => ({ ...prev, dateOfJoining: err }))
                     }}
                   />
                   {errors.dateOfJoining && (
@@ -858,20 +849,18 @@ const FrontDeskForm = ({
                 </div>
 
                 <div className="col-md-4">
-
-
                   <CFormLabel>
                     Vaccination Status <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormSelect
                     value={formData.vaccinationStatus}
                     onChange={(e) => {
-                      const value = e.target.value;
-                      handleChange('vaccinationStatus', value);
+                      const value = e.target.value
+                      handleChange('vaccinationStatus', value)
 
                       // ✅ Live validation
-                      const error = value ? '' : 'Vaccination Status is required.';
-                      setErrors((prev) => ({ ...prev, vaccinationStatus: error }));
+                      const error = value ? '' : 'Vaccination Status is required.'
+                      setErrors((prev) => ({ ...prev, vaccinationStatus: error }))
                     }}
                   >
                     <option value="">Select Status</option>
@@ -882,32 +871,29 @@ const FrontDeskForm = ({
                   {errors.vaccinationStatus && (
                     <div className="text-danger mt-1">{errors.vaccinationStatus}</div>
                   )}
-
-
                 </div>
               </div>
 
               <div className="row mb-3">
                 <div className="col-md-4">
                   {' '}
-                  <CFormLabel>Department</CFormLabel>
+                  <CFormLabel>
+                    Department<span style={{ color: 'red' }}>*</span>
+                  </CFormLabel>
                   <CFormInput
-                    value={(formData.department)}
+                    value={formData.department}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '');
+                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '')
 
                       // Update value
-                      handleChange('department', value);
+                      handleChange('department', value)
 
                       // Run live validation
-                      const err = validateField('department', value); // assuming 'department' validation exists in validators.js
-                      setErrors((prev) => ({ ...prev, department: err }));
+                      const err = validateField('department', value) // assuming 'department' validation exists in validators.js
+                      setErrors((prev) => ({ ...prev, department: err }))
                     }}
                   />
-                  {errors.department && (
-                    <div className="text-danger mt-1">{errors.department}</div>
-                  )}
-
+                  {errors.department && <div className="text-danger mt-1">{errors.department}</div>}
                 </div>
                 <div className="col-md-4">
                   {' '}
@@ -918,20 +904,19 @@ const FrontDeskForm = ({
                     type="number"
                     value={formData.yearOfExperience}
                     onChange={(e) => {
-                      const value = e.target.value;
+                      const value = e.target.value
 
                       // Update value
-                      handleChange('yearOfExperience', value);
+                      handleChange('yearOfExperience', value)
 
                       // Live validation
-                      const err = validateField('yearOfExperience', value); // ensure this exists in your validators.js
-                      setErrors((prev) => ({ ...prev, yearOfExperience: err }));
+                      const err = validateField('yearOfExperience', value) // ensure this exists in your validators.js
+                      setErrors((prev) => ({ ...prev, yearOfExperience: err }))
                     }}
                   />
                   {errors.yearOfExperience && (
                     <div className="text-danger mt-1">{errors.yearOfExperience}</div>
                   )}
-
                 </div>
 
                 {/* <div className="col-md-4">
@@ -951,14 +936,17 @@ const FrontDeskForm = ({
                 </div> */}
                 <div className="col-md-4">
                   {' '}
-                  <CFormLabel>Qualification</CFormLabel>
+                  <CFormLabel>
+                    Qualification<span style={{ color: 'red' }}>*</span>
+                  </CFormLabel>
                   <CFormInput
-                    value={(formData.qualification)}
+                    value={formData.qualification}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '');
+                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '')
                       handleChange('qualification', value)
-                    }
-                    }
+                      const err = validateField('qualification', value) // ensure this exists in your validators.js
+                      setErrors((prev) => ({ ...prev, qualification: err }))
+                    }}
                   />
                 </div>
               </div>
@@ -987,9 +975,9 @@ const FrontDeskForm = ({
 
               {Object.keys(formData.address)
                 .reduce((rows, field, index) => {
-                  if (index % 3 === 0) rows.push([]);
-                  rows[rows.length - 1].push(field);
-                  return rows;
+                  if (index % 3 === 0) rows.push([])
+                  rows[rows.length - 1].push(field)
+                  return rows
                 }, [])
                 .map((rowFields, rowIndex) => (
                   <div className="row mb-3" key={rowIndex}>
@@ -1001,43 +989,43 @@ const FrontDeskForm = ({
                         <CFormInput
                           type="text"
                           maxLength={field === 'postalCode' ? 6 : undefined}
-                          value={(formData.address[field])}
+                          value={formData.address[field]}
                           onChange={(e) => {
-                            let value = e.target.value;
+                            let value = e.target.value
 
                             // Postal Code → digits only
                             if (field === 'postalCode') {
-                              if (/^\d*$/.test(value)) handleNestedChange('address', field, value);
+                              if (/^\d*$/.test(value)) handleNestedChange('address', field, value)
                             }
                             // City, State, Country → letters and spaces only
                             else if (['city', 'state', 'country'].includes(field)) {
-                              value = value.replace(/[^A-Za-z\s]/g, '');
-                              handleNestedChange('address', field, value);
+                              value = value.replace(/[^A-Za-z\s]/g, '')
+                              handleNestedChange('address', field, value)
                             }
                             // Other fields → allow all
                             else {
-                              handleNestedChange('address', field, value);
+                              handleNestedChange('address', field, value)
                             }
 
                             // Live validation
-                            const error = validateField(field, value, formData);
+                            const error = validateField(field, value, formData)
                             setErrors((prev) => ({
                               ...prev,
                               address: {
                                 ...prev.address,
                                 [field]: error,
                               },
-                            }));
+                            }))
                           }}
                           onBlur={() => {
-                            const error = validateField(field, formData.address[field], formData);
+                            const error = validateField(field, formData.address[field], formData)
                             setErrors((prev) => ({
                               ...prev,
                               address: {
                                 ...prev.address,
                                 [field]: error,
                               },
-                            }));
+                            }))
                           }}
                         />
                         {errors.address?.[field] && (
@@ -1047,7 +1035,6 @@ const FrontDeskForm = ({
                     ))}
                   </div>
                 ))}
-
 
               {/* 🔹 Bank Details */}
               <h5 className="mt-3">Bank Account Details</h5>
@@ -1100,7 +1087,8 @@ const FrontDeskForm = ({
 
                             // Account Number → digits only
                             if (field === 'accountNumber') {
-                              if (/^\d*$/.test(value)) handleNestedChange('bankAccountDetails', field, value)
+                              if (/^\d*$/.test(value))
+                                handleNestedChange('bankAccountDetails', field, value)
                               err = value ? '' : 'Account Number is required.'
                             }
 
@@ -1121,17 +1109,28 @@ const FrontDeskForm = ({
                             // IFSC → uppercase, correct format
                             if (field === 'ifscCode') {
                               value = value.toUpperCase()
-                              if (/^[A-Z0-9]*$/.test(value)) handleNestedChange('bankAccountDetails', field, value)
+                              if (/^[A-Z0-9]*$/.test(value))
+                                handleNestedChange('bankAccountDetails', field, value)
                               if (value.length === 11) {
                                 const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
-                                err = ifscRegex.test(value) ? '' : 'Invalid IFSC format (HDFC0001234)'
+                                err = ifscRegex.test(value)
+                                  ? ''
+                                  : 'Invalid IFSC format (HDFC0001234)'
                                 if (!err) {
                                   try {
                                     const res = await fetch(`https://ifsc.razorpay.com/${value}`)
                                     if (res.ok) {
                                       const data = await res.json()
-                                      handleNestedChange('bankAccountDetails', 'bankName', data.BANK || '')
-                                      handleNestedChange('bankAccountDetails', 'branchName', data.BRANCH || '')
+                                      handleNestedChange(
+                                        'bankAccountDetails',
+                                        'bankName',
+                                        data.BANK || '',
+                                      )
+                                      handleNestedChange(
+                                        'bankAccountDetails',
+                                        'branchName',
+                                        data.BRANCH || '',
+                                      )
                                     }
                                   } catch {
                                     handleNestedChange('bankAccountDetails', 'bankName', '')
@@ -1149,7 +1148,14 @@ const FrontDeskForm = ({
                             }
 
                             // Other fields → required
-                            if (!['accountNumber', 'panCardNumber', 'ifscCode', 'accountHolderName'].includes(field)) {
+                            if (
+                              ![
+                                'accountNumber',
+                                'panCardNumber',
+                                'ifscCode',
+                                'accountHolderName',
+                              ].includes(field)
+                            ) {
                               handleNestedChange('bankAccountDetails', field, value)
                               err = value ? '' : `${field} is required.`
                             }
@@ -1171,7 +1177,6 @@ const FrontDeskForm = ({
                     ))}
                   </div>
                 ))}
-
 
               {/* 🔹 Documents */}
               <h5 className="mt-3">Documents</h5>

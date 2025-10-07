@@ -1493,6 +1493,7 @@ public class DoctorServiceImpl implements DoctorService {
 
 	    return response;
 	}
+
 	private List<DoctorAvailableSlotDTO> generateSlots(String openingTime, String closingTime, int intervalMinutes) {
 		DateTimeFormatter formatter = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern("h:mm a")
 				.toFormatter(Locale.ENGLISH);

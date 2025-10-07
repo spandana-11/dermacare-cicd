@@ -80,12 +80,12 @@ const ReferDoctorManagement = () => {
         const res = await addReferDoctor(formData)
         await fetchTechs() // refresh from API
         console.log(res)
-        setModalData({
-          username: res.data.data.userName,
-          password: res.data.data.password,
-        })
+        // setModalData({
+        //   username: res.data.data.userName,
+        //   password: res.data.data.password,
+        // })
         setModalVisible(false)
-        setModalTVisible(true)
+        // setModalTVisible(true)
         toast.success('ReferDoctor added successfully!')
       }
     } catch (err) {

@@ -39,7 +39,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
     dateOfJoining: '',
     department: '',
     yearsOfExperience: '',
-    specialization: '',
+    // specialization: '',
     shiftTimingOrAvailability: '',
     role: 'nurse',
     address: {
@@ -66,18 +66,16 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
     nursingDegreeOrDiplomaCertificate: '',
     nursingCouncilRegistration: '',
     previousEmploymentHistory: '',
-    experienceCertificates: '',
+    // experienceCertificates: '',
     vaccinationStatus: '',
-    insuranceOrESIdetails: {
-      policyOrEsiNumber: '',
-      providerName: '',
-      type: '',
-      status: '',
-    },
+    // insuranceOrESIdetails: {
+    //   policyOrEsiNumber: '',
+    //   providerName: '',
+    //   type: '',
+    //   status: '',
+    // },
 
     permissions: emptyPermissions,
-    userName: '',
-    password: '',
   }
 
   // 🔹 State
@@ -243,8 +241,8 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
       setFormData((prev) => ({
         ...prev,
         [field]: reader.result, // Full Data URL
-        [`${field}Name`]: file.name,
-        [`${field}Type`]: file.type, // image/png, application/pdf, etc.
+        // [`${field}Name`]: file.name,
+        // [`${field}Type`]: file.type, // image/png, application/pdf, etc.
       }))
     }
     reader.readAsDataURL(file)
@@ -282,10 +280,10 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
       toast.error('Contact number must be 10 digits and start with 6-9.')
       return
     }
-    if (!mobileRegex.test(formData.emergencyContactNumber)) {
-      toast.error('Emergency contact must be 10 digits and start with 6-9.')
-      return
-    }
+    // if (!mobileRegex.test(formData.emergencyContactNumber)) {
+    //   toast.error('Emergency contact must be 10 digits and start with 6-9.')
+    //   return
+    // }
 
     // ✅ Emergency contact and Nurse contact must not be same
     if (formData.nurseContactNumber === formData.emergencyContactNumber) {
@@ -371,6 +369,9 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
     const duplicateContact = nurses?.some(
       (t) => t.nurseContactNumber === formData.nurseContactNumber && t.id !== formData.id,
     )
+
+    console.log(duplicateContact)
+    console.log(formData.nurseContactNumber)
     if (duplicateContact) {
       toast.error('Contact number already exists!')
       return
@@ -822,7 +823,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                         handleChange('nurseContactNumber', value)
 
                         // Live validation
-                        const err = validateField('nurseContactNumber', value)
+                        const err = validateField('nurseContactNumber', value, formData, nurses)
                         setErrors((prev) => ({ ...prev, nurseContactNumber: err }))
                       }
                     }}
