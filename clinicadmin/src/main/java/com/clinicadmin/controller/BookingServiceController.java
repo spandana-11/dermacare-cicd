@@ -37,8 +37,8 @@ public class BookingServiceController {
 	
 	
 	@GetMapping("/appointments/byIds/{clinicId}/{branchId}")
-	public ResponseEntity<?> retrieveTodayAndTomorrowAndDayAfterTomorrowAppointments(@PathVariable String clinicId,@PathVariable String branchId) {
-		return bookingService.retrieveTodayAndTomorrowAndDayAfterTomorrowAppointments(clinicId, branchId);
+	public ResponseEntity<?> retrieveOneWeekAppointments(@PathVariable String clinicId,@PathVariable String branchId) {
+		return bookingService.retrieveOneWeekAppointments(clinicId, branchId);
 	
 	}
 	

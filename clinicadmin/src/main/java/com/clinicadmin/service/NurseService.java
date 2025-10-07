@@ -11,9 +11,11 @@ public interface NurseService {
 
     public Response getNurseByHospitalAndNurseId(String hospitalId, String nurseId);
 
-    public Response updateNurse(String hospitalId, String nurseId, NurseDTO dto);
+//    public Response updateNurse(String hospitalId, String nurseId, NurseDTO dto);
 
     public Response deleteNurse(String hospitalId, String nurseId);
+
+	public Response updateNurse(String nurseId, NurseDTO dto);
 
 //	public Response nurseLogin(NurseLoginDTO loginDTO);
 //

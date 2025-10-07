@@ -73,7 +73,7 @@ public interface BookingFeign {
 	        @PathVariable String branchId);
 	
 	@GetMapping("/api/v1/appointments/byIds/{clinicId}/{branchId}")
-	public ResponseEntity<?> retrieveTodayAndTomorrowAndDayAfterTomorrowAppointments(@PathVariable String clinicId,@PathVariable String branchId);
+	public ResponseEntity<?> retrieveOneWeekAppointments(@PathVariable String clinicId,@PathVariable String branchId);
 	
 	@GetMapping("/api/v1/appointments/byIdsAndDate/{clinicId}/{branchId}/{date}")
 	public ResponseEntity<?> retrieveAppointnmentsByServiceDate(@PathVariable String clinicId,@PathVariable String branchId,@PathVariable String date);

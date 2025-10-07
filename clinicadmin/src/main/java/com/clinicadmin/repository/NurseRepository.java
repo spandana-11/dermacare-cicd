@@ -16,6 +16,9 @@ public interface NurseRepository extends MongoRepository<Nurse, ObjectId> {
 	boolean existsByNurseId(String nurseId);
 
 	Optional<Nurse> findByHospitalIdAndNurseId(String hospitalId, String nurseId);
+	
+
+	Optional<Nurse> findByNurseId(String nurseId);
 
 	List<Nurse> findByHospitalId(String hospitalId);
 

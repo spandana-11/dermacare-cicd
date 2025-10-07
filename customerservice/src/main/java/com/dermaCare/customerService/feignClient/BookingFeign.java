@@ -74,12 +74,17 @@ public interface BookingFeign {
 	@GetMapping("/api/v1/booking/customerId/{customerId}")
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingByCustomerId(@PathVariable String customerId);
 
-	@GetMapping("/api/v1/appointments/customerId/{customerId}")
-	public ResponseEntity<?> retrieveInprogressAppointnmentsByCustomerId(@PathVariable String customerId);
-	
+	@GetMapping("/api/v1/appointments/Inprogress/{customerId}")
+	public ResponseEntity<?> getInprogressAppointmentsByCustomerId(@PathVariable String customerId);
 	
 	@GetMapping("/api/v1/appointments/FilterbyRelation/{customerId}")
 	public ResponseEntity<?> retrieveAppointnmentsByRelation(@PathVariable String customerId);
+	
+	@GetMapping("/api/v1/appointments/patientId/{patientId}")	
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingByPatientId(@PathVariable String patientId);
+	
+	@GetMapping("/api/v1/appointments/byInput/{input}")
+	public ResponseEntity<?> retrieveAppointnmentsByInput(@PathVariable String input);
 	
 	
 	//FALLBACK METHODS

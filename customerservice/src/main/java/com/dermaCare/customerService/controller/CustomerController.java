@@ -541,5 +541,19 @@ public ResponseEntity<Response> getAverageRatingByDoctorId( @PathVariable String
 			 @PathVariable String customerId){
 	   return customerService.retrieveAppointnmentsByRelation(customerId);
  }
+   
+   @GetMapping("/bookings/byPatientId/{patientId}")
+   public ResponseEntity<?> getInprogressBookingsByPatientId(
+			 @PathVariable String patientId){
+	   return customerService.retrieveAppointnmentsByPatientId(patientId);
+ }
+   
+   
+   @GetMapping("/bookings/byInput/{input}")
+   public ResponseEntity<?> getInprogressBookingsByInput(
+			 @PathVariable String input){
+	   return customerService.retrieveAppointnmentsByInput(input);
+ }
+   
 
 }

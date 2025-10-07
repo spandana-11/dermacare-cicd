@@ -1432,7 +1432,7 @@ public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingsByCus
 public ResponseEntity<?> getInprogressBookingsByCustomerId(String customerId) {
     ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
     try {
-        return bookingFeign.retrieveInprogressAppointnmentsByCustomerId(customerId);
+        return bookingFeign.getInprogressAppointmentsByCustomerId(customerId);
     } catch (FeignException e) {
         res = new ResponseStructure<>(null, ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR, e.status());
         return ResponseEntity.status(res.getStatusCode()).body(res);
@@ -1450,5 +1450,27 @@ public ResponseEntity<?> retrieveAppointnmentsByRelation(String customerId) {
     }
 }
 
+
+@Override
+public ResponseEntity<?> retrieveAppointnmentsByPatientId(String patientId) {
+    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+    try {
+        return bookingFeign.getBookingByPatientId(patientId);
+    } catch (FeignException e) {
+        res = new ResponseStructure<>(null, ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR, e.status());
+        return ResponseEntity.status(res.getStatusCode()).body(res);
+    }
+}
+
+@Override
+public ResponseEntity<?> retrieveAppointnmentsByInput(String input) {
+    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+    try {
+        return bookingFeign.retrieveAppointnmentsByInput(input);
+    } catch (FeignException e) {
+        res = new ResponseStructure<>(null, ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR, e.status());
+        return ResponseEntity.status(res.getStatusCode()).body(res);
+    }
+}
 
 }

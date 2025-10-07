@@ -127,4 +127,6 @@ public interface CustomerService {
 
 	public ResponseEntity<?> retrieveAppointnmentsByRelation(String customerId);
 	public ResponseEntity<?> getInprogressBookingsByCustomerId(String customerId);
+	public ResponseEntity<?> retrieveAppointnmentsByPatientId(String patientId);
+	public ResponseEntity<?> retrieveAppointnmentsByInput(String input);
 }
