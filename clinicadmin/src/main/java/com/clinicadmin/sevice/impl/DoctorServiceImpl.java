@@ -1409,7 +1409,7 @@ public class DoctorServiceImpl implements DoctorService {
 	        // ✅ Fetch all existing slots of the doctor on the same date (all branches)
 	        List<DoctorSlot> doctorSlotsOnDate = slotRepository.findAllByDoctorIdAndDate(doctorId, date);
 
-	        // ✅ Flatten all existing slots for faster comparison
+	        // ✅ Flatten all existing slots
 	        List<DoctorAvailableSlotDTO> existingSlots = doctorSlotsOnDate.stream()
 	                .flatMap(ds -> ds.getAvailableSlots().stream().map(s -> {
 	                    DoctorAvailableSlotDTO dto = new DoctorAvailableSlotDTO();
@@ -1431,15 +1431,20 @@ public class DoctorServiceImpl implements DoctorService {
 
 	        LocalTime now = LocalTime.now();
 
-	        // ✅ Compare generated slots with DB slots using overlap & past-time logic
-	        generatedSlots.forEach(slot -> {
-	            // 🔹 Check for branch overlap
+	        // ✅ Compare generated slots with DB slots using overlap & time logic
+	        List<DoctorAvailableSlotDTO> finalSlots = new ArrayList<>();
+
+	        for (DoctorAvailableSlotDTO slot : generatedSlots) {
+	            boolean conflictFound = false;
+
+	            // 🔹 Check branch overlap
 	            DoctorAvailableSlotDTO conflictSlot = existingSlots.stream()
 	                    .filter(existing -> isOverlapping(slot.getSlot(), intervalMinutes, List.of(existing), 30))
 	                    .findFirst()
 	                    .orElse(null);
 
 	            if (conflictSlot != null) {
+	                conflictFound = true;
 	                slot.setAvailable(false);
 	                slot.setReason("Already exists in " + conflictSlot.getReason() + " Branch");
 	            } else {
@@ -1447,26 +1452,35 @@ public class DoctorServiceImpl implements DoctorService {
 	                slot.setReason(null);
 	            }
 
-	            // 🔹 Disable past slots if date is today
+	            // 🔹 Disable or skip past-time slots (only for today)
 	            if (slotDate.equals(today)) {
 	                LocalTime slotTime = LocalTime.parse(normalizeTime(slot.getSlot()), formatter);
+
 	                if (slotTime.isBefore(now)) {
+	                    // if slot already exists in DB and is past — skip entirely
+	                    if (conflictFound) {
+	                        continue; // skip adding to list
+	                    }
+
+	                    // otherwise, mark unavailable
 	                    slot.setAvailable(false);
 	                    slot.setReason("Time already passed");
 	                }
 	            }
-	        });
 
-	        // ✅ Log final slot states for debugging
+	            finalSlots.add(slot);
+	        }
+
+	        // ✅ Log final slots
 	        System.out.println("Final generated slots:");
-	        generatedSlots.forEach(s ->
+	        finalSlots.forEach(s ->
 	                System.out.println(s.getSlot() + " | Available: " + s.isAvailable() + " | Reason: " + s.getReason())
 	        );
 
-	        // ✅ Add summary to response message
-	        long unavailableCount = generatedSlots.stream().filter(s -> !s.isAvailable()).count();
+	        long unavailableCount = finalSlots.stream().filter(s -> !s.isAvailable()).count();
+
 	        response.setSuccess(true);
-	        response.setData(generatedSlots);
+	        response.setData(finalSlots);
 	        response.setMessage("Slots generated successfully. " + unavailableCount
 	                + " slot(s) are unavailable due to branch conflicts or past time.");
 	        response.setStatus(200);
