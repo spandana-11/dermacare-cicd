@@ -42,9 +42,9 @@ public class Nurse {
 	private String medicalFitnessCertificate;
 	private String emailId;
 	private String previousEmploymentHistory;
-	private String experienceCertificates;
+//	private String experienceCertificates;
 	private String vaccinationStatus;
-	private InsuranceOrESIDetails insuranceOrESIdetails;
+//	private InsuranceOrESIDetails insuranceOrESIdetails;
 	private String emergencyContactNumber;
 	private String shiftTimingOrAvailability;
 	private Address address;

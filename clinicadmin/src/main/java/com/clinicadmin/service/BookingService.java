@@ -14,7 +14,7 @@ public interface BookingService {
 	Response getAllBookedServicesDetailsByBranchId(String branchId);
 	
 	public ResponseEntity<ResponseStructure<List<BookingResponseDTO>>> getBookingsByClinicIdWithBranchId(String clinicId, String branchId);
-	public ResponseEntity<?> retrieveTodayAndTomorrowAndDayAfterTomorrowAppointments(String clinicId, String branchId);
+	public ResponseEntity<?> retrieveOneWeekAppointments(String clinicId, String branchId);
 
 	public ResponseEntity<?> retrieveAppointnmentsByServiceDate(String clinicId, String branchId,String date);
 	

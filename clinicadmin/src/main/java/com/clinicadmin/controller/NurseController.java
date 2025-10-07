@@ -48,10 +48,10 @@ public class NurseController {
 	}
 
 	// ------------------- Update Nurse -------------------
-	@PutMapping("updateNurse/{hospitalId}/{nurseId}")
-	public ResponseEntity<Response> updateNurse(@PathVariable String hospitalId, @PathVariable String nurseId,
+	@PutMapping("updateNurse/{nurseId}")
+	public ResponseEntity<Response> updateNurse( @PathVariable String nurseId,
 			@RequestBody NurseDTO dto) {
-		Response response = nurseService.updateNurse(hospitalId, nurseId, dto);
+		Response response = nurseService.updateNurse(nurseId, dto);
 		return ResponseEntity.status(response.getStatus()).body(response);
 	}
 

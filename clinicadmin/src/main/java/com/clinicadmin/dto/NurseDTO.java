@@ -70,12 +70,12 @@ public class NurseDTO {
 
 	private String previousEmploymentHistory;
 
-	private String experienceCertificates;
+//	private String experienceCertificates;
 
 	private String vaccinationStatus;
 	private String profilePicture;
 
-	private InsuranceOrESIDetails insuranceOrESIdetails;
+//	private InsuranceOrESIDetails insuranceOrESIdetails;
 
 	private String gender;
 	private String qualifications;
@@ -117,7 +117,7 @@ public class NurseDTO {
 			emailId = emailId.trim();
 		if (previousEmploymentHistory != null)
 			previousEmploymentHistory = previousEmploymentHistory.trim();
-		if (experienceCertificates != null)
-			experienceCertificates = experienceCertificates.trim();
+//		if (experienceCertificates != null)
+//			experienceCertificates = experienceCertificates.trim();
 	}
 }
