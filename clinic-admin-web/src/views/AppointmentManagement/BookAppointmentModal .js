@@ -24,7 +24,7 @@ import {
 } from '@coreui/react'
 
 import { GetClinicBranches } from '../Doctors/DoctorAPI'
-import { getBookingsByPatientId } from '../../APIs/GetPatinetData'
+import { getBookingsByPatientId } from '../../APIs/GetpatinetData'
 // import fetchHospital from '../Usecontext/HospitalContext'
 
 import {
