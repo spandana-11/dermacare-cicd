@@ -36,7 +36,7 @@ import {
 import { BASE_URL, wifiUrl } from '../../baseUrl'
 import axios from 'axios'
 import { useHospital } from '../Usecontext/HospitalContext'
-import { getBookingsByPatientId } from '../../APIs/GetPatinetData'
+
 // import { getInProgressBookings, getInProgressfollowupBookings } from '../../APIs/GetFollowUpApi'
 import { toast } from 'react-toastify'
 import BookingSearch from '../widgets/BookingSearch '
