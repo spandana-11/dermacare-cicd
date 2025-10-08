@@ -10,9 +10,9 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -1255,25 +1255,36 @@ public class DoctorServiceImpl implements DoctorService {
 			List<DoctorSlot> doctorSlotsOnDate = slotRepository.findAllByDoctorIdAndDate(doctorId, dto.getDate());
 
 			// ✅ Prepare slots with availability info
-			List<DoctorAvailableSlotDTO> slotsWithAvailability = dto.getAvailableSlots().stream().map(incomingSlot -> {
-				// Check if slot already exists in another branch
-				Optional<DoctorSlot> conflictingSlot = doctorSlotsOnDate.stream().filter(slot -> slot
-						.getAvailableSlots().stream().anyMatch(s -> s.getSlot().equals(incomingSlot.getSlot())))
-						.findFirst();
+			List<DoctorAvailableSlotDTO> slotsWithAvailability = dto.getAvailableSlots().stream()
+			        .map(incomingSlot -> {
+			            Optional<DoctorSlot> conflictingSlot = doctorSlotsOnDate.stream()
+			                    .filter(slot -> slot.getAvailableSlots()
+			                            .stream()
+			                            .anyMatch(s -> s.getSlot().equals(incomingSlot.getSlot())))
+			                    .findFirst();
 
-				if (conflictingSlot.isPresent()) {
-					String existingBranchId = conflictingSlot.get().getBranchId();
-					String existingBranchName = conflictingSlot.get().getBranchName(); // ✅ Already stored in DB
+			            if (conflictingSlot.isPresent()) {
+			                String existingBranchName = conflictingSlot.get().getBranchName();
+			                incomingSlot.setAvailable(false);
+			                incomingSlot.setReason("Already exists in " + existingBranchName + " Branch");
+			            } else {
+			                incomingSlot.setAvailable(true);
+			                incomingSlot.setReason(null);
+			            }
 
-					incomingSlot.setAvailable(false);
-					incomingSlot.setReason("Already exists in " + existingBranchName + " Branch");
-				} else {
-					incomingSlot.setAvailable(true);
-					incomingSlot.setReason(null);
-				}
+			            return incomingSlot;
+			        })
+			        // ✅ Sort after mapping
+			        .sorted(Comparator.comparing(slot -> {
+			            DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+			                    .parseCaseInsensitive()
+			                    .appendPattern("h:mm a")
+			                    .toFormatter(Locale.ENGLISH);
 
-				return incomingSlot;
-			}).toList();
+			            return LocalTime.parse(normalizeTime(slot.getSlot()), formatter);
+			        }))
+			        .toList();
+
 
 			// ✅ Filter only slots that are available to save in this branch
 			List<DoctorAvailableSlotDTO> slotsToSave = slotsWithAvailability.stream()
