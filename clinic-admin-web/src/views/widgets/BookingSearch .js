@@ -13,7 +13,7 @@ import {
 } from '@coreui/react'
 import { toast } from 'react-toastify'
 import { getInProgressfollowupBookings } from '../../APIs/GetFollowUpApi'
-import { getBookingsByPatientId } from '../../APIs/GetPatinetData'
+import { getBookingsByPatientId } from '../../APIs/GetpatinetData'
 
 const BookingSearch = ({
   visitType,
