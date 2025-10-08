@@ -27,6 +27,7 @@ const SecurityForm = ({
   initialData,
   viewMode,
   technicians,
+  security,
   fetchTechs,
 }) => {
   const emptyPermissions = {} // ✅ no feature is selected by default
@@ -208,7 +209,7 @@ const SecurityForm = ({
     setFormData((prev) => ({ ...prev, [field]: value }))
 
     // Run validation on each change
-    const error = validateField(field, value, { ...formData, [field]: value }, technicians)
+    const error = validateField(field, value, { ...formData, [field]: value }, security)
 
     setErrors((prev) => ({ ...prev, [field]: error }))
   }
@@ -219,7 +220,7 @@ const SecurityForm = ({
     }))
   }
   const handleBlur = (field, value) => {
-    const error = validateField(field, value, formData, technicians)
+    const error = validateField(field, value, formData, security)
     setErrors((prev) => ({ ...prev, [field]: error }))
   }
 
@@ -287,7 +288,7 @@ const SecurityForm = ({
     }
 
     // ✅ Check duplicate contact number
-    const duplicateContact = technicians?.some(
+    const duplicateContact = security?.some(
       (t) => t.contactNumber === formData.contactNumber && t.id !== formData.id,
     )
     if (duplicateContact) {
@@ -296,7 +297,7 @@ const SecurityForm = ({
     }
 
     // ✅ Check duplicate email
-    const duplicateEmail = technicians?.some(
+    const duplicateEmail = security?.some(
       (t) => t.emailId === formData.emailId && t.id !== formData.id,
     )
     if (duplicateEmail) {
@@ -351,7 +352,7 @@ const SecurityForm = ({
       return
     }
 
-    const duplicateContact = technicians?.some(
+    const duplicateContact = security?.some(
       (t) => t.contactNumber === formData.contactNumber && t.id !== formData.id,
     )
     if (duplicateContact) {
@@ -359,7 +360,7 @@ const SecurityForm = ({
       return
     }
 
-    const duplicateEmail = technicians?.some(
+    const duplicateEmail = security?.some(
       (t) => t.emailId === formData.emailId && t.id !== formData.id,
     )
     if (duplicateEmail) {
@@ -659,14 +660,14 @@ const SecurityForm = ({
                         value={formData.previousEmployeeHistory}
                       />
                     </div>
-                    <div className="row mb-2">
+                    {/* <div className="row mb-2">
                       <div className="col-md-6">
                         <RowFull label="User Name" value={formData.userName} />
                       </div>
                       <div className="col-md-6">
                         <RowFull label="Password" value={formData.password} />
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 </Section>
               </div>
@@ -765,7 +766,7 @@ const SecurityForm = ({
                       if (/^\d*$/.test(value)) {
                         handleChange('contactNumber', value)
                         // ✅ Live validation
-                        const err = validateField('contactNumber', value, formData, technicians)
+                        const err = validateField('contactNumber', value, formData, security)
                         setErrors((prev) => ({ ...prev, contactNumber: err }))
                       }
                     }}
@@ -887,12 +888,7 @@ const SecurityForm = ({
                   <CFormInput
                     type="date"
                     value={formData.dateOfJoining}
-                    min={new Date().toISOString().split('T')[0]} // today
-                    max={
-                      new Date(new Date().setMonth(new Date().getMonth() + 3))
-                        .toISOString()
-                        .split('T')[0]
-                    } // today + 3 months
+                    max={new Date().toISOString().split('T')[0]} // today + 3 months
                     onChange={(e) => handleChange('dateOfJoining', e.target.value)}
                   />
                 </div>

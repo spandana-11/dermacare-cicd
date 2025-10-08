@@ -842,7 +842,21 @@ const CustomerManagement = () => {
                         {viewCustomerData.age || '-'} Yrs
                       </CCol>
 
-                      <CCol md={12} className="mt-3">
+                      <CCol md={6} className="mt-3">
+                        <h6></h6>
+                        <p className="ms-3">Patient-ID: {viewCustomerData.patientId || 'N/A'}</p>
+                      </CCol>
+                      <CCol md={6} className="mt-3">
+                        <h6></h6>
+                        <p className="ms-3">Referred By: {viewCustomerData.referredBy || 'N/A'}</p>
+                      </CCol>
+                      <CCol md={6} className="mt-3">
+                        <h6></h6>
+                        <p className="ms-3">
+                          referralCode: {viewCustomerData.referralCode || 'N/A'}
+                        </p>
+                      </CCol>
+                      <CCol md={6} className="mt-3">
                         <h6>
                           <FaMapMarkerAlt className="me-1" />
                         </h6>

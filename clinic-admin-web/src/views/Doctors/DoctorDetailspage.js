@@ -820,8 +820,16 @@ const DoctorDetailsPage = () => {
     const branchId = localStorage.getItem('branchId')
     const date = selectedDate // from calendar
     const intervaltime = interval
-    const start = selectedHospital.data.openingTime // ✅ directly from object
-    const end = selectedHospital.data.closingTime // ✅ directly from object
+    // const start = selectedHospital.data.openingTime // ✅ directly from object
+
+    // const end = selectedHospital.data.closingTime // ✅ directly from object
+    // ✅ directly from object
+    const availableTimes = doctorData?.availableTimes || `${start} - ${end}` // fallback
+
+    const [start, end] = availableTimes.split('-').map((time) => time.trim())
+
+    console.log(start) // "09:00 AM"
+    console.log(end) // "04:00 PM"
 
     const slots = await fetchDoctorSlots(doctorId, branchId, date, intervaltime, start, end)
     console.log(slots)

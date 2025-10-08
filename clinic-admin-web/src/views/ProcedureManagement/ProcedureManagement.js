@@ -547,25 +547,25 @@ const ServiceManagement = () => {
 
     // GST
     // GST validation (optional)
-    if (newService.gst && newService.gst.trim() !== '') {
-      if (isNaN(Number(newService.gst))) {
-        newErrors.gst = 'GST must be a valid number.'
-      } else if (Number(newService.gst) < 0) {
-        newErrors.gst = 'GST cannot be negative.'
-      } else if (Number(newService.gst) > 99) {
-        newErrors.gst = 'GST cannot exceed 99.'
-      }
-    } else {
-      // If empty, no error (optional field)
-      newErrors.gst = ''
-    }
+    // if (newService.gst && newService.gst.trim() !== '') {
+    //   if (isNaN(Number(newService.gst))) {
+    //     newErrors.gst = 'GST must be a valid number.'
+    //   } else if (Number(newService.gst) < 0) {
+    //     newErrors.gst = 'GST cannot be negative.'
+    //   } else if (Number(newService.gst) > 99) {
+    //     newErrors.gst = 'GST cannot exceed 99.'
+    //   }
+    // } else {
+    //   // If empty, no error (optional field)
+    //   newErrors.gst = ''
+    // }
 
-    // Discount (optional)
-    if (newService.discount && !/^\d+(\.\d{1,2})?$/.test(newService.discount)) {
-      newErrors.discount = 'Discount must be a valid number.'
-    } else if (Number(newService.discount) < 0 || Number(newService.discount) > 99) {
-      newErrors.discount = 'Discount must be between 0 and 99.'
-    }
+    // // Discount (optional)
+    // if (newService.discount && !/^\d+(\.\d{1,2})?$/.test(newService.discount)) {
+    //   newErrors.discount = 'Discount must be a valid number.'
+    // } else if (Number(newService.discount) < 0 || Number(newService.discount) > 99) {
+    //   newErrors.discount = 'Discount must be between 0 and 99.'
+    // }
 
     // Min Time Value
     if (!newService.minTimeValue || newService.minTimeValue.trim() === '') {
@@ -597,11 +597,11 @@ const ServiceManagement = () => {
     }
 
     // Other Taxes (optional)
-    if (newService.taxPercentage && !/^\d+(\.\d{1,2})?$/.test(newService.taxPercentage)) {
-      newErrors.taxPercentage = 'Tax Percentage must be a valid number.'
-    } else if (Number(newService.taxPercentage) < 0 || Number(newService.taxPercentage) > 99) {
-      newErrors.taxPercentage = 'Tax Percentage must be between 0 and 99.'
-    }
+    // if (newService.taxPercentage && !/^\d+(\.\d{1,2})?$/.test(newService.taxPercentage)) {
+    //   newErrors.taxPercentage = 'Tax Percentage must be a valid number.'
+    // } else if (Number(newService.taxPercentage) < 0 || Number(newService.taxPercentage) > 99) {
+    //   newErrors.taxPercentage = 'Tax Percentage must be between 0 and 99.'
+    // }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -1639,9 +1639,9 @@ const ServiceManagement = () => {
                     e.target.value = e.target.value.replace(/[^0-9.]/g, '')
                   }}
                 />
-                {errors.discount && (
+                {/* {errors.discount && (
                   <CFormText className="text-danger">{errors.discount}</CFormText>
-                )}
+                )} */}
               </CCol>
 
               <CCol md={3}>
@@ -1655,7 +1655,7 @@ const ServiceManagement = () => {
                   value={newService.gst || ''}
                   onChange={handleChange}
                 />
-                {errors.gst && <CFormText className="text-danger">{errors.gst}</CFormText>}
+                {/* {errors.gst && <CFormText className="text-danger">{errors.gst}</CFormText>} */}
               </CCol>
 
               <CCol md={3}>
@@ -1670,9 +1670,9 @@ const ServiceManagement = () => {
                     e.target.value = e.target.value.replace(/[^0-9.]/g, '')
                   }}
                 />
-                {errors.taxPercentage && (
+                {/* {errors.taxPercentage && (
                   <CFormText className="text-danger">{errors.taxPercentage}</CFormText>
-                )}
+                )} */}
               </CCol>
             </CRow>
 

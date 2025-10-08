@@ -36,11 +36,11 @@ const EmployeeManagement = () => {
     { title: 'Doctors', type: 'doctor', path: '/employee-management/doctor' },
     { title: 'Nurses', type: 'nurse', path: '/employee-management/nurse' },
     { title: 'Pharmacist', type: 'pharmacist', path: '/employee-management/pharmacist' },
-    { title: 'Laboratory', type: 'laboratory', path: '/employee-management/lab-technician' },
+    { title: 'Lab Technician', type: 'laboratory', path: '/employee-management/lab-technician' },
     { title: 'FrontDesk', type: 'frontDesk', path: '/employee-management/frontdesk' },
     { title: 'Security', type: 'security', path: '/employee-management/security' },
     { title: 'OtherStaff', type: 'otherStaff', path: '/employee-management/otherstaff' },
-    { title: 'Admin', type: 'admin', path: '/Admin' }, //TODO: Administrator
+    { title: 'Administrator', type: 'admin', path: '/Admin' }, //TODO: Administrator
   ]
 
   // ✅ Permission check function

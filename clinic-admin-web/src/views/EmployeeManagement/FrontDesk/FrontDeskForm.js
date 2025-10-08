@@ -227,7 +227,15 @@ const FrontDeskForm = ({
 
     // ✅ Enforce 250 KB max
     if (file.size > 250 * 1024) {
-      alert('File size must be less than 250KB.')
+      toast.error('File size must be less than 250KB.', {
+        position: 'top-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      })
       return
     }
 

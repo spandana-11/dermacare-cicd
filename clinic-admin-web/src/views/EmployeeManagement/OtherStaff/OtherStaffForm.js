@@ -96,6 +96,7 @@ const OtherStaffForm = ({
     'contactNumber',
     'governmentId',
     'dateOfJoining',
+    'profilePicture',
     'department',
     'clinicId',
     'medicalFitnessCertificate', // also mandatory
@@ -228,7 +229,15 @@ const OtherStaffForm = ({
     if (!file) return
     // ✅ Check file size (bytes → KB)
     if (file.size > 250 * 1024) {
-      alert('File size must be less than 250KB.')
+      toast.error('File size must be less than 250KB.', {
+        position: 'top-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      })
       return // do not proceed
     }
 

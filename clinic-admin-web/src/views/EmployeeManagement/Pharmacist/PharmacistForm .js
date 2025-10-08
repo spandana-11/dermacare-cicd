@@ -237,7 +237,15 @@ const PharmacistForm = ({
 
     // ✅ Check file size (bytes → KB)
     if (file.size > 250 * 1024) {
-      alert('File size must be less than 250KB.')
+      toast.error('File size must be less than 250KB.', {
+        position: 'top-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      })
       return // do not proceed
     }
 
@@ -282,10 +290,10 @@ const PharmacistForm = ({
       toast.error('Contact number must be 10 digits and start with 6-9.')
       return
     }
-    if (!mobileRegex.test(formData.emergencyContactNumber)) {
-      toast.error('Emergency contact must be 10 digits and start with 6-9.')
-      return
-    }
+    // if (!mobileRegex.test(formData.emergencyContactNumber)) {
+    //   toast.error('Emergency contact must be 10 digits and start with 6-9.')
+    //   return
+    // }
     // ✅ Emergency contact and Nurse contact must not be same
     if (formData.contactNumber === formData.emergencyContactNumber) {
       toast.error('Contact Number and Emergency Contact cannot be the same.')
@@ -877,12 +885,7 @@ const PharmacistForm = ({
                   <CFormInput
                     type="date"
                     value={formData.dateOfJoining}
-                    min={new Date().toISOString().split('T')[0]} // today
-                    max={
-                      new Date(new Date().setMonth(new Date().getMonth() + 3))
-                        .toISOString()
-                        .split('T')[0]
-                    } // today + 3 months
+                    max={new Date().toISOString().split('T')[0]} // ✅ disables future dates // today + 3 months
                     onChange={(e) => handleChange('dateOfJoining', e.target.value)}
                   />
                 </div>
