@@ -1,0 +1,48 @@
+name: CI/CD - Deploy to Lightsail (Docker Compose)
+
+# Trigger the workflow on pushes to main branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout repository code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Deploy to Lightsail via SSH
+      - name: Deploy to Lightsail via SSH
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ubuntu
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          port: 22
+          script: |
+            set -e  # Exit immediately if any command fails
+
+            echo "🔁 Switching to app directory..."
+            cd /home/ubuntu/dermacare-cicd || exit 1
+
+            echo "📦 Pulling latest changes from GitHub..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "🧹 Stopping existing Docker containers..."
+            docker-compose down
+
+            echo "🧩 Keeping existing Firebase and local config files..."
+            # No overwriting of manually added firebase-key.json or .env files
+
+            echo "🚀 Building Docker containers..."
+            docker-compose build --no-cache
+
+            echo "🚀 Starting Docker containers..."
+            docker-compose up -d
+
+            echo "✅ Deployment completed successfully!"
