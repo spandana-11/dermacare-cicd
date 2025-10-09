@@ -65,11 +65,123 @@ const NurseManagement = () => {
     fetchNurses()
   }, [])
 
+  // const cleanPayload = (data) => {
+  //   const payload = { ...data }
+
+  //   // Remove empty strings in top-level fields
+  //   Object.keys(payload).forEach((key) => {
+  //     if (
+  //       payload[key] === '' ||
+  //       payload[key] === null ||
+  //       (Array.isArray(payload[key]) && payload[key].length === 0)
+  //     ) {
+  //       delete payload[key]
+  //     }
+  //   })
+
+  //   // Nested objects (address, bankAccountDetails)
+  //   if (payload.address) {
+  //     Object.keys(payload.address).forEach((key) => {
+  //       if (!payload.address[key]) delete payload.address[key]
+  //     })
+  //     if (Object.keys(payload.address).length === 0) delete payload.address
+  //   }
+
+  //   if (payload.bankAccountDetails) {
+  //     Object.keys(payload.bankAccountDetails).forEach((key) => {
+  //       if (!payload.bankAccountDetails[key]) delete payload.bankAccountDetails[key]
+  //     })
+  //     if (Object.keys(payload.bankAccountDetails).length === 0) delete payload.bankAccountDetails
+  //   }
+
+  //   return payload
+  // }
+
   // ---------------- Save Nurse (Add / Edit) ----------------
   const handleSave = async (formData) => {
     try {
       if (selectedNurse) {
         // Update nurse
+        // Construct full payload before PUT
+        // const payload = {
+        //   fullName: formData.fullName || null,
+        //   gender: formData.gender || null,
+        //   dateOfBirth: formData.dateOfBirth || null,
+        //   nurseContactNumber: formData.nurseContactNumber || null,
+        //   emailId: formData.emailId || null,
+        //   governmentId: formData.governmentId || null,
+        //   qualifications: formData.qualifications || null,
+        //   dateOfJoining: formData.dateOfJoining || null,
+        //   department: formData.department || null,
+        //   yearsOfExperience: formData.yearsOfExperience || null,
+
+        //   shiftTimingOrAvailability: formData.shiftTimingOrAvailability || null,
+        //   emergencyContactNumber: formData.emergencyContactNumber || null,
+        //   vaccinationStatus: formData.vaccinationStatus || null,
+        //   previousEmploymentHistory: formData.previousEmploymentHistory || null,
+
+        //   // Nested Address
+        //   address: {
+        //     houseNo: formData.address?.houseNo || null,
+        //     street: formData.address?.street || null,
+        //     landmark: formData.address?.landmark || null,
+        //     city: formData.address?.city || null,
+        //     state: formData.address?.state || null,
+        //     postalCode: formData.address?.postalCode || null,
+        //     country: formData.address?.country || null,
+        //   },
+
+        //   // Nested Bank Account Details
+        //   bankAccountDetails: {
+        //     accountNumber: formData.bankAccountDetails?.accountNumber || null,
+        //     accountHolderName: formData.bankAccountDetails?.accountHolderName || null,
+        //     ifscCode: formData.bankAccountDetails?.ifscCode || null,
+        //     bankName: formData.bankAccountDetails?.bankName || null,
+        //     branchName: formData.bankAccountDetails?.branchName || null,
+        //     panCardNumber: formData.bankAccountDetails?.panCardNumber || null,
+        //   },
+
+        //   // Documents / Files
+        //   medicalFitnessCertificate: decodeImage(formData.medicalFitnessCertificate || null),
+        //   profilePicture: decodeImage(formData.profilePicture || null),
+        //   nursingLicense: formData.nursingLicense || null,
+        //   nursingDegreeOrDiplomaCertificate: formData.nursingDegreeOrDiplomaCertificate || null,
+        //   nursingCouncilRegistration: formData.nursingCouncilRegistration || null,
+
+        //   // Permissions
+        //   permissions: formData.permissions || {},
+
+        //   // You can include any other optional fields your backend expects
+        // }
+
+        // const payload = {
+        //   fullName: formData.fullName || '',
+        //   emailId: formData.emailId || '',
+        //   nurseContactNumber: formData.nurseContactNumber || '',
+        //   gender: formData.gender || '',
+        //   dateOfBirth: formData.dateOfBirth || '',
+        //   department: formData.department || '',
+        //   yearsOfExperience: formData.yearsOfExperience || '',
+        //   shiftTimingOrAvailability: formData.shiftTimingOrAvailability || '',
+        //   vaccinationStatus: formData.vaccinationStatus || '',
+        //   address: formData.address || {},
+        //   bankAccountDetails: formData.bankAccountDetails || {},
+        //   previousEmploymentHistory: formData.previousEmploymentHistory || '',
+        //   governmentId: formData.governmentId || '',
+        //   nursingCouncilRegistration: formData.nursingCouncilRegistration || '',
+        //   dateOfJoining: formData.dateOfJoining || '',
+        //   // medicalFitnessCertificate: formData.medicalFitnessCertificate || null,
+        //   // profilePicture: formData.profilePicture || null,
+        //   // nursingLicense: formData.nursingLicense || null,
+        //   // nursingDegreeOrDiplomaCertificate: formData.nursingDegreeOrDiplomaCertificate || null,
+        //   nursingCouncilRegistration: formData.nursingCouncilRegistration || null,
+
+        //   // Permissions
+        //   permissions: formData.permissions || {},
+        // }
+
+        // updateNurse(hospitalId, formData.id, payload)
+
         await updateNurse(hospitalId, selectedNurse.nurseId, formData)
         toast.success('Nurse updated successfully!')
       } else {
@@ -80,9 +192,10 @@ const NurseManagement = () => {
           username: res.data.data.userName,
           password: res.data.data.password,
         })
+        setModalVisible(false)
         setModalTVisible(true)
       }
-      setModalVisible(false)
+
       fetchNurses()
       setSelectedNurse(null)
       setViewMode(false)
@@ -309,7 +422,11 @@ const NurseManagement = () => {
               ))
             ) : (
               <CTableRow>
-                <CTableDataCell colSpan="8" className="text-center">
+                <CTableDataCell
+                  colSpan="8"
+                  className="text-center"
+                  style={{ color: 'var(--color-black)' }}
+                >
                   No nurse found.
                 </CTableDataCell>
               </CTableRow>

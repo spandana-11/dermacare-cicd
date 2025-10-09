@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.dermacare.bookingService.dto.BookingInfoByInput;
 import com.dermacare.bookingService.dto.BookingRequset;
 import com.dermacare.bookingService.dto.BookingResponse;
 import com.dermacare.bookingService.service.BookingService_Service;
@@ -273,6 +274,12 @@ public class BookingServiceController {
 			return service.getInProgressAppointmentsByCustomerId(customerId);
 		}
 		
+		@GetMapping("/appointments/Inprogress/patientId/{patientId}")
+		public ResponseEntity<?> getInprogressAppointmentsByPatientId(@PathVariable String patientId)
+		{
+			return service.getInProgressAppointmentsByPatientId(patientId);
+		}
+		
 		@GetMapping("/appointments/byIdsAndDate/{clinicId}/{branchId}/{date}")
 		public ResponseEntity<?> retrieveAppointnmentsByServiceDate(@PathVariable String clinicId,@PathVariable String branchId,@PathVariable String date)
 		{
@@ -295,7 +302,7 @@ public class BookingServiceController {
 		@GetMapping("/appointments/byInput/{input}")	
 		public ResponseEntity<?> retrieveAppointnmentsByInput(@PathVariable String input) {
 
-			List<BookingResponse> response = service.bookingByInput(input);
+			List<BookingInfoByInput> response = service.bookingByInput(input);
 			if (response == null || response.isEmpty()) {
 				return new ResponseEntity<>(ResponseStructure.buildResponse(null,
 						"No booking yet" + input, HttpStatus.OK, HttpStatus.OK.value()),

@@ -189,10 +189,7 @@ const handleDeleteCategoryImage = () => {
 
         return
       }
-      if (file.size > 100 * 1024) {
-        setErrors((prev) => ({ ...prev, categoryImage: "File size must be less than 100kb." }))
-        return
-      }
+     
 
       const reader = new FileReader()
       reader.onloadend = () => {

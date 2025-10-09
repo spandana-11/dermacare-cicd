@@ -73,7 +73,6 @@ const PharmacyManagement = () => {
     medicineType: '',
     duration: '',
     durationUnit: '',
-    frequency: '',
     remindWhen: '',
     times: [],
     food: '',
@@ -123,7 +122,7 @@ const PharmacyManagement = () => {
     if (!formData.medicineType?.trim()) errors.medicineType = 'Medicine Type is required'
     if (!formData.duration) errors.duration = 'Duration is required'
     if (!formData.durationUnit) errors.durationUnit = 'Unit is required'
-    if (!formData.frequency) errors.frequency = 'Frequency is required'
+    // if (!formData.frequency) errors.frequency = 'Frequency is required'
     if (!formData.times || formData.times.filter(Boolean).length === 0)
       errors.times = 'At least one Time Slot is required'
     if (!formData.food) errors.food = 'Food Instructions are required'
@@ -132,27 +131,43 @@ const PharmacyManagement = () => {
     return Object.keys(errors).length === 0
   }
 
+  // 🧠 Define this BEFORE return()
+  // ✅ Handle Save (Add or Update)
   const handleSave = async () => {
+    console.log('Clicked Save, formData:', formData)
+
+    console.log('Technician updated successfully!', formData.id)
     if (!validateForm()) return
+
     try {
       if (formData.id) {
+        // UPDATE FLOW
+        console.log('Updating medicine...')
         const updatedMedicine = await updateMedicine(formData.id, formData)
-        setMedicines((prev) => prev.map((med) => (med.id === formData.id ? updatedMedicine : med)))
+        setMedicines((prev) => prev.map((m) => (m.id === formData.id ? updatedMedicine : m)))
+        toast.success('Medicine updated successfully!')
       } else {
+        // ADD FLOW
+        console.log('Adding new medicine...')
         const newMedicine = await saveMedicineTemplate(formData)
         setMedicines((prev) => [...prev, newMedicine])
+        toast.success('Medicine added successfully!')
       }
+
+      // ✅ Reset modal & state
       setShowModal(false)
       setFormData(initialFormData)
       setFormErrors({})
       fetchMedicines()
     } catch (error) {
-      console.error(error)
+      console.error('Error saving medicine:', error)
       toast.error('Failed to save medicine!')
     }
   }
 
   const handleEdit = (medicine) => {
+    // Make sure the medicine object has an id
+    console.log('Editing medicine:', medicine)
     setFormData(medicine)
     setShowModal(true)
   }
@@ -196,7 +211,7 @@ const PharmacyManagement = () => {
   )
 
   const slotCount = () => {
-    switch (formData.frequency) {
+    switch (formData.remindWhen) {
       case 'Once a day':
         return 1
       case 'Twice a day':
@@ -518,8 +533,8 @@ const PharmacyManagement = () => {
             <CCol md={4}>
               <CFormSelect
                 label="Frequency *"
-                value={formData.frequency}
-                onChange={(e) => handleChange('frequency', e.target.value)}
+                value={formData.remindWhen}
+                onChange={(e) => handleChange('remindWhen', e.target.value)}
                 disabled={isFrequencyDisabled()} // ✅ disabled when Hour or NA
               >
                 <option value="">-- Select Frequency --</option>
@@ -666,7 +681,11 @@ const PharmacyManagement = () => {
           <CButton color="secondary" variant="outline" onClick={() => setShowModal(false)}>
             Cancel
           </CButton>
-          <CButton onClick={handleSave} style={{ backgroundColor: '#a5c4d4ff', color: '#7e3a93' }}>
+
+          <CButton
+            onClick={handleSave}
+            style={{ backgroundColor: 'var(--color-bgcolor)', color: 'var(--color-black)' }}
+          >
             Save Medicine
           </CButton>
         </CModalFooter>

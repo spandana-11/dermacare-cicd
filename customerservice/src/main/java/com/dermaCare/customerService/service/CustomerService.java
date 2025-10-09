@@ -129,4 +129,5 @@ public interface CustomerService {
 	public ResponseEntity<?> getInprogressBookingsByCustomerId(String customerId);
 	public ResponseEntity<?> retrieveAppointnmentsByPatientId(String patientId);
 	public ResponseEntity<?> retrieveAppointnmentsByInput(String input);
+	public ResponseEntity<?> getInprogressBookingsByPatientId(String patientId) ;
 }

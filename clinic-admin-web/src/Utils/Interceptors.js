@@ -143,6 +143,9 @@ export function attachInterceptors(getAuthToken) {
   const resInterceptor = http.interceptors.response.use(
     (response) => response,
     (error) => {
+      // if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      //   toast.error('⏱️ Request timed out. Please try again.')
+      // }
       if (error.response?.status === 401) {
         toast.error('Session expired. Please login again.')
         // optional: log out user
@@ -151,7 +154,7 @@ export function attachInterceptors(getAuthToken) {
       } else if (error.response?.data?.message) {
         toast.error(error.response.data.message)
       } else {
-        toast.error('Request failed.')
+        toast.error('⏱️ Request timed out. Please try again.')
       }
       return Promise.reject(error)
     },

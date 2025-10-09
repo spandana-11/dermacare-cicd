@@ -22,4 +22,7 @@ public interface CustomerServiceFeignClient {
 	
 	@GetMapping("/api/customer/getRatingInfoByDoctorId/{doctorId}")
 	public ResponseEntity<Response> getRatingInfoByDoctorId(@PathVariable String doctorId);
+	
+	@GetMapping("/api/customer/getSubServiceInfo/{subServiceId}")
+	   public ResponseEntity<Object> getSubServiceInfoBySubServiceId(@PathVariable String subServiceId);
 }

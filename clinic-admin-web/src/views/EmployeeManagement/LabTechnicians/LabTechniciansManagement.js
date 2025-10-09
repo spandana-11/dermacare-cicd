@@ -83,9 +83,11 @@ const LabTechnicianManagement = () => {
           username: res.data.data.userName,
           password: res.data.data.password,
         })
-        setModalVisible(false)
-        setModalTVisible(true)
-        toast.success('Technician added successfully!')
+        if (res.status == 200) {
+          setModalVisible(false)
+          setModalTVisible(true)
+          toast.success('Technician added successfully!')
+        }
       }
     } catch (err) {
       toast.error('❌ Failed to save technician.')
@@ -135,7 +137,7 @@ const LabTechnicianManagement = () => {
 
   return (
     <div>
-      {can('Laboratory', 'create') && (
+      {can('Lab Technician', 'create') && (
         <div
           className="mb-3 w-100"
           style={{ display: 'flex', justifyContent: 'end', alignContent: 'end', alignItems: 'end' }}
@@ -269,7 +271,7 @@ const LabTechnicianManagement = () => {
 
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
-                      {can('Laboratory', 'read') && (
+                      {can('Lab Technician', 'read') && (
                         <button
                           className="actionBtn"
                           onClick={() => {
@@ -282,7 +284,7 @@ const LabTechnicianManagement = () => {
                           <Eye size={18} />
                         </button>
                       )}
-                      {can('Laboratory', 'update') && (
+                      {can('Lab Technician', 'update') && (
                         <button
                           className="actionBtn"
                           onClick={() => {
@@ -295,7 +297,7 @@ const LabTechnicianManagement = () => {
                           <Edit2 size={18} />
                         </button>
                       )}
-                      {can('Laboratory', 'delete') && (
+                      {can('Lab Technician', 'delete') && (
                         <button
                           className="actionBtn"
                           onClick={() => {

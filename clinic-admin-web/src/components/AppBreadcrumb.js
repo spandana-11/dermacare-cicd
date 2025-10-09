@@ -5,6 +5,7 @@ import routes from '../routes'
 
 import { CBreadcrumb, CBreadcrumbItem } from '@coreui/react'
 import { COLORS } from '../Constant/Themes'
+import BackButton from '../views/widgets/BackButton'
 
 const AppBreadcrumb = () => {
   const currentLocation = useLocation().pathname
@@ -33,20 +34,25 @@ const AppBreadcrumb = () => {
   const breadcrumbs = getBreadcrumbs(currentLocation)
 
   return (
-    <CBreadcrumb className="my-0 custom-breadcrumb">
-      <CBreadcrumbItem href="/">Home</CBreadcrumbItem>
-      {breadcrumbs.map((breadcrumb, index) => {
-        return (
+    <div className="d-flex justify-content-between align-items-center align-content-center  w-100">
+      <CBreadcrumb className="my-0 custom-breadcrumb mb-0">
+        <CBreadcrumbItem href="/">Home</CBreadcrumbItem>
+        {breadcrumbs.map((breadcrumb, index) => (
           <CBreadcrumbItem
-            style={{ color: 'var(--color-black)' }}
-            {...(breadcrumb.active ? { active: true } : { href: breadcrumb.pathname })}
             key={index}
+            {...(breadcrumb.active ? { active: true } : { href: breadcrumb.pathname })}
+            style={{ color: 'var(--color-black)' }}
           >
             {breadcrumb.name}
           </CBreadcrumbItem>
-        )
-      })}
-    </CBreadcrumb>
+        ))}
+      </CBreadcrumb>
+
+      {/* 🟢 Back Button aligned at the right end */}
+      <div className="ms-auto ">
+        <BackButton />
+      </div>
+    </div>
   )
 }
 

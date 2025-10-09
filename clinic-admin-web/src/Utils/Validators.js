@@ -1,46 +1,24 @@
-import { emailPattern } from "../Constant/Constants"
+import { emailPattern } from '../Constant/Constants'
 
 // validators.js
 export const validateField = (field, value, formData = {}, technicians = []) => {
   let error = ''
 
+  const trimmedValue = typeof value === 'string' ? value.trim() : value // ✅ normalize input
+  value = trimmedValue
+
   switch (field) {
     // 🔹 Basic Info
     case 'fullName':
-      {
-        // Remove numbers and special characters immediately
-        if (value) {
-          value = value.replace(/[^A-Za-z\s]/g, '')
-        }
-
-        const trimmedValue = value ? value.trim() : ''
-        let error = ''
-
-        // Validation
-        if (!trimmedValue) {
-          error = 'Full Name is required.'
-        } else if (trimmedValue.length < 3 || trimmedValue.length > 50) {
-          error = 'Full Name must be between 3 and 50 characters.'
-        } else {
-          error = ''
-        }
-
-        // Return or set error in your state as needed
-        // Example:
-        // setErrors(prev => ({ ...prev, fullName: error }));
-      }
+      if (!value) error = 'Full Name is required.'
+      else if (value.length < 3 || value.length > 50)
+        error = 'Full Name must be between 3 and 50 characters.'
       break
 
-    // ...other fields
-
     case 'gender':
-      if (!value || value.trim() === '') {
-        error = 'Gender is required.'
-      } else if (!['male', 'female', 'other'].includes(value.toLowerCase())) {
+      if (!value) error = 'Gender is required.'
+      else if (!['male', 'female', 'other'].includes(value.toLowerCase()))
         error = 'Invalid gender selected.'
-      } else {
-        error = ''
-      }
       break
 
     case 'dateOfBirth':
@@ -52,12 +30,12 @@ export const validateField = (field, value, formData = {}, technicians = []) => 
         if (
           today.getMonth() < dob.getMonth() ||
           (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())
-        ) {
+        )
           age--
-        }
         if (age < 18) error = 'Staff must be at least 18 years old.'
       }
       break
+
     case 'yearsOfExperience':
       if (value === '' || value === null || value === undefined) {
         error = 'Years of Experience is required.'
@@ -74,33 +52,76 @@ export const validateField = (field, value, formData = {}, technicians = []) => 
       break
 
     case 'contactNumber':
-      if (!value || !/^[6-9]\d{9}$/.test(value)) {
-        error = 'Contact number must be 10 digits and start with 6-9.'
-      } else if (technicians?.some((t) => t.contactNumber === value && t.id !== formData.id)) {
-        error = 'Contact number already exists.'
-      } else if (value === formData.emergencyContact) {
-        error = 'Contact number cannot be the same as emergency contact.'
-      } else {
-        error = ''
-      }
-      break
     case 'nurseContactNumber':
-      if (!value || !/^[6-9]\d{9}$/.test(value)) {
+    case 'mobileNumber': {
+      if (!value) error = 'Contact number is required.'
+      else if (!/^[6-9]\d{9}$/.test(value))
         error = 'Contact number must be 10 digits and start with 6-9.'
-      } else if (technicians?.some((t) => t.contactNumber === value && t.id !== formData.id)) {
-        error = 'Contact number already exists.'
-      } else if (value === formData.emergencyContactNumber) {
-        error = 'Nurse contact number cannot be the same as Emergency contact number.'
-      } else {
-        error = ''
+      else if (
+        technicians?.some((t) => {
+          const existingContact = t.contactNumber || t.mobileNumber || t.nurseContactNumber
+          const existingId =
+            t.id ||
+            t.technicianId ||
+            t.pharmacistId ||
+            t.nurseId ||
+            t.securityId ||
+            t.labTechnicianId
+
+          const currentId =
+            formData.id ||
+            formData.technicianId ||
+            formData.pharmacistId ||
+            formData.nurseId ||
+            formData.securityId ||
+            formData.labTechnicianId
+
+          return existingContact === value && existingId !== currentId
+        })
+      ) {
+        error = 'Mobile number already exists.'
       }
       break
+    }
 
     case 'emailId':
-      if (!value || !emailPattern.test(value)) error = 'Valid Email is required.'
-      else if (technicians?.some((t) => t.emailId === value && t.id !== formData.id))
+    case 'email': {
+      if (!value) error = 'Email is required.'
+      else if (!emailPattern.test(value)) error = 'Valid Email is required.'
+      else if (
+        technicians?.some((t) => {
+          const existingEmail = t.emailId || t.email || t.emailID
+          const existingId =
+            t.id ||
+            t.technicianId ||
+            t.pharmacistId ||
+            t.nurseId ||
+            t.securityId ||
+            t.labTechnicianId
+
+          const currentId =
+            formData.id ||
+            formData.technicianId ||
+            formData.pharmacistId ||
+            formData.nurseId ||
+            formData.securityId ||
+            formData.labTechnicianId
+
+          return existingEmail === value && existingId !== currentId
+        })
+      ) {
         error = 'Email already exists.'
+      }
       break
+    }
+
+    case 'city':
+    case 'country':
+      if (!value) error = `${field.charAt(0).toUpperCase() + field.slice(1)} is required.`
+      else if (!/^[A-Za-z\s]+$/.test(value))
+        error = `${field.charAt(0).toUpperCase() + field.slice(1)} must contain only letters.`
+      break
+
     case 'status':
       if (!value || (value !== 'Active' && value !== 'Inactive')) {
         error = 'Status is required.'
@@ -265,33 +286,11 @@ export const validateField = (field, value, formData = {}, technicians = []) => 
 
     // 🔹 Address
     case 'houseNo':
-      if (!formData.address?.houseNo || formData.address.houseNo.trim() === '')
-        error = 'Address: House No is required.'
-      else if (formData.address.houseNo.length > 20)
-        error = 'Address: House No cannot exceed 20 characters.'
-      break
-
     case 'street':
-      if (!formData.address?.street || formData.address.street.trim() === '')
-        error = 'Address: Street is required.'
-      else if (formData.address.street.length < 2 || formData.address.street.length > 50)
-        error = 'Address: Street must be between 2 and 50 characters.'
+      if (!value) error = `Address: ${field.charAt(0).toUpperCase() + field.slice(1)} is required.`
+      else if (value.length < 1 || value.length > 50)
+        error = `Address: ${field.charAt(0).toUpperCase() + field.slice(1)} must be valid.`
       break
-
-    case 'city':
-      if (!formData.address?.city || formData.address.city.trim() === '')
-        error = 'Address: City is required.'
-      else if (formData.address.city.length < 2 || formData.address.city.length > 50)
-        error = 'Address: City must be between 2 and 50 characters.'
-      break
-
-    case 'country':
-      if (!formData.address?.country || formData.address.country.trim() === '')
-        error = 'Address: Country is required.'
-      else if (formData.address.country.length < 2 || formData.address.country.length > 50)
-        error = 'Address: Country must be between 2 and 50 characters.'
-      break
-
     // 🔹 Add more fields like bank, documents, previous employment, etc. here if needed
     case 'accountNumber':
       if (!value || value.trim() === '') error = 'Account Number is required.'
@@ -435,6 +434,9 @@ export const validateField = (field, value, formData = {}, technicians = []) => 
       if (!value || value.trim() === '') error = 'Police Verification is required.'
       else if (value.length < 2 || value.length > 50)
         error = 'Police Verification must be between 2 and 50 characters.'
+      break
+    default:
+      if (!value) error = ''
       break
   }
 

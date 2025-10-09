@@ -59,7 +59,7 @@ const ActiveAppointmentsScreen = React.lazy(
 
 const routes = [
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
-  { path: '/doctor', name: 'Doctors', element: Doctors },
+  { path: '/employee-management/doctor', name: 'Doctors', element: Doctors },
   { path: '/consent-forms', name: 'Consent Forms', element: ConsentForms },
 
   { path: '/employee-management/nurse', name: 'Nurse', element: Nurse },

@@ -237,7 +237,15 @@ const PharmacistForm = ({
 
     // ✅ Check file size (bytes → KB)
     if (file.size > 250 * 1024) {
-      alert('File size must be less than 250KB.')
+      toast.error('File size must be less than 250KB.', {
+        position: 'top-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      })
       return // do not proceed
     }
 
@@ -282,10 +290,10 @@ const PharmacistForm = ({
       toast.error('Contact number must be 10 digits and start with 6-9.')
       return
     }
-    if (!mobileRegex.test(formData.emergencyContactNumber)) {
-      toast.error('Emergency contact must be 10 digits and start with 6-9.')
-      return
-    }
+    // if (!mobileRegex.test(formData.emergencyContactNumber)) {
+    //   toast.error('Emergency contact must be 10 digits and start with 6-9.')
+    //   return
+    // }
     // ✅ Emergency contact and Nurse contact must not be same
     if (formData.contactNumber === formData.emergencyContactNumber) {
       toast.error('Contact Number and Emergency Contact cannot be the same.')
@@ -798,7 +806,7 @@ const PharmacistForm = ({
                         handleChange('contactNumber', value)
 
                         // Live validation using your existing function
-                        const err = validateField('contactNumber', value)
+                        const err = validateField('contactNumber', value, formData, pharmacists)
                         setErrors((prev) => ({ ...prev, contactNumber: err }))
                       }
                     }}
@@ -813,17 +821,17 @@ const PharmacistForm = ({
                   </CFormLabel>
                   <CFormInput
                     type="email"
-                    value={formData.emailId}
+                    value={formData.emailID}
                     onChange={(e) => {
                       const value = e.target.value
-                      handleChange('emailId', value)
+                      handleChange('emailID', value)
 
                       // Run live validation
-                      const err = validateField('emailId', value)
-                      setErrors((prev) => ({ ...prev, emailId: err }))
+                      const err = validateField('emailID', value)
+                      setErrors((prev) => ({ ...prev, emailID: err }))
                     }}
                   />
-                  {errors.emailId && <div className="text-danger mt-1">{errors.emailId}</div>}
+                  {errors.emailID && <div className="text-danger mt-1">{errors.emailID}</div>}
                 </div>
               </div>
 
@@ -877,12 +885,7 @@ const PharmacistForm = ({
                   <CFormInput
                     type="date"
                     value={formData.dateOfJoining}
-                    min={new Date().toISOString().split('T')[0]} // today
-                    max={
-                      new Date(new Date().setMonth(new Date().getMonth() + 3))
-                        .toISOString()
-                        .split('T')[0]
-                    } // today + 3 months
+                    max={new Date().toISOString().split('T')[0]} // ✅ disables future dates // today + 3 months
                     onChange={(e) => handleChange('dateOfJoining', e.target.value)}
                   />
                 </div>

@@ -85,7 +85,8 @@ const [modalData, setModalData] = useState(null) // store username & password
         })
         setModalVisible(false)
         setModalTVisible(true)
-        toast.success('Other Staff added successfully!')}
+        toast.success('Other Staff added successfully!')
+      }
     } catch (err) {
       toast.error('❌ Failed to save Other Staff.')
       console.error('API error:', err)

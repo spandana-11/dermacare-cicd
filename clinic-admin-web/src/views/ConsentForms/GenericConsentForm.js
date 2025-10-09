@@ -272,6 +272,13 @@ const GenericConsentForm = () => {
                 </CListGroup>
               )}
 
+              {answerInput.trim() !== '' && (
+                <div className="text-warning mb-2">
+                  Tip: Click the <FaPlus style={{ verticalAlign: 'middle' }} /> button to add your
+                  answer before saving the Q&A.
+                </div>
+              )}
+
               <CButton
                 color="info"
                 className="me-2"

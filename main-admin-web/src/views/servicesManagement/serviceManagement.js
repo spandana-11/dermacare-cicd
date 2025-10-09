@@ -148,10 +148,7 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
       return
     }
 
-    if (file.size > 100 * 1024) {
-      setErrors((prev) => ({ ...prev, serviceImage: "File size must be < 100kb" }))
-      return
-    }
+    
 
     const reader = new FileReader()
     reader.onloadend = () => {
@@ -840,10 +837,10 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
     onChange={(e) => {
       const file = e.target.files[0];
       if (!file) return;
-      if (file.size > 100 * 1024) {
+      if (file.size > 5000 * 1024) {
         setEditErrors((prev) => ({
           ...prev,
-          serviceImage: "File size must be less than 100kb",
+          serviceImage: "File size must be less than 5mb",
         }));
         return;
       } else {

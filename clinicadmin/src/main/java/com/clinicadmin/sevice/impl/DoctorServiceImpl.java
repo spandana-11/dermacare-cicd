@@ -3,12 +3,16 @@ package com.clinicadmin.sevice.impl;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -1251,25 +1255,36 @@ public class DoctorServiceImpl implements DoctorService {
 			List<DoctorSlot> doctorSlotsOnDate = slotRepository.findAllByDoctorIdAndDate(doctorId, dto.getDate());
 
 			// ✅ Prepare slots with availability info
-			List<DoctorAvailableSlotDTO> slotsWithAvailability = dto.getAvailableSlots().stream().map(incomingSlot -> {
-				// Check if slot already exists in another branch
-				Optional<DoctorSlot> conflictingSlot = doctorSlotsOnDate.stream().filter(slot -> slot
-						.getAvailableSlots().stream().anyMatch(s -> s.getSlot().equals(incomingSlot.getSlot())))
-						.findFirst();
+			List<DoctorAvailableSlotDTO> slotsWithAvailability = dto.getAvailableSlots().stream()
+			        .map(incomingSlot -> {
+			            Optional<DoctorSlot> conflictingSlot = doctorSlotsOnDate.stream()
+			                    .filter(slot -> slot.getAvailableSlots()
+			                            .stream()
+			                            .anyMatch(s -> s.getSlot().equals(incomingSlot.getSlot())))
+			                    .findFirst();
 
-				if (conflictingSlot.isPresent()) {
-					String existingBranchId = conflictingSlot.get().getBranchId();
-					String existingBranchName = conflictingSlot.get().getBranchName(); // ✅ Already stored in DB
+			            if (conflictingSlot.isPresent()) {
+			                String existingBranchName = conflictingSlot.get().getBranchName();
+			                incomingSlot.setAvailable(false);
+			                incomingSlot.setReason("Already exists in " + existingBranchName + " Branch");
+			            } else {
+			                incomingSlot.setAvailable(true);
+			                incomingSlot.setReason(null);
+			            }
 
-					incomingSlot.setAvailable(false);
-					incomingSlot.setReason("Already exists in " + existingBranchName + " Branch");
-				} else {
-					incomingSlot.setAvailable(true);
-					incomingSlot.setReason(null);
-				}
+			            return incomingSlot;
+			        })
+			        // ✅ Sort after mapping
+			        .sorted(Comparator.comparing(slot -> {
+			            DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+			                    .parseCaseInsensitive()
+			                    .appendPattern("h:mm a")
+			                    .toFormatter(Locale.ENGLISH);
 
-				return incomingSlot;
-			}).toList();
+			            return LocalTime.parse(normalizeTime(slot.getSlot()), formatter);
+			        }))
+			        .toList();
+
 
 			// ✅ Filter only slots that are available to save in this branch
 			List<DoctorAvailableSlotDTO> slotsToSave = slotsWithAvailability.stream()
@@ -1390,22 +1405,269 @@ public class DoctorServiceImpl implements DoctorService {
 //		return response;
 //	}
 //
+//	@Override
+//	public Response generateDoctorSlots(String doctorId, String branchId, String date, int intervalMinutes,
+//	        String openingTime, String closingTime) {
+//
+//	    Response response = new Response();
+//
+//	    try {
+//	        // ✅ Normalize input times
+//	        openingTime = normalizeTime(URLDecoder.decode(openingTime, StandardCharsets.UTF_8));
+//	        closingTime = normalizeTime(URLDecoder.decode(closingTime, StandardCharsets.UTF_8));
+//
+//	        // ✅ Generate all possible slots
+//	        List<DoctorAvailableSlotDTO> generatedSlots = generateSlots(openingTime, closingTime, intervalMinutes);
+//
+//	        // ✅ Fetch all existing slots of the doctor on the same date (all branches)
+//	        List<DoctorSlot> doctorSlotsOnDate = slotRepository.findAllByDoctorIdAndDate(doctorId, date);
+//
+//	        // ✅ Flatten all existing slots
+//	        List<DoctorAvailableSlotDTO> existingSlots = doctorSlotsOnDate.stream()
+//	                .flatMap(ds -> ds.getAvailableSlots().stream().map(s -> {
+//	                    DoctorAvailableSlotDTO dto = new DoctorAvailableSlotDTO();
+//	                    dto.setSlot(normalizeTime(s.getSlot()));
+//	                    dto.setAvailable(s.isAvailable());
+//	                    dto.setReason(ds.getBranchName());
+//	                    return dto;
+//	                }))
+//	                .toList();
+//
+//	        // ✅ Date comparison setup
+//	        LocalDate slotDate = LocalDate.parse(date);
+//	        LocalDate today = LocalDate.now();
+//
+//	        DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+//	                .parseCaseInsensitive()
+//	                .appendPattern("h:mm a")
+//	                .toFormatter(Locale.ENGLISH);
+//
+//	        LocalTime now = LocalTime.now();
+//
+//	        // ✅ Compare generated slots with DB slots using overlap & time logic
+//	        List<DoctorAvailableSlotDTO> finalSlots = new ArrayList<>();
+//
+//	        for (DoctorAvailableSlotDTO slot : generatedSlots) {
+//	            boolean conflictFound = false;
+//
+//	            // 🔹 Check branch overlap
+//	            DoctorAvailableSlotDTO conflictSlot = existingSlots.stream()
+//	                    .filter(existing -> isOverlapping(slot.getSlot(), intervalMinutes, List.of(existing), 30))
+//	                    .findFirst()
+//	                    .orElse(null);
+//
+//	            if (conflictSlot != null) {
+//	                conflictFound = true;
+//	                slot.setAvailable(false);
+//	                slot.setReason("Already exists in " + conflictSlot.getReason() + " Branch");
+//	            } else {
+//	                slot.setAvailable(true);
+//	                slot.setReason(null);
+//	            }
+//
+//	            // 🔹 Disable or skip past-time slots (only for today)
+//	            if (slotDate.equals(today)) {
+//	                LocalTime slotTime = LocalTime.parse(normalizeTime(slot.getSlot()), formatter);
+//
+//	                if (slotTime.isBefore(now)) {
+//	                    // if slot already exists in DB and is past — skip entirely
+//	                    if (conflictFound) {
+//	                        continue; // skip adding to list
+//	                    }
+//
+//	                    // otherwise, mark unavailable
+//	                    slot.setAvailable(false);
+//	                    slot.setReason("Time already passed");
+//	                }
+//	            }
+//
+//	            finalSlots.add(slot);
+//	        }
+//
+//	        // ✅ Log final slots
+//	        System.out.println("Final generated slots:");
+//	        finalSlots.forEach(s ->
+//	                System.out.println(s.getSlot() + " | Available: " + s.isAvailable() + " | Reason: " + s.getReason())
+//	        );
+//
+//	        long unavailableCount = finalSlots.stream().filter(s -> !s.isAvailable()).count();
+//
+//	        response.setSuccess(true);
+//	        response.setData(finalSlots);
+//	        response.setMessage("Slots generated successfully. " + unavailableCount
+//	                + " slot(s) are unavailable due to branch conflicts or past time.");
+//	        response.setStatus(200);
+//
+//	    } catch (Exception e) {
+//	        response.setSuccess(false);
+//	        response.setMessage("Error generating slots: " + e.getMessage());
+//	        response.setStatus(500);
+//	    }
+//
+//	    return response;
+//	}
+//
+//	private List<DoctorAvailableSlotDTO> generateSlots(String openingTime, String closingTime, int intervalMinutes) {
+//		DateTimeFormatter formatter = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern("h:mm a")
+//				.toFormatter(Locale.ENGLISH);
+//
+//		System.out.println("OpeningTime: '" + openingTime + "'");
+//		System.out.println("ClosingTime: '" + closingTime + "'");
+//
+//		LocalTime start;
+//		LocalTime end;
+//
+//		try {
+//			start = LocalTime.parse(openingTime, formatter);
+//			end = LocalTime.parse(closingTime, formatter);
+//		} catch (DateTimeParseException e) {
+//			throw new RuntimeException("Failed to parse time: " + e.getParsedString(), e);
+//		}
+//
+//		List<DoctorAvailableSlotDTO> slots = new ArrayList<>();
+//		while (!start.isAfter(end.minusMinutes(intervalMinutes))) {
+//			DoctorAvailableSlotDTO slot = new DoctorAvailableSlotDTO();
+//			slot.setSlot(start.format(formatter));
+//			slot.setAvailable(true);
+//			slots.add(slot);
+//			start = start.plusMinutes(intervalMinutes);
+//		}
+//		return slots;
+//	}
+//
+//	private String normalizeTime(String time) {
+//		time = time.trim().replaceAll("\\s+", " ").toUpperCase();
+//		time = time.replaceAll("(?<=\\d)(AM|PM)", " $1");
+//		return time;
+//	}
+//
+//	private boolean isOverlapping(String newSlot, int newInterval, List<DoctorAvailableSlotDTO> existingSlots, int existingInterval) {
+//	    DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+//	            .parseCaseInsensitive()
+//	            .appendPattern("h:mm a")
+//	            .toFormatter(Locale.ENGLISH);
+//
+//	    newSlot = normalizeTime(newSlot);
+//	    LocalTime newStart = LocalTime.parse(newSlot, formatter);
+//	    LocalTime newEnd = newStart.plusMinutes(newInterval);
+//
+//	    for (DoctorAvailableSlotDTO existing : existingSlots) {
+//	        if (existing.getSlot() == null) continue;
+//
+//	        String existingSlotStr = normalizeTime(existing.getSlot());
+//	        LocalTime existStart = LocalTime.parse(existingSlotStr, formatter);
+//
+//	        // Ensure existingInterval is valid
+//	        int effectiveInterval = existingInterval > 0 ? existingInterval : newInterval;
+//	        LocalTime existEnd = existStart.plusMinutes(effectiveInterval);
+//
+//	        // Improved overlap logic: true if any part of the new slot overlaps with existing
+//	        boolean overlaps = newStart.isBefore(existEnd) && newEnd.isAfter(existStart);
+//	        if (overlaps) {
+//	            return true;
+//	        }
+//	    }
+//	    return false;
+//	}
+
+	
+//	@Override
+//	public Response generateDoctorSlots(String doctorId, String branchId, String date, int intervalMinutes,
+//	                                    String openingTime, String closingTime) {
+//
+//	    Response response = new Response();
+//
+//	    try {
+//	        // ✅ Normalize input times
+//	        openingTime = normalizeTime(URLDecoder.decode(openingTime, StandardCharsets.UTF_8));
+//	        closingTime = normalizeTime(URLDecoder.decode(closingTime, StandardCharsets.UTF_8));
+//
+//	        // ✅ Generate all possible slots with date-aware past-time handling
+//	        List<DoctorAvailableSlotDTO> generatedSlots = generateSlots(openingTime, closingTime, intervalMinutes, date);
+//
+//	        // ✅ Fetch all existing slots of the doctor on the same date (all branches)
+//	        List<DoctorSlot> doctorSlotsOnDate = slotRepository.findAllByDoctorIdAndDate(doctorId, date);
+//
+//	        // ✅ Flatten all existing slots
+//	        List<DoctorAvailableSlotDTO> existingSlots = doctorSlotsOnDate.stream()
+//	                .flatMap(ds -> ds.getAvailableSlots().stream().map(s -> {
+//	                    DoctorAvailableSlotDTO dto = new DoctorAvailableSlotDTO();
+//	                    dto.setSlot(normalizeTime(s.getSlot()));
+//	                    dto.setAvailable(s.isAvailable());
+//	                    dto.setReason(ds.getBranchName());
+//	                    return dto;
+//	                }))
+//	                .toList();
+//
+//	        // ✅ Compare generated slots with DB slots using overlap & time logic
+//	        List<DoctorAvailableSlotDTO> finalSlots = new ArrayList<>();
+//
+//	        for (DoctorAvailableSlotDTO slot : generatedSlots) {
+//	            boolean conflictFound = false;
+//
+//	            // 🔹 Check for branch overlap conflict
+//	            DoctorAvailableSlotDTO conflictSlot = existingSlots.stream()
+//	                    .filter(existing -> isOverlapping(slot.getSlot(), intervalMinutes, List.of(existing), 30))
+//	                    .findFirst()
+//	                    .orElse(null);
+//
+//	            if (conflictSlot != null) {
+//	                conflictFound = true;
+//	                slot.setAvailable(false);
+//	                slot.setReason("Already exists in " + conflictSlot.getReason() + " Branch");
+//	            }
+//
+//	            // if conflict not found, slot availability already handled inside generateSlots()
+//	            finalSlots.add(slot);
+//	        }
+//
+//	        // ✅ Log final results
+//	        System.out.println("Final generated slots:");
+//	        finalSlots.forEach(s ->
+//	                System.out.println(s.getSlot() + " | Available: " + s.isAvailable() + " | Reason: " + s.getReason())
+//	        );
+//
+//	        long unavailableCount = finalSlots.stream().filter(s -> !s.isAvailable()).count();
+//
+//	        response.setSuccess(true);
+//	        response.setData(finalSlots);
+//	        response.setMessage("Slots generated successfully. " + unavailableCount
+//	                + " slot(s) are unavailable due to branch conflicts or past time.");
+//	        response.setStatus(200);
+//
+//	    } catch (Exception e) {
+//	        response.setSuccess(false);
+//	        response.setMessage("Error generating slots: " + e.getMessage());
+//	        response.setStatus(500);
+//	    }
+//
+//	    return response;
+//	}
+
 	@Override
 	public Response generateDoctorSlots(String doctorId, String branchId, String date, int intervalMinutes,
-	        String openingTime, String closingTime) {
+	                                    String openingTime, String closingTime) {
+
 	    Response response = new Response();
+
 	    try {
-	        // ✅ Normalize input times
+	        // ✅ Normalize times
 	        openingTime = normalizeTime(URLDecoder.decode(openingTime, StandardCharsets.UTF_8));
 	        closingTime = normalizeTime(URLDecoder.decode(closingTime, StandardCharsets.UTF_8));
 
-	        // ✅ Generate all possible slots
-	        List<DoctorAvailableSlotDTO> generatedSlots = generateSlots(openingTime, closingTime, intervalMinutes);
+	        // ✅ Detect local timezone (default to Asia/Kolkata)
+	        ZoneId zoneId = ZoneId.of("Asia/Kolkata"); // <-- change if your clinic is elsewhere
+	        ZonedDateTime nowZoned = ZonedDateTime.now(zoneId);
+	        LocalDate today = nowZoned.toLocalDate();
+	        LocalTime now = nowZoned.toLocalTime();
 
-	        // ✅ Fetch all existing slots of the doctor on the same date (all branches)
+	        // ✅ Generate slots
+	        List<DoctorAvailableSlotDTO> generatedSlots = generateSlots(openingTime, closingTime, intervalMinutes, date, zoneId);
+
+	        // ✅ Fetch existing slots
 	        List<DoctorSlot> doctorSlotsOnDate = slotRepository.findAllByDoctorIdAndDate(doctorId, date);
 
-	        // Flatten all existing slots from DB for faster comparison
+	        // ✅ Flatten existing slots
 	        List<DoctorAvailableSlotDTO> existingSlots = doctorSlotsOnDate.stream()
 	                .flatMap(ds -> ds.getAvailableSlots().stream().map(s -> {
 	                    DoctorAvailableSlotDTO dto = new DoctorAvailableSlotDTO();
@@ -1413,36 +1675,61 @@ public class DoctorServiceImpl implements DoctorService {
 	                    dto.setAvailable(s.isAvailable());
 	                    dto.setReason(ds.getBranchName());
 	                    return dto;
-	                })).toList();
+	                }))
+	                .toList();
 
-	        // ✅ Compare generated slots with DB slots using overlap logic
-	        generatedSlots.forEach(slot -> {
-	            DoctorAvailableSlotDTO conflictSlot = existingSlots.stream()
-	                .filter(existing -> isOverlapping(slot.getSlot(), intervalMinutes, List.of(existing), 30)) // assuming 30-minute slots
-	                .findFirst()
-	                .orElse(null);
+	        DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+	                .parseCaseInsensitive()
+	                .appendPattern("h:mm a")
+	                .toFormatter(Locale.ENGLISH);
 
-	            if (conflictSlot != null) {
-	                slot.setAvailable(false);
-	                slot.setReason("Already exists in " + conflictSlot.getReason() + " Branch");
-	            } else {
-	                slot.setAvailable(true);
-	                slot.setReason(null);
+	        LocalDate slotDate = LocalDate.parse(date);
+	        List<DoctorAvailableSlotDTO> finalSlots = new ArrayList<>();
+
+	        for (DoctorAvailableSlotDTO slot : generatedSlots) {
+	            LocalTime slotTime = LocalTime.parse(normalizeTime(slot.getSlot()), formatter);
+	            boolean available = slot.isAvailable();
+	            String reason = slot.getReason();
+
+	            // 🔹 Branch overlap
+	            if (available) {
+	                DoctorAvailableSlotDTO conflictSlot = existingSlots.stream()
+	                        .filter(existing -> isOverlapping(slot.getSlot(), intervalMinutes, List.of(existing), 30))
+	                        .findFirst()
+	                        .orElse(null);
+
+	                if (conflictSlot != null) {
+	                    available = false;
+	                    reason = "Already exists in " + conflictSlot.getReason() + " Branch";
+	                }
 	            }
-	        });
 
+	            // 🔹 Date/time checks (timezone aware)
+	            if (slotDate.isBefore(today)) {
+	                available = false;
+	                reason = "Date already passed";
+	            } else if (slotDate.equals(today) && slotTime.isBefore(now)) {
+	                available = false;
+	                reason = "Time already passed";
+	            }
 
-	        // ✅ Log final slot states
+	            slot.setAvailable(available);
+	            slot.setReason(reason);
+	            finalSlots.add(slot);
+	        }
+
+	        // ✅ Logging
 	        System.out.println("Final generated slots:");
-	        generatedSlots.forEach(s -> System.out
-	                .println(s.getSlot() + " | Available: " + s.isAvailable() + " | Reason: " + s.getReason()));
+	        finalSlots.forEach(s ->
+	                System.out.println(s.getSlot() + " | Available: " + s.isAvailable() + " | Reason: " + s.getReason())
+	        );
 
-	        // ✅ Add summary to response message
-	        long unavailableCount = generatedSlots.stream().filter(s -> !s.isAvailable()).count();
+	        long unavailableCount = finalSlots.stream().filter(s -> !s.isAvailable()).count();
+
 	        response.setSuccess(true);
-	        response.setData(generatedSlots);
+	        response.setData(finalSlots);
 	        response.setMessage("Slots generated successfully. " + unavailableCount
-	                + " slot(s) are unavailable due to branch conflicts.");
+	                + " slot(s) are unavailable due to branch conflicts or past time.");
 	        response.setStatus(200);
 
 	    } catch (Exception e) {
@@ -1454,38 +1741,62 @@ public class DoctorServiceImpl implements DoctorService {
 	    return response;
 	}
 
-	private List<DoctorAvailableSlotDTO> generateSlots(String openingTime, String closingTime, int intervalMinutes) {
-		DateTimeFormatter formatter = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern("h:mm a")
-				.toFormatter(Locale.ENGLISH);
 
-		System.out.println("OpeningTime: '" + openingTime + "'");
-		System.out.println("ClosingTime: '" + closingTime + "'");
+	// ---------------- Helper Methods ----------------
 
-		LocalTime start;
-		LocalTime end;
+	private List<DoctorAvailableSlotDTO> generateSlots(String openingTime, String closingTime, int intervalMinutes, String date, ZoneId zoneId) {
+    DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+            .parseCaseInsensitive()
+            .appendPattern("h:mm a")
+            .toFormatter(Locale.ENGLISH);
 
-		try {
-			start = LocalTime.parse(openingTime, formatter);
-			end = LocalTime.parse(closingTime, formatter);
-		} catch (DateTimeParseException e) {
-			throw new RuntimeException("Failed to parse time: " + e.getParsedString(), e);
-		}
+    LocalTime start;
+    LocalTime end;
 
-		List<DoctorAvailableSlotDTO> slots = new ArrayList<>();
-		while (!start.isAfter(end.minusMinutes(intervalMinutes))) {
-			DoctorAvailableSlotDTO slot = new DoctorAvailableSlotDTO();
-			slot.setSlot(start.format(formatter));
-			slot.setAvailable(true);
-			slots.add(slot);
-			start = start.plusMinutes(intervalMinutes);
-		}
-		return slots;
-	}
+    try {
+        start = LocalTime.parse(openingTime.trim().toUpperCase(), formatter);
+        end = LocalTime.parse(closingTime.trim().toUpperCase(), formatter);
+    } catch (DateTimeParseException e) {
+        throw new RuntimeException("Failed to parse time: " + e.getParsedString(), e);
+    }
+
+    List<DoctorAvailableSlotDTO> slots = new ArrayList<>();
+    LocalDate today = ZonedDateTime.now(zoneId).toLocalDate();
+    LocalTime now = ZonedDateTime.now(zoneId).toLocalTime();
+    LocalDate slotDate = LocalDate.parse(date);
+
+    // ❌ If selected date is before today — no slots at all
+    if (slotDate.isBefore(today)) {
+        return slots;
+    }
+
+    while (!start.isAfter(end.minusMinutes(intervalMinutes))) {
+
+        // ⏰ Skip past slots for today's date
+        if (slotDate.equals(today) && start.isBefore(now)) {
+            start = start.plusMinutes(intervalMinutes);
+            continue;
+        }
+
+        DoctorAvailableSlotDTO slot = new DoctorAvailableSlotDTO();
+        slot.setSlot(start.format(formatter));
+        slot.setSlotbooked(false);
+        slot.setAvailable(true);
+        slot.setReason(null);
+
+        slots.add(slot);
+        start = start.plusMinutes(intervalMinutes);
+    }
+
+    return slots;
+}
+
+
 
 	private String normalizeTime(String time) {
-		time = time.trim().replaceAll("\\s+", " ").toUpperCase();
-		time = time.replaceAll("(?<=\\d)(AM|PM)", " $1");
-		return time;
+	    time = time.trim().replaceAll("\\s+", " ").toUpperCase();
+	    time = time.replaceAll("(?<=\\d)(AM|PM)", " $1");
+	    return time;
 	}
 
 	private boolean isOverlapping(String newSlot, int newInterval, List<DoctorAvailableSlotDTO> existingSlots, int existingInterval) {
@@ -1504,11 +1815,9 @@ public class DoctorServiceImpl implements DoctorService {
 	        String existingSlotStr = normalizeTime(existing.getSlot());
 	        LocalTime existStart = LocalTime.parse(existingSlotStr, formatter);
 
-	        // Ensure existingInterval is valid
 	        int effectiveInterval = existingInterval > 0 ? existingInterval : newInterval;
 	        LocalTime existEnd = existStart.plusMinutes(effectiveInterval);
 
-	        // Improved overlap logic: true if any part of the new slot overlaps with existing
 	        boolean overlaps = newStart.isBefore(existEnd) && newEnd.isAfter(existStart);
 	        if (overlaps) {
 	            return true;
@@ -1517,6 +1826,7 @@ public class DoctorServiceImpl implements DoctorService {
 	    return false;
 	}
 
+	
 //	private boolean isOverlapping(String newSlot, int newInterval, List<DoctorAvailableSlotDTO> existingSlots,
 //			int existingInterval) {
 //		DateTimeFormatter formatter = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern("h:mm a")

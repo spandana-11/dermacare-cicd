@@ -80,12 +80,12 @@ const ReferDoctorManagement = () => {
         const res = await addReferDoctor(formData)
         await fetchTechs() // refresh from API
         console.log(res)
-        setModalData({
-          username: res.data.data.userName,
-          password: res.data.data.password,
-        })
+        // setModalData({
+        //   username: res.data.data.userName,
+        //   password: res.data.data.password,
+        // })
         setModalVisible(false)
-        setModalTVisible(true)
+        // setModalTVisible(true)
         toast.success('ReferDoctor added successfully!')
       }
     } catch (err) {
@@ -133,7 +133,7 @@ const ReferDoctorManagement = () => {
 
   return (
     <div>
-      {can('Laboratory', 'create') && (
+      {can('Reffer Doctor', 'create') && (
         <div
           className="mb-3 w-100"
           style={{ display: 'flex', justifyContent: 'end', alignContent: 'end', alignItems: 'end' }}
@@ -149,7 +149,7 @@ const ReferDoctorManagement = () => {
           </CButton>
         </div>
       )}
-      <CModal visible={modalTVisible} backdrop="static" keyboard={false}>
+      {/* <CModal visible={modalTVisible} backdrop="static" keyboard={false}>
         <CModalHeader>
           <h5>Technician Credentials</h5>
         </CModalHeader>
@@ -181,7 +181,7 @@ const ReferDoctorManagement = () => {
             Close
           </CButton>
         </CModalFooter>
-      </CModal>
+      </CModal> */}
       <ConfirmationModal
         isVisible={isModalVisible}
         title="Delete ReferDoctor"
@@ -267,7 +267,7 @@ const ReferDoctorManagement = () => {
 
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
-                      {can('Laboratory', 'read') && (
+                      {can('Reffer Doctor', 'read') && (
                         <button
                           className="actionBtn"
                           onClick={() => {
@@ -280,7 +280,7 @@ const ReferDoctorManagement = () => {
                           <Eye size={18} />
                         </button>
                       )}
-                      {can('Laboratory', 'update') && (
+                      {can('Reffer Doctor', 'update') && (
                         <button
                           className="actionBtn"
                           onClick={() => {
@@ -293,7 +293,7 @@ const ReferDoctorManagement = () => {
                           <Edit2 size={18} />
                         </button>
                       )}
-                      {can('Laboratory', 'delete') && (
+                      {can('Reffer Doctor', 'delete') && (
                         <button
                           className="actionBtn"
                           onClick={() => {

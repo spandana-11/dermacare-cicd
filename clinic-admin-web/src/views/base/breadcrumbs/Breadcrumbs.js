@@ -10,6 +10,7 @@ import {
   CLink,
 } from '@coreui/react'
 import { DocsExample } from 'src/components'
+import BackButton from '../../widgets/BackButton'
 
 const Breadcrumbs = () => {
   return (
@@ -67,6 +68,7 @@ const Breadcrumbs = () => {
           </CCardBody>
         </CCard>
       </CCol>
+ 
     </CRow>
   )
 }

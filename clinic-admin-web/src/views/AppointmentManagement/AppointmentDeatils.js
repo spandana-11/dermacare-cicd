@@ -349,14 +349,14 @@ const AppointmentDetails = () => {
               Add Vitals
             </CButton>
           )}
-          <CButton
+          {/* <CButton
             color="secondary"
             size="sm"
             onClick={() => navigate(-1)}
             style={{ backgroundColor: 'var(--color-black)' }}
           >
             Back
-          </CButton>
+          </CButton> */}
         </div>
       </div>
 

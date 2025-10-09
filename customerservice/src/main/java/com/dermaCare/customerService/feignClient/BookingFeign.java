@@ -86,6 +86,8 @@ public interface BookingFeign {
 	@GetMapping("/api/v1/appointments/byInput/{input}")
 	public ResponseEntity<?> retrieveAppointnmentsByInput(@PathVariable String input);
 	
+	@GetMapping("/api/v1/appointments/Inprogress/patientId/{patientId}")
+	public ResponseEntity<?> getInprogressAppointmentsByPatientId(@PathVariable String patientId);
 	
 	//FALLBACK METHODS
 	

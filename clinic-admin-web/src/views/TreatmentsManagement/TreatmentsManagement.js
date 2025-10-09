@@ -442,20 +442,19 @@ const TreatmentsManagement = () => {
                 {errors.treatmentName}
               </div>
             )}
+            <CModalFooter>
+              <CButton color="secondary" onClick={() => setModalVisible(false)}>
+                Cancel
+              </CButton>
+              <CButton
+                type="submit" // ✅ triggers form submit (handled above)
+                style={{ backgroundColor: 'var(--color-black)' }}
+                className="text-white"
+              >
+                Add
+              </CButton>
+            </CModalFooter>
           </CForm>
-
-          <CModalFooter>
-            <CButton color="secondary" onClick={() => setModalVisible(false)}>
-              Cancel
-            </CButton>
-            <CButton
-              type="submit" // ✅ triggers form submit (handled above)
-              style={{ backgroundColor: 'var(--color-black)' }}
-              className="text-white"
-            >
-              Add
-            </CButton>
-          </CModalFooter>
         </CModalBody>
       </CModal>
 

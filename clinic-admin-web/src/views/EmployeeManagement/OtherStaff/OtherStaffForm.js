@@ -96,6 +96,7 @@ const OtherStaffForm = ({
     'contactNumber',
     'governmentId',
     'dateOfJoining',
+    'profilePicture',
     'department',
     'clinicId',
     'medicalFitnessCertificate', // also mandatory
@@ -228,7 +229,15 @@ const OtherStaffForm = ({
     if (!file) return
     // ✅ Check file size (bytes → KB)
     if (file.size > 250 * 1024) {
-      alert('File size must be less than 250KB.')
+      toast.error('File size must be less than 250KB.', {
+        position: 'top-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      })
       return // do not proceed
     }
 
@@ -272,10 +281,10 @@ const OtherStaffForm = ({
       toast.error('Contact number must be 10 digits and start with 6-9.')
       return
     }
-    if (!mobileRegex.test(formData.emergencyContact)) {
-      toast.error('Emergency contact must be 10 digits and start with 6-9.')
-      return
-    }
+    // if (!mobileRegex.test(formData.emergencyContact)) {
+    //   toast.error('Emergency contact must be 10 digits and start with 6-9.')
+    //   return
+    // }
     // ✅ Emergency contact and Nurse contact must not be same
     if (formData.contactNumber === formData.emergencyContact) {
       toast.error('Contact Number and Emergency Contact cannot be the same.')
@@ -713,7 +722,7 @@ const OtherStaffForm = ({
                       if (/^\d*$/.test(value)) {
                         handleChange('contactNumber', value)
                         // ✅ Live validation
-                        const error = validators.contactNumber(value)
+                        const error = validators.contactNumber(value, formData, technicians)
                         setErrors((prev) => ({ ...prev, contactNumber: error }))
                       }
                     }}

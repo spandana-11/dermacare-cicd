@@ -22,6 +22,8 @@ public interface CustomerOnboardingService {
 	Response getCustomersByHospitalIdAndBranchId(String hospitalId, String branchId);
 
 	Response login(CustomerLoginDTO dto);
+	
+	public Response getCustomersByPatientId(String patientId);
 //
 //	Response resetPassword(ChangeDoctorPasswordDTO dto);
 }

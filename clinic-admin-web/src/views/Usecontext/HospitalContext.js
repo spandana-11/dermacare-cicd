@@ -76,6 +76,7 @@ export const HospitalProvider = ({ children }) => {
       if (res.status === 200 && res.data) {
         setSelectedHospital(res.data)
       }
+      return res.data // ✅ return data here
       console.log(res.data)
     } catch (err) {
       console.error(err)
