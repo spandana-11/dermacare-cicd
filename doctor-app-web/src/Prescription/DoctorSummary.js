@@ -324,7 +324,7 @@ const DoctorSummary = ({
         treatments: formData?.treatments,
         followUp: formData.followUp,
         prescription: formData.prescription,
-        visitType: patientData?.visitType || "OFFLINE",
+        // visitType: patientData?.visitType || "OFFLINE",
       }
       console.log(payload)
       const response = await createDoctorSaveDetails(payload)

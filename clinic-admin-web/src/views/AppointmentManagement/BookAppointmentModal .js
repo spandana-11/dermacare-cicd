@@ -24,6 +24,7 @@ import {
 } from '@coreui/react'
 
 import { GetClinicBranches } from '../Doctors/DoctorAPI'
+import { useNavigate } from 'react-router-dom'
 
 // import fetchHospital from '../Usecontext/HospitalContext'
 
@@ -36,10 +37,9 @@ import {
 import { BASE_URL, wifiUrl } from '../../baseUrl'
 import axios from 'axios'
 import { useHospital } from '../Usecontext/HospitalContext'
-
 // import { getInProgressBookings, getInProgressfollowupBookings } from '../../APIs/GetFollowUpApi'
 import { toast } from 'react-toastify'
-import BookingSearch from '../widgets/BookingSearch '
+import BookingSearch from '../widgets/BookingSearch'
 import LoadingIndicator from '../../Utils/loader'
 import { postBooking } from '../../APIs/BookServiceAPi'
 
@@ -56,6 +56,9 @@ const BookAppointmentModal = ({ visible, onClose }) => {
   const [selectedDate, setSelectedDate] = useState('')
   const [sloading, setSLoading] = useState(false)
   const [bookingData, setBookingData] = useState(null)
+  const [loadingFee, setLoadingFee] = useState(false)
+  const navigate = useNavigate()
+
 
   const [selectedBooking, setSelectedBooking] = useState(null)
   const [mvisible, setMVisible] = useState(false)
@@ -88,46 +91,7 @@ const BookAppointmentModal = ({ visible, onClose }) => {
   const type = appointmentType.trim().toLowerCase()
 
   const [bookingDetails, setBookingDetails] = useState({
-    // categoryName: 'General Medicine',
-    // categoryId: 'CAT123',
-    // servicename: 'Consultation',
-    // serviceId: 'SERV456',
-    // subServiceName: 'Follow-up Checkup',
-    // subServiceId: 'SUB789',
-    // clinicId: localStorage.getItem('HospitalId') || '',
-    // clinicName: localStorage.getItem('HospitalName') || '',
-    // clinicAddress: '123 Health Street, Chennai',
-    // doctorId: 'DOC1001',
-    // doctorName: 'Dr. Prakash Kumar',
-    // doctorDeviceId: 'DEV56789',
-    // consultationType: 'Online',
-    // consultationFee: 500.0,
-    // totalFee: 650.0,
-    // consultationExpiration: '2025-12-31',
-    // paymentType: 'UPI',
-    // visitType: 'Followup',
-    // symptomsDuration: '3 Days',
-    // attachments: [], // optional files
-    // freeFollowUps: 2,
-    // consentFormPdf: 'https://example.com/consent.pdf',
-    // doctorRefCode: 'REFD123',
-    // customerId: 'CUST001',
-    // branchname: localStorage.getItem('branchName') || '',
-    // branchId: localStorage.getItem('branchId') || '',
-    // customerDeviceId: 'DEV12345',
-    // name: 'Arun Kumar',
-    // relation: 'Self',
-    // patientAddress: '45 Gandhi Street, Chennai',
-    // patientMobileNumber: '9876543210',
-    // age: '32',
-    // gender: 'Male',
-    // bookingFor: 'Self',
-    // mobileNumber: '9876543210',
-    // problem: 'Fever and Cough',
-    // serviceDate: '2025-10-07',
-    // servicetime: '10:30 AM',
-
-    // Branch & clinic info
+  // Branch & clinic info
 
     branchId: localStorage.getItem('branchId') || '',
     branchname: localStorage.getItem('branchName') || '',
@@ -162,7 +126,7 @@ const BookAppointmentModal = ({ visible, onClose }) => {
     // Patient info
     bookingFor: 'Self', // Self / Others
     name: '',
-    relation: '', // If booking for others
+    // relation: '', // If booking for others
     patientAddress: '',
     patientMobileNumber: '',
     mobileNumber: '', // optional, same as patientMobileNumber
@@ -348,7 +312,7 @@ const BookAppointmentModal = ({ visible, onClose }) => {
         if (bookingDetails.consultationType.toLowerCase().includes('service')) {
           setBookingDetails((prev) => ({
             ...prev,
-            // consultationFee: subServiceInfo.consultationFee || 0,
+            consultationFee: subServiceInfo.consultationFee || 0,
             servicecost: subServiceInfo.price,
             discountAmount: subServiceInfo.discountedCost || 0,
             discountPercentage: subServiceInfo.discountPercentage || 0,
@@ -409,12 +373,43 @@ const BookAppointmentModal = ({ visible, onClose }) => {
     fetchSubServices()
   }, [selectedService])
 
-  const slotsToShow = slotsForSelectedDate
-    .filter((s) => formatDate(s.day || s.date) === selectedDate)
-    .flatMap((s) => s.availableSlots || [])
+const now = new Date() // current time
 
-  // initially show only 2 rows (6 slots per row => 12 slots)
-  const visibleSlots = showAllSlots ? slotsToShow : slotsToShow.slice(0, 12)
+  // Filter slots for selected date and remove past slots for today
+  const slotsToShow = (slotsForSelectedDate || [])
+    .filter(
+      (s) => new Date(s.day || s.date).toDateString() === new Date(selectedDate).toDateString(),
+    )
+    .flatMap((s) => s.availableSlots || []) // default to [] if undefined
+
+    .filter((slotObj) => {
+      const slotDate = new Date(selectedDate)
+      const [time, meridian] = slotObj.slot.split(' ') // "09:30 AM"
+      let [hours, minutes] = time.split(':').map(Number)
+      if (meridian === 'PM' && hours !== 12) hours += 12
+      if (meridian === 'AM' && hours === 12) hours = 0
+      slotDate.setHours(hours, minutes, 0, 0)
+
+      // Only remove past slots for today
+      const isToday = new Date(selectedDate).toDateString() === now.toDateString()
+      if (isToday) return slotDate > now
+      return true
+    })
+
+  // Sort slots by time
+  const sortedSlots = slotsToShow.sort((a, b) => {
+    const parseTime = (slot) => {
+      const [time, meridian] = slot.slot.split(' ')
+      let [hours, minutes] = time.split(':').map(Number)
+      if (meridian === 'PM' && hours !== 12) hours += 12
+      if (meridian === 'AM' && hours === 12) hours = 0
+      return hours * 60 + minutes
+    }
+    return parseTime(a) - parseTime(b)
+  })
+
+  // Only show first 12 slots unless "show all" is clicked
+  const visibleSlots = showAllSlots ? sortedSlots : sortedSlots.slice(0, 12)
 
   // ✅ Fetch Branches (when modal opens)
   useEffect(() => {
@@ -442,7 +437,11 @@ const BookAppointmentModal = ({ visible, onClose }) => {
   // ✅ Fetch Doctors when Branch & SubService are chosen
 
   useEffect(() => {
-    const fetchDoctors = async () => {
+
+    fetchDoctors()
+  }, [appointmentType, bookingDetails.branchId, selectedSubService])
+
+      const fetchDoctors = async () => {
       setLoadingDoctors(true)
       try {
         let doctorsList = []
@@ -473,9 +472,6 @@ const BookAppointmentModal = ({ visible, onClose }) => {
       }
     }
 
-    fetchDoctors()
-  }, [appointmentType, bookingDetails.branchId, selectedSubService])
-
   const fetchSlots = async (doctorId) => {
     try {
       const hospitalId = localStorage.getItem('HospitalId')
@@ -500,55 +496,94 @@ const BookAppointmentModal = ({ visible, onClose }) => {
     }
   }
 
+  // Watch for appointmentType changes and reset related fields
+
+
+
   // Fetch available slots for a doctor
 
-  const handleBookingChange = (e) => {
-    const { name, value } = e.target
+ const handleBookingChange = (e) => {
+  const { name, value } = e.target
 
-    setBookingDetails((prev) => {
-      let updatedDetails = { ...prev, [name]: value }
+  setBookingDetails((prev) => {
+    let updatedDetails = { ...prev, [name]: value }
+      if (name === 'patientMobileNumber' && value.startsWith('0')) {
+    return // ignore the input
+  }
 
-      // ✅ Sync mobileNumber when patientMobileNumber changes
-      if (name === 'patientMobileNumber') {
-        updatedDetails.mobileNumber = value
-      }
+    // ✅ Sync mobileNumber when patientMobileNumber changes
+    if (name === 'patientMobileNumber') {
+      updatedDetails.mobileNumber = value
+    }
 
-      // DOB → Age
-      if (name === 'dob' && value) {
-        const today = new Date()
-        const dob = new Date(value)
-        let age = today.getFullYear() - dob.getFullYear()
-        const m = today.getMonth() - dob.getMonth()
-        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--
-        updatedDetails.age = age >= 1 ? age : 0
-      }
+    // ✅ DOB → Age
+    if (name === 'dob' && value) {
+      const today = new Date()
+      const dob = new Date(value)
+      let age = today.getFullYear() - dob.getFullYear()
+      const m = today.getMonth() - dob.getMonth()
+      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--
+      updatedDetails.age = age >= 1 ? age : 0
+    }
 
-      // Age → DOB
-      if (name === 'age' && value) {
-        const today = new Date()
-        const dob = new Date()
-        dob.setFullYear(today.getFullYear() - parseInt(value))
-        updatedDetails.dob = dob.toISOString().split('T')[0] // YYYY-MM-DD
-      }
-      if (name === 'symptomsDuration' || name === 'unit') {
-        const duration = name === 'symptomsDuration' ? value : updatedDetails.symptomsDuration
-        const unit = name === 'unit' ? value : updatedDetails.unit
-        updatedDetails.symptomsDuration = duration && unit ? `${duration} ${unit}` : duration
-      }
+    // ✅ Age → DOB
+    if (name === 'age' && value) {
+      const today = new Date()
+      const dob = new Date()
+      dob.setFullYear(today.getFullYear() - parseInt(value))
+      updatedDetails.dob = dob.toISOString().split('T')[0] // YYYY-MM-DD
+    }
 
-      return updatedDetails
-    })
+    // ✅ Combine symptoms duration and unit
+    if (name === 'symptomsDuration' || name === 'unit') {
+      const duration = name === 'symptomsDuration' ? value : updatedDetails.symptomsDuration
+      const unit = name === 'unit' ? value : updatedDetails.unit
+      updatedDetails.symptomsDuration = duration && unit ? `${duration} ${unit}` : duration
+    }
 
-    // Remove errors
-    setErrors((prev) => {
-      const updatedErrors = { ...prev }
-      if (name === 'dob' || name === 'age') {
+    return updatedDetails
+  })
+
+  // ✅ Real-time validation
+  setErrors((prev) => {
+    const updatedErrors = { ...prev }
+
+    // Validation rules
+    switch (name) {
+      case 'name':
+        if (!value || value.trim() === '') updatedErrors[name] = 'Name is required'
+        else delete updatedErrors[name]
+        break
+
+      case 'patientMobileNumber':
+        if (!value) updatedErrors[name] = 'Mobile number is required'
+        else if (!/^[6-9]\d{9}$/.test(value))
+          updatedErrors[name] = 'Enter a valid 10-digit mobile number starting with 6-9'
+        else delete updatedErrors[name]
+        break
+
+      case 'appointmentType':
+        if (!value || value.trim() === '') {
+          updatedErrors[name] = 'Please select appointment type'
+        } else {
+          delete updatedErrors[name] // ✅ remove error as soon as valid
+        }
+        break
+
+      case 'dob':
+      case 'age':
         delete updatedErrors.dob
         delete updatedErrors.age
-      }
-      return updatedErrors
-    })
-  }
+        break
+
+      default:
+        break
+    }
+
+    return updatedErrors
+  })
+}
+
 
   const handleNestedChange = (section, field, value) => {
     // Update the bookingDetails
@@ -588,86 +623,100 @@ const BookAppointmentModal = ({ visible, onClose }) => {
     })
   }
 
-  const validate = () => {
-    const newErrors = {}
+ const validate = () => {
+  const newErrors = {}
+
+  // Visit Type
+  if (!visitType) newErrors.visitType = 'Please select visit type'
+
+  // Appointment Type (required only for first visit)
+  
+    // if (appointmentType)
+    //   newErrors.appointmentType = 'Please select appointment type'
+  
+
+  // Contact Info (only for new patients)
+  if (!selectedBooking && visitType !== 'followup') {
+    if (!bookingDetails.name || bookingDetails.name.trim().length === 0) {
+  newErrors.name = 'Name is required'
+} else if (bookingDetails.name.trim().length < 3) {
+  newErrors.name = 'Name must be at least 3 characters'
+}
+
+
+    if (!bookingDetails.dob) newErrors.dob = 'Date of Birth is required'
+
+    if (!bookingDetails.gender) newErrors.gender = 'Please select gender'
+
+ if (!bookingDetails.patientMobileNumber) {
+  newErrors.patientMobileNumber = 'Mobile number is required'
+} else if (!/^[6-9]\d{9}$/.test(bookingDetails.patientMobileNumber)) {
+  newErrors.patientMobileNumber =
+    'Enter a valid 10-digit mobile number starting with 6-9'
+} else {
+  delete newErrors.patientMobileNumber
+}
+
+
+
+    // Address validations
     const addressErrors = {}
-
-    // Name
-    if (!bookingDetails.name?.trim()) newErrors.name = 'Name is required.'
-    // else if (!/^[A-Za-z\s]+$/.test(bookingDetails.name))
-    //   newErrors.name = 'Name must contain only letters.'
-    else if (bookingDetails.name.length < 3 || bookingDetails.name.length > 50)
-      newErrors.name = 'Name must be 3-50 characters.'
-
-    //   if (!bookingDetails.patientId?.trim()) {
-    //   newErrors.patientId = 'Patient ID is required.';
-    // } else if (bookingDetails.patientId.length < 3 || bookingDetails.patientId.length > 20) {
-    //   newErrors.patientId = 'Patient ID must be 3-20 characters.';
-    // }
-
-    // Address
-    // if (!bookingDetails.patientAddress?.trim())
-    //   newErrors.patientAddress = 'Address is required.';
-    // else if (bookingDetails.patientAddress.length < 5 || bookingDetails.patientAddress.length > 200)
-    //   newErrors.patientAddress = 'Address must be 5-200 characters.';
-
-    // Mobile Number
-    if (!bookingDetails.patientMobileNumber?.trim())
-      newErrors.patientMobileNumber = 'Mobile number is required.'
-    else if (!/^[6-9]\d{9}$/.test(bookingDetails.patientMobileNumber))
-      newErrors.patientMobileNumber = 'Enter a valid 10-digit mobile number starting with 6-9.'
-
-    // Age
-
-    // Gender
-    if (!bookingDetails.gender) newErrors.gender = 'Gender is required.'
-
-    // Branch
-    // if (!bookingDetails.branchname) newErrors.branchname = 'Branch selection is required.';
-
-    // Doctor Name
-    if (!bookingDetails.doctorName) newErrors.doctorName = 'Doctor name is required.'
-
-    // Service Selection
-    if (appointmentType === 'services') {
-      if (!selectedCategory) newErrors.selectedCategory = 'Category selection is required.'
-      // if (!selectedService) newErrors.selectedService = 'Service selection is required.';
-      if (!selectedSubService) newErrors.subServiceName = 'Sub-service selection is required.'
-    }
-
-    // Slot Selection
-    // if (!bookingDetails.slot) newErrors.slot = 'Please select a slot.';
-
-    if (!bookingDetails.paymentType) newErrors.paymentType = 'Payment type is required.'
-
-    // Optional: Doctor Referral Code
-    if (bookingDetails.doctorRefCode) {
-      if (bookingDetails.doctorRefCode.length < 4 || bookingDetails.doctorRefCode.length > 10)
-        newErrors.doctorRefCode = 'Referral code must be 4-10 characters.'
-    }
-    Object.keys(bookingDetails.address || {}).forEach((field) => {
-      const value = bookingDetails.address[field]?.trim() || ''
-
-      if (!value) {
+    const addressFields = bookingDetails.address || {}
+    for (let field in addressFields) {
+      if (!addressFields[field] || addressFields[field].trim() === '') {
         addressErrors[field] = `${field} is required`
-      } else {
-        // Specific validations
-        if (field === 'postalCode' && !/^\d{6}$/.test(value)) {
-          addressErrors[field] = 'Postal code must be 6 digits'
-        }
-        if (field === 'phone' && !/^[6-9]\d{9}$/.test(value)) {
-          addressErrors[field] = 'Enter a valid 10-digit phone number'
-        }
+      } else if (field === 'postalCode' && !/^\d{6}$/.test(addressFields[field])) {
+        addressErrors[field] = 'Postal code must be 6 digits'
       }
-    })
-
-    // if (Object.keys(addressErrors).length > 0) {
-    //   newErrors.address = addressErrors
-    // }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    }
+    if (Object.keys(addressErrors).length > 0) newErrors.address = addressErrors
   }
+
+  // Services (if service appointment)
+  if (visitType !== 'followup' && appointmentType?.includes('service')) {
+    if (!selectedCategory) newErrors.selectedCategory = 'Select a category'
+    if (!selectedService) newErrors.selectedService = 'Select a service'
+    if (!selectedSubService) newErrors.selectedSubService = 'Select a procedure'
+  }
+
+  // Branch & Doctor
+  if (visitType !== 'followup') {
+    if (!bookingDetails.branchId) newErrors.branchname = 'Select a branch'
+    if (!bookingDetails.doctorId) newErrors.doctorName = 'Select a doctor'
+  }
+
+  // Slots
+  if (visitType !== 'followup' && selectedSlots.length === 0)
+    newErrors.slot = 'Please select a time slot'
+
+  // Payment
+  if (visitType !== 'followup' && !bookingDetails.paymentType)
+    newErrors.paymentType = 'Select payment type'
+
+  // Symptoms (optional)
+  if (
+    bookingDetails.problem &&
+    (bookingDetails.problem.length < 5 || bookingDetails.problem.length > 300)
+  )
+    newErrors.problem = 'Problem description must be 5-300 characters'
+
+  if (
+    bookingDetails.symptomsDuration &&
+    (bookingDetails.symptomsDuration < 1 || bookingDetails.symptomsDuration > 365)
+  )
+    newErrors.symptomsDuration = 'Duration must be between 1 and 365'
+
+  // Doctor Referral Code (optional)
+  if (
+    bookingDetails.doctorRefCode &&
+    (bookingDetails.doctorRefCode.length < 4 || bookingDetails.doctorRefCode.length > 10)
+  )
+    newErrors.doctorRefCode = 'Referral code must be 4-10 characters'
+
+  setErrors(newErrors)
+  return Object.keys(newErrors).length === 0
+}
+
 
   const handleAppointmentTypeChange = (type) => {
     setBookingDetails((prev) => ({
@@ -706,6 +755,9 @@ const BookAppointmentModal = ({ visible, onClose }) => {
 
       console.log('Booking submitted successfully:', res.data)
       toast.success('Booking submitted successfully!')
+      setTimeout(() => {
+        navigate('/dashboard') // replace with your dashboard route
+      }, 1000)
 
       // ✅ Reload page after a short delay to allow toast to show
       setTimeout(() => {
@@ -812,6 +864,10 @@ const BookAppointmentModal = ({ visible, onClose }) => {
               onChange={() => {
                 setVisitType('first')
                 setBookingDetails((prev) => ({ ...prev, visitType: 'first' }))
+                setSlotsForSelectedDate([]) // reset date slots
+
+                setSelectedDate('') // reset selected date
+                setSelectedSlots([])
               }}
             />
           </CCol>
@@ -825,6 +881,10 @@ const BookAppointmentModal = ({ visible, onClose }) => {
               onChange={() => {
                 setVisitType('followup')
                 setBookingDetails((prev) => ({ ...prev, visitType: 'followup' }))
+                setSlotsForSelectedDate([]) // reset date slots
+
+                setSelectedDate('') // reset selected date
+                setSelectedSlots([])
               }}
             />
           </CCol>
@@ -860,6 +920,7 @@ const BookAppointmentModal = ({ visible, onClose }) => {
                   value="inclinic"
                   checked={appointmentType === 'inclinic'}
                   onChange={(e) => {
+                    fetchDoctors()
                     // handleAppointmentTypeChange(e.target.value)
                     setAppointmentType('inclinic')
                     setBookingDetails((prev) => ({
@@ -884,6 +945,10 @@ const BookAppointmentModal = ({ visible, onClose }) => {
                 />
               </CCol>
             </CRow>
+            {errors.appointmentType && (
+  <div className="text-danger mb-3">{errors.appointmentType}</div>
+)}
+            
           </div>
         )}
 
@@ -972,6 +1037,7 @@ const BookAppointmentModal = ({ visible, onClose }) => {
                     name="patientMobileNumber"
                     value={bookingDetails.patientMobileNumber || ''}
                     onChange={handleBookingChange}
+                     maxLength={10}
                   />
                   {errors.patientMobileNumber && (
                     <p className="text-danger">{errors.patientMobileNumber}</p>
@@ -1197,71 +1263,91 @@ const BookAppointmentModal = ({ visible, onClose }) => {
                 {errors.branchname && <div className="text-danger">{errors.branchname}</div>}
               </CCol>
 
-              <CCol md={4}>
-                <h6>
-                  Doctor Name <span className="text-danger">*</span>
-                </h6>
-                <CFormSelect
-                  name="doctorName"
-                  value={bookingDetails.doctorId || ''}
-                  onChange={(e) => {
-                    const selectedDoctorId = e.target.value
-                    const selectedDoctor = doctors.find((doc) => doc.doctorId === selectedDoctorId)
+     <CCol md={4}>
+  <h6>
+    Doctor Name <span className="text-danger">*</span>
+  </h6>
 
-                    if (selectedDoctor) {
-                      // fetch slots for the selected doctor
-                      fetchSlots(selectedDoctorId)
+  {loadingDoctors ? (
+    <div className="text-center py-2" style={{ color: 'var(--color-black)' }}>
+      Loading doctors...
+    </div>
+  ) : (
+    <CFormSelect
+      name="doctorName"
+      value={bookingDetails.doctorId || ''}
+      onChange={async (e) => {
+        const selectedDoctorId = e.target.value
+        const selectedDoctor = doctors.find((doc) => doc.doctorId === selectedDoctorId)
 
-                      const type = appointmentType.toLowerCase() // normalize
-                      let fee = 0
+        if (selectedDoctor) {
+          setLoadingFee(true) // start loader for fee
+          try {
+            await fetchSlots(selectedDoctorId)
 
-                      if (type === 'services') {
-                        fee = subServiceInfo.consultationFee || 0
-                      } else if (type === 'inclinic') {
-                        fee = selectedDoctor.doctorFees?.inClinicFee || 0
-                      } else if (type === 'online') {
-                        fee = selectedDoctor.doctorFees?.vedioConsultationFee || 0
-                      }
+            let fee = 0
+            const type = appointmentType?.toLowerCase() || ''
 
-                      setBookingDetails((prev) => ({
-                        ...prev,
-                        doctorId: selectedDoctor.doctorId,
-                        doctorName: selectedDoctor.doctorName,
-                        doctorDeviceId: selectedDoctor.doctorDeviceId,
-                        consultationFee: fee,
-                      }))
+            if (type.includes('services')) {
+              fee = subServiceInfo?.consultationFee || 0
+            } else if (type === 'inclinic') {
+              fee = selectedDoctor.doctorFees?.inClinicFee || 0
+            } else if (type === 'online') {
+              fee = selectedDoctor.doctorFees?.vedioConsultationFee || 0
+            }
 
-                      setConsuationFee(fee)
-                      setErrors((prev) => ({ ...prev, doctorName: '' }))
-                    } else {
-                      setBookingDetails((prev) => ({
-                        ...prev,
-                        doctorId: '',
-                        doctorName: '',
-                        doctorDeviceId: '',
-                      }))
-                      setErrors((prev) => ({ ...prev, doctorName: 'Please select a valid doctor' }))
-                    }
-                  }}
-                  disabled={loadingDoctors}
-                  required
-                >
-                  <option value="">Select Doctor</option>
-                  {doctors.map((doc) => (
-                    <option
-                      key={doc.doctorId}
-                      value={doc.doctorId}
-                      disabled={!doc.doctorAvailabilityStatus} // disable if doctor not available
-                      style={{ color: doc.doctorAvailabilityStatus ? 'inherit' : '#aaa' }} // muted color
-                    >
-                      {doc.doctorName} - {doc.doctorFees ? bookingDetails.consultationFee : 0}
-                      {!doc.doctorAvailabilityStatus ? ' (Not Available)' : ''}
-                    </option>
-                  ))}
-                </CFormSelect>
+            setBookingDetails((prev) => ({
+              ...prev,
+              doctorId: selectedDoctor.doctorId,
+              doctorName: selectedDoctor.doctorName,
+              doctorDeviceId: selectedDoctor.doctorDeviceId,
+              consultationFee: fee,
+            }))
+            setConsuationFee(fee)
+            setErrors((prev) => ({ ...prev, doctorName: '' }))
+          } catch (err) {
+            console.error('Error fetching fee or slots:', err)
+            setErrors((prev) => ({ ...prev, doctorName: 'Failed to fetch consultation fee' }))
+          } finally {
+            setLoadingFee(false) // stop loader
+          }
+        } else {
+          setBookingDetails((prev) => ({
+            ...prev,
+            doctorId: '',
+            doctorName: '',
+            doctorDeviceId: '',
+            consultationFee: 0,
+          }))
+          setErrors((prev) => ({ ...prev, doctorName: 'Please select a valid doctor' }))
+        }
+      }}
+      disabled={loadingDoctors || loadingFee}
+      required
+    >
+      <option value="">Select Doctor</option>
+      {doctors.map((doc) => (
+        <option
+          key={doc.doctorId}
+          value={doc.doctorId}
+          disabled={!doc.doctorAvailabilityStatus}
+          style={{ color: doc.doctorAvailabilityStatus ? 'inherit' : '#aaa' }}
+        >
+          {doc.doctorName} -{appointmentType?.toLowerCase()=='inclinic'?doc.doctorFees.inClinicFee:doc.doctorFees.vedioConsultationFee}
+          {/* {loadingFee && bookingDetails.doctorId === doc.doctorId ? 'Loading...' : bookingDetails.consultationFee || 0}
+          {!doc.doctorAvailabilityStatus ? ' (Not Available)' : ''} */}
+        </option>
+      ))}
+    </CFormSelect>
+  )}
 
-                {errors.doctorName && <div className="text-danger">{errors.doctorName}</div>}
-              </CCol>
+  {errors.doctorName && <div className="text-danger">{errors.doctorName}</div>}
+</CCol>
+
+
+
+
+
             </CRow>
           </div>
         )}
@@ -1303,122 +1389,133 @@ const BookAppointmentModal = ({ visible, onClose }) => {
 
         {/* ==================== Available Slots ==================== */}
         <h5 className="mb-3 border-bottom pb-2">Available Slots</h5>
-        <CCol md={12}>
+  <CCol md={12}>
           {/* Date Buttons */}
-          <div className="d-flex gap-2 flex-wrap mb-3">
-            {[...new Set(slotsForSelectedDate.map((s) => formatDate(s.day || s.date)))].map(
-              (dateValue, idx) => {
-                if (!dateValue) return null
-                const isSelected = selectedDate === dateValue
+          <div>
+            {/* Date Buttons */}
+            <div className="d-flex gap-2 flex-wrap mb-3">
+              {(slotsForSelectedDate || [])
+                .map((s) => s.day || s.date)
+                .filter((d) => {
+                  const today = new Date()
+                  today.setHours(0, 0, 0, 0)
+                  const dateObj = new Date(d)
+                  dateObj.setHours(0, 0, 0, 0)
+                  return dateObj >= today // remove past dates
+                })
+                .sort((a, b) => new Date(a) - new Date(b))
+                .map((dateValue, idx) => {
+                  const dateObj = new Date(dateValue)
+                  const isSelected =
+                    new Date(selectedDate).toDateString() === dateObj.toDateString()
+                  const dayLabel = dateObj.toLocaleDateString('en-US', { weekday: 'short' })
+                  const dateLabel = dateObj.toLocaleDateString('en-US', {
+                    day: 'numeric',
+                    month: 'short',
+                  })
 
-                const d = new Date(dateValue)
-                const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' })
-                const dateLabel = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+                  return (
+                    <CButton
+                      key={idx}
+                      onClick={() => {
+                        const formattedDate = dateObj.toISOString().split('T')[0] // "YYYY-MM-DD"
 
-                return (
-                  <CButton
-                    key={idx}
-                    onClick={() => {
-                      setSelectedDate(dateValue)
-                      // Update serviceDate in bookingDetails
-                      setBookingDetails((prev) => ({
-                        ...prev,
-                        serviceDate: dateValue,
-                      }))
-                    }}
-                    style={{
-                      backgroundColor: isSelected ? 'var(--color-black)' : '#fff',
-                      color: isSelected ? '#fff' : 'var(--color-black)',
-                      border: '1px solid var(--color-black)',
-                      minWidth: '80px',
-                    }}
-                  >
-                    <div style={{ fontSize: '14px' }}>{dayLabel}</div>
-                    <div style={{ fontSize: '12px' }}>{dateLabel}</div>
-                  </CButton>
-                )
-              },
-            )}
-          </div>
-
-          {/* Time Slots for Selected Date */}
-          <div className="slot-grid mt-3">
-            <CCard className="mb-4">
-              <CCardBody>
-                {loadingSlots ? (
-                  <LoadingIndicator message="Loading slots..." />
-                ) : slotsToShow.length === 0 ? (
-                  <p className="text-center " style={{ color: 'var(--color-black)' }}>
-                    No available slots for this date
-                  </p>
-                ) : (
-                  <>
-                    <div
-                      className="slots-container"
+                        setSelectedDate(formattedDate) // optional: keep selectedDate in same format
+                        setSelectedSlots([]) // clear previous slots
+                        setBookingDetails((prev) => ({
+                          ...prev,
+                          serviceDate: formattedDate,
+                          servicetime: '',
+                        }))
+                      }}
                       style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(6, 1fr)',
-                        gap: '10px',
+                        backgroundColor: isSelected ? 'var(--color-black)' : '#fff',
+                        color: isSelected ? '#fff' : 'var(--color-black)',
+                        border: '1px solid var(--color-black)',
+                        minWidth: '80px',
                       }}
                     >
-                      {visibleSlots.map((slotObj, i) => {
-                        const slotLabel = slotObj.slot
-                        const isSelectedSlot = selectedSlots.includes(slotLabel)
+                      <div style={{ fontSize: '14px' }}>{dayLabel}</div>
+                      <div style={{ fontSize: '12px' }}>{dateLabel}</div>
+                    </CButton>
+                  )
+                })}
+            </div>
 
-                        return (
-                          <div
-                            key={i}
-                            className={`slot-item text-center border rounded px-2 py-1 transition-all duration-200
-                      ${slotObj.slotbooked ? 'bg-secondary text-white cursor-not-allowed opacity-60' : ''}
-                      ${isSelectedSlot && !slotObj.slotbooked ? 'bg-primary text-white' : ''}
-                      ${!isSelectedSlot && !slotObj.slotbooked ? 'bg-light text-dark hover:bg-gray-200 cursor-pointer' : ''}
-                    `}
-                            onClick={() => {
-                              if (slotObj.slotbooked) return
+            {/* Time Slots */}
+            <div className="slot-grid mt-3">
+              <CCard className="mb-4">
+                <CCardBody>
+                  {slotsToShow.length === 0 ? (
+                    <p className="text-center" style={{ color: 'var(--color-black)' }}>
+                      No available slots for this date
+                    </p>
+                  ) : (
+                    <>
+                      <div
+                        className="slots-container"
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(6, 1fr)',
+                          gap: '5px',
+                        }}
+                      >
+                        {visibleSlots.map((slotObj, i) => {
+                          const slotLabel = slotObj.slot
+                          const isBooked = slotObj.slotbooked
+                          const isSelectedSlot = selectedSlots.includes(slotLabel)
 
-                              let updatedSlots
-                              if (isSelectedSlot) {
-                                updatedSlots = selectedSlots.filter((s) => s !== slotLabel)
-                              } else {
-                                updatedSlots = [...selectedSlots, slotLabel]
-                              }
+                          return (
+                            <div
+                              key={i}
+                              style={{ cursor: 'pointer' }}
+                              className={`slot-item text-center border rounded px-2 py-1 transition-all duration-200
+    ${isBooked ? 'bg-secondary text-white cursor-not-allowed opacity-60' : ''}
+    ${isSelectedSlot && !isBooked ? 'bg-primary text-white' : ''}
+    ${!isSelectedSlot && !isBooked ? 'bg-light text-dark hover:bg-gray-200 cursor-pointer' : ''}
+  `}
+                              onClick={() => {
+                                if (isBooked) return
 
-                              setSelectedSlots(updatedSlots)
+                                // Single selection: replace selectedSlots with only this slot
+                                setSelectedSlots([slotLabel])
 
-                              // Update bookingDetails with selected slots
-                              setBookingDetails((prev) => ({
-                                ...prev,
-                                servicetime: slotLabel, // send as comma-separated string or array based on backend
-                              }))
-                            }}
-                          >
-                            {slotLabel}
-                          </div>
-                        )
-                      })}
-                    </div>
-
-                    {/* Show More / Show Less button */}
-                    {slotsToShow.length > 12 && (
-                      <div className="text-center mt-2">
-                        <CButton
-                          color="secondary"
-                          size="sm"
-                          onClick={() => setShowAllSlots((prev) => !prev)}
-                        >
-                          {showAllSlots ? 'Show Less' : 'Show More'}
-                        </CButton>
+                                // Update backend-ready value
+                                setBookingDetails((prev) => ({
+                                  ...prev,
+                                  servicetime: slotLabel,
+                                }))
+                              }}
+                            >
+                              {slotLabel}
+                            </div>
+                          )
+                        })}
                       </div>
-                    )}
-                  </>
-                )}
-              </CCardBody>
-            </CCard>
+
+                      {/* Show More / Less */}
+                      {slotsToShow.length > 12 && (
+                        <div className="text-center mt-2">
+                          <CButton
+                            color="secondary"
+                            size="sm"
+                            onClick={() => setShowAllSlots(!showAllSlots)}
+                          >
+                            {showAllSlots ? 'Show Less' : 'Show More'}
+                          </CButton>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CCardBody>
+              </CCard>
+            </div>
           </div>
 
           {/* Error message */}
           {errors.slot && <div className="text-danger mt-2">{errors.slot}</div>}
         </CCol>
+
 
         {/* SECTION: Symptoms */}
         {/* ==================== Symptoms & Attachment Sections ==================== */}
@@ -1484,15 +1581,15 @@ const BookAppointmentModal = ({ visible, onClose }) => {
                 accept=".jpg,.png,.pdf"
                 onChange={async (e) => {
                   const newFiles = Array.from(e.target.files)
-                  const maxSize = 250 * 1024 // 250 KB
+                  // const maxSize = 250 * 1024 // 250 KB
 
                   // Check individual file sizes
-                  const oversizedFile = newFiles.find((file) => file.size > maxSize)
-                  if (oversizedFile) {
-                    toast.error(`"${oversizedFile.name}" exceeds 250 KB limit.`)
-                    e.target.value = ''
-                    return
-                  }
+                  // const oversizedFile = newFiles.find((file) => file.size > maxSize)
+                  // if (oversizedFile) {
+                  //   toast.error(`"${oversizedFile.name}" exceeds 250 KB limit.`)
+                  //   e.target.value = ''
+                  //   return
+                  // }
 
                   // Limit to 6 files total
                   if (newFiles.length + (bookingDetails.attachments?.length || 0) > 6) {

@@ -26,6 +26,7 @@ import {
 } from './LabTechnicianAPI'
 import { toast } from 'react-toastify'
 import { useHospital } from '../../Usecontext/HospitalContext'
+import { showToast } from '../../../Utils/Toaster'
 
 const LabTechnicianManagement = () => {
   const [technicians, setTechnicians] = useState([])
@@ -67,30 +68,74 @@ const LabTechnicianManagement = () => {
   }, [])
   // ✅ Save (Add / Edit)
 
+  // const handleSave = async (formData) => {
+  //   try {
+  //     if (selectedTech) {
+  //       await updateLabTechnician(selectedTech.id, formData)
+  //       fetchTechs()
+
+  //       // setTechnicians((prev) => [...prev, res.data.data])
+  //       toast.success('Technician updated successfully!')
+  //     } else {
+  //       const res = await addLabTechnician(formData)
+  //       await fetchTechs() // refresh from API
+  //       console.log(res)
+  //       setModalData({
+  //         username: res.data.data.userName,
+  //         password: res.data.data.password,
+  //       })
+  //       if (res.status == 200) {
+  //         setModalVisible(false)
+  //         setModalTVisible(true)
+  //         toast.success('Technician added successfully!')
+  //       }
+  //     }
+  //   } catch (err) {
+  //     toast.error('❌ Failed to save technician.')
+  //     console.error('API error:', err)
+  //   }
+  // }
+
   const handleSave = async (formData) => {
     try {
-      if (selectedTech) {
-        await updateLabTechnician(selectedTech.id, formData)
-        fetchTechs()
+      let res
 
-        // setTechnicians((prev) => [...prev, res.data.data])
-        toast.success('Technician updated successfully!')
+      if (selectedTech) {
+        // ✅ Update Technician
+        res = await updateLabTechnician(selectedTech.id, formData)
+        await fetchTechs()
+        setModalVisible(false)
       } else {
-        const res = await addLabTechnician(formData)
-        await fetchTechs() // refresh from API
-        console.log(res)
-        setModalData({
-          username: res.data.data.userName,
-          password: res.data.data.password,
-        })
-        if (res.status == 200) {
-          setModalVisible(false)
-          setModalTVisible(true)
-          toast.success('Technician added successfully!')
-        }
+        // ✅ Add Technician
+        res = await addLabTechnician(formData)
       }
+
+      // ✅ Handle Success (backend must explicitly return success)
+      if (res.status === 201 || (res.status === 200 && res.data?.success)) {
+        await fetchTechs()
+
+        // ✅ If new technician, show credentials modal
+        if (!selectedTech) {
+          setModalData({
+            username: res.data.data?.userName,
+            password: res.data.data?.password,
+          })
+          setModalTVisible(true)
+        }
+
+        showToast(res.data?.message || 'Technician saved successfully!')
+
+        setModalVisible(false)
+        return
+      }
+
+      // ❌ Backend responded but with an error (e.g. status 409)
+      showToast(res.data?.message || 'Failed to save technician.')
     } catch (err) {
-      toast.error('❌ Failed to save technician.')
+      // ❌ API or network failure
+      const backendMessage =
+        err.response?.data?.message || err.response?.data?.error || '❌ Failed to save technician.'
+      // showToast(backendMessage)
       console.error('API error:', err)
     }
   }

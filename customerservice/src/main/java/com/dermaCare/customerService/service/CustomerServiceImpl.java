@@ -40,6 +40,7 @@ import com.dermaCare.customerService.dto.ReportsDtoList;
 import com.dermaCare.customerService.dto.ServicesDto;
 import com.dermaCare.customerService.dto.SubServicesDetailsDto;
 import com.dermaCare.customerService.dto.SubServicesDto;
+import com.dermaCare.customerService.dto.TempBlockingSlot;
 import com.dermaCare.customerService.entity.ConsultationEntity;
 import com.dermaCare.customerService.entity.Customer;
 import com.dermaCare.customerService.entity.CustomerRating;
@@ -1483,5 +1484,15 @@ public ResponseEntity<?> retrieveAppointnmentsByInput(String input) {
         return ResponseEntity.status(res.getStatusCode()).body(res);
     }
 }
+
+@Override
+public boolean blockSlot(TempBlockingSlot tempBlockingSlot) {
+    try {
+        return clinicAdminFeign.blockSlot(tempBlockingSlot);
+    } catch (FeignException e) {
+       return false;
+    }
+}
+
 
 }

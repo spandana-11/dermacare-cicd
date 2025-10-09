@@ -13,6 +13,7 @@ import com.dermaCare.customerService.dto.CustomerRatingDomain;
 import com.dermaCare.customerService.dto.FavouriteDoctorsDTO;
 import com.dermaCare.customerService.dto.LoginDTO;
 import com.dermaCare.customerService.dto.NotificationToCustomer;
+import com.dermaCare.customerService.dto.TempBlockingSlot;
 import com.dermaCare.customerService.util.ResBody;
 import com.dermaCare.customerService.util.Response;
 import com.dermaCare.customerService.util.ResponseStructure;
@@ -130,4 +131,5 @@ public interface CustomerService {
 	public ResponseEntity<?> retrieveAppointnmentsByPatientId(String patientId);
 	public ResponseEntity<?> retrieveAppointnmentsByInput(String input);
 	public ResponseEntity<?> getInprogressBookingsByPatientId(String patientId) ;
+	public boolean blockSlot(TempBlockingSlot tempBlockingSlot);
 }

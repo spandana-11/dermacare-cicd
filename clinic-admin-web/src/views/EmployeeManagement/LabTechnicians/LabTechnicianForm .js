@@ -19,6 +19,7 @@ import UserPermissionModal from '../UserPermissionModal'
 import { validateField } from '../../../Utils/Validators'
 import FilePreview from '../../../Utils/FilePreview'
 import { emailPattern } from '../../../Constant/Constants'
+import { showToast } from '../../../Utils/Toaster'
 
 const LabTechnicianForm = ({
   visible,
@@ -129,9 +130,11 @@ const LabTechnicianForm = ({
 
       for (const key of keys) {
         value = value?.[key]
+        if (value === undefined || value === null) break
       }
 
-      if (!value || String(value).trim() === '') {
+      // ✅ Avoid false negatives like 0 or false (which are valid values)
+      if (value === undefined || value === null || String(value).trim() === '') {
         missingFields.push(field)
       }
     }
@@ -248,22 +251,17 @@ const LabTechnicianForm = ({
     reader.readAsDataURL(file)
   }
 
-  // 🔹 Save handler
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    // 1️⃣ Mandatory field validation
     const missing = validateMandatoryFields(formData, mandatoryFields)
-
     if (missing.length > 0) {
-      toast.error(`Please fill required fields: ${missing.join(', ')}`)
+      toast.warning(`Please fill required fields: ${missing.join(', ')}`, {
+        toastId: 'missing-fields',
+      })
       return
     }
 
-    //     const missing = validateMandatoryFields(formData, mandatoryFields)
-
-    // if (missing.length > 0) {
-    //   toast.error(`Please fill required fields: ${missing.join(', ')}`)
-    //   return
-    // }
-
+    // 2️⃣ Date of Birth validation
     if (formData.dateOfBirth) {
       const dob = new Date(formData.dateOfBirth)
       const today = new Date()
@@ -271,7 +269,6 @@ const LabTechnicianForm = ({
       const isBeforeBirthday =
         today.getMonth() < dob.getMonth() ||
         (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())
-
       const actualAge = isBeforeBirthday ? age - 1 : age
 
       if (actualAge < 18) {
@@ -280,51 +277,47 @@ const LabTechnicianForm = ({
       }
     }
 
-    // ✅ Mobile validation (10 digits, starting with 6-9)
+    // 3️⃣ Mobile validation
     const mobileRegex = /^[6-9]\d{9}$/
     if (!mobileRegex.test(formData.contactNumber)) {
       toast.error('Contact number must be 10 digits and start with 6-9.')
       return
     }
 
-    // ✅ Emergency contact and Nurse contact must not be same
+    // 4️⃣ Emergency contact validation
     if (formData.contactNumber === formData.emergencyContact) {
       toast.error('Contact Number and Emergency Contact cannot be the same.')
       return
     }
-    // ✅ Email validation
 
+    // 5️⃣ Email validation
     if (!emailPattern.test(formData.emailId)) {
       toast.error('Please enter a valid email address.')
       return
     }
 
-    // ✅ Check duplicate contact number
-    const duplicateContact = technicians?.some(
-      (t) => t.contactNumber === formData.contactNumber && t.id !== formData.id,
-    )
-    if (duplicateContact) {
+    // 6️⃣ Duplicate checks
+    if (
+      technicians?.some((t) => t.contactNumber === formData.contactNumber && t.id !== formData.id)
+    ) {
       toast.error('Contact number already exists!')
       return
     }
 
-    // ✅ Check duplicate email
-    const duplicateEmail = technicians?.some(
-      (t) => t.emailId === formData.emailId && t.id !== formData.id,
-    )
-    if (duplicateEmail) {
+    if (technicians?.some((t) => t.emailId === formData.emailId && t.id !== formData.id)) {
       toast.error('Email already exists!')
       return
     }
+
+    // 7️⃣ Permissions validation
     if (Object.keys(formData.permissions).length === 0) {
       toast.error('Please assign at least one user permission before saving.')
       return
     }
 
-    console.log(formData)
-    onSave(formData)
+    // ✅ 8️⃣ If everything passed → Save technician
+    await onSave(formData)
     setFormData(emptyForm)
-    onClose()
   }
 
   const handleUserPermission = () => {

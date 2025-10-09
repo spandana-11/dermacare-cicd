@@ -89,21 +89,26 @@ const AppSidebar = () => {
     age: patientData?.age || '—',
     gender: patientData?.gender || '—',
     mobile: patientData?.mobileNumber || '—',
-    visitType: patientData?.consultationType === null
+    visitType: patientData?.visitType === null
       ? 0
-      : patientData?.consultationType ?? '—',
-
+      : patientData?.visitType ?? '—',
+    bookingFor: patientData?.bookingFor || '_',
     visitCount: patientData?.visitCount === null ? 0 : patientData?.visitCount ?? '—',
     followUp: patientData?.freeFollowUpsLeft || '—',
     symptom: patientData?.problem || '—',
     patientId: patientData?.patientId || '—',
     clinicName: patientData?.clinicName || '—',
+    clinicId: patientData?.clinicId || '—',
     doctorName: patientData?.doctorName || '—',
+    doctorId: patientData?.doctorId || '—',
     consultationFee: patientData?.consultationFee ?? '—',
     totalFee: patientData?.totalFee ?? '—',
     serviceDate: patientData?.serviceDate || '—',
     serviceTime: patientData?.serviceTime || patientData?.servicetime || '—',
     duration: patientData?.duration || '—',
+    subServiceId: patientData?.subServiceId || '_',
+    subServiceName: patientData?.subServiceName || '_',
+    consultationExpiration: patientData?.consultationExpiration || '_',
     vitals,
   };
   // helpers (place above your return)
@@ -189,12 +194,12 @@ const AppSidebar = () => {
                   <h6 style={{ color: COLORS.black, fontSize: SIZES.small, marginBottom: "6px" }}>
                     <strong>Age / Gender:</strong>{" "}
                     <span>
-                     {display.age
-  ? display.age.toString().toLowerCase().includes("year") || 
-    display.age.toString().toLowerCase().includes("yr")
-    ? display.age
-    : `${display.age} Years`
-  : "-"}
+                      {display.age
+                        ? display.age.toString().toLowerCase().includes("year") ||
+                          display.age.toString().toLowerCase().includes("yr")
+                          ? display.age
+                          : `${display.age} Years`
+                        : "-"}
 
                       / {display.gender || "-"}
                     </span>
@@ -384,12 +389,12 @@ const AppSidebar = () => {
                     <div>
                       <strong style={{ fontWeight: "bold" }}>Age/Gender:</strong> {display.age} / {display.gender}
                     </div>
-                    <div>Mobile: {display.mobile}</div>
-                    <div>Booking For: {display.bookingFor}</div>
-                    <div>Patient ID: {display.patientId}</div>
-                    <div>Visit Type: {display.visitType}</div>
-                    <div>Visit Count: {display.visitCount}</div>
-                    <div>FollowUp Count: {display.followUp}</div>
+                    <div>Mobile:{' '} {display.mobile}</div>
+                    <div>Booking For:{' '} {display.bookingFor}</div>
+                    <div>Patient ID:{' '} {display.patientId}</div>
+                    <div>Visit Type:{' '} {display.visitType}</div>
+                    <div>Visit Count:{' '} {display.visitCount}</div>
+                    <div>FollowUp Count:{' '} {display.followUp}</div>
                   </div>
                 </div>
               </div>
@@ -403,9 +408,9 @@ const AppSidebar = () => {
                   </h6>
                   <div className="mb-4" style={{ color: COLORS.black, fontSize: SIZES.small }}>
                     <div>
-                      {display.clinicName} ({display.clinicId})
+                      {display.clinicName}: {' '} {display.clinicId}
                     </div>
-                    <div>Address: {display.clinicAddress}</div>
+                    <div>Address:{' '} {display.clinicAddress}</div>
                   </div>
                 </CCol>
                 <CCol>
@@ -414,7 +419,7 @@ const AppSidebar = () => {
                   </h6>
                   <div className="mb-2" style={{ color: COLORS.black, fontSize: SIZES.small }}>
                     <div>
-                      {display.doctorName} ({display.doctorId})
+                      {display.doctorName}: {' '}{display.doctorId}
                     </div>
                   </div>
                 </CCol>
@@ -431,7 +436,10 @@ const AppSidebar = () => {
                 Duration
               </h6>
               <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                <div>{display.duration}</div>
+                <div>
+                  Consultation Expiration:{' '}
+                  {display?.consultationExpiration ? display.consultationExpiration : '—'}
+                </div>
               </div>
             </CCol>
             <CCol lg={5}>
@@ -453,8 +461,8 @@ const AppSidebar = () => {
                 Appointment
               </h6>
               <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                <div>Date: {display.serviceDate}</div>
-                <div>Time: {display.serviceTime}</div>
+                <div>Date:{' '} {display.serviceDate}</div>
+                <div>Time:{' '} {display.serviceTime}</div>
               </div>
             </CCol>
             <CCol lg={5}>
@@ -462,13 +470,18 @@ const AppSidebar = () => {
                 Sub-Service
               </h6>
               <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                {display.subServiceName && display.subServiceName !== '—' ? (
-                  <div> {display.subServiceName}</div>
+                {display?.subServiceId && display?.subServiceName ? (
+                  <>
+                    <div>SubServiceID:{' '} {display.subServiceId}</div>
+                    <div>SubServiceName:{' '} {display.subServiceName}</div>
+                  </>
                 ) : (
-                  <div>&nbsp;</div>
+                  <div>—</div>
                 )}
               </div>
             </CCol>
+
+
           </CRow>
 
           <hr className="my-3" />
@@ -480,8 +493,8 @@ const AppSidebar = () => {
                 Fees
               </h6>
               <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                <div>Consultation Fee: {fmt(display.consultationFee)}</div>
-                <div>Total Fee: {fmt(display.totalFee)}</div>
+                <div>Consultation Fee:{' '} {fmt(display.consultationFee)}</div>
+                <div>Total Fee:{' '} {fmt(display.totalFee)}</div>
               </div>
             </CCol>
           </CRow>
@@ -495,11 +508,13 @@ const AppSidebar = () => {
                 Vitals
               </h6>
               <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                <div>Height: {display.vitals.height}</div>
-                <div>Weight: {display.vitals.weight}</div>
-                <div>Blood Pressure: {display.vitals.bp}</div>
-                <div>Temperature: {display.vitals.temperature}</div>
-                <div>BMI: {display.vitals.bmi}</div>
+                <div>Height: {display.vitals.height === '—' ? 0 : display.vitals.height} cm</div>
+                <div>Weight: {display.vitals.weight === '—' ? 0 : display.vitals.weight} kg</div>
+                <div>Blood Pressure: {display.vitals.bloodPressure === '—' ? 0 : display.vitals.bloodPressure} mmHg</div>
+                <div>Temperature: {display.vitals.temperature === '—' ? 0 : display.vitals.temperature} °C</div>
+                <div>BMI: {display.vitals.bmi === '—' ? 0 : display.vitals.bmi} kg/m²</div>
+
+
               </div>
             </CCol>
           </CRow>

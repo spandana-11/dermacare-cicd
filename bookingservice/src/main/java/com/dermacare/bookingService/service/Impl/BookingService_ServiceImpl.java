@@ -1,13 +1,11 @@
 package com.dermacare.bookingService.service.Impl;
 
-
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -17,14 +15,11 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
 import com.dermacare.bookingService.dto.BookingInfoByInput;
 import com.dermacare.bookingService.dto.BookingRequset;
 import com.dermacare.bookingService.dto.BookingResponse;
@@ -34,7 +29,6 @@ import com.dermacare.bookingService.dto.DoctorSaveDetailsDTO;
 import com.dermacare.bookingService.dto.NotificationDTO;
 import com.dermacare.bookingService.dto.RelationInfoDTO;
 import com.dermacare.bookingService.dto.TreatmentDetailsDTO;
-import com.dermacare.bookingService.dto.TtdAppointments;
 import com.dermacare.bookingService.entity.Booking;
 import com.dermacare.bookingService.entity.ReportsList;
 import com.dermacare.bookingService.feign.ClinicAdminFeign;
@@ -154,7 +148,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		if(b != null) {
 			entity.setPatientId(b.getPatientId());
 		}}}else {
-			entity.setPatientId(generatePatientId());}
+			entity.setPatientId(generatePatientId(request));}
 		}
 		return entity;		
 	}
@@ -179,10 +173,10 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	}}
 	
 	
-	  private static String generatePatientId() {	       
+	  private static String generatePatientId(BookingRequset request) {	       
 	        String uuid = UUID.randomUUID().toString();
 	        String randomPart = uuid.replaceAll("-", "").substring(0, 6).toUpperCase();
-	        return "PT_" + randomPart;
+	        return request.getBranchId()+"_"+"PT_" + randomPart;
 	    }
 	
 	
@@ -520,13 +514,40 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	}
 	
 	
+	
 	@Override
 	public List<BookingInfoByInput> bookingByInput(String input) {
 		   List<BookingInfoByInput> outpt = new ArrayList<>();
 	       try {
-	    	List<Booking> bookings = repository.findByPatientId(input);
-	    	if( bookings != null && !bookings.isEmpty()) {
-		        Booking b = bookings.get(bookings.size()-1);	
+	    	 List<Booking> bookings = repository.findByMobileNumber(input);
+		        // If still not found, try customerId
+		    	 if(bookings == null || bookings.isEmpty()) {
+		            bookings = repository.findByCustomerId(input);
+		           // System.out.println(bookings);
+		    	} 
+	        	 if(bookings == null || bookings.isEmpty()) {
+		            bookings = repository.findByNameIgnoreCase(input);
+		          // System.out.println(bookings);
+		        }
+	        	if(bookings == null || bookings.isEmpty()) {
+		        for(Booking b : bookings) {
+		        	//System.out.println(b);
+		        BookingInfoByInput bkng = new BookingInfoByInput() ;	
+		        bkng.setAge(b.getAge());
+		        bkng.setClinicId(b.getClinicId());
+		        bkng.setCustomerId(b.getCustomerId());
+		        bkng.setGender(b.getGender());
+		        bkng.setMobileNumber(b.getMobileNumber());
+		        bkng.setName(b.getName());
+		        bkng.setPatientAddress(b.getPatientAddress());
+		        bkng.setPatientId(b.getPatientId());
+		        bkng.setPatientMobileNumber(b.getPatientMobileNumber());
+		        bkng.setRelation(b.getRelation());
+		        outpt.add(bkng);}}
+	        if(input.contains("_")){
+		    List<Booking> bookgs = repository.findByPatientId(input);
+	    	if( bookgs != null && !bookgs.isEmpty()) {
+		        Booking b = bookgs.get(bookgs.size()-1);	
 		        BookingInfoByInput bkng = new BookingInfoByInput() ;	
 		        bkng.setAge(b.getAge());
 		        bkng.setClinicId(b.getClinicId());
@@ -555,43 +576,15 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		        bkng.setPatientId(bg.getPatientId());
 		        bkng.setPatientMobileNumber(bg.getMobileNumber());
 		        bkng.setRelation(null);
-		        outpt.add(bkng);}	 
-	    	if(bookings == null || bookings.isEmpty()) {
-	            bookings = repository.findByMobileNumber(input);
-	           /// System.out.println(bookings);
-	         }
-	        // If still not found, try customerId
-	    	else if(bookings == null || bookings.isEmpty()) {
-	            bookings = repository.findByCustomerId(input);
-	           // System.out.println(bookings);
-	    	}else{  
-        	 if(bookings == null || bookings.isEmpty()) {
-	            bookings = repository.findByNameIgnoreCase(input);
-	           // System.out.println(bookings);
-	        }}  
-	    	if(outpt == null || outpt.isEmpty()) {
-	        for(Booking b : bookings) {
-	        	//System.out.println(b);
-	        BookingInfoByInput bkng = new BookingInfoByInput() ;	
-	        bkng.setAge(b.getAge());
-	        bkng.setClinicId(b.getClinicId());
-	        bkng.setCustomerId(b.getCustomerId());
-	        bkng.setGender(b.getGender());
-	        bkng.setMobileNumber(b.getMobileNumber());
-	        bkng.setName(b.getName());
-	        bkng.setPatientAddress(b.getPatientAddress());
-	        bkng.setPatientId(b.getPatientId());
-	        bkng.setPatientMobileNumber(b.getPatientMobileNumber());
-	        bkng.setRelation(b.getRelation());
-	        outpt.add(bkng);
-	        }}}catch (Exception e) {
+		        outpt.add(bkng);}} 
+	       }catch (Exception e) {
 	        //System.err.println("Error fetching bookings: " + e.getMessage());
 	        System.out.println(e.getMessage());; // safe fallback
 	    }
 	    return outpt;
 	}
 
-
+	
 	
 	@Override
 	public List<BookingResponse> bookingByClinicId(String clinicId) {
@@ -861,7 +854,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                        	//System.out.println(d);
 		                            LocalDate treatmentDate = LocalDate.parse(d.getDate());
 		                           // System.out.println(treatmentDate);
-		                            if (!treatmentDate.isBefore(today) && !treatmentDate.isAfter(sixthDate)) {
+		                            LocalDate serviceDate = LocalDate.parse(booking.getServiceDate()); 
+		                            if (!treatmentDate.isBefore(today) && !treatmentDate.isAfter(sixthDate) && !treatmentDate.isBefore(serviceDate)) {
 		                            	Booking bkng = new Booking(booking);		                            	
 		                            	bkng.setFollowupDate(treatmentDate.toString());
 		                            	//System.out.println(bkng);
@@ -946,7 +940,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                        	//System.out.println(d);
 		                            LocalDate treatmentDate = LocalDate.parse(d.getDate());
 		                           // System.out.println(treatmentDate);
-		                            if (!treatmentDate.isBefore(today) && !treatmentDate.isAfter(sixthDate)) {
+		                            LocalDate serviceDate = LocalDate.parse(booking.getServiceDate()); 
+		                            if (!treatmentDate.isBefore(today) && !treatmentDate.isAfter(sixthDate) && !treatmentDate.isBefore(serviceDate)) {
 		                            	Booking bkng = new Booking(booking);		                            	
 		                            	bkng.setFollowupDate(treatmentDate.toString());
 		                            	//System.out.println(bkng);
@@ -1209,7 +1204,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 					               }}
 		
 		
-		public ResponseEntity<?> retrieveOneWeekAppointments(String cinicId,String branchId){						
+    public ResponseEntity<?> retrieveOneWeekAppointments(String cinicId,String branchId){						
 		ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
 	    List<BookingResponse> finalList = new ArrayList<>();
 	   Response response = new Response();
@@ -1248,8 +1243,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                        for (DatesDTO d : details.getDates()) {
 	                        	//System.out.println(d);
 	                            LocalDate treatmentDate = LocalDate.parse(d.getDate());
-	                           // System.out.println(treatmentDate);
-	                            if (!treatmentDate.isBefore(today) && !treatmentDate.isAfter(sixthDate)) {
+	                            LocalDate serviceDate = LocalDate.parse(booking.getServiceDate()); 
+	                            if(!treatmentDate.isBefore(today) && !treatmentDate.isAfter(sixthDate) && !treatmentDate.isBefore(serviceDate)) {
 	                            	Booking bkng = new Booking(booking);		                            	
 	                            	bkng.setFollowupDate(treatmentDate.toString());
 	                            	//System.out.println(bkng);
@@ -1548,6 +1543,18 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		    }
 
 		    return ResponseEntity.status(res.getStatusCode()).body(res);
+		}
+		
+		
+		@Override
+		public BookingResponse checkBookingByDateAndTime(String date,String time,String doctorId) {
+			Booking booking = repository.findByServiceDateAndServicetimeAndDoctorId(date, time, doctorId);
+			if(booking != null) {
+			return toResponse(booking);
+			}else {
+				return null;
+			}
+			
 		}
 
 

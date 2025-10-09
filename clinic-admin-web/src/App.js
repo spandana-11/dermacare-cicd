@@ -59,7 +59,7 @@ const App = () => {
         </Routes>
       </Suspense>
 
-      <ToastContainer />
+      <ToastContainer newestOnTop/>
     </BrowserRouter>
   )
 }

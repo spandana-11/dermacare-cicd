@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.dermacare.bookingService.dto.BookingInfoByInput;
 import com.dermacare.bookingService.dto.BookingRequset;
 import com.dermacare.bookingService.dto.BookingResponse;
+import com.dermacare.bookingService.dto.TempBlockingSlot;
 import com.dermacare.bookingService.service.BookingService_Service;
 import com.dermacare.bookingService.util.Response;
 import com.dermacare.bookingService.util.ResponseStructure;
@@ -312,6 +313,12 @@ public class BookingServiceController {
 					"Booking fetched sucessfully on clinicId" + input, HttpStatus.OK, HttpStatus.OK.value()),
 					HttpStatus.OK);
 
+		}
+		
+		@PostMapping("/appointments/serviceDate/serviceTime/DoctorId")
+		public BookingResponse blockingSlot(@RequestBody TempBlockingSlot temp)
+		{
+			return service.checkBookingByDateAndTime(temp.getServiceDate(), temp.getServicetime(), temp.getDoctorId());
 		}
 		
 		}

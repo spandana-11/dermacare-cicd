@@ -108,7 +108,6 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
     },
   }
 
-  // ✅ Filter tabs based on doctor mode
   const TABS = useMemo(() => {
     if (!fromDoctorTemplate) return ALL_TABS
 
@@ -118,7 +117,12 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
     if (hasDisease) return ALL_TABS
     return ['Diagnosis']
   }, [ALL_TABS, fromDoctorTemplate, formData?.symptoms?.diagnosis])
-
+  // 🔹 Auto-open "Diagnosis" tab when doctor opens template mode
+  useEffect(() => {
+    if (fromDoctorTemplate) {
+      setActiveTab('Diagnosis')
+    }
+  }, [fromDoctorTemplate])
   // Badge counts
   const counts = useMemo(
     () => ({
@@ -131,37 +135,37 @@ const PatientAppointmentDetails = ({ defaultTab, tabs, fromDoctorTemplate = fals
   )
 
   // Save prescription template
-const savePrescriptionTemplate = async () => {
-  try {
-    const diagnosis = formData.symptoms?.diagnosis?.trim() || ''
+  const savePrescriptionTemplate = async () => {
+    try {
+      const diagnosis = formData.symptoms?.diagnosis?.trim() || ''
 
-    // if (!diagnosis) {
-    //   alert('Diagnosis is missing. Cannot save template.')
-    //   return
-    // }
+      // if (!diagnosis) {
+      //   alert('Diagnosis is missing. Cannot save template.')
+      //   return
+      // }
 
-    const clinicId = localStorage.getItem('hospitalId')
-    const template = {
-      clinicId,
-      title: diagnosis,
-      symptoms: diagnosis,
-      tests: formData.tests || [],
-      prescription: formData.prescription || [],
-      treatments: formData.treatments || [],
-      followUp: formData.followUp || '',
+      const clinicId = localStorage.getItem('hospitalId')
+      const template = {
+        clinicId,
+        title: diagnosis,
+        symptoms: diagnosis,
+        tests: formData.tests || [],
+        prescription: formData.prescription || [],
+        treatments: formData.treatments || [],
+        followUp: formData.followUp || '',
+      }
+
+      const res = await SavePatientPrescription(template)
+      if (res.status === 200) {
+        success(`${res.message || 'Prescription Template saved successfully to server!'}`, { title: 'Success' })
+      } else {
+        info(`${res.message || 'A prescription template updated successfully'}`, { title: 'Info' })
+      }
+    } catch (error) {
+      console.error('❌ Error saving template:', error)
+      alert('Failed to save prescription template. Please try again.')
     }
-
-    const res = await SavePatientPrescription(template)
-    if (res.status === 200) {
-      success(`${res.message || 'Prescription Template saved successfully to server!'}`, { title: 'Success' })
-    } else {
-      info(`${res.message || 'A prescription template updated successfully'}`, { title: 'Info' })
-    }
-  } catch (error) {
-    console.error('❌ Error saving template:', error)
-    alert('Failed to save prescription template. Please try again.')
   }
-}
 
 
 

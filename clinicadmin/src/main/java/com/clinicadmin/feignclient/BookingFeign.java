@@ -1,19 +1,20 @@
 package com.clinicadmin.feignclient;
 
 import java.util.List;
-
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
 import com.clinicadmin.dto.BookingResponse;
 import com.clinicadmin.dto.BookingResponseDTO;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.ResponseStructure;
+import com.clinicadmin.dto.TempBlockingSlot;
+
 
 @FeignClient(value = "bookingservice")
 public interface BookingFeign {
@@ -80,5 +81,8 @@ public interface BookingFeign {
 	
 	@PutMapping("/api/v1/update/bookingId")
 	public ResponseEntity<?> updateAppointmentBasedOnBookingId(@RequestBody BookingResponseDTO bookingResponse );
+	
+	@PostMapping("/api/v1/appointments/serviceDate/serviceTime/DoctorId")
+	public BookingResponse blockingSlot(@RequestBody TempBlockingSlot temp);
 	
 }

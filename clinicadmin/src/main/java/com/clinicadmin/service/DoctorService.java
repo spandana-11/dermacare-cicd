@@ -10,6 +10,7 @@ import com.clinicadmin.dto.DoctorSlotDTO;
 import com.clinicadmin.dto.DoctorsDTO;
 import com.clinicadmin.dto.LoginBasedOnRoleDTO;
 import com.clinicadmin.dto.Response;
+import com.clinicadmin.dto.TempBlockingSlot;
 
 public interface DoctorService {
 	public Response addDoctor(DoctorsDTO dto);
@@ -92,5 +93,7 @@ public interface DoctorService {
 
 	Response generateDoctorSlots(String doctorId, String branchId, String date, int intervalMinutes, String openingTime,
 			String closingTime);
+	
+	public boolean blockingSlot(TempBlockingSlot tempBlockingSlot);
 
 }
