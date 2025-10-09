@@ -10,11 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout code
-      - name: Checkout Code
-        uses: actions/checkout@v4
 
-      # Step 2: Deploy via SSH to Lightsail
       - name: Deploy to Lightsail via SSH
         uses: appleboy/ssh-action@v0.1.8
         with:
@@ -23,20 +19,7 @@ jobs:
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           port: 22
           script: |
-            cd /home/ubuntu/dermacare-cicd || exit 1
 
-            echo "📦 Pulling latest changes..."
-            git pull origin main
-
-            echo "🧹 Stopping existing containers..."
-            docker compose down
-
-            echo "🔑 Updating firebase-key.json in services..."
-            echo "${{ secrets.FIREBASE_KEY }}" > notification-service/src/main/resources/firebase-key.json
-            echo "${{ secrets.FIREBASE_KEY }}" > customerservice/src/main/resources/firebase-key.json
-
-            echo "🚀 Building Docker containers..."
-            docker compose build
 
             echo "🚀 Starting Docker containers..."
             docker compose up -d
