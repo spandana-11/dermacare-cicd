@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.dermaCare.customerService.dto.CustomerLoginDTO;
 import com.dermaCare.customerService.dto.DoctorsDTO;
+import com.dermaCare.customerService.dto.TempBlockingSlot;
 import com.dermaCare.customerService.util.Response;
 
 
@@ -65,6 +66,9 @@ public interface ClinicAdminFeign {
 	 
 	 @GetMapping("/clinic-admin/getAverageRatingsByDoctorId/{doctorId}")
 		public ResponseEntity<Response> getAverageRatingsByDoctorId( @PathVariable String doctorId) ;
+
+	 @PostMapping("/clinic-admin/block/slot")
+	  public boolean blockSlot(@RequestBody TempBlockingSlot tempBlockingSlot);
 	 
 //	//FALLBACK METHODS
 //	

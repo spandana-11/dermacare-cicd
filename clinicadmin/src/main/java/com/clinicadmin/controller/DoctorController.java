@@ -28,6 +28,7 @@ import com.clinicadmin.dto.DoctorSlotDTO;
 import com.clinicadmin.dto.DoctorsDTO;
 import com.clinicadmin.dto.LoginBasedOnRoleDTO;
 import com.clinicadmin.dto.Response;
+import com.clinicadmin.dto.TempBlockingSlot;
 import com.clinicadmin.dto.UpdateSlotRequestDTO;
 import com.clinicadmin.service.DoctorNoteService;
 import com.clinicadmin.service.DoctorService;
@@ -442,5 +443,11 @@ public class DoctorController {
 		        return ResponseEntity.status(response.getStatus()).body(response);
 		    }
 		 
+		 
+		 @PostMapping("/block/slot")
+		    public boolean blockSlot(@RequestBody TempBlockingSlot tempBlockingSlot) {
+		        return doctorService.blockingSlot(tempBlockingSlot);
+		        
+		    }
 
 }

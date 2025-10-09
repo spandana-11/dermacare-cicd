@@ -39,6 +39,7 @@ import {
   updateMedicine,
 } from './PharmacyManagementAPI'
 import { Edit2, Eye, Trash2 } from 'lucide-react'
+import ConfirmationModal from '../ConfirmationModal'
 
 const PharmacyManagement = () => {
   const [activeKey, setActiveKey] = useState(0)
@@ -49,7 +50,8 @@ const PharmacyManagement = () => {
   const [viewModal, setViewModal] = useState(false)
   const [viewData, setViewData] = useState(null)
   const [formErrors, setFormErrors] = useState({})
-
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false)
+  const [medicineIdToDelete, setMedicineIdToDelete] = useState(null)
   const slotOptions = [
     { value: 'morning', label: 'Morning' },
     { value: 'afternoon', label: 'Afternoon' },
@@ -68,7 +70,7 @@ const PharmacyManagement = () => {
     dateOfManufacturing: '',
     dateOfExpriy: '',
     nameAndAddressOfTheManufacturer: '',
-    stock: 0,
+    stock: '',
     dose: '',
     medicineType: '',
     duration: '',
@@ -117,39 +119,61 @@ const PharmacyManagement = () => {
 
   const validateForm = () => {
     const errors = {}
+
+    // Medicine Info
     if (!formData.name?.trim()) errors.name = 'Medicine Name is required'
     if (!formData.dose?.trim()) errors.dose = 'Dosage is required'
     if (!formData.medicineType?.trim()) errors.medicineType = 'Medicine Type is required'
+
+    // Prescription Info
     if (!formData.duration) errors.duration = 'Duration is required'
     if (!formData.durationUnit) errors.durationUnit = 'Unit is required'
-    // if (!formData.frequency) errors.frequency = 'Frequency is required'
     if (!formData.times || formData.times.filter(Boolean).length === 0)
       errors.times = 'At least one Time Slot is required'
     if (!formData.food) errors.food = 'Food Instructions are required'
 
+    // Manufacturer / Inventory Info
+    if (!formData.nameAndAddressOfTheManufacturer?.trim())
+      errors.nameAndAddressOfTheManufacturer = 'Manufacturer is required'
+    if (!formData.dateOfManufacturing) errors.dateOfManufacturing = 'Manufacturing Date is required'
+    if (!formData.dateOfExpriy) errors.dateOfExpriy = 'Expiry Date is required'
+    else if (formData.dateOfManufacturing && formData.dateOfExpriy <= formData.dateOfManufacturing)
+      errors.dateOfExpriy = 'Expiry date must be after Manufacturing date'
+    if (!formData.manufacturingLicenseNumber?.trim())
+      errors.manufacturingLicenseNumber = 'License Number is required'
+
     setFormErrors(errors)
     return Object.keys(errors).length === 0
   }
+
 
   // 🧠 Define this BEFORE return()
   // ✅ Handle Save (Add or Update)
   const handleSave = async () => {
     console.log('Clicked Save, formData:', formData)
 
-    console.log('Technician updated successfully!', formData.id)
     if (!validateForm()) return
 
     try {
       if (formData.id) {
         // UPDATE FLOW
-        console.log('Updating medicine...')
+        console.log('Updating medicine with ID:', formData.id)
         const updatedMedicine = await updateMedicine(formData.id, formData)
-        setMedicines((prev) => prev.map((m) => (m.id === formData.id ? updatedMedicine : m)))
+        setMedicines((prev) =>
+          prev.map((m) => (m.id === formData.id ? updatedMedicine : m))
+        )
         toast.success('Medicine updated successfully!')
       } else {
         // ADD FLOW
         console.log('Adding new medicine...')
         const newMedicine = await saveMedicineTemplate(formData)
+
+        if (!newMedicine.id) {
+          console.error('❌ API did not return an ID for the new medicine', newMedicine)
+          toast.error('Failed to add medicine! ID missing.')
+          return
+        }
+
         setMedicines((prev) => [...prev, newMedicine])
         toast.success('Medicine added successfully!')
       }
@@ -177,34 +201,35 @@ const PharmacyManagement = () => {
     setViewModal(true)
   }
 
-  const handleDelete = async (id) => {
-    const confirmed = window.confirm('Are you sure you want to delete this medicine?')
-    if (!confirmed) return
-    const success = await deletePrescriptionById(id)
-    if (success) {
-      setMedicines((prev) => prev.filter((med) => med.id !== id))
-      toast.success('Medicine deleted successfully!')
-    } else {
-      toast.error('Failed to delete medicine!')
-    }
+  const handleDelete = (id) => {
+    setMedicineIdToDelete(id)
+    setIsDeleteModalVisible(true)
   }
-
   const handleCreateMedicineType = async (inputValue) => {
     try {
       const clinicId = localStorage.getItem('HospitalId')
       if (!clinicId) return toast.error('Clinic ID missing!')
-      const savedType = await addMedicineType({ clinicId, typeName: inputValue })
-      if (savedType?.typeName) {
-        const newType = savedType.typeName
-        if (!medicineType.includes(newType)) setMedicineType((prev) => [...prev, newType])
-        handleChange('medicineType', newType)
-        toast.success('New medicine type added!')
+
+      // Call API to add new medicine type
+      const updatedTypes = await addMedicineType({ clinicId, typeName: inputValue })
+
+      if (updatedTypes && updatedTypes.length > 0) {
+        // Update local state only if new type is not already present
+        if (!medicineType.includes(inputValue)) {
+          setMedicineType((prev) => [...prev, inputValue])
+        }
+
+        // Set the selected type in form
+        handleChange('medicineType', inputValue)
+
+        toast.success(`New medicine type added: ${inputValue}`)
       }
     } catch (error) {
-      console.error(error)
+      console.error('❌ Error adding medicine type:', error)
       toast.error('Error adding medicine type!')
     }
   }
+
 
   const filteredMedicines = medicines.filter((med) =>
     (med.name || '').toLowerCase().includes(search.toLowerCase()),
@@ -245,6 +270,20 @@ const PharmacyManagement = () => {
 
   const isTimeslotDisabled = () => {
     return isFrequencyDisabled() // same logic
+  }
+  const confirmDeleteMedicine = async () => {
+    if (!medicineIdToDelete) return
+
+    const success = await deletePrescriptionById(medicineIdToDelete)
+    if (success) {
+      setMedicines((prev) => prev.filter((med) => med.id !== medicineIdToDelete))
+      toast.success('Medicine deleted successfully!')
+    } else {
+      toast.error('Failed to delete medicine!')
+    }
+
+    setIsDeleteModalVisible(false)
+    setMedicineIdToDelete(null)
   }
 
   return (
@@ -508,7 +547,11 @@ const PharmacyManagement = () => {
             </CCol>
             <CCol md={4}>
               <CFormSelect
-                label="Duration Unit *"
+                label={
+                  <>
+                    Duration Unit <span className="text-danger">*</span>
+                  </>
+                }
                 value={formData.durationUnit}
                 onChange={(e) => handleChange('durationUnit', e.target.value)}
               >
@@ -519,6 +562,9 @@ const PharmacyManagement = () => {
                 <option value="Month">Month</option>
                 <option value="NA">NA</option>
               </CFormSelect>
+              {formErrors.durationUnit && (
+                <small className="text-danger">{formErrors.durationUnit}</small>
+              )}
             </CCol>
 
             <CCol md={4}>
@@ -528,14 +574,20 @@ const PharmacyManagement = () => {
                 value={formData.others}
                 onChange={(e) => handleChange('others', e.target.value)}
               />
+              {/* Optional field, so no validation message */}
             </CCol>
+
 
             <CCol md={4}>
               <CFormSelect
-                label="Frequency *"
+                label={
+                  <>
+                    Frequency <span className="text-danger">*</span>
+                  </>
+                }
                 value={formData.remindWhen}
                 onChange={(e) => handleChange('remindWhen', e.target.value)}
-                disabled={isFrequencyDisabled()} // ✅ disabled when Hour or NA
+                disabled={isFrequencyDisabled()} // disabled when Hour or NA
               >
                 <option value="">-- Select Frequency --</option>
                 {getFrequencyOptions(formData.durationUnit).map((freq, idx) => (
@@ -544,7 +596,11 @@ const PharmacyManagement = () => {
                   </option>
                 ))}
               </CFormSelect>
+              {formErrors.remindWhen && (
+                <small className="text-danger">{formErrors.remindWhen}</small>
+              )}
             </CCol>
+
             <CCol md={4}>
               <CFormSelect
                 label={
@@ -572,14 +628,18 @@ const PharmacyManagement = () => {
               return (
                 <CCol md={4} key={i}>
                   <CFormSelect
-                    label={`Time Slot ${i + 1} *`}
+                    label={
+                      <>
+                        Time Slot {i + 1} <span className="text-danger">*</span>
+                      </>
+                    }
                     value={formData.times?.[i] || ''}
                     onChange={(e) => {
                       const updatedTimes = [...(formData.times || [])]
                       updatedTimes[i] = e.target.value
                       handleChange('times', updatedTimes)
                     }}
-                    disabled={i >= slotCount() || isTimeslotDisabled()} // ✅ disable instead of hide
+                    disabled={i >= slotCount() || isTimeslotDisabled()} // disable when necessary
                   >
                     <option value="">Select Time…</option>
                     {slotOptions.map((opt) => (
@@ -592,10 +652,14 @@ const PharmacyManagement = () => {
                       </option>
                     ))}
                   </CFormSelect>
+                  {formErrors.times && i === 0 && (
+                    <small className="text-danger">{formErrors.times}</small>
+                  )}
                 </CCol>
               )
             })}
           </CRow>
+
 
           {/* Instructions */}
           <CRow className="g-3 mb-3">
@@ -620,7 +684,7 @@ const PharmacyManagement = () => {
                 label="Serial Number"
                 value={formData.serialNumber}
                 onChange={(e) => {
-                  const onlyNums = e.target.value.replace(/[^0-9]/g, '') // keep digits only
+                  const onlyNums = e.target.value// keep digits only
                   handleChange('serialNumber', onlyNums)
                 }}
               />
@@ -634,37 +698,84 @@ const PharmacyManagement = () => {
             </CCol>
             <CCol md={4}>
               <CFormInput
-                label="Manufacturer"
+                label={
+                  <>
+                    Manufacturer <span className="text-danger">*</span>
+                  </>
+                }
                 value={formData.nameAndAddressOfTheManufacturer}
                 onChange={(e) => handleChange('nameAndAddressOfTheManufacturer', e.target.value)}
               />
+              {formErrors.nameAndAddressOfTheManufacturer && (
+                <small className="text-danger">{formErrors.nameAndAddressOfTheManufacturer}</small>
+              )}
             </CCol>
             <CCol md={6}>
               <CFormInput
                 type="month"
-                label="Manufacturing Date"
-                value={formData.dateOfManufacturing}
-                onChange={(e) => handleChange('dateOfManufacturing', e.target.value)}
+                label={
+                  <>
+                    Manufacturing Date <span className="text-danger">*</span>
+                  </>
+                }
+                value={formData.dateOfManufacturing || ''}
+                onChange={(e) => {
+                  const selectedMfg = e.target.value
+                  handleChange('dateOfManufacturing', selectedMfg)
+
+                  // If expiry date exists and is before manufacturing, reset it
+                  if (formData.dateOfExpriy && formData.dateOfExpriy <= selectedMfg) {
+                    handleChange('dateOfExpriy', '')
+                  }
+                }}
               />
+              {formErrors.dateOfManufacturing && (
+                <small className="text-danger">{formErrors.dateOfManufacturing}</small>
+              )}
             </CCol>
+
             <CCol md={6}>
               <CFormInput
                 type="month"
-                label="Expiry Date"
-                value={formData.dateOfExpriy}
-                onChange={(e) => handleChange('dateOfExpriy', e.target.value)}
+                label={
+                  <>
+                    Expiry Date <span className="text-danger">*</span>
+                  </>
+                }
+                value={formData.dateOfExpriy || ''}
+                min={formData.dateOfManufacturing || undefined} // prevents selecting before MFG
+                onChange={(e) => {
+                  const selectedExp = e.target.value
+                  if (formData.dateOfManufacturing && selectedExp <= formData.dateOfManufacturing) {
+                    toast.error('Expiry date must be after Manufacturing date')
+                    return
+                  }
+                  handleChange('dateOfExpriy', selectedExp)
+                }}
               />
+              {formErrors.dateOfExpriy && (
+                <small className="text-danger">{formErrors.dateOfExpriy}</small>
+              )}
             </CCol>
+
             <CCol md={6}>
               <CFormInput
-                label="License Number"
+                label={
+                  <>
+                    License Number <span className="text-danger">*</span>
+                  </>
+                }
                 value={formData.manufacturingLicenseNumber || ''}
                 onChange={(e) => {
-                  const onlyNums = e.target.value.replace(/[^0-9]/g, '') // allow digits only
+                  const onlyNums = e.target.value // allow digits only
                   handleChange('manufacturingLicenseNumber', onlyNums)
                 }}
               />
+              {formErrors.manufacturingLicenseNumber && (
+                <small className="text-danger">{formErrors.manufacturingLicenseNumber}</small>
+              )}
             </CCol>
+
             <CCol md={6}>
               <CFormInput
                 type="number"
@@ -793,6 +904,21 @@ const PharmacyManagement = () => {
           </CButton>
         </CModalFooter>
       </CModal>
+      <ConfirmationModal
+        isVisible={isDeleteModalVisible}
+        title="Delete Medicine"
+        message="Are you sure you want to delete this medicine? This action cannot be undone."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        confirmColor="danger"
+        cancelColor="secondary"
+        onConfirm={confirmDeleteMedicine}
+        onCancel={() => {
+          setIsDeleteModalVisible(false)
+          setMedicineIdToDelete(null)
+        }}
+      />
+
     </div>
   )
 }

@@ -2,43 +2,36 @@ import axios from "axios";
 import { BASE_URL } from "../../baseUrl"; // Make sure this includes protocol: http:// or https://
 
 
-
-export const addMedicineType = async (newType) => {
-  const clinicId = localStorage.getItem("HospitalId")
-  if (!clinicId) return newType
-
-  try {
-    const url = `${BASE_URL}/search-or-add`
-    const response = await axios.post(url, {
-      clinicId,
-      medicineType: [newType],
-    })
-
-    return response.data?.data?.addedType || newType
-  } catch (error) {
-    console.error(error)
-    return newType
-  }
-}
-
-
-// Fetch all medicine types
+// ✅ Fetch all medicine types for a clinic
 export const getMedicineTypes = async (clinicId) => {
-  if (!BASE_URL) return []
+  if (!clinicId) return []
 
   try {
-    const url = `${BASE_URL}/getMedicineTypes/${clinicId}`
-    const response = await axios.get(url)
-    console.log("🔍 Medicine Types Response:", response.data)
-
-    // adjust depending on backend shape
-    return response.data?.data?.medicineTypes || response.data?.data || []
+    const response = await axios.get(`${BASE_URL}/getMedicineTypes/${clinicId}`)
+    console.log('🔍 Medicine Types Response:', response.data)
+    return response.data?.data?.medicineTypes || []
   } catch (error) {
-    console.error("❌ Error fetching medicine types:", error)
+    console.error('❌ Error fetching medicine types:', error)
     return []
   }
 }
 
+// ✅ Add a new medicine type (or multiple)
+export const addMedicineType = async ({ clinicId, typeName }) => {
+  if (!clinicId || !typeName) return null
+
+  try {
+    const response = await axios.post(`${BASE_URL}/search-or-add`, {
+      clinicId,
+      medicineTypes: [typeName], // only send the new type
+    })
+    console.log('➕ Add Medicine Type Response:', response.data)
+    return response.data?.data?.medicineTypes || []
+  } catch (error) {
+    console.error('❌ Error adding medicine type:', error)
+    return null
+  }
+}
 
 
 // ✅ Fetch medicine templates by clinicId
@@ -69,11 +62,12 @@ export const saveMedicineTemplate = async (formData) => {
         serialNumber: formData.serialNumber,
         genericName: formData.genericName || formData.name,
         brandName: formData.brandName,
-        nameAndAddressOfTheManufacturer: formData.manufacturer,
+        nameAndAddressOfTheManufacturer: formData.nameAndAddressOfTheManufacturer,
         batchNumber: formData.batchNumber,
         dateOfManufacturing: formData.dateOfManufacturing,
-        dateOfExpriy: formData.dateOfExpiry,
-        manufacturingLicenseNumber: formData.licenseNumber,
+        dateOfExpriy: formData.dateOfExpriy,
+        manufacturingLicenseNumber: formData.manufacturingLicenseNumber,
+        stock:formData.stock,
       },
     ],
   };

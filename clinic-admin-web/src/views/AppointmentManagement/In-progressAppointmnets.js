@@ -92,7 +92,7 @@ const InProgressAppointmentsPage = () => {
 
     try {
       const response = await GetBookingInprogress()
-        console.log('In-progress appointments:', response)
+      console.log('In-progress appointments:', response)
 
       if (response && Array.isArray(response)) {
         setAllAppointments(response) // ✅ store unfiltered appointments
@@ -448,7 +448,7 @@ const InProgressAppointmentsPage = () => {
                 <CTableDataCell>{apt.mobileNumber}</CTableDataCell>
                 <CTableDataCell>{apt.consultationType}</CTableDataCell>
 
-                <CTableDataCell>{apt.serviceDate}</CTableDataCell>
+                <CTableDataCell>{apt.followupDate}</CTableDataCell>
                 <CTableDataCell>
                   <div className="d-flex align-items-center gap-2">
                     <CFormSelect

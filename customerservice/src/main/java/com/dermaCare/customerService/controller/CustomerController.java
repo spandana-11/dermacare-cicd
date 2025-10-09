@@ -21,6 +21,7 @@ import com.dermaCare.customerService.dto.CustomerRatingDomain;
 import com.dermaCare.customerService.dto.FavouriteDoctorsDTO;
 import com.dermaCare.customerService.dto.LoginDTO;
 import com.dermaCare.customerService.dto.NotificationToCustomer;
+import com.dermaCare.customerService.dto.TempBlockingSlot;
 import com.dermaCare.customerService.service.CustomerService;
 import com.dermaCare.customerService.util.OtpUtil;
 import com.dermaCare.customerService.util.ResBody;
@@ -562,5 +563,10 @@ public ResponseEntity<Response> getAverageRatingByDoctorId( @PathVariable String
 	   return customerService.retrieveAppointnmentsByInput(input);
  }
    
+   @PostMapping("/block/slot/whileBooking")
+   public boolean blockSlot(
+		  @RequestBody TempBlockingSlot tempBlockingSlot){
+	   return customerService.blockSlot(tempBlockingSlot);
+ }
 
 }

@@ -107,7 +107,7 @@ const PharmacistManagement = () => {
         toast.success('Pharmacist updated successfully!')
       } else {
         const res = await addPharmacist(correctedFormData)
-        await fetchTechs()
+       
 
         if (res?.data?.data?.userName && res?.data?.data?.password) {
           setCredentials({
@@ -119,6 +119,7 @@ const PharmacistManagement = () => {
         }
 
         toast.success('Pharmacist added successfully!')
+         await fetchTechs()
       }
     } catch (err) {
       console.error('API error:', err)
