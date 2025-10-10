@@ -27,6 +27,7 @@ public class DoctorSaveDetailsDTO {
 	private String clinicName;
 	private String customerId;
 	private String bookingId;
+	private String subServiceId;
 	private LocalDateTime visitDateTime;
 	private String visitType;
 	private int visitCount; 

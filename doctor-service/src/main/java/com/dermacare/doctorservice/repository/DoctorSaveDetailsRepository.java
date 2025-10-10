@@ -15,5 +15,10 @@ public interface DoctorSaveDetailsRepository extends MongoRepository<DoctorSaveD
 	DoctorSaveDetails findByBookingId(String bookingId);
 	List<DoctorSaveDetails> findByCustomerId(String customerId);
 	List<DoctorSaveDetails> findByDoctorIdAndPatientId(String doctorId, String patientId);
+	List<DoctorSaveDetails> findByDoctorIdAndPatientIdAndSubServiceId(
+	        String doctorId,
+	        String patientId,
+	        String subServiceId
+	);
 	
 	}
