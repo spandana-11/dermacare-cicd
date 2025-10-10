@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -141,7 +142,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		}else {
 			entity.setChannelId(null) ;
 		}}
-		if(request.getRelation() != null) {
+		if(request.getRelation() != null && request.getPatientId() == null) {
 		List<Booking> existingBooking = repository.findByRelationIgnoreCaseAndCustomerIdAndNameIgnoreCase(request.getRelation(),request.getCustomerId(),request.getName());
 		if(existingBooking != null && !existingBooking.isEmpty()) {
 		for(Booking b : existingBooking) {
@@ -243,40 +244,93 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	}
 	
 	
-	public ResponseEntity<?> getTodayDoctorAppointmentsByDoctorId(String hospitalId,String doctorId) {
-		ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
-		try {
-			List<Booking> existingBooking = repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
-			List<BookingResponse> respnse = new ArrayList<>();
-			if(existingBooking != null && !existingBooking.isEmpty()) {
-			for(Booking b : existingBooking) {
-			DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-			String currentDate = LocalDate.now().format(dateFormatter);	
-			if(b.getServiceDate().equals(currentDate) && !b.getStatus().equalsIgnoreCase("Completed") && !b.getStatus().equalsIgnoreCase("Pending") 
-			&& !b.getStatus().equalsIgnoreCase("In-Progress")){
-			respnse.add(toResponse(b));}}
-			if(respnse != null && !respnse.isEmpty()){
-			res.setStatusCode(200);
-			res.setHttpStatus(HttpStatus.OK);
-			res.setData(respnse);
-			res.setMessage("Appointments Are Found");}
-			else {
-				res.setStatusCode(200);
-				res.setHttpStatus(HttpStatus.OK);
-				res.setData(respnse);
-				res.setMessage("Appointments With Today Date Are Not Found");}
-			}else {
-				res.setStatusCode(200);
-				res.setData(respnse);
-				res.setMessage("Appointments Are Not Found");}
-		}catch(Exception e) {
-			res.setStatusCode(500);
-			res.setMessage(e.getMessage());}
-		return ResponseEntity.status(res.getStatusCode()).body(res);
+//	public ResponseEntity<?> getTodayDoctorAppointmentsByDoctorId(String hospitalId,String doctorId) {
+//		ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
+//		try {
+//			List<Booking> existingBooking = repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
+//			List<BookingResponse> respnse = new ArrayList<>();
+//			if(existingBooking != null && !existingBooking.isEmpty()) {
+//			for(Booking b : existingBooking) {
+//			DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+//			String currentDate = LocalDate.now().format(dateFormatter);	
+//			if(b.getServiceDate().equals(currentDate) && !b.getStatus().equalsIgnoreCase("Completed") && !b.getStatus().equalsIgnoreCase("Pending") 
+//			&& !b.getStatus().equalsIgnoreCase("In-Progress")){
+//			respnse.add(toResponse(b));}}
+//			if(respnse != null && !respnse.isEmpty()){
+//			res.setStatusCode(200);
+//			res.setHttpStatus(HttpStatus.OK);
+//			res.setData(respnse);
+//			res.setMessage("Appointments Are Found");}
+//			else {
+//				res.setStatusCode(200);
+//				res.setHttpStatus(HttpStatus.OK);
+//				res.setData(respnse);
+//				res.setMessage("Appointments With Today Date Are Not Found");}
+//			}else {
+//				res.setStatusCode(200);
+//				res.setData(respnse);
+//				res.setMessage("Appointments Are Not Found");}
+//		}catch(Exception e) {
+//			res.setStatusCode(500);
+//			res.setMessage(e.getMessage());}
+//		return ResponseEntity.status(res.getStatusCode()).body(res);
+//	}
+//	
+	
+	public ResponseEntity<?> getTodayDoctorAppointmentsByDoctorId(String hospitalId, String doctorId) {
+	    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+	    List<BookingResponse> responseList = new ArrayList<>();
+
+	    try {
+	        List<Booking> existingBookings = repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
+
+	        if (existingBookings != null && !existingBookings.isEmpty()) {
+	            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+	            LocalDate currentDate = LocalDate.now();
+
+	            for (Booking booking : existingBookings) {
+	                try {
+	                    LocalDate bookingDate = LocalDate.parse(booking.getServiceDate(), dateFormatter);
+
+	                    if (bookingDate.equals(currentDate) &&
+	                        !booking.getStatus().equalsIgnoreCase("Completed") &&
+	                        !booking.getStatus().equalsIgnoreCase("Pending") &&
+	                        !booking.getStatus().equalsIgnoreCase("In-Progress")) {
+
+	                        responseList.add(toResponse(booking));
+	                    }
+	                } catch (DateTimeParseException e) {
+	                    // Log or handle invalid date format in booking.getServiceDate()
+	                    System.err.println("Invalid date format for booking ID: " + booking.getBookingId());
+	                }
+	            }
+
+	            if (!responseList.isEmpty()) {
+	                res.setStatusCode(200);
+	                res.setHttpStatus(HttpStatus.OK);
+	                res.setData(responseList);
+	                res.setMessage("Appointments Are Found");
+	            } else {
+	                res.setStatusCode(200);
+	                res.setHttpStatus(HttpStatus.OK);
+	                res.setData(responseList);
+	                res.setMessage("Appointments With Today Date Are Not Found");
+	            }
+	        } else {
+	            res.setStatusCode(200);
+	            res.setHttpStatus(HttpStatus.OK);
+	            res.setData(responseList);
+	            res.setMessage("Appointments Are Not Found");
+	        }
+	    } catch (Exception e) {
+	        res.setStatusCode(500);
+	        res.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+	        res.setMessage("Error occurred: " + e.getMessage());
+	    }
+
+	    return ResponseEntity.status(res.getStatusCode()).body(res);
 	}
-	
-	
-	
+
 	public ResponseEntity<?> filterDoctorAppointmentsByDoctorId(String hospitalId,String doctorId,String number) {
 		ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
 		List<BookingResponse> resnse = new ArrayList<>();

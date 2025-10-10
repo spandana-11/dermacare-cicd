@@ -635,7 +635,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
             customColor={COLORS.bgcolor}
             onClick={() => {
               setClickedSaveTemplate(true)
-              uploadPrescription({ downloadAfter: false })
+              // uploadPrescription({ downloadAfter: false })
 
               onSaveTemplate?.()
               info('Template saved. You can now Save or Save & Download.', { title: 'Template' })
