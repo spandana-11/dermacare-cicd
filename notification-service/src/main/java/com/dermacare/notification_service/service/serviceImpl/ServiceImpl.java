@@ -266,7 +266,7 @@ public class ServiceImpl implements ServiceInterface{
 		                case "Rejected":
 		                    b.setStatus("Rejected");
 		                    b.setReasonForCancel(notificationResponse.getReasonForCancel());
-		                    cllinicFeign.makingFalseDoctorSlot(b.getDoctorId(), b.getServiceDate(), b.getServicetime());
+		                    cllinicFeign.makingFalseDoctorSlot(b.getDoctorId(),b.getBranchId() ,b.getServiceDate(), b.getServicetime());
 		                    notificationEntity.getData().setStatus("Rejected");
 		                    repository.save(notificationEntity);
 		                    try {

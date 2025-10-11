@@ -243,6 +243,54 @@ public class LabTechnicianServiceImpl implements LabTechnicianService {
 		return ResponseStructure.<LabTechnicianRequestDTO>builder().statusCode(200)
 				.message("Lab Technician data fetched successfully").data(dto).build();
 	}
+	
+	@Override
+	public ResponseStructure<List<LabTechnicianRequestDTO>> getLabTechniciansByHospitalIdAndBranchId(
+	        String clinicId, String branchId) {
+
+	    ResponseStructure<List<LabTechnicianRequestDTO>> response = new ResponseStructure<>();
+
+	    try {
+	        // ✅ Validation
+	        if (clinicId == null || clinicId.isBlank() || branchId == null || branchId.isBlank()) {
+	            response.setData(null);
+	            response.setMessage("Clinic ID and Branch ID must not be empty");
+	            response.setHttpStatus(HttpStatus.BAD_REQUEST);
+	            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+	            return response;
+	        }
+
+	        // ✅ Correct repository method name
+	        List<LabTechnicianEntity> technicians = repository.findByClinicIdAndBranchId(clinicId, branchId);
+
+	        if (technicians == null || technicians.isEmpty()) {
+	            response.setData(List.of());
+	            response.setMessage("No lab technicians found for clinicId: " + clinicId + " and branchId: " + branchId);
+	            response.setHttpStatus(HttpStatus.OK);
+	            response.setStatusCode(HttpStatus.OK.value());
+	            return response;
+	        }
+
+	        // ✅ Convert to DTO
+	        List<LabTechnicianRequestDTO> dtos = technicians.stream()
+	                .map(LabTechnicianMapper::toDTO)
+	                .collect(Collectors.toList());
+
+	        response.setData(dtos);
+	        response.setMessage("Lab technicians fetched successfully");
+	        response.setHttpStatus(HttpStatus.OK);
+	        response.setStatusCode(HttpStatus.OK.value());
+
+	    } catch (Exception e) {
+	        response.setData(null);
+	        response.setMessage("Error fetching lab technicians: " + e.getMessage());
+	        response.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+	        response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	    }
+
+	    return response;
+	}
+
 
 	// ----------------- Helper methods -------------------
 	private String generateLabTechId() {

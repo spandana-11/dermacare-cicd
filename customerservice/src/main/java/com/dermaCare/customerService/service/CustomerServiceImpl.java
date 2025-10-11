@@ -716,7 +716,7 @@ public Response getReportsAndDoctorSaveDetails(String customerId) {
 	    		  ResponseEntity<ResponseStructure<BookingResponse>> res = bookingFeign.bookService(req);
 	    		  BookingResponse bookingResponse  = res.getBody().getData(); 
 	    		  if(bookingResponse!=null) {
-	    	clinicAdminFeign.updateDoctorSlotWhileBooking(bookingResponse.getDoctorId(), 
+	    	clinicAdminFeign.updateDoctorSlotWhileBooking(bookingResponse.getDoctorId(),bookingResponse.getBranchId(),
 	  	    		  bookingResponse.getServiceDate(),bookingResponse.getServicetime());
     			     response.setData(res.getBody());			
 		    		 response.setStatus(res.getBody().getStatusCode());	 

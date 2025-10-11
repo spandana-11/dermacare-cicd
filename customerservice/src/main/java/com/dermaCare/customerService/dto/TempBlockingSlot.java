@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 public class TempBlockingSlot {
 	
 	private String doctorId;
+	private String branchId;
 	private String serviceDate;
 	private String servicetime;
 	private boolean status;

@@ -46,8 +46,8 @@ public interface ClinicAdminFeign {
 	@GetMapping("/clinic-admin/averageRatings/{branchId}/{doctorId}")
 	public ResponseEntity<Response> getAverageRatings(@PathVariable String branchId, @PathVariable String doctorId);
 	
-	@PutMapping("/clinic-admin/updateDoctorSlotWhileBooking/{doctorId}/{date}/{time}")
-	public boolean updateDoctorSlotWhileBooking(@PathVariable String doctorId, @PathVariable String date,
+	@PutMapping("/clinic-admin/updateDoctorSlotWhileBooking/{doctorId}/{branchId}/{date}/{time}")
+	public boolean updateDoctorSlotWhileBooking(@PathVariable String doctorId,@PathVariable String branchId, @PathVariable String date,
 			@PathVariable String time);
 	
 	@PutMapping("/clinic-admin/updateDoctor/{doctorId}")

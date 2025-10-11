@@ -115,5 +115,16 @@ public class LabTechnicianController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
     
+//  GET BY CLINIC ID + BRANCH ID
+@GetMapping("/getLabTechniciansByClinicIdAndBranchId/{clinicId}/{branchId}")
+public ResponseEntity<ResponseStructure<List<LabTechnicianRequestDTO>>> getLabTechniciansByClinicAndBranch(
+        @PathVariable String clinicId,
+        @PathVariable String branchId) {
+    ResponseStructure<List<LabTechnicianRequestDTO>> response =
+            service.getLabTechniciansByHospitalIdAndBranchId(clinicId, branchId);
+    return ResponseEntity.status(response.getHttpStatus()).body(response);
+}
+
+    
     
 }

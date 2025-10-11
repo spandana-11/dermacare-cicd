@@ -36,4 +36,6 @@ public interface LabTechnicianRepository extends MongoRepository<LabTechnicianEn
 
 	List<LabTechnicianEntity> findByClinicId(String clinicId);
 
+	List<LabTechnicianEntity> findByClinicIdAndBranchId(String clinicId, String branchId);
+
 }

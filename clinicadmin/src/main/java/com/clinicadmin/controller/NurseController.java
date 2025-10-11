@@ -61,6 +61,16 @@ public class NurseController {
 		Response response = nurseService.deleteNurse(hospitalId, nurseId);
 		return ResponseEntity.status(response.getStatus()).body(response);
 	}
+	
+	// ------------------- Get All Nurses by Hospital and Branch -------------------
+	@GetMapping("/getAllNursesByBranchIdAndHospiatlId/{hospitalId}/{branchId}")
+	public ResponseEntity<Response> getAllNursesByBranch(
+	        @PathVariable String hospitalId,
+	        @PathVariable String branchId) {
+	    Response response = nurseService.getAllNursesByBranchIdAndHospitalId(hospitalId, branchId);
+	    return ResponseEntity.status(response.getStatus()).body(response);
+	}
+
 
 	// ---------------------------------------------------------------------------------------------------
 	// ---------------------------------

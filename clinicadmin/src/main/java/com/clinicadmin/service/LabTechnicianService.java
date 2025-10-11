@@ -29,6 +29,9 @@ public interface LabTechnicianService {
 	ResponseStructure<LabTechnicianRequestDTO> getLabTechnicianByClinicAndId(String clinicId, String technicianId);
 
 	ResponseStructure<List<LabTechnicianRequestDTO>> getLabTechniciansByClinic(String clinicId);
+
+	ResponseStructure<List<LabTechnicianRequestDTO>> getLabTechniciansByHospitalIdAndBranchId(String clinicId,
+			String branchId);
 	
 
 }

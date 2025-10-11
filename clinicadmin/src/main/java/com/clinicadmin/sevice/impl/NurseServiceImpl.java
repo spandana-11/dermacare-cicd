@@ -336,6 +336,49 @@ public class NurseServiceImpl implements NurseService {
 
         return dto;
     }
+    
+    @Override
+    public Response getAllNursesByBranchIdAndHospitalId(String hospitalId, String branchId) {
+        Response response = new Response();
+        try {
+            // 🔍 Validate input
+            if (hospitalId == null || hospitalId.isBlank() || branchId == null || branchId.isBlank()) {
+                response.setSuccess(false);
+                response.setMessage("Hospital ID and Branch ID must not be empty");
+                response.setStatus(HttpStatus.BAD_REQUEST.value());
+                return response;
+            }
+
+            // 🔍 Fetch nurses
+            List<Nurse> nurses = nurseRepository.findByHospitalIdAndBranchId(hospitalId, branchId);
+
+            if (nurses == null || nurses.isEmpty()) {
+                response.setSuccess(true);
+                response.setData(List.of());
+                response.setMessage("No nurses found for hospitalId: " + hospitalId + " and branchId: " + branchId);
+                response.setStatus(HttpStatus.OK.value());
+                return response;
+            }
+
+            // 🔄 Convert to DTO
+            List<NurseDTO> nurseDTOs = nurses.stream()
+                    .map(this::mapNurseEntityToNurseDTO)
+                    .toList();
+
+            // ✅ Prepare success response
+            response.setSuccess(true);
+            response.setData(nurseDTOs);
+            response.setMessage("Nurses fetched successfully");
+            response.setStatus(HttpStatus.OK.value());
+
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Error fetching nurses: " + e.getMessage());
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+        return response;
+    }
+
 
     // ------------------- Helper Methods ----------------------
 

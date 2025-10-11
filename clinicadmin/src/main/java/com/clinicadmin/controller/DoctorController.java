@@ -303,17 +303,17 @@ public class DoctorController {
 			return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
 		}
 
-		@PutMapping("/updateDoctorSlotWhileBooking/{doctorId}/{date}/{time}")
-		public boolean updateDoctorSlotWhileBooking(@PathVariable String doctorId, @PathVariable String date,
+		@PutMapping("/updateDoctorSlotWhileBooking/{doctorId}/{branchId}/{date}/{time}")
+		public boolean updateDoctorSlotWhileBooking(@PathVariable String doctorId,@PathVariable String branchId, @PathVariable String date,
 				@PathVariable String time) {
-			return doctorService.updateSlot(doctorId, date, time);
+			return doctorService.updateSlot(doctorId,branchId, date, time);
 		}
 		
 		
-		@PutMapping("/makingFalseDoctorSlot/{doctorId}/{date}/{time}")
-		public boolean makingFalseDoctorSlot(@PathVariable String doctorId, @PathVariable String date,
+		@PutMapping("/makingFalseDoctorSlot/{doctorId}/{branchId}/{date}/{time}")
+		public boolean makingFalseDoctorSlot(@PathVariable String doctorId,@PathVariable String branchId, @PathVariable String date,
 				@PathVariable String time) {
-			return doctorService.makingFalseDoctorSlot(doctorId, date, time);
+			return doctorService.makingFalseDoctorSlot(doctorId, branchId, date, time);
 		}
 	
 	
