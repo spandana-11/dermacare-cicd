@@ -308,7 +308,7 @@ const AppSidebar = () => {
         {!isPatientLoading && !hasPatient && ratings.length > 0 && (
           <CSidebarFooter className="border-top d-none d-lg-flex flex-column mt-2" style={{ paddingLeft: 10, paddingRight: 10 }}>
             <h6 style={{ color: COLORS.black, fontWeight: 'bold', marginBottom: '0.5rem' }}>
-              Patient Reviews
+              Patient Ratings
             </h6>
 
             {ratings.map((item, index) => (
