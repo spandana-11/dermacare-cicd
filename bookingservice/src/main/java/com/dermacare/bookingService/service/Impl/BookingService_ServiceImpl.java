@@ -181,10 +181,10 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		}}}else {
 			entity.setPatientId(generatePatientId(request));}
 		}}else {
-			if(request.getPatientId() == null) {
-				entity.setPatientId(generatePatientId(request));
-			}else {
-				entity.setPatientId(request.getPatientId());	
+			if (request.getPatientId() == null || request.getPatientId().trim().isEmpty()) {
+			    entity.setPatientId(generatePatientId(request));
+			} else {
+			    entity.setPatientId(request.getPatientId());
 			}
 		}
 		return entity;		
