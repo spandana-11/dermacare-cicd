@@ -828,7 +828,7 @@ const BookAppointmentModal = ({ visible, onClose }) => {
       serviceDate: selectedDate,
       servicetime: bookingDetails.servicetime,
       patientId: followupData.patientId,
-      bookingfor: followupData.bookingFor,
+      bookingFor: followupData.bookingFor,
     }
 
     console.log('📦 Follow-up Payload:', payload)
