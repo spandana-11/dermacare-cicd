@@ -158,8 +158,8 @@ public class RatingCalculationService {
                     .toList();
 
             if (matchedRatings.isEmpty()) {
-                response.setSuccess(false);
-                response.setStatus(404);
+                response.setSuccess(true);
+                response.setStatus(200);
                 response.setMessage("Invalid or no ratings found for doctorId: " + doctorId);
                 return response;
             }

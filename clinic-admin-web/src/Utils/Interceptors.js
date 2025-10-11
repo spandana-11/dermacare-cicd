@@ -108,59 +108,138 @@
 //   }
 // }
 
+// import axios from 'axios'
+// import { toast } from 'react-toastify'
+// import { BASE_URL, SBASE_URL } from '../baseUrl'
+
+// /* --------------------- Axios instances --------------------- */
+// export const http = axios.create({
+//   baseURL: BASE_URL, // 🔒 Secured APIs
+//   withCredentials: true,
+//   timeout: 20000,
+// })
+
+// export const httpPublic = axios.create({
+//   baseURL: BASE_URL, // 🌐 Public APIs
+//   withCredentials: true,
+//   timeout: 20000,
+// })
+
+// /* --------------------- Interceptors --------------------- */
+// export function attachInterceptors(getAuthToken) {
+//   // ✅ Request interceptor → attach token automatically
+//   const reqInterceptor = http.interceptors.request.use(
+//     (config) => {
+//       // const token = getAuthToken?.() || localStorage.getItem('token')
+//       // if (token) {
+//       //   config.headers.Authorization = `Bearer ${token}`
+//       // }
+//       return config
+//     },
+//     (error) => Promise.reject(error),
+//   )
+
+//   // ✅ Response interceptor → handle errors
+//   const resInterceptor = http.interceptors.response.use(
+//     (response) => response,
+//     (error) => {
+//       // if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+//       //   toast.error('⏱️ Request timed out. Please try again.')
+//       // }
+//       if (error.response?.status === 401) {
+//         toast.error('Session expired. Please login again.')
+//         // optional: log out user
+//         // localStorage.removeItem('token')
+//         // window.location.href = '/login'
+//       } else if (error.response?.data?.message) {
+//         toast.error(error.response.data.message)
+//       } else {
+//         toast.error('⏱️ Request timed out. Please try again.')
+//       }
+//       return Promise.reject(error)
+//     },
+//   )
+
+//   // Return a function to eject interceptors if needed
+//   return () => {
+//     http.interceptors.request.eject(reqInterceptor)
+//     http.interceptors.response.eject(resInterceptor)
+//   }
+// }
 import axios from 'axios'
 import { toast } from 'react-toastify'
-import { BASE_URL, SBASE_URL } from '../baseUrl'
+import { BASE_URL } from '../baseUrl'
 
 /* --------------------- Axios instances --------------------- */
 export const http = axios.create({
-  baseURL: BASE_URL, // 🔒 Secured APIs
+  baseURL: BASE_URL,
   withCredentials: true,
   timeout: 20000,
 })
 
 export const httpPublic = axios.create({
-  baseURL: BASE_URL, // 🌐 Public APIs
+  baseURL: BASE_URL,
   withCredentials: true,
   timeout: 20000,
 })
 
+/* --------------------- Toast Control Flag --------------------- */
+let isToastActive = false
+const showToastOnce = (message) => {
+  if (!isToastActive) {
+    isToastActive = true
+    toast.error(message, {
+      onClose: () => {
+        // reset when toast closes
+        isToastActive = false
+      },
+    })
+  }
+}
+
 /* --------------------- Interceptors --------------------- */
 export function attachInterceptors(getAuthToken) {
-  // ✅ Request interceptor → attach token automatically
   const reqInterceptor = http.interceptors.request.use(
     (config) => {
       // const token = getAuthToken?.() || localStorage.getItem('token')
-      // if (token) {
-      //   config.headers.Authorization = `Bearer ${token}`
-      // }
+      // if (token) config.headers.Authorization = `Bearer ${token}`
       return config
     },
     (error) => Promise.reject(error),
   )
 
-  // ✅ Response interceptor → handle errors
   const resInterceptor = http.interceptors.response.use(
     (response) => response,
     (error) => {
-      // if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-      //   toast.error('⏱️ Request timed out. Please try again.')
-      // }
-      if (error.response?.status === 401) {
-        toast.error('Session expired. Please login again.')
-        // optional: log out user
-        // localStorage.removeItem('token')
-        // window.location.href = '/login'
-      } else if (error.response?.data?.message) {
-        toast.error(error.response.data.message)
-      } else {
-        toast.error('⏱️ Request timed out. Please try again.')
+      const status = error.response?.status
+      const message = error.response?.data?.message
+
+      // ✅ Check for network errors or server down
+      if (error.message === 'Network Error' || !error.response) {
+        showToastOnce('🚫 Server unreachable. Please try again later.')
       }
+      // ✅ Check for timeout
+      else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        showToastOnce('⏱️ Request timed out. Please try again.')
+      }
+      // ✅ Unauthorized
+      else if (status === 401) {
+        showToastOnce('🔒 Session expired. Please login again.')
+      }
+      // ✅ API-specific error message
+      else if (message) {
+        showToastOnce(message)
+      }
+      // ✅ Fallback message
+      else {
+        showToastOnce('❌ Something went wrong. Please try again.')
+      }
+
       return Promise.reject(error)
     },
   )
 
-  // Return a function to eject interceptors if needed
+  // optional cleanup function
   return () => {
     http.interceptors.request.eject(reqInterceptor)
     http.interceptors.response.eject(resInterceptor)

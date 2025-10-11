@@ -1166,12 +1166,14 @@ const DoctorManagement = () => {
                   const trimmedValue = value.trim()
                   if (!trimmedValue) {
                     error = 'Profile description is required.'
-                  } else if (!/^[A-Za-z\s.,'-]+$/.test(trimmedValue)) {
-                    // Allow letters, spaces, periods, commas, apostrophes, hyphens
-                    error = 'Profile description can contain only letters and common punctuation.'
-                  } else if (trimmedValue.length < 10 || trimmedValue.length > 500) {
+                  }
+                  // } else if (!/^[A-Za-z\s.,'-]+$/.test(trimmedValue)) {
+                  //   // Allow letters, spaces, periods, commas, apostrophes, hyphens
+                  //   error = 'Profile description can contain only letters and common punctuation.'
+                  // }
+                  else if (trimmedValue.length < 10 || trimmedValue.length > 5000) {
                     // Minimum 10, maximum 500 characters
-                    error = 'Profile description must be between 10 and 500 characters.'
+                    error = 'Profile description must be between 10 and 5000 characters.'
                   }
 
                   setFormErrors((prev) => ({ ...prev, profileDescription: error }))

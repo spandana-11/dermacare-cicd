@@ -35,7 +35,9 @@ const BookingSearch = ({
     setLoading(true)
     try {
       const res = await apiFunc(query)
+
       setBookingData(res?.data?.data || [])
+      console.log('Fetched bookings:', res?.data?.data || [])
     } catch (err) {
       console.error('Error fetching bookings:', err)
       setBookingData([])
@@ -51,10 +53,14 @@ const BookingSearch = ({
       return
     }
 
+    // Reset previous selection
+    setSelectedBooking(null)
+    setModalVisible(false)
+
     if (visitType === 'followup') {
-      fetchBookings(getInProgressfollowupBookings, patientSearch)
+      await fetchBookings(getInProgressfollowupBookings, patientSearch)
     } else {
-      fetchBookings(getBookingsByPatientId, patientSearch)
+      await fetchBookings(getBookingsByPatientId, patientSearch)
     }
   }
 
@@ -62,21 +68,43 @@ const BookingSearch = ({
   useEffect(() => {
     if (!patientSearch.trim()) {
       setBookingData([])
+      setSelectedBooking(null)
+      setModalVisible(false)
       return
     }
 
     const delayDebounce = setTimeout(async () => {
+      setSelectedBooking(null) // Reset before new fetch
+      setModalVisible(false)
       if (visitType === 'followup') {
-        const res = await fetchBookings(getInProgressfollowupBookings, patientSearch)
-        console.log(bookingData.doctorId)
-        // await fetchSlots(res.doctorId)
+        await fetchBookings(getInProgressfollowupBookings, patientSearch)
       } else {
-        fetchBookings(getBookingsByPatientId, patientSearch)
+        await fetchBookings(getBookingsByPatientId, patientSearch)
       }
-    }, 600) // wait 600ms after typing stops
+    }, 600)
 
     return () => clearTimeout(delayDebounce)
   }, [patientSearch, visitType])
+
+  // // ⚡ Auto-fetch on typing (debounced)
+  // useEffect(() => {
+  //   if (!patientSearch.trim()) {
+  //     setBookingData([])
+  //     return
+  //   }
+
+  //   const delayDebounce = setTimeout(async () => {
+  //     if (visitType === 'followup') {
+  //       const res = await fetchBookings(getInProgressfollowupBookings, patientSearch)
+  //       console.log(bookingData.doctorId)
+  //       // await fetchSlots(res.doctorId)
+  //     } else {
+  //       fetchBookings(getBookingsByPatientId, patientSearch)
+  //     }
+  //   }, 600) // wait 600ms after typing stops
+
+  //   return () => clearTimeout(delayDebounce)
+  // }, [patientSearch, visitType])
 
   //   const handleSelectBooking = async (booking) => {
   //     console.log(booking.doctorId)
@@ -127,37 +155,39 @@ const BookingSearch = ({
       </CRow>
 
       {/* 📋 Booking List */}
-      {Array.isArray(bookingData) && bookingData.length > 0 ? (
-        <CListGroup className="shadow-sm mb-4">
-          {bookingData.map((item) => (
-            <CListGroupItem
-              key={item.bookingId}
-              action
-              onClick={() => handleSelectBooking(item)}
-              style={{
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <strong>{item.name}</strong>
-              <span className="text-muted">{item.patientId}</span>
-              <span className="text-muted">{item.doctorName}</span>
-              <span className="text-muted">{item.branchname}</span>
-            </CListGroupItem>
-          ))}
-        </CListGroup>
-      ) : (
-        !loading &&
-        patientSearch && (
-          <p className="text-muted">
-            {visitType === 'followup'
-              ? `No bookings found for ${patientSearch}`
-              : `No Patient details found for ${patientSearch}`}
-          </p>
-        )
-      )}
+      {Array.isArray(bookingData) && bookingData.length > 0
+        ? !selectedBooking &&
+          Array.isArray(bookingData) &&
+          bookingData.length > 0 && (
+            <CListGroup className="shadow-sm mb-4">
+              {bookingData.map((item) => (
+                <CListGroupItem
+                  key={item.bookingId}
+                  action
+                  onClick={() => handleSelectBooking(item)}
+                  style={{
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <strong>{item.name}</strong>
+                  <span className="text-muted">{item.patientId}</span>
+                  <span className="text-muted">{item.doctorName}</span>
+                  <span className="text-muted">{item.branchname}</span>
+                </CListGroupItem>
+              ))}
+            </CListGroup>
+          )
+        : !loading &&
+          patientSearch && (
+            <p className="text-muted">
+              {visitType === 'followup'
+                ? `No bookings found for ${patientSearch}`
+                : `No Patient details found for ${patientSearch}`}
+            </p>
+          )}
       {/* {visitType === 'followup' && (
         <div className="mt-4 text-end d-flex justify-content-end gap-2">
           <CButton color="secondary" onClick={onClose}>

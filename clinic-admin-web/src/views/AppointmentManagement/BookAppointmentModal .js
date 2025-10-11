@@ -39,7 +39,7 @@ import axios from 'axios'
 import { useHospital } from '../Usecontext/HospitalContext'
 // import { getInProgressBookings, getInProgressfollowupBookings } from '../../APIs/GetFollowUpApi'
 import { toast } from 'react-toastify'
-import BookingSearch from '../widgets/BookingSearch'
+import BookingSearch from '../widgets/BookingSearch '
 import LoadingIndicator from '../../Utils/loader'
 import { postBooking } from '../../APIs/BookServiceAPi'
 
@@ -47,7 +47,7 @@ import { DoctorData } from '../Doctors/DoctorAPI'
 
 const BookAppointmentModal = ({ visible, onClose }) => {
   const [visitType, setVisitType] = useState('first')
-  const [appointmentType, setAppointmentType] = useState('Services & Treatments') // services / inclinic / online
+  const [appointmentType, setAppointmentType] = useState('services') // services / inclinic / online
   const [patientSearch, setPatientSearch] = useState('')
   const [selectedPatient, setSelectedPatient] = useState(null)
   const [doctorData, setDoctorData] = useState([]) // initialize as empty array
@@ -59,12 +59,11 @@ const BookAppointmentModal = ({ visible, onClose }) => {
   const [loadingFee, setLoadingFee] = useState(false)
   const navigate = useNavigate()
 
-
   const [selectedBooking, setSelectedBooking] = useState(null)
   const [mvisible, setMVisible] = useState(false)
 
   const [showAllSlots, setShowAllSlots] = useState(false)
-  const [subServiceInfo, setSubServiceInfo] = useState([])
+  const [subServiceInfo, setSubServiceInfo] = useState(null)
   const [selectedSubServiceInfo, setSelectedSubServiceInfo] = useState(null)
 
   const { fetchHospital, selectedHospital } = useHospital()
@@ -88,18 +87,16 @@ const BookAppointmentModal = ({ visible, onClose }) => {
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [consuationFee, setConsuationFee] = useState(0)
   const [servicesConsultation, setServicesConsultation] = useState(0)
+
   const type = appointmentType.trim().toLowerCase()
 
-  const [bookingDetails, setBookingDetails] = useState({
-  // Branch & clinic info
-
+  const initialBookingDetails = {
     branchId: localStorage.getItem('branchId') || '',
     branchname: localStorage.getItem('branchName') || '',
     clinicId: localStorage.getItem('HospitalId') || '',
     clinicName: localStorage.getItem('HospitalName') || '',
     clinicAddress: '',
 
-    // Service info
     categoryName: '',
     categoryId: '',
     servicename: '',
@@ -107,46 +104,37 @@ const BookAppointmentModal = ({ visible, onClose }) => {
     subServiceName: '',
     subServiceId: '',
 
-    // Doctor info
     doctorId: '',
     doctorName: '',
     doctorDeviceId: '',
     doctorRefCode: '',
 
-    // Consultation info
-    consultationType: 'Services & Treatments', // Services & Teatments / In-Clinic Consultation / Online Consultation,
-
+    consultationType: 'Services & Treatments',
     consultationFee: '',
-
     consultationExpiration: selectedHospital.data.consultationExpiration,
     paymentType: '',
     visitType: 'first',
     servicecost: '',
 
-    // Patient info
-    bookingFor: 'Self', // Self / Others
+    bookingFor: 'Self',
     name: '',
-    // relation: '', // If booking for others
     patientAddress: '',
     patientMobileNumber: '',
-    mobileNumber: '', // optional, same as patientMobileNumber
+    mobileNumber: '',
     age: '',
     gender: '',
     symptomsDuration: '',
     problem: '',
 
-    // Attachments & other fields
-    attachments: [], // array of File objects
+    attachments: [],
     freeFollowUps: selectedHospital.data.freeFollowUps,
     consentFormPdf: '',
     customerId: '',
     customerDeviceId: '',
 
-    // Service date/time
     serviceDate: '',
     servicetime: '',
 
-    // Optional structured address
     address: {
       houseNo: '',
       street: '',
@@ -156,7 +144,8 @@ const BookAppointmentModal = ({ visible, onClose }) => {
       postalCode: '',
       country: 'India',
     },
-  })
+  }
+  const [bookingDetails, setBookingDetails] = useState(initialBookingDetails)
 
   const [errors, setErrors] = useState({})
 
@@ -282,69 +271,6 @@ const BookAppointmentModal = ({ visible, onClose }) => {
   // ✅ Fetch SubServices when Service changes
 
   useEffect(() => {
-    if (!selectedSubService) {
-      setSubServices([])
-      setBookingDetails((prev) => ({
-        ...prev,
-        consultationFee: 0,
-        discountAmount: 0,
-        discountPercentage: 0,
-        totalAmount: 0,
-      }))
-      return
-    }
-
-    const fetchSubServiceInfo = async () => {
-      try {
-        const clinicId = localStorage.getItem('HospitalId')
-
-        const url = `${BASE_URL}/getSubService/${clinicId}/${selectedSubService}`
-        console.log('Fetching sub-service info from URL:', url)
-
-        const res = await axios.get(url)
-        console.log('Sub-service API response:', res.data)
-
-        // ✅ Extract first object from array
-        const subServiceInfo = res.data?.data || {}
-        setSubServices(subServiceInfo)
-        setServicesConsultation(subServiceInfo.price)
-        // ✅ Update booking details from API fields
-        if (bookingDetails.consultationType.toLowerCase().includes('service')) {
-          setBookingDetails((prev) => ({
-            ...prev,
-            consultationFee: subServiceInfo.consultationFee || 0,
-            servicecost: subServiceInfo.price,
-            discountAmount: subServiceInfo.discountedCost || 0,
-            discountPercentage: subServiceInfo.discountPercentage || 0,
-            totalAmount: subServiceInfo.finalCost,
-          }))
-        }
-        // setBookingDetails((prev) => ({
-        //   ...prev,
-        //   servicecost: subServiceInfo.price,
-        //   discountAmount: subServiceInfo.discountedCost || 0,
-        //   discountPercentage: subServiceInfo.discountPercentage || 0,
-        //   totalAmount: subServiceInfo.finalCost, // Adjust formula as needed
-        // }))
-
-        // Optional: store the subservice info
-      } catch (err) {
-        console.error('Error fetching sub-service info:', err)
-        setSubServices([])
-        setBookingDetails((prev) => ({
-          ...prev,
-          servicecost: '',
-          discountAmount: '',
-          discountPercentage: '',
-          totalAmount: '',
-        }))
-      }
-    }
-
-    fetchSubServiceInfo()
-  }, [selectedSubService])
-
-  useEffect(() => {
     console.log('useEffect triggered with service ID:', selectedService)
 
     if (!selectedService) {
@@ -373,7 +299,73 @@ const BookAppointmentModal = ({ visible, onClose }) => {
     fetchSubServices()
   }, [selectedService])
 
-const now = new Date() // current time
+  useEffect(() => {
+    if (!selectedSubService) {
+      setSubServices([])
+      setBookingDetails((prev) => ({
+        ...prev,
+        // consultationFee: 0,
+        discountAmount: 0,
+        discountPercentage: 0,
+        totalAmount: 0,
+      }))
+      return
+    }
+
+    const fetchSubServiceInfo = async () => {
+      try {
+        const clinicId = localStorage.getItem('HospitalId')
+
+        const url = `${BASE_URL}/getSubService/${clinicId}/${selectedSubService}`
+        console.log('Fetching sub-service info from URL:', url)
+
+        const res = await axios.get(url)
+        console.log('Sub-service API response:', res.data)
+
+        // ✅ Extract first object from array
+        const subServiceInfo = res.data?.data || {}
+        // setSubServices(subServiceInfo)
+        setServicesConsultation(subServiceInfo.price)
+        // ✅ Update booking details from API fields
+        if (bookingDetails.consultationType.toLowerCase().includes('service')) {
+          setBookingDetails((prev) => ({
+            ...prev,
+            subServiceId: subServiceInfo.subServiceId,
+            subServiceName: subServiceInfo.subServiceName,
+            consultationFee: subServiceInfo.consultationFee || 0,
+            servicecost: subServiceInfo.price,
+            discountAmount: subServiceInfo.discountedCost || 0,
+            discountPercentage: subServiceInfo.discountPercentage || 0,
+            totalAmount: subServiceInfo.finalCost,
+          }))
+        }
+        // setBookingDetails((prev) => ({
+        //   ...prev,
+        //   servicecost: subServiceInfo.price,
+        //   discountAmount: subServiceInfo.discountedCost || 0,
+        //   discountPercentage: subServiceInfo.discountPercentage || 0,
+        //   totalAmount: subServiceInfo.finalCost, // Adjust formula as needed
+        // }))
+
+        // Optional: store the subservice info
+      } catch (err) {
+        console.error('Error fetching sub-service info:', err)
+        setSubServices([])
+        setBookingDetails((prev) => ({
+          ...prev,
+          consultationFee: '',
+          servicecost: '',
+          discountAmount: '',
+          discountPercentage: '',
+          totalAmount: '',
+        }))
+      }
+    }
+
+    fetchSubServiceInfo()
+  }, [selectedSubService])
+
+  const now = new Date() // current time
 
   // Filter slots for selected date and remove past slots for today
   const slotsToShow = (slotsForSelectedDate || [])
@@ -437,49 +429,44 @@ const now = new Date() // current time
   // ✅ Fetch Doctors when Branch & SubService are chosen
 
   useEffect(() => {
-
     fetchDoctors()
   }, [appointmentType, bookingDetails.branchId, selectedSubService])
 
-      const fetchDoctors = async () => {
-      setLoadingDoctors(true)
-      try {
-        let doctorsList = []
+  const fetchDoctors = async () => {
+    setLoadingDoctors(true)
+    try {
+      let doctorsList = []
 
-        if (appointmentType !== 'services') {
-          // Use the DoctorData function
-          const response = await DoctorData()
-          doctorsList = Array.isArray(response.data) ? response.data : []
-        } else if (
-          appointmentType === 'services' &&
-          bookingDetails.branchId &&
-          selectedSubService
-        ) {
-          const clinicId = localStorage.getItem('HospitalId')
-          const branchId = bookingDetails.branchId
-          const subServiceId = selectedSubService
-          const url = `${BASE_URL}/doctors/${clinicId}/${branchId}/${subServiceId}`
-          const response = await axios.get(url)
-          doctorsList = Array.isArray(response.data.data) ? response.data.data : []
-        }
-
-        setDoctors(doctorsList)
-      } catch (err) {
-        console.error('Error fetching doctors:', err)
-        setDoctors([])
-      } finally {
-        setLoadingDoctors(false)
+      if (appointmentType !== 'services') {
+        // Use the DoctorData function
+        const response = await DoctorData()
+        doctorsList = Array.isArray(response.data) ? response.data : []
+      } else if (appointmentType === 'services' && bookingDetails.branchId && selectedSubService) {
+        const clinicId = localStorage.getItem('HospitalId')
+        const branchId = bookingDetails.branchId
+        const subServiceId = selectedSubService
+        const url = `${BASE_URL}/doctors/${clinicId}/${branchId}/${subServiceId}`
+        const response = await axios.get(url)
+        doctorsList = Array.isArray(response.data.data) ? response.data.data : []
       }
+
+      setDoctors(doctorsList)
+    } catch (err) {
+      console.error('Error fetching doctors:', err)
+      setDoctors([])
+    } finally {
+      setLoadingDoctors(false)
     }
+  }
 
   const fetchSlots = async (doctorId) => {
     try {
       const hospitalId = localStorage.getItem('HospitalId')
-      const branchId = localStorage.getItem('branchId')
+      // const branchId = localStorage.getItem('branchId')
       // const branchId = bookingDetails.branchId
 
       const response = await axios.get(
-        `${BASE_URL}/getDoctorSlots/${hospitalId}/${branchId}/${doctorId}`,
+        `${BASE_URL}/getDoctorSlots/${hospitalId}/${bookingDetails.branchId}/${doctorId}`,
       )
 
       if (response.data.success) {
@@ -498,92 +485,99 @@ const now = new Date() // current time
 
   // Watch for appointmentType changes and reset related fields
 
-
-
   // Fetch available slots for a doctor
 
- const handleBookingChange = (e) => {
-  const { name, value } = e.target
+  const handleBookingChange = (e) => {
+    const { name, value } = e.target
 
-  setBookingDetails((prev) => {
-    let updatedDetails = { ...prev, [name]: value }
+    setBookingDetails((prev) => {
+      let updatedDetails = { ...prev, [name]: value }
       if (name === 'patientMobileNumber' && value.startsWith('0')) {
-    return // ignore the input
+        return // ignore the input
+      }
+
+      // ✅ Sync mobileNumber when patientMobileNumber changes
+      if (name === 'patientMobileNumber') {
+        updatedDetails.mobileNumber = value
+      }
+
+      // ✅ DOB → Age
+      if (name === 'dob' && value) {
+        const today = new Date()
+        const dob = new Date(value)
+        let age = today.getFullYear() - dob.getFullYear()
+        const m = today.getMonth() - dob.getMonth()
+        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--
+        updatedDetails.age = age >= 1 ? age : 0
+      }
+
+      // ✅ Age → DOB
+      if (name === 'age' && value) {
+        const today = new Date()
+        const dob = new Date()
+        dob.setFullYear(today.getFullYear() - parseInt(value))
+        updatedDetails.dob = dob.toISOString().split('T')[0] // YYYY-MM-DD
+      }
+
+      // ✅ Combine symptoms duration and unit
+      if (name === 'symptomsDuration' || name === 'unit') {
+        updatedDetails[name] = value
+      }
+      if (name === 'name') {
+        // Remove any digits from input
+        const lettersOnly = value.replace(/[0-9]/g, '')
+        updatedDetails[name] = lettersOnly
+      }
+
+      return updatedDetails
+    })
+
+    // ✅ Real-time validation
+    setErrors((prev) => {
+      const updatedErrors = { ...prev }
+
+      // Validation rules
+      switch (name) {
+        case 'name':
+          if (!value || value.trim() === '') updatedErrors[name] = 'Name is required'
+          else delete updatedErrors[name]
+          break
+
+        case 'patientMobileNumber':
+          if (!value) updatedErrors[name] = 'Mobile number is required'
+          else if (!/^[6-9]\d{9}$/.test(value))
+            updatedErrors[name] = 'Enter a valid 10-digit mobile number starting with 6-9'
+          else delete updatedErrors[name]
+          break
+
+        case 'appointmentType':
+          if (!value || value.trim() === '') {
+            updatedErrors[name] = 'Please select appointment type'
+          } else {
+            delete updatedErrors[name] // ✅ remove error as soon as valid
+          }
+          break
+
+        case 'dob':
+        case 'age':
+          delete updatedErrors.dob
+          delete updatedErrors.age
+          break
+
+        default:
+          break
+      }
+
+      return updatedErrors
+    })
   }
-
-    // ✅ Sync mobileNumber when patientMobileNumber changes
-    if (name === 'patientMobileNumber') {
-      updatedDetails.mobileNumber = value
-    }
-
-    // ✅ DOB → Age
-    if (name === 'dob' && value) {
-      const today = new Date()
-      const dob = new Date(value)
-      let age = today.getFullYear() - dob.getFullYear()
-      const m = today.getMonth() - dob.getMonth()
-      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--
-      updatedDetails.age = age >= 1 ? age : 0
-    }
-
-    // ✅ Age → DOB
-    if (name === 'age' && value) {
-      const today = new Date()
-      const dob = new Date()
-      dob.setFullYear(today.getFullYear() - parseInt(value))
-      updatedDetails.dob = dob.toISOString().split('T')[0] // YYYY-MM-DD
-    }
-
-    // ✅ Combine symptoms duration and unit
-    if (name === 'symptomsDuration' || name === 'unit') {
-      const duration = name === 'symptomsDuration' ? value : updatedDetails.symptomsDuration
-      const unit = name === 'unit' ? value : updatedDetails.unit
-      updatedDetails.symptomsDuration = duration && unit ? `${duration} ${unit}` : duration
-    }
-
-    return updatedDetails
-  })
-
-  // ✅ Real-time validation
-  setErrors((prev) => {
-    const updatedErrors = { ...prev }
-
-    // Validation rules
-    switch (name) {
-      case 'name':
-        if (!value || value.trim() === '') updatedErrors[name] = 'Name is required'
-        else delete updatedErrors[name]
-        break
-
-      case 'patientMobileNumber':
-        if (!value) updatedErrors[name] = 'Mobile number is required'
-        else if (!/^[6-9]\d{9}$/.test(value))
-          updatedErrors[name] = 'Enter a valid 10-digit mobile number starting with 6-9'
-        else delete updatedErrors[name]
-        break
-
-      case 'appointmentType':
-        if (!value || value.trim() === '') {
-          updatedErrors[name] = 'Please select appointment type'
-        } else {
-          delete updatedErrors[name] // ✅ remove error as soon as valid
-        }
-        break
-
-      case 'dob':
-      case 'age':
-        delete updatedErrors.dob
-        delete updatedErrors.age
-        break
-
-      default:
-        break
-    }
-
-    return updatedErrors
-  })
-}
-
+  useEffect(() => {
+    setBookingDetails((prev) => ({
+      ...prev,
+      slot: '', // reset only slot
+      // consultationFee stays as is
+    }))
+  }, [bookingDetails.doctorId])
 
   const handleNestedChange = (section, field, value) => {
     // Update the bookingDetails
@@ -623,100 +617,129 @@ const now = new Date() // current time
     })
   }
 
- const validate = () => {
-  const newErrors = {}
+  const validate = () => {
+    const newErrors = {}
 
-  // Visit Type
-  if (!visitType) newErrors.visitType = 'Please select visit type'
+    // Visit Type
+    if (!visitType) newErrors.visitType = 'Please select visit type'
 
-  // Appointment Type (required only for first visit)
-  
+    // Appointment Type (required only for first visit)
+
     // if (appointmentType)
     //   newErrors.appointmentType = 'Please select appointment type'
-  
 
-  // Contact Info (only for new patients)
-  if (!selectedBooking && visitType !== 'followup') {
-    if (!bookingDetails.name || bookingDetails.name.trim().length === 0) {
-  newErrors.name = 'Name is required'
-} else if (bookingDetails.name.trim().length < 3) {
-  newErrors.name = 'Name must be at least 3 characters'
-}
+    // Contact Info (only for new patients)
+    if (!selectedBooking && visitType !== 'followup') {
+      const name = bookingDetails.name?.trim() || ''
 
+      if (!name) {
+        newErrors.name = 'Name is required'
+      } else if (name.length < 3) {
+        newErrors.name = 'Name must be at least 3 characters'
+      } else if (!/^[A-Za-z\s]+$/.test(name)) {
+        // Only letters and spaces
+        newErrors.name = 'Name can only contain letters'
+      } else {
+        delete newErrors.name
+      }
 
-    if (!bookingDetails.dob) newErrors.dob = 'Date of Birth is required'
+      if (!bookingDetails.dob) newErrors.dob = 'Date of Birth is required'
 
-    if (!bookingDetails.gender) newErrors.gender = 'Please select gender'
+      if (!bookingDetails.gender) {
+        newErrors.gender = 'Please select gender'
+      } else {
+        delete newErrors.gender
+      }
 
- if (!bookingDetails.patientMobileNumber) {
-  newErrors.patientMobileNumber = 'Mobile number is required'
-} else if (!/^[6-9]\d{9}$/.test(bookingDetails.patientMobileNumber)) {
-  newErrors.patientMobileNumber =
-    'Enter a valid 10-digit mobile number starting with 6-9'
-} else {
-  delete newErrors.patientMobileNumber
-}
+      if (!bookingDetails.patientMobileNumber) {
+        newErrors.patientMobileNumber = 'Mobile number is required'
+      } else if (!/^[6-9]\d{9}$/.test(bookingDetails.patientMobileNumber)) {
+        newErrors.patientMobileNumber = 'Enter a valid 10-digit mobile number starting with 6-9'
+      } else {
+        delete newErrors.patientMobileNumber
+      }
 
+      // Address validations
+      const addressErrors = {}
+      const addressFields = bookingDetails.address || {}
 
+      for (let field in addressFields) {
+        if (field === 'landmark') continue // ✅ Landmark is optional
 
-    // Address validations
-    const addressErrors = {}
-    const addressFields = bookingDetails.address || {}
-    for (let field in addressFields) {
-      if (!addressFields[field] || addressFields[field].trim() === '') {
-        addressErrors[field] = `${field} is required`
-      } else if (field === 'postalCode' && !/^\d{6}$/.test(addressFields[field])) {
-        addressErrors[field] = 'Postal code must be 6 digits'
+        if (!addressFields[field] || addressFields[field].trim() === '') {
+          addressErrors[field] = `${field} is required`
+        } else if (field === 'postalCode' && !/^\d{6}$/.test(addressFields[field])) {
+          addressErrors[field] = 'Postal code must be 6 digits'
+        }
+      }
+
+      if (Object.keys(addressErrors).length > 0) newErrors.address = addressErrors
+    }
+    // Services (if service appointment)
+    if (visitType !== 'followup' && appointmentType?.includes('service')) {
+      if (!selectedCategory) newErrors.selectedCategory = 'Select a category'
+      if (!selectedService) newErrors.selectedService = 'Select a service'
+      if (!selectedSubService) newErrors.selectedSubService = 'Select a procedure'
+    }
+
+    // Branch & Doctor
+    if (visitType !== 'followup') {
+      if (!bookingDetails.branchId) newErrors.branchname = 'Select a branch'
+      if (!bookingDetails.doctorId) newErrors.doctorName = 'Select a doctor'
+    }
+
+    // Slots
+    if (visitType !== 'followup' && selectedSlots.length === 0)
+      newErrors.slot = 'Please select a time slot'
+
+    // Payment
+    if (visitType !== 'followup' && !bookingDetails.paymentType)
+      newErrors.paymentType = 'Select payment type'
+
+    // Symptoms (optional)
+    if (
+      bookingDetails.problem &&
+      (bookingDetails.problem.length < 5 || bookingDetails.problem.length > 300)
+    )
+      newErrors.problem = 'Problem description must be 5-300 characters'
+
+    if (
+      bookingDetails.symptomsDuration &&
+      (bookingDetails.symptomsDuration < 1 || bookingDetails.symptomsDuration > 365)
+    )
+      newErrors.symptomsDuration = 'Duration must be between 1 and 365'
+
+    // Doctor Referral Code (optional)
+    if (
+      bookingDetails.doctorRefCode &&
+      (bookingDetails.doctorRefCode.length < 4 || bookingDetails.doctorRefCode.length > 10)
+    )
+      newErrors.doctorRefCode = 'Referral code must be 4-10 characters'
+    if (bookingDetails.appointmentType === 'inclinic') {
+      if (!bookingDetails.problem?.trim()) {
+        toast.error('Please enter Symptoms/Problem.')
+        return
+      }
+      if (!bookingDetails.symptomsDuration) {
+        toast.error('Please enter Symptoms Duration.')
+        return
+      }
+      if (!bookingDetails.unit) {
+        toast.error('Please select Unit for Symptoms Duration.')
+        return
+      }
+      if (visitType !== 'followup') {
+        if (!bookingDetails.paymentType || bookingDetails.paymentType.trim() === '') {
+          newErrors.paymentType = 'Select payment type'
+        } else {
+          delete newErrors.paymentType
+        }
       }
     }
-    if (Object.keys(addressErrors).length > 0) newErrors.address = addressErrors
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
   }
-
-  // Services (if service appointment)
-  if (visitType !== 'followup' && appointmentType?.includes('service')) {
-    if (!selectedCategory) newErrors.selectedCategory = 'Select a category'
-    if (!selectedService) newErrors.selectedService = 'Select a service'
-    if (!selectedSubService) newErrors.selectedSubService = 'Select a procedure'
-  }
-
-  // Branch & Doctor
-  if (visitType !== 'followup') {
-    if (!bookingDetails.branchId) newErrors.branchname = 'Select a branch'
-    if (!bookingDetails.doctorId) newErrors.doctorName = 'Select a doctor'
-  }
-
-  // Slots
-  if (visitType !== 'followup' && selectedSlots.length === 0)
-    newErrors.slot = 'Please select a time slot'
-
-  // Payment
-  if (visitType !== 'followup' && !bookingDetails.paymentType)
-    newErrors.paymentType = 'Select payment type'
-
-  // Symptoms (optional)
-  if (
-    bookingDetails.problem &&
-    (bookingDetails.problem.length < 5 || bookingDetails.problem.length > 300)
-  )
-    newErrors.problem = 'Problem description must be 5-300 characters'
-
-  if (
-    bookingDetails.symptomsDuration &&
-    (bookingDetails.symptomsDuration < 1 || bookingDetails.symptomsDuration > 365)
-  )
-    newErrors.symptomsDuration = 'Duration must be between 1 and 365'
-
-  // Doctor Referral Code (optional)
-  if (
-    bookingDetails.doctorRefCode &&
-    (bookingDetails.doctorRefCode.length < 4 || bookingDetails.doctorRefCode.length > 10)
-  )
-    newErrors.doctorRefCode = 'Referral code must be 4-10 characters'
-
-  setErrors(newErrors)
-  return Object.keys(newErrors).length === 0
-}
-
 
   const handleAppointmentTypeChange = (type) => {
     setBookingDetails((prev) => ({
@@ -755,14 +778,15 @@ const now = new Date() // current time
 
       console.log('Booking submitted successfully:', res.data)
       toast.success('Booking submitted successfully!')
+      setBookingDetails(initialBookingDetails)
       setTimeout(() => {
         navigate('/dashboard') // replace with your dashboard route
       }, 1000)
 
       // ✅ Reload page after a short delay to allow toast to show
-      setTimeout(() => {
-        window.location.reload()
-      }, 1000) // 1 second delay
+      // setTimeout(() => {
+      //   window.location.reload()
+      // }, 1000) // 1 second delay
     } catch (err) {
       console.error('Error submitting booking:', err)
 
@@ -804,6 +828,7 @@ const now = new Date() // current time
       serviceDate: selectedDate,
       servicetime: bookingDetails.servicetime,
       patientId: followupData.patientId,
+      bookingfor: followupData.bookingFor,
     }
 
     console.log('📦 Follow-up Payload:', payload)
@@ -829,8 +854,8 @@ const now = new Date() // current time
         age: selectedBooking.age || '',
         gender: selectedBooking.gender || '',
         patientMobileNumber: selectedBooking.mobileNumber || '',
-        followupsLeft: selectedBooking.followupsLeft || '',
-        freeFollowupsLeft: selectedBooking.freeFollowupsLeft || '',
+        // followupsLeft: selectedBooking.followupsLeft || '',
+        // freeFollowupsLeft: selectedBooking.freeFollowupsLeft || '',
         address: selectedBooking.patientAddress,
       }))
     }
@@ -946,9 +971,8 @@ const now = new Date() // current time
               </CCol>
             </CRow>
             {errors.appointmentType && (
-  <div className="text-danger mb-3">{errors.appointmentType}</div>
-)}
-            
+              <div className="text-danger mb-3">{errors.appointmentType}</div>
+            )}
           </div>
         )}
 
@@ -1037,7 +1061,7 @@ const now = new Date() // current time
                     name="patientMobileNumber"
                     value={bookingDetails.patientMobileNumber || ''}
                     onChange={handleBookingChange}
-                     maxLength={10}
+                    maxLength={10}
                   />
                   {errors.patientMobileNumber && (
                     <p className="text-danger">{errors.patientMobileNumber}</p>
@@ -1058,13 +1082,15 @@ const now = new Date() // current time
                         {rowFields.map((field) => (
                           <CCol md={4} key={field}>
                             <CFormLabel className="text-capitalize">
-                              {field} <span className="text-danger">*</span>
+                              {field}{' '}
+                              {field !== 'landmark' && <span className="text-danger">*</span>}
                             </CFormLabel>
                             <CFormInput
                               type="text"
                               maxLength={field === 'postalCode' ? 6 : undefined}
                               value={bookingDetails.address[field] || ''}
                               onChange={(e) => handleNestedChange('address', field, e.target.value)}
+                              required={field !== 'landmark'} // optional only for landmark
                             />
                             {errors.address?.[field] && (
                               <div className="text-danger mt-1">{errors.address[field]}</div>
@@ -1263,91 +1289,94 @@ const now = new Date() // current time
                 {errors.branchname && <div className="text-danger">{errors.branchname}</div>}
               </CCol>
 
-     <CCol md={4}>
-  <h6>
-    Doctor Name <span className="text-danger">*</span>
-  </h6>
+              <CCol md={4}>
+                <h6>
+                  Doctor Name <span className="text-danger">*</span>
+                </h6>
 
-  {loadingDoctors ? (
-    <div className="text-center py-2" style={{ color: 'var(--color-black)' }}>
-      Loading doctors...
-    </div>
-  ) : (
-    <CFormSelect
-      name="doctorName"
-      value={bookingDetails.doctorId || ''}
-      onChange={async (e) => {
-        const selectedDoctorId = e.target.value
-        const selectedDoctor = doctors.find((doc) => doc.doctorId === selectedDoctorId)
+                {loadingDoctors ? (
+                  <div className="text-center py-2" style={{ color: 'var(--color-black)' }}>
+                    Loading doctors...
+                  </div>
+                ) : (
+                  <CFormSelect
+                    name="doctorName"
+                    value={bookingDetails.doctorId || ''}
+                    onChange={async (e) => {
+                      const selectedDoctorId = e.target.value
+                      const selectedDoctor = doctors.find(
+                        (doc) => doc.doctorId === selectedDoctorId,
+                      )
+                      if (selectedDoctor) {
+                        setLoadingFee(true) // start loader for fee
+                        try {
+                          await fetchSlots(selectedDoctorId) // fetch slots for doctor
 
-        if (selectedDoctor) {
-          setLoadingFee(true) // start loader for fee
-          try {
-            await fetchSlots(selectedDoctorId)
+                          let fee = 0
+                          const type = appointmentType?.toLowerCase()
+                          if (type.includes('services')) {
+                            fee = subServiceInfo?.consultationFee || 0
+                          } else if (type.includes('inclinic')) {
+                            fee = selectedDoctor.doctorFees?.inClinicFee || 0
+                          } else if (type.includes('online')) {
+                            fee = selectedDoctor.doctorFees?.vedioConsultationFee || 0
+                          }
 
-            let fee = 0
-            const type = appointmentType?.toLowerCase() || ''
-
-            if (type.includes('services')) {
-              fee = subServiceInfo?.consultationFee || 0
-            } else if (type === 'inclinic') {
-              fee = selectedDoctor.doctorFees?.inClinicFee || 0
-            } else if (type === 'online') {
-              fee = selectedDoctor.doctorFees?.vedioConsultationFee || 0
-            }
-
-            setBookingDetails((prev) => ({
-              ...prev,
-              doctorId: selectedDoctor.doctorId,
-              doctorName: selectedDoctor.doctorName,
-              doctorDeviceId: selectedDoctor.doctorDeviceId,
-              consultationFee: fee,
-            }))
-            setConsuationFee(fee)
-            setErrors((prev) => ({ ...prev, doctorName: '' }))
-          } catch (err) {
-            console.error('Error fetching fee or slots:', err)
-            setErrors((prev) => ({ ...prev, doctorName: 'Failed to fetch consultation fee' }))
-          } finally {
-            setLoadingFee(false) // stop loader
-          }
-        } else {
-          setBookingDetails((prev) => ({
-            ...prev,
-            doctorId: '',
-            doctorName: '',
-            doctorDeviceId: '',
-            consultationFee: 0,
-          }))
-          setErrors((prev) => ({ ...prev, doctorName: 'Please select a valid doctor' }))
-        }
-      }}
-      disabled={loadingDoctors || loadingFee}
-      required
-    >
-      <option value="">Select Doctor</option>
-      {doctors.map((doc) => (
-        <option
-          key={doc.doctorId}
-          value={doc.doctorId}
-          disabled={!doc.doctorAvailabilityStatus}
-          style={{ color: doc.doctorAvailabilityStatus ? 'inherit' : '#aaa' }}
-        >
-          {doc.doctorName} -{appointmentType?.toLowerCase()=='inclinic'?doc.doctorFees.inClinicFee:doc.doctorFees.vedioConsultationFee}
-          {/* {loadingFee && bookingDetails.doctorId === doc.doctorId ? 'Loading...' : bookingDetails.consultationFee || 0}
+                          setBookingDetails((prev) => ({
+                            ...prev,
+                            doctorId: selectedDoctor.doctorId,
+                            doctorName: selectedDoctor.doctorName,
+                            doctorDeviceId: selectedDoctor.doctorDeviceId,
+                            consultationFee: fee,
+                          }))
+                          setConsuationFee(fee)
+                          setErrors((prev) => ({ ...prev, doctorName: undefined }))
+                        } catch (err) {
+                          setErrors((prev) => ({
+                            ...prev,
+                            doctorName: 'Failed to fetch consultation fee',
+                          }))
+                        } finally {
+                          setLoadingFee(false) // stop loader
+                        }
+                      } else {
+                        setBookingDetails((prev) => ({
+                          ...prev,
+                          doctorId: '',
+                          doctorName: '',
+                          doctorDeviceId: '',
+                          consultationFee: 0,
+                        }))
+                        setErrors((prev) => ({
+                          ...prev,
+                          doctorName: 'Please select a valid doctor',
+                        }))
+                      }
+                    }}
+                    disabled={loadingDoctors || loadingFee}
+                    required
+                  >
+                    <option value="">Select Doctor</option>
+                    {doctors.map((doc) => (
+                      <option
+                        key={doc.doctorId}
+                        value={doc.doctorId}
+                        disabled={!doc.doctorAvailabilityStatus}
+                        style={{ color: doc.doctorAvailabilityStatus ? 'inherit' : '#aaa' }}
+                      >
+                        {doc.doctorName} -
+                        {appointmentType?.toLowerCase() == 'inclinic'
+                          ? doc.doctorFees.inClinicFee
+                          : doc.doctorFees.vedioConsultationFee}
+                        {/* {loadingFee && bookingDetails.doctorId === doc.doctorId ? 'Loading...' : bookingDetails.consultationFee || 0}
           {!doc.doctorAvailabilityStatus ? ' (Not Available)' : ''} */}
-        </option>
-      ))}
-    </CFormSelect>
-  )}
+                      </option>
+                    ))}
+                  </CFormSelect>
+                )}
 
-  {errors.doctorName && <div className="text-danger">{errors.doctorName}</div>}
-</CCol>
-
-
-
-
-
+                {errors.doctorName && <div className="text-danger">{errors.doctorName}</div>}
+              </CCol>
             </CRow>
           </div>
         )}
@@ -1381,16 +1410,13 @@ const now = new Date() // current time
                 <h6>Total Amount</h6>
                 <CFormInput type="number" value={bookingDetails.totalAmount || 0} disabled />
               </CCol>
-
-              {/* Payment Type */}
             </CRow>
           </>
         )}
 
         {/* ==================== Available Slots ==================== */}
         <h5 className="mb-3 border-bottom pb-2">Available Slots</h5>
-  <CCol md={12}>
-          {/* Date Buttons */}
+        <CCol md={12}>
           <div>
             {/* Date Buttons */}
             <div className="d-flex gap-2 flex-wrap mb-3">
@@ -1516,51 +1542,68 @@ const now = new Date() // current time
           {errors.slot && <div className="text-danger mt-2">{errors.slot}</div>}
         </CCol>
 
-
         {/* SECTION: Symptoms */}
         {/* ==================== Symptoms & Attachment Sections ==================== */}
         {visitType !== 'followup' && (
           <>
             {/* SECTION: Symptoms */}
-            <h5 className="mb-3 border-bottom pb-2">Symptoms (optional)</h5>
+            <h5 className="mb-3 border-bottom pb-2">Symptoms</h5>
+
             <CRow className="mb-4">
               <CCol md={5}>
-                <h6>Symptoms/Problem</h6>
+                <h6>
+                  Symptoms/Problem
+                  {bookingDetails.appointmentType === 'inclinic' && (
+                    <span className="text-danger">*</span>
+                  )}
+                </h6>
+
                 <CFormTextarea
                   name="problem"
                   value={bookingDetails.problem}
                   onChange={handleBookingChange}
-                  minLength={5} // ✅ Minimum 5 characters
-                  maxLength={300} // ✅ Maximum 300 characters
+                  minLength={5}
+                  maxLength={300}
+                  required={bookingDetails.appointmentType === 'inclinic'} // 👈 required only for inclinic
                 />
               </CCol>
 
               <CCol md={4}>
-                <h6>Symptoms/Duration</h6>
+                <h6>
+                  Symptoms/Duration
+                  {bookingDetails.appointmentType === 'inclinic' && (
+                    <span className="text-danger">*</span>
+                  )}
+                </h6>
+
                 <CFormInput
                   type="number"
                   name="symptomsDuration"
                   value={bookingDetails.symptomsDuration}
                   onChange={(e) => {
                     const value = e.target.value
-                    // Prevent entering 0
                     if (value === '0') return
-                    setBookingDetails((prev) => ({
-                      ...prev,
-                      symptomsDuration: value,
-                    }))
+                    setBookingDetails((prev) => ({ ...prev, symptomsDuration: value }))
                   }}
                   min={1}
                   max={365}
+                  required={bookingDetails.appointmentType === 'inclinic'} // 👈 required only for inclinic
                 />
               </CCol>
 
               <CCol md={3}>
-                <h6>Unit</h6>
+                <h6>
+                  Unit
+                  {bookingDetails.appointmentType === 'inclinic' && (
+                    <span className="text-danger">*</span>
+                  )}
+                </h6>
+
                 <CFormSelect
                   name="unit"
                   value={bookingDetails.unit || ''}
                   onChange={handleBookingChange}
+                  required={bookingDetails.appointmentType === 'inclinic'} // 👈 required only for inclinic
                 >
                   <option value="">Select Unit</option>
                   <option value="Day">Day</option>
@@ -1572,7 +1615,7 @@ const now = new Date() // current time
             </CRow>
 
             {/* SECTION: Attachment */}
-            <CCol md={6}>
+            <CCol md={6} className="mt-2">
               <h6>Attachment</h6>
               <CFormInput
                 type="file"
@@ -1668,7 +1711,9 @@ const now = new Date() // current time
                 <CFormSelect
                   name="paymentType"
                   value={bookingDetails.paymentType}
-                  onChange={handleBookingChange}
+                  onChange={(e) =>
+                    setBookingDetails((prev) => ({ ...prev, paymentType: e.target.value }))
+                  }
                 >
                   <option value="">Select Payment Type</option>
                   <option value="Cash">Cash</option>
