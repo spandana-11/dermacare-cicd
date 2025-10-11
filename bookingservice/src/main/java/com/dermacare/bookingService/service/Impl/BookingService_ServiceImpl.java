@@ -1085,15 +1085,15 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                continue;
 		            }
 
-		            // ✅ Parse serviceDate safely
 		            LocalDate serviceDate;
 		            try {
 		                serviceDate = LocalDate.parse(booking.getServiceDate(), isoFormatter);
 		            } catch (Exception e) {
-		                continue; // skip invalid date
+		                continue;
 		            }
 
-		            if (serviceDate.equals(today)) {
+		            // ✅ Include any In-Progress booking with serviceDate between today and sixthDate
+		            if (!serviceDate.isBefore(today) && !serviceDate.isAfter(sixthDate)) {
 		                String key = booking.getBookingId() + "_" + booking.getServiceDate();
 		                if (uniqueKeys.add(key)) {
 		                    finalList.add(toResponse(booking));
