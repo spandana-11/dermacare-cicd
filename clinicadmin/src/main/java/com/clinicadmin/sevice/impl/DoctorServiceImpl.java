@@ -1046,13 +1046,13 @@ public class DoctorServiceImpl implements DoctorService {
 
 	}
 
-	public boolean updateSlot(String doctorId, String date, String time) {
+	public boolean updateSlot(String doctorId, String branchId,String date, String time) {
 	    if (doctorId == null || date == null || time == null) {
 	        return false;
 	    }
 	    try {
 	        // Fetch doctor slots from repository
-	        DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDate(doctorId, date);
+	        DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDateAndBranchId(doctorId,date,branchId);
 
 	        if (doctorSlots == null || doctorSlots.getAvailableSlots() == null || doctorSlots.getAvailableSlots().isEmpty()) {	           
 	            return false;
@@ -1082,13 +1082,13 @@ public class DoctorServiceImpl implements DoctorService {
 	}
 
 
-	public boolean makingFalseDoctorSlot(String doctorId, String date, String time) {
+	public boolean makingFalseDoctorSlot(String doctorId,String branchId, String date, String time) {
 	    if (doctorId == null || date == null || time == null) {
 	        return false;
 	    }
 
 	    try {
-	        DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDate(doctorId, date);
+	        DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDateAndBranchId(doctorId, date,branchId);
 
 	        if (doctorSlots == null || doctorSlots.getAvailableSlots() == null || doctorSlots.getAvailableSlots().isEmpty()) {
 	            return false;
@@ -2834,30 +2834,53 @@ public class DoctorServiceImpl implements DoctorService {
 	
 	
 	public boolean blockingSlot(TempBlockingSlot tempBlockingSlot) {
-		boolean res = false;
-		try {
-			DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDate(tempBlockingSlot.getDoctorId(), tempBlockingSlot.getServiceDate());
-			if(doctorSlots.getDoctorId() != null) {
-			for (DoctorAvailableSlotDTO slot : doctorSlots.getAvailableSlots()) {
-				if (slot.getSlot().equalsIgnoreCase(tempBlockingSlot.getServicetime())) {
-					slot.setSlotbooked(true);
-					slotRepository.save(doctorSlots);
-					slots.add(tempBlockingSlot);
-					res = true;
-					break;
-				}else {
-					res = false;
-				}
-			}}else {
-				res = false;}
-		} catch (NullPointerException e) {
-			System.out.println(e.getMessage());
-			res = false;
-		}
-	return res;
+	    // Validate input
+	    if (tempBlockingSlot == null ||
+	        tempBlockingSlot.getDoctorId() == null ||
+	        tempBlockingSlot.getServiceDate() == null ||
+	        tempBlockingSlot.getServicetime() == null) {
+	        return false;}
+	    try {
+	        // Fetch doctor slots for that date
+	        DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDateAndBranchId(
+	                tempBlockingSlot.getDoctorId(),
+	                tempBlockingSlot.getServiceDate(),
+	                tempBlockingSlot.getBranchId()
+	        );
+	        if (doctorSlots == null ||
+	            doctorSlots.getAvailableSlots() == null ||
+	            doctorSlots.getAvailableSlots().isEmpty()) {
+	            return false;
+	        }
+	        // Find matching slot by time
+	        Optional<DoctorAvailableSlotDTO> matchingSlotOpt = doctorSlots.getAvailableSlots()
+	                .stream()
+	                .filter(slot -> tempBlockingSlot.getServicetime().equalsIgnoreCase(slot.getSlot()))
+	                .findFirst();
+	        if (matchingSlotOpt.isPresent()) {
+	            DoctorAvailableSlotDTO matchingSlot = matchingSlotOpt.get();
+	            // Check if slot already booked
+	            if (matchingSlot.isSlotbooked()) {
+	                return false;
+	            }
+	            // Mark slot as booked
+	            matchingSlot.setSlotbooked(true);
+	            slotRepository.save(doctorSlots);
+	            return true; // Successfully blocked
+	        } else {
+	            return false; // No matching slot found
+	        }
+	    } catch (Exception e) {
+	        // Log error for debugging (important for production)
+	        System.err.println("Error while blocking slot: " + e.getMessage());
+	        return false;
+	    } finally {
+	        // Optional cleanup or logging
+	        System.out.println("Slot blocking process completed for doctor: " + tempBlockingSlot.getDoctorId());
+	    }
 	}
-	
-	
+
+		
 
 	@Scheduled(fixedRate = 120 * 1000)
 	public void checkingSlots(){

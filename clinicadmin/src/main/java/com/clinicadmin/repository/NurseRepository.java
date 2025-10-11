@@ -24,5 +24,7 @@ public interface NurseRepository extends MongoRepository<Nurse, ObjectId> {
 
 	void deleteByHospitalIdAndNurseId(String hospitalId, String nurseId);
 
+	List<Nurse> findByHospitalIdAndBranchId(String hospitalId, String branchId);
+
 //	Optional<Nurse> findByUserName(String userName);
 }

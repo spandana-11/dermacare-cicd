@@ -20,9 +20,10 @@ public interface CllinicFeign {
 	public Boolean updateDoctorSlotWhileBooking(@PathVariable String doctorId, @PathVariable String date,
 			@PathVariable String time);
 	
-	@PutMapping("/clinic-admin/makingFalseDoctorSlot/{doctorId}/{date}/{time}")
-	public Boolean makingFalseDoctorSlot(@PathVariable String doctorId, @PathVariable String date,
+	@PutMapping("/clinic-admin//makingFalseDoctorSlot/{doctorId}/{branchId}/{date}/{time}")
+	public boolean makingFalseDoctorSlot(@PathVariable String doctorId,@PathVariable String branchId, @PathVariable String date,
 			@PathVariable String time);
+		
 	
 	
 }

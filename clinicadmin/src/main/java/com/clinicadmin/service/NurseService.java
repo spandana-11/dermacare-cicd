@@ -17,6 +17,8 @@ public interface NurseService {
 
 	public Response updateNurse(String nurseId, NurseDTO dto);
 
+	Response getAllNursesByBranchIdAndHospitalId(String hospitalId, String branchId);
+
 //	public Response nurseLogin(NurseLoginDTO loginDTO);
 //
 //	Response resetLoginPassword(ResetNurseLoginPasswordDTO dto);

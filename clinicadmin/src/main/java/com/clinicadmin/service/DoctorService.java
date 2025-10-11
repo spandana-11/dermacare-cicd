@@ -46,13 +46,13 @@ public interface DoctorService {
 
 	public Response getDoctorsByClinicIdAndDoctorId(String clinicId, String doctorId);
 
-	public boolean updateSlot(String doctorId, String date, String time);
+	public boolean updateSlot(String doctorId, String branchId,String date, String time);
 
 	public Response getHospitalAndDoctorsUsingSubserviceId(String subServiceId);
 
 	public Response getAllDoctorsBySubserviceId(String subServiceId);
 
-	public boolean makingFalseDoctorSlot(String doctorId, String date, String time);
+	public boolean makingFalseDoctorSlot(String doctorId,String branchId, String date, String time);
 
 	public ResponseEntity<?> notificationToClinic(String hospitalId);
 

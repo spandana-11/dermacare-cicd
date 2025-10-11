@@ -21,6 +21,7 @@ public class BookingResponse {
 	private String customerDeviceId;
 	private String problem;
 	private String clinicId;
+	private String branchId;
 	private String doctorWebDeviceId;
 	private String clinicName;
 	private String clinicDeviceId;
