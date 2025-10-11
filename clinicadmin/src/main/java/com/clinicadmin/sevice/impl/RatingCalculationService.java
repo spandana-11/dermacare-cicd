@@ -160,7 +160,7 @@ public class RatingCalculationService {
             if (matchedRatings.isEmpty()) {
                 response.setSuccess(true);
                 response.setStatus(200);
-                response.setMessage("Invalid or no ratings found for doctorId: " + doctorId);
+                response.setMessage("No Ratings Available.");
                 return response;
             }
 
