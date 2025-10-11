@@ -157,37 +157,57 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		
 	
 	private Booking toEntity(BookingRequset request) {
-		Booking entity = new ObjectMapper().convertValue(request,Booking.class );
-		//entity.setMobileNumber(Long.parseLong(request.getMobileNumber()));
-		ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
+	    Booking entity = new ObjectMapper().convertValue(request, Booking.class);
+
+	    // Set booking timestamp in IST
+	    ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
 	    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy hh:mm a");
 	    String formattedTime = istTime.format(formatter);
-		entity.setBookedAt(formattedTime);
-		entity.setFreeFollowUpsLeft(request.getFreeFollowUps());
-		//entity.setPrescriptionPdf(new ObjectMapper().convertValue(request.getPrescriptionPdf(),new TypeReference<List<byte[]>>(){}));
-		if(request.getConsultationType() != null){
-		if(request.getConsultationType().equalsIgnoreCase("video consultation") || request.getConsultationType().equalsIgnoreCase("online consultation") ) {
-			entity.setChannelId(randomNumber());
-		}else {
-			entity.setChannelId(null) ;
-		}}
-		if(request.getBookingFor().equalsIgnoreCase("Someone")){
-		if(request.getRelation() != null && request.getPatientId() == null) {
-		List<Booking> existingBooking = repository.findByRelationIgnoreCaseAndCustomerIdAndNameIgnoreCase(request.getRelation(),request.getCustomerId(),request.getName());
-		if(existingBooking != null && !existingBooking.isEmpty()) {
-		for(Booking b : existingBooking) {
-		if(b != null) {
-			entity.setPatientId(b.getPatientId());
-		}}}else {
-			entity.setPatientId(generatePatientId(request));}
-		}}else {
-			if (request.getPatientId() == null || request.getPatientId().trim().isEmpty()) {
-			    entity.setPatientId(generatePatientId(request));
-			} else {
-			    entity.setPatientId(request.getPatientId());
-			}
-		}
-		return entity;		
+	    entity.setBookedAt(formattedTime);
+
+	    // Set follow-up count
+	    entity.setFreeFollowUpsLeft(request.getFreeFollowUps());
+
+	    // Set channel ID for online/video consultations
+	    if (request.getConsultationType() != null) {
+	        if (request.getConsultationType().equalsIgnoreCase("video consultation") ||
+	            request.getConsultationType().equalsIgnoreCase("online consultation")) {
+	            entity.setChannelId(randomNumber());
+	        } else {
+	            entity.setChannelId(null);
+	        }
+	    }
+
+	    // Handle patient ID logic
+	    if (request.getBookingFor().equalsIgnoreCase("Someone")) {
+	        if (request.getRelation() != null &&
+	            (request.getPatientId() == null || request.getPatientId().trim().isEmpty())) {
+
+	            List<Booking> existingBooking = repository.findByRelationIgnoreCaseAndCustomerIdAndNameIgnoreCase(
+	                request.getRelation(), request.getCustomerId(), request.getName());
+
+	            if (existingBooking != null && !existingBooking.isEmpty()) {
+	                for (Booking b : existingBooking) {
+	                    if (b != null) {
+	                        entity.setPatientId(b.getPatientId()); // Reuse existing patient ID
+	                        break;
+	                    }
+	                }
+	            } else {
+	                entity.setPatientId(generatePatientId(request)); // Generate new patient ID
+	            }
+	        } else {
+	            entity.setPatientId(request.getPatientId()); // Use provided patient ID
+	        }
+	    } else {
+	        if (request.getPatientId() == null || request.getPatientId().trim().isEmpty()) {
+	            entity.setPatientId(generatePatientId(request)); // Generate new patient ID
+	        } else {
+	            entity.setPatientId(request.getPatientId()); // Use provided patient ID
+	        }
+	    }
+
+	    return entity;
 	}
 	
 	
