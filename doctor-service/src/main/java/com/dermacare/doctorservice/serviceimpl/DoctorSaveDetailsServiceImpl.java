@@ -1,4 +1,5 @@
 package com.dermacare.doctorservice.serviceimpl;
+
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Base64;
@@ -168,8 +169,6 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                     HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
-
-
 
     @Override
     public Response getDoctorDetailsById(String id) {

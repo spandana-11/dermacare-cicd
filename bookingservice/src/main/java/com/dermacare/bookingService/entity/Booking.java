@@ -65,6 +65,7 @@ public class Booking  {
 	private String doctorRefCode;
 	private String consultationExpiration;
 	private String followupStatus;
+	private Integer sittings;
 	
 	
 	 public Booking(Booking booking) {

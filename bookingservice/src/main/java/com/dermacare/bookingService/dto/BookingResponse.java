@@ -62,5 +62,6 @@ public class BookingResponse {
 	private String doctorRefCode;
 	private String paymentType;
 	private String followupStatus;
+	private Integer sittings;
 	
 }

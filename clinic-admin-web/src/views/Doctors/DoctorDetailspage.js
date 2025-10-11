@@ -354,7 +354,7 @@ const DoctorDetailsPage = () => {
     const fetchDoctorRatings = async () => {
       try {
         const hospitalId = localStorage.getItem('HospitalId')
-        const response = await http.get(`/averageRatings/${hospitalId}/${doctorData.doctorId}`)
+        const response = await http.get(`/getAverageRatingsByDoctorId/${doctorData.doctorId}`)
 
         if (!response.data.success) {
           setError('Failed to fetch ratings')
@@ -411,16 +411,26 @@ const DoctorDetailsPage = () => {
       reader.onload = () => resolve(reader.result)
       reader.onerror = (error) => reject(error)
     })
-
   function formatTimeAgo(dateString) {
-    const diff = Math.floor((new Date() - new Date(dateString)) / 60000) // minutes
+    // Parse DD-MM-YYYY hh:mm:ss AM/PM manually
+    const [datePart, timePart, meridian] = dateString.split(' ')
+    const [day, month, year] = datePart.split('-').map(Number)
+    let [hours, minutes, seconds] = timePart.split(':').map(Number)
+
+    if (meridian === 'PM' && hours !== 12) hours += 12
+    if (meridian === 'AM' && hours === 12) hours = 0
+
+    const date = new Date(year, month - 1, day, hours, minutes, seconds)
+
+    const diff = Math.floor((new Date() - date) / 60000) // minutes
     if (diff < 1) return 'Just now'
     if (diff < 60) return `${diff} minute${diff > 1 ? 's' : ''} ago`
-    const hours = Math.floor(diff / 60)
-    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`
-    const days = Math.floor(hours / 24)
+    const hoursDiff = Math.floor(diff / 60)
+    if (hoursDiff < 24) return `${hoursDiff} hour${hoursDiff > 1 ? 's' : ''} ago`
+    const days = Math.floor(hoursDiff / 24)
     return `${days} day${days > 1 ? 's' : ''} ago`
   }
+
   useEffect(() => {
     if (doctorData?.doctorId) {
       fetchSlots()
@@ -1845,9 +1855,27 @@ const DoctorDetailsPage = () => {
                   </CRow>
 
                   {ratings.comments.map((comment, index) => {
-                    const initials =
-                      customerDetails[comment.customerMobileNumber]?.slice(0, 2).toUpperCase() ||
-                      'US'
+                    const getInitials = (name) => {
+                      if (!name) return 'US'
+
+                      // Remove common prefixes like Mr., Mrs., Ms., Dr.
+                      const cleaned = name.replace(/^(Mr\.|Mrs\.|Ms\.|Dr\.)\s*/i, '').trim()
+
+                      // Split the remaining name and take first 2 words
+                      const parts = cleaned.split(' ')
+
+                      // Take the first letters of up to 2 words
+                      const initials = parts
+                        .slice(0, 2)
+                        .map((word) => word[0]?.toUpperCase() || '')
+                        .join('')
+
+                      return initials || 'US'
+                    }
+
+                    // Usage:
+                    const initials = getInitials(comment.patientName)
+
                     const timeAgo = formatTimeAgo(comment.dateAndTimeAtRating)
 
                     return (
@@ -1868,8 +1896,7 @@ const DoctorDetailsPage = () => {
                             <div className="d-flex justify-content-between align-items-center">
                               <div>
                                 <h6 className="mb-0">
-                                  {customerDetails[comment.customerMobileNumber] ||
-                                    comment.customerMobileNumber}
+                                  {comment.patientName || comment.patientName}
                                 </h6>
 
                                 <small style={{ color: 'var(--color-black)' }}>{timeAgo}</small>

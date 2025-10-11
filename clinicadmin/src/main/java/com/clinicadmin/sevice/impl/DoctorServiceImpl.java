@@ -2882,7 +2882,7 @@ public class DoctorServiceImpl implements DoctorService {
 
 		
 
-	@Scheduled(fixedRate = 120 * 1000)
+	@Scheduled(fixedRate = 30 * 1000)
 	public void checkingSlots(){
 			//System.out.println(System.currentTimeMillis());
 			//System.out.println(slots);			
@@ -2899,7 +2899,7 @@ public class DoctorServiceImpl implements DoctorService {
 				}catch(Exception e) {}
 				//System.out.println(bkng);
 				if(bkng == null) {
-					DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDate(n.getDoctorId(),n.getServiceDate());
+					DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDateAndBranchId(n.getDoctorId(),n.getServiceDate(),n.getBranchId());
 					//System.out.println(doctorSlots);
 					for (DoctorAvailableSlotDTO slot : doctorSlots.getAvailableSlots()) {
 						if (slot.getSlot().equalsIgnoreCase(n.getServicetime())) {
