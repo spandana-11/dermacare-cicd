@@ -1023,27 +1023,69 @@ public class DoctorServiceImpl implements DoctorService {
 		}
 	}
 
+	// @Override
+	// public Response deleteDoctorSlotbyDate(String doctorId, String date) {
+	// 	DoctorSlot doctorSlot = slotRepository.findByDoctorIdAndDate(doctorId, date);
+
+	// 	if (doctorSlot == null) {
+	// 		Response response = new Response();
+	// 		response.setSuccess(false);
+	// 		response.setData(null);
+	// 		response.setMessage("No slots found for doctor on this date");
+	// 		response.setStatus(HttpStatus.NOT_FOUND.value());
+	// 		return response;
+	// 	}
+
+	// 	slotRepository.delete(doctorSlot);
+	// 	Response response = new Response();
+	// 	response.setSuccess(true);
+	// 	response.setData(null);
+	// 	response.setMessage("All slots deleted successfully for date " + date);
+	// 	response.setStatus(HttpStatus.OK.value());
+	// 	return response;
+
+	// }
+
 	@Override
 	public Response deleteDoctorSlotbyDate(String doctorId, String date) {
-		DoctorSlot doctorSlot = slotRepository.findByDoctorIdAndDate(doctorId, date);
+	    Response response = new Response();
 
-		if (doctorSlot == null) {
-			Response response = new Response();
-			response.setSuccess(false);
-			response.setData(null);
-			response.setMessage("No slots found for doctor on this date");
-			response.setStatus(HttpStatus.NOT_FOUND.value());
-			return response;
-		}
+	    // Fetch doctor slot for the given doctor and date
+	    DoctorSlot doctorSlot = slotRepository.findByDoctorIdAndDate(doctorId, date);
 
-		slotRepository.delete(doctorSlot);
-		Response response = new Response();
-		response.setSuccess(true);
-		response.setData(null);
-		response.setMessage("All slots deleted successfully for date " + date);
-		response.setStatus(HttpStatus.OK.value());
-		return response;
+	    if (doctorSlot == null) {
+	        response.setSuccess(false);
+	        response.setData(null);
+	        response.setMessage("No slots found for doctor on this date");
+	        response.setStatus(HttpStatus.NOT_FOUND.value());
+	        return response;
+	    }
 
+	    // Filter and keep only booked slots
+	    List<DoctorAvailableSlotDTO> bookedSlots = doctorSlot.getAvailableSlots()
+	            .stream()
+	            .filter(DoctorAvailableSlotDTO::isSlotbooked) // keep only booked ones
+	            .toList();
+
+	    if (bookedSlots.isEmpty()) {
+	        // if no booked slots, delete the entire document
+	        slotRepository.delete(doctorSlot);
+	        response.setSuccess(true);
+	        response.setData(null);
+	        response.setMessage("All unbooked slots deleted successfully (no booked slots found).");
+	        response.setStatus(HttpStatus.OK.value());
+	        return response;
+	    }
+
+	    // Update the document to keep only booked slots
+	    doctorSlot.setAvailableSlots(bookedSlots);
+	    slotRepository.save(doctorSlot);
+
+	    response.setSuccess(true);
+	    response.setData(bookedSlots);
+	    response.setMessage("Unbooked slots deleted successfully, booked slots retained.");
+	    response.setStatus(HttpStatus.OK.value());
+	    return response;
 	}
 
 	public boolean updateSlot(String doctorId, String branchId,String date, String time) {
