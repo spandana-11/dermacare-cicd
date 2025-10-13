@@ -128,21 +128,29 @@ const ProcedureConsentForm = () => {
     const fetchSubServices = async () => {
       try {
         const res = await subServiceData(newService.serviceId)
-        // Correctly handle the response format based on your API logs
         const subList = res?.data || []
+
+        // Flatten all subservices
         let allSubServices = []
         if (Array.isArray(subList)) {
           allSubServices = subList.flatMap((item) => item.subServices || [])
         } else if (subList?.subServices) {
           allSubServices = subList.subServices
         }
-        console.log(allSubServices)
-        setSubServiceOptions(allSubServices)
+
+        // Extract all subServiceIds
+        const subServiceIds = allSubServices.map((sub) => sub.subServiceId)
+
+        // Check details and filter by consentFormType
+        await checkSubServiceDetails(subServiceIds)
+
+        console.log('All SubServices:', allSubServices)
       } catch (e) {
         console.error('Error fetching subServices', e)
         setSubServiceOptions([])
       }
     }
+
     fetchSubServices()
   }, [newService.serviceId])
 
@@ -182,18 +190,39 @@ const ProcedureConsentForm = () => {
     })
   }
   const checkSubServiceDetails = async (ids) => {
-    let incomplete = false
     const hospitalId = localStorage.getItem('HospitalId')
-    for (const id of ids) {
-      const data = await getSubServiceById(hospitalId, id) // Use actual hospitalId
-      if (!data || !data.price || !data.finalCost) {
-        incomplete = true
-        break
-      }
-    }
+    let filteredSubServices = []
+    let incomplete = false
 
+    const detailsArray = await Promise.all(ids.map((id) => getSubServiceById(hospitalId, id)))
+
+    detailsArray.forEach((data) => {
+      if (!data) return // skip null/undefined
+
+      // If data is an array, use it; if object, wrap it in array
+      const subArray = Array.isArray(data) ? data : [data]
+
+      // Filter only consentFormType === '2'
+      const consent2Subs = subArray.filter((sub) => sub.consentFormType === '2')
+
+      filteredSubServices.push(...consent2Subs)
+
+      // Check for missing price/finalCost
+      consent2Subs.forEach((sub) => {
+        if (!sub.price || !sub.finalCost) {
+          incomplete = true
+        }
+      })
+    })
+
+    // ✅ Update state
+    setSubServiceOptions(filteredSubServices)
     setIsSubServiceComplete(!incomplete)
+
+    console.log('Filtered SubServices with consentFormType=2:', filteredSubServices)
   }
+
+  console.log(subServiceOptions)
   const handleSubServiceChange = (e) => {
     const selectedId = e.target.value
     const selectedObj = subServiceOptions?.find((s) => s.subServiceId === selectedId)
