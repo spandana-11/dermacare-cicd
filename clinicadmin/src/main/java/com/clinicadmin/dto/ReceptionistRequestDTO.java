@@ -50,7 +50,7 @@ public class ReceptionistRequestDTO {
 	@NotNull(message = "Address cannot be null")
 	private Address address;
 
-	// @NotBlank(message = "Emergency contact is required")
+
 	private String emergencyContact;
 	private String profilePicture;
 

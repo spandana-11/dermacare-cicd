@@ -287,6 +287,16 @@ public class DoctorController {
 
 		// --------------------------delete slot by using time date
 		// doctorId-----------------------------------------------------
+		@DeleteMapping("/doctorId/{doctorId}/branchId/{branchId}/date/{date}/slot/{slot}")
+		public  ResponseEntity<Response>deleteDoctorSlot(
+		        @PathVariable String doctorId,
+		        @PathVariable String branchId,
+		        @PathVariable String date,
+		        @PathVariable String slot) {
+			Response response = doctorService.deleteDoctorSlot(doctorId, branchId, date, slot);
+			return ResponseEntity.status(response.getStatus()).body(response);
+		}
+
 		@DeleteMapping("/doctorId/{doctorId}/{date}/{slot}/slots")
 		public Response deleteDoctorSlot(@PathVariable String doctorId, @PathVariable String date,
 				@PathVariable String slot) {
@@ -301,6 +311,15 @@ public class DoctorController {
 			Response response = doctorService.deleteDoctorSlotbyDate(doctorId, date);
 
 			return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+		}
+		@DeleteMapping("/delete-by-date/{doctorId}/{branchId}/{date}")
+		public ResponseEntity<Response> deleteDoctorSlotsByDate(
+		        @PathVariable String doctorId,
+		        @PathVariable String branchId,
+		        @PathVariable String date) {
+		    
+		    Response response = doctorService.deleteDoctorSlotbyDate(doctorId, branchId, date);
+		    return ResponseEntity.status(response.getStatus()).body(response);
 		}
 
 		@PutMapping("/updateDoctorSlotWhileBooking/{doctorId}/{branchId}/{date}/{time}")

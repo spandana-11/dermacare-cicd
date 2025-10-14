@@ -96,4 +96,8 @@ public interface DoctorService {
 	
 	public boolean blockingSlot(TempBlockingSlot tempBlockingSlot);
 
+	Response deleteDoctorSlot(String doctorId, String branchId, String date, String slotToDelete);
+
+	Response deleteDoctorSlotbyDate(String doctorId, String branchId, String date);
+
 }

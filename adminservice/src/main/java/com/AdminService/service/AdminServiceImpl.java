@@ -1,6 +1,6 @@
  package com.AdminService.service;
 
- import java.util.ArrayList;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
-
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -21,7 +20,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
-
 import com.AdminService.dto.AdminHelper;
 import com.AdminService.dto.BookingResponse;
 import com.AdminService.dto.CategoryDto;
@@ -58,9 +56,10 @@ import com.AdminService.util.PermissionsUtil;
 import com.AdminService.util.Response;
 import com.AdminService.util.ResponseStructure;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import feign.FeignException;
 import feign.FeignException.FeignClientException;
+
+
 @Service
 public class AdminServiceImpl implements AdminService {
 
@@ -858,11 +857,7 @@ public class AdminServiceImpl implements AdminService {
 	                        ? Base64.getEncoder().encodeToString(clinic.getProfessionalIndemnityInsurance())
 
 	                        : ""
-
 	                );
-
-
-
 	                clnc.setGstRegistrationCertificate(
 
 	                    clinic.getGstRegistrationCertificate() != null
@@ -872,7 +867,6 @@ public class AdminServiceImpl implements AdminService {
 	                        : ""
 
 	                );
-
 
 	                // Others – list of documents
 
