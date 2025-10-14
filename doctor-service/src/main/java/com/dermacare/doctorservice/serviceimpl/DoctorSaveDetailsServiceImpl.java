@@ -107,7 +107,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             dto.setClinicName(dto.getClinicName() != null ? dto.getClinicName() : "");
 
             // ----------------------- Step 4: Calculate Visit Count -----------------------
-            // 🔥 Core logic: doctorId + patientId + subServiceId
+            // 🔥 Core logic: doctorId + patientId + subServiceId                             
             List<DoctorSaveDetails> previousVisits =
                     repository.findByDoctorIdAndPatientIdAndSubServiceId(
                             dto.getDoctorId(),
