@@ -30,6 +30,7 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
   )
   const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
   const [activeIdx, setActiveIdx] = useState(-1);
+  const [validationErrors, setValidationErrors] = useState({})
   // at the top of the component, before any return
   const [selectedTreatmentOption, setSelectedTreatmentOption] = useState(
     formData?.symptoms?.diagnosis
@@ -144,14 +145,42 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
 
 
   const updateCfg = (t, field, value) => {
-    setTreatmentConfigs((prev) => ({
-      ...prev,
-      [t]: {
-        ...prev[t],
-        [field]: field === 'sittings' ? Number(value || 0) : value,
-      },
-    }))
-  }
+    setTreatmentConfigs((prev) => {
+      const newCfg = {
+        ...prev,
+        [t]: {
+          ...prev[t],
+          [field]: field === 'sittings' ? Number(value || 0) : value,
+        },
+      };
+
+      // Run validation immediately
+      const errors = [];
+      const cfg = newCfg[t];
+
+      if (!cfg.startDate) errors.push("Start date is required");
+      else {
+        const today = new Date();
+        const selected = new Date(cfg.startDate);
+        today.setHours(0, 0, 0, 0);
+        selected.setHours(0, 0, 0, 0);
+        if (selected < today) errors.push("Start date cannot be in the past");
+      }
+
+      if (!cfg.sittings || cfg.sittings < 1) errors.push("Sittings must be at least 1");
+
+      // Update validationErrors
+      setValidationErrors((prevErrors) => {
+        const next = { ...prevErrors };
+        if (errors.length > 0) next[t] = errors.join(". ");
+        else delete next[t];
+        return next;
+      });
+
+      return newCfg;
+    });
+  };
+
 
   const editSchedule = (t) => {
     setGeneratedData((prev) => {
@@ -254,7 +283,10 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
     console.log(payload)
     onNext?.(payload)
   }
-
+  // Checks if any date in generatedData is in the past
+  const hasPastDates = Object.values(generatedData).some(meta =>
+    meta.dates?.some(d => new Date(d.date) < new Date(new Date().setHours(0, 0, 0, 0)))
+  );
   return (
     <div className="pb-5 treatment-wrapper">
       {snackbar.show && (
@@ -382,12 +414,16 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
                             type="date"
                             className="form-control"
                             value={cfg.startDate}
-                            min={new Date().toISOString().split("T")[0]}   // ✅ disables past dates
+                            min={new Date().toISOString().split("T")[0]} // disables past dates in calendar picker
                             onChange={(e) => updateCfg(t, "startDate", e.target.value)}
                           />
+                          {/* Display validation error for this treatment */}
+                          {validationErrors[t] && validationErrors[t].includes("Start date") && (
+                            <div className="text-danger mt-1">
+                              {validationErrors[t]}
+                            </div>
+                          )}
                         </div>
-
-
                         <div className="col-md-12">
                           <GradientTextCard text="Reason (for this treatment)" />
                           <CFormTextarea
@@ -409,12 +445,10 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
                             backgroundColor: COLORS.bgcolor,
                             color: COLORS.black,
                             border: "2px solid #000", // add border here
-
                           }}
                         >
                           Generate Table for {t}
                         </Button>
-
                       </div>
                     </div>
                   )
@@ -448,7 +482,9 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
                             ? 'Daily'
                             : meta.frequency === 'week'
                               ? 'Weekly'
-                              : 'Monthly'}
+                              : 'Monthly'}{' '}
+                          ({meta?.sittings ?? 0} sittings from{' '}
+                          {meta?.startDate ?? '—'})
                         </span>
 
                         <div className="d-flex align-items-center">
@@ -505,7 +541,7 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
                       )}
                       <table className="table table-bordered">
                         <thead>
-                          <tr>
+                          <tr style={{ textAlign: "center" }}>
                             <th>S.No</th>
                             <th>Date</th>
                             <th>Sitting</th>
@@ -513,7 +549,7 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
                         </thead>
                         <tbody>
                           {meta.dates.map(({ date, sitting }, i) => (
-                            <tr key={i}>
+                            <tr key={i} style={{ textAlign: "center" }}>
                               <td>{i + 1}</td>
                               <td>{date}</td>
                               <td>{sitting}</td>
@@ -522,6 +558,11 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
                         </tbody>
                       </table>
                     </CAccordionBody>
+                    {hasPastDates && (
+                      <div className="text-danger my-2">
+                        ⚠ Some dates in the treatment table are in the past. Please correct them before proceeding.
+                      </div>
+                    )}
                   </CAccordionItem>
                 ))}
               </CAccordion>
@@ -550,9 +591,9 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
         )} */}
 
         <Button
-          customColor={COLORS.bgcolor} // background color of button
+          customColor={COLORS.bgcolor}
           color={COLORS.black}
-          disabled={hasPendingCards /* or use: nextDisabled for stricter gating */}
+          disabled={hasPendingCards || hasPastDates} // disabled if any past date exists
           onClick={handleNext}
         >
           Next

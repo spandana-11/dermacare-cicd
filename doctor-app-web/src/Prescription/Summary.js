@@ -214,7 +214,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         followUp: formData?.followUp,
         prescription: formData?.prescription,
         prescriptionPdf: [base64],
-        subServiceId:patientData?.subServiceId
+        subServiceId: patientData?.subServiceId
         // visitType: patientData?.visitType || "OFFLINE",
       }
       console.log("Final Payload to Upload:", payload)
@@ -299,7 +299,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         prescription: formData?.prescription,
         prescriptionPdf: [base64],
         visitType: patientData?.visitType || "OFFLINE",
-        subServiceId:patientData?.subServiceId
+        subServiceId: patientData?.subServiceId
       }
       console.log("Final Payload to Upload:", payload)
 

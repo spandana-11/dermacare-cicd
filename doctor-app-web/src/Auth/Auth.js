@@ -417,7 +417,7 @@ export const averageRatings = async (doctorId) => {
         hospitalRating: overallHospitalRating,
         comments,
         ratingStats: ratingCategoryStats,
-        message: response.data?.message || "No patient reviews available",
+        message: response.data?.message || "No patient ratings available",
       };
     } else {
       return {
@@ -425,7 +425,7 @@ export const averageRatings = async (doctorId) => {
         hospitalRating: 0,
         comments: [],
         ratingStats: [],
-        message: response.data?.message || "No patient reviews available",
+        message: response.data?.message || "No patient ratings available",
       };
     }
   } catch (error) {
@@ -436,7 +436,7 @@ export const averageRatings = async (doctorId) => {
       hospitalRating: 0,
       comments: [],
       ratingStats: [],
-      message: "No patient reviews available",
+      message: "No patient ratings available",
     };
   }
 };

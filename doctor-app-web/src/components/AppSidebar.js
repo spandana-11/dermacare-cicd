@@ -23,7 +23,7 @@ import female from '../assets/images/female.png'
 import { useDoctorContext } from '../Context/DoctorContext'
 import { getClinicDetails, getDoctorDetails, averageRatings, getPatientVitals } from '../Auth/Auth'
 import { capitalizeEachWord, capitalizeFirst, capitalizeWords } from '../utils/CaptalZeWord'
-
+import './AppSidebar.css'
 const AppSidebar = () => {
   const dispatch = useDispatch()
   const unfoldable = useSelector((state) => state.sidebarUnfoldable)
@@ -112,7 +112,11 @@ const AppSidebar = () => {
     vitals,
   };
   // helpers (place above your return)
-  const fmt = (n) => (n !== '—' && !isNaN(+n) ? `₹ ${Number(n).toFixed(2)}` : '—')
+  const fmt = (n) => {
+    if (n === '—' || isNaN(+n)) return '—';
+    const num = Number(n);
+    return `₹ ${num % 1 === 0 ? num.toFixed(0) : num.toFixed(2)}`;
+  };
 
   // useEffect(() => {
   //   // clear context + localStorage so sidebar shows doctor data
@@ -208,7 +212,7 @@ const AppSidebar = () => {
                     <strong>Mobile:</strong> <span>{display.mobile}</span>
                   </h6>
                   <h6 style={{ color: COLORS.black, fontSize: SIZES.small, marginBottom: "6px" }}>
-                    <strong>Visit Type:</strong> <span>{display.visitType}</span>
+                    <strong>Visit Type:</strong> <span>{capitalizeFirst(display.visitType)}</span>
                   </h6>
                   <h6 style={{ color: COLORS.black, fontSize: SIZES.small, marginBottom: "6px" }}>
                     <strong>Visit Count:</strong> <span>{display.visitCount === '—' ? 0 : display.visitCount}</span>
@@ -300,11 +304,10 @@ const AppSidebar = () => {
           />
         </CSidebarHeader>
 
-        {/* Show navigation/footer only when NOT loading and no patient selected */}
         {/* Show navigation only when NOT loading and no patient selected */}
         {!isPatientLoading && !hasPatient && <AppSidebarNav items={navigation} />}
 
-        {/* Show Patient Reviews only if ratings exist */}
+        {/* Show Patient Ratings only if ratings exist */}
         {!isPatientLoading && !hasPatient && ratings.length > 0 && (
           <CSidebarFooter className="border-top d-none d-lg-flex flex-column mt-2" style={{ paddingLeft: 10, paddingRight: 10 }}>
             <h6 style={{ color: COLORS.black, fontWeight: 'bold', marginBottom: '0.5rem' }}>
@@ -356,170 +359,119 @@ const AppSidebar = () => {
               </div>
             ))}
           </CSidebarFooter>
-
-
-
         )}
-
-
       </CSidebar>
-
-      {/* Modal with full patient details; opens when header is clicked */}
-      <CModal visible={showModal} onClose={() => setShowModal(false)} alignment="center" size="lg">
-        <CModalHeader onClose={() => setShowModal(false)}>
-          <CModalTitle>Patient Details</CModalTitle>
+      <CModal
+        visible={showModal}
+        onClose={() => setShowModal(false)}
+        alignment="center"
+        size="lg"
+        className="patient-modal-ui"
+      >
+        <CModalHeader className="modal-header-modern">
+          <CModalTitle>Patient Overview</CModalTitle>
         </CModalHeader>
-        <CModalBody>
-          {/* ROW 1: Patient (left) | Clinic (right) */}
-          <CRow className="g-3">
-            <CCol lg={6}>
-              <div className="d-flex align-items-start">
-                <CImage
-                  src={genderImg}
-                  alt="Patient"
-                  width={80}
-                  className="rounded-circle border me-3"
-                  style={{ borderWidth: 2, padding: 5, color: COLORS.gray }}
-                />
-                <div>
-                  <h5 className="mb-1" style={{ color: COLORS.black, fontWeight: 'bold' }}>
-                    {display.name}
-                  </h5>
-                  <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    <div>
-                      <strong style={{ fontWeight: "bold" }}>Age/Gender:</strong> {display.age} / {display.gender}
-                    </div>
-                    <div>Mobile:{' '} {display.mobile}</div>
-                    <div>Booking For:{' '} {display.bookingFor}</div>
-                    <div>Patient ID:{' '} {display.patientId}</div>
-                    <div>Visit Type:{' '} {display.visitType}</div>
-                    <div>Visit Count:{' '} {display.visitCount}</div>
-                    <div>FollowUp Count:{' '} {display.followUp}</div>
-                  </div>
+
+        <CModalBody className="modal-body-modern">
+          {/* --- PATIENT BASIC INFO --- */}
+          <div className="info-card">
+            <div className="info-left">
+              <CImage src={genderImg} alt="Patient" className="avatar" />
+              <div className="patient-info">
+                <div className="patient-field">
+                  <span className="label">Name:</span>
+                  <span className="value">{capitalizeFirst(display?.name || '—')}</span>
+                </div>
+                <div className="patient-field">
+                  <span className="label">Patient ID:</span>
+                  <span className="value">{display?.patientId || '—'}</span>
                 </div>
               </div>
-            </CCol>
+            </div>
+            <div className="info-grid">
+              <div><strong>Age/Gender:</strong> {display.age} / {display.gender}</div>
+              <div><strong>Mobile:</strong> {display.mobile}</div>
+              <div><strong>Booking For:</strong> {capitalizeFirst(display.bookingFor)}</div>
+              <div><strong>Visit Type:</strong> {capitalizeFirst(display.visitType)}</div>
+              <div><strong>Visit Count:</strong> {display.visitCount === '—' ? 0 : display.visitCount}</div>
+              <div><strong>FollowUps:</strong> {display.followUp === '—' ? 0 : display.followUp}</div>
+            </div>
+          </div>
 
-            <CCol lg={5}>
-              <CCol>
-                <CCol>
-                  <h6 className="mb-2" style={{ color: COLORS.black, fontWeight: 600 }}>
-                    Clinic
-                  </h6>
-                  <div className="mb-4" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    <div>
-                      {display.clinicName}: {' '} {display.clinicId}
-                    </div>
-                    <div>Address:{' '} {display.clinicAddress}</div>
-                  </div>
-                </CCol>
-                <CCol>
-                  <h6 className="mb-2" style={{ color: COLORS.black, fontWeight: 600 }}>
-                    Doctor
-                  </h6>
-                  <div className="mb-2" style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                    <div>
-                      {display.doctorName}: {' '}{display.doctorId}
-                    </div>
-                  </div>
-                </CCol>
-              </CCol>
-            </CCol>
-          </CRow>
+          {/* --- CLINIC / DOCTOR --- */}
+          <div className="info-card">
+            <div className="info-block">
+              <h5>Clinic Details</h5>
+              <p><strong>{display.clinicName}</strong> ({display.clinicId})</p>
+              <p className="subtext">{display.clinicAddress}</p>
+            </div>
+            <div className="info-block">
+              <h5>Doctor</h5>
+              <p><strong>{display.doctorName}</strong> ({display.doctorId})</p>
+            </div>
+          </div>
 
-          <hr className="my-3" />
-
-          {/* ROW 2: Duration | Problem */}
-          <CRow className="g-3">
-            <CCol lg={6}>
-              <h6 className="mb-2" style={{ color: COLORS.black, fontWeight: 600 }}>
-                Duration
-              </h6>
-              <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                <div>
-                  Consultation Expiration:{' '}
-                  {display?.consultationExpiration ? display.consultationExpiration : '—'}
-                </div>
+          {/* --- DURATION & PROBLEM --- */}
+          <div className="info-card">
+            <div className="info-grid-2">
+              <div>
+                <h5>Duration</h5>
+                <p>
+                  Consultation Expiration:{" "}
+                  {display?.consultationExpiration || "—"}
+                </p>
               </div>
-            </CCol>
-            <CCol lg={5}>
-              <h6 className="mb-2" style={{ color: COLORS.black, fontWeight: 600 }}>
-                Problem
-              </h6>
-              <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                <div>{display.symptom}</div>
+              <div>
+                <h5>Problem</h5>
+                <p>{display.symptom || "—"}</p>
               </div>
-            </CCol>
-          </CRow>
+            </div>
+          </div>
 
-          <hr className="my-3" />
-
-          {/* ROW 3: Appointment | Service (sub-service only if available) */}
-          <CRow className="g-3">
-            <CCol lg={6}>
-              <h6 className="mb-2" style={{ color: COLORS.black, fontWeight: 600 }}>
-                Appointment
-              </h6>
-              <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                <div>Date:{' '} {display.serviceDate}</div>
-                <div>Time:{' '} {display.serviceTime}</div>
+          {/* --- APPOINTMENT --- */}
+          <div className="info-card">
+            <div className="info-grid-2">
+              <div>
+                <h5>Appointment</h5>
+                <p>Date: {display.serviceDate}</p>
+                <p>Time: {display.serviceTime}</p>
               </div>
-            </CCol>
-            <CCol lg={5}>
-              <h6 className="mb-2" style={{ color: COLORS.black, fontWeight: 600 }}>
-                Sub-Service
-              </h6>
-              <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                {display?.subServiceId && display?.subServiceName ? (
+              <div>
+                <h5>Sub-Service</h5>
+                {display?.subServiceId ? (
                   <>
-                    <div>SubServiceID:{' '} {display.subServiceId}</div>
-                    <div>SubServiceName:{' '} {display.subServiceName}</div>
+                    <p>ID: {display.subServiceId}</p>
+                    <p>Name: {display.subServiceName}</p>
                   </>
                 ) : (
-                  <div>—</div>
+                  <p>—</p>
                 )}
               </div>
-            </CCol>
+            </div>
+          </div>
 
+          {/* --- FEES --- */}
+          <div className="info-card">
+            <h5>Fees</h5>
+            <p>Consultation Fee: {fmt(display.consultationFee)}</p>
+            <p>Total Fee: {fmt(display.totalFee)}</p>
+          </div>
 
-          </CRow>
-
-          <hr className="my-3" />
-
-          {/* ROW 4: Fees */}
-          <CRow className="g-3">
-            <CCol lg={12}>
-              <h6 className="mb-2" style={{ color: COLORS.black, fontWeight: 600 }}>
-                Fees
-              </h6>
-              <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                <div>Consultation Fee:{' '} {fmt(display.consultationFee)}</div>
-                <div>Total Fee:{' '} {fmt(display.totalFee)}</div>
-              </div>
-            </CCol>
-          </CRow>
-
-          <hr className="my-3" />
-
-          {/* ROW 5: Vitals */}
-          <CRow className="g-3">
-            <CCol lg={12}>
-              <h6 className="mb-2" style={{ color: COLORS.black, fontWeight: 600 }}>
-                Vitals
-              </h6>
-              <div style={{ color: COLORS.black, fontSize: SIZES.small }}>
-                <div>Height: {display.vitals.height === '—' ? 0 : display.vitals.height} cm</div>
-                <div>Weight: {display.vitals.weight === '—' ? 0 : display.vitals.weight} kg</div>
-                <div>Blood Pressure: {display.vitals.bloodPressure === '—' ? 0 : display.vitals.bloodPressure} mmHg</div>
-                <div>Temperature: {display.vitals.temperature === '—' ? 0 : display.vitals.temperature} °C</div>
-                <div>BMI: {display.vitals.bmi === '—' ? 0 : display.vitals.bmi} kg/m²</div>
-
-
-              </div>
-            </CCol>
-          </CRow>
+          {/* --- VITALS --- */}
+          <div className="info-card">
+            <h5>Vitals</h5>
+            <div className="vitals-container">
+              <div><span>Height</span><strong>{display.vitals.height || 0} cm</strong></div>
+              <div><span>Weight</span><strong>{display.vitals.weight || 0} kg</strong></div>
+              <div><span>BP</span><strong>{display.vitals.bloodPressure || 0} mmHg</strong></div>
+              <div><span>Temp</span><strong>{display.vitals.temperature || 0} °C</strong></div>
+              <div><span>BMI</span><strong>{display.vitals.bmi || 0} kg/m²</strong></div>
+            </div>
+          </div>
         </CModalBody>
       </CModal>
+
+
     </>
   )
 }
