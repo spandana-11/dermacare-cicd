@@ -11,9 +11,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class TreatmentDetailsDTO {
-    private List<DatesDTO> dates;
-    private String reason;
-    private String frequency;
-    private int sittings;
-    private String startDate;
+	 private List<DatesDTO> dates;
+	    private String reason;
+	    private String frequency;
+	    private Integer sittings;
+	    private String startDate;
+	    private Integer totalSittings;
 }

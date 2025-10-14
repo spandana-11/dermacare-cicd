@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 
 public class Dates {
-    private String date; 
-    private int sitting;
+	 private String date; 
+	    private Integer sitting;
 }
 
