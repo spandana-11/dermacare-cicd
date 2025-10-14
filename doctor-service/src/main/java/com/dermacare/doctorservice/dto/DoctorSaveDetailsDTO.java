@@ -37,5 +37,7 @@ public class DoctorSaveDetailsDTO {
 	private FollowUpDetailsDTO followUp;
 	private PrescriptionDetailsDTO prescription;
 	private List<String> prescriptionPdf;
+	private LocalDateTime consultationStartDate;
+    private LocalDateTime consultationExpiryDate;
 //  private int visitNumber;
 }

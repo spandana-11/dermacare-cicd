@@ -39,5 +39,7 @@ public class DoctorSaveDetails {
     private FollowUpDetails followUp;
     private PrescriptionDetails prescription;
     private List<String> prescriptionPdf;
+	private LocalDateTime consultationStartDate;
+    private LocalDateTime consultationExpiryDate;
     
 }
