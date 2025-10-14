@@ -314,7 +314,7 @@ const DoctorSummary = ({
       const payload = {
         bookingId: patientData.bookingId,
         // doctorName: doctorDetails.doctorName,
-         customerId: patientData?.customerId,
+        customerId: patientData?.customerId,
         clinicName: clinicDetails.name,
         clinicId: clinicDetails.hospitalId,
         patientId: patientData.patientId,
@@ -324,6 +324,7 @@ const DoctorSummary = ({
         treatments: formData?.treatments,
         followUp: formData.followUp,
         prescription: formData.prescription,
+        subServiceId: patientData?.subServiceId
         // visitType: patientData?.visitType || "OFFLINE",
       }
       console.log(payload)
@@ -359,6 +360,7 @@ const DoctorSummary = ({
       treatments: formData?.treatments,
       followUp: formData.followUp,
       prescription: formData.prescription,
+      subServiceId: patientData?.subServiceId
 
     }
     console.log(payload)
@@ -400,9 +402,6 @@ const DoctorSummary = ({
                 </CCardBody>
               </CCard>
             )}
-
-
-
             {/* Medication Table */}
             {medicines.length > 0 && (
               <CCard className="shadow-sm mb-3">

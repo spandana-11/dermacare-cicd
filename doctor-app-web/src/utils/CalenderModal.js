@@ -115,16 +115,25 @@ const CalendarModal = ({
     <Popover id={`popover-${appointment.bookingId}`} style={{ maxWidth: "260px" }}>
       <Popover.Header as="h6">Patient Info</Popover.Header>
       <Popover.Body>
-        <div><strong>PatientId:</strong> {appointment.patientId}</div>
-        <div><strong>Name:</strong> {appointment.name || appointment.patientName}</div>
-        <div><strong>Mobile:</strong> {appointment.patientMobileNumber || appointment.mobileNumber}</div>
-        <div><strong>Booking For:</strong> {appointment.bookingFor}</div>
-        <div><strong>Service Date:</strong> {formatFullDate(new Date(appointment.serviceDate))}</div>
-        <div><strong>Service Time:</strong> {appointment.servicetime}</div>
-        {appointment.relation && <div><strong>Relation:</strong> {appointment.relation}</div>}
+        <div><strong>Name:</strong> {appointment.name}</div>
+        <div>
+          <strong>Age & Gender:</strong> {appointment.age}, {appointment.gender}
+        </div>
+        <div>
+          <strong>Mobile:</strong> {appointment.patientMobileNumber || appointment.mobileNumber}
+        </div>
+        <div>
+          <strong>Branch & Clinic:</strong> {appointment.branchname}, {appointment.clinicName}
+        </div>
+        <div><strong>Doctor:</strong> {appointment.doctorName}</div>
+        <div>
+          <strong>Service Date & Time:</strong> {formatFullDate(new Date(appointment.serviceDate))}, {appointment.servicetime}
+        </div>
+        <div><strong>Status:</strong> {appointment.status}</div>
       </Popover.Body>
     </Popover>
   );
+
 
   // Auto reload hook
   useEffect(() => {
@@ -228,7 +237,7 @@ const CalendarModal = ({
                           <OverlayTrigger
                             key={appt.bookingId}
                             trigger={["hover", "focus"]}
-                            placement="top"
+                            placement="right"
                             overlay={generatePopover(appt)}
                           >
                             <div

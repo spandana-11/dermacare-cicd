@@ -62,6 +62,115 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
     @Autowired
     private BookingFeignClient bookingFeignClient;
 
+//    @Override
+//    public Response saveDoctorDetails(DoctorSaveDetailsDTO dto) {
+//        try {
+//            // ----------------------- Step 0: Validate Booking ID -----------------------
+//            if (dto.getBookingId() == null || dto.getBookingId().isBlank()) {
+//                return buildResponse(false, null,
+//                        "Booking ID must not be null or empty",
+//                        HttpStatus.BAD_REQUEST.value());
+//            }
+//
+//            // ----------------------- Step 1: Validate Booking -----------------------
+//            ResponseEntity<ResponseStructure<BookingResponse>> bookingEntity =
+//                    bookingFeignClient.getBookedService(dto.getBookingId());
+//
+//            if (bookingEntity == null || bookingEntity.getBody() == null) {
+//                return buildResponse(false, null,
+//                        "Unable to fetch booking details. Booking service returned null.",
+//                        HttpStatus.BAD_GATEWAY.value());
+//            }
+//
+//            ResponseStructure<BookingResponse> bookingResponse = bookingEntity.getBody();
+//
+//            BookingResponse bookingData = bookingResponse.getData();
+//            if (bookingData == null) {
+//                return buildResponse(false, null,
+//                        "Booking not found with ID: " + dto.getBookingId(),
+//                        HttpStatus.NOT_FOUND.value());
+//            }
+//
+//            // ----------------------- Step 2: Validate Doctor -----------------------
+//            Response doctorResponse = clinicAdminClient.getDoctorById(dto.getDoctorId()).getBody();
+//            if (doctorResponse == null || !doctorResponse.isSuccess() || doctorResponse.getData() == null) {
+//                return buildResponse(false, null,
+//                        "Doctor not found with ID: " + dto.getDoctorId(),
+//                        HttpStatus.NOT_FOUND.value());
+//            }
+//
+//            Map<String, Object> doctorData = objectMapper.convertValue(doctorResponse.getData(), Map.class);
+//            dto.setDoctorName((String) doctorData.get("doctorName"));
+//
+//            // ----------------------- Step 3: Ensure clinic info safe -----------------------
+//            dto.setClinicId(dto.getClinicId() != null ? dto.getClinicId() : "");
+//            dto.setClinicName(dto.getClinicName() != null ? dto.getClinicName() : "");
+//
+//            // ----------------------- Step 4: Calculate Visit Count -----------------------
+//            // 🔥 Core logic: doctorId + patientId + subServiceId                             
+//            List<DoctorSaveDetails> previousVisits =
+//                    repository.findByDoctorIdAndPatientIdAndSubServiceId(
+//                            dto.getDoctorId(),
+//                            dto.getPatientId(),
+//                            dto.getSubServiceId()
+//                    );
+//
+//            int visitCount = (previousVisits != null && !previousVisits.isEmpty())
+//                    ? previousVisits.size() + 1
+//                    : 1;
+//
+//            dto.setVisitDateTime(LocalDateTime.now());
+//            dto.setVisitType(VisitTypeUtil.getVisitTypeFromCount(visitCount));
+//            dto.setVisitCount(visitCount);
+//
+//            // ----------------------- Step 5: Save Entity -----------------------
+//            DoctorSaveDetails entity = convertToEntity(dto);
+//            entity.setVisitCount(visitCount);
+//            DoctorSaveDetails saved = repository.save(entity);
+//
+//            // ----------------------- Step 6: Update Booking -----------------------
+//            bookingData.setStatus("In-Progress");
+//
+//            if (!"FIRST_VISIT".equalsIgnoreCase(saved.getVisitType())
+//                    && bookingData.getFreeFollowUpsLeft() != null) {
+//                Integer left = bookingData.getFreeFollowUpsLeft();
+//                if (left > 0) {
+//                    left = left - 1;
+//                    bookingData.setFreeFollowUpsLeft(left);
+//                }
+//                if (left == 0) {
+//                    bookingData.setStatus("Completed");
+//                }
+//            }
+//
+//            bookingFeignClient.updateAppointment(bookingData);
+//
+//            // ----------------------- Step 7: Build Response -----------------------
+//            DoctorSaveDetailsDTO savedDto = convertToDto(saved);
+//
+//            return buildResponse(true,
+//                    Map.of(
+//                            "savedDetails", savedDto,
+//                            "visitNumber", visitCount,
+//                            "subServiceId", dto.getSubServiceId()
+//                    ),
+//                    "Doctor details saved successfully",
+//                    HttpStatus.CREATED.value());
+//
+//        } catch (FeignException e) {
+//            // Proper Feign exception message from Booking Service
+//            String errorMessage = e.contentUTF8();
+//            return buildResponse(false, null,
+//                    "Booking Service Error: " + (errorMessage != null ? errorMessage : e.getMessage()),
+//                    HttpStatus.BAD_GATEWAY.value());
+//        } catch (Exception e) {
+//            return buildResponse(false, null,
+//                    "Unexpected error: " + e.getMessage(),
+//                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+//        }
+//    }
+
+    
     @Override
     public Response saveDoctorDetails(DoctorSaveDetailsDTO dto) {
         try {
@@ -76,20 +185,13 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             ResponseEntity<ResponseStructure<BookingResponse>> bookingEntity =
                     bookingFeignClient.getBookedService(dto.getBookingId());
 
-            if (bookingEntity == null || bookingEntity.getBody() == null) {
-                return buildResponse(false, null,
-                        "Unable to fetch booking details. Booking service returned null.",
-                        HttpStatus.BAD_GATEWAY.value());
-            }
-
-            ResponseStructure<BookingResponse> bookingResponse = bookingEntity.getBody();
-
-            BookingResponse bookingData = bookingResponse.getData();
-            if (bookingData == null) {
+            if (bookingEntity == null || bookingEntity.getBody() == null || bookingEntity.getBody().getData() == null) {
                 return buildResponse(false, null,
                         "Booking not found with ID: " + dto.getBookingId(),
                         HttpStatus.NOT_FOUND.value());
             }
+
+            BookingResponse bookingData = bookingEntity.getBody().getData();
 
             // ----------------------- Step 2: Validate Doctor -----------------------
             Response doctorResponse = clinicAdminClient.getDoctorById(dto.getDoctorId()).getBody();
@@ -102,40 +204,36 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             Map<String, Object> doctorData = objectMapper.convertValue(doctorResponse.getData(), Map.class);
             dto.setDoctorName((String) doctorData.get("doctorName"));
 
-            // ----------------------- Step 3: Ensure clinic info safe -----------------------
-            dto.setClinicId(dto.getClinicId() != null ? dto.getClinicId() : "");
-            dto.setClinicName(dto.getClinicName() != null ? dto.getClinicName() : "");
+            // ----------------------- Step 3: Default Clinic Info -----------------------
+            dto.setClinicId(Optional.ofNullable(dto.getClinicId()).orElse(""));
+            dto.setClinicName(Optional.ofNullable(dto.getClinicName()).orElse(""));
 
             // ----------------------- Step 4: Calculate Visit Count -----------------------
-            // 🔥 Core logic: doctorId + patientId + subServiceId                             
+            // ✅ Only count previous visits for the same bookingId
             List<DoctorSaveDetails> previousVisits =
-                    repository.findByDoctorIdAndPatientIdAndSubServiceId(
-                            dto.getDoctorId(),
-                            dto.getPatientId(),
-                            dto.getSubServiceId()
-                    );
+                    repository.findByBookingId(dto.getBookingId());
 
             int visitCount = (previousVisits != null && !previousVisits.isEmpty())
                     ? previousVisits.size() + 1
                     : 1;
 
-            dto.setVisitDateTime(LocalDateTime.now());
-            dto.setVisitType(VisitTypeUtil.getVisitTypeFromCount(visitCount));
             dto.setVisitCount(visitCount);
+            dto.setVisitType(VisitTypeUtil.getVisitTypeFromCount(visitCount));
+            dto.setVisitDateTime(LocalDateTime.now());
 
             // ----------------------- Step 5: Save Entity -----------------------
             DoctorSaveDetails entity = convertToEntity(dto);
-            entity.setVisitCount(visitCount);
             DoctorSaveDetails saved = repository.save(entity);
 
             // ----------------------- Step 6: Update Booking -----------------------
+            // ✅ New booking = always first visit (no decrement)
+            // ✅ Same booking used again = follow-up (decrement follow-ups)
             bookingData.setStatus("In-Progress");
 
-            if (!"FIRST_VISIT".equalsIgnoreCase(saved.getVisitType())
-                    && bookingData.getFreeFollowUpsLeft() != null) {
+            if (visitCount > 1 && bookingData.getFreeFollowUpsLeft() != null) {
                 Integer left = bookingData.getFreeFollowUpsLeft();
                 if (left > 0) {
-                    left = left - 1;
+                    left -= 1;
                     bookingData.setFreeFollowUpsLeft(left);
                 }
                 if (left == 0) {
@@ -152,13 +250,14 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                     Map.of(
                             "savedDetails", savedDto,
                             "visitNumber", visitCount,
-                            "subServiceId", dto.getSubServiceId()
+                            "bookingId", dto.getBookingId(),
+                            "bookingStatus", bookingData.getStatus(),
+                            "freeFollowUpsLeft", bookingData.getFreeFollowUpsLeft()
                     ),
                     "Doctor details saved successfully",
                     HttpStatus.CREATED.value());
 
         } catch (FeignException e) {
-            // Proper Feign exception message from Booking Service
             String errorMessage = e.contentUTF8();
             return buildResponse(false, null,
                     "Booking Service Error: " + (errorMessage != null ? errorMessage : e.getMessage()),
@@ -611,23 +710,51 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
         }
     }
     
+//    
+//    @Override
+//    public Response getDoctorDetailsByBookingId(String bookingId) {
+//    	try {
+//        DoctorSaveDetails optional = repository.findByBookingId(bookingId);
+//        if(optional != null) {
+//        	ObjectMapper mapper = new ObjectMapper();
+//	        mapper.registerModule(new JavaTimeModule());
+//	        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+//        return new Response(true,mapper.convertValue(optional,DoctorSaveDetailsDTO.class ), "prescription details found", HttpStatus.OK.value());
+//        }else {
+//        return new Response(false, null, "prescription details Not found", HttpStatus.NOT_FOUND.value());
+//        }}catch(Exception e) {
+//        	 return new Response(false, null,e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+//        }
+//    }
     
+
     @Override
     public Response getDoctorDetailsByBookingId(String bookingId) {
-    	try {
-        DoctorSaveDetails optional = repository.findByBookingId(bookingId);
-        if(optional != null) {
-        	ObjectMapper mapper = new ObjectMapper();
-	        mapper.registerModule(new JavaTimeModule());
-	        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        return new Response(true,mapper.convertValue(optional,DoctorSaveDetailsDTO.class ), "prescription details found", HttpStatus.OK.value());
-        }else {
-        return new Response(false, null, "prescription details Not found", HttpStatus.NOT_FOUND.value());
-        }}catch(Exception e) {
-        	 return new Response(false, null,e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+        try {
+            List<DoctorSaveDetails> visits = repository.findByBookingId(bookingId);
+
+            if (visits != null && !visits.isEmpty()) {
+                // 🟢 Get the latest visit (last saved)
+                DoctorSaveDetails latest = visits.get(visits.size() - 1);
+
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.registerModule(new JavaTimeModule());
+                mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+                return new Response(
+                    true,
+                    mapper.convertValue(latest, DoctorSaveDetailsDTO.class),
+                    "Prescription details found",
+                    HttpStatus.OK.value()
+                );
+            } else {
+                return new Response(false, null, "Prescription details not found", HttpStatus.NOT_FOUND.value());
+            }
+        } catch (Exception e) {
+            return new Response(false, null, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
-    
+
     @Override
     public Response getDoctorDetailsByCustomerId(String customerId) {
     	try {
