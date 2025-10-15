@@ -16,4 +16,5 @@ public class TreatmentDetailsDTO {
     private String frequency;
     private int sittings;
     private String startDate;
+    private Integer totalSittings;
 }
