@@ -48,6 +48,7 @@ public class SecurityStaffMapper {
         staff.setHospitalName(dto.getHospitalName());
         staff.setBranchId(dto.getBranchId());
         staff.setRole(dto.getRole());
+        staff.setBranchName(dto.getBranchName());
         staff.setPermissions(dto.getPermissions());
         staff.setFullName(dto.getFullName());
         staff.setDateOfBirth(dto.getDateOfBirth());
@@ -83,6 +84,7 @@ public class SecurityStaffMapper {
         dto.setClinicId(staff.getClinicId());
         dto.setHospitalName(staff.getHospitalName());
         dto.setBranchId(staff.getBranchId());
+        dto.setBranchName(staff.getBranchName());
         dto.setRole(staff.getRole());
         dto.setFullName(staff.getFullName());
         dto.setDateOfBirth(staff.getDateOfBirth());

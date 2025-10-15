@@ -56,6 +56,8 @@ public class WardBoyMapper {
 		wardBoy.setClinicId(dto.getClinicId());
 		wardBoy.setHospitalName(dto.getHospitalName());
 		wardBoy.setBranchId(dto.getBranchId());
+		wardBoy.setBranchName(dto.getBranchName());
+		
 		wardBoy.setRole(dto.getRole());
 
 		wardBoy.setFullName(dto.getFullName());
@@ -99,6 +101,7 @@ public class WardBoyMapper {
 		dto.setClinicId(entity.getClinicId());
 		dto.setHospitalName(entity.getHospitalName());
 		dto.setBranchId(entity.getBranchId());
+		dto.setBranchName(entity.getBranchName());
 		dto.setRole(entity.getRole());
 		dto.setDateOfBirth(entity.getDateOfBirth());
 		dto.setContactNumber(entity.getContactNumber());

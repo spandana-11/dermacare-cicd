@@ -285,4 +285,22 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 		return ResponseStructure.<ReceptionistRequestDTO>builder().statusCode(200)
 				.message("Receptionist data fetched successfully").data(dto).build();
 	}
+	@Override
+	public ResponseStructure<List<ReceptionistRequestDTO>> getReceptionistsByClinicAndBranch(String clinicId, String branchId) {
+	    // Fetch receptionist entities from repository by clinicId and branchId
+	    List<ReceptionistEntity> entities = repository.findByClinicIdAndBranchId(clinicId, branchId);
+
+	    // Map entities to DTOs
+	    List<ReceptionistRequestDTO> dtos = entities.stream()
+	            .map(ReceptionistMapper::toDTO)
+	            .collect(Collectors.toList());
+
+	    // Build response
+	    String message = dtos.isEmpty() 
+	            ? "No receptionists found for clinic " + clinicId + " and branch " + branchId 
+	            : "Receptionists retrieved successfully";
+
+	    return ResponseStructure.buildResponse(dtos, message, HttpStatus.OK, HttpStatus.OK.value());
+	}
+
 }

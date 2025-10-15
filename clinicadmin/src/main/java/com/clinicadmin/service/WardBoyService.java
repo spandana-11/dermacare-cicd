@@ -20,4 +20,7 @@ public interface WardBoyService {
 	ResponseStructure<List<WardBoyDTO>> getWardBoysByClinicId(String clinicId);
 
 	ResponseStructure<WardBoyDTO> getWardBoyByIdAndClinicId(String wardBoyId, String clinicId);
+
+	ResponseStructure<List<WardBoyDTO>> getWardBoysByClinicIdAndBranchId(String clinicId, String branchId);
+
 }

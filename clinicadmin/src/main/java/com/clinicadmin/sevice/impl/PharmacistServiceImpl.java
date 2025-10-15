@@ -216,6 +216,32 @@ public class PharmacistServiceImpl implements PharmacistService {
 		}
 		return response;
 	}
+	
+	
+	@Override
+	public Response getPharmacistsByClinicIdAndBranchId(String hospitalId, String branchId) {
+	    Response response = new Response();
+
+	    List<Pharmacist> pharmacists = pharmacistRepository.findByHospitalIdAndBranchId(hospitalId, branchId);
+
+	    if (pharmacists.isEmpty()) {
+	        response.setSuccess(false);
+	        response.setMessage("No pharmacists found for hospital " + hospitalId + " and branch " + branchId);
+	        response.setStatus(HttpStatus.NOT_FOUND.value());
+	        response.setData(null);
+	    } else {
+	        response.setSuccess(true);
+	        response.setMessage("Pharmacists retrieved successfully");
+	        response.setStatus(HttpStatus.OK.value());
+	        response.setData(pharmacists);
+	    }
+
+	    return response;
+	}
+
+
+
+
 
 	// ---------------- LOGIN ----------------
 //	@Override
@@ -566,6 +592,7 @@ public class PharmacistServiceImpl implements PharmacistService {
 	        }
 	    }
 	}
+
 
 
 

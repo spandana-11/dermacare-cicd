@@ -41,6 +41,7 @@ public class BookingRequset {
 	private String subServiceId;
 	private String subServiceName;
 	private String serviceDate;
+	private String toatalSittings;
 	private String followupDate;
 	private String servicetime;
 	private String consultationType;

@@ -99,4 +99,17 @@ public class ReceptionistController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
+    
+ // Get receptionists by branchId and clinicId
+    @GetMapping("/getReceptionistsByClinicIdAndBranchId/{clinicId}/{branchId}")
+    public ResponseEntity<ResponseStructure<List<ReceptionistRequestDTO>>> getReceptionistsByClinicIdAndBranchId(
+            @PathVariable String clinicId,
+            @PathVariable String branchId) {
+        
+        ResponseStructure<List<ReceptionistRequestDTO>> response = 
+                service.getReceptionistsByClinicAndBranch(clinicId, branchId);
+        
+        return ResponseEntity.status(response.getHttpStatus()).body(response);
+    }
+
 }

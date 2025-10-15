@@ -1,7 +1,6 @@
 package com.dermaCare.customerService.dto;
 
 import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -30,18 +29,21 @@ public class BookingResponse {
 	private String mobileNumber;
 	private String customerId;
 	private String consultationExpiration;
+	private String customerDeviceId;
 	private String problem;
 	private String symptomsDuration;
 	private String clinicId;
+	private String clinicDeviceId;
 	private String clinicName;
 	private String branchId;
 	private String branchname;
 	private String doctorId;
 	private String doctorName;
+	private String doctorMobileDeviceId;
+	private String doctorWebDeviceId;
 	private String subServiceId;
 	private String subServiceName;
 	private String serviceDate;
-	private String followupDate;
 	private String servicetime;
 	private String consultationType;
 	private double consultationFee;
@@ -59,6 +61,9 @@ public class BookingResponse {
 	private String doctorRefCode;
 	private String paymentType;
 	private String followupStatus;
-	private Integer sittings;
-
+	private Integer totalSittings;
+	private Integer pendingSittings;
+	private Integer takenSittings;
+	private Integer currentSitting;
+	private String followupDate;
 }

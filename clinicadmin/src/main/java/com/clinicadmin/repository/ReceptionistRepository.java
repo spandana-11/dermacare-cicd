@@ -21,4 +21,6 @@ public interface ReceptionistRepository extends MongoRepository<ReceptionistEnti
 
 	Optional<ReceptionistEntity> findByClinicIdAndId(String clinicId, String receptionistId);
 
+	List<ReceptionistEntity> findByClinicIdAndBranchId(String clinicId, String branchId);
+
 }

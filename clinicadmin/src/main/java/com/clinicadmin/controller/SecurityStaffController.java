@@ -64,4 +64,15 @@ public class SecurityStaffController {
         ResponseStructure<String> response = service.deleteSecurityStaff(staffId);
         return new ResponseEntity<>(response, response.getHttpStatus());
 }
+    
+ // ------------------- Get All Security Staff by ClinicId and BranchId -------------------
+    @GetMapping("/getSecurityStaffByClinicIdAndBranchId/{clinicId}/{branchId}")
+    public ResponseEntity<ResponseStructure<List<SecurityStaffDTO>>> getSecurityStaffByClinicIdAndBranchId(
+            @PathVariable String clinicId,
+            @PathVariable String branchId) {
+
+        ResponseStructure<List<SecurityStaffDTO>> response = service.getSecurityStaffByClinicIdAndBranchId(clinicId, branchId);
+        return new ResponseEntity<>(response, response.getHttpStatus());
+    }
+
 }

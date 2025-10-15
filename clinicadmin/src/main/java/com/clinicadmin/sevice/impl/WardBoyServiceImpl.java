@@ -225,4 +225,32 @@ public class WardBoyServiceImpl implements WardBoyService {
 		return sb.toString();
 	}
 
+	
+	@Override
+	public ResponseStructure<List<WardBoyDTO>> getWardBoysByClinicIdAndBranchId(String clinicId, String branchId) {
+	    // Fetch all ward boys for the given clinicId and branchId
+	    List<WardBoyDTO> wardBoys = wardBoyRepository
+	            .findAllByClinicIdAndBranchId(clinicId, branchId) // Repository method
+	            .stream()
+	            .map(WardBoyMapper::toDTO) // Convert Entity → DTO
+	            .collect(Collectors.toList());
+
+	    // Return response
+	    if (wardBoys.isEmpty()) {
+	        return ResponseStructure.buildResponse(
+	                null,
+	                "No WardBoys found for clinicId: " + clinicId + " and branchId: " + branchId,
+	                HttpStatus.NOT_FOUND,
+	                HttpStatus.NOT_FOUND.value()
+	        );
+	    }
+
+	    return ResponseStructure.buildResponse(
+	            wardBoys,
+	            "WardBoys fetched successfully for clinicId: " + clinicId + " and branchId: " + branchId,
+	            HttpStatus.OK,
+	            HttpStatus.OK.value()
+	    );
+	}
+
 }

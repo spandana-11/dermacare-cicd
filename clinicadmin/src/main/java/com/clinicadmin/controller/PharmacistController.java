@@ -65,6 +65,18 @@ public class PharmacistController {
 		Response response = pharmacistService.deletePharmacist(pharmacistId);
 		return ResponseEntity.status(response.getStatus()).body(response);
 	}
+	
+	@GetMapping("/getPharmacistsByHospitalIdAndBranchId/{hospitalId}/{branchId}")
+	public ResponseEntity<Response> getPharmacistsByHospitalIdAndBranchId(
+	        @PathVariable String hospitalId,
+	        @PathVariable String branchId) {
+
+	    Response response = pharmacistService.getPharmacistsByClinicIdAndBranchId(hospitalId, branchId);
+	    return ResponseEntity.status(response.getStatus()).body(response);
+	}
+
+
+
 
 	// ---------------------------------------------------------------------------------------------------
 	// --------------------------------- Pharmacist Login
