@@ -243,7 +243,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             // 🧠 Logic Flow:
             // 1️⃣ Before consultationStartDate → "Scheduled"
             // 2️⃣ After start → "In-Progress" and decrease free follow-ups (if sittings done)
-            // 3️⃣ After expiry or all free follow-ups used → "Completed"
+            // 3️⃣ After expire or all free follow-ups used → "Completed"
             if (!consultationStarted) {
                 status = "In-Progress";
             } else if (!consultationExpired) {
@@ -270,7 +270,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                     Map.of(
                             "savedDetails", savedDto,
                             "visitNumber", visitCount,
-                            "subServiceId", dto.getSubServiceId(), // ✅ Included
+                            "subServiceId", dto.getSubServiceId(), 
                             "status", status,
                             "freeFollowUpsLeft", freeFollowUpsLeft,
                             "consultationStartDate", consultationStartDate,
