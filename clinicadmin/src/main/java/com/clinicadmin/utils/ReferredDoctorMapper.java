@@ -20,6 +20,7 @@ public class ReferredDoctorMapper {
         doctor.setMobileNumber(dto.getMobileNumber());
         doctor.setEmail(dto.getEmail());
         doctor.setAddress(dto.getAddress());
+        doctor.setReferralId(dto.getReferralId());
 //        doctor.setFirstReferralDate(dto.getFirstReferralDate());
 //        doctor.setTotalReferrals(dto.getTotalReferrals());
 //        doctor.setReferredPatients(dto.getReferredPatients());
@@ -44,6 +45,7 @@ public class ReferredDoctorMapper {
         dto.setMobileNumber(doctor.getMobileNumber());
         dto.setEmail(doctor.getEmail());
         dto.setAddress(doctor.getAddress());
+        dto.setReferralId(doctor.getReferralId());
 //        dto.setFirstReferralDate(doctor.getFirstReferralDate());
 //        dto.setTotalReferrals(doctor.getTotalReferrals());
 //        dto.setReferredPatients(doctor.getReferredPatients());

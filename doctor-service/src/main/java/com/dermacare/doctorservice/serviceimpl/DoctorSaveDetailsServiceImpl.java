@@ -202,18 +202,30 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             if (savedVisit.getFollowUp() != null && savedVisit.getFollowUp().getDurationValue() > 0) {
                 int durationValue = savedVisit.getFollowUp().getDurationValue();
                 String durationUnit = savedVisit.getFollowUp().getDurationUnit();
-                LocalDateTime nextFollowUpDate = consultationStartDate; // start from consultationStartDate
+
+                // ✅ Always start from consultationStartDate (not before)
+                LocalDateTime baseDate = consultationStartDate.isAfter(LocalDateTime.now())
+                        ? consultationStartDate
+                        : LocalDateTime.now();
+
+                LocalDateTime nextFollowUpDate = baseDate;
 
                 switch (durationUnit.toLowerCase()) {
                     case "days" -> nextFollowUpDate = consultationStartDate.plusDays(durationValue);
                     case "weeks" -> nextFollowUpDate = consultationStartDate.plusWeeks(durationValue);
                     case "months" -> nextFollowUpDate = consultationStartDate.plusMonths(durationValue);
+                    default -> nextFollowUpDate = consultationStartDate.plusDays(durationValue);
+                }
+
+                // ✅ Ensure follow-up never starts before consultation
+                if (nextFollowUpDate.isBefore(consultationStartDate)) {
+                    nextFollowUpDate = consultationStartDate;
                 }
 
                 savedVisit.getFollowUp().setNextFollowUpDate(nextFollowUpDate.toString());
             }
 
-            // ----------------------- Step 10: Free Follow-ups & Booking Status -----------------------
+         // ----------------------- Step 10: Free Follow-ups & Booking Status -----------------------
             int freeFollowUpsLeft = Optional.ofNullable(bookingData.getFreeFollowUpsLeft()).orElse(0);
             boolean consultationExpired = consultationExpiryDate != null && !LocalDateTime.now().isBefore(consultationExpiryDate);
 
@@ -221,15 +233,34 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             boolean allSittingsCompleted = hasTreatments && savedVisit.getTreatments().getGeneratedData().values().stream()
                     .allMatch(t -> t.getSittings() != null && t.getSittings() == 0);
 
-            // Only reduce free follow-ups if consultation is active and all sittings done
-            if (!consultationExpired && allSittingsCompleted && freeFollowUpsLeft > 0) {
-                freeFollowUpsLeft--;
+            // ✅ Only decrease free follow-ups after consultation has started
+            boolean consultationStarted = LocalDateTime.now().isAfter(consultationStartDate) || 
+                                          LocalDateTime.now().isEqual(consultationStartDate);
+
+            // Initialize status
+            String status;
+
+            // 🧠 Logic Flow:
+            // 1️⃣ Before consultationStartDate → "Scheduled"
+            // 2️⃣ After start → "In-Progress" and decrease free follow-ups (if sittings done)
+            // 3️⃣ After expiry or all free follow-ups used → "Completed"
+            if (!consultationStarted) {
+                status = "In-Progress";
+            } else if (!consultationExpired) {
+                // Consultation active
+                if (allSittingsCompleted && freeFollowUpsLeft > 0) {
+                    freeFollowUpsLeft--;
+                }
+                status = (freeFollowUpsLeft <= 0) ? "Completed" : "In-Progress";
+            } else {
+                status = "Completed";
             }
 
-            String status = (consultationExpired || freeFollowUpsLeft <= 0) ? "Completed" : "In-Progress";
+            // ✅ Prevent negative follow-ups
             bookingData.setFreeFollowUpsLeft(Math.max(freeFollowUpsLeft, 0));
             bookingData.setStatus(status);
 
+            // Update booking service
             bookingFeignClient.updateAppointment(bookingData);
 
 
