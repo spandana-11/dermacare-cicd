@@ -29,4 +29,10 @@ public interface PharmacistService {
 	ResponseEntity<Response> getMedicineTypes(String clinicId);
 	ResponseEntity<Response> searchOrAddMedicineType(MedicineTypeDTO dto);
 	ResponseEntity<Response> updateMedicine(String medicineId, MedicineDTO dto);
+//	Response getPharmacistsByClinicAndBranch(String clinicId, String branchId);
+	Response getPharmacistsByClinicIdAndBranchId(String clinicId, String branchId);
+	
+//	Response getPharmacistsByClinicIdAndBranchId(String clinicId, String branchId);
+
+
 }

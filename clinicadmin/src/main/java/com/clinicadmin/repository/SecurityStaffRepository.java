@@ -13,4 +13,7 @@ public interface SecurityStaffRepository extends MongoRepository<SecurityStaff, 
 
  
     List<SecurityStaff> findByContactNumber(String contactNumber);
+
+
+	List<SecurityStaff> findByClinicIdAndBranchId(String clinicId, String branchId);
 }

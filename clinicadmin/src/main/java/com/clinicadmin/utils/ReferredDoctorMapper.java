@@ -9,6 +9,7 @@ public class ReferredDoctorMapper {
         ReferredDoctor doctor = new ReferredDoctor();
         doctor.setFullName(dto.getFullName());
         doctor.setClinicId(dto.getClinicId());
+        doctor.setReferralId(dto.getReferralId());
         doctor.setGender(dto.getGender());
         doctor.setDateOfBirth(dto.getDateOfBirth());
         doctor.setGovernmentId(dto.getGovernmentId());
@@ -20,7 +21,6 @@ public class ReferredDoctorMapper {
         doctor.setMobileNumber(dto.getMobileNumber());
         doctor.setEmail(dto.getEmail());
         doctor.setAddress(dto.getAddress());
-        doctor.setReferralId(dto.getReferralId());
 //        doctor.setFirstReferralDate(dto.getFirstReferralDate());
 //        doctor.setTotalReferrals(dto.getTotalReferrals());
 //        doctor.setReferredPatients(dto.getReferredPatients());
@@ -33,6 +33,7 @@ public class ReferredDoctorMapper {
     public static ReferredDoctorDTO entityToDto(ReferredDoctor doctor) {
         ReferredDoctorDTO dto = new ReferredDoctorDTO();
         dto.setClinicId(doctor.getClinicId());
+        dto.setReferralId(doctor.getReferralId());
         dto.setFullName(doctor.getFullName());
         dto.setGender(doctor.getGender());
         dto.setDateOfBirth(doctor.getDateOfBirth());
@@ -45,7 +46,6 @@ public class ReferredDoctorMapper {
         dto.setMobileNumber(doctor.getMobileNumber());
         dto.setEmail(doctor.getEmail());
         dto.setAddress(doctor.getAddress());
-        dto.setReferralId(doctor.getReferralId());
 //        dto.setFirstReferralDate(doctor.getFirstReferralDate());
 //        dto.setTotalReferrals(doctor.getTotalReferrals());
 //        dto.setReferredPatients(doctor.getReferredPatients());

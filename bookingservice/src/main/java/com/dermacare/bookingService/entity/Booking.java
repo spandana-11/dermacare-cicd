@@ -66,6 +66,10 @@ public class Booking  {
 	private String consultationExpiration;
 	private String followupStatus;
 	private Integer sittings;
+	private Integer totalSittings;
+	private Integer pendingSittings;
+	private Integer takenSittings;
+	private Integer currentSitting;
 	
 	
 	 public Booking(Booking booking) {

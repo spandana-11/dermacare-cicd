@@ -72,4 +72,13 @@ public class WardBoyController {
         ResponseStructure<Void> response = wardBoyService.deleteWardBoy(id);
         return new ResponseEntity<>(response, response.getHttpStatus());
     }
+    @GetMapping("/getWardBoysByClinicIdAndBranchId/{clinicId}/{branchId}")
+    public ResponseEntity<ResponseStructure<List<WardBoyDTO>>> getWardBoysByClinicIdAndBranchId(
+            @PathVariable String clinicId,
+            @PathVariable String branchId) {
+        
+        ResponseStructure<List<WardBoyDTO>> response = wardBoyService.getWardBoysByClinicIdAndBranchId(clinicId, branchId);
+        return new ResponseEntity<>(response, response.getHttpStatus());
+    }
+
 }

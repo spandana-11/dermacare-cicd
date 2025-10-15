@@ -13,4 +13,6 @@ public interface SecurityStaffService {
     ResponseStructure<String> deleteSecurityStaff(String staffId);
 //	ResponseStructure<SecurityStaff> updateSecurityStaff(SecurityStaffDTO dto);
 	ResponseStructure<SecurityStaff> updateSecurityStaff(SecurityStaff staffRequest);
+	ResponseStructure<List<SecurityStaffDTO>> getSecurityStaffByClinicIdAndBranchId(String clinicId, String branchId);
+
 }

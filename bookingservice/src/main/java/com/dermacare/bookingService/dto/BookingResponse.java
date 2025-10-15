@@ -44,7 +44,6 @@ public class BookingResponse {
 	private String subServiceId;
 	private String subServiceName;
 	private String serviceDate;
-	private String followupDate;
 	private String servicetime;
 	private String consultationType;
 	private double consultationFee;
@@ -62,6 +61,10 @@ public class BookingResponse {
 	private String doctorRefCode;
 	private String paymentType;
 	private String followupStatus;
-	private Integer sittings;
-	
+	private Integer totalSittings;
+	private Integer pendingSittings;
+	private Integer takenSittings;
+	private Integer currentSitting;
+	private String followupDate;
+		
 }

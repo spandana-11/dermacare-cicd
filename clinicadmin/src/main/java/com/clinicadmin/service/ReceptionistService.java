@@ -29,5 +29,8 @@ public interface ReceptionistService {
     ResponseStructure<List<ReceptionistRequestDTO>> getReceptionistsByClinic(String clinicId);
 
     // ✅ Fetch a receptionist by clinicId and receptionistId
+    
+    ResponseStructure<List<ReceptionistRequestDTO>> getReceptionistsByClinicAndBranch(String clinicId, String branchId);
+
     ResponseStructure<ReceptionistRequestDTO> getReceptionistByClinicAndId(String clinicId, String receptionistId);
 }

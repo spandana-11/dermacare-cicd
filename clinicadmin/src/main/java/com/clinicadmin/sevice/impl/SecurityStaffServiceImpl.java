@@ -166,6 +166,33 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 		return ResponseStructure.buildResponse(staffId, "Staff deleted successfully", HttpStatus.OK,
 				HttpStatus.OK.value());
 	}
+	
+	@Override
+	public ResponseStructure<List<SecurityStaffDTO>> getSecurityStaffByClinicIdAndBranchId(String clinicId, String branchId) {
+	    List<SecurityStaff> staffList = repository.findByClinicIdAndBranchId(clinicId, branchId);
+
+	    if (staffList == null || staffList.isEmpty()) {
+	        return ResponseStructure.buildResponse(
+	                null,
+	                "No security staff found for Clinic ID: " + clinicId + " and Branch ID: " + branchId,
+	                HttpStatus.NOT_FOUND,
+	                HttpStatus.NOT_FOUND.value()
+	        );
+	    }
+
+	    List<SecurityStaffDTO> dtoList = staffList.stream()
+	            .map(SecurityStaffMapper::toDTO) // Converts Entity to DTO
+	            .collect(Collectors.toList());
+
+	    return ResponseStructure.buildResponse(
+	            dtoList,
+	            "Security staff retrieved successfully for Clinic ID: " + clinicId + " and Branch ID: " + branchId,
+	            HttpStatus.OK,
+	            HttpStatus.OK.value()
+	    );
+	}
+
+
 
 // --------------   Generate password--------------------------
 	private String generateStructuredPassword() {
