@@ -56,4 +56,12 @@ public class BookingResponse {
 	private String consentFormPdf;
 	private String paymentType;
 
+	// ✅ Sitting summary fields
+    private Integer totalSittings;
+    private Integer takenSittings;
+    private Integer pendingSittings;
+    private Integer currentSitting;
+
+    // ✅ Treatments info
+    private TreatmentResponseDTO treatments;
 }
