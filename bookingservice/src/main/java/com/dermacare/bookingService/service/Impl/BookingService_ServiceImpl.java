@@ -65,7 +65,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	public DoctorSaveDetailsDTO saveDetails = new DoctorSaveDetailsDTO();
 	public DoctorSaveDetailsDTO sDetails = new DoctorSaveDetailsDTO();
 	public DoctorSaveDetailsDTO sd = new DoctorSaveDetailsDTO();
-	
+	 LocalDate exp = null;
 
 	@Override
 	public ResponseEntity<?> addService(BookingRequset request) {
@@ -1067,7 +1067,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		            return ResponseEntity.ok(res);
 		        }
 		        LocalDate today = LocalDate.now();
-		        LocalDate sixthDate = today.plusDays(6);
+		        LocalDate sixthDate = today.plusDays(6);       
 		        DateTimeFormatter isoFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 		        for (Booking booking : booked) {
 		            if (!"In-Progress".equalsIgnoreCase(booking.getStatus())) {
@@ -1170,6 +1170,11 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                        }})
 		                        .filter(Objects::nonNull)
 		                        .findFirst();
+		                LocalDate lstSitting = allDates.get(allDates.size()-1);
+		                if(lstSitting.equals(LocalDate.now()) || lstSitting.isAfter(LocalDate.now())) {
+		                	exp = lstSitting.plusDays(Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", "")));
+		                	finalList = inprogressAppointmentsByConsultationExpiration(exp, booking,saveDetails); 
+		                }
 		                // Update booking object
 		                booking.setTotalSittings(totalSittingsSum);
 		                booking.setPendingSittings(pendingSittingsSum);
@@ -1184,9 +1189,14 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		            else if (saveDetails.getFollowUp() != null &&
 		                saveDetails.getFollowUp().getNextFollowUpDate() != null) {
 		                try {
-		                	
+		                	 int days = 0;
+			                	if(exp == null ){
+			                    days = Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", ""));
+			                    //System.out.println(days);
+			                    LocalDate serviceDate  = LocalDate.parse(booking.getServiceDate(), isoFormatter);
+			                    exp = serviceDate.plusDays(days);}
 		                    LocalDate followDate = LocalDate.parse(saveDetails.getFollowUp().getNextFollowUpDate(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-		                    if (!followDate.isBefore(today) && !followDate.isAfter(sixthDate)) {
+		                    if (!followDate.isBefore(today) && !followDate.isAfter(sixthDate) && !followDate.isAfter(exp)) {
 		                        Booking bkng = new Booking(booking);
 		                        bkng.setFollowupDate(followDate.format(isoFormatter));
 		                        bkng.setStatus("In-Progress");
@@ -1199,16 +1209,18 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		            // ✅ Consultation expiration fallback
 		            if (booking.getConsultationExpiration() != null) {
 		                try {
-		                    int days = Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", ""));
-		                    System.out.println(days);
-		                    LocalDate exp = LocalDate.parse(booking.getServiceDate(), isoFormatter);
-		                    LocalDate expDate = exp.plusDays(days);
-		                    System.out.println(expDate);
+		                	  int days = 0;
+		                	if(exp == null ){
+		                    days = Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", ""));
+		                   // System.out.println(days);
+		                    LocalDate serviceDate  = LocalDate.parse(booking.getServiceDate(), isoFormatter);
+		                    exp = serviceDate.plusDays(days);}
+		                   // System.out.println(expDate);
 		                    for (int i = 0; i <= 6; i++) {
 		                        LocalDate date = today.plusDays(i);
 		                        //System.out.println(date);
 		                       // System.out.println(sixthDate);
-		                        if ((!date.isAfter(sixthDate)) && (date.isBefore(expDate) || date.equals(expDate))) {
+		                        if ((!date.isAfter(sixthDate)) && (date.isBefore(exp) || date.equals(exp))) {
 		                            //System.out.println("hii");
 		                        	Booking bkng = new Booking(booking);
 		                        	//bkng.setConsentFormPdf(null);
@@ -1259,6 +1271,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		        }
 		        LocalDate today = LocalDate.now();
 		        LocalDate sixthDate = today.plusDays(6);
+		        LocalDate exp = null;
 		        DateTimeFormatter isoFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 		        for (Booking booking : booked) {
 		            if (!"In-Progress".equalsIgnoreCase(booking.getStatus())) {
@@ -1300,7 +1313,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                                : Stream.empty())
 		                        .sorted()
 		                        .toList();
-                           // System.out.println(allDates);
+                            //System.out.println(allDates);
 		                // Calculate totalSittings and pendingSittings
 		                int totalSittingsSum = saveDetails.getTreatments().getGeneratedData().values().stream()
 		                        .filter(Objects::nonNull)
@@ -1311,7 +1324,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                        .filter(Objects::nonNull)
 		                        .mapToInt(d -> d.getSittings() != null ? d.getSittings() : 0)
 		                        .sum();
-		               // System.out.println(pendingSittingsSum);
+		                //System.out.println(pendingSittingsSum);
 		                AtomicInteger takenSittingsCount = new AtomicInteger(0);
 
 		                // Determine next follow-up date according to your rules
@@ -1361,6 +1374,11 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                        }})
 		                        .filter(Objects::nonNull)
 		                        .findFirst();
+		                LocalDate lstSitting = allDates.get(allDates.size()-1);
+		                if(lstSitting.equals(LocalDate.now()) || lstSitting.isAfter(LocalDate.now()))  {
+		                	exp = lstSitting.plusDays(Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", "")));
+		                	finalList =	inprogressAppointmentsByConsultationExpiration(exp, booking,saveDetails); 
+		                }
 		                // Update booking object
 		                booking.setTotalSittings(totalSittingsSum);
 		                booking.setPendingSittings(pendingSittingsSum);
@@ -1368,15 +1386,21 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                booking.setCurrentSitting(pendingSittingsSum);
 		                nextFollowupOpt.ifPresent(d -> booking.setFollowupDate(d.format(isoFormatter)));
 		                finalList.add(toResponse(booking));
-		               // System.out.println(nextFollowupOpt);
+		                //System.out.println(nextFollowupOpt);
 		                //System.out.println(finalList);
 		            }
 		            // ✅ Existing Follow-Up section
 		            else if (saveDetails.getFollowUp() != null &&
 		                saveDetails.getFollowUp().getNextFollowUpDate() != null) {
 		                try {
+		                	 int days = 0;
+			                	if(exp == null ){
+			                    days = Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", ""));
+			                    //System.out.println(days);
+			                    LocalDate serviceDate  = LocalDate.parse(booking.getServiceDate(), isoFormatter);
+			                    exp = serviceDate.plusDays(days);}
 		                    LocalDate followDate = LocalDate.parse(saveDetails.getFollowUp().getNextFollowUpDate(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-		                    if (!followDate.isBefore(today) && !followDate.isAfter(sixthDate)) {
+		                    if (!followDate.isBefore(today) && !followDate.isAfter(sixthDate) && !followDate.isAfter(exp)) {
 		                        Booking bkng = new Booking(booking);
 		                        bkng.setFollowupDate(followDate.format(isoFormatter));
 		                        bkng.setStatus("In-Progress");
@@ -1389,13 +1413,24 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		            // ✅ Consultation expiration fallback
 		            if (booking.getConsultationExpiration() != null) {
 		                try {
-		                    int days = Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", ""));
-		                    LocalDate exp = LocalDate.parse(booking.getServiceDate(), isoFormatter);
-		                    LocalDate expDate = exp.plusDays(days);
+		                	  int days = 0;
+		                	if(exp == null ){
+		                    days = Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", ""));
+		                   // System.out.println(days);
+		                    LocalDate serviceDate  = LocalDate.parse(booking.getServiceDate(), isoFormatter);
+		                    exp = serviceDate.plusDays(days);}
+		                   // System.out.println(expDate);
 		                    for (int i = 0; i <= 6; i++) {
 		                        LocalDate date = today.plusDays(i);
-		                        if ((!date.isAfter(sixthDate)) && (date.isBefore(expDate) || date.equals(expDate))) {
-		                            Booking bkng = new Booking(booking);
+		                        //System.out.println(date);
+		                       // System.out.println(sixthDate);
+		                        if ((!date.isAfter(sixthDate)) && (date.isBefore(exp) || date.equals(exp))) {
+		                            //System.out.println("hii");
+		                        	Booking bkng = new Booking(booking);
+		                        	//bkng.setConsentFormPdf(null);
+		                        	//bkng.setAttachments(null);
+		                        	//bkng.setReports(null);
+		                           // System.out.println(bkng);
 		                            bkng.setFollowupDate(date.format(isoFormatter));
 		                            bkng.setStatus("In-Progress");	                            
 		                            finalList.add(toResponse(bkng));
@@ -1422,6 +1457,68 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		    return ResponseEntity.status(res.getStatusCode()).body(res);
 		}
 
+		
+		
+		public List<BookingResponse> inprogressAppointmentsByConsultationExpiration(LocalDate exp,Booking booking, DoctorSaveDetailsDTO saveDetails ) {
+			List<BookingResponse> finalList = new ArrayList<>();
+			try {
+				LocalDate today = LocalDate.now();
+ 		        LocalDate sixthDate = today.plusDays(6);
+ 		        DateTimeFormatter isoFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+ 		     	 if(saveDetails.getFollowUp() != null &&
+	                saveDetails.getFollowUp().getNextFollowUpDate() != null) {
+	                  try{
+	                	 int days = 0;
+		                	if(exp == null ){
+		                    days = Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", ""));
+		                    //System.out.println(days);
+		                    LocalDate serviceDate  = LocalDate.parse(booking.getServiceDate(), isoFormatter);
+		                    exp = serviceDate.plusDays(days);}
+	                    LocalDate followDate = LocalDate.parse(saveDetails.getFollowUp().getNextFollowUpDate(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+	                    if (!followDate.isBefore(today) && !followDate.isAfter(sixthDate) && !followDate.isAfter(exp)) {
+	                        Booking bkng = new Booking(booking);
+	                        bkng.setFollowupDate(followDate.format(isoFormatter));
+	                        bkng.setStatus("In-Progress");
+	                           finalList.add(toResponse(bkng));		                        
+	                    }
+	                } catch (Exception e) {
+	                    System.out.println(e.getMessage());
+	                }
+	            }else {        
+	            // ✅ Consultation expiration fallback
+	            if (booking.getConsultationExpiration() != null) {
+	                    try {
+	                	  int days = 0;
+	                	if(exp == null ){
+	                    days = Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", ""));
+	                   // System.out.println(days);
+	                    LocalDate serviceDate  = LocalDate.parse(booking.getServiceDate(), isoFormatter);
+	                    exp = serviceDate.plusDays(days);}
+	                   // System.out.println(expDate);
+	                    for (int i = 0; i <= 6; i++) {
+	                        LocalDate date = today.plusDays(i);
+	                        //System.out.println(date);
+	                       // System.out.println(sixthDate);
+	                        if ((!date.isAfter(sixthDate)) && (date.isBefore(exp) || date.equals(exp))) {
+	                            //System.out.println("hii");
+	                        	Booking bkng = new Booking(booking);
+	                        	//bkng.setConsentFormPdf(null);
+	                        	//bkng.setAttachments(null);
+	                        	//bkng.setReports(null);
+	                           // System.out.println(bkng);
+	                            bkng.setFollowupDate(date.format(isoFormatter));
+	                            bkng.setStatus("In-Progress");	                            
+	                            finalList.add(toResponse(bkng));
+	                        }}	                   
+	                }catch (Exception e){
+	                	 System.out.println(e.getMessage());
+	               }}}}catch(Exception e) {
+	            	System.out.println(e.getMessage());
+	            	return null;
+	            }
+			return finalList;
+			}
+		
 	
 		public ResponseEntity<?> getDoctorFutureAppointments(String doctorId){
 			ResponseStructure<List<BookingResponse>> res = new ResponseStructure<List<BookingResponse>>();
@@ -1657,6 +1754,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	        }
 	        LocalDate today = LocalDate.now();
 	        LocalDate sixthDate = today.plusDays(6);
+	        LocalDate exp = null;
 	        DateTimeFormatter isoFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 	        for (Booking booking : booked) {
 	            if (!"In-Progress".equalsIgnoreCase(booking.getStatus())) {
@@ -1698,18 +1796,18 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                                : Stream.empty())
 	                        .sorted()
 	                        .toList();
-                       // System.out.println(allDates);
+                        //System.out.println(allDates);
 	                // Calculate totalSittings and pendingSittings
 	                int totalSittingsSum = saveDetails.getTreatments().getGeneratedData().values().stream()
 	                        .filter(Objects::nonNull)
 	                        .mapToInt(d -> d.getTotalSittings() != null ? d.getTotalSittings() : 0)
 	                        .sum();
-	                //System.out.println(totalSittingsSum);
+	               // System.out.println(totalSittingsSum);
 	                int pendingSittingsSum = saveDetails.getTreatments().getGeneratedData().values().stream()
 	                        .filter(Objects::nonNull)
 	                        .mapToInt(d -> d.getSittings() != null ? d.getSittings() : 0)
 	                        .sum();
-	               // System.out.println(pendingSittingsSum);
+	                //System.out.println(pendingSittingsSum);
 	                AtomicInteger takenSittingsCount = new AtomicInteger(0);
 
 	                // Determine next follow-up date according to your rules
@@ -1737,7 +1835,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                                        .filter(f -> f.isAfter(today))
 	                                        .findFirst()
 	                                        .orElse(null);
-	                        }else if(LocalDate.parse(booking.getFollowupDate(), isoFormatter).isEqual(today)) {
+	                            } else if (LocalDate.parse(booking.getFollowupDate(), isoFormatter).isEqual(today)) {
 	                                if (sittingBooked) {
 	                                    // Today booked → pick first future date if available
 	                                    return allDates.stream()
@@ -1759,6 +1857,11 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                        }})
 	                        .filter(Objects::nonNull)
 	                        .findFirst();
+	                LocalDate lstSitting = allDates.get(allDates.size()-1);
+	                if(lstSitting.equals(LocalDate.now()) || lstSitting.isAfter(LocalDate.now())) {
+	                	exp = lstSitting.plusDays(Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", "")));
+	                	finalList = inprogressAppointmentsByConsultationExpiration(exp, booking,saveDetails); 
+	                }
 	                // Update booking object
 	                booking.setTotalSittings(totalSittingsSum);
 	                booking.setPendingSittings(pendingSittingsSum);
@@ -1767,16 +1870,20 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                nextFollowupOpt.ifPresent(d -> booking.setFollowupDate(d.format(isoFormatter)));
 	                finalList.add(toResponse(booking));
 	                //System.out.println(nextFollowupOpt);
-	               // System.out.println(finalList);
+	                //System.out.println(finalList);
 	            }
 	            // ✅ Existing Follow-Up section
-	            else {
-	            	if(saveDetails.getFollowUp() != null &&	            
+	            else if (saveDetails.getFollowUp() != null &&
 	                saveDetails.getFollowUp().getNextFollowUpDate() != null) {
-
 	                try {
+	                	 int days = 0;
+		                	if(exp == null ){
+		                    days = Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", ""));
+		                    //System.out.println(days);
+		                    LocalDate serviceDate  = LocalDate.parse(booking.getServiceDate(), isoFormatter);
+		                    exp = serviceDate.plusDays(days);}
 	                    LocalDate followDate = LocalDate.parse(saveDetails.getFollowUp().getNextFollowUpDate(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-	                    if (!followDate.isBefore(today) && !followDate.isAfter(sixthDate)) {
+	                    if (!followDate.isBefore(today) && !followDate.isAfter(sixthDate) && !followDate.isAfter(exp)) {
 	                        Booking bkng = new Booking(booking);
 	                        bkng.setFollowupDate(followDate.format(isoFormatter));
 	                        bkng.setStatus("In-Progress");
@@ -1786,7 +1893,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                    System.out.println(e.getMessage());
 	                }
 	            }}
-	        }}
+	        }
 	        res.setStatusCode(200);
 	        res.setHttpStatus(HttpStatus.OK);
 	        res.setMessage(finalList.isEmpty()
@@ -1802,6 +1909,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 	    return ResponseEntity.status(res.getStatusCode()).body(res);
 	}
+
 
 				
 		public ResponseEntity<?> retrieveAppointments(String cinicId,String branchId,String date){			
