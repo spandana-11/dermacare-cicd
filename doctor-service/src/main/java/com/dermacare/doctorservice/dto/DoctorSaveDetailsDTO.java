@@ -40,5 +40,10 @@ public class DoctorSaveDetailsDTO {
 	private LocalDateTime consultationStartDate;
     private LocalDateTime consultationExpiryDate;
     private String consultationType;
+    // ✅ New sitting fields
+    private int totalSittings;
+    private int pendingSittings;
+    private int takenSittings;
+    private int currentSitting;
 //  private int visitNumber;
 }
