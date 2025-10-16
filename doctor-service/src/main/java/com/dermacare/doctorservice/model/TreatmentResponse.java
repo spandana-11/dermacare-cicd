@@ -15,4 +15,11 @@ import lombok.NoArgsConstructor;
 public class TreatmentResponse {
     private List<String> selectedTestTreatment;
     private Map<String, TreatmentDetails> generatedData; 
+
+    // sitting summary fields
+    private int totalSittings;
+    private int pendingSittings;
+    private int takenSittings;
+    private int currentSitting;
 }
+
