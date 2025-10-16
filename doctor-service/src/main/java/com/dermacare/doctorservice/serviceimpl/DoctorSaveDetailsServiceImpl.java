@@ -1972,22 +1972,27 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             // Save back to entity (DB)
             TreatmentResponse treatmentEntity = TreatmentResponse.builder()
                     .generatedData(generatedDataDTO.entrySet().stream()
-                            .collect(Collectors.toMap(
-                                    Map.Entry::getKey,
-                                    e -> TreatmentDetails.builder()
-                                            .dates(e.getValue().getDates().stream()
-                                                    .map(d -> new Dates(d.getDate(), d.getSitting()))
-                                                    .collect(Collectors.toList()))
-                                            .reason(e.getValue().getReason())
-                                            .frequency(e.getValue().getFrequency())
-                                            .startDate(e.getValue().getStartDate())
-                                            .sittings(e.getValue().getSittings())
-                                            .totalSittings(e.getValue().getTotalSittings())
-                                            .build()
-                            ))
+                        .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            e -> TreatmentDetails.builder()
+                                    .dates(e.getValue().getDates().stream()
+                                            .map(d -> new Dates(d.getDate(), d.getSitting()))
+                                            .collect(Collectors.toList()))
+                                    .reason(e.getValue().getReason())
+                                    .frequency(e.getValue().getFrequency())
+                                    .startDate(e.getValue().getStartDate())
+                                    .sittings(e.getValue().getSittings())
+                                    .totalSittings(e.getValue().getTotalSittings())
+                                    .takenSittings(e.getValue().getTakenSittings())
+                                    .pendingSittings(e.getValue().getPendingSittings())
+                                    .currentSitting(e.getValue().getCurrentSitting())
+                                    .build()
+                        ))
                     )
-                    .selectedTestTreatment(savedVisit.getTreatments() != null ? savedVisit.getTreatments().getSelectedTestTreatment() : null)
+                    .selectedTestTreatment(savedVisit.getTreatments() != null
+                            ? savedVisit.getTreatments().getSelectedTestTreatment() : null)
                     .build();
+
 
             savedVisit.setTreatments(treatmentEntity);
             repository.save(savedVisit);
