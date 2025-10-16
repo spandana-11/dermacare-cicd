@@ -1876,14 +1876,15 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             LocalDateTime lastSittingDateTime = null;
             boolean hasTreatments = false;
 
-            int totalSittings = 0;
-            int takenSittings = 0;
-            int pendingSittings = 0;
-            int currentSitting = 0;
-
             // Prepare DTO to return in response
             TreatmentResponseDTO treatmentResponseDTO = new TreatmentResponseDTO();
             Map<String, TreatmentDetailsDTO> generatedDataDTO = new HashMap<>();
+
+            // Overall counters for all treatments
+            int overallTotalSittings = 0;
+            int overallTakenSittings = 0;
+            int overallPendingSittings = 0;
+            int overallCurrentSitting = 0;
 
             // Check if treatments exist in saved visit
             if (savedVisit.getTreatments() != null && savedVisit.getTreatments().getGeneratedData() != null) {
@@ -1911,7 +1912,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                                 if (!sittingDate.isAfter(LocalDate.now())) {
                                     completed++;
                                     currentSittingForThisTreatment = counter.get();
-                                    currentSitting = currentSittingForThisTreatment; // overall current sitting
+                                    overallCurrentSitting = Math.max(overallCurrentSitting, currentSittingForThisTreatment);
                                 }
 
                                 // Track last sitting date
@@ -1952,24 +1953,26 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                     generatedDataDTO.put(entry.getKey(), dtoTreatment);
 
                     // Update overall counters
-                    totalSittings += total;
-                    takenSittings += completed;
+                    overallTotalSittings += total;
+                    overallTakenSittings += completed;
+                    overallPendingSittings += Math.max(total - completed, 0);
 
-                    // Update entity itself (optional if you want to store sitting info in DB)
+                    // Update entity itself for DB
                     entityTreatment.setSittings(Math.max(total - completed, 0));
+                    entityTreatment.setTakenSittings(completed);
+                    entityTreatment.setPendingSittings(Math.max(total - completed, 0));
+                    entityTreatment.setCurrentSitting(currentSittingForThisTreatment);
                 }
-
-                pendingSittings = Math.max(totalSittings - takenSittings, 0);
             }
 
-            // Set the response DTO fields
+            // Set the response DTO fields with overall summary
             treatmentResponseDTO.setGeneratedData(generatedDataDTO);
-            treatmentResponseDTO.setTotalSittings(totalSittings);
-            treatmentResponseDTO.setTakenSittings(takenSittings);
-            treatmentResponseDTO.setPendingSittings(pendingSittings);
-            treatmentResponseDTO.setCurrentSitting(currentSitting);
+            treatmentResponseDTO.setTotalSittings(overallTotalSittings);
+            treatmentResponseDTO.setTakenSittings(overallTakenSittings);
+            treatmentResponseDTO.setPendingSittings(overallPendingSittings);
+            treatmentResponseDTO.setCurrentSitting(overallCurrentSitting);
 
-            // Save back to entity (DB)
+            // Save back to entity (DB) with overall summary included
             TreatmentResponse treatmentEntity = TreatmentResponse.builder()
                     .generatedData(generatedDataDTO.entrySet().stream()
                         .collect(Collectors.toMap(
@@ -1991,8 +1994,11 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                     )
                     .selectedTestTreatment(savedVisit.getTreatments() != null
                             ? savedVisit.getTreatments().getSelectedTestTreatment() : null)
+                    .totalSittings(overallTotalSittings)
+                    .takenSittings(overallTakenSittings)
+                    .pendingSittings(overallPendingSittings)
+                    .currentSitting(overallCurrentSitting)
                     .build();
-
 
             savedVisit.setTreatments(treatmentEntity);
             repository.save(savedVisit);
@@ -2058,10 +2064,10 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             bookingData.setStatus(status);
 
             // ✅ Set sitting summary fields for Booking service
-            bookingData.setTotalSittings(totalSittings);
-            bookingData.setPendingSittings(pendingSittings);
-            bookingData.setTakenSittings(takenSittings);
-            bookingData.setCurrentSitting(currentSitting);
+            bookingData.setTotalSittings(overallTotalSittings);
+            bookingData.setTakenSittings(overallTakenSittings);
+            bookingData.setPendingSittings(overallPendingSittings);
+            bookingData.setCurrentSitting(overallCurrentSitting);
 
             bookingFeignClient.updateAppointment(bookingData);
 
