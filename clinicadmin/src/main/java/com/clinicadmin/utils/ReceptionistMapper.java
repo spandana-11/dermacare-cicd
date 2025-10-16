@@ -1,34 +1,21 @@
 package com.clinicadmin.utils;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import com.clinicadmin.dto.ReceptionistRequestDTO;
 import com.clinicadmin.entity.ReceptionistEntity;
+
 public class ReceptionistMapper {
 
     // ----------------- Base64 Helper -----------------
-    public static String encodeIfNotBase64(String input) {
-        if (input == null || input.isBlank()) return input;
-
-        String base64Pattern = "^[A-Za-z0-9+/]*={0,2}$";
-        if (input.matches(base64Pattern) && input.length() % 4 == 0) {
-            try {
-                Base64.getDecoder().decode(input);
-                return input; // already Base64
-            } catch (IllegalArgumentException e) {
-                // not valid, so encode
-            }
-        }
+    public static String encodeToBase64(String input) {
+        if (input == null || input.isEmpty()) return null;
         return Base64.getEncoder().encodeToString(input.getBytes(StandardCharsets.UTF_8));
     }
 
-    public static String safeReturnAsBase64(String input) {
-        if (input == null) return null;
-        try {
-            Base64.getDecoder().decode(input);
-            return input;
-        } catch (Exception e) {
-            return Base64.getEncoder().encodeToString(input.getBytes(StandardCharsets.UTF_8));
-        }
+    public static String decodeFromBase64(String base64) {
+        if (base64 == null || base64.isEmpty()) return null;
+        return new String(Base64.getDecoder().decode(base64), StandardCharsets.UTF_8);
     }
 
     // ----------------- DTO → Entity -----------------
@@ -38,10 +25,10 @@ public class ReceptionistMapper {
         ReceptionistEntity entity = new ReceptionistEntity();
         applyDtoToEntity(dto, entity);
 
-        // Encode files
-        entity.setGraduationCertificate(encodeIfNotBase64(dto.getGraduationCertificate()));
-        entity.setComputerSkillsProof(encodeIfNotBase64(dto.getComputerSkillsProof()));
-        entity.setProfilePicture(encodeIfNotBase64(dto.getProfilePicture()));
+        // Encode Base64 fields
+        entity.setGraduationCertificate(encodeToBase64(dto.getGraduationCertificate()));
+        entity.setComputerSkillsProof(encodeToBase64(dto.getComputerSkillsProof()));
+        entity.setProfilePicture(encodeToBase64(dto.getProfilePicture()));
 
         return entity;
     }
@@ -58,8 +45,6 @@ public class ReceptionistMapper {
         dto.setRole(entity.getRole());
         dto.setAddress(entity.getAddress());
         dto.setEmergencyContact(entity.getEmergencyContact());
-//        dto.setUserName(entity.getUserName());
-//        dto.setPassword(entity.getPassword());
         dto.setFullName(entity.getFullName());
         dto.setDateOfBirth(entity.getDateOfBirth());
         dto.setContactNumber(entity.getContactNumber());
@@ -74,14 +59,12 @@ public class ReceptionistMapper {
         dto.setYearOfExperience(entity.getYearOfExperience());
         dto.setVaccinationStatus(entity.getVaccinationStatus());
         dto.setShiftTimingsOrAvailability(entity.getShiftTimingsOrAvailability());
-        
-
-        // Decode files safely
-        dto.setGraduationCertificate(safeReturnAsBase64(entity.getGraduationCertificate()));
-        dto.setComputerSkillsProof(safeReturnAsBase64(entity.getComputerSkillsProof()));
-        dto.setProfilePicture(safeReturnAsBase64(entity.getProfilePicture()));
         dto.setPreviousEmploymentHistory(entity.getPreviousEmploymentHistory());
-        dto.setPermissions(entity.getPermissions());
+
+        // Decode Base64 fields
+        dto.setGraduationCertificate(decodeFromBase64(entity.getGraduationCertificate()));
+        dto.setComputerSkillsProof(decodeFromBase64(entity.getComputerSkillsProof()));
+        dto.setProfilePicture(decodeFromBase64(entity.getProfilePicture()));
 
         return dto;
     }
@@ -96,9 +79,6 @@ public class ReceptionistMapper {
         if (dto.getRole() != null) entity.setRole(dto.getRole());
         if (dto.getPermissions() != null) entity.setPermissions(dto.getPermissions());
         if (dto.getAddress() != null) entity.setAddress(dto.getAddress());
-//        if (dto.getEmergencyContact() != null) entity.setEmergencyContact(dto.getEmergencyContact());
-//        if (dto.getUserName() != null) entity.setUserName(dto.getUserName());
-//        if (dto.getPassword() != null) entity.setPassword(dto.getPassword());
         if (dto.getFullName() != null) entity.setFullName(dto.getFullName());
         if (dto.getDateOfBirth() != null) entity.setDateOfBirth(dto.getDateOfBirth());
         if (dto.getContactNumber() != null) entity.setContactNumber(dto.getContactNumber());
@@ -111,16 +91,18 @@ public class ReceptionistMapper {
         if (dto.getGender() != null) entity.setGender(dto.getGender());
         if (dto.getYearOfExperience() != null) entity.setYearOfExperience(dto.getYearOfExperience());
         if (dto.getVaccinationStatus() != null) entity.setVaccinationStatus(dto.getVaccinationStatus());
-        if (dto.getShiftTimingsOrAvailability() != null) entity.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
-
-        // Encode files if provided
-        if (dto.getGraduationCertificate() != null)
-            entity.setGraduationCertificate(encodeIfNotBase64(dto.getGraduationCertificate()));
-        if (dto.getComputerSkillsProof() != null)
-            entity.setComputerSkillsProof(encodeIfNotBase64(dto.getComputerSkillsProof()));
-
+        if (dto.getShiftTimingsOrAvailability() != null)
+            entity.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
         if (dto.getPreviousEmploymentHistory() != null)
             entity.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
+
+        // Encode Base64 fields if provided
+        if (dto.getGraduationCertificate() != null)
+            entity.setGraduationCertificate(encodeToBase64(dto.getGraduationCertificate()));
+        if (dto.getComputerSkillsProof() != null)
+            entity.setComputerSkillsProof(encodeToBase64(dto.getComputerSkillsProof()));
+        if (dto.getProfilePicture() != null)
+            entity.setProfilePicture(encodeToBase64(dto.getProfilePicture()));
     }
 
     // ----------------- Helper for Create -----------------
@@ -132,8 +114,6 @@ public class ReceptionistMapper {
         entity.setRole(dto.getRole());
         entity.setAddress(dto.getAddress());
         entity.setEmergencyContact(dto.getEmergencyContact());
-//        entity.setUserName(dto.getUserName() != null ? dto.getUserName() : dto.getContactNumber());
-//        entity.setPassword(dto.getPassword());
         entity.setFullName(dto.getFullName());
         entity.setDateOfBirth(dto.getDateOfBirth());
         entity.setContactNumber(dto.getContactNumber());
@@ -143,13 +123,16 @@ public class ReceptionistMapper {
         entity.setDepartment(dto.getDepartment());
         entity.setBankAccountDetails(dto.getBankAccountDetails());
         entity.setEmailId(dto.getEmailId());
-        entity.setGraduationCertificate(encodeIfNotBase64(dto.getGraduationCertificate()));
-        entity.setComputerSkillsProof(encodeIfNotBase64(dto.getComputerSkillsProof()));
         entity.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
         entity.setPermissions(dto.getPermissions());
         entity.setGender(dto.getGender());
         entity.setYearOfExperience(dto.getYearOfExperience());
         entity.setVaccinationStatus(dto.getVaccinationStatus());
         entity.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
+
+        // Encode Base64 fields
+        entity.setGraduationCertificate(encodeToBase64(dto.getGraduationCertificate()));
+        entity.setComputerSkillsProof(encodeToBase64(dto.getComputerSkillsProof()));
+        entity.setProfilePicture(encodeToBase64(dto.getProfilePicture()));
     }
 }
