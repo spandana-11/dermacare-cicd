@@ -1255,6 +1255,148 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 //		}
 
 		
+//		@Override
+//		public ResponseEntity<?> getInProgressAppointmentsByCustomerId(String customerId) {
+//		    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+//		    List<BookingResponse> finalList = new ArrayList<>();
+//		    Response response = new Response();
+//		    DoctorSaveDetailsDTO saveDetails = new DoctorSaveDetailsDTO();
+//
+//		    try {
+//		        List<Booking> booked = repository.findByCustomerId(customerId);
+//		        if (booked == null || booked.isEmpty()) {
+//		            res.setStatusCode(200);
+//		            res.setHttpStatus(HttpStatus.OK);
+//		            res.setMessage("No bookings found for customer");
+//		            res.setData(finalList);
+//		            return ResponseEntity.ok(res);
+//		        }
+//
+//		        LocalDate today = LocalDate.now();
+//		        DateTimeFormatter isoFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+//
+//		        for (Booking booking : booked) {
+//		            if (!"In-Progress".equalsIgnoreCase(booking.getStatus())) {
+//		                continue;
+//		            }
+//
+//		            // ✅ Get Doctor Save Details
+//		            try {
+//		                response = doctorFeign.getDoctorSaveDetailsByBookingId(booking.getBookingId()).getBody();
+//		            } catch (Exception e) {
+//		                System.out.println("DoctorFeign error: " + e.getMessage());
+//		            }
+//
+//		            if (response != null && response.getData() != null) {
+//		                saveDetails = new ObjectMapper().convertValue(response.getData(), DoctorSaveDetailsDTO.class);
+//		            }
+//
+//		            // ✅ CASE 1: Treatments (Services & Treatments bookings with sittings)
+//		            if (saveDetails.getTreatments() != null &&
+//		                saveDetails.getTreatments().getGeneratedData() != null &&
+//		                !saveDetails.getTreatments().getGeneratedData().isEmpty()) {
+//
+//		                List<LocalDate> allDates = saveDetails.getTreatments().getGeneratedData().values().stream()
+//		                        .filter(Objects::nonNull)
+//		                        .flatMap(details -> details.getDates() != null
+//		                                ? details.getDates().stream().map(d -> LocalDate.parse(d.getDate(), isoFormatter))
+//		                                : Stream.empty())
+//		                        .filter(Objects::nonNull)
+//		                        .sorted()
+//		                        .toList();
+//
+//		                int totalSittingsSum = saveDetails.getTreatments().getGeneratedData().values().stream()
+//		                        .mapToInt(d -> d.getTotalSittings() != null ? d.getTotalSittings() : 0)
+//		                        .sum();
+//
+//		                int pendingSittingsSum = saveDetails.getTreatments().getGeneratedData().values().stream()
+//		                        .mapToInt(d -> d.getSittings() != null ? d.getSittings() : 0)
+//		                        .sum();
+//
+//		                AtomicInteger takenSittingsCount = new AtomicInteger(0);
+//
+//		                // Count sittings already booked
+//		                for (LocalDate sittingDate : allDates) {
+//		                    try {
+//		                        Booking resp = repository.findByPatientIdAndFollowupDate(
+//		                                booking.getPatientId(),
+//		                                sittingDate.format(isoFormatter));
+//		                        if (resp != null) {
+//		                            takenSittingsCount.incrementAndGet();
+//		                        }
+//		                    } catch (Exception ignored) {}
+//		                }
+//
+//		                // Consultation Expiration based on last sitting
+//		                LocalDate lastSitting = allDates.get(allDates.size() - 1);
+//		                LocalDate exp = lastSitting.plusDays(
+//		                        Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", ""))
+//		                );
+//
+//		                booking.setTotalSittings(totalSittingsSum);
+//		                booking.setPendingSittings(pendingSittingsSum);
+//		                booking.setTakenSittings(takenSittingsCount.get());
+//		                booking.setCurrentSitting(pendingSittingsSum);
+//
+//		                // ✅ Always include Treatment booking if not expired
+//		                if (!exp.isBefore(today)) {
+//		                    finalList.add(toResponse(booking));
+//		                }
+//		            }
+//
+//		            // ✅ CASE 2: Consultation with Follow-Up
+//		            else if (saveDetails.getFollowUp() != null &&
+//		                     saveDetails.getFollowUp().getNextFollowUpDate() != null) {
+//		                try {
+//		                    LocalDate followDate = LocalDate.parse(
+//		                            saveDetails.getFollowUp().getNextFollowUpDate(),
+//		                            DateTimeFormatter.ISO_LOCAL_DATE_TIME
+//		                    );
+//
+//		                    int days = Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", ""));
+//		                    LocalDate exp = LocalDate.parse(booking.getServiceDate(), isoFormatter).plusDays(days);
+//
+//		                    if (!followDate.isBefore(today) && !followDate.isAfter(exp)) {
+//		                        Booking bkng = new Booking(booking);
+//		                        bkng.setFollowupDate(followDate.format(isoFormatter));
+//		                        finalList.add(toResponse(bkng));
+//		                    }
+//		                } catch (Exception e) {
+//		                    System.out.println("Followup parse error: " + e.getMessage());
+//		                }
+//		            }
+//
+//		            // ✅ CASE 3: Normal Consultation (no treatments, no follow-up → use consultationExpiration)
+//		            else {
+//		                try {
+//		                    int days = Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", ""));
+//		                    LocalDate exp = LocalDate.parse(booking.getServiceDate(), isoFormatter).plusDays(days);
+//
+//		                    if (!exp.isBefore(today)) {
+//		                        finalList.add(toResponse(booking));
+//		                    }
+//		                } catch (Exception e) {
+//		                    System.out.println("Consultation parse error: " + e.getMessage());
+//		                }
+//		            }
+//		        }
+//
+//		        res.setStatusCode(200);
+//		        res.setHttpStatus(HttpStatus.OK);
+//		        res.setMessage(finalList.isEmpty()
+//		                ? "No In-Progress appointments found"
+//		                : "In-Progress appointments found");
+//		        res.setData(finalList);
+//
+//		    } catch (Exception e) {
+//		        res.setStatusCode(500);
+//		        res.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+//		        res.setMessage("Error: " + e.getMessage());
+//		    }
+//
+//		    return ResponseEntity.status(res.getStatusCode()).body(res);
+//		}
+
 		@Override
 		public ResponseEntity<?> getInProgressAppointmentsByCustomerId(String customerId) {
 		    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
@@ -1280,6 +1422,13 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                continue;
 		            }
 
+		            // ✅ Include only relevant consultation types
+		            if (!"In-Clinic Consultation".equalsIgnoreCase(booking.getConsultationType()) &&
+		                !"Services & Treatments".equalsIgnoreCase(booking.getConsultationType()) &&
+		                !"Online Consultation".equalsIgnoreCase(booking.getConsultationType())) {
+		                continue;
+		            }
+
 		            // ✅ Get Doctor Save Details
 		            try {
 		                response = doctorFeign.getDoctorSaveDetailsByBookingId(booking.getBookingId()).getBody();
@@ -1291,7 +1440,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                saveDetails = new ObjectMapper().convertValue(response.getData(), DoctorSaveDetailsDTO.class);
 		            }
 
-		            // ✅ CASE 1: Treatments (Services & Treatments bookings with sittings)
+		            // CASE 1: Treatments (Services & Treatments bookings with sittings)
 		            if (saveDetails.getTreatments() != null &&
 		                saveDetails.getTreatments().getGeneratedData() != null &&
 		                !saveDetails.getTreatments().getGeneratedData().isEmpty()) {
@@ -1338,13 +1487,13 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                booking.setTakenSittings(takenSittingsCount.get());
 		                booking.setCurrentSitting(pendingSittingsSum);
 
-		                // ✅ Always include Treatment booking if not expired
+		                // Always include Treatment booking if not expired
 		                if (!exp.isBefore(today)) {
 		                    finalList.add(toResponse(booking));
 		                }
 		            }
 
-		            // ✅ CASE 2: Consultation with Follow-Up
+		            // CASE 2: Consultation with Follow-Up
 		            else if (saveDetails.getFollowUp() != null &&
 		                     saveDetails.getFollowUp().getNextFollowUpDate() != null) {
 		                try {
@@ -1366,7 +1515,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                }
 		            }
 
-		            // ✅ CASE 3: Normal Consultation (no treatments, no follow-up → use consultationExpiration)
+		            // CASE 3: Normal Consultation (no treatments, no follow-up → use consultationExpiration)
 		            else {
 		                try {
 		                    int days = Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", ""));
@@ -1397,7 +1546,6 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		    return ResponseEntity.status(res.getStatusCode()).body(res);
 		}
 
-		
 	
 //		public ResponseEntity<?> getInProgressAppointmentsByPatientId(String patientId) {
 //		    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
@@ -2440,7 +2588,15 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		        DateTimeFormatter isoFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
 		        for (Booking booking : booked) {
+		            // Include only In-Progress bookings
 		            if (!"In-Progress".equalsIgnoreCase(booking.getStatus())) {
+		                continue;
+		            }
+
+		            // Include both In-Clinic & Online Consultations
+		            if (!"In-Clinic Consultation".equalsIgnoreCase(booking.getConsultationType()) &&
+		                !"Services & Treatments".equalsIgnoreCase(booking.getConsultationType()) &&
+		                !"Online Consultation".equalsIgnoreCase(booking.getConsultationType())) {
 		                continue;
 		            }
 
@@ -2466,7 +2622,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                saveDetails = new ObjectMapper().convertValue(response.getData(), DoctorSaveDetailsDTO.class);
 		            }
 
-		            // ✅ Case 1: Treatment Data
+		            // Case 1: Treatment Data
 		            if (saveDetails.getTreatments() != null &&
 		                    saveDetails.getTreatments().getGeneratedData() != null &&
 		                    !saveDetails.getTreatments().getGeneratedData().isEmpty()) {
@@ -2506,7 +2662,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                finalList.add(toResponse(booking));
 		            }
 
-		            // ✅ Case 2: FollowUp Data
+		            // Case 2: FollowUp Data
 		            else if (saveDetails.getFollowUp() != null &&
 		                    saveDetails.getFollowUp().getNextFollowUpDate() != null) {
 
@@ -2528,7 +2684,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                }
 		            }
 
-		            // ✅ Case 3: Plain In-Clinic Consultation (No Treatments/Followup but still In-Progress)
+		            // Case 3: Plain In-Clinic or Online Consultation (No Treatments/Followup)
 		            else {
 		                if (ld != null && !ld.isBefore(today) && !ld.isAfter(sixthDate)) {
 		                    finalList.add(toResponse(booking));
@@ -2551,6 +2707,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 		    return ResponseEntity.status(res.getStatusCode()).body(res);
 		}
+
 
 		
 		public ResponseEntity<?> retrieveAppointments(String cinicId,String branchId,String date){			
