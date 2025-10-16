@@ -233,11 +233,13 @@ public class PharmacistServiceImpl implements PharmacistService {
 	        response.setSuccess(true);
 	        response.setMessage("Pharmacists retrieved successfully");
 	        response.setStatus(HttpStatus.OK.value());
-	        response.setData(pharmacists);
+	        // ✅ Map entities to DTOs to get string ID
+	        response.setData(pharmacists.stream().map(this::mapEntityToDto).toList());
 	    }
 
 	    return response;
 	}
+
 
 
 
@@ -303,6 +305,8 @@ public class PharmacistServiceImpl implements PharmacistService {
 	// ---------------- Helper Methods ----------------
 	private Pharmacist mapDtoToEntity(PharmacistDTO dto) {
 		Pharmacist pharmacist = new Pharmacist();
+	    // Convert MongoDB ObjectId or any complex id to simple string
+	    dto.setId(pharmacist.getId() != null ? pharmacist.getId().toString() : null);
 		pharmacist.setHospitalId(dto.getHospitalId());
 		pharmacist.setHospitalName(dto.getHospitalName());
 		pharmacist.setBranchId(dto.getBranchId());
