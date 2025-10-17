@@ -45,7 +45,7 @@ public class DoctorSaveDetailsController {
         Response response = service.getAllDoctorDetails();
         return ResponseEntity.status(response.getStatus()).body(response);
     }
-    @GetMapping("/visitHistory/{patientId}/{bookingId}")
+    @GetMapping("/visitHistoryBypatientIdAndBookingId/{patientId}/{bookingId}")
     public ResponseEntity<Response> getVisitHistory(
             @PathVariable String patientId,
             @PathVariable String bookingId) {
