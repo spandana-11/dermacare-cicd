@@ -2258,6 +2258,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                                                                     .map(d -> Dates.builder()
                                                                             .date(d.getDate())
                                                                             .sitting(d.getSitting())
+                                                                            .status(d.getStatus())
                                                                             .build())
                                                                     .collect(Collectors.toList())
                                                             : null;
@@ -2392,6 +2393,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                                                                         .map(d -> DatesDTO.builder()
                                                                                 .date(d.getDate())
                                                                                 .sitting(d.getSitting())
+                                                                                .status(d.getStatus())
                                                                                 .build())
                                                                         .collect(Collectors.toList())
                                                                 : null)

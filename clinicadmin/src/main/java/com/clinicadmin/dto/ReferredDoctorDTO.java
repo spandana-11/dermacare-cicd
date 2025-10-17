@@ -11,7 +11,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ReferredDoctorDTO {
-	
+	private String id;
     private String clinicId;
     private String fullName;
     private String gender;

@@ -7,6 +7,7 @@ public class ReferredDoctorMapper {
 
     public static ReferredDoctor dtoToEntity(ReferredDoctorDTO dto) {
         ReferredDoctor doctor = new ReferredDoctor();
+        doctor.setId(dto.getId());
         doctor.setFullName(dto.getFullName());
         doctor.setClinicId(dto.getClinicId());
         doctor.setReferralId(dto.getReferralId());
@@ -32,6 +33,7 @@ public class ReferredDoctorMapper {
 
     public static ReferredDoctorDTO entityToDto(ReferredDoctor doctor) {
         ReferredDoctorDTO dto = new ReferredDoctorDTO();
+        dto.setId(doctor.getId());
         dto.setClinicId(doctor.getClinicId());
         dto.setReferralId(doctor.getReferralId());
         dto.setFullName(doctor.getFullName());
