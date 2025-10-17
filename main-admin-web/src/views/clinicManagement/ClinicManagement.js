@@ -149,7 +149,7 @@ const ClinicManagement = ({ service, onBack }) => {
         {error && <p className="text-center text-danger">{error}</p>}
 
         <CTable hover responsive>
-          <CTableHead>
+          <CTableHead className="pink-table">
             <CTableRow>
               <CTableHeaderCell>S.No</CTableHeaderCell>
               <CTableHeaderCell>Clinic Name</CTableHeaderCell>
@@ -160,7 +160,7 @@ const ClinicManagement = ({ service, onBack }) => {
             </CTableRow>
           </CTableHead>
 
-          <CTableBody>
+          <CTableBody className="pink-table">
             {currentItems?.length > 0
               ? currentItems.map((clinic, index) => (
                   <CTableRow key={clinic?.id || index}>

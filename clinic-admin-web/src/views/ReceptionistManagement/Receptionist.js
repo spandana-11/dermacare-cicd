@@ -23,6 +23,7 @@ import CIcon from '@coreui/icons-react'
 import { cilSearch, cilPlus, cilTrash, cilPencil } from '@coreui/icons'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const ReceptionistManagement = () => {
   // ✅ Dummy Data
@@ -40,17 +41,17 @@ const ReceptionistManagement = () => {
   // ✅ Add / Edit
   const handleSave = () => {
     if (!formData.name || !formData.email || !formData.phone) {
-      toast.error('Please fill required fields')
+      showCustomToast('Please fill required fields','error')
       return
     }
     if (formData.id) {
       // Edit
       setReceptionists(receptionists.map((r) => (r.id === formData.id ? formData : r)))
-      toast.success('Receptionist updated successfully')
+      showCustomToast('Receptionist updated successfully','success')
     } else {
       // Add
       setReceptionists([{ ...formData, id: Date.now() }, ...receptionists])
-      toast.success('Receptionist added successfully')
+      showCustomToast('Receptionist added successfully','success')
     }
     setFormData({ id: null, name: '', email: '', phone: '', shift: '' })
     setModalVisible(false)
@@ -59,7 +60,7 @@ const ReceptionistManagement = () => {
   // ✅ Delete
   const handleDelete = (id) => {
     setReceptionists(receptionists.filter((r) => r.id !== id))
-    toast.info('Receptionist deleted')
+    showCustomToast('Receptionist deleted','warning')
   }
 
   // ✅ Filter by search

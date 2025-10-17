@@ -14,6 +14,7 @@ import {
   cilNotes,
   cilWallet,
   cilLightbulb,
+  cilBell,
 } from '@coreui/icons'
 import { CNavItem } from '@coreui/react'
 import { NavLink } from 'react-router-dom'
@@ -50,6 +51,20 @@ export const getNavigation = (permissions = {}) => {
     },
     {
       component: CNavItem,
+      to: '/pharmacy-management',
+      name: 'Pharmacy Management',
+      as: NavLink,
+      icon: <CIcon icon={cilTablet} customClassName="nav-icon" />,
+    },
+    {
+      component: CNavItem,
+      to: '/report-management',
+      name: 'Reports',
+      as: NavLink,
+      icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
+    },
+    {
+      component: CNavItem,
       to: '/Disease',
       name: 'Disease-Management',
       as: NavLink,
@@ -76,21 +91,7 @@ export const getNavigation = (permissions = {}) => {
       as: NavLink,
       icon: <CIcon icon={cilSettings} customClassName="nav-icon" />,
     },
-    {
-      component: CNavItem,
-      to: '/report-management',
-      name: 'Reports',
-      as: NavLink,
-      icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
-    },
 
-    {
-      component: CNavItem,
-      to: '/pharmacy-management',
-      name: 'Pharmacy Management',
-      as: NavLink,
-      icon: <CIcon icon={cilTablet} customClassName="nav-icon" />,
-    },
     {
       component: CNavItem,
       to: '/consent-forms',
@@ -101,7 +102,7 @@ export const getNavigation = (permissions = {}) => {
     {
       component: CNavItem,
       to: '/ref-doctor',
-      name: 'Reffer Doctor',
+      name: 'Refer Doctor',
       as: NavLink,
       icon: <CIcon icon={cilNotes} customClassName="nav-icon" />,
     },
@@ -111,6 +112,13 @@ export const getNavigation = (permissions = {}) => {
       name: 'Payouts',
       as: NavLink,
       icon: <CIcon icon={cilWallet} customClassName="nav-icon" />,
+    },
+    {
+      component: CNavItem,
+      to: '/notification',
+      name: 'Push Notification',
+      as: NavLink,
+      icon: <CIcon icon={cilBell} customClassName="nav-icon" />,
     },
     {
       component: CNavItem,

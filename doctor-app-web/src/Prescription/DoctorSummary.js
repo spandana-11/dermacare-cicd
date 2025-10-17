@@ -551,6 +551,7 @@ const DoctorSummary = ({
                               <th style={{ width: "8%", textAlign: "center" }}>S.No</th>
                               <th style={{ width: "46%", textAlign: "center" }}>Date</th>
                               <th style={{ width: "46%", textAlign: "center" }}>Sitting</th>
+                              <th style={{ width: "46%", textAlign: "center" }}>Status</th>
                             </tr>
 
                           </thead>
@@ -560,6 +561,7 @@ const DoctorSummary = ({
                                 <td>{i + 1}</td>
                                 <td>{d?.date ?? '—'}</td>
                                 <td>{d?.sitting ?? '—'}</td>
+                                <td>{d?.status ?? '—'}</td>
                               </tr>
                             ))}
                           </tbody>

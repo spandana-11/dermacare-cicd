@@ -7,6 +7,7 @@ import { toast } from 'react-toastify'
 import { updateDoctorAvailability } from './DoctorAPI' // Adjust path accordingly
 import { COLORS } from '../../Constant/Themes'
 import capitalizeWords from '../../Utils/capitalizeWords'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const DoctorCard = ({ doctor }) => {
   const navigate = useNavigate()
@@ -20,9 +21,9 @@ const DoctorCard = ({ doctor }) => {
 
     const success = await updateDoctorAvailability(doctor.doctorId, value)
     if (success) {
-      toast.success(`Availability set to ${value ? 'Available' : 'Not Available'}`)
+     showCustomToast(`Availability set to ${value ? 'Available' : 'Not Available'}`,'success')
     } else {
-      toast.error('Failed to update availability')
+      showCustomToast('Failed to update availability','error')
       setAvailability(!value) // revert change if failed
     }
   }

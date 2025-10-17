@@ -169,6 +169,7 @@
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import { BASE_URL } from '../baseUrl'
+import { showCustomToast } from './Toaster'
 
 /* --------------------- Axios instances --------------------- */
 export const http = axios.create({
@@ -188,7 +189,7 @@ let isToastActive = false
 const showToastOnce = (message) => {
   if (!isToastActive) {
     isToastActive = true
-    toast.error(message, {
+    showCustomToast(message,'error', {
       onClose: () => {
         // reset when toast closes
         isToastActive = false

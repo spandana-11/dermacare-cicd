@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+
 import axios from 'axios'
 import {
   CCard,
@@ -48,11 +49,12 @@ const BranchDetails = () => {
 
   const { branchId, clinicId } = useParams()
 
-  
+   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const [formErrors, setFormErrors] = useState({})
+  const tabFromUrl = parseInt(searchParams.get('tab')) || 0
 
-  const [activeTab, setActiveTab] = useState(0)
+  const [activeTab, setActiveTab] = useState(tabFromUrl)
   const [branchData, setBranchData] = useState(null)
   const [doctors, setDoctors] = useState([])
   const [appointments, setAppointments] = useState([])
@@ -79,6 +81,14 @@ const fetchAllDoctors = async (clinicId, branchId) => {
     console.error('Error fetching doctors for branch:', error.response?.data || error.message)
   }
 }
+  useEffect(() => {
+    const tab = parseInt(searchParams.get('tab')) || 0
+    setActiveTab(tab)
+  }, [searchParams])
+  const handleTabChange = (tabIndex) => {
+    setActiveTab(tabIndex)
+    setSearchParams({ tab: tabIndex })
+  }
 const capitalizeWords = (str) =>
   str?.replace(/\b\w/g, (char) => char.toUpperCase()) || ''
 useEffect(() => {
@@ -170,17 +180,17 @@ const handleDeleteDoctor = async () => {
         {/* Navigation Tabs */}
         <CNav variant="tabs">
           <CNavItem>
-            <CNavLink active={activeTab === 0} onClick={() => setActiveTab(0)}>
+            <CNavLink active={activeTab === 0} onClick={() => handleTabChange(0)}>
               Branch Details
             </CNavLink>
           </CNavItem>
           <CNavItem>
-            <CNavLink active={activeTab === 1} onClick={() => setActiveTab(1)}>
+            <CNavLink active={activeTab === 1} onClick={() => handleTabChange(1)}>
               Doctors
             </CNavLink>
           </CNavItem>
           <CNavItem>
-            <CNavLink active={activeTab === 2} onClick={() => setActiveTab(2)}>
+            <CNavLink active={activeTab === 2} onClick={() => handleTabChange(2)}>
               Appointments
             </CNavLink>
           </CNavItem>
@@ -491,6 +501,7 @@ const handleDeleteDoctor = async () => {
       <DoctorCard
         key={doc.doctorId}
         doctor={doc}
+        branchId={branchData.branchId} // ✅ pass branchId here
         onEdit={() => {
           setSelectedDoctor(doc)
           setEditDoctorModal(true)

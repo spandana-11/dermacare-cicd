@@ -16,15 +16,20 @@ import {
   CAccordionHeader,
   CAccordionBody,
 } from '@coreui/react'
-
+import axios from 'axios'
 import jsPDF from 'jspdf'
 import { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
-import { deleteBookingData } from './appointmentAPI' // adjust this path as per your project
+import { AppointmentData, deleteBookingData, GetBookingByClinicIdData } from './appointmentAPI' // adjust this path as per your project
 import { GetdoctorsByClinicIdData } from './appointmentAPI'
 import { FaEye, FaDownload } from 'react-icons/fa'
 import { deleteVitalsData, postVitalsData, updateVitalsData, VitalsDataById } from './VitalsAPI'
 import { Download, Eye } from 'lucide-react'
+import { useHospital } from '../Usecontext/HospitalContext'
+import { GetProcedureFormData } from '../ConsentForms/ConsentFormsAPI'
+import ConsentFormHandler from '../ConsentForms/ConsentFormHandler'
+import { showCustomToast } from '../../Utils/Toaster'
+
 const AppointmentDetails = () => {
   const { id } = useParams()
   const location = useLocation()
@@ -41,7 +46,7 @@ const AppointmentDetails = () => {
     bmi: '',
   })
   const appointment = location.state?.appointment
-
+  const { hospitalId, selectedHospital } = useHospital()
   if (!appointment) {
     return (
       <div className="text-center mt-4">
@@ -160,37 +165,41 @@ const AppointmentDetails = () => {
 
   const handleSubmitVitals = async () => {
     if (!validateVitals()) {
-      toast.error('Please fix validation errors before submitting.')
+      showCustomToast('Please fix validation errors before submitting.','error')
       return
     }
     console.log('Submitting vitals data:', formData)
     try {
       await postVitalsData({ ...formData, patientId: appointment.patientId }, appointment.bookingId)
-      toast.success('Vitals added successfully!')
+
+      showCustomToast('Vitals added successfully! ', 'success')
+
       setShowModal(false)
       setFormData({ height: '', weight: '', bloodPressure: '', temperature: '', bmi: '' })
       fetchVitals()
     } catch (error) {
-      toast.error('Failed to add vitals')
+      showCustomToast('Failed to add vitals','error')
     }
   }
   const handleUpdateVitals = async () => {
     try {
       await updateVitalsData(formData, appointment.bookingId, appointment.patientId)
-      toast.success('Vitals updated successfully!')
+      showCustomToast('Vitals updated successfully!', 'success')
+
       setShowModal(false)
       fetchVitals()
     } catch (error) {
-      toast.error('Failed to update vitals')
+      showCustomToast('Failed to update vitals','error')
     }
   }
   const handleDeleteVitals = async () => {
     try {
       await deleteVitalsData(appointment.bookingId, appointment.patientId)
-      toast.success('Vitals deleted successfully!')
+      showCustomToast('Vitals deleted successfully!', 'success')
+
       setVitals(null)
     } catch (error) {
-      toast.error('Failed to delete vitals')
+      showCustomToast('Failed to delete vitals','error')
     }
   }
   const regexRules = {
@@ -571,47 +580,58 @@ const AppointmentDetails = () => {
               <CAccordion activeItemKey={1}>
                 {/* Consent Form Accordion */}
                 {/* {appointment?.consentFormPdf != '' && ( */}
-                {appointment?.consentFormPdf ? (
-                  <CAccordionItem itemKey={1}>
-                    <CAccordionHeader>Consent Form</CAccordionHeader>
-                    <CAccordionBody>
-                      <div className="d-flex gap-2 align-items-start justify-content-between">
-                        <div>{appointment?.subServiceName}</div>
-                        <div className="row">
-                          <div className="col-6">
-                            <CButton
-                              style={{
-                                backgroundColor: 'var(--color-bgcolor)',
-                                color: 'var(--color-black)',
-                              }}
-                              onClick={() => handlePreview(appointment?.consentFormPdf)}
-                              className="d-flex align-items-center gap-1"
-                            >
-                              <Eye size={16} />
-                            </CButton>
-                          </div>
-                          <div className="col-6">
-                            <CButton
-                              style={{
-                                backgroundColor: 'var(--color-bgcolor)',
-                                color: 'var(--color-black)',
-                              }}
-                              onClick={() =>
-                                handleDownload(appointment?.consentFormPdf, 'consent_form.pdf')
-                              }
-                              className="d-flex align-items-center gap-1 "
-                            >
-                              <Download size={16} />
-                            </CButton>
+
+                {appointment?.consultationType?.toLowerCase() === 'services & treatments' &&
+                  appointment?.consultationType?.toLowerCase() === 'services & treatments' &&
+                  new Date(appointment?.serviceDate) <= new Date() &&
+                  (appointment?.consentFormPdf ? (
+                    <CAccordionItem itemKey={1}>
+                      <CAccordionHeader>Consent Form</CAccordionHeader>
+                      <CAccordionBody>
+                        <div className="d-flex gap-1 align-items-start justify-content-between">
+                          <div>{appointment?.subServiceName}</div>
+                          <div className="d-flex gap-2">
+                            <div>
+                              <CButton
+                                style={{
+                                  backgroundColor: 'var(--color-bgcolor)',
+                                  color: 'var(--color-black)',
+                                }}
+                                onClick={() => handlePreview(appointment?.consentFormPdf)}
+                                className="d-flex align-items-center gap-1"
+                              >
+                                <Eye size={16} />
+                              </CButton>
+                            </div>
+                            <div>
+                              <CButton
+                                style={{
+                                  backgroundColor: 'var(--color-bgcolor)',
+                                  color: 'var(--color-black)',
+                                }}
+                                onClick={() =>
+                                  handleDownload(appointment?.consentFormPdf, 'consent_form.pdf')
+                                }
+                                className="d-flex align-items-center gap-1 "
+                              >
+                                <Download size={16} />
+                              </CButton>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </CAccordionBody>
-                  </CAccordionItem>
-                ) : null}
+                      </CAccordionBody>
+                    </CAccordionItem>
+                  ) : (
+                    <ConsentFormHandler
+                      appointment={appointment}
+                      doctor={doctor}
+                      selectedHospital={selectedHospital}
+                      hospitalId={hospitalId}
+                    />
+                  ))}
 
-                {/* ) */}
-                {/* } */}
+                {/* Web-specific Consent Form (always visible for confirmed appointments) */}
+                {/* Web-specific Consent Form */}
 
                 {/* Past Reports Accordion */}
                 <CAccordionItem itemKey={2}>
@@ -746,5 +766,4 @@ const AppointmentDetails = () => {
     </div>
   )
 }
-
 export default AppointmentDetails

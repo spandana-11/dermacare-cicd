@@ -1,4 +1,5 @@
 import React from 'react'
+import NotificationPanel from './views/PushNotification/PushNotificationScreen'
 
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
 const Doctors = React.lazy(() => import('./views/Doctors/DoctorManagement'))
@@ -56,6 +57,7 @@ const PharmacyManagement = React.lazy(
 const ActiveAppointmentsScreen = React.lazy(
   () => import('./views/AppointmentManagement/In-progressAppointmnets'),
 )
+ 
 
 const routes = [
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
@@ -84,6 +86,7 @@ const routes = [
   { path: '/procedure-management', name: 'Procedure Management', element: ProcedureManagement },
 
   { path: '/payouts', name: 'Payouts', element: Payouts },
+  { path: '/notification', name: 'Notification', element: NotificationPanel },
   { path: '/help', name: 'Help', element: Help },
   { path: '/reset-password', name: 'Reset Password', element: Resetpassword },
 

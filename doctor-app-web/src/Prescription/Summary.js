@@ -556,6 +556,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
                           <th style={{ width: "8%", textAlign: "center" }}>S.No</th>
                           <th style={{ width: "46%", textAlign: "center" }}>Date</th>
                           <th style={{ width: "46%", textAlign: "center" }}>Sitting</th>
+                          <th style={{ width: "46%", textAlign: "center" }}>Status</th>
                         </tr>
 
                       </thead>
@@ -565,6 +566,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
                             <td>{i + 1}</td>
                             <td>{d?.date ?? '—'}</td>
                             <td>{d?.sitting ?? '—'}</td>
+                            <td>{d?.status ?? '—'}</td>
                           </tr>
                         ))}
                       </tbody>

@@ -22,7 +22,8 @@ import {
   CTableBody,
   CTableDataCell,
   CPagination,
-  CPaginationItem
+  CPaginationItem,
+  CSpinner,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilSearch,cilTrash  } from '@coreui/icons'
@@ -32,6 +33,8 @@ import { getAllServices, postServiceData, updateServiceData, deleteServiceData, 
 import { CategoryData } from '../categoryManagement/CategoryAPI'
 import Select from 'react-select'
 import { cilXCircle } from '@coreui/icons'
+import LoadingIndicator from '../../Utils/loader'
+import { Edit2, Eye, Trash2 } from 'lucide-react'
 
 
 const ServiceManagement = () => {
@@ -148,7 +151,10 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
       return
     }
 
-    
+    // if (file.size > 100 * 1024) {
+    //   setErrors((prev) => ({ ...prev, serviceImage: "File size must be < 100kb" }))
+    //   return
+    // }
 
     const reader = new FileReader()
     reader.onloadend = () => {
@@ -159,19 +165,49 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
     reader.readAsDataURL(file)
   }
 
-  const handleServiceChange = (e) => {
-    const { name, value } = e.target
+const handleServiceChange = (e) => {
+  const { name, value } = e.target
 
-    setNewService((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+  // Replace multiple spaces with a single space
+  let sanitizedValue = value.replace(/\s+/g, ' ')
 
+  // Capitalize each word
+  const capitalizedValue = sanitizedValue
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+
+  // Update service state
+  setNewService((prev) => ({
+    ...prev,
+    [name]: capitalizedValue,
+  }))
+
+  // Clear previous errors
+  setErrors((prev) => ({
+    ...prev,
+    [name]: '',
+  }))
+
+  // Validation
+  if (!sanitizedValue.trim()) {
     setErrors((prev) => ({
       ...prev,
-      [name]: '',
+      [name]: 'Service name is required.',
+    }))
+  } else if (!/^[A-Za-z0-9\s]+$/.test(sanitizedValue)) {
+    setErrors((prev) => ({
+      ...prev,
+      [name]: 'Service name can only contain letters, numbers, and spaces.',
+    }))
+  } else if (/^\d+$/.test(sanitizedValue)) {
+    setErrors((prev) => ({
+      ...prev,
+      [name]: 'Service name cannot contain only numbers.',
     }))
   }
+}
+
 
   const validateForm = () => {
     const newErrors = {}
@@ -252,40 +288,91 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
     }))
   }
 
-  const handleAddService = async () => {
-    if (!validateForm()) {
-      return
-    }
+const handleAddService = async () => {
+  // Reset previous errors
+  setErrors({});
 
-    const newName = (newService.serviceName || '').trim().toLowerCase()
-    const duplicate = service.some((s) => (s.serviceName || '').trim().toLowerCase() === newName)
+  const trimmedName = (newService.serviceName || '').trim();
+  const trimmedDescription = (newService.description || '').trim();
 
-    if (duplicate) {
-      toast.error('Service already exists!')
-      return
-    }
+  const newErrors = {}; // collect all errors before deciding to return
 
-    try {
-      const payload = {
-        ...newService,
-        serviceName: newService.serviceName.trim(),
-      }
-      await postServiceData(payload)
-      toast.success('Service added successfully!')
-      setModalVisible(false)
-      setNewService({
-        serviceName: '',
-        categoryId: '',
-        description: '',
-        serviceImage: null,
-      })
-      setErrors({})
-      await fetchData()
-    } catch (error) {
-      console.error('Failed to add service:', error)
-      toast.error('Failed to add service')
-    }
+  // --- Validate Service Name ---
+  if (!trimmedName) {
+    newErrors.serviceName = "Service Name is required.";
+  } else if (!/^[A-Za-z0-9\s]+$/.test(trimmedName)) {
+    newErrors.serviceName = "Service Name must only contain letters, numbers, and spaces.";
+  } else if (/^\d+$/.test(trimmedName)) {
+    newErrors.serviceName = "Service name cannot contain only numbers.";
+  } else if (trimmedName.length < 3) {
+    newErrors.serviceName = "Service name must be at least 3 characters long.";
   }
+
+  // --- Validate Description ---
+  if (!trimmedDescription) {
+    newErrors.description = "Description is required.";
+  } else if (trimmedDescription.length < 10) {
+    newErrors.description = "Description must be at least 10 characters long.";
+  } else if (!/^[A-Za-z0-9\s.,-]+$/.test(trimmedDescription)) {
+    newErrors.description = "Description can only contain letters, numbers, spaces, commas, periods, and hyphens.";
+  }
+
+  // --- Validate Category ---
+  if (!newService.categoryId) {
+    newErrors.categoryId = "Category is required.";
+  }
+
+  // --- Validate Image ---
+  if (!newService.serviceImage) {
+    newErrors.serviceImage = "Service image is required.";
+  }
+
+  // --- If any error exists, stop here ---
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+  }
+
+  // --- Check for duplicates ---
+  const newName = trimmedName.toLowerCase();
+  const duplicate = service.some(
+    (s) => (s.serviceName || '').trim().toLowerCase() === newName
+  );
+
+  if (duplicate) {
+    setErrors({ serviceName: "Service already exists." });
+    return;
+  }
+
+  // --- Submit data ---
+  try {
+    const payload = {
+      ...newService,
+      serviceName: trimmedName,
+      description: trimmedDescription,
+    };
+
+    await postServiceData(payload);
+    toast.success("Service added successfully!");
+    setModalVisible(false);
+
+    // Reset form
+    setNewService({
+      serviceName: "",
+      categoryId: "",
+      description: "",
+      serviceImage: null,
+    });
+    setErrors({});
+    await fetchData();
+  } catch (error) {
+    console.error("Failed to add service:", error);
+    toast.error("Failed to add service");
+  }
+};
+
+
+
   const handleServiceView = (service) => {
     console.log("Clicked Service", service)
     setSelectedService(service)
@@ -303,48 +390,94 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
     setEditServiceMode(true)
   }
 
-  const handleUpdateService = async () => {
-    if (!validateEditForm()) return
+const handleUpdateService = async () => {
+  const trimmedName = (updatedService.ServiceName || '').trim();
+  const trimmedDescription = (updatedService.description || '').trim();
 
-    try {
-      const newName = (updatedService.ServiceName || '').trim().toLowerCase()
+  // 🔄 Reset previous errors
+  setEditErrors({});
 
-      const duplicate = service.some(
-        (s) =>
-          (s.serviceName || '').trim().toLowerCase() === newName &&
-          s.serviceId !== updatedService.ServiceId
-      )
+  const newErrors = {};
 
-      if (duplicate) {
-        toast.error('Service with this name already exists!')
-        return
-      }
-
-      let imageBase64 = updatedService.serviceImage
-      if (updatedService.serviceImage && typeof updatedService.serviceImage !== 'string') {
-        imageBase64 = await toBase64(updatedService.serviceImage)
-      }
-
-      const payload = {
-        serviceId: updatedService.ServiceId,
-        serviceName: updatedService.ServiceName.trim(),
-        categoryId: updatedService.categoryId,
-        description: updatedService.description,
-        serviceImage: imageBase64?.includes('base64,')
-          ? imageBase64.split(',')[1]
-          : imageBase64,
-      }
-
-      await updateServiceData(payload, updatedService.ServiceId)
-      toast.success('Service updated successfully!')
-      setEditServiceMode(false)
-      setEditErrors({})
-      await fetchData()
-    } catch (error) {
-      console.error(error)
-      toast.error('Failed to update service')
-    }
+  // 🔍 Service Name Validation
+  if (!trimmedName) {
+    newErrors.ServiceName = "Service Name is required.";
+  } else if (!/^[A-Za-z0-9\s]+$/.test(trimmedName)) {
+    newErrors.ServiceName = "Service Name must only contain letters, numbers, and spaces.";
+  } else if (/^\d+$/.test(trimmedName)) {
+    newErrors.ServiceName = "Service Name cannot contain only numbers.";
+  } else if (trimmedName.length < 3) {
+    newErrors.ServiceName = "Service Name must be at least 3 characters long.";
   }
+
+  // 🔍 Description Validation
+  if (!trimmedDescription) {
+    newErrors.description = "Description is required.";
+  } else if (trimmedDescription.length < 10) {
+    newErrors.description = "Description must be at least 10 characters long.";
+  } else if (!/^[A-Za-z0-9\s.,-]+$/.test(trimmedDescription)) {
+    newErrors.description = "Description can only contain letters, numbers, spaces, commas, periods, and hyphens.";
+  }
+
+    if (!updatedService.categoryId) {
+    newErrors.categoryId = "Category is required.";
+  }
+
+  // 🔍 Image Validation
+  if (!updatedService.serviceImage) {
+    newErrors.serviceImage = "Service image is required.";
+  }
+
+  // ⛔ Stop if any errors exist
+  if (Object.keys(newErrors).length > 0) {
+    setEditErrors(newErrors);
+    return;
+  }
+
+  try {
+    // ✅ Check for duplicates (case-insensitive)
+    const newName = trimmedName.toLowerCase();
+    const duplicate = service.some(
+      (s) =>
+        (s.serviceName || '').trim().toLowerCase() === newName &&
+        s.serviceId !== updatedService.ServiceId
+    );
+
+    if (duplicate) {
+      setEditErrors({ ServiceName: "Service already exists." });
+      return;
+    }
+
+    // ✅ Convert image to Base64 if it's a file
+    let imageBase64 = updatedService.serviceImage;
+    if (imageBase64 && typeof imageBase64 !== 'string') {
+      imageBase64 = await toBase64(imageBase64);
+    }
+
+    // ✅ Prepare payload (consistent casing)
+    const payload = {
+      serviceId: updatedService.ServiceId,
+      serviceName: trimmedName,
+      categoryId: updatedService.categoryId,
+      description: trimmedDescription,
+      serviceImage: imageBase64?.includes('base64,')
+        ? imageBase64.split(',')[1]
+        : imageBase64,
+    };
+
+    await updateServiceData(payload, updatedService.ServiceId);
+    toast.success('Service updated successfully!');
+    setEditServiceMode(false);
+    setEditErrors({});
+    await fetchData();
+  } catch (error) {
+    console.error("Update service error:", error);
+    toast.error('Failed to update service');
+  }
+};
+
+
+
 
   const toBase64 = (file) =>
     new Promise((resolve, reject) => {
@@ -423,7 +556,7 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
       ) : (
         <>
           <CTable striped hover responsive>
-            <CTableHead>
+            <CTableHead className='pink-table'>
               <CTableRow>
                 <CTableHeaderCell style={{width:'80px'}}>S.No</CTableHeaderCell>
                 <CTableHeaderCell>Service Name</CTableHeaderCell>
@@ -432,50 +565,47 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
                 <CTableHeaderCell  style={{width:'80px'}}>Actions</CTableHeaderCell>
               </CTableRow>
             </CTableHead>
-            <CTableBody>
+            <CTableBody className='pink-table'>
               {currentItems && currentItems.length > 0 ? (
-                currentItems.map((row, index) => (
-                  <CTableRow key={row.serviceId || index}>
+                currentItems.map((service, index) => (
+                  <CTableRow key={service.serviceId || index}>
                     <CTableDataCell>{(currentPage-1)* itemsPerPage + index+1}</CTableDataCell>
-                    <CTableDataCell>{row.serviceName}</CTableDataCell>
-                    <CTableDataCell>{row.categoryName}</CTableDataCell>
-                    <CTableDataCell>{row.description}</CTableDataCell>
-                    <CTableDataCell>
-                      <div
-                        style={{
-                          display:'flex',
-                          justifyContent:'space-between',
-                          alignItems:'center',
-                          width:'230px',
-                        }}
-                      >
-                           <CButton
-                          color="primary"
-                          className="ms-2"
-                          size="sm"
-                          onClick={() => handleViewService(row.serviceId)}
-                          style={{width:'80px'}}
+                    <CTableDataCell>{service.serviceName}</CTableDataCell>
+                    <CTableDataCell>{service.categoryName}</CTableDataCell>
+                    <CTableDataCell>{service.description}</CTableDataCell>
+                    <CTableDataCell className="text-end">
+                
+                                          <div className="d-flex justify-content-end gap-2  ">
+
+                           <button
+                          // color="primary"
+                          className="actionBtn"
+                          
+                          onClick={() => handleViewService(service.serviceId)}
+                          title="View"
+                          >
+                          <Eye size={18} />
+                        </button>
+                       
+                        <button
+                         
+                          className="actionBtn"
+                         
+                          onClick={() => handleServiceEdit(service)}
+                          title="Edit"
                         >
-                          View
-                        </CButton>
-                        <CButton
-                          color='warning'
-                          className="ms-2"
+                          <Edit2 size={18} />
+                        </button>
+                        <button
+                          
+                          className="actionBtn"
                           size="sm"
-                          onClick={() => handleServiceEdit(row)}
-                          style={{marginRight:'10px', width:'80px'}}
+                          onClick={() => handleServiceDelete(service.serviceId)}
+                         title="Delete"
                         >
-                          Edit
-                        </CButton>
-                        <CButton
-                          color="danger"
-                          className="ms-2"
-                          size="sm"
-                          onClick={() => handleServiceDelete(row.serviceId)}
-                          style={{width:'80px', color:'white'}}
-                        >
-                          Delete
-                        </CButton>
+                          <Trash2 size={18} />
+                        </button>
+
                       </div>
                     </CTableDataCell>
                   </CTableRow>
@@ -768,6 +898,7 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
           value={updatedService.ServiceName}
           onChange={(e) => {
             const value = e.target.value
+            
             setUpdatedService({ ...updatedService, ServiceName: value })
             validateEditField("ServiceName", value)
           }}
@@ -837,10 +968,10 @@ const totalPages = Math.ceil(filteredData.length / itemsPerPage)
     onChange={(e) => {
       const file = e.target.files[0];
       if (!file) return;
-      if (file.size > 5000 * 1024) {
+      if (file.size > 100 * 1024) {
         setEditErrors((prev) => ({
           ...prev,
-          serviceImage: "File size must be less than 5mb",
+          serviceImage: "File size must be less than 100kb",
         }));
         return;
       } else {

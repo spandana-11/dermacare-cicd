@@ -14,6 +14,7 @@ import {
 import { toast } from 'react-toastify'
 import { getInProgressfollowupBookings } from '../../APIs/GetFollowUpApi'
 import { getBookingsByPatientId } from '../../APIs/GetpatinetData'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const BookingSearch = ({
   visitType,
@@ -49,7 +50,7 @@ const BookingSearch = ({
   // 🔍 Manual search on button click
   const handleSearch = async () => {
     if (!patientSearch.trim()) {
-      toast.error('Please enter a valid Patient ID / Name / Mobile')
+      showCustomToast('Please enter a valid Patient ID / Name / Mobile','error')
       return
     }
 
@@ -118,7 +119,7 @@ const BookingSearch = ({
     if (visitType === 'followup') {
       if (!booking?.doctorId) {
         console.warn('Doctor ID missing for follow-up booking:', booking)
-        toast.error('Doctor details missing for this booking.')
+        showCustomToast('Doctor details missing for this booking.','error')
         return
       }
 
@@ -126,7 +127,7 @@ const BookingSearch = ({
         await fetchSlots(booking.doctorId)
       } catch (err) {
         console.error('Error fetching slots:', err)
-        toast.error('Failed to load doctor slots.')
+        showCustomToast('Failed to load doctor slots.','error')
       }
     }
 
@@ -148,7 +149,7 @@ const BookingSearch = ({
           />
         </CCol>
         <CCol md={2}>
-          <CButton color="primary" onClick={handleSearch} disabled={loading}>
+          <CButton  style={{color:"white",backgroundColor:"var(--color-black)"}} onClick={handleSearch} disabled={loading}>
             {loading ? 'Searching...' : 'Search'}
           </CButton>
         </CCol>

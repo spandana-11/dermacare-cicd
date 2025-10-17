@@ -39,6 +39,7 @@ import { Eye, Edit2, Trash2 } from 'lucide-react' // modern icons
 import { Button } from 'bootstrap'
 import LoadingIndicator from '../../Utils/loader'
 import { useHospital } from '../Usecontext/HospitalContext'
+import { showCustomToast } from '../../Utils/Toaster'
 const DiseasesManagement = () => {
   // const [searchQuery, setSearchQuery] = useState('')
   const [diseases, setDiseases] = useState([])
@@ -99,11 +100,11 @@ const DiseasesManagement = () => {
   const handleConfirmDelete = async () => {
     try {
       await deleteDiseaseData(diseaseIdToDelete, hospitalIdToDelete)
-      toast.success('Disease deleted successfully!', { position: 'top-right' })
+      showCustomToast('Disease deleted successfully!', { position: 'top-right' },'success')
       // fetchData()
       fetchDataByHid(hospitalId)
     } catch (error) {
-      toast.error('Failed to delete disease.')
+      showCustomToast('Failed to delete disease.','error')
       console.error('Delete error:', error)
     }
     setIsModalVisible(false)
@@ -161,7 +162,7 @@ const DiseasesManagement = () => {
       (t) => t.diseaseName.trim().toLowerCase() === trimmedName.toLowerCase(),
     )
     if (duplicate) {
-      toast.error(`Duplicate disease name - ${trimmedName} already exists!`, {
+      showCustomToast(`Duplicate disease name - ${trimmedName} already exists!`,'error', {
         position: 'top-right',
       })
       setModalVisible(false)
@@ -189,14 +190,14 @@ const DiseasesManagement = () => {
       setDiseases((prev) => [newDiseaseRow, ...prev])
       setNewDisease({ diseaseName: '', probableSymptoms: '', notes: '' })
       fetchDataByHid(hospitalId)
-      toast.success('Disease added successfully!')
+      showCustomToast('Disease added successfully!','success')
       setModalVisible(false)
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
         error.response?.statusText ||
         'An unexpected error occurred.'
-      toast.error(`Error adding disease: ${errorMessage}`)
+      showCustomToast(`Error adding disease: ${errorMessage}`,'error')
     }
   }
 
@@ -217,7 +218,7 @@ const DiseasesManagement = () => {
         d.id !== diseaseToEdit.id,
     )
     if (duplicate) {
-      toast.error(`Duplicate disease name - ${diseaseToEdit.diseaseName} already exists!`, {
+      showCustomToast(`Duplicate disease name - ${diseaseToEdit.diseaseName} already exists!`,'error', {
         position: 'top-right',
       })
       return
@@ -239,11 +240,11 @@ const DiseasesManagement = () => {
         prev.map((d) => (d.id === diseaseToEdit.id ? { ...d, ...diseaseToEdit } : d)),
       )
 
-      toast.success('Disease updated successfully!')
+      showCustomToast('Disease updated successfully!','success')
       setEditDiseaseMode(false)
     } catch (error) {
       console.error('Update error:', error)
-      toast.error('Failed to update disease.')
+      showCustomToast('Failed to update disease.','error')
     }
   }
 
@@ -285,7 +286,12 @@ const DiseasesManagement = () => {
       )}
 
       {viewDisease && (
-        <CModal visible={!!viewDisease} onClose={() => setViewDisease(null)} backdrop="static">
+        <CModal
+          visible={!!viewDisease}
+          onClose={() => setViewDisease(null)}
+          backdrop="static"
+          alignment="center"
+        >
           <CModalHeader>
             <CModalTitle>Disease Details</CModalTitle>
           </CModalHeader>
@@ -478,11 +484,9 @@ const DiseasesManagement = () => {
               displayData.map((disease, index) => (
                 <CTableRow key={disease.id}>
                   <CTableDataCell>{(currentPage - 1) * rowsPerPage + index + 1}</CTableDataCell>
-                  <CTableDataCell>{(disease.diseaseName)}</CTableDataCell>
-                  <CTableDataCell>
-                    {(disease.probableSymptoms || 'NA')}
-                  </CTableDataCell>
-                  <CTableDataCell>{(disease.notes || 'NA')}</CTableDataCell>
+                  <CTableDataCell>{disease.diseaseName}</CTableDataCell>
+                  <CTableDataCell>{disease.probableSymptoms || 'NA'}</CTableDataCell>
+                  <CTableDataCell>{disease.notes || 'NA'}</CTableDataCell>
 
                   {/* Actions */}
                   <CTableDataCell className="text-end">

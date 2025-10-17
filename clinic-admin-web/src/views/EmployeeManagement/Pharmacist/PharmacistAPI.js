@@ -2,8 +2,8 @@ import { BASE_URL } from '../../../baseUrl'
 import { http } from '../../../Utils/Interceptors'
 import axios from 'axios'
 // ✅ Get all pharmacists
-export const getPharmacistsById = (hospitalId) => {
-  return http.get(`${BASE_URL}/getAllPharmacists/${hospitalId}`)
+export const getPharmacistsById = (hospitalId,branchid) => {
+  return http.get(`${BASE_URL}/getPharmacistsByHospitalIdAndBranchId/${hospitalId}/${branchid}`)
 }
 export const getPharmacistsByDept = (pharmacistId) => {
   return http.get(`${BASE_URL}/getAllPharmacists/${pharmacistId}`)

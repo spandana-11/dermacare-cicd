@@ -19,6 +19,7 @@ import { cilSearch } from '@coreui/icons'
 import { getReassign, postReassign } from '../ReassignAppointmnet/reassignAPI'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const ReassignAppointment = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -133,7 +134,7 @@ const ReassignAppointment = () => {
 
       setViewService(null)
 
-      toast.success(response?.message || 'Reassignment completed successfully!', {
+      showCustomToast(response?.message || 'Reassignment completed successfully!', 'success',{
         position: 'top-right',
         autoClose: 3000,
       })
@@ -142,7 +143,7 @@ const ReassignAppointment = () => {
     } catch (error) {
       console.error('Reassign failed:', error?.response?.data || error.message)
 
-      toast.error(error?.response?.data?.message || 'Reassignment failed. Please try again.', {
+      showCustomToast(error?.response?.data?.message || 'Reassignment failed. Please try again.', 'error',{
         position: 'top-right',
         autoClose: 3000,
       })

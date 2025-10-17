@@ -16,7 +16,7 @@ import Select from 'react-select'
 import GradientTextCard from '../components/GradintColorText'
 import Button from '../components/CustomButton/CustomButton'
 import { COLORS } from '../Themes'
-import { addTreatmentByHospital, getAllTreatments, getAllTreatmentsByHospital } from '../../src/Auth/Auth'
+import { addTreatmentByHospital, getAllTreatments, getAllTreatmentsByHospital, getTreatmentStatusByVisitId } from '../../src/Auth/Auth'
 import CIcon from '@coreui/icons-react'
 import { cilTrash } from '@coreui/icons'
 import './TestsTreatments.css'
@@ -144,6 +144,7 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
   }
 
 
+
   const updateCfg = (t, field, value) => {
     setTreatmentConfigs((prev) => {
       const newCfg = {
@@ -202,6 +203,7 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
         [t]: {
           frequency: meta.frequency || 'day',
           sittings,
+          status,
           startDate: firstDate,
           reason: meta.reason || '',
         },
@@ -217,40 +219,65 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
     setSelectedTestTreatments((list) => (list.includes(t) ? list : [...list, t]))
   }
 
-  const generateForTreatment = (t) => {
-    const cfg = treatmentConfigs[t] || DEFAULT_CFG
-    const { frequency, sittings, startDate, reason } = cfg
+  const generateForTreatment = async (t) => {
+    const cfg = treatmentConfigs[t] || DEFAULT_CFG;
+    const { frequency, sittings, startDate, reason } = cfg;
 
-    const missingFields = []
-    if (!startDate) missingFields.push("start date")
-    if (!sittings || sittings < 1) missingFields.push("sittings")
-
-    if (missingFields.length > 0) {
-      showSnackbar(`Please fill ${missingFields.join(" and ")} for "${t}"`, 'danger')
-      return
+    if (!startDate || !sittings || sittings < 1) {
+      showSnackbar(`Please fill start date and sittings for "${t}"`, 'danger');
+      return;
     }
 
-    const start = new Date(startDate)
-    const dates = []
-    for (let i = 0; i < sittings; i++) {
-      const next = new Date(start)
-      if (frequency === 'day') next.setDate(start.getDate() + i)
-      if (frequency === 'week') next.setDate(start.getDate() + i * 7)
-      if (frequency === 'month') next.setMonth(start.getMonth() + i)
-      dates.push({ date: next.toISOString().split('T')[0], sitting: i + 1 })
+    const start = new Date(startDate);
+    const dates = Array.from({ length: sittings }, (_, i) => {
+      const next = new Date(start);
+      if (frequency === 'day') next.setDate(start.getDate() + i);
+      if (frequency === 'week') next.setDate(start.getDate() + i * 7);
+      if (frequency === 'month') next.setMonth(start.getMonth() + i);
+      return { date: next.toISOString().split('T')[0], sitting: i + 1 };
+    });
+
+    const newGeneratedData = {
+      ...generatedData,
+      [t]: { frequency, sittings, startDate, reason, dates, bookingId: formData.bookingId },
+    };
+
+    setGeneratedData(newGeneratedData);
+    setTreatmentConfigs((prev) => ({ ...prev, [t]: { ...DEFAULT_CFG } }));
+
+    await updateTreatmentStatuses(newGeneratedData); // pass the updated data
+  };
+
+  const updateTreatmentStatuses = async (dataToUpdate) => {
+    try {
+      const updatedData = { ...dataToUpdate };
+
+      for (const treatment of Object.keys(updatedData)) {
+        const meta = updatedData[treatment];
+
+        if (!meta.bookingId) continue;
+
+        const statusData = await getTreatmentStatusByVisitId(formData.patientId, meta.bookingId);
+
+        if (Array.isArray(meta.dates)) {
+          updatedData[treatment].dates = meta.dates.map((d) => {
+            // Find matching status by date
+            const matched = statusData.find(s => s.date === d.date);
+            return {
+              ...d,
+              status: matched?.status || "Pending"
+            };
+          });
+        }
+      }
+
+      setGeneratedData(updatedData);
+    } catch (error) {
+      showSnackbar("Failed to update treatment statuses", "error");
+      console.error(error);
     }
+  };
 
-    setGeneratedData((prev) => ({
-      ...prev,
-      [t]: { frequency, sittings, startDate, reason, dates },
-    }))
-
-    // Clear inputs for this treatment
-    setTreatmentConfigs((prev) => ({
-      ...prev,
-      [t]: { ...DEFAULT_CFG },
-    }))
-  }
 
 
   const deleteSchedule = (t) => {
@@ -545,14 +572,20 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
                             <th>S.No</th>
                             <th>Date</th>
                             <th>Sitting</th>
+                            <th>Status</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {meta.dates.map(({ date, sitting }, i) => (
+                          {meta.dates.map(({ date, sitting, status }, i) => (
                             <tr key={i} style={{ textAlign: "center" }}>
                               <td>{i + 1}</td>
                               <td>{date}</td>
                               <td>{sitting}</td>
+                              <td>
+                                <span className={`badge ${status === 'Pending' ? 'bg-warning' : 'bg-success'}`}>
+                                  {status || 'Pending'}
+                                </span>
+                              </td>
                             </tr>
                           ))}
                         </tbody>

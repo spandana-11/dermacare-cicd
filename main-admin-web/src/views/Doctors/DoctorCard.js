@@ -6,7 +6,7 @@ import { CFormSwitch } from '@coreui/react' // <-- import this for the toggle sw
 import { toast } from 'react-toastify'
 import { updateDoctorAvailability } from './DoctorAPI' // Adjust path accordingly
 
-const DoctorCard = ({ doctor }) => {
+const DoctorCard = ({ doctor, branchId }) => {
   const navigate = useNavigate()
   const [availability, setAvailability] = useState(doctor.doctorAvailabilityStatus || false)
 
@@ -70,7 +70,7 @@ const DoctorCard = ({ doctor }) => {
       <div className="doctor-action d-flex flex-column align-items-center gap-2 p-2 border rounded shadow-sm">
         <button
           className="btn btn-info w-100"
-          onClick={() => navigate(`/doctor/${doctor.doctorId}`, { state: { doctor } })}
+          onClick={() => navigate(`/doctor/${doctor.doctorId}`, { state: { doctor, branchId } })}
           aria-label={`View details of Dr. ${doctor.doctorName}`}
         >
           View Details

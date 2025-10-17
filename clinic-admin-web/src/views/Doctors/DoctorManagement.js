@@ -43,6 +43,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUserDoctor } from '@fortawesome/free-solid-svg-icons'
 import { http } from '../../Utils/Interceptors'
 import { GetClinicBranches } from './DoctorAPI'
+import { showCustomToast } from '../../Utils/Toaster'
 const DoctorManagement = () => {
   const {
     doctorData,
@@ -436,13 +437,21 @@ const DoctorManagement = () => {
       isValid = false
     }
 
-    if (!startDay || !endDay) {
-      errors.availableDays = 'Start and end days are required'
-      isValid = false
-    } else if (dayOrder.indexOf(startDay) > dayOrder.indexOf(endDay)) {
-      errors.availableDays = 'Start day cannot be after end day'
+    if (!startDay) {
+      errors.startDay = 'Start day is required'
       isValid = false
     }
+
+    if (!endDay) {
+      errors.endDay = 'End day is required'
+      isValid = false
+    }
+
+    if (startDay && endDay && dayOrder.indexOf(startDay) > dayOrder.indexOf(endDay)) {
+      errors.endDay = 'End day cannot be before start day'
+      isValid = false
+    }
+
 
     const convertTo24Hrs = (time) => {
       const [rawTime, modifier] = time.split(' ')
@@ -469,6 +478,20 @@ const DoctorManagement = () => {
     if (!form.branch || form.branch.length === 0) {
       errors.branch = 'Please select at least one branch'
       isValid = false
+    }
+    if (!startTime) {
+      errors.startTime = 'Start time is required';
+      isValid = false;
+    }
+
+    if (!endTime) {
+      errors.endTime = 'End time is required';
+      isValid = false;
+    }
+
+    if (startTime && endTime && times.indexOf(startTime) > times.indexOf(endTime)) {
+      errors.endTime = 'End time cannot be before start time';
+      isValid = false;
     }
     setFormErrors(errors)
     return isValid
@@ -524,12 +547,12 @@ const DoctorManagement = () => {
       const emailExists = doctorData.data?.some((doc) => doc.doctorEmail === form.doctorEmail)
 
       if (mobileExists) {
-        toast.error('A doctor with this mobile number already exists')
+        showCustomToast('A doctor with this mobile number already exists','error')
         return
       }
 
       if (emailExists) {
-        toast.error('A doctor with this email already exists')
+        showCustomToast('A doctor with this email already exists','error')
         return
       }
 
@@ -595,7 +618,7 @@ const DoctorManagement = () => {
           clinicName: hospitalName,
         })
 
-        toast.success(response.data.message || 'Doctor added successfully', {
+        showCustomToast(response.data.message || 'Doctor added successfully','success', {
           position: 'top-right',
         })
         //  ✅ Reset form
@@ -645,27 +668,27 @@ const DoctorManagement = () => {
       const errorMessage = error?.response?.data?.message || 'Something went wrong'
 
       if (status === 400 && errorMessage.includes('mobile number')) {
-        toast.error(errorMessage, {
+        showCustomToast(errorMessage, {
           position: 'top-right',
-        })
+        },'error')
         setErrors((prev) => ({
           ...prev,
           doctorMobileNumber: errorMessage,
         }))
         setModalVisible(true) // ❌ Keep modal open so user can fix input
       } else if (status === 400 && errorMessage.includes('email')) {
-        toast.error(errorMessage, {
+        showCustomToast(errorMessage, {
           position: 'top-right',
-        })
+        },'error')
         setErrors((prev) => ({
           ...prev,
           doctorEmail: errorMessage,
         }))
         setModalVisible(true)
       } else {
-        toast.error(errorMessage, {
+        showCustomToast(errorMessage, {
           position: 'top-right',
-        })
+        },'error')
         setModalVisible(false) // ✅ Optional: Close modal on other errors
       }
     } finally {
@@ -1246,15 +1269,14 @@ const DoctorManagement = () => {
           <CRow className="g-4 mb-4">
             <CCol md={6}>
               <CFormLabel>
-                Start Day
-                <span className="text-danger">*</span>
+                Start Day <span className="text-danger">*</span>
               </CFormLabel>
               <CFormSelect
                 value={startDay}
                 onChange={(e) => {
-                  setStartDay(e.target.value)
-                  availableDays(e.target.value, 'start')
-                  setFormErrors((prev) => ({ ...prev, availableDays: '' })) // ✅ clear error
+                  setStartDay(e.target.value);
+                  availableDays(e.target.value, 'start');
+                  setFormErrors((prev) => ({ ...prev, startDay: '' })); // clear startDay error
                 }}
               >
                 <option value="">Select</option>
@@ -1264,18 +1286,19 @@ const DoctorManagement = () => {
                   </option>
                 ))}
               </CFormSelect>
+              {formErrors.startDay && <div className="text-danger">{formErrors.startDay}</div>}
             </CCol>
+
             <CCol md={6}>
               <CFormLabel>
-                End Day
-                <span className="text-danger">*</span>
+                End Day <span className="text-danger">*</span>
               </CFormLabel>
               <CFormSelect
                 value={endDay}
                 onChange={(e) => {
-                  setEndDay(e.target.value)
-                  availableDays(e.target.value, 'end')
-                  setFormErrors((prev) => ({ ...prev, availableDays: '' }))
+                  setEndDay(e.target.value);
+                  availableDays(e.target.value, 'end');
+                  setFormErrors((prev) => ({ ...prev, endDay: '' })); // clear endDay error
                 }}
               >
                 <option value="">Select</option>
@@ -1285,21 +1308,18 @@ const DoctorManagement = () => {
                   </option>
                 ))}
               </CFormSelect>
-              {formErrors.availableDays && (
-                <div className="text-danger">{formErrors.availableDays}</div>
-              )}
+              {formErrors.endDay && <div className="text-danger">{formErrors.endDay}</div>}
             </CCol>
             <CCol md={6}>
               <CFormLabel>
-                Start Time
-                <span className="text-danger">*</span>
+                Start Time <span className="text-danger">*</span>
               </CFormLabel>
               <CFormSelect
                 value={startTime}
                 onChange={(e) => {
-                  setStartTime(e.target.value)
-                  handleTimeChange(e.target.value, 'start')
-                  setFormErrors((prev) => ({ ...prev, availableTimes: '' }))
+                  setStartTime(e.target.value);
+                  handleTimeChange(e.target.value, 'start');
+                  setFormErrors((prev) => ({ ...prev, startTime: '' })); // clear startTime error
                 }}
               >
                 <option value="">Select</option>
@@ -1309,18 +1329,19 @@ const DoctorManagement = () => {
                   </option>
                 ))}
               </CFormSelect>
+              {formErrors.startTime && <div className="text-danger">{formErrors.startTime}</div>}
             </CCol>
+
             <CCol md={6}>
               <CFormLabel>
-                End Time
-                <span className="text-danger">*</span>
+                End Time <span className="text-danger">*</span>
               </CFormLabel>
               <CFormSelect
                 value={endTime}
                 onChange={(e) => {
-                  setEndTime(e.target.value)
-                  handleTimeChange(e.target.value, 'end')
-                  setFormErrors((prev) => ({ ...prev, availableTimes: '' }))
+                  setEndTime(e.target.value);
+                  handleTimeChange(e.target.value, 'end');
+                  setFormErrors((prev) => ({ ...prev, endTime: '' })); // clear endTime error
                 }}
               >
                 <option value="">Select</option>
@@ -1330,10 +1351,9 @@ const DoctorManagement = () => {
                   </option>
                 ))}
               </CFormSelect>
+              {formErrors.endTime && <div className="text-danger">{formErrors.endTime}</div>}
             </CCol>
-            {formErrors.availableTimes && (
-              <div className="text-danger">{formErrors.availableTimes}</div>
-            )}
+
           </CRow>
 
           <hr />

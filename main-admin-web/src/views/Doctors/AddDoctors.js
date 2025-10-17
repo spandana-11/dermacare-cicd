@@ -4,7 +4,7 @@
   import { cilUser } from '@coreui/icons'
   import axios from 'axios'
   import {AddDoctorByAdmin} from './DoctorAPI'
-  import { useHospital } from "../../Usecontext/HospitalContext"
+  // import { useHospital } from "../../Usecontext/HospitalContext"
 
   import { ToastContainer, toast } from 'react-toastify'
   import 'react-toastify/dist/ReactToastify.css'
@@ -36,6 +36,7 @@ import emailjs from 'emailjs-com'
     getSubServicesbyserviceId,
     getadminSubServicesbyserviceId,
     getservice,
+    GetBy_DoctorId
   } from '../../baseUrl'
   import {
     serviceData,
@@ -50,15 +51,16 @@ import {GetClinicBranches} from '../Doctors/DoctorAPI'
   const AddDoctors = ({ modalVisible, setModalVisible, clinicId, closeForm, branchId, fetchAllDoctors  }) => {
       const navigate = useNavigate() // ✅ define navigate here
 
-    const { doctorData, errorMessage, setDoctorData, fetchHospitalDetails, fetchDoctorDetails } =
-      useHospital()
+    // const { doctorData, errorMessage, setDoctorData, fetchHospitalDetails, fetchDoctorDetails } =
+    //   useHospital()
   const [activeTab, setActiveTab] = useState(1);
-    
+    const [selectedHospital, setSelectedHospital] = useState(null)
     const [doctors, setDoctors] = useState([]);
   const [branchOptions, setBranchOptions] = useState([])
   const [branchLoading, setBranchLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-
+const [doctorData, setDoctorData] = useState(null)
+ const [errorMessage, setErrorMessage] = useState("")
     // const [modalVisible, setModalVisible] = useState(false)
     const [newService, setNewService] = useState({
       serviceName: '',
@@ -77,6 +79,21 @@ import {GetClinicBranches} from '../Doctors/DoctorAPI'
       online: false,
       serviceTreatment: false,
     })
+  useEffect(() => {
+    // Load hospitals + selected hospital from localStorage
+    const storedHospitals = JSON.parse(localStorage.getItem("Hospitals")) || []
+    const storedSelectedId = localStorage.getItem("SelectedHospitalId")
+
+    if (storedHospitals.length) {
+      setHospitals(storedHospitals)
+    }
+
+    if (storedSelectedId) {
+      fetchHospitalDetails(storedSelectedId)
+      fetchDoctorDetails(storedSelectedId)
+      fetchSubServices(storedSelectedId)
+    }
+  }, [])
 
     const toggleType = (type) => {
       setEnabledTypes((prev) => {
@@ -303,7 +320,21 @@ import {GetClinicBranches} from '../Doctors/DoctorAPI'
       }
     }
     // const hospitalId = localStorage.getItem('HospitalId')
-
+   const fetchHospitalDetails = async (id) => {
+    setLoading(true)
+    try {
+      const url = `${BASE_URL}/admin/getClinicById/${id}`
+      const response = await axios.get(url)
+      if (response.status === 200 && response.data) {
+        setSelectedHospital(response.data)
+      }
+    } catch (err) {
+      console.error("Fetch clinic error:", err)
+      setErrorMessage("Error fetching clinic details.")
+    } finally {
+      setLoading(false)
+    }
+ }
     useEffect(() => {
       const fetchAllData = async () => {
         try {
@@ -345,12 +376,27 @@ import {GetClinicBranches} from '../Doctors/DoctorAPI'
 
       fetchAllData()
     }, [])
-
+  const fetchDoctorDetails = async (clinicId) => {
+    setLoading(true)
+    try {
+      const url = `${BASE_URL}/${GetBy_DoctorId}/${clinicId}`
+    
+      const response = await axios.get(url)
+      if (response.status === 200 && response.data) {
+        setDoctorData(response.data)
+      }
+    } catch (err) {
+      console.error("Fetch doctor error:", err)
+      setErrorMessage("Error fetching doctor details.")
+    } finally {
+      setLoading(false)
+    }
+  }
     useEffect(() => {
-      const clnicId = localStorage.getItem('HospitalId')
-      fetchHospitalDetails(clnicId)
+      // const clnicId = localStorage.getItem('HospitalId')
+      fetchHospitalDetails(clinicId)
 
-      fetchDoctorDetails(clnicId)
+      fetchDoctorDetails(clinicId)
     }, [])
 
     const validateDoctorForm = () => {

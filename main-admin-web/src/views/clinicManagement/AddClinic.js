@@ -283,7 +283,7 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
     //consultation Expiration
     if (!formData.consultationExpiration) {
       newErrors.consultationExpiration = 'Consultation days are required'
-    } else if (isNaN(formData.consultationExpiration) || formData.consultationExpiration <= 0) {
+    } else if (isNaN(formData.consultationExpiration) || formData.consultationExpiration < 0) {
       newErrors.consultationExpiration = 'Enter a valid number greater than 0'
     }
 

@@ -57,6 +57,7 @@ import {
   subServiceData,
 } from '../ProcedureManagement/ProcedureManagementAPI'
 import { fetchDoctorSlots } from '../../APIs/GenerateSlots'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const DoctorDetailsPage = () => {
   const [categoryOptions, setCategoryOptions] = useState([])
@@ -115,8 +116,8 @@ const DoctorDetailsPage = () => {
     console.log(isDeleted)
     if (isDeleted) {
       navigate('/employee-management/doctor')
-      fetchDoctor()
-      toast.success('Doctor deleted successfully')
+      fetchDoctors()
+      showCustomToast('Doctor deleted successfully','success')
     } else {
       // toast.error(`${isDeleted.message}` || 'Failed to delete doctor')
     }
@@ -224,13 +225,13 @@ const DoctorDetailsPage = () => {
 
         navigate(`/employee-management/doctor`)
         await fetchDoctors()
-        toast.success(res.data.message || 'Doctor updated successfully')
+        showCustomToast(res.data.message || 'Doctor updated successfully','success')
       } else {
-        toast.error('Failed to update doctor')
+        showCustomToast('Failed to update doctor','error')
       }
     } catch (err) {
       console.error('Update error:', err)
-      toast.error('Error while updating doctor')
+     showCustomToast('Error while updating doctor','error')
     }
   }
 
@@ -309,7 +310,7 @@ const DoctorDetailsPage = () => {
 
       if (res.data.success) {
         // alert(' Slots added successfully')
-        toast.success('Slots added successfully')
+        showCustomToast('Slots added successfully','success')
         setVisibleSlot(false)
         setVisible(false)
         setSelectedSlots([])
@@ -519,7 +520,7 @@ const DoctorDetailsPage = () => {
       const success = await handleUpdate() // make sure handleUpdate returns a success status
       if (success) {
         // ✅ show toast after update is actually done
-        toast.success('Doctor details updated successfully!', {
+        showCustomToast('Doctor details updated successfully!','success', {
           position: 'top-right',
           autoClose: 3000,
         })
@@ -848,7 +849,7 @@ const DoctorDetailsPage = () => {
     setTimeSlots(slots) // modal
     setSelectedSlots([]) // reset selection
 
-    toast.success(`Generated ${slots.length} slots`)
+    showCustomToast(`Generated ${slots.length} slots`,'success')
   }
   return (
     <div className="doctor-details-page" style={{ padding: '1rem' }}>
@@ -1009,7 +1010,7 @@ const DoctorDetailsPage = () => {
 
                             if (file) {
                               if (file.size > MAX_FILE_SIZE) {
-                                toast.success('File size exceeds 2 MB!')
+                                showCustomToast('File size exceeds 2 MB!','success')
 
                                 e.target.value = '' // clear input
                                 return
@@ -1740,26 +1741,35 @@ const DoctorDetailsPage = () => {
 
               <div className="slot-grid mt-3">
                 <CCard className="mb-4">
-                  {/* <CCardHeader className="fw-bold">{selectedDate}</CCardHeader> */}
                   <CCardBody>
                     {loading ? (
                       <LoadingIndicator message="Loading slots..." />
                     ) : (
-                      <div className="d-flex flex-wrap gap-3">
+                      <div
+                        className="slot-container d-grid "
+                        style={{
+                          display: 'grid',
+                          color: 'var(--color-black)',
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+                          gap: '12px',
+                        }}
+                      >
                         {slotsForSelectedDate.map((slotObj, i) => {
                           const isSelected = selectedSlots.includes(slotObj.slot)
+                          const isBooked = slotObj?.slotbooked
 
                           return (
                             <div
                               key={i}
-                              className={`slot-item px-3 py-2 border rounded ${
-                                slotObj?.slotbooked
+                              className={`slot-item text-center border rounded   ${
+                                isBooked
                                   ? 'bg-danger text-white' // booked = red
                                   : isSelected
-                                    ? 'text-white' // selected = black background, white text
+                                    ? 'text-white'
                                     : 'bg-light'
                               }`}
                               onClick={() => {
+                                if (isBooked) return // ❌ Prevent click for booked slots
                                 if (isSelected) {
                                   setSelectedSlots((prev) => prev.filter((s) => s !== slotObj.slot))
                                 } else {
@@ -1767,27 +1777,33 @@ const DoctorDetailsPage = () => {
                                 }
                               }}
                               style={{
-                                cursor: 'pointer',
+                                padding: '10px 0',
+                                borderRadius: '8px',
+                                cursor: isBooked ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s ease',
+                                opacity: isBooked ? 0.7 : 1,
                                 color: 'var(--color-black)',
-                                backgroundColor: slotObj?.slotbooked
-                                  ? undefined
+                                backgroundColor: isBooked
+                                  ? 'red'
                                   : isSelected
                                     ? 'var(--color-black)'
                                     : undefined,
                               }}
+                              title={isBooked ? 'Booked' : 'Not Booked'}
                             >
                               {slotObj?.slot}
                             </div>
                           )
                         })}
-
-                        {slotsForSelectedDate.length === 0 && (
-                          <p style={{ color: 'var(--color-black)' }}>
-                            No available slots for this date
-                          </p>
-                        )}
                       </div>
                     )}
+                    <div className="w-100">
+                      {slotsForSelectedDate.length === 0 && (
+                        <p style={{ color: 'var(--color-black)' }}>
+                          No available slots for this date
+                        </p>
+                      )}
+                    </div>
                   </CCardBody>
                 </CCard>
               </div>
@@ -1813,7 +1829,7 @@ const DoctorDetailsPage = () => {
                   disabled={selectedSlots.length === 0}
                   onClick={() => {
                     if (selectedSlots.length === 0) {
-                      toast.info('Please select slot(s) to delete.')
+                     showCustomToast('Please select slot(s) to delete.','success')
                       return
                     }
                     setDeleteMode('selected') // mark which action we are confirming
@@ -2064,8 +2080,8 @@ const DoctorDetailsPage = () => {
 
                 const handleClick = () => {
                   if (!slotObj.available) {
-                    if (slotObj.reason) toast.info(`Cannot book: ${slotObj.reason}`)
-                    else toast.info('This slot is unavailable')
+                    if (slotObj.reason) showCustomToast(`Cannot book: ${slotObj.reason}`,'warning')
+                    else showCustomToast('This slot is unavailable','warning')
                     return
                   }
                   toggleSlot(slotObj.slot)
@@ -2142,27 +2158,30 @@ const DoctorDetailsPage = () => {
           <CButton
             style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
             onClick={async () => {
+              const branchid = localStorage.getItem('branchId')
               try {
                 if (deleteMode === 'selected') {
                   // delete selected
                   for (const slot of selectedSlots) {
                     await http.delete(
-                      `/doctorId/${doctorData?.doctorId}/${selectedDate}/${slot}/slots`,
+                      `/doctorId/${doctorData?.doctorId}/branchId/${branchid}/date/${selectedDate}/slot/${slot}`,
                     )
                   }
-                  toast.success(' Selected slots deleted successfully.')
+                  showCustomToast(' Selected slots deleted successfully.','success')
                   setSelectedSlots([])
                   fetchSlots()
                 } else if (deleteMode === 'all') {
                   // delete all for date
-                  await http.delete(`/delete-by-date/${doctorData?.doctorId}/${selectedDate}`)
-                  toast.success(` All slots for ${selectedDate} deleted.`)
+                  await http.delete(
+                    `/delete-by-date/${doctorData?.doctorId}/${branchid}/${selectedDate}`,
+                  )
+                  showCustomToast(` All slots for ${selectedDate} deleted.`,'success')
                   setSelectedSlots([])
                   fetchSlots()
                 }
               } catch (err) {
                 console.error('Error deleting slots:', err)
-                toast.error('❌ Failed to delete slots.')
+                showCustomToast('❌ Failed to delete slots.','error')
               } finally {
                 setShowDeleteConfirmModal(false)
               }

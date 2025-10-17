@@ -16,6 +16,7 @@ import {
 } from '../../baseUrl'
 import { toast } from 'react-toastify'
 import { http } from '../../Utils/Interceptors'
+import { showCustomToast } from '../../Utils/Toaster'
 
 export const subServiceData = async (serviceId) => {
   console.log('Serviceid response:', serviceId)
@@ -128,7 +129,7 @@ export const postServiceData = async (serviceData, id) => {
     return response
   } catch (error) {
     console.error('Error response:', error.response)
-    toast.error(`${error.response.data.message || error.response.statusText}`)
+   showCustomToast(`${error.response.data.message || error.response.statusText}`,'error')
   }
 }
 

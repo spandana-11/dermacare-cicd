@@ -26,6 +26,7 @@ import {
 } from './OtherStaffAPI'
 import { toast } from 'react-toastify'
 import { useHospital } from '../../Usecontext/HospitalContext'
+import { showCustomToast } from '../../../Utils/Toaster'
 
 const OtherStaffManagement = () => {
   const [technicians, setTechnicians] = useState([])
@@ -41,14 +42,15 @@ const OtherStaffManagement = () => {
   const [deleteId, setDeleteId] = useState(null)
 
   // ✅ Load from localStorage on mount
-const [modalData, setModalData] = useState(null) // store username & password
+  const [modalData, setModalData] = useState(null) // store username & password
   const [modalTVisible, setModalTVisible] = useState(false)
   const fetchTechs = async () => {
     setLoading(true)
     try {
       const clinicID = localStorage.getItem('HospitalId')
+      const branchId = localStorage.getItem('branchId')
       if (clinicID) {
-        const res = await getAllOtherStaffs(clinicID) // wait for API
+        const res = await getAllOtherStaffs(clinicID, branchId) // wait for API
         console.log('API Response:', res)
         setLoading(false)
         // ✅ update state with actual data, not Promise
@@ -74,9 +76,9 @@ const [modalData, setModalData] = useState(null) // store username & password
         fetchTechs()
 
         // setTechnicians((prev) => [...prev, res.data.data])
-        toast.success('Other Staff updated successfully!')
+        showCustomToast('Other Staff updated successfully!', 'success')
       } else {
-       const res = await addOtherStaff(formData)
+        const res = await addOtherStaff(formData)
         await fetchTechs() // refresh from API
         console.log(res)
         setModalData({
@@ -85,10 +87,10 @@ const [modalData, setModalData] = useState(null) // store username & password
         })
         setModalVisible(false)
         setModalTVisible(true)
-        toast.success('Other Staff added successfully!')
+        showCustomToast('Other Staff added successfully!', 'success')
       }
     } catch (err) {
-      toast.error('❌ Failed to save Other Staff.')
+      // toast.error('❌ Failed to save Other Staff.')
       console.error('API error:', err)
     }
   }
@@ -98,9 +100,10 @@ const [modalData, setModalData] = useState(null) // store username & password
     try {
       await deleteOtherStaff(id) // ✅ call backend
       setTechnicians((prev) => prev.filter((t) => t.id !== id))
-      toast.success('Other Staff deleted successfully!')
+      showCustomToast('Other Staff deleted successfully!', 'success')
+      fetchTechs()
     } catch (err) {
-      toast.error('❌ Failed to delete Other Staff.')
+      showCustomToast('❌ Failed to delete Other Staff.', 'error')
       console.error('Delete error:', err)
     } finally {
       setIsModalVisible(false) // close modal after action
@@ -171,9 +174,10 @@ const [modalData, setModalData] = useState(null) // store username & password
         <CModalFooter>
           <CButton
             color="primary"
-            onClick={() =>{ setModalTVisible(false)
+            onClick={() => {
+              setModalTVisible(false)
               setModalData(null)
-            }} 
+            }}
           >
             Close
           </CButton>
@@ -230,7 +234,7 @@ const [modalData, setModalData] = useState(null) // store username & password
                   <CTableDataCell>
                     {tech.profilePicture ? (
                       <img
-                        src={decodeImage(tech.profilePicture)} // ✅ decode first
+                        src={tech.profilePicture} // ✅ decode first
                         alt={tech.fullName}
                         width="40"
                         height="40"

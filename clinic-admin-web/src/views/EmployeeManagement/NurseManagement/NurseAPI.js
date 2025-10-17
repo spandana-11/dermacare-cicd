@@ -7,8 +7,8 @@ export const addNurse = (data) => {
 }
 
 // ------------------- Get All Nurses by Hospital -------------------
-export const getAllNurses = (hospitalId) => {
-  return http.get(`${BASE_URL}/getAllNurses/${hospitalId}`)
+export const getAllNurses = (hospitalId,branchId) => {
+  return http.get(`${BASE_URL}/getAllNursesByBranchIdAndHospiatlId/${hospitalId}/${branchId}`)
 }
 
 // ------------------- Get Single Nurse -------------------

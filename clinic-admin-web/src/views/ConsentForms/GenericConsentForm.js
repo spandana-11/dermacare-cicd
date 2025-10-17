@@ -24,6 +24,7 @@ import {
 import { toast } from 'react-toastify'
 import capitalizeWords from '../../Utils/capitalizeWords'
 import ConfirmationModal from '../../components/ConfirmationModal'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const GenericConsentForm = () => {
   const [showForm, setShowForm] = useState(false)
@@ -95,13 +96,13 @@ const GenericConsentForm = () => {
     if (!trimmedQuestion || answers.length === 0) {
       // Only show toast if user actually clicked without proper input
       if (trimmedQuestion === '' && answers.length === 0) return
-      toast.error('Please add a question and at least one answer.')
+      showCustomToast('Please add a question and at least one answer.','error')
       return
     }
 
     // Prevent duplicate question
     if (qaList.some((qa) => qa.question === trimmedQuestion)) {
-      toast.error('This question already exists.')
+      showCustomToast('This question already exists.','error')
       return
     }
 
@@ -152,7 +153,7 @@ const GenericConsentForm = () => {
   const editProcedureForm = (index) => {
     const form = procedureForms[index]
     if (!form) {
-      toast.error('Selected form not found')
+      showCustomToast('Selected form not found','error')
       return
     }
 
@@ -170,7 +171,7 @@ const GenericConsentForm = () => {
     const form = procedureForms[index]
     const formId = form?.id || form?.consentFormId || form?.formId
     if (!formId) {
-      toast.error('This form cannot be deleted.')
+      showCustomToast('This form cannot be deleted.','error')
       return
     }
     try {
@@ -179,7 +180,7 @@ const GenericConsentForm = () => {
       setIsAdding(false) // ✅ enable adding after delete
     } catch (error) {
       console.error('Error deleting Generic Form:', error)
-      toast.error('Failed to delete form.')
+      showCustomToast('Failed to delete form.','error')
     }
   }
 

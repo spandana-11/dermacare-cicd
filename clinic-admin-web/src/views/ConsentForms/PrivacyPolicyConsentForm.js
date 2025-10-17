@@ -5,6 +5,7 @@ import FilePreview from '../../Utils/FilePreview'
 import { Delete, Edit, Trash } from 'lucide-react'
 import { toast } from 'react-toastify'
 import ConfirmationModal from '../../components/ConfirmationModal'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const PrivacyPolicyManager = () => {
   const [selectedFile, setSelectedFile] = useState(null)
@@ -20,8 +21,9 @@ const PrivacyPolicyManager = () => {
   const editFileRef = useRef(null)
   // fetch policies from backend
   const fetchPolicies = async () => {
+    const clinicId = localStorage.getItem('HospitalId')
     try {
-      const res = await axios.get(`${BASE_URL}/getAllPolicies`)
+      const res = await axios.get(`${BASE_URL}/getPoliciesByClinicId/${clinicId}`)
       if (res.data?.data) setPolicies(res.data.data)
       else if (Array.isArray(res.data)) setPolicies(res.data)
     } catch (err) {
@@ -40,13 +42,13 @@ const PrivacyPolicyManager = () => {
 
     // Only allow PDF
     if (file.type !== 'application/pdf') {
-      toast.error('Only PDF files are allowed!')
+      showCustomToast('Only PDF files are allowed!', 'error')
       return
     }
 
     // Max size 2 MB
     if (file.size > MAX_SIZE) {
-      toast.error('File is too large! Maximum allowed size is 2 MB.')
+      showCustomToast('File is too large! Maximum allowed size is 2 MB.', 'error')
       return
     }
 
@@ -55,7 +57,7 @@ const PrivacyPolicyManager = () => {
 
   // upload file to backend
   const handleSubmit = () => {
-    if (!selectedFile) return toast.error(`Please select a file first.`)
+    if (!selectedFile) return showCustomToast(`Please select a file first.`, 'error')
 
     const reader = new FileReader()
     reader.readAsDataURL(selectedFile)
@@ -73,14 +75,14 @@ const PrivacyPolicyManager = () => {
           },
           { headers: { 'Content-Type': 'application/json' } },
         )
-        toast.success(`File uploaded successfully!`)
+        showCustomToast(`File uploaded successfully!`, 'success')
 
         setSelectedFile(null)
         setShowFileInput(false)
         fetchPolicies()
       } catch (err) {
         console.error('Upload error:', err.response || err)
-        toast.warn(`File upload failed. Check console for details.`)
+        showCustomToast(`File upload failed. Check console for details.`, 'warning')
       }
     }
   }
@@ -93,7 +95,7 @@ const PrivacyPolicyManager = () => {
 
         // check both structures
         const base64File = res.data?.data?.privacyPolicy || res.data?.privacyPolicy
-        if (!base64File) return toast.warn(`No file data available.`)
+        if (!base64File) return showCustomToast(`No file data available.`, 'warning')
 
         const extension = policy.fileName?.split('.').pop().toLowerCase()
         let mimeType = 'application/octet-stream'
@@ -125,7 +127,7 @@ const PrivacyPolicyManager = () => {
       }
     } catch (err) {
       console.error('View error:', err.response || err)
-      toast.warning(`Unable to fetch file.`)
+      showCustomToast(`Unable to fetch file.`, 'warning')
     }
   }
 
@@ -142,7 +144,7 @@ const PrivacyPolicyManager = () => {
   }
 
   const handleUpdate = async () => {
-    if (!selectedFile) return toast.warning(`Please select a file first.`)
+    if (!selectedFile) return showCustomToast(`Please select a file first.`, 'warning')
 
     const reader = new FileReader()
     reader.readAsDataURL(selectedFile)
@@ -155,14 +157,14 @@ const PrivacyPolicyManager = () => {
           { privacyPolicy: base64File },
           { headers: { 'Content-Type': 'application/json' } },
         )
-        toast.success(`Policy updated successfully!`)
+        showCustomToast(`Policy updated successfully!`, 'success')
 
         setSelectedFile(null)
         setEditingPolicyId(null) // hide file input after update
         fetchPolicies()
       } catch (err) {
         console.error('Update error:', err.response || err)
-        toast.warning(`Update failed.`)
+        showCustomToast(`Update failed.`, 'success')
       }
     }
   }
@@ -170,11 +172,11 @@ const PrivacyPolicyManager = () => {
   const handleDelete = async (id) => {
     try {
       await axios.delete(`${BASE_URL}/deletePolicyById/${id}`)
-      toast.success(`Policy deleted successfully!`)
+      showCustomToast(`Policy deleted successfully!`, 'success')
       fetchPolicies()
     } catch (err) {
       console.error('Delete error:', err.response || err)
-      toast.error(`Delete failed.`)
+      showCustomToast(`Delete failed.`, 'error')
     } finally {
       setIsModalVisible(false)
     }

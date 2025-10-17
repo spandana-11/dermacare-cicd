@@ -31,6 +31,8 @@ import CIcon from '@coreui/icons-react'
 import { cilSearch,cilTrash  } from '@coreui/icons'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import { Edit2, Eye, Trash2 } from 'lucide-react'
+
 import {
   CategoryData,
   postCategoryData,
@@ -51,7 +53,7 @@ const CategoryManagement = () => {
   const [editCategoryMode, setEditCategoryMode] = useState(false)
   const [categoryToEdit, setCategoryToEdit] = useState(null)
   const [fileKey, setFileKey] = useState(Date.now()) // used to reset file input
-
+  
   const [errors, setErrors] = useState({
     categoryName: '',
     categoryImage: '',
@@ -145,12 +147,20 @@ const CategoryManagement = () => {
   const validateField = (name, value) => {
     let error = ""
 
-    if (name === "categoryName") {
-      if (!value) error = "Category name is required."
-      // else if (!/^[A-Za-z\s]+$/.test(value)) {
-      //   error = "Category name must only contain alphabets and spaces."
-      // }
+  if (name === "categoryName") {
+        const trimmedValue = value.trim()
+  if (!trimmedValue) {
+      error = "Category name is required."
+    } 
+ 
+   else if (!/^[A-Za-z0-9\s]+$/.test(trimmedValue)) {
+      error = "Category name must only contain letters, numbers, and spaces."
+    } 
+    // Disallow only numbers
+    else if (/^\d+$/.test(trimmedValue)) {
+      error = "Category name cannot contain only numbers."
     }
+}
 
     if (name === "categoryImage") {
       if (!value) error = "Category image is required."
@@ -189,7 +199,10 @@ const handleDeleteCategoryImage = () => {
 
         return
       }
-     
+      // if (file.size > 100 * 1024) {
+      //   setErrors((prev) => ({ ...prev, categoryImage: "File size must be less than 100kb." }))
+      //   return
+      // }
 
       const reader = new FileReader()
       reader.onloadend = () => {
@@ -207,36 +220,59 @@ const handleDeleteCategoryImage = () => {
     return results.every((res) => res)
   }
 
-  const handleAddCategory = async () => {
-    if (!validateForm()) return
+const handleAddCategory = async () => {
+  const trimmedName = newCategory.categoryName.trim();
+  let isValid = true;
 
-    try {
-      const payload = {
-        categoryName: newCategory.categoryName,
-        categoryImage: newCategory.categoryImage,
-      }
+  // 🔹 Category Name validation
+  if (!trimmedName) {
+    setErrors(prev => ({ ...prev, categoryName: "Category Name is required" }));
+    isValid = false;
+  } else if (trimmedName.length < 3) {
+    setErrors(prev => ({ ...prev, categoryName: "Category Name must be at least 3 characters long" }));
+    isValid = false;
+  } else if (!/^[A-Za-z0-9\s]+$/.test(trimmedName)) {
+    setErrors(prev => ({ ...prev, categoryName: "Category Name must only contain letters, numbers, and spaces" }));
+    isValid = false;
+  } else if (/^\d+$/.test(trimmedName)) {
+    setErrors(prev => ({ ...prev, categoryName: "Category Name cannot be only numbers" }));
+    isValid = false;
+  } else {
+    setErrors(prev => ({ ...prev, categoryName: "" }));
+  }
 
-      const response = await postCategoryData(payload)
-      toast.success('Category added successfully!', { position: 'top-right' })
-      fetchData()
-      setModalVisible(false)
-      setNewCategory({
-        categoryName: '',
-        categoryImage: null,
-      })
-      setErrors({ categoryName: '', categoryImage: '' })
-    } catch (error) {
-      console.error('Error adding category:', error)
-      const errorMessage = error.response?.data?.message || error.response?.statusText || 'An unexpected error occurred.'
-      const statusCode = error.response?.status
+  // 🔹 Image validation
+  if (!newCategory.categoryImage) {
+    setErrors(prev => ({ ...prev, categoryImage: "Category Image is required" }));
+    isValid = false;
+  } else {
+    setErrors(prev => ({ ...prev, categoryImage: "" }));
+  }
 
-      if (statusCode === 409 || errorMessage.toLowerCase().includes('duplicate')) {
-        toast.error(`Error: Duplicate category name - ${newCategory.categoryName} already exists!`, { position: 'top-right' })
-      } else {
-        toast.error(`Error adding category: ${errorMessage}`, { position: 'top-right' })
-      }
+  if (!isValid) return;
+
+  try {
+    const payload = {
+      categoryName: trimmedName,
+      categoryImage: newCategory.categoryImage,
+    };
+
+    const response = await postCategoryData(payload);
+    toast.success("Category added successfully!");
+    fetchData();
+    setModalVisible(false);
+    setNewCategory({ categoryName: "", categoryImage: null });
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || "";
+    if (errorMessage.toLowerCase().includes("exists")) {
+      setErrors(prev => ({ ...prev, categoryName: "Category Name already exists." }));
+    } else {
+      toast.error("Failed to add category");
     }
   }
+};
+
+
 
   const handleCategoryEdit = (category) => {
     console.log('Category to edit:', category)
@@ -249,40 +285,60 @@ const handleDeleteCategoryImage = () => {
     setEditCategoryMode(true)
   }
 
-  const handleUpdateCategory = async () => {
-    let isValid=true;
+const handleUpdateCategory = async () => {
+  let isValid = true;
+  const trimmedName = updatedCategory.categoryName.trim();
 
-    if (!updatedCategory.categoryName.trim()) {
-      setErrors((prev)=>({...prev, categoryName:"Category Name is required"}))
-      isValid=false;
-    }else{
-      setErrors((prev)=>({...prev, categoryName:''}))
+  // 🔹 Category Name validation
+  if (!trimmedName) {
+    setErrors(prev => ({ ...prev, categoryName: "Category Name is required" }));
+    isValid = false;
+  } else if (trimmedName.length < 3) {
+    setErrors(prev => ({ ...prev, categoryName: "Category Name must be at least 3 characters long" }));
+    isValid = false;
+  } else if (!/^[A-Za-z0-9\s]+$/.test(trimmedName)) {
+    setErrors(prev => ({ ...prev, categoryName: "Category Name must only contain letters, numbers, and spaces" }));
+    isValid = false;
+  } else if (/^\d+$/.test(trimmedName)) {
+    setErrors(prev => ({ ...prev, categoryName: "Category Name cannot be only numbers" }));
+    isValid = false;
+  } else {
+    setErrors(prev => ({ ...prev, categoryName: "" }));
+  }
+
+  // 🔹 Image validation
+  if (!updatedCategory.categoryImage) {
+    setErrors(prev => ({ ...prev, categoryImage: "Category Image is required" }));
+    isValid = false;
+  } else {
+    setErrors(prev => ({ ...prev, categoryImage: "" }));
+  }
+
+  if (!isValid) return;
+
+  try {
+    const updateData = {
+      categoryName: trimmedName,
+      categoryImage: updatedCategory.categoryImage,
+    };
+
+    const response = await updateCategoryData(updateData, updatedCategory.categoryId);
+    if (response) {
+      toast.success("Category updated successfully!");
+      setEditCategoryMode(false);
+      fetchData();
     }
-    if(!updatedCategory.categoryImage){
-      setErrors((prev)=>({...prev, categoryImage:"Category Image is required"}))
-      isValid=false;
-    }else{
-      setErrors((prev)=>({...prev, categoryImage:""}))
-    }
-
-    if(!isValid) return;
-    try {
-      const updateData = {
-        categoryName: updatedCategory.categoryName,
-        categoryImage: updatedCategory.categoryImage,
-      }
-
-      const response = await updateCategoryData(updateData, updatedCategory.categoryId)
-      if (response) {
-        toast.success('Category updated successfully!')
-        setEditCategoryMode(false)
-        fetchData()
-      }
-    } catch (error) {
-      console.error('Error updating category:', error)
-      toast.error('Failed to update category')
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || "";
+    if (errorMessage.toLowerCase().includes("exists")) {
+      setErrors(prev => ({ ...prev, categoryName: "Category Name already exists." }));
+    } else {
+      toast.error("Failed to update category");
     }
   }
+};
+
+
 
   const handleCancel = () => {
     setUpdatedCategory({
@@ -390,48 +446,79 @@ const handleDeleteCategoryImage = () => {
         </CForm>
 
         <CTable striped hover responsive>
-          <CTableHead>
+          <CTableHead className='pink-table'>
             <CTableRow>
               <CTableHeaderCell>S.No</CTableHeaderCell>
               <CTableHeaderCell>Category Name</CTableHeaderCell>
-              <CTableHeaderCell className="text-center">
+              <CTableHeaderCell className="text-end">
                 Actions
               </CTableHeaderCell>
             </CTableRow>
           </CTableHead>
-          <CTableBody>
+          <CTableBody className='pink-table'> 
             {currentItems.length > 0 ? (
-              currentItems.map((row, index) => (
-                <CTableRow key={row.categoryId}>
+              currentItems.map((category, index) => (
+                <CTableRow key={category.categoryId}>
                   <CTableDataCell>
                     {(currentPage - 1) * itemsPerPage + index + 1}
                   </CTableDataCell>
-                  <CTableDataCell>{row.categoryName}</CTableDataCell>
-                  <CTableDataCell className="text-center">
-                  <CButton
-  color="primary"
-  size="sm"
-  onClick={() => setViewCategory(row)}
->
-  View
-</CButton>
-<CButton
-  color="warning"
-  className="ms-2"
-  size="sm"
-  onClick={() => handleCategoryEdit(row)}
->
-  Edit
-</CButton>
-<CButton
-  color="danger"
-  className="ms-2"
-  size="sm"
-  onClick={() => handleCategoryDelete(row.categoryId)}
->
-  Delete
-</CButton>
+                  <CTableDataCell>{category.categoryName}</CTableDataCell>
+                  <CTableDataCell className="text-end">
+                    <div className="d-flex justify-content-end gap-2">
+                    {/* {can('category', 'read')&&( */}
+                      <button
+                        className="actionBtn"
+                        onClick={()=>setViewCategory(category)}
+                        title="View"
+                        >
+                          <Eye size={18} />
+                        </button>
+                    {/* )} */}
+                    {/* {can('Treatments', 'update') &&( */}
+                      <button
+                        className="actionBtn"
+                        onClick={()=>handleCategoryEdit(category)}
+                        title="Edit"
+                        >
+                        <Edit2 size={18} />
+                        </button>
+                    {/* )} */}
+                    {/* {can('Treatments', 'delete')&&( */}
+                      <button
+                        className="actionBtn"
+                        onClick={()=>handleCategoryDelete(category.categoryId)}
+                        title="Delete"
+                        >
+                          <Trash2 size={18} />
+                          </button>
+                    {/* )} */}
+                    </div>
                   </CTableDataCell>
+                  {/* <CTableDataCell className="text-center">
+                    <CButton
+    color="primary"
+    size="sm"
+    onClick={() => setViewCategory(row)}
+  >
+    View
+  </CButton>
+  <CButton
+    color="warning"
+    className="ms-2"
+    size="sm"
+    onClick={() => handleCategoryEdit(row)}
+  >
+    Edit
+  </CButton>
+  <CButton
+    color="danger"
+    className="ms-2"
+    size="sm"
+    onClick={() => handleCategoryDelete(row.categoryId)}
+  >
+    Delete
+  </CButton>
+                  </CTableDataCell> */}
                 </CTableRow>
               ))
             ) : (
@@ -557,25 +644,66 @@ const handleDeleteCategoryImage = () => {
             }}
             id="addCategoryForm"
           >
-            <h6>
-              Category Name <span style={{ color: 'red' }}>*</span>
-            </h6>
-            <CFormInput
-              type="text"
-              placeholder="Category Name"
-              value={newCategory.categoryName || ''}
-              name="categoryName"
-              onChange={handleCategoryChange}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  handleAddCategory()
-                }
-              }}
-            />
-            {errors.categoryName && (
-              <CFormText className="text-danger">{errors.categoryName}</CFormText>
-            )}
+<h6>
+  Category Name <span style={{ color: 'red' }}>*</span>
+</h6>
+
+<CFormInput
+  type="text"
+  placeholder="Category Name"
+  value={newCategory.categoryName || ''}
+  name="categoryName"
+  onChange={(e) => {
+    let value = e.target.value;
+
+    // Replace multiple spaces with a single space
+    value = value.replace(/\s+/g, ' ');
+
+    // Capitalize each word
+    const capitalizedValue = value
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+
+    // Update category state
+    setNewCategory(prev => ({ ...prev, categoryName: capitalizedValue }));
+
+    // Validation
+   const trimmedValue = value.trim();
+
+if (!trimmedValue) {
+  setErrors(prev => ({ ...prev, categoryName: 'Category Name is required.' }));
+} 
+// ❌ Only letters, numbers, spaces allowed
+else if (!/^[A-Za-z0-9\s]+$/.test(trimmedValue)) {
+  setErrors(prev => ({ ...prev, categoryName: 'Category Name must only contain letters, numbers, and spaces.' }));
+} 
+// ❌ Only numbers are not allowed
+else if (/^\d+$/.test(trimmedValue)) {
+  setErrors(prev => ({ ...prev, categoryName: 'Category Name cannot be only numbers.' }));
+} 
+// ✅ Minimum length check
+else if (trimmedValue.length < 3) {
+  setErrors(prev => ({ ...prev, categoryName: 'Category Name must be at least 3 characters long.' }));
+} 
+else {
+  setErrors(prev => ({ ...prev, categoryName: '' }));
+}
+
+  }}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddCategory();
+    }
+  }}
+/>
+
+{errors.categoryName && (
+  <CFormText className="text-danger">{errors.categoryName}</CFormText>
+)}
+
+
 <h6>
         Category Image <span style={{ color: "red" }}>*</span>
       </h6>
@@ -657,46 +785,65 @@ const handleDeleteCategoryImage = () => {
             }}
             id="editCategoryForm"
           >
-            <h6>
-              Category Name <span style={{ color: 'red' }}>*</span>
-            </h6>
-            <CFormInput
-              type="text"
-              placeholder="Category Name"
-              value={updatedCategory?.categoryName || ''}
-              onChange={(e) => {
-                const value = e.target.value
-                const capitalizedValue = value.charAt(0).toUpperCase() + value.slice(1)
+     <h6>
+  Category Name <span style={{ color: 'red' }}>*</span>
+</h6>
 
-                setUpdatedCategory((prev) => ({
-                  ...prev,
-                  categoryName: capitalizedValue,
-                }))
+<CFormInput
+  type="text"
+  placeholder="Category Name"
+  value={updatedCategory.categoryName || ''}
+  onChange={(e) => {
+    let value = e.target.value;
 
-                if (!value.trim()) {
-                  setErrors((prev) => ({
-                    ...prev,
-                    categoryName: "Category name is required.",
-                  }))
-                } else if (!/^[A-Za-z\s]+$/.test(value)) {
-                  setErrors((prev) => ({
-                    ...prev,
-                    categoryName: "Category name must only contain alphabets and spaces.",
-                  }))
-                } else {
-                  setErrors((prev) => ({ ...prev, categoryName: "" }))
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  handleUpdateCategory()
-                }
-              }}
-            />
-            {errors.categoryName && (
-              <CFormText className="text-danger">{errors.categoryName}</CFormText>
-            )}
+    // Replace multiple spaces with a single space
+    value = value.replace(/\s+/g, ' ');
+
+    // Capitalize each word
+    const capitalizedValue = value
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+
+    // Update state
+    setUpdatedCategory(prev => ({ ...prev, categoryName: capitalizedValue }));
+
+    // Validation
+    const trimmedValue = value.trim();
+
+if (!trimmedValue) {
+  setErrors(prev => ({ ...prev, categoryName: 'Category Name is required.' }));
+} 
+// ❌ Only letters, numbers, spaces allowed
+else if (!/^[A-Za-z0-9\s]+$/.test(trimmedValue)) {
+  setErrors(prev => ({ ...prev, categoryName: 'Category Name must only contain letters, numbers, and spaces.' }));
+} 
+// ❌ Only numbers are not allowed
+else if (/^\d+$/.test(trimmedValue)) {
+  setErrors(prev => ({ ...prev, categoryName: 'Category Name cannot be only numbers.' }));
+} 
+// ✅ Minimum length check
+else if (trimmedValue.length < 3) {
+  setErrors(prev => ({ ...prev, categoryName: 'Category Name must be at least 3 characters long.' }));
+} 
+else {
+  setErrors(prev => ({ ...prev, categoryName: '' }));
+}
+
+  }}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleUpdateCategory();
+    }
+  }}
+/>
+
+{errors.categoryName && (
+  <CFormText className="text-danger">{errors.categoryName}</CFormText>
+)}
+
+
 
 <h6>
   Category Image <span style={{ color: 'red' }}>*</span>

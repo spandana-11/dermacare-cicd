@@ -40,6 +40,7 @@ import {
 } from './PharmacyManagementAPI'
 import { Edit2, Eye, Trash2 } from 'lucide-react'
 import ConfirmationModal from '../ConfirmationModal'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const PharmacyManagement = () => {
   const [activeKey, setActiveKey] = useState(0)
@@ -146,7 +147,6 @@ const PharmacyManagement = () => {
     return Object.keys(errors).length === 0
   }
 
-
   // 🧠 Define this BEFORE return()
   // ✅ Handle Save (Add or Update)
   const handleSave = async () => {
@@ -159,10 +159,8 @@ const PharmacyManagement = () => {
         // UPDATE FLOW
         console.log('Updating medicine with ID:', formData.id)
         const updatedMedicine = await updateMedicine(formData.id, formData)
-        setMedicines((prev) =>
-          prev.map((m) => (m.id === formData.id ? updatedMedicine : m))
-        )
-        toast.success('Medicine updated successfully!')
+        setMedicines((prev) => prev.map((m) => (m.id === formData.id ? updatedMedicine : m)))
+        showCustomToast('Medicine updated successfully!', 'success')
       } else {
         // ADD FLOW
         console.log('Adding new medicine...')
@@ -170,12 +168,12 @@ const PharmacyManagement = () => {
 
         if (!newMedicine.id) {
           console.error('❌ API did not return an ID for the new medicine', newMedicine)
-          toast.error('Failed to add medicine! ID missing.')
+          showCustomToast('Failed to add medicine! ID missing.', 'error')
           return
         }
 
         setMedicines((prev) => [...prev, newMedicine])
-        toast.success('Medicine added successfully!')
+        showCustomToast('Medicine added successfully!', 'success')
       }
 
       // ✅ Reset modal & state
@@ -185,7 +183,7 @@ const PharmacyManagement = () => {
       fetchMedicines()
     } catch (error) {
       console.error('Error saving medicine:', error)
-      toast.error('Failed to save medicine!')
+      showCustomToast('Failed to save medicine!', 'error')
     }
   }
 
@@ -208,7 +206,7 @@ const PharmacyManagement = () => {
   const handleCreateMedicineType = async (inputValue) => {
     try {
       const clinicId = localStorage.getItem('HospitalId')
-      if (!clinicId) return toast.error('Clinic ID missing!')
+      if (!clinicId) return showCustomToast('Clinic ID missing!', 'error')
 
       // Call API to add new medicine type
       const updatedTypes = await addMedicineType({ clinicId, typeName: inputValue })
@@ -221,15 +219,13 @@ const PharmacyManagement = () => {
 
         // Set the selected type in form
         handleChange('medicineType', inputValue)
-
-        toast.success(`New medicine type added: ${inputValue}`)
+        showCustomToast(`New medicine type added: ${inputValue}`, 'success')
       }
     } catch (error) {
       console.error('❌ Error adding medicine type:', error)
-      toast.error('Error adding medicine type!')
+      showCustomToast('Error adding medicine type!', 'error')
     }
   }
-
 
   const filteredMedicines = medicines.filter((med) =>
     (med.name || '').toLowerCase().includes(search.toLowerCase()),
@@ -277,9 +273,9 @@ const PharmacyManagement = () => {
     const success = await deletePrescriptionById(medicineIdToDelete)
     if (success) {
       setMedicines((prev) => prev.filter((med) => med.id !== medicineIdToDelete))
-      toast.success('Medicine deleted successfully!')
+      showCustomToast(`Medicine deleted successfully!`, 'success')
     } else {
-      toast.error('Failed to delete medicine!')
+      showCustomToast('Failed to delete medicine!', 'error')
     }
 
     setIsDeleteModalVisible(false)
@@ -577,7 +573,6 @@ const PharmacyManagement = () => {
               {/* Optional field, so no validation message */}
             </CCol>
 
-
             <CCol md={4}>
               <CFormSelect
                 label={
@@ -660,7 +655,6 @@ const PharmacyManagement = () => {
             })}
           </CRow>
 
-
           {/* Instructions */}
           <CRow className="g-3 mb-3">
             <CCol md={6}>
@@ -684,7 +678,7 @@ const PharmacyManagement = () => {
                 label="Serial Number"
                 value={formData.serialNumber}
                 onChange={(e) => {
-                  const onlyNums = e.target.value// keep digits only
+                  const onlyNums = e.target.value // keep digits only
                   handleChange('serialNumber', onlyNums)
                 }}
               />
@@ -747,7 +741,7 @@ const PharmacyManagement = () => {
                 onChange={(e) => {
                   const selectedExp = e.target.value
                   if (formData.dateOfManufacturing && selectedExp <= formData.dateOfManufacturing) {
-                    toast.error('Expiry date must be after Manufacturing date')
+                    showCustomToast('Expiry date must be after Manufacturing date', 'error')
                     return
                   }
                   handleChange('dateOfExpriy', selectedExp)
@@ -801,7 +795,13 @@ const PharmacyManagement = () => {
           </CButton>
         </CModalFooter>
       </CModal>
-      <CModal visible={viewModal} onClose={() => setViewModal(false)} size="lg" backdrop="static">
+      <CModal
+        visible={viewModal}
+        onClose={() => setViewModal(false)}
+        size="lg"
+        backdrop="static"
+        className="custom-modal"
+      >
         <CModalHeader>
           <CModalTitle>
             <span role="img" aria-label="pill">
@@ -918,7 +918,6 @@ const PharmacyManagement = () => {
           setMedicineIdToDelete(null)
         }}
       />
-
     </div>
   )
 }
