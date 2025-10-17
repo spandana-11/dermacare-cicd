@@ -17,4 +17,7 @@ public class TreatmentDetailsDTO {
 	    private Integer sittings;
 	    private String startDate;
 	    private Integer totalSittings;
+	    private Integer takenSittings;
+	    private Integer pendingSittings;
+	    private Integer currentSitting;
 }
