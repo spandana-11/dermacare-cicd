@@ -1111,9 +1111,123 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 //	    }
 //	}
 
+//	@Override
+//	public ResponseEntity<?> updateAppointment(BookingResponse bookingResponse) {
+//	    try {
+//	        Booking entity = repository.findByBookingId(bookingResponse.getBookingId())
+//	                .orElseThrow(() -> new RuntimeException("Invalid Booking Id. Please provide a valid Id."));
+//
+//	        // --- Update fields from bookingResponse to entity ---
+//	        if (bookingResponse.getAge() != null) entity.setAge(bookingResponse.getAge());
+//	        if (bookingResponse.getBookedAt() != null) entity.setBookedAt(bookingResponse.getBookedAt());
+//	        if (bookingResponse.getBookingFor() != null) entity.setBookingFor(bookingResponse.getBookingFor());
+//	        if (bookingResponse.getClinicId() != null) entity.setClinicId(bookingResponse.getClinicId());
+//	        if (bookingResponse.getConsultationFee() != 0) entity.setConsultationFee(bookingResponse.getConsultationFee());
+//	        if (bookingResponse.getConsultationType() != null) entity.setConsultationType(bookingResponse.getConsultationType());
+//	        if (bookingResponse.getDoctorId() != null) entity.setDoctorId(bookingResponse.getDoctorId());
+//	        if (bookingResponse.getGender() != null) entity.setGender(bookingResponse.getGender());
+//	        if (bookingResponse.getMobileNumber() != null) entity.setMobileNumber(bookingResponse.getMobileNumber());
+//	        if (bookingResponse.getName() != null) entity.setName(bookingResponse.getName());
+//	        if (bookingResponse.getProblem() != null) entity.setProblem(bookingResponse.getProblem());
+//	        if (bookingResponse.getServiceDate() != null) entity.setServiceDate(bookingResponse.getServiceDate());
+//	        if (bookingResponse.getServicetime() != null) entity.setServicetime(bookingResponse.getServicetime());
+//	        if (bookingResponse.getStatus() != null) entity.setStatus(bookingResponse.getStatus());
+//	        if (bookingResponse.getNotes() != null) entity.setNotes(bookingResponse.getNotes());
+//	        if (bookingResponse.getReports() != null) {
+//	            entity.setReports(new ObjectMapper().convertValue(
+//	                    bookingResponse.getReports(),
+//	                    new TypeReference<List<ReportsList>>() {}));
+//	        }
+//	        if (bookingResponse.getSubServiceId() != null) entity.setSubServiceId(bookingResponse.getSubServiceId());
+//	        if (bookingResponse.getSubServiceName() != null) entity.setSubServiceName(bookingResponse.getSubServiceName());
+//	        if (bookingResponse.getReasonForCancel() != null) entity.setReasonForCancel(bookingResponse.getReasonForCancel());
+//	        if (bookingResponse.getTotalFee() != 0) entity.setTotalFee(bookingResponse.getTotalFee());
+//	        if (bookingResponse.getFreeFollowUpsLeft() != null) entity.setFreeFollowUpsLeft(bookingResponse.getFreeFollowUpsLeft());
+//	        if (bookingResponse.getFreeFollowUps() != null) entity.setFreeFollowUps(bookingResponse.getFreeFollowUps());
+//	        if (bookingResponse.getVisitCount() != null) entity.setVisitCount(bookingResponse.getVisitCount());
+//	        if (bookingResponse.getFollowupStatus() != null) entity.setFollowupStatus(bookingResponse.getFollowupStatus());
+//	        if (bookingResponse.getFollowupDate() != null) entity.setFollowupDate(bookingResponse.getFollowupDate());
+//
+//	        // --- Total sittings ---
+//	        if (bookingResponse.getTotalSittings() != null) entity.setTotalSittings(bookingResponse.getTotalSittings());
+//
+//	        // --- Update treatment dates & sittings summary ---
+//	        if (bookingResponse.getTreatments() != null) {
+//	            entity.setTreatments(bookingResponse.getTreatments()); // copy treatments info from DTO
+//	        }
+//
+//	        // --- Save entity ---
+//	        Booking updatedBooking = repository.save(entity);
+//
+//	        // --- Map entity to BookingResponse to return ---
+//	        BookingResponse responseDTO = new BookingResponse();
+//	        responseDTO.setBookingId(updatedBooking.getBookingId());
+//	        responseDTO.setBookingFor(updatedBooking.getBookingFor());
+//	        responseDTO.setName(updatedBooking.getName());
+//	        responseDTO.setRelation(updatedBooking.getRelation());
+//	        responseDTO.setPatientMobileNumber(updatedBooking.getPatientMobileNumber());
+//	        responseDTO.setPatientId(updatedBooking.getPatientId());
+//	        responseDTO.setVisitType(updatedBooking.getVisitType());
+//	        responseDTO.setFreeFollowUpsLeft(updatedBooking.getFreeFollowUpsLeft());
+//	        responseDTO.setFreeFollowUps(updatedBooking.getFreeFollowUps());
+//	        responseDTO.setPatientAddress(updatedBooking.getPatientAddress());
+//	        responseDTO.setAge(updatedBooking.getAge());
+//	        responseDTO.setGender(updatedBooking.getGender());
+//	        responseDTO.setMobileNumber(updatedBooking.getMobileNumber());
+//	        responseDTO.setCustomerId(updatedBooking.getCustomerId());
+//	        responseDTO.setConsultationExpiration(updatedBooking.getConsultationExpiration());
+//	        responseDTO.setCustomerDeviceId(updatedBooking.getCustomerDeviceId());
+//	        responseDTO.setProblem(updatedBooking.getProblem());
+//	        responseDTO.setSymptomsDuration(updatedBooking.getSymptomsDuration());
+//	        responseDTO.setClinicId(updatedBooking.getClinicId());
+//	        responseDTO.setClinicName(updatedBooking.getClinicName());
+//	        responseDTO.setBranchId(updatedBooking.getBranchId());
+//	        responseDTO.setBranchname(updatedBooking.getBranchname());
+//	        responseDTO.setDoctorId(updatedBooking.getDoctorId());
+//	        responseDTO.setDoctorName(updatedBooking.getDoctorName());
+//	        responseDTO.setSubServiceId(updatedBooking.getSubServiceId());
+//	        responseDTO.setSubServiceName(updatedBooking.getSubServiceName());
+//	        responseDTO.setServiceDate(updatedBooking.getServiceDate());
+//	        responseDTO.setServicetime(updatedBooking.getServicetime());
+//	        responseDTO.setConsultationType(updatedBooking.getConsultationType());
+//	        responseDTO.setConsultationFee(updatedBooking.getConsultationFee());
+//	        responseDTO.setStatus(updatedBooking.getStatus());
+//	        responseDTO.setTotalFee(updatedBooking.getTotalFee());
+//	        responseDTO.setTotalSittings(updatedBooking.getTotalSittings());
+//	        responseDTO.setPendingSittings(updatedBooking.getPendingSittings());
+//	        responseDTO.setTakenSittings(updatedBooking.getTakenSittings());
+//	        responseDTO.setCurrentSitting(updatedBooking.getCurrentSitting());
+//	        responseDTO.setBookedAt(updatedBooking.getBookedAt());
+//	        responseDTO.setTreatments(updatedBooking.getTreatments()); // ✅ include treatments
+//
+//	        // --- Return wrapped response ---
+//	        return new ResponseEntity<>(
+//	                ResponseStructure.buildResponse(
+//	                        responseDTO,
+//	                        "Booking updated successfully",
+//	                        HttpStatus.OK,
+//	                        HttpStatus.OK.value()
+//	                ),
+//	                HttpStatus.OK
+//	        );
+//
+//	    } catch (Exception e) {
+//	        return new ResponseEntity<>(
+//	                ResponseStructure.buildResponse(
+//	                        null,
+//	                        e.getMessage(),
+//	                        HttpStatus.INTERNAL_SERVER_ERROR,
+//	                        HttpStatus.INTERNAL_SERVER_ERROR.value()
+//	                ),
+//	                HttpStatus.INTERNAL_SERVER_ERROR
+//	        );
+//	    }
+//	}
+
 	@Override
 	public ResponseEntity<?> updateAppointment(BookingResponse bookingResponse) {
 	    try {
+	        // --- Fetch booking from DB ---
 	        Booking entity = repository.findByBookingId(bookingResponse.getBookingId())
 	                .orElseThrow(() -> new RuntimeException("Invalid Booking Id. Please provide a valid Id."));
 
@@ -1148,18 +1262,21 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	        if (bookingResponse.getFollowupStatus() != null) entity.setFollowupStatus(bookingResponse.getFollowupStatus());
 	        if (bookingResponse.getFollowupDate() != null) entity.setFollowupDate(bookingResponse.getFollowupDate());
 
-	        // --- Total sittings ---
+	        // --- Update sitting summary ---
 	        if (bookingResponse.getTotalSittings() != null) entity.setTotalSittings(bookingResponse.getTotalSittings());
+	        if (bookingResponse.getTakenSittings() != null) entity.setTakenSittings(bookingResponse.getTakenSittings());
+	        if (bookingResponse.getPendingSittings() != null) entity.setPendingSittings(bookingResponse.getPendingSittings());
+	        if (bookingResponse.getCurrentSitting() != null) entity.setCurrentSitting(bookingResponse.getCurrentSitting());
 
-	        // --- Update treatment dates & sittings summary ---
+	        // --- Update treatments (map + sitting summary inside) ---
 	        if (bookingResponse.getTreatments() != null) {
-	            entity.setTreatments(bookingResponse.getTreatments()); // copy treatments info from DTO
+	            entity.setTreatments(bookingResponse.getTreatments());
 	        }
 
-	        // --- Save entity ---
+	        // --- Save updated booking ---
 	        Booking updatedBooking = repository.save(entity);
 
-	        // --- Map entity to BookingResponse to return ---
+	        // --- Build response DTO ---
 	        BookingResponse responseDTO = new BookingResponse();
 	        responseDTO.setBookingId(updatedBooking.getBookingId());
 	        responseDTO.setBookingFor(updatedBooking.getBookingFor());
@@ -1193,12 +1310,17 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	        responseDTO.setConsultationFee(updatedBooking.getConsultationFee());
 	        responseDTO.setStatus(updatedBooking.getStatus());
 	        responseDTO.setTotalFee(updatedBooking.getTotalFee());
+
+	        // ✅ Sitting summary
 	        responseDTO.setTotalSittings(updatedBooking.getTotalSittings());
 	        responseDTO.setPendingSittings(updatedBooking.getPendingSittings());
 	        responseDTO.setTakenSittings(updatedBooking.getTakenSittings());
 	        responseDTO.setCurrentSitting(updatedBooking.getCurrentSitting());
+
 	        responseDTO.setBookedAt(updatedBooking.getBookedAt());
-	        responseDTO.setTreatments(updatedBooking.getTreatments()); // ✅ include treatments
+
+	        // ✅ Treatments (with dates, sittings, status)
+	        responseDTO.setTreatments(updatedBooking.getTreatments());
 
 	        // --- Return wrapped response ---
 	        return new ResponseEntity<>(
