@@ -698,48 +698,104 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	}
 	
 	
-	public ResponseEntity<?> updateAppointment(BookingResponse bookingResponse){
-		try {
-		Booking entity = repository.findByBookingId(bookingResponse.getBookingId())
-	.orElseThrow(() -> new RuntimeException("Invalid Booking Id Please provide Valid Id"));
-		if (bookingResponse.getAge() != null) entity.setAge(bookingResponse.getAge());
-		if (bookingResponse.getBookedAt() != null) entity.setBookedAt(bookingResponse.getBookedAt());
-		if (bookingResponse.getBookingFor() != null) entity.setBookingFor(bookingResponse.getBookingFor());
-		if (bookingResponse.getClinicId() != null) entity.setClinicId(bookingResponse.getClinicId());
-		if (bookingResponse.getConsultationFee() != 0) entity.setConsultationFee(bookingResponse.getConsultationFee());
-		if (bookingResponse.getConsultationType() != null) entity.setConsultationType(bookingResponse.getConsultationType());
-		if (bookingResponse.getDoctorId() != null) entity.setDoctorId(bookingResponse.getDoctorId());
-		if (bookingResponse.getGender() != null) entity.setGender(bookingResponse.getGender());
-		if (bookingResponse.getMobileNumber() != null) entity.setMobileNumber(bookingResponse.getMobileNumber());
-		if (bookingResponse.getName() != null) entity.setName(bookingResponse.getName());
-		if (bookingResponse.getProblem() != null) entity.setProblem(bookingResponse.getProblem());
-		if (bookingResponse.getServiceDate() != null) entity.setServiceDate(bookingResponse.getServiceDate());
-		if (bookingResponse.getServicetime() != null) entity.setServicetime(bookingResponse.getServicetime());
-		if (bookingResponse.getStatus() != null) entity.setStatus(bookingResponse.getStatus());
-		if (bookingResponse.getNotes() != null) entity.setNotes(bookingResponse.getNotes());
-		if (bookingResponse.getReports() != null)
-		    entity.setReports(new ObjectMapper().convertValue(bookingResponse.getReports(),new TypeReference<List<ReportsList>>(){}));
-		if (bookingResponse.getSubServiceId() != null) entity.setSubServiceId(bookingResponse.getSubServiceId());
-		if (bookingResponse.getSubServiceName() != null) entity.setSubServiceName(bookingResponse.getSubServiceName());
-		if (bookingResponse.getReasonForCancel() != null) entity.setReasonForCancel(bookingResponse.getReasonForCancel());
-		if (bookingResponse.getTotalFee() != 0) entity.setTotalFee(bookingResponse.getTotalFee());
-		if (bookingResponse.getFreeFollowUpsLeft() != null) entity.setFreeFollowUpsLeft(bookingResponse.getFreeFollowUpsLeft());
-		
-		Booking e = repository.save(entity);			
-		if(e != null){	
-		return new ResponseEntity<>(ResponseStructure.buildResponse(e,
-				"Booking updated sucessfully",HttpStatus.OK, HttpStatus.OK.value()),
-				HttpStatus.OK);			
-		}else {
-			return new ResponseEntity<>(ResponseStructure.buildResponse(null,
-					"Booking Not Updated", HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value()),
-					HttpStatus.NOT_FOUND);
-		}}catch(Exception e) {
-			return new ResponseEntity<>(ResponseStructure.buildResponse(null,
-					e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.value()),
-					HttpStatus.INTERNAL_SERVER_ERROR);
-		}}
+//	public ResponseEntity<?> updateAppointment(BookingResponse bookingResponse){
+//		try {
+//		Booking entity = repository.findByBookingId(bookingResponse.getBookingId())
+//	.orElseThrow(() -> new RuntimeException("Invalid Booking Id Please provide Valid Id"));
+//		if (bookingResponse.getAge() != null) entity.setAge(bookingResponse.getAge());
+//		if (bookingResponse.getBookedAt() != null) entity.setBookedAt(bookingResponse.getBookedAt());
+//		if (bookingResponse.getBookingFor() != null) entity.setBookingFor(bookingResponse.getBookingFor());
+//		if (bookingResponse.getClinicId() != null) entity.setClinicId(bookingResponse.getClinicId());
+//		if (bookingResponse.getConsultationFee() != 0) entity.setConsultationFee(bookingResponse.getConsultationFee());
+//		if (bookingResponse.getConsultationType() != null) entity.setConsultationType(bookingResponse.getConsultationType());
+//		if (bookingResponse.getDoctorId() != null) entity.setDoctorId(bookingResponse.getDoctorId());
+//		if (bookingResponse.getGender() != null) entity.setGender(bookingResponse.getGender());
+//		if (bookingResponse.getMobileNumber() != null) entity.setMobileNumber(bookingResponse.getMobileNumber());
+//		if (bookingResponse.getName() != null) entity.setName(bookingResponse.getName());
+//		if (bookingResponse.getProblem() != null) entity.setProblem(bookingResponse.getProblem());
+//		if (bookingResponse.getServiceDate() != null) entity.setServiceDate(bookingResponse.getServiceDate());
+//		if (bookingResponse.getServicetime() != null) entity.setServicetime(bookingResponse.getServicetime());
+//		if (bookingResponse.getStatus() != null) entity.setStatus(bookingResponse.getStatus());
+//		if (bookingResponse.getNotes() != null) entity.setNotes(bookingResponse.getNotes());
+//		if (bookingResponse.getReports() != null)
+//		    entity.setReports(new ObjectMapper().convertValue(bookingResponse.getReports(),new TypeReference<List<ReportsList>>(){}));
+//		if (bookingResponse.getSubServiceId() != null) entity.setSubServiceId(bookingResponse.getSubServiceId());
+//		if (bookingResponse.getSubServiceName() != null) entity.setSubServiceName(bookingResponse.getSubServiceName());
+//		if (bookingResponse.getReasonForCancel() != null) entity.setReasonForCancel(bookingResponse.getReasonForCancel());
+//		if (bookingResponse.getTotalFee() != 0) entity.setTotalFee(bookingResponse.getTotalFee());
+//		if (bookingResponse.getFreeFollowUpsLeft() != null) entity.setFreeFollowUpsLeft(bookingResponse.getFreeFollowUpsLeft());
+//		
+//		Booking e = repository.save(entity);			
+//		if(e != null){	
+//		return new ResponseEntity<>(ResponseStructure.buildResponse(e,
+//				"Booking updated sucessfully",HttpStatus.OK, HttpStatus.OK.value()),
+//				HttpStatus.OK);			
+//		}else {
+//			return new ResponseEntity<>(ResponseStructure.buildResponse(null,
+//					"Booking Not Updated", HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value()),
+//					HttpStatus.NOT_FOUND);
+//		}}catch(Exception e) {
+//			return new ResponseEntity<>(ResponseStructure.buildResponse(null,
+//					e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.value()),
+//					HttpStatus.INTERNAL_SERVER_ERROR);
+//		}}
 	
+
+	public ResponseEntity<?> updateAppointment(BookingResponse bookingResponse) {
+	    try {
+	        Booking entity = repository.findByBookingId(bookingResponse.getBookingId())
+	            .orElseThrow(() -> new RuntimeException("Invalid Booking Id Please provide Valid Id"));
+
+	        if (bookingResponse.getAge() != null) entity.setAge(bookingResponse.getAge());
+	        if (bookingResponse.getBookedAt() != null) entity.setBookedAt(bookingResponse.getBookedAt());
+	        if (bookingResponse.getBookingFor() != null) entity.setBookingFor(bookingResponse.getBookingFor());
+	        if (bookingResponse.getClinicId() != null) entity.setClinicId(bookingResponse.getClinicId());
+	        if (bookingResponse.getConsultationFee() != 0) entity.setConsultationFee(bookingResponse.getConsultationFee());
+	        if (bookingResponse.getConsultationType() != null) entity.setConsultationType(bookingResponse.getConsultationType());
+	        if (bookingResponse.getDoctorId() != null) entity.setDoctorId(bookingResponse.getDoctorId());
+	        if (bookingResponse.getGender() != null) entity.setGender(bookingResponse.getGender());
+	        if (bookingResponse.getMobileNumber() != null) entity.setMobileNumber(bookingResponse.getMobileNumber());
+	        if (bookingResponse.getName() != null) entity.setName(bookingResponse.getName());
+	        if (bookingResponse.getProblem() != null) entity.setProblem(bookingResponse.getProblem());
+	        if (bookingResponse.getServiceDate() != null) entity.setServiceDate(bookingResponse.getServiceDate());
+	        if (bookingResponse.getServicetime() != null) entity.setServicetime(bookingResponse.getServicetime());
+	        if (bookingResponse.getStatus() != null) entity.setStatus(bookingResponse.getStatus());
+	        if (bookingResponse.getNotes() != null) entity.setNotes(bookingResponse.getNotes());
+	        if (bookingResponse.getReports() != null)
+	            entity.setReports(new ObjectMapper().convertValue(bookingResponse.getReports(),
+	                new TypeReference<List<ReportsList>>(){}));
+	        if (bookingResponse.getSubServiceId() != null) entity.setSubServiceId(bookingResponse.getSubServiceId());
+	        if (bookingResponse.getSubServiceName() != null) entity.setSubServiceName(bookingResponse.getSubServiceName());
+	        if (bookingResponse.getReasonForCancel() != null) entity.setReasonForCancel(bookingResponse.getReasonForCancel());
+	        if (bookingResponse.getTotalFee() != 0) entity.setTotalFee(bookingResponse.getTotalFee());
+	        if (bookingResponse.getFreeFollowUpsLeft() != null) entity.setFreeFollowUpsLeft(bookingResponse.getFreeFollowUpsLeft());
+	        if (bookingResponse.getFreeFollowUps() != null) entity.setFreeFollowUps(bookingResponse.getFreeFollowUps());
+	        if (bookingResponse.getVisitCount() != null) entity.setVisitCount(bookingResponse.getVisitCount());
+	        if (bookingResponse.getFollowupStatus() != null) entity.setFollowupStatus(bookingResponse.getFollowupStatus());
+	        if (bookingResponse.getFollowupDate() != null) entity.setFollowupDate(bookingResponse.getFollowupDate());
+
+	        // ✅ Add Sitting Summary updates
+	        if (bookingResponse.getTotalSittings() != null) entity.setTotalSittings(bookingResponse.getTotalSittings());
+	        if (bookingResponse.getTakenSittings() != null) entity.setTakenSittings(bookingResponse.getTakenSittings());
+	        if (bookingResponse.getPendingSittings() != null) entity.setPendingSittings(bookingResponse.getPendingSittings());
+	        if (bookingResponse.getCurrentSitting() != null) entity.setCurrentSitting(bookingResponse.getCurrentSitting());
+
+	        Booking e = repository.save(entity);            
+	        if (e != null) {    
+	            return new ResponseEntity<>(ResponseStructure.buildResponse(e,
+	                    "Booking updated successfully", HttpStatus.OK, HttpStatus.OK.value()),
+	                    HttpStatus.OK);            
+	        } else {
+	            return new ResponseEntity<>(ResponseStructure.buildResponse(null,
+	                    "Booking Not Updated", HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value()),
+	                    HttpStatus.NOT_FOUND);
+	        }
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(ResponseStructure.buildResponse(null,
+	                e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.value()),
+	                HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
 
 	
 //	@Scheduled(cron = "0 01 0 * * ?")
