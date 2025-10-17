@@ -198,7 +198,7 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
                                     .startDate(entry.getValue().getStartDate())
                                     .dates(entry.getValue().getDates() != null
                                         ? entry.getValue().getDates().stream()
-                                            .map(d -> new Dates(d.getDate(), d.getSitting()))
+                                            .map(d -> new Dates(d.getDate(), d.getSitting(),d.getStatus()))
                                             .collect(Collectors.toList())
                                         : null
                                     )
@@ -443,7 +443,7 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
                                                     .dates(
                                                         entry.getValue().getDates() != null
                                                             ? entry.getValue().getDates().stream()
-                                                                .map(d -> new DatesDTO(d.getDate(), d.getSitting()))
+                                                                .map(d -> new DatesDTO(d.getDate(), d.getSitting(),d.getStatus()))
                                                                 .collect(Collectors.toList())
                                                             : null
                                                     )
