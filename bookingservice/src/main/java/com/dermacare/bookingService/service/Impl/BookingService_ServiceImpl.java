@@ -8,6 +8,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -20,22 +21,25 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
 import com.dermacare.bookingService.dto.BookingInfoByInput;
 import com.dermacare.bookingService.dto.BookingRequset;
 import com.dermacare.bookingService.dto.BookingResponse;
 import com.dermacare.bookingService.dto.CustomerOnbordingDTO;
+import com.dermacare.bookingService.dto.DatesDTO;
 import com.dermacare.bookingService.dto.DoctorSaveDetailsDTO;
 import com.dermacare.bookingService.dto.RelationInfoDTO;
+import com.dermacare.bookingService.dto.TreatmentDetailsDTO;
 import com.dermacare.bookingService.entity.Booking;
 import com.dermacare.bookingService.entity.ReportsList;
 import com.dermacare.bookingService.feign.ClinicAdminFeign;
 import com.dermacare.bookingService.feign.DoctorFeign;
-import com.dermacare.bookingService.feign.NotificationFeign;
 import com.dermacare.bookingService.producer.KafkaProducer;
 import com.dermacare.bookingService.repository.BookingServiceRepository;
 import com.dermacare.bookingService.service.BookingService_Service;
@@ -741,11 +745,267 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 //		}}
 	
 
+//	public ResponseEntity<?> updateAppointment(BookingResponse bookingResponse) {
+//	    try {
+//	        Booking entity = repository.findByBookingId(bookingResponse.getBookingId())
+//	            .orElseThrow(() -> new RuntimeException("Invalid Booking Id Please provide Valid Id"));
+//
+//	        if (bookingResponse.getAge() != null) entity.setAge(bookingResponse.getAge());
+//	        if (bookingResponse.getBookedAt() != null) entity.setBookedAt(bookingResponse.getBookedAt());
+//	        if (bookingResponse.getBookingFor() != null) entity.setBookingFor(bookingResponse.getBookingFor());
+//	        if (bookingResponse.getClinicId() != null) entity.setClinicId(bookingResponse.getClinicId());
+//	        if (bookingResponse.getConsultationFee() != 0) entity.setConsultationFee(bookingResponse.getConsultationFee());
+//	        if (bookingResponse.getConsultationType() != null) entity.setConsultationType(bookingResponse.getConsultationType());
+//	        if (bookingResponse.getDoctorId() != null) entity.setDoctorId(bookingResponse.getDoctorId());
+//	        if (bookingResponse.getGender() != null) entity.setGender(bookingResponse.getGender());
+//	        if (bookingResponse.getMobileNumber() != null) entity.setMobileNumber(bookingResponse.getMobileNumber());
+//	        if (bookingResponse.getName() != null) entity.setName(bookingResponse.getName());
+//	        if (bookingResponse.getProblem() != null) entity.setProblem(bookingResponse.getProblem());
+//	        if (bookingResponse.getServiceDate() != null) entity.setServiceDate(bookingResponse.getServiceDate());
+//	        if (bookingResponse.getServicetime() != null) entity.setServicetime(bookingResponse.getServicetime());
+//	        if (bookingResponse.getStatus() != null) entity.setStatus(bookingResponse.getStatus());
+//	        if (bookingResponse.getNotes() != null) entity.setNotes(bookingResponse.getNotes());
+//	        if (bookingResponse.getReports() != null)
+//	            entity.setReports(new ObjectMapper().convertValue(bookingResponse.getReports(),
+//	                new TypeReference<List<ReportsList>>(){}));
+//	        if (bookingResponse.getSubServiceId() != null) entity.setSubServiceId(bookingResponse.getSubServiceId());
+//	        if (bookingResponse.getSubServiceName() != null) entity.setSubServiceName(bookingResponse.getSubServiceName());
+//	        if (bookingResponse.getReasonForCancel() != null) entity.setReasonForCancel(bookingResponse.getReasonForCancel());
+//	        if (bookingResponse.getTotalFee() != 0) entity.setTotalFee(bookingResponse.getTotalFee());
+//	        if (bookingResponse.getFreeFollowUpsLeft() != null) entity.setFreeFollowUpsLeft(bookingResponse.getFreeFollowUpsLeft());
+//	        if (bookingResponse.getFreeFollowUps() != null) entity.setFreeFollowUps(bookingResponse.getFreeFollowUps());
+//	        if (bookingResponse.getVisitCount() != null) entity.setVisitCount(bookingResponse.getVisitCount());
+//	        if (bookingResponse.getFollowupStatus() != null) entity.setFollowupStatus(bookingResponse.getFollowupStatus());
+//	        if (bookingResponse.getFollowupDate() != null) entity.setFollowupDate(bookingResponse.getFollowupDate());
+//
+//	        // ✅ Add Sitting Summary updates
+//	        if (bookingResponse.getTotalSittings() != null) entity.setTotalSittings(bookingResponse.getTotalSittings());
+//	        if (bookingResponse.getTakenSittings() != null) entity.setTakenSittings(bookingResponse.getTakenSittings());
+//	        if (bookingResponse.getPendingSittings() != null) entity.setPendingSittings(bookingResponse.getPendingSittings());
+//	        if (bookingResponse.getCurrentSitting() != null) entity.setCurrentSitting(bookingResponse.getCurrentSitting());
+//
+//	        Booking e = repository.save(entity);            
+//	        if (e != null) {    
+//	            return new ResponseEntity<>(ResponseStructure.buildResponse(e,
+//	                    "Booking updated successfully", HttpStatus.OK, HttpStatus.OK.value()),
+//	                    HttpStatus.OK);            
+//	        } else {
+//	            return new ResponseEntity<>(ResponseStructure.buildResponse(null,
+//	                    "Booking Not Updated", HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value()),
+//	                    HttpStatus.NOT_FOUND);
+//	        }
+//	    } catch (Exception e) {
+//	        return new ResponseEntity<>(ResponseStructure.buildResponse(null,
+//	                e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.value()),
+//	                HttpStatus.INTERNAL_SERVER_ERROR);
+//	    }
+//	}
+
+//
+//	@Override
+//	public ResponseEntity<?> updateAppointment(BookingResponse bookingResponse) {
+//	    try {
+//	        Booking entity = repository.findByBookingId(bookingResponse.getBookingId())
+//	                .orElseThrow(() -> new RuntimeException("Invalid Booking Id. Please provide a valid Id."));
+//
+//	        // ✅ Update basic details if provided
+//	        if (bookingResponse.getAge() != null) entity.setAge(bookingResponse.getAge());
+//	        if (bookingResponse.getBookedAt() != null) entity.setBookedAt(bookingResponse.getBookedAt());
+//	        if (bookingResponse.getBookingFor() != null) entity.setBookingFor(bookingResponse.getBookingFor());
+//	        if (bookingResponse.getClinicId() != null) entity.setClinicId(bookingResponse.getClinicId());
+//	        if (bookingResponse.getConsultationFee() != 0) entity.setConsultationFee(bookingResponse.getConsultationFee());
+//	        if (bookingResponse.getConsultationType() != null) entity.setConsultationType(bookingResponse.getConsultationType());
+//	        if (bookingResponse.getDoctorId() != null) entity.setDoctorId(bookingResponse.getDoctorId());
+//	        if (bookingResponse.getGender() != null) entity.setGender(bookingResponse.getGender());
+//	        if (bookingResponse.getMobileNumber() != null) entity.setMobileNumber(bookingResponse.getMobileNumber());
+//	        if (bookingResponse.getName() != null) entity.setName(bookingResponse.getName());
+//	        if (bookingResponse.getProblem() != null) entity.setProblem(bookingResponse.getProblem());
+//	        if (bookingResponse.getServiceDate() != null) entity.setServiceDate(bookingResponse.getServiceDate());
+//	        if (bookingResponse.getServicetime() != null) entity.setServicetime(bookingResponse.getServicetime());
+//	        if (bookingResponse.getStatus() != null) entity.setStatus(bookingResponse.getStatus());
+//	        if (bookingResponse.getNotes() != null) entity.setNotes(bookingResponse.getNotes());
+//	        if (bookingResponse.getReports() != null) {
+//	            entity.setReports(new ObjectMapper().convertValue(
+//	                    bookingResponse.getReports(),
+//	                    new TypeReference<List<ReportsList>>() {}));
+//	        }
+//	        if (bookingResponse.getSubServiceId() != null) entity.setSubServiceId(bookingResponse.getSubServiceId());
+//	        if (bookingResponse.getSubServiceName() != null) entity.setSubServiceName(bookingResponse.getSubServiceName());
+//	        if (bookingResponse.getReasonForCancel() != null) entity.setReasonForCancel(bookingResponse.getReasonForCancel());
+//	        if (bookingResponse.getTotalFee() != 0) entity.setTotalFee(bookingResponse.getTotalFee());
+//	        if (bookingResponse.getFreeFollowUpsLeft() != null) entity.setFreeFollowUpsLeft(bookingResponse.getFreeFollowUpsLeft());
+//	        if (bookingResponse.getFreeFollowUps() != null) entity.setFreeFollowUps(bookingResponse.getFreeFollowUps());
+//	        if (bookingResponse.getVisitCount() != null) entity.setVisitCount(bookingResponse.getVisitCount());
+//	        if (bookingResponse.getFollowupStatus() != null) entity.setFollowupStatus(bookingResponse.getFollowupStatus());
+//	        if (bookingResponse.getFollowupDate() != null) entity.setFollowupDate(bookingResponse.getFollowupDate());
+//
+//	        // ✅ Total sittings from request
+//	        if (bookingResponse.getTotalSittings() != null) {
+//	            entity.setTotalSittings(bookingResponse.getTotalSittings());
+//	        }
+//
+//	        // ✅ Update Treatment Dates & Auto Sitting Summary
+//	        if (bookingResponse.getTreatmentDates() != null && !bookingResponse.getTreatmentDates().isEmpty()) {
+//	            List<LocalDate> existingDates = entity.getTreatmentDates() != null ? entity.getTreatmentDates() : new ArrayList<>();
+//	            for (LocalDate newDate : bookingResponse.getTreatmentDates()) {
+//	                if (!existingDates.contains(newDate)) {
+//	                    existingDates.add(newDate);
+//	                }
+//	            }
+//	            entity.setTreatmentDates(existingDates);
+//
+//	            // Auto calculate sitting summary
+//	            int takenSittings = existingDates.size();
+//	            int totalSittings = entity.getTotalSittings() != null ? entity.getTotalSittings() : 0;
+//	            int pendingSittings = Math.max(totalSittings - takenSittings, 0);
+//	            int currentSitting = (pendingSittings > 0) ? (takenSittings + 1) : takenSittings;
+//
+//	            entity.setTakenSittings(takenSittings);
+//	            entity.setPendingSittings(pendingSittings);
+//	            entity.setCurrentSitting(currentSitting);
+//
+//	            // ✅ Auto update status when sittings are completed
+//	            if (pendingSittings == 0 && totalSittings > 0) {
+//	                entity.setStatus("Completed");
+//	            }
+//	        }
+//
+//	        // ✅ Save updated booking
+//	        Booking updatedBooking = repository.save(entity);
+//
+//	        return new ResponseEntity<>(
+//	                ResponseStructure.buildResponse(
+//	                        updatedBooking,
+//	                        "Booking updated successfully",
+//	                        HttpStatus.OK,
+//	                        HttpStatus.OK.value()
+//	                ),
+//	                HttpStatus.OK
+//	        );
+//
+//	    } catch (Exception e) {
+//	        return new ResponseEntity<>(
+//	                ResponseStructure.buildResponse(
+//	                        null,
+//	                        e.getMessage(),
+//	                        HttpStatus.INTERNAL_SERVER_ERROR,
+//	                        HttpStatus.INTERNAL_SERVER_ERROR.value()
+//	                ),
+//	                HttpStatus.INTERNAL_SERVER_ERROR
+//	        );
+//	    }
+//	}
+
+//	@Override
+//	public ResponseEntity<?> updateAppointment(BookingResponse bookingResponse) {
+//	    try {
+//	        Booking entity = repository.findByBookingId(bookingResponse.getBookingId())
+//	                .orElseThrow(() -> new RuntimeException("Invalid Booking Id. Please provide a valid Id."));
+//
+//	        // --------------------- Update basic fields ---------------------
+//	        if (bookingResponse.getAge() != null) entity.setAge(bookingResponse.getAge());
+//	        if (bookingResponse.getBookedAt() != null) entity.setBookedAt(bookingResponse.getBookedAt());
+//	        if (bookingResponse.getBookingFor() != null) entity.setBookingFor(bookingResponse.getBookingFor());
+//	        if (bookingResponse.getClinicId() != null) entity.setClinicId(bookingResponse.getClinicId());
+//	        if (bookingResponse.getConsultationFee() != 0) entity.setConsultationFee(bookingResponse.getConsultationFee());
+//	        if (bookingResponse.getConsultationType() != null) entity.setConsultationType(bookingResponse.getConsultationType());
+//	        if (bookingResponse.getDoctorId() != null) entity.setDoctorId(bookingResponse.getDoctorId());
+//	        if (bookingResponse.getGender() != null) entity.setGender(bookingResponse.getGender());
+//	        if (bookingResponse.getMobileNumber() != null) entity.setMobileNumber(bookingResponse.getMobileNumber());
+//	        if (bookingResponse.getName() != null) entity.setName(bookingResponse.getName());
+//	        if (bookingResponse.getProblem() != null) entity.setProblem(bookingResponse.getProblem());
+//	        if (bookingResponse.getServiceDate() != null) entity.setServiceDate(bookingResponse.getServiceDate());
+//	        if (bookingResponse.getServicetime() != null) entity.setServicetime(bookingResponse.getServicetime());
+//	        if (bookingResponse.getStatus() != null) entity.setStatus(bookingResponse.getStatus());
+//	        if (bookingResponse.getNotes() != null) entity.setNotes(bookingResponse.getNotes());
+//	        if (bookingResponse.getReports() != null) {
+//	            entity.setReports(new ObjectMapper().convertValue(
+//	                    bookingResponse.getReports(),
+//	                    new TypeReference<List<ReportsList>>() {}));
+//	        }
+//	        if (bookingResponse.getSubServiceId() != null) entity.setSubServiceId(bookingResponse.getSubServiceId());
+//	        if (bookingResponse.getSubServiceName() != null) entity.setSubServiceName(bookingResponse.getSubServiceName());
+//	        if (bookingResponse.getReasonForCancel() != null) entity.setReasonForCancel(bookingResponse.getReasonForCancel());
+//	        if (bookingResponse.getTotalFee() != 0) entity.setTotalFee(bookingResponse.getTotalFee());
+//	        if (bookingResponse.getFreeFollowUpsLeft() != null) entity.setFreeFollowUpsLeft(bookingResponse.getFreeFollowUpsLeft());
+//	        if (bookingResponse.getFreeFollowUps() != null) entity.setFreeFollowUps(bookingResponse.getFreeFollowUps());
+//	        if (bookingResponse.getVisitCount() != null) entity.setVisitCount(bookingResponse.getVisitCount());
+//	        if (bookingResponse.getFollowupStatus() != null) entity.setFollowupStatus(bookingResponse.getFollowupStatus());
+//	        if (bookingResponse.getFollowupDate() != null) entity.setFollowupDate(bookingResponse.getFollowupDate());
+//	        if (bookingResponse.getTotalSittings() != null) entity.setTotalSittings(bookingResponse.getTotalSittings());
+//
+//	        // --------------------- Update treatment sittings ---------------------
+//	        if (bookingResponse.getTreatments() != null && bookingResponse.getTreatments().getGeneratedData() != null) {
+//	            int totalSittings = 0;
+//	            int takenSittings = 0;
+//	            int pendingSittings = 0;
+//	            int currentSitting = 0;
+//
+//	            for (Map.Entry<String, TreatmentDetailsDTO> entry : bookingResponse.getTreatments().getGeneratedData().entrySet()) {
+//	                TreatmentDetailsDTO treatment = entry.getValue();
+//	                if (treatment != null) {
+//	                    int treatmentTotalSittings = treatment.getTotalSittings() != null ? treatment.getTotalSittings() : 0;
+//	                    int treatmentTakenSittings = treatment.getDates() != null ? treatment.getDates().size() : 0;
+//	                    int treatmentPending = Math.max(treatmentTotalSittings - treatmentTakenSittings, 0);
+//	                    int treatmentCurrent = treatmentPending > 0 ? treatmentTakenSittings + 1 : treatmentTakenSittings;
+//
+//	                    // Update treatment object
+//	                    treatment.setTakenSittings(treatmentTakenSittings);
+//	                    treatment.setPendingSittings(treatmentPending);
+//	                    treatment.setCurrentSitting(treatmentCurrent);
+//
+//	                    // Accumulate for booking summary
+//	                    totalSittings += treatmentTotalSittings;
+//	                    takenSittings += treatmentTakenSittings;
+//	                    pendingSittings += treatmentPending;
+//	                    currentSitting = Math.max(currentSitting, treatmentCurrent);
+//	                }
+//	            }
+//
+//	            // Update booking-level sitting summary
+//	            entity.setTotalSittings(totalSittings);
+//	            entity.setTakenSittings(takenSittings);
+//	            entity.setPendingSittings(pendingSittings);
+//	            entity.setCurrentSitting(currentSitting);
+//
+//	            // Auto update status
+//	            if (pendingSittings == 0 && totalSittings > 0) entity.setStatus("Completed");
+//	            else if (takenSittings > 0) entity.setStatus("In Progress");
+//	            else entity.setStatus("Booked");
+//	        }
+//
+//	        // --------------------- Save ---------------------
+//	        Booking updatedBooking = repository.save(entity);
+//	        return new ResponseEntity<>(
+//	                ResponseStructure.buildResponse(
+//	                        updatedBooking,
+//	                        "Booking updated successfully",
+//	                        HttpStatus.OK,
+//	                        HttpStatus.OK.value()
+//	                ),
+//	                HttpStatus.OK
+//	        );
+//
+//	    } catch (Exception e) {
+//	        return new ResponseEntity<>(
+//	                ResponseStructure.buildResponse(
+//	                        null,
+//	                        e.getMessage(),
+//	                        HttpStatus.INTERNAL_SERVER_ERROR,
+//	                        HttpStatus.INTERNAL_SERVER_ERROR.value()
+//	                ),
+//	                HttpStatus.INTERNAL_SERVER_ERROR
+//	        );
+//	    }
+//	}
+	
+	@Override
 	public ResponseEntity<?> updateAppointment(BookingResponse bookingResponse) {
 	    try {
 	        Booking entity = repository.findByBookingId(bookingResponse.getBookingId())
-	            .orElseThrow(() -> new RuntimeException("Invalid Booking Id Please provide Valid Id"));
+	                .orElseThrow(() -> new RuntimeException("Invalid Booking Id. Please provide a valid Id."));
 
+	        // --------------------- Update basic fields ---------------------
 	        if (bookingResponse.getAge() != null) entity.setAge(bookingResponse.getAge());
 	        if (bookingResponse.getBookedAt() != null) entity.setBookedAt(bookingResponse.getBookedAt());
 	        if (bookingResponse.getBookingFor() != null) entity.setBookingFor(bookingResponse.getBookingFor());
@@ -761,9 +1021,11 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	        if (bookingResponse.getServicetime() != null) entity.setServicetime(bookingResponse.getServicetime());
 	        if (bookingResponse.getStatus() != null) entity.setStatus(bookingResponse.getStatus());
 	        if (bookingResponse.getNotes() != null) entity.setNotes(bookingResponse.getNotes());
-	        if (bookingResponse.getReports() != null)
-	            entity.setReports(new ObjectMapper().convertValue(bookingResponse.getReports(),
-	                new TypeReference<List<ReportsList>>(){}));
+	        if (bookingResponse.getReports() != null) {
+	            entity.setReports(new ObjectMapper().convertValue(
+	                    bookingResponse.getReports(),
+	                    new TypeReference<List<ReportsList>>() {}));
+	        }
 	        if (bookingResponse.getSubServiceId() != null) entity.setSubServiceId(bookingResponse.getSubServiceId());
 	        if (bookingResponse.getSubServiceName() != null) entity.setSubServiceName(bookingResponse.getSubServiceName());
 	        if (bookingResponse.getReasonForCancel() != null) entity.setReasonForCancel(bookingResponse.getReasonForCancel());
@@ -773,27 +1035,79 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	        if (bookingResponse.getVisitCount() != null) entity.setVisitCount(bookingResponse.getVisitCount());
 	        if (bookingResponse.getFollowupStatus() != null) entity.setFollowupStatus(bookingResponse.getFollowupStatus());
 	        if (bookingResponse.getFollowupDate() != null) entity.setFollowupDate(bookingResponse.getFollowupDate());
-
-	        // ✅ Add Sitting Summary updates
 	        if (bookingResponse.getTotalSittings() != null) entity.setTotalSittings(bookingResponse.getTotalSittings());
-	        if (bookingResponse.getTakenSittings() != null) entity.setTakenSittings(bookingResponse.getTakenSittings());
-	        if (bookingResponse.getPendingSittings() != null) entity.setPendingSittings(bookingResponse.getPendingSittings());
-	        if (bookingResponse.getCurrentSitting() != null) entity.setCurrentSitting(bookingResponse.getCurrentSitting());
 
-	        Booking e = repository.save(entity);            
-	        if (e != null) {    
-	            return new ResponseEntity<>(ResponseStructure.buildResponse(e,
-	                    "Booking updated successfully", HttpStatus.OK, HttpStatus.OK.value()),
-	                    HttpStatus.OK);            
-	        } else {
-	            return new ResponseEntity<>(ResponseStructure.buildResponse(null,
-	                    "Booking Not Updated", HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value()),
-	                    HttpStatus.NOT_FOUND);
+	        // --------------------- Update Treatments & Dates ---------------------
+	        if (bookingResponse.getTreatments() != null && bookingResponse.getTreatments().getGeneratedData() != null) {
+	            Map<String, TreatmentDetailsDTO> updatedTreatments = entity.getTreatments() != null
+	                    ? entity.getTreatments()
+	                    : new HashMap<>();
+
+	            for (Map.Entry<String, TreatmentDetailsDTO> entry : bookingResponse.getTreatments().getGeneratedData().entrySet()) {
+	                String treatmentName = entry.getKey();
+	                TreatmentDetailsDTO incoming = entry.getValue();
+
+	                TreatmentDetailsDTO existing = updatedTreatments.getOrDefault(treatmentName, new TreatmentDetailsDTO());
+	                List<DatesDTO> existingDates = existing.getDates() != null ? existing.getDates() : new ArrayList<>();
+
+	                if (incoming.getDates() != null) {
+	                    for (DatesDTO dateDTO : incoming.getDates()) {
+	                        if (!existingDates.contains(dateDTO)) existingDates.add(dateDTO);
+	                    }
+	                }
+
+	                existing.setDates(existingDates);
+	                existing.setTotalSittings(incoming.getTotalSittings());
+	                existing.setTakenSittings(existingDates.size());
+	                existing.setPendingSittings(Math.max(existing.getTotalSittings() - existing.getTakenSittings(), 0));
+	                existing.setCurrentSitting(existing.getPendingSittings() > 0 ? existing.getTakenSittings() + 1 : existing.getTakenSittings());
+	                existing.setReason(incoming.getReason());
+	                existing.setFrequency(incoming.getFrequency());
+
+	                updatedTreatments.put(treatmentName, existing);
+	            }
+
+	            entity.setTreatments(updatedTreatments);
+
+	            // --------------------- Update Booking Summary ---------------------
+	            int totalSittings = updatedTreatments.values().stream().mapToInt(t -> t.getTotalSittings() != null ? t.getTotalSittings() : 0).sum();
+	            int takenSittings = updatedTreatments.values().stream().mapToInt(t -> t.getTakenSittings() != null ? t.getTakenSittings() : 0).sum();
+	            int pendingSittings = updatedTreatments.values().stream().mapToInt(t -> t.getPendingSittings() != null ? t.getPendingSittings() : 0).sum();
+	            int currentSitting = updatedTreatments.values().stream().mapToInt(t -> t.getCurrentSitting() != null ? t.getCurrentSitting() : 0).max().orElse(0);
+
+	            entity.setTotalSittings(totalSittings);
+	            entity.setTakenSittings(takenSittings);
+	            entity.setPendingSittings(pendingSittings);
+	            entity.setCurrentSitting(currentSitting);
+
+	            if (pendingSittings == 0 && totalSittings > 0) entity.setStatus("Completed");
+	            else if (takenSittings > 0) entity.setStatus("In-Progress");
+	            else entity.setStatus("Booked");
 	        }
+
+	        // --------------------- Save ---------------------
+	        Booking updatedBooking = repository.save(entity);
+
+	        return new ResponseEntity<>(
+	                ResponseStructure.buildResponse(
+	                        updatedBooking,
+	                        "Booking updated successfully",
+	                        HttpStatus.OK,
+	                        HttpStatus.OK.value()
+	                ),
+	                HttpStatus.OK
+	        );
+
 	    } catch (Exception e) {
-	        return new ResponseEntity<>(ResponseStructure.buildResponse(null,
-	                e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.value()),
-	                HttpStatus.INTERNAL_SERVER_ERROR);
+	        return new ResponseEntity<>(
+	                ResponseStructure.buildResponse(
+	                        null,
+	                        e.getMessage(),
+	                        HttpStatus.INTERNAL_SERVER_ERROR,
+	                        HttpStatus.INTERNAL_SERVER_ERROR.value()
+	                ),
+	                HttpStatus.INTERNAL_SERVER_ERROR
+	        );
 	    }
 	}
 

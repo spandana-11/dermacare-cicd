@@ -67,4 +67,6 @@ public class BookingResponse {
 	private Integer currentSitting;
 	private String followupDate;
 		
+	// ✅ Add treatments info
+    private TreatmentResponseDTO treatments;
 }
