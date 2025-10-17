@@ -1908,11 +1908,14 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                                 LocalDate sittingDate = LocalDate.parse(d.getDate());
                                 LocalDateTime sittingDateTime = sittingDate.atStartOfDay();
 
+                                String sittingStatus = "Pending";
+
                                 // Count completed sittings (past or today)
                                 if (!sittingDate.isAfter(LocalDate.now())) {
                                     completed++;
                                     currentSittingForThisTreatment = counter.get();
                                     overallCurrentSitting = Math.max(overallCurrentSitting, currentSittingForThisTreatment);
+                                    sittingStatus = "Completed"; // ✅ mark status
                                 }
 
                                 // Track last sitting date
@@ -1925,10 +1928,14 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                                     d.setSitting(counter.getAndIncrement());
                                 }
 
+                                // ✅ Update entity status
+                                d.setStatus(sittingStatus);
+
                                 // Convert to DTO
                                 DatesDTO dtoDate = DatesDTO.builder()
                                         .date(d.getDate())
                                         .sitting(d.getSitting())
+                                        .status(sittingStatus)
                                         .build();
                                 datesDTOList.add(dtoDate);
 
@@ -1957,7 +1964,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                     overallTakenSittings += completed;
                     overallPendingSittings += Math.max(total - completed, 0);
 
-                    // Update entity itself for DB
+                    // ✅ Update entity itself for DB
                     entityTreatment.setSittings(Math.max(total - completed, 0));
                     entityTreatment.setTakenSittings(completed);
                     entityTreatment.setPendingSittings(Math.max(total - completed, 0));
@@ -1972,25 +1979,25 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             treatmentResponseDTO.setPendingSittings(overallPendingSittings);
             treatmentResponseDTO.setCurrentSitting(overallCurrentSitting);
 
-            // Save back to entity (DB) with overall summary included
+            // ✅ Save back to entity with status
             TreatmentResponse treatmentEntity = TreatmentResponse.builder()
                     .generatedData(generatedDataDTO.entrySet().stream()
-                        .collect(Collectors.toMap(
-                            Map.Entry::getKey,
-                            e -> TreatmentDetails.builder()
-                                    .dates(e.getValue().getDates().stream()
-                                            .map(d -> new Dates(d.getDate(), d.getSitting()))
-                                            .collect(Collectors.toList()))
-                                    .reason(e.getValue().getReason())
-                                    .frequency(e.getValue().getFrequency())
-                                    .startDate(e.getValue().getStartDate())
-                                    .sittings(e.getValue().getSittings())
-                                    .totalSittings(e.getValue().getTotalSittings())
-                                    .takenSittings(e.getValue().getTakenSittings())
-                                    .pendingSittings(e.getValue().getPendingSittings())
-                                    .currentSitting(e.getValue().getCurrentSitting())
-                                    .build()
-                        ))
+                            .collect(Collectors.toMap(
+                                    Map.Entry::getKey,
+                                    e -> TreatmentDetails.builder()
+                                            .dates(e.getValue().getDates().stream()
+                                                    .map(d -> new Dates(d.getDate(), d.getSitting(), d.getStatus()))
+                                                    .collect(Collectors.toList()))
+                                            .reason(e.getValue().getReason())
+                                            .frequency(e.getValue().getFrequency())
+                                            .startDate(e.getValue().getStartDate())
+                                            .sittings(e.getValue().getSittings())
+                                            .totalSittings(e.getValue().getTotalSittings())
+                                            .takenSittings(e.getValue().getTakenSittings())
+                                            .pendingSittings(e.getValue().getPendingSittings())
+                                            .currentSitting(e.getValue().getCurrentSitting())
+                                            .build()
+                            ))
                     )
                     .selectedTestTreatment(savedVisit.getTreatments() != null
                             ? savedVisit.getTreatments().getSelectedTestTreatment() : null)

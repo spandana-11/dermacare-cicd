@@ -13,5 +13,6 @@ import lombok.NoArgsConstructor;
 public class Dates {
 	 private String date; 
 	    private Integer sitting;
+	    private String status; 
 }
 
