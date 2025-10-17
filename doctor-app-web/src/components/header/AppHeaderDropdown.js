@@ -57,7 +57,7 @@ const AppHeaderDropdown = () => {
       <CDropdownToggle placement="bottom-end" className="py-0 pe-0" caret={false}>
         <CAvatar
           src={clinic?.hospitalLogo ? `data:image/png;base64,${clinic.hospitalLogo}` : avatar8}
-          size="lg"
+          // size="md"
           className="profile-image"
         />
       </CDropdownToggle>

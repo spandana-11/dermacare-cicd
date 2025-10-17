@@ -43,6 +43,7 @@ import {
 } from './providerAPIs'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const PersonalViewDetails = () => {
   const { id } = useParams()
@@ -317,7 +318,7 @@ const PersonalViewDetails = () => {
         console.error('Mobile number (ID) is undefined or invalid')
       }
     } catch (error) {
-      toast.error(error.message, { position: 'top-right' })
+      showCustomToast(error.message, { position: 'top-right' },'error')
       setError('Failed to update caregiver details.')
     } finally {
       setLoading(false)
@@ -383,7 +384,7 @@ const PersonalViewDetails = () => {
     const hasErrors = Object.values(errors).some((error) => error !== '')
 
     if (hasErrors) {
-      toast.error('Please correct validation errors before submitting.', { position: 'top-right' })
+      showCustomToast('Please correct validation errors before submitting.', { position: 'top-right' },'error')
       return
     }
 
@@ -412,7 +413,7 @@ const PersonalViewDetails = () => {
       fetchAllData(id)
     } catch (error) {
       console.error('Error updating Basic details:', error.response ? error.response.data : error)
-      toast.error(error.message, { position: 'top-right' })
+      showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
 
@@ -503,7 +504,7 @@ const PersonalViewDetails = () => {
   const handleQualificationUpdateClick = async () => {
     const hasErrors = Object.values(QulErrors).some((error) => error !== '')
     if (hasErrors) {
-      toast.error('Please correct validation errors before submitting.', { position: 'top-right' })
+      showCustomToast('Please correct validation errors before submitting.', { position: 'top-right' },'error')
       return
     }
 
@@ -535,7 +536,7 @@ const PersonalViewDetails = () => {
       setEditQualificationMode(false)
       fetchAllData(id)
 
-      toast.success('Qualification details updated successfully!', {
+      showCustomToast('Qualification details updated successfully!','success', {
         position: 'top-right',
         autoClose: 3000,
       })
@@ -544,7 +545,7 @@ const PersonalViewDetails = () => {
         'Error updating Qualifications details:',
         error.response ? error.response.data : error,
       )
-      toast.error(error.message, { position: 'top-right' })
+      showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
 
@@ -634,7 +635,7 @@ const PersonalViewDetails = () => {
   const handleUpdateExperience = async (index, id) => {
     const hasErrors = Object.values(expError).some((error) => error !== '')
     if (hasErrors) {
-      toast.error('Please correct validation errors before submitting.', { position: 'top-right' })
+     showCustomToast('Please correct validation errors before submitting.', { position: 'top-right' },'error')
       return
     }
 
@@ -685,13 +686,12 @@ const PersonalViewDetails = () => {
 
       fetchAllData(id) // Refresh data
 
-      toast.success('Experience details updated successfully!', {
+      showCustomToast('Experience details updated successfully!','showCustomToast', {
         position: 'top-right',
         autoClose: 3000,
       })
     } catch (error) {
-      console.error('Error updating experience data:', error.response?.data || error.message)
-      toast.error(error.message, { position: 'top-right' })
+      showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
 
@@ -734,7 +734,7 @@ const PersonalViewDetails = () => {
         const updatedEditMode = editExperienceMode.filter((_, i) => i !== index)
         setEditExperienceMode(updatedEditMode)
 
-        toast.success('Experience details deleted successfully!', {
+        showCustomToast('Experience details deleted successfully!','success', {
           position: 'top-right',
           autoClose: 3000,
         })
@@ -744,7 +744,7 @@ const PersonalViewDetails = () => {
       }
     } catch (error) {
       console.error('Error removing experience:', error)
-      toast.error(error.message, { position: 'top-right' })
+      showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
 
@@ -852,7 +852,7 @@ const PersonalViewDetails = () => {
     setErrors(validationErrors)
 
     if (Object.keys(validationErrors).length > 0) {
-      toast.error('Fill all the fields!', { position: 'top-right' })
+      showCustomToast('Fill all the fields!', { position: 'top-right' },'error')
       return
     }
 
@@ -889,7 +889,7 @@ const PersonalViewDetails = () => {
         })
 
         setIsAddingNewExperience(false)
-        toast.success('Experience Added successfully!', {
+        showCustomToast('Experience Added successfully!','success', {
           position: 'top-right',
           autoClose: 3000,
         })
@@ -906,7 +906,7 @@ const PersonalViewDetails = () => {
         await fetchAllData(id)
       }
     } catch (error) {
-      toast.error(error.message, { position: 'top-right' })
+      showCustomToast(error.message, { position: 'top-right' },'error')
 
       if (error.response) {
         console.error('API response error:', error.response.data)
@@ -1084,7 +1084,7 @@ const PersonalViewDetails = () => {
           return updatedModes;
         });
   
-        toast.success('Course updated successfully!', {
+        showCustomToast('Course updated successfully!','success', {
           position: 'top-right',
           autoClose: 3000,
         });
@@ -1093,7 +1093,7 @@ const PersonalViewDetails = () => {
       }
     } catch (error) {
       console.error('Error updating course:', error.response?.data || error.message);
-      toast.error(error.message, { position: 'top-right' })
+      showCustomToast(error.message, { position: 'top-right' },'error')
     }
   };
   
@@ -1138,7 +1138,7 @@ const PersonalViewDetails = () => {
 
         const updatedEditMode = editCourseMode.filter((_, i) => i !== index)
         setEditCourseMode(updatedEditMode)
-        toast.success('Course details deleted successfully!', {
+        showCustomToast('Course details deleted successfully!', 'success',{
           position: 'top-right',
           autoClose: 3000,
         })
@@ -1147,7 +1147,7 @@ const PersonalViewDetails = () => {
       }
     } catch (error) {
       console.error('Error removing course:', error)
-      toast.error(error.message, { position: 'top-right' })
+      showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
 
@@ -1205,7 +1205,7 @@ const PersonalViewDetails = () => {
     const validationErrors = validateNewCourseForm()
     setCourseError(validationErrors)
     if (Object.keys(validationErrors).length > 0) {
-      toast.error('Fill all the fields!', { position: 'top-right' })
+      showCustomToast('Fill all the fields!', { position: 'top-right' },'error')
       return
     }
 
@@ -1242,14 +1242,14 @@ const PersonalViewDetails = () => {
         })
 
         setIsAddingNewCourse(false)
-        toast.success('Course details added successfully!', {
+        showCustomToast('Course details added successfully!','success', {
           position: 'top-right',
           autoClose: 3000,
         })
         await fetchAllData(id)
       }
     } catch (error) {
-      toast.error(error.message, { position: 'top-right' })
+      showCustomToast(error.message, { position: 'top-right' },'error')
 
       if (error.response) {
         console.error('API response error:', error.response.data)
@@ -1395,7 +1395,7 @@ const PersonalViewDetails = () => {
   const handleBankUpdateClick = async () => {
     const hasErrors = Object.values(bankError).some((error) => error !== '')
     if (hasErrors) {
-      toast.error('Please correct validation errors before submitting.', { position: 'top-right' })
+     showCustomToast('Please correct validation errors before submitting.', { position: 'top-right' },'error')
       return
     }
 
@@ -1416,13 +1416,13 @@ const PersonalViewDetails = () => {
 
       setEditBankMode(false)
       fetchAllData(id)
-      toast.success('Bank details updated successfully!', {
+     showCustomToast('Bank details updated successfully!','success', {
         position: 'top-right',
         autoClose: 3000,
       })
     } catch (error) {
       console.error('Error updating bank details:', error.response ? error.response.data : error)
-      toast.error(error.message, { position: 'top-right' })
+      showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
 
@@ -1487,7 +1487,7 @@ const PersonalViewDetails = () => {
       }))
 
       await fetchAllData(id)
-      toast.success('Verification details updated successfully!', {
+      showCustomToast('Verification details updated successfully!','success', {
         position: 'top-right',
         autoClose: 3000,
       })
@@ -1497,7 +1497,7 @@ const PersonalViewDetails = () => {
         'Error updating Verification details:',
         error.response ? error.response.data : error,
       )
-      toast.error(error.message, { position: 'top-right' })
+      showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
 

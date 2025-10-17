@@ -19,6 +19,7 @@ import UserPermissionModal from '../UserPermissionModal'
 import { validateFormData, validateField } from '../../../Utils/Validators'
 import { emailPattern } from '../../../Constant/Constants'
 import FilePreview from '../../../Utils/FilePreview'
+import { showCustomToast } from '../../../Utils/Toaster'
 
 const OtherStaffForm = ({
   visible,
@@ -229,7 +230,7 @@ const OtherStaffForm = ({
     if (!file) return
     // ✅ Check file size (bytes → KB)
     if (file.size > 250 * 1024) {
-      toast.error('File size must be less than 250KB.', {
+      showCustomToast('File size must be less than 250KB.', 'error', {
         position: 'top-right',
         autoClose: 3000,
         hideProgressBar: false,
@@ -253,12 +254,11 @@ const OtherStaffForm = ({
     reader.readAsDataURL(file)
   }
 
-  // 🔹 Save handler
-  const handleSubmit = () => {
+  const validateForm = () => {
     const missing = validateMandatoryFields(formData, mandatoryFields) // returns array
 
     if (missing.length > 0) {
-      toast.error(`Please fill required fields: ${missing.join(', ')}`)
+      showCustomToast(`Please fill required fields: ${missing.join(', ')}`, 'error')
       return
     }
     if (formData.dateOfBirth) {
@@ -272,49 +272,70 @@ const OtherStaffForm = ({
       const actualAge = isBeforeBirthday ? age - 1 : age
 
       if (actualAge < 18) {
-        toast.error('Technician must be at least 18 years old.')
+        showCustomToast('Technician must be at least 18 years old.', 'error')
         return
       }
     }
     const mobileRegex = /^[6-9]\d{9}$/
     if (!mobileRegex.test(formData.contactNumber)) {
-      toast.error('Contact number must be 10 digits and start with 6-9.')
+      showCustomToast('Contact number must be 10 digits and start with 6-9.', 'error')
       return
     }
-    // if (!mobileRegex.test(formData.emergencyContact)) {
-    //   toast.error('Emergency contact must be 10 digits and start with 6-9.')
-    //   return
-    // }
+
     // ✅ Emergency contact and Nurse contact must not be same
     if (formData.contactNumber === formData.emergencyContact) {
-      toast.error('Contact Number and Emergency Contact cannot be the same.')
+      showCustomToast('Contact Number and Emergency Contact cannot be the same.', 'error')
       return
     }
     // ✅ Email validation
 
     const email = formData.emailId.trim()
     if (!emailPattern.test(email)) {
-      toast.error('Please enter a valid email address.')
+      showCustomToast('Please enter a valid email address.', 'error')
       return
     }
     const duplicateContact = technicians?.some(
       (t) => t.contactNumber === formData.contactNumber && t.id !== formData.id,
     )
     if (duplicateContact) {
-      toast.error('Contact number already exists!')
+      showCustomToast('Contact number already exists!', 'error')
       return
     }
     const duplicateEmail = technicians?.some(
       (t) => t.emailId === formData.emailId && t.id !== formData.id,
     )
     if (duplicateEmail) {
-      toast.error('Email already exists!')
+      showCustomToast('Email already exists!', 'error')
       return
     }
-    console.log('Saving Staff data:', formData)
-    onSave(formData)
-    setFormData(emptyForm)
-    onClose()
+
+    return true
+  }
+
+  // 🔹 Save handler
+  const handleSubmit = async () => {
+    const isValid = validateForm()
+    if (!isValid) {
+      console.warn('⚠️ Validation failed. Please check required fields.')
+      return
+    }
+
+    try {
+      const res = await onSave(formData)
+      console.log(res) // Now this will log actual API response
+      if (res != undefined) {
+        setFormData(emptyForm)
+      }
+      else{
+        onClose();
+      }
+    } catch (err) {
+      console.error('Submit failed', err)
+    }
+    // console.log('Saving Staff data:', formData)
+    // onSave(formData)
+    // setFormData(emptyForm)
+    // onClose()
   }
 
   // 🔹 Close Preview Modal
@@ -419,205 +440,122 @@ const OtherStaffForm = ({
           {viewMode ? (
             // ✅ VIEW MODE
 
-            <div className="p-4 border rounded shadow-sm bg-white ">
-              <div className="d-flex justify-content-between align-items-center">
-                {/* Left Side: Details */}
-                <div>
-                  <div className="mb-1">
-                    <span className="fw-bold ">Name : </span>
-                    <span>{formData.fullName}</span>
-                  </div>
-                  <div className="mb-1">
-                    <span className="fw-bold">Email : </span>
-                    <span>{formData.emailId}</span>
-                  </div>
-                  <div>
-                    <span className="fw-bold">Cantact : </span>
-                    <span>{formData.contactNumber}</span>
-                  </div>
-                </div>
-
-                {/* Right Side: Image + ID */}
-                <div className="text-center">
-                  {formData.profilePicture ? (
+            <div className="container my-4">
+              {/* Profile Header */}
+              <div className="card p-4 mb-4 shadow-sm border-light">
+                <div className="d-flex flex-column flex-md-row align-items-center">
+                  {/* Profile Image */}
+                  <div className="text-center me-md-4 mb-3 mb-md-0">
                     <img
-                      src={formData.profilePicture} // ✅ decode first
+                      src={formData.profilePicture || "/assets/images/default-avatar.png"}
                       alt={formData.fullName}
-                      width="80"
-                      height="80"
-                      style={{
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                        border: '1px solid var(--color-black)',
-                      }}
+                      width="100"
+                      height="100"
+                      className="rounded-circle border"
+                      style={{ objectFit: "cover", borderColor: "#ccc" }}
                     />
-                  ) : (
-                    <img
-                      src="/assets/images/default-avatar.png"
-                      alt="No profile"
-                      width="40"
-                      height="40"
-                      style={{
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                        border: '1px solid var(--color-black)',
-                      }}
-                    />
-                  )}
-                  <div
-                    style={{
-                      color: 'var(--color-black)',
-                      marginTop: '5px',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                    }}
-                  >
-                    ID: {formData.wardBoyId}
+                  </div>
+
+                  {/* Basic Info */}
+                  <div className="flex-grow-1 text-center text-md-start">
+                    <h4 className="fw-bold mb-1" style={{ color: '#7e3a93' }}>
+                      {formData.fullName}
+                    </h4>
+                    <p className="text-muted mb-1"><strong>Email:</strong> {formData.emailId}</p>
+                    <p className="text-muted mb-1"><strong>Contact:</strong> {formData.contactNumber}</p>
+                    <div>
+                      <span className="badge bg-secondary mt-2">ID: {formData.wardBoyId}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-              <hr />
 
-              <div className="space-y-5 mt-5">
-                {/* Personal Info */}
-
-                <div className="row mb-2">
-                  <div className="col-md-4">
-                    <Row label="Full Name" value={formData.fullName} />
-                  </div>
-                  <div className="col-md-4">
-                    <Row label="Email" value={formData.emailId} />
-                  </div>
-                  <div className="col-md-4">
-                    <Row label="Contact" value={formData.contactNumber} />
-                  </div>
-                  <div className="col-md-4">
-                    <Row label="Gender" value={formData.gender} />
-                  </div>
-                  <div className="col-md-4">
-                    <Row label="Date of Birth" value={formData.dateOfBirth} />
-                  </div>
-                  <div className="col-md-4">
-                    <Row label="Government ID" value={formData.governmentId} />
-                  </div>
+              {/* Personal Information */}
+              <div className="card p-3 mb-4 shadow-sm border-light">
+                <h5 className="mb-3 border-bottom pb-2">Personal Information</h5>
+                <div className="row g-3">
+                  <div className="col-md-4"><Row label="Full Name" value={formData.fullName} /></div>
+                  <div className="col-md-4"><Row label="Email" value={formData.emailId} /></div>
+                  <div className="col-md-4"><Row label="Contact" value={formData.contactNumber} /></div>
+                  <div className="col-md-4"><Row label="Gender" value={formData.gender} /></div>
+                  <div className="col-md-4"><Row label="Date of Birth" value={formData.dateOfBirth} /></div>
+                  <div className="col-md-4"><Row label="Government ID" value={formData.governmentId} /></div>
                 </div>
+              </div>
 
-                {/* Work Info */}
-                <Section title="Work Information">
-                  <div className="row mb-2">
-                    <div className="col-md-4">
-                      <Row label="Date of Joining" value={formData.dateOfJoining} />
-                    </div>
-                    <div className="col-md-4">
-                      <Row label="Department" value={formData.department} />
-                    </div>
-                    <div className="col-md-4">
-                      <Row label="Experience" value={formData.workExprience} />
-                    </div>
-                    {/* <div className="col-md-4">
-                      <Row label="Specialization" value={formData.specialization} />
-                    </div> */}
-                    <div className="col-md-4">
-                      <Row label="Shift Timings" value={formData.shiftTimingsOrAvailability} />
-                    </div>
-                    <div className="col-md-4">
-                      <Row label="Emergency Contact" value={formData.emergencyContact} />
-                    </div>
-                  </div>
-                </Section>
+              {/* Work Information */}
+              <div className="card p-3 mb-4 shadow-sm border-light">
+                <h5 className="mb-3 border-bottom pb-2">Work Information</h5>
+                <div className="row g-3">
+                  <div className="col-md-4"><Row label="Date of Joining" value={formData.dateOfJoining} /></div>
+                  <div className="col-md-4"><Row label="Department" value={formData.department} /></div>
+                  <div className="col-md-4"><Row label="Experience" value={formData.workExprience} /></div>
+                  <div className="col-md-4"><Row label="Shift Timings" value={formData.shiftTimingsOrAvailability} /></div>
+                  <div className="col-md-4"><Row label="Emergency Contact" value={formData.emergencyContact} /></div>
+                </div>
+              </div>
 
-                {/* Address */}
-                <Section title="Address">
-                  <RowFull
-                    value={`${formData.address.houseNo}, ${formData.address.street}, ${formData.address.city}, ${formData.address.state} - ${formData.address.postalCode}, ${formData.address.country}`}
-                  />
-                </Section>
+              {/* Address */}
+              <div className="card p-3 mb-4 shadow-sm border-light">
+                <h5 className="mb-3 border-bottom pb-2">Address</h5>
+                <RowFull
+                  value={`${formData.address.houseNo}, ${formData.address.street}, ${formData.address.city}, ${formData.address.state} - ${formData.address.postalCode}, ${formData.address.country}`}
+                />
+              </div>
 
-                {/* Bank Info */}
-                <Section title="Bank Details">
-                  <div className="row mb-2">
-                    <div className="col-md-4">
-                      <Row
-                        label="Account Number"
-                        value={formData.bankAccountDetails.accountNumber}
+              {/* Bank Details */}
+              <div className="card p-3 mb-4 shadow-sm border-light">
+                <h5 className="mb-3 border-bottom pb-2">Bank Details</h5>
+                <div className="row g-3">
+                  <div className="col-md-4"><Row label="Account Number" value={formData.bankAccountDetails.accountNumber} /></div>
+                  <div className="col-md-4"><Row label="Account Holder Name" value={formData.bankAccountDetails.accountHolderName} /></div>
+                  <div className="col-md-4"><Row label="IFSC Code" value={formData.bankAccountDetails.ifscCode} /></div>
+                  <div className="col-md-4"><Row label="Bank Name" value={formData.bankAccountDetails.bankName} /></div>
+                  <div className="col-md-4"><Row label="Branch Name" value={formData.bankAccountDetails.branchName} /></div>
+                  <div className="col-md-4"><Row label="PAN Card" value={formData.bankAccountDetails.panCardNumber} /></div>
+                </div>
+              </div>
+
+              {/* Documents */}
+              <div className="card p-3 mb-4 shadow-sm border-light">
+                <h5 className="mb-3 border-bottom pb-2">Documents</h5>
+                <div className="row g-3">
+                  {formData.qualificationOrCertifications ? (
+                    <div className="col-md-6">
+                      <FilePreview
+                        label="Qualification / Certifications"
+                        type={formData.qualificationOrCertificationsType}
+                        data={formData.qualificationOrCertifications}
                       />
                     </div>
-                    <div className="col-md-4">
-                      <Row
-                        label="Account Holder Name"
-                        value={formData.bankAccountDetails.accountHolderName}
+                  ) : (
+                    <p className="col-md-6 text-muted">Not Provided Qualification / Certifications</p>
+                  )}
+                  {formData.medicalFitnessCertificate ? (
+                    <div className="col-md-6">
+                      <FilePreview
+                        label="Medical Fitness Certificate"
+                        type={formData.medicalFitnessCertificateType || 'application/pdf'}
+                        data={formData.medicalFitnessCertificate}
                       />
                     </div>
-                    <div className="col-md-4">
-                      <Row label="IFSC Code" value={formData.bankAccountDetails.ifscCode} />
-                    </div>
-                    <div className="col-md-4">
-                      <Row label="Bank Name" value={formData.bankAccountDetails.bankName} />
-                    </div>
-                    <div className="col-md-4">
-                      <Row label="Branch Name" value={formData.bankAccountDetails.branchName} />
-                    </div>
-                    <div className="col-md-4">
-                      <Row label="PAN Card" value={formData.bankAccountDetails.panCardNumber} />
-                    </div>
-                  </div>
-                </Section>
+                  ) : (
+                    <p className="col-md-6 text-muted">Not Provided Medical Fitness Certificate</p>
+                  )}
+                </div>
+              </div>
 
-                {/* Documents */}
-                <Section title="Documents">
-                  <div className="row">
-                    {formData.qualificationOrCertifications != '' ? (
-                      <div className="col-md-6">
-                        <FilePreview
-                          label="Qualification / Certifications"
-                          type={formData.qualificationOrCertificationsType}
-                          data={formData.qualificationOrCertifications}
-                        />
-                      </div>
-                    ) : (
-                      <p className="col-md-6">Not Provided qualification/Certifications</p>
-                    )}
-                    {formData.medicalFitnessCertificate != '' ? (
-                      <div className="col-md-6">
-                        <FilePreview
-                          label="Medical Fitness Certificate"
-                          type={formData.medicalFitnessCertificateType || 'application/pdf'}
-                          data={formData.medicalFitnessCertificate}
-                        />
-                      </div>
-                    ) : (
-                      <p className="col-md-6">Not Provided medical Fitness Certificate</p>
-                    )}
-                  </div>
-                </Section>
-                <div className="mt-4"></div>
-                {/* Other Info */}
-                <Section title="Other Information ">
-                  <div className="row mb-2">
-                    {/* <div className="col-md-6">
-                      <Row label="Police Verification" value={formData.policeVerification} />
-                    </div> */}
-                    {/* <div className="col-md-6">
-                      <Row label="Vaccination Status" value={formData.vaccinationStatus} />
-                    </div> */}
-                    <div className="col-md-12">
-                      <RowFull
-                        label="Previous Employment"
-                        value={formData.previousEmploymentHistory}
-                      />
-                    </div>
-                    <div className="row mb-2">
-                      <div className="col-md-6">
-                        <RowFull label="User Name" value={formData.userName} />
-                      </div>
-                      <div className="col-md-6">
-                        <RowFull label="Password" value={formData.password} />
-                      </div>
-                    </div>
-                  </div>
-                </Section>
+              {/* Other Information */}
+              <div className="card p-3 mb-4 shadow-sm border-light">
+                <h5 className="mb-3 border-bottom pb-2">Other Information</h5>
+                <div className="row g-3">
+                  <div className="col-md-12"><RowFull label="Previous Employment" value={formData.previousEmploymentHistory} /></div>
+                  {/* <div className="col-md-6"><RowFull label="User Name" value={formData.userName} /></div>
+      <div className="col-md-6"><RowFull label="Password" value={formData.password} /></div> */}
+                </div>
               </div>
             </div>
+
           ) : (
             // ✅ EDIT MODE
             <CForm>
@@ -657,7 +595,7 @@ const OtherStaffForm = ({
                       const value = e.target.value.replace(/[^A-Za-z\s]/g, '')
                       handleChange('fullName', value)
                     }}
-                    onBlur={() => handleBlur('fullName', formData.fullName)}
+                    // onBlur={() => handleBlur('fullName', formData.fullName)}
                     invalid={!!errors.fullName}
                   />
                   {errors.fullName && <div className="text-danger mt-1">{errors.fullName}</div>}
@@ -722,7 +660,7 @@ const OtherStaffForm = ({
                       if (/^\d*$/.test(value)) {
                         handleChange('contactNumber', value)
                         // ✅ Live validation
-                        const error = validators.contactNumber(value, formData, technicians)
+                        const error = validateField(value, formData, technicians)
                         setErrors((prev) => ({ ...prev, contactNumber: error }))
                       }
                     }}
@@ -766,7 +704,7 @@ const OtherStaffForm = ({
                       if (/^\d*$/.test(value)) {
                         handleChange('governmentId', value)
                         // ✅ Live validation
-                        const error = validators.aadhar(value) // from your validator file
+                        const error = validateField('governmentId', value) // from your validator file
                         setErrors((prev) => ({ ...prev, governmentId: error }))
                       }
                     }}
@@ -790,6 +728,7 @@ const OtherStaffForm = ({
                   <CFormInput
                     type="date"
                     value={formData.dateOfJoining}
+                    max={new Date().toISOString().split('T')[0]}
                     onChange={(e) => {
                       const value = e.target.value
                       handleChange('dateOfJoining', value)
@@ -1059,7 +998,7 @@ const OtherStaffForm = ({
                             ) {
                               const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
                               if (!panRegex.test(formData.bankAccountDetails[field])) {
-                                toast.error('Invalid PAN format (e.g., ABCDE1234F)')
+                                showCustomToast('Invalid PAN format (e.g., ABCDE1234F)', 'error')
                               }
                             }
 
@@ -1070,7 +1009,7 @@ const OtherStaffForm = ({
                             ) {
                               const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
                               if (!ifscRegex.test(formData.bankAccountDetails[field])) {
-                                toast.error('Invalid IFSC format (e.g., HDFC0001234)')
+                                showCustomToast('Invalid IFSC format (e.g., HDFC0001234)', 'error')
                                 handleNestedChange('bankAccountDetails', 'bankName', '')
                                 handleNestedChange('bankAccountDetails', 'branchName', '')
                                 return
@@ -1094,7 +1033,7 @@ const OtherStaffForm = ({
                                   )
                                 }
                               } catch (err) {
-                                toast.error('Error fetching bank details')
+                                showCustomToast('Error fetching bank details', 'error')
                                 handleNestedChange('bankAccountDetails', 'bankName', '')
                                 handleNestedChange('bankAccountDetails', 'branchName', '')
                               }

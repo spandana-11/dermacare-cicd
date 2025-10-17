@@ -224,7 +224,7 @@ const Appointments = ({ searchTerm = '' }) => {
                               key={branch.branchId}
                               onClick={() => setSelectedBranch(branch)}
                             >
-                              {branch.branchName} 
+                              {branch.branchName}
                             </CDropdownItem>
                           ))
                         ) : (
@@ -289,7 +289,7 @@ const Appointments = ({ searchTerm = '' }) => {
                   ) : currentPatients.length === 0 ? (
                     <CTableRow>
                       <CTableDataCell
-                        colSpan={9}
+                        colSpan={10}
                         className="text-center text-muted py-4"
                         style={{ color: COLORS.logocolor }}
                       >

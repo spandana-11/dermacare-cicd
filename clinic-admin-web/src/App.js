@@ -35,7 +35,7 @@ const App = () => {
   }, [storedTheme, isColorModeSet, setColorMode])
 
   return (
-    <BrowserRouter basename="/">
+   
       <Suspense fallback={<CSpinner color="primary" variant="grow" />}>
         <Routes>
           {/* ✅ Lowercase redirect for consistency */}
@@ -58,9 +58,7 @@ const App = () => {
           />
         </Routes>
       </Suspense>
-
-      <ToastContainer newestOnTop/>
-    </BrowserRouter>
+    
   )
 }
 

@@ -28,6 +28,7 @@ import {
   updateServiceData,
   // deleteServiceData,
 } from './registrationAPI'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const ClinicRegistration = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -306,7 +307,7 @@ const ClinicRegistration = () => {
       }
 
       const response = await postServiceData(payload)
-      toast.success('newClinic Added successfully!', { position: 'top-right' })
+      showCustomToast('newClinic Added successfully!', { position: 'top-right' },'success')
 
       fetchData()
       console.log('newClinic added successfully:', response)
@@ -549,12 +550,12 @@ const ClinicRegistration = () => {
       console.log('Updated service:', updatedResponse)
 
       setEditServiceMode(false)
-      toast.success('Service Updated successfully!', { position: 'top-right' })
+      showCustomToast('Service Updated successfully!', { position: 'top-right' },'success')
 
       fetchData()
     } catch (error) {
       console.error('Error updating service:', error)
-      toast.error('Failed to update service. Please try again.', { position: 'top-right' })
+     showCustomToast('Failed to update service. Please try again.', { position: 'top-right' },'error')
     }
   }
 
@@ -588,7 +589,7 @@ const ClinicRegistration = () => {
     try {
       const result = await deleteServiceData(serviceIdToDelete)
       console.log('Service deleted:', result)
-      toast.success('Service deleted successfully!', { position: 'top-right' })
+      showCustomToast('Service deleted successfully!', { position: 'top-right' },'success')
 
       fetchData()
     } catch (error) {

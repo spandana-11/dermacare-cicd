@@ -18,14 +18,10 @@ import capitalizeWords from '../../../Utils/capitalizeWords'
 import { useGlobalSearch } from '../../Usecontext/GlobalSearchContext'
 import ConfirmationModal from '../../../components/ConfirmationModal'
 import LoadingIndicator from '../../../Utils/loader'
-import {
-  addSecurity,
-  deleteSecurity,
-  getAllSecuritys,
-  updateSecurity,
-} from './SecurityAPI'
+import { addSecurity, deleteSecurity, getAllSecuritys, updateSecurity } from './SecurityAPI'
 import { toast } from 'react-toastify'
 import { useHospital } from '../../Usecontext/HospitalContext'
+import { showCustomToast } from '../../../Utils/Toaster'
 
 const SecurityManagement = () => {
   const [technicians, setTechnicians] = useState([])
@@ -41,14 +37,15 @@ const SecurityManagement = () => {
   const [deleteId, setDeleteId] = useState(null)
 
   // ✅ Load from localStorage on mount
-const [modalData, setModalData] = useState(null) // store username & password
+  const [modalData, setModalData] = useState(null) // store username & password
   const [modalTVisible, setModalTVisible] = useState(false)
   const fetchTechs = async () => {
     setLoading(true)
     try {
       const clinicID = localStorage.getItem('HospitalId')
+      const branchId = localStorage.getItem('branchId')
       if (clinicID) {
-        const res = await getAllSecuritys(clinicID) // wait for API
+        const res = await getAllSecuritys(clinicID, branchId) // wait for API
         console.log('API Response:', res)
         setLoading(false)
         // ✅ update state with actual data, not Promise
@@ -74,9 +71,9 @@ const [modalData, setModalData] = useState(null) // store username & password
         fetchTechs()
 
         // setTechnicians((prev) => [...prev, res.data.data])
-        toast.success('Security updated successfully!')
+        showCustomToast('Security updated successfully!','success')
       } else {
-       const res = await addSecurity(formData)
+        const res = await addSecurity(formData)
         await fetchTechs() // refresh from API
         console.log(res)
         setModalData({
@@ -85,22 +82,23 @@ const [modalData, setModalData] = useState(null) // store username & password
         })
         setModalVisible(false)
         setModalTVisible(true)
-        toast.success('Security added successfully!')}
+        showCustomToast('Security added successfully!','success')
+      }
     } catch (err) {
-      toast.error('❌ Failed to save security.')
+      // toast.error('❌ Failed to save security.')
       console.error('API error:', err)
     }
   }
 
   // ✅ Delete
   const handleDelete = async (id) => {
-    console.log(id);
+    console.log(id)
     try {
       await deleteSecurity(id) // ✅ call backend
-      setTechnicians((prev) => prev.filter((t) => t.id !== id))
-      toast.success('Security deleted successfully!')
+      setTechnicians((prev) => prev.filter((t) => t.securityStaffId !== id))
+      showCustomToast('Security deleted successfully!','success')
     } catch (err) {
-      toast.error('❌ Failed to delete security.')
+      showCustomToast('❌ Failed to delete security.','error')
       console.error('Delete error:', err)
     } finally {
       setIsModalVisible(false) // close modal after action
@@ -171,9 +169,10 @@ const [modalData, setModalData] = useState(null) // store username & password
         <CModalFooter>
           <CButton
             color="primary"
-            onClick={() =>{ setModalTVisible(false)
+            onClick={() => {
+              setModalTVisible(false)
               setModalData(null)
-            }} 
+            }}
           >
             Close
           </CButton>
@@ -230,7 +229,7 @@ const [modalData, setModalData] = useState(null) // store username & password
                   <CTableDataCell>
                     {tech.profilePicture ? (
                       <img
-                        src={decodeImage(tech.profilePicture)} // ✅ decode first
+                        src={tech.profilePicture} // ✅ decode first
                         alt={tech.fullName}
                         width="40"
                         height="40"

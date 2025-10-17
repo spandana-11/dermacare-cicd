@@ -32,6 +32,7 @@ import {
 } from './PharmacistAPI'
 import { toast } from 'react-toastify'
 import { useHospital } from '../../Usecontext/HospitalContext'
+import { showCustomToast } from '../../../Utils/Toaster'
 
 const PharmacistManagement = () => {
   const [pharmacist, setPharmacist] = useState([])
@@ -56,8 +57,9 @@ const PharmacistManagement = () => {
     setLoading(true)
     try {
       const hospitalId = localStorage.getItem('HospitalId')
+      const branchId = localStorage.getItem('branchId')
       if (hospitalId) {
-        const res = await getPharmacistsById(hospitalId)
+        const res = await getPharmacistsById(hospitalId, branchId)
         const list = res.data?.data || res.data || []
         setPharmacist(list)
       }
@@ -102,12 +104,11 @@ const PharmacistManagement = () => {
       }
 
       if (selectedTech) {
-        await UpdatePharmacistById(selectedTech.pharmacistId, correctedFormData)
+        await UpdatePharmacistById(selectedTech.pharmacistId, formData)
         fetchTechs()
-        toast.success('Pharmacist updated successfully!')
+        showCustomToast('Pharmacist updated successfully!', 'success')
       } else {
-        const res = await addPharmacist(correctedFormData)
-       
+        const res = await addPharmacist(formData)
 
         if (res?.data?.data?.userName && res?.data?.data?.password) {
           setCredentials({
@@ -118,12 +119,13 @@ const PharmacistManagement = () => {
           setCredentialsModalVisible(true) // open modal
         }
 
-        toast.success('Pharmacist added successfully!')
-         await fetchTechs()
+        showCustomToast('Pharmacist added successfully!', 'success')
+        await fetchTechs()
+        return res
       }
     } catch (err) {
       console.error('API error:', err)
-      toast.error(err.response?.data?.message || '❌ Failed to save pharmacist.')
+      showCustomToast(err.response?.data?.message || '❌ Failed to save pharmacist.', 'error')
     }
   }
 
@@ -132,10 +134,10 @@ const PharmacistManagement = () => {
     try {
       await DeletePharmacistById(pharmacistId)
       setPharmacist((prev) => prev.filter((p) => p.pharmacistId !== pharmacistId))
-      toast.success('Pharmacist deleted successfully!')
+      showCustomToast('Pharmacist deleted successfully!', 'success')
     } catch (err) {
       console.error('Delete error:', err)
-      toast.error('❌ Failed to delete pharmacist.')
+      showCustomToast('❌ Failed to delete pharmacist.', 'error')
     } finally {
       setIsModalVisible(false)
     }

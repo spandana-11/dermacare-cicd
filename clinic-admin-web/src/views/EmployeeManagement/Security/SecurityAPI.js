@@ -3,8 +3,8 @@ import { http } from '../../../Utils/Interceptors'
 
 // If not using interceptor, you can manually attach token
 
-export const getAllSecuritys = (clinicID) => {
-  return http.get(`${BASE_URL}/getAllSecurityStaffByClinicId/${clinicID}`)
+export const getAllSecuritys = (clinicID, branchId) => {
+  return http.get(`${BASE_URL}/getSecurityStaffByClinicIdAndBranchId/${clinicID}/${branchId}`)
 }
 
 export const addSecurity = (data) => {

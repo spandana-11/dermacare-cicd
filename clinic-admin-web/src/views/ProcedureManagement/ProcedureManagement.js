@@ -58,6 +58,7 @@ import capitalizeWords from '../../Utils/capitalizeWords'
 import LoadingIndicator from '../../Utils/loader'
 import { http } from '../../Utils/Interceptors'
 import { useHospital } from '../Usecontext/HospitalContext'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const ServiceManagement = () => {
   // const [searchQuery, setSearchQuery] = useState('')
@@ -733,14 +734,14 @@ const ServiceManagement = () => {
       console.log('Response received:', response)
 
       if (response.status === 201) {
-        toast.success(response.data.message, { position: 'top-right' })
+        showCustomToast(response.data.message, { position: 'top-right' }, 'success')
         setModalVisible(false)
         fetchData()
         // serviceData()
       }
     } catch (error) {
       console.error('Error in handleAddService:', error.response)
-      toast.error(error.response?.data?.message || 'Something went wrong', {
+      showCustomToast(error.response?.data?.message || 'Something went wrong', 'error', {
         position: 'top-right',
       })
     }
@@ -858,13 +859,13 @@ const ServiceManagement = () => {
       // send cleaned payload
       const response = await updateServiceData(subServiceId, hospitalId, updatedService)
 
-      toast.success('Procedure updated successfully!', { position: 'top-right' })
+      showCustomToast('Procedure updated successfully!', { position: 'top-right' }, 'success')
       setEditServiceMode(false)
       setModalVisible(false)
       fetchData()
     } catch (error) {
       console.error('Update failed:', error)
-      toast.error('Error updating service.', { position: 'top-right' })
+      showCustomToast('Error updating service.', { position: 'top-right' }, 'error')
     }
   }
 
@@ -890,7 +891,7 @@ const ServiceManagement = () => {
     try {
       const result = await deleteServiceData(serviceIdToDelete, hospitalId)
       console.log('Service deleted:', result)
-      toast.success('Procedure deleted successfully!', { position: 'top-right' })
+      showCustomToast('Procedure deleted successfully!', { position: 'top-right' }, 'success')
 
       fetchData()
     } catch (error) {
@@ -1143,236 +1144,180 @@ const ServiceManagement = () => {
           backdrop="static"
           className="custom-modal"
         >
-          <CModalHeader style={{ color: 'var(--color-black)' }}>
-            <CModalTitle className="w-100 text-center  fs-4">Procedure Details</CModalTitle>
+          <CModalHeader className=" text-white">
+            <CModalTitle className="w-100 text-center fs-5 fw-bold">
+              Procedure Details
+            </CModalTitle>
           </CModalHeader>
-          <CModalBody style={{ color: 'var(--color-black)' }}>
-            <CRow className="mb-3">
-              <CCol sm={6}>
-                <strong>Procedure Name:</strong>
-                <div>{viewService.subServiceName}</div>
-              </CCol>
-              <CCol sm={6}>
-                <strong>Procedure ID:</strong>
-                <div>{viewService.subServiceId}</div>
-              </CCol>
-            </CRow>
-            <CRow className="mb-3">
-              <CCol sm={6}>
-                <strong>Service Name:</strong>
-                <div>{viewService.serviceName}</div>
-              </CCol>
-              <CCol sm={6}>
-                <strong>Service Id:</strong>
-                <div>{viewService.serviceId}</div>
-              </CCol>
-            </CRow>
 
-            <CRow className="mb-3">
-              <CCol sm={6}>
-                <strong>Category Name:</strong>
-                <div>{viewService.categoryName}</div>
-              </CCol>
-              <CCol sm={6}>
-                <strong>Category Id:</strong>
-                <div>{viewService.categoryId}</div>
-              </CCol>
-              <CCol sm={6}>
-                <strong>Consent Form Type:</strong>
-                <div>{consentFormTypeLabels[viewService.consentFormType] || 'N/A'}</div>
-              </CCol>
-            </CRow>
+          <CModalBody className="bg-light text-dark">
+            {/* --- Basic Details --- */}
+            <div className="p-3 mb-4 bg-white rounded shadow-sm">
+              <h6 className="fw-bold border-bottom pb-2 mb-3">
+                Basic Information
+              </h6>
+              <CRow className="gy-2">
+                <CCol sm={6}>
+                  <p className="mb-1 fw-semibold">Procedure Name:</p>
+                  <span className="text-muted">{viewService.subServiceName || 'N/A'}</span>
+                </CCol>
+                <CCol sm={6}>
+                  <p className="mb-1 fw-semibold">Procedure ID:</p>
+                  <span className="text-muted">{viewService.subServiceId || 'N/A'}</span>
+                </CCol>
+                <CCol sm={6}>
+                  <p className="mb-1 fw-semibold">Service Name:</p>
+                  <span className="text-muted">{viewService.serviceName || 'N/A'}</span>
+                </CCol>
+                <CCol sm={6}>
+                  <p className="mb-1 fw-semibold">Service ID:</p>
+                  <span className="text-muted">{viewService.serviceId || 'N/A'}</span>
+                </CCol>
+                <CCol sm={6}>
+                  <p className="mb-1 fw-semibold">Category Name:</p>
+                  <span className="text-muted">{viewService.categoryName || 'N/A'}</span>
+                </CCol>
+                <CCol sm={6}>
+                  <p className="mb-1 fw-semibold">Consent Form Type:</p>
+                  <span className="text-muted">
+                    {consentFormTypeLabels[viewService.consentFormType] || 'N/A'}
+                  </span>
+                </CCol>
+                <CCol sm={6}>
+                  <p className="mb-1 fw-semibold">Status:</p>
+                  <span
+                    className={`badge ${viewService.status === 'Active' ? 'bg-success' : 'bg-secondary'
+                      }`}
+                  >
+                    {viewService.status}
+                  </span>
+                </CCol>
+              </CRow>
+            </div>
 
-            <CRow className="mb-3">
-              <CCol sm={6}>
-                <strong>Status:</strong>
-                <div>{viewService.status}</div>
-              </CCol>
-            </CRow>
+            {/* --- Pricing Details --- */}
+            <div className="p-3 mb-4 bg-white rounded shadow-sm">
+              <h6 className="fw-bold border-bottom pb-2 mb-3">Pricing Details</h6>
+              <CRow className="gy-2">
+                <CCol sm={4}><strong>Price:</strong> ₹ {Math.round(viewService.price)}</CCol>
+                <CCol sm={4}><strong>Discount %:</strong> {Math.round(viewService.discountPercentage)}%</CCol>
+                <CCol sm={4}><strong>Discount Amount:</strong> ₹ {Math.round(viewService.discountAmount)}</CCol>
+                <CCol sm={4}><strong>Discounted Cost:</strong> ₹ {Math.round(viewService.discountedCost)}</CCol>
+                <CCol sm={4}><strong>Tax %:</strong> {Math.round(viewService.taxPercentage)}%</CCol>
+                <CCol sm={4}><strong>Tax Amount:</strong> ₹ {Math.round(viewService.taxAmount)}</CCol>
+                <CCol sm={4}><strong>Platform Fee %:</strong> {Math.round(viewService.platformFeePercentage)}%</CCol>
+                <CCol sm={4}><strong>Platform Fee:</strong> ₹ {Math.round(viewService.platformFee)}</CCol>
+                <CCol sm={4}><strong>Clinic Pay:</strong> ₹ {Math.round(viewService.clinicPay)}</CCol>
+                <CCol sm={4}><strong>GST:</strong> {Math.round(viewService.gst)}</CCol>
+                <CCol sm={4}><strong>Consultation Fee:</strong> ₹ {viewService.consultationFee}</CCol>
+                <CCol sm={4}><strong>Final Cost:</strong> ₹ {Math.round(viewService.finalCost)}</CCol>
+                <CCol sm={4}><strong>Service Time:</strong> {formatMinutes(viewService.minTime)}</CCol>
+              </CRow>
+            </div>
 
-            <hr />
+            {/* --- Q&A Sections --- */}
+            <div className="p-3 mb-4 bg-white rounded shadow-sm">
+              <h6 className="fw-bold border-bottom pb-2 mb-3">Pre-Procedure QA</h6>
+              {Array.isArray(viewService.preProcedureQA) && viewService.preProcedureQA.length > 0 ? (
+                viewService.preProcedureQA.map((qa, index) => {
+                  const question = Object.keys(qa)[0]
+                  const answers = qa[question]
+                  return (
+                    <div key={index} className="mb-2">
+                      <strong>{question}</strong>
+                      <ul className="mb-1 text-muted ps-3">
+                        {answers.map((ans, i) => (
+                          <li key={i}>{ans}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )
+                })
+              ) : (
+                <p className="text-muted">No Pre-Procedure Q&A available.</p>
+              )}
+            </div>
 
-            <CRow className="mb-3">
-              <CCol sm={4}>
-                <strong>Price:</strong>
-                <div>₹ {Math.round(viewService.price)}</div>
-              </CCol>
-              <CCol sm={4}>
-                <strong>Discount %:</strong>
-                <div>{Math.round(viewService.discountPercentage)}%</div>
-              </CCol>
-              <CCol sm={4}>
-                <strong>Discount Amount:</strong>
-                <div>₹ {Math.round(viewService.discountAmount)}</div>
-              </CCol>
-            </CRow>
+            <div className="p-3 mb-4 bg-white rounded shadow-sm">
+              <h6 className="fw-bold  border-bottom pb-2 mb-3">Procedure QA</h6>
+              {Array.isArray(viewService.procedureQA) && viewService.procedureQA.length > 0 ? (
+                viewService.procedureQA.map((qa, index) => {
+                  const question = Object.keys(qa)[0]
+                  const answers = qa[question]
+                  return (
+                    <div key={index} className="mb-2">
+                      <strong>{question}</strong>
+                      <ul className="mb-1 text-muted ps-3">
+                        {answers.map((ans, i) => (
+                          <li key={i}>{ans}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )
+                })
+              ) : (
+                <p className="text-muted">No Procedure Q&A available.</p>
+              )}
+            </div>
 
-            <CRow className="mb-3">
-              <CCol sm={4}>
-                <strong>Discounted Cost:</strong>
-                <div>₹ {Math.round(viewService.discountedCost)}</div>
-              </CCol>
-              <CCol sm={4}>
-                <strong>Tax %:</strong>
-                <div>{Math.round(viewService.taxPercentage)}%</div>
-              </CCol>
-              <CCol sm={4}>
-                <strong>Tax Amount:</strong>
-                <div>₹ {Math.round(viewService.taxAmount)}</div>
-              </CCol>
-            </CRow>
+            <div className="p-3 mb-4 bg-white rounded shadow-sm">
+              <h6 className="fw-bold border-bottom pb-2 mb-3">Post-Procedure QA</h6>
+              {Array.isArray(viewService.postProcedureQA) && viewService.postProcedureQA.length > 0 ? (
+                viewService.postProcedureQA.map((qa, index) => {
+                  const question = Object.keys(qa)[0]
+                  const answers = qa[question]
+                  return (
+                    <div key={index} className="mb-2">
+                      <strong>{question}</strong>
+                      <ul className="mb-1 text-muted ps-3">
+                        {answers.map((ans, i) => (
+                          <li key={i}>{ans}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )
+                })
+              ) : (
+                <p className="text-muted">No Post-Procedure Q&A available.</p>
+              )}
+            </div>
 
-            <CRow className="mb-3">
-              <CCol sm={4}>
-                <strong>Platform Fee %:</strong>
-                <div>{Math.round(viewService.platformFeePercentage)}%</div>
-              </CCol>
-              <CCol sm={4}>
-                <strong>Platform Fee:</strong>
-                <div>₹ {Math.round(viewService.platformFee)}</div>
-              </CCol>
-              <CCol sm={4}>
-                <strong>Clinic Pay:</strong>
-                <div>₹ {Math.round(viewService.clinicPay)}</div>
-              </CCol>
-            </CRow>
-
-            <CRow className="mb-3">
-              {/* <CCol sm={4}>
-                <strong>GST Amount:</strong>
-                <div>{Math.round(viewService.gstAmount)}</div>
-              </CCol> */}
-              <CCol sm={4}>
-                <strong>GST:</strong>
-                <div>{Math.round(viewService.gst)}</div>
-              </CCol>
-              <CCol sm={4}>
-                <strong>Consultation Fee:</strong>
-                <div>₹ {viewService.consultationFee}</div>
-              </CCol>
-              <CCol sm={4}>
-                <strong>Final Cost:</strong>
-                <div>₹ {Math.round(viewService.finalCost)}</div>
-              </CCol>
-            </CRow>
-
-            <CRow className="mb-3">
-              <CCol sm={4}>
-                <strong>Service Time:</strong>
-                <div>{formatMinutes(viewService.minTime)}</div>
-              </CCol>
-            </CRow>
-
-            <hr />
-
-            <CRow className="mb-3">
-              <CCol sm={12}>
-                <strong className="mb-3">Pre-Procedure QA:</strong>
-                {Array.isArray(viewService.preProcedureQA) &&
-                viewService.preProcedureQA.length > 0 ? (
-                  viewService.preProcedureQA.map((qa, index) => {
-                    const question = Object.keys(qa)[0]
-                    const answers = qa[question]
-                    return (
-                      <div key={index} style={{ marginBottom: '10px' }}>
-                        <strong>{question}</strong>
-                        <ul>
-                          {answers.map((ans, i) => (
-                            <li key={i}>{ans}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )
-                  })
-                ) : (
-                  <div>No Pre-Procedure Q&A available</div>
-                )}
-              </CCol>
-            </CRow>
-
-            <CRow className="mb-3">
-              <CCol sm={12}>
-                <strong className="mb-3">Procedure QA:</strong>
-                {Array.isArray(viewService.procedureQA) && viewService.procedureQA.length > 0 ? (
-                  viewService.procedureQA.map((qa, index) => {
-                    const question = Object.keys(qa)[0]
-                    const answers = qa[question]
-                    return (
-                      <div key={index} style={{ marginBottom: '10px' }}>
-                        <strong>{question}</strong>
-                        <ul>
-                          {answers.map((ans, i) => (
-                            <li key={i}>{ans}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )
-                  })
-                ) : (
-                  <div>No Procedure Q&A available</div>
-                )}
-              </CCol>
-            </CRow>
-
-            <CRow className="mb-3">
-              <CCol sm={12}>
-                <strong className="mb-3">Post-Procedure QA:</strong>
-                {Array.isArray(viewService.postProcedureQA) &&
-                viewService.postProcedureQA.length > 0 ? (
-                  viewService.postProcedureQA.map((qa, index) => {
-                    const question = Object.keys(qa)[0]
-                    const answers = qa[question]
-                    return (
-                      <div key={index} style={{ marginBottom: '10px' }}>
-                        <strong>{question}</strong>
-                        <ul>
-                          {answers.map((ans, i) => (
-                            <li key={i}>{ans}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )
-                  })
-                ) : (
-                  <div>No Post-Procedure Q&A available</div>
-                )}
-              </CCol>
-            </CRow>
-
-            <hr />
-
-            <CRow>
-              <CCol sm={6}>
-                <strong>Service Image:</strong>
-                {viewService.subServiceImage ? (
-                  <div className="mt-2">
+            {/* --- Image & Description --- */}
+            <div className="p-3 bg-white rounded shadow-sm">
+              <h6 className="fw-bold  border-bottom pb-2 mb-3">Additional Details</h6>
+              <CRow>
+                <CCol sm={6}>
+                  <p className="fw-semibold">Service Image:</p>
+                  {viewService.subServiceImage ? (
                     <img
                       src={`data:image/png;base64,${viewService.subServiceImage}`}
                       alt="Service"
-                      style={{ width: '100%', maxWidth: '250px', borderRadius: '8px' }}
+                      style={{
+                        width: '100%',
+                        maxWidth: '250px',
+                        borderRadius: '8px',
+                        border: '1px solid #ddd',
+                      }}
                     />
-
-                    {previewImage && (
-                      <img src={previewImage} alt="Preview" height="80" className="mt-2" />
-                    )}
-                  </div>
-                ) : (
-                  <div>No image available</div>
-                )}
-              </CCol>
-              <CCol sm={6}>
-                <strong>View Description:</strong>
-                <div>{viewService.viewDescription}</div>
-              </CCol>
-            </CRow>
+                  ) : (
+                    <p className="text-muted">No image available</p>
+                  )}
+                </CCol>
+                <CCol sm={6}>
+                  <p className="fw-semibold">Description:</p>
+                  <p className="text-muted">{viewService.viewDescription || 'N/A'}</p>
+                </CCol>
+              </CRow>
+            </div>
           </CModalBody>
 
-          <CModalFooter>
+          <CModalFooter className="bg-light">
             <CButton color="secondary" onClick={() => setViewService(null)}>
               Close
             </CButton>
           </CModalFooter>
         </CModal>
+
       )}
 
       <CModal

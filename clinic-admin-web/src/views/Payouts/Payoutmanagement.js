@@ -26,6 +26,7 @@ import { useHospital } from '../Usecontext/HospitalContext'
 import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
 import { Edit2, Eye, Trash2 } from 'lucide-react'
 import LoadingIndicator from '../../Utils/loader'
+import { showCustomToast } from '../../Utils/Toaster'
 
 // ✅ Dummy API methods
 // replace these with your real API methods
@@ -157,13 +158,13 @@ const PayoutManagement = () => {
 
   const handleAdd = async () => {
     if (!formData.amount || !formData.paymentMethod || !formData.userEmail) {
-      toast.error('Fill all required fields')
+      showCustomToast('Fill all required fields','error')
       return
     }
     try {
       const res = await postPayoutsData(formData)
       setPayouts([res.data, ...payouts])
-      toast.success('Added successfully')
+      showCustomToast('Added successfully','success')
       setFormData({
         transactionId: '',
         amount: '',
@@ -175,7 +176,7 @@ const PayoutManagement = () => {
         billingAddress: '',
       })
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Add failed')
+      showCustomToast(err?.response?.data?.message || 'Add failed','error')
     }
   }
 
@@ -282,7 +283,7 @@ const PayoutManagement = () => {
       )}
 
       {/* View Modal */}
-      <CModal visible={!!viewData} onClose={() => setViewData(null)}>
+      <CModal visible={!!viewData} onClose={() => setViewData(null)}  alignment="center" backdrop="static">
         <CModalHeader>
           <CModalTitle>Transaction Details</CModalTitle>
         </CModalHeader>

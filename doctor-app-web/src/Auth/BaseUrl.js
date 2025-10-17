@@ -24,7 +24,7 @@ export const updateLoginEndpoint = 'update-password'
 export const addDiseaseUrl = `${ipUrl}/clinic-admin`
 export const getdoctorSaveDetailsEndpoint = `${ipUrl}/api/doctors/getDoctorSaveDetailsById`
 export const getVisitHistoryByPatientIdAndDoctorIdEndpoint = `${ipUrl}/api/doctors/getVisitHistoryByPatientIdAndDoctorId`
-
+export const visitHistoryBypatientIdAndBookingId= `${ipUrl}/api/doctors/visitHistoryBypatientIdAndBookingId`
 //reports
 export const AllReports = `getallreports`
 export const SavingReports = `savereports`

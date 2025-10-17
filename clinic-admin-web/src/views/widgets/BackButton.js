@@ -1,21 +1,21 @@
 import React, { useState } from 'react'
 import { CButton } from '@coreui/react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigation } from '../Usecontext/NavigationProvider'
 
 const BackButton = () => {
-  const navigate = useNavigate()
+  const { goBack } = useNavigation()
   const [isHovered, setIsHovered] = useState(false)
 
   return (
     <CButton
       variant="outline"
-      onClick={() => navigate(-1)} // ✅ Go back
+      onClick={goBack} // go back one step in stack
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
         borderColor: 'var(--color-black)',
         color: isHovered ? 'white' : 'var(--color-black)',
-        backgroundColor: isHovered ? 'var(--color-black)' : 'transparent', // purple hover
+        backgroundColor: isHovered ? 'var(--color-black)' : 'transparent',
         transition: 'all 0.3s ease',
       }}
     >

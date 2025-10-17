@@ -25,6 +25,7 @@ import {
   updateCategoryData,
   deleteCategoryData,
 } from './CategoryAPI'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const CategoryManagement = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -233,12 +234,12 @@ const CategoryManagement = () => {
       }
 
       const response = await postCategoryData(payload)
-      toast.success('Category added successfully!', { position: 'top-right' })
+      showCustomToast('Category added successfully!', { position: 'top-right' },'success')
       fetchData()
       setModalVisible(false)
     } catch (error) {
       console.error('Error adding category:', error)
-      toast.error(error.message, { position: 'top-right' })
+      showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
   const handleCategoryEdit = (category) => {
@@ -252,7 +253,7 @@ const CategoryManagement = () => {
 
   const handleUpdateCategory = async () => {
     if (!updatedCategory.categoryName.trim()) {
-      toast.error('Category name is required', { position: 'top-right' })
+     showCustomToast('Category name is required', { position: 'top-right' },'error')
       return
     }
 
@@ -266,12 +267,12 @@ const CategoryManagement = () => {
       const response = await updateCategoryData(categoryToEdit.categoryId, formData)
 
       console.log('Category updated successfully:', response)
-      toast.success('Category updated successfully!', { position: 'top-right' })
+      showCustomToast('Category updated successfully!', { position: 'top-right' },'success')
       setEditCategoryMode(false)
       fetchData()
     } catch (error) {
       console.error('Error updating category:', error)
-      toast.error(error.message, { position: 'top-right' })
+      showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
 
@@ -309,7 +310,7 @@ const CategoryManagement = () => {
     try {
       await deleteCategoryData(categoryIdToDelete)
       setIsModalVisible(false)
-      toast.success('Category deleted successfully!', { position: 'top-right' })
+      showCustomToast('Category deleted successfully!', { position: 'top-right' },'success')
       fetchData()
     } catch (error) {
       alert('Failed to delete category.')

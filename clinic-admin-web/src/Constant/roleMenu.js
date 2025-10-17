@@ -29,7 +29,7 @@ export const roleMenu = {
     Billing: ['create', 'read', 'update', 'delete'],
     Analytics: ['create', 'read', 'update', 'delete'],
     'Tax reports': ['create', 'read', 'update', 'delete'],
-    "Reffer Doctors":['create', 'read', 'update', 'delete'],
+    "Refer Doctors":['create', 'read', 'update', 'delete'],
   },
   //Lab Technician Permissions
   labTechnician: {

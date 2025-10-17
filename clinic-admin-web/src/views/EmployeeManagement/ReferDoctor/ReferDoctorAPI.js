@@ -3,8 +3,8 @@ import { http } from '../../../Utils/Interceptors'
 
 // ✅ All names match your imports in ReferDoctorManagement.js now
 
-export const getAllReferDoctors = () => {
-  return http.get(`${BASE_URL}/getAllReferralDoctors`,)
+export const getAllReferDoctors = (clinicId) => {
+  return http.get(`${BASE_URL}/getReferralDoctorsByClinicId/${clinicId}`,)
 }
 
 export const addReferDoctor = (data) => {

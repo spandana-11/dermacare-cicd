@@ -38,6 +38,7 @@ import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
 import ConfirmationModal from '../../components/ConfirmationModal'
 import LoadingIndicator from '../../Utils/loader'
 import { useHospital } from '../Usecontext/HospitalContext'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const TreatmentsManagement = () => {
   // const [searchQuery, setSearchQuery] = useState('')
@@ -120,11 +121,11 @@ const TreatmentsManagement = () => {
   const handleConfirmDelete = async () => {
     try {
       await deleteTreatmentData(treatmentIdToDelete, hospitalIdToDelete)
-      toast.success('Treatment deleted successfully!', { position: 'top-right' })
+      showCustomToast('Treatment deleted successfully!', { position: 'top-right' },'success')
       // fetchData()
       fetchDataBy_HId(hospitalId)
     } catch (error) {
-      toast.error('Failed to delete treatment.')
+      showCustomToast('Failed to delete treatment.','error')
       console.error('Delete error:', error)
     }
     setIsModalVisible(false)
@@ -156,7 +157,7 @@ const TreatmentsManagement = () => {
       (t) => t.treatmentName.trim().toLowerCase() === trimmedName.toLowerCase(),
     )
     if (duplicate) {
-      toast.error(`Duplicate treatment name - "${trimmedName}" already exists!`, {
+      showCustomToast(`Duplicate treatment name - "${trimmedName}" already exists!`,'error', {
         position: 'top-right',
       })
       return
@@ -178,7 +179,7 @@ const TreatmentsManagement = () => {
       }
       setTreatment((prev) => [...prev, newTreatmentRow]) // new last
 
-      toast.success('Treatment added successfully!')
+      showCustomToast('Treatment added successfully!','success')
       setModalVisible(false)
       setNewTreatment({ treatmentName: '' })
     } catch (error) {
@@ -186,7 +187,7 @@ const TreatmentsManagement = () => {
         error.response?.data?.message ||
         error.response?.statusText ||
         'An unexpected error occurred.'
-      toast.error(`Error adding treatment: ${errorMessage}`, { position: 'top-right' })
+      showCustomToast(`Error adding treatment: ${errorMessage}`, { position: 'top-right' },'error')
     }
   }
   const handleUpdateTreatment = async () => {
@@ -209,7 +210,7 @@ const TreatmentsManagement = () => {
         t.id !== treatmentId && t.treatmentName.trim().toLowerCase() === trimmedName.toLowerCase(),
     )
     if (duplicate) {
-      toast.error(`Duplicate treatment name - "${trimmedName}" already exists!`, {
+      showCustomToast(`Duplicate treatment name - "${trimmedName}" already exists!`, 'error',{
         position: 'top-right',
       })
       return
@@ -222,7 +223,7 @@ const TreatmentsManagement = () => {
         hospitalId,
       )
 
-      toast.success('Treatment updated successfully!')
+      showCustomToast('Treatment updated successfully!','success')
 
       // 🔹 Update state immediately (no need to refetch)
       setTreatment((prev) =>
@@ -232,7 +233,7 @@ const TreatmentsManagement = () => {
       setEditTreatmentMode(false)
     } catch (error) {
       console.error('Update error:', error)
-      toast.error('Failed to update treatment.')
+      showCustomToast('Failed to update treatment.','error')
     }
   }
 
@@ -379,7 +380,12 @@ const TreatmentsManagement = () => {
       </CForm>
 
       {viewTreatment && (
-        <CModal visible={!!viewTreatment} onClose={() => setViewTreatment(null)} backdrop="static">
+        <CModal
+          visible={!!viewTreatment}
+          onClose={() => setViewTreatment(null)}
+          backdrop="static"
+          alignment="center"
+        >
           <CModalHeader>
             <CModalTitle>Treatment Details</CModalTitle>
           </CModalHeader>
@@ -517,7 +523,7 @@ const TreatmentsManagement = () => {
 
       <ConfirmationModal
         isVisible={isModalVisible}
-        title="Delete Doctor"
+        title="Delete Treatment"
         message="Are you sure you want to delete this treatment? This action cannot be undone."
         confirmText="Yes, Delete"
         cancelText="Cancel"
@@ -561,7 +567,7 @@ const TreatmentsManagement = () => {
                   <CTableDataCell>{treatment.treatmentName}</CTableDataCell>
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
-                      {can('Treatments', 'read') && (
+                      {/* {can('Treatments', 'read') && (
                         <button
                           className="actionBtn"
                           onClick={() => setViewTreatment(treatment)}
@@ -569,7 +575,7 @@ const TreatmentsManagement = () => {
                         >
                           <Eye size={18} />
                         </button>
-                      )}
+                      )} */}
 
                       {can('Treatments', 'update') && (
                         <button

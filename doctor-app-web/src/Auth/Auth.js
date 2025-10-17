@@ -22,7 +22,8 @@ import {
   labtestsbase,
   baseUrl,
   labtestsupdatedbase,
-  addtreatmentUrl
+  addtreatmentUrl,
+  visitHistoryBypatientIdAndBookingId
 } from './BaseUrl'
 
 export const postLogin = async (payload, endpoint) => {
@@ -398,6 +399,22 @@ export const addTreatmentByHospital = async (treatmentName) => {
     return treatmentName;
   }
 };
+
+export const getTreatmentStatusByVisitId = async (patientId, bookingId) => {
+  try {
+    const response = await fetch(`${visitHistoryBypatientIdAndBookingId}/${patientId}/${bookingId}`)
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch treatment status (HTTP ${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error("Error fetching treatment status:", error)
+    throw error
+  }
+}
 
 //Ratings
 export const averageRatings = async (doctorId) => {

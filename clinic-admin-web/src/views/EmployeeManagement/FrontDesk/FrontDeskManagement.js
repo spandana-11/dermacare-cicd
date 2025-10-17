@@ -27,6 +27,7 @@ import {
 import { toast } from 'react-toastify'
 import { useHospital } from '../../Usecontext/HospitalContext'
 import FrontDeskForm from './FrontDeskForm'
+import { showCustomToast } from '../../../Utils/Toaster'
 
 const FrontDeskManagement = () => {
   const [receptionist, setReceptionist] = useState([])
@@ -49,8 +50,9 @@ const FrontDeskManagement = () => {
     setLoading(true)
     try {
       const clinicID = localStorage.getItem('HospitalId')
+      const branchId = localStorage.getItem('branchId')
       if (clinicID) {
-        const res = await getAllFrontDeskAPI(clinicID) // wait for API
+        const res = await getAllFrontDeskAPI(clinicID, branchId) // wait for API
         console.log('API Response:', res)
         setLoading(false)
         // ✅ update state with actual data, not Promise
@@ -71,28 +73,55 @@ const FrontDeskManagement = () => {
 
   const handleSave = async (formData) => {
     try {
+      let res
       if (selectedTech) {
-        await updateFrontDeskAPI(selectedTech.id, formData)
+        res = await updateFrontDeskAPI(selectedTech.id, formData)
+        showCustomToast('Receptionist updated successfully!','success')
         fetchTechs()
 
         // setReceptionist((prev) => [...prev, res.data.data])
-        toast.success('Receptionist updated successfully!')
       } else {
-        const res = await addFrontDeskAPI(formData)
-        await fetchTechs() // refresh from API
-        console.log(res)
-        setModalData({
-          username: res.data.data.userName,
-          password: res.data.data.password,
-        })
-        setModalVisible(false)
-        setModalTVisible(true)
-        toast.success('Receptionist added successfully!')
+        res = await addFrontDeskAPI(formData)
       }
-      setModalVisible(false)
-      setSelectedTech(null)
+
+      if (res.data?.statusCode === 201 || (res.data?.statusCode === 200 && res.data?.success)) {
+        await fetchTechs()
+
+        // ✅ If new technician, show credentials modal
+        if (!selectedTech) {
+          setModalData({
+            username: res.data.data?.userName,
+            password: res.data.data?.password,
+          })
+          setModalTVisible(true)
+        }
+        showCustomToast('Receptionist added successfully!', 'success')
+        // showToast(res.data?.message || 'Technician saved successfully!')
+
+        setModalVisible(false)
+        return res
+      }
+
+      console.log(res)
+
+      // ❌ Backend responded but with an error (e.g. status 409)
+      showCustomToast(res.data?.message || 'Failed to save receptionist.', 'error')
+      return res
+      //   await fetchTechs() // refresh from API
+      //   console.log(res)
+      //   setModalData({
+      //     username: res.data.data.userName,
+      //     password: res.data.data.password,
+      //   })
+      //   setModalVisible(false)
+      //   setModalTVisible(true)
+      //   toast.success('Receptionist added successfully!')
+      // }
+      // showToast(res.data?.message || 'Failed to save receptionist.')
+      // setModalVisible(false)
+      // setSelectedTech(null)
     } catch (err) {
-      toast.error('❌ Failed to save receptionist.')
+      showCustomToast('❌ Failed to save receptionist.','error')
       console.error('API error:', err)
     }
   }
@@ -102,9 +131,9 @@ const FrontDeskManagement = () => {
     try {
       await deleteFrontDeskAPI(id) // ✅ call backend
       setReceptionist((prev) => prev.filter((t) => t.id !== id))
-      toast.success('Receptionist deleted successfully!')
+      showCustomToast('Receptionist deleted successfully!','success')
     } catch (err) {
-      toast.error('❌ Failed to delete receptionist.')
+      showCustomToast('❌ Failed to delete receptionist.','error')
       console.error('Delete error:', err)
     } finally {
       setIsModalVisible(false) // close modal after action
@@ -235,7 +264,7 @@ const FrontDeskManagement = () => {
                   <CTableDataCell>
                     {tech.profilePicture ? (
                       <img
-                        src={decodeImage(tech.profilePicture)} // ✅ decode first
+                        src={tech.profilePicture} // ✅ decode first
                         alt={tech.fullName}
                         width="40"
                         height="40"

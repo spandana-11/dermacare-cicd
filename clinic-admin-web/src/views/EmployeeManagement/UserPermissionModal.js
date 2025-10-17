@@ -1,5 +1,6 @@
 import React from 'react'
 import { toast } from 'react-toastify'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const UserPermissionModal = ({
   show,
@@ -19,22 +20,32 @@ const UserPermissionModal = ({
     'Doctors',
     'Nurses',
     'Pharmacist',
-    'Laboratory',
-    'Admin',
+    'Lab Technician',
+    'Administrator',
     'FrontDesk',
     'Security',
     'OtherStaff',
   ]
 
+  const appointmnetRelatedFeatures = ['Reports']
+
   const isEmployeeManagementChecked = !!permissions['Employee management']
+  const isAppointmnetManagementChecked = !!permissions['Appointments']
 
   // Handler to check if we should block interaction
   const handleFeatureToggle = (feature) => {
+    // Block Employee Management dependencies
     if (employeeRelatedFeatures.includes(feature) && !isEmployeeManagementChecked) {
-      toast.success('Please select Employee Management first.')
-
+      showCustomToast('Please select Employee Management first.','warning')
       return
     }
+
+    // Block Appointment-related features (like Reports)
+    if (appointmnetRelatedFeatures.includes(feature) && !isAppointmnetManagementChecked) {
+      showCustomToast('Please select Appointments first.','warning')
+      return
+    }
+
     toggleFeature(feature)
   }
 
@@ -53,33 +64,33 @@ const UserPermissionModal = ({
                 {features.map((feature) => {
                   const isFeatureChecked = !!permissions[feature]
                   const allSelected =
-                    isFeatureChecked && permissions[feature].length === actions.length
+                    isFeatureChecked && permissions[feature]?.length === actions.length
 
                   const isEmployeeDependent = employeeRelatedFeatures.includes(feature)
+                  const isAppointmentDependent = appointmnetRelatedFeatures.includes(feature)
 
-                  // Disable employee-related features if Employee Management is not checked
-                  const isDisabled = isEmployeeDependent && !isEmployeeManagementChecked
+                  // Disable feature if its dependency is not checked
+                  const isDisabled =
+                    (isEmployeeDependent && !isEmployeeManagementChecked) ||
+                    (isAppointmentDependent && !isAppointmnetManagementChecked)
 
                   return (
                     <div
                       key={feature}
-                      className={`col-md-5 mb-3 border p-2 rounded mx-4 ${
-                        isDisabled ? 'opacity-50' : ''
-                      }`}
+                      className={`col-md-5 mb-3 border p-2 rounded mx-4 ${isDisabled ? 'opacity-50' : ''}`}
                     >
-                      {/* Feature Checkbox */}
                       <div className="d-flex justify-content-between align-items-center">
                         <label className="fw-bold">
                           <input
                             type="checkbox"
-                            disabled={false} // we still allow click to show alert
+                            disabled={false} // keep clickable for toast
                             checked={isFeatureChecked}
                             onChange={() => handleFeatureToggle(feature)}
                           />{' '}
                           {feature}
                         </label>
 
-                        {/* Show Select All only for features that have actions */}
+                        {/* Select All checkbox */}
                         {feature !== 'Dashboard' && feature !== 'Employee management' && (
                           <label>
                             <input
@@ -93,7 +104,7 @@ const UserPermissionModal = ({
                         )}
                       </div>
 
-                      {/* Actions section (hidden for Dashboard & Employee Management) */}
+                      {/* Actions */}
                       {feature !== 'Dashboard' && feature !== 'Employee management' && (
                         <div className="d-flex flex-wrap gap-3 mt-2">
                           {actions.map((action) => (

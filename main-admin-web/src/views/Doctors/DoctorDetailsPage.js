@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import axios from 'axios'
+
 import { Modal, Button } from 'react-bootstrap'
 import './Doctor.css'
 import Select from 'react-select'
@@ -38,8 +39,8 @@ import { format, addDays, startOfToday } from 'date-fns'
 import { FaTrash } from 'react-icons/fa'
 import { BASE_URL } from '../../baseUrl'
 import capitalizeWords from '../../Utils/capitalizeWords'
-import { useNavigate } from 'react-router-dom'
-import { useHospital } from '../../Usecontext/HospitalContext'
+import { useParams, useNavigate } from 'react-router-dom'
+// import { useHospital } from '../../Usecontext/HospitalContext'
 import { GetClinicBranches, handleDeleteToggle, UpdateDoctorById } from './DoctorAPI'
 import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -68,8 +69,10 @@ const DoctorDetailsPage = () => {
 
   const { state } = useLocation()
   const [doctorData, setDoctorData] = useState(state?.doctor || {})
-  const { fetchHospitalDetails } = useHospital()
+  // const { fetchHospitalDetails } = useHospital()
   const navigate = useNavigate()
+const branchId = state?.branchId
+
   const [activeKey, setActiveKey] = useState(1)
   const minDate = format(startOfToday(), 'yyyy-MM-dd')
   const maxDate = format(addDays(startOfToday(), 14), 'yyyy-MM-dd')
@@ -112,7 +115,8 @@ const DoctorDetailsPage = () => {
     const isDeleted = await handleDeleteToggle(id)
     console.log(isDeleted)
     if (isDeleted) {
-      navigate('/doctors')
+         navigate(`/branch-details/${branchId}?tab=1`)
+
       toast.success('Doctor deleted successfully')
     } else {
       // toast.error(`${isDeleted.message}` || 'Failed to delete doctor')
@@ -133,8 +137,10 @@ const DoctorDetailsPage = () => {
     const fetchDoctor = async () => {
       try {
         const res = await http.get(`/getDoctorById/${doctorId}`)
+        console.log("helolookjafkj", branchId)
         setDoctorData(res.data)
         setFormData(res.data)
+
       } catch (err) {
         console.error('Error fetching doctor', err)
       }
@@ -221,7 +227,8 @@ const DoctorDetailsPage = () => {
         setDoctorData(res.data.updatedDoctor)
         setFormData(res.data.updatedDoctor)
         setIsEditing(false)
-        navigate(`/doctor`)
+              navigate(`/branch-details/${branchId}?tab=1`)
+
       } else {
         toast.error('Failed to update doctor')
       }
@@ -575,6 +582,7 @@ useEffect(() => {
       const response = await GetClinicBranches(doctorData.clinicId);
 
       const branches = response?.data || [];
+      console.log('test branches', branches)
       const formatted = branches.map((b) => ({
         value: b.branchId || b.id,
         label: b.branchName || b.name,

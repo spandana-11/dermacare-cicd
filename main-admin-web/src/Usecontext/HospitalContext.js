@@ -1,133 +1,178 @@
-import React, { createContext, useContext, useState, useEffect, useCallback} from "react"
-import axios from "axios"
-import { BASE_URL, GetBy_DoctorId } from "../baseUrl"
-import { GetSubServices_ByClinicId } from "../views/ProcedureManagement/ProcedureAPI"
+// import React, { createContext, useContext, useState, useEffect, useCallback} from "react"
+// import axios from "axios"
+// import { BASE_URL, GetBy_DoctorId } from "../baseUrl"
+// import { GetSubServices_ByClinicId } from "../views/ProcedureManagement/ProcedureAPI"
 
-const HospitalContext = createContext()
+// const HospitalContext = createContext()
 
-export const HospitalProvider = ({ children }) => {
-  const [hospitals, setHospitals] = useState([])          // ✅ all hospitals
-  const [selectedHospital, setSelectedHospital] = useState(null) // ✅ current selected hospital
-  const [doctorData, setDoctorData] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [errorMessage, setErrorMessage] = useState("")
-  const [notificationCount, setNotificationCount] = useState("")
-  const [subServices, setSubServices] = useState([])
-    const [role, setRole] = useState(localStorage.getItem('role'))
-  const [hydrated, setHydrated] = useState(false) // Track data readiness
+// export const HospitalProvider = ({ children }) => {
+//   const [hospitals, setHospitals] = useState([])          // ✅ all hospitals
+//   const [selectedHospital, setSelectedHospital] = useState(null) // ✅ current selected hospital
+//   const [doctorData, setDoctorData] = useState(null)
+//   const [loading, setLoading] = useState(false)
+//   const [errorMessage, setErrorMessage] = useState("")
+//   const [notificationCount, setNotificationCount] = useState("")
+//   const [subServices, setSubServices] = useState([])
+//     const [role, setRole] = useState(localStorage.getItem('role'))
+//   const [hydrated, setHydrated] = useState(false) // Track data readiness
 
-  useEffect(() => {
-    // Load hospitals + selected hospital from localStorage
-    const storedHospitals = JSON.parse(localStorage.getItem("Hospitals")) || []
-    const storedSelectedId = localStorage.getItem("SelectedHospitalId")
+//   useEffect(() => {
+//     // Load hospitals + selected hospital from localStorage
+//     const storedHospitals = JSON.parse(localStorage.getItem("Hospitals")) || []
+//     const storedSelectedId = localStorage.getItem("SelectedHospitalId")
 
-    if (storedHospitals.length) {
-      setHospitals(storedHospitals)
-    }
+//     if (storedHospitals.length) {
+//       setHospitals(storedHospitals)
+//     }
 
-    if (storedSelectedId) {
-      fetchHospitalDetails(storedSelectedId)
-      fetchDoctorDetails(storedSelectedId)
-      fetchSubServices(storedSelectedId)
-    }
-  }, [])
+//     if (storedSelectedId) {
+//       fetchHospitalDetails(storedSelectedId)
+//       fetchDoctorDetails(storedSelectedId)
+//       fetchSubServices(storedSelectedId)
+//     }
+//   }, [])
 
-  // Fetch ALL hospitals
-  const fetchAllHospitals = async () => {
-    setLoading(true)
-    try {
-      const url = `${BASE_URL}/admin/getAllClinics`
-      const res = await axios.get(url)
-      if (res.status === 200 && res.data?.data) {
-        setHospitals(res.data.data)
+//   // Fetch ALL hospitals
+//   const fetchAllHospitals = async () => {
+//     setLoading(true)
+//     try {
+//       const url = `${BASE_URL}/admin/getAllClinics`
+//       const res = await axios.get(url)
+//       if (res.status === 200 && res.data?.data) {
+//         setHospitals(res.data.data)
 
-        // store in localStorage
-        localStorage.setItem("Hospitals", JSON.stringify(res.data.data))
-      }
-    } catch (err) {
-      console.error("Error fetching all hospitals", err)
-      setErrorMessage("Failed to fetch hospitals")
-    } finally {
-      setLoading(false)
-    }
-  }
+//         // store in localStorage
+//         localStorage.setItem("Hospitals", JSON.stringify(res.data.data))
+//       }
+//     } catch (err) {
+//       console.error("Error fetching all hospitals", err)
+//       setErrorMessage("Failed to fetch hospitals")
+//     } finally {
+//       setLoading(false)
+//     }
+//   }
 
-  // Select a hospital
-  const selectHospital = (hospitalId) => {
-    localStorage.setItem("SelectedHospitalId", hospitalId)
-    fetchHospitalDetails(hospitalId)
-    fetchDoctorDetails(hospitalId)
-    fetchSubServices(hospitalId)
-  }
+//   // Select a hospital
+//   const selectHospital = (clinicId) => {
+//     localStorage.setItem("SelectedHospitalId", clinicId)
+//     fetchHospitalDetails(clinicId)
+//     fetchDoctorDetails(clinicId)
+//     fetchSubServices(clinicId)
+//   }
 
-  // Fetch one hospital’s details
-  const fetchHospitalDetails = async (id) => {
-    setLoading(true)
-    try {
-      const url = `${BASE_URL}/admin/getClinicById/${id}`
-      const response = await axios.get(url)
-      if (response.status === 200 && response.data) {
-        setSelectedHospital(response.data)
-      }
-    } catch (err) {
-      console.error("Fetch clinic error:", err)
-      setErrorMessage("Error fetching clinic details.")
-    } finally {
-      setLoading(false)
-    }
-  }
+//   // Fetch one hospital’s details
+//   const fetchHospitalDetails = async (id) => {
+//     setLoading(true)
+//     try {
+//       const url = `${BASE_URL}/admin/getClinicById/${id}`
+//       const response = await axios.get(url)
+//       if (response.status === 200 && response.data) {
+//         setSelectedHospital(response.data)
+//       }
+//     } catch (err) {
+//       console.error("Fetch clinic error:", err)
+//       setErrorMessage("Error fetching clinic details.")
+//     } finally {
+//       setLoading(false)
+//     }
+//   }
+//  const fetchAllData = useCallback(
+//     async (id = clinicId) => {
+//       if (!id) return
+//       setLoading(true)
+//       try {
+//         // Fetch hospital
+//         const hospitalRes = await http.get(`/getClinic/${id}`)
+//         if (hospitalRes.status === 200 && hospitalRes.data) setSelectedHospital(hospitalRes.data)
 
-  // Fetch doctor details
-  const fetchDoctorDetails = async (hospitalId) => {
-    setLoading(true)
-    try {
-      const url = `${BASE_URL}/${GetBy_DoctorId}/${hospitalId}`
-      const response = await axios.get(url)
-      if (response.status === 200 && response.data) {
-        setDoctorData(response.data)
-      }
-    } catch (err) {
-      console.error("Fetch doctor error:", err)
-      setErrorMessage("Error fetching doctor details.")
-    } finally {
-      setLoading(false)
-    }
-  }
+//         // Fetch doctors
+//         const branchId = localStorage.getItem('branchId')
+//         const doctorRes = await http.get(`${getDoctorByClinicId}/${id}/${branchId}`)
+//         if (doctorRes.status === 200 && doctorRes.data) setDoctorData(doctorRes.data)
 
-  const fetchSubServices = async (clinicId) => {
-    try {
-      const res = await GetSubServices_ByClinicId(clinicId)
-      const list = Array.isArray(res?.data) ? res.data : []
-      const filtered = list.filter((s) => s.hospitalId === clinicId)
-      setSubServices(filtered)
-    } catch (err) {
-      console.error("Fetch subservices error:", err)
-      setSubServices([])
-    }
-  }
+//         // Fetch subservices
+//         const subRes = await GetSubServices_ByClinicId(id)
+//         const list = Array.isArray(subRes?.data) ? subRes.data : []
+//         setSubServices(list.filter((s) => s.hospitalId === id))
+//       } catch (err) {
+//         console.error(err)
+//         setErrorMessage('Error fetching hospital data.')
+//       } finally {
+//         setLoading(false)
+//         setHydrated(true)
+//       }
+//     },
+//     [clinicId],
+//   )
+//   // Fetch doctor details
+//   const fetchDoctorDetails = async (clinicId) => {
+//     setLoading(true)
+//     try {
+//       const url = `${BASE_URL}/${GetBy_DoctorId}/${clinicId}`
+//       const response = await axios.get(url)
+//       if (response.status === 200 && response.data) {
+//         setDoctorData(response.data)
+//       }
+//     } catch (err) {
+//       console.error("Fetch doctor error:", err)
+//       setErrorMessage("Error fetching doctor details.")
+//     } finally {
+//       setLoading(false)
+//     }
+//   }
 
-  return (
-    <HospitalContext.Provider
-      value={{
-        hospitals,             // ✅ all hospitals
-        selectedHospital,      // ✅ selected one
-        doctorData,
-        setDoctorData,         // ✅ expose this so components can update doctor list
-        subServices,
-        loading,
-        errorMessage,
-        notificationCount,
-        setNotificationCount,
-        fetchAllHospitals,
-        selectHospital, 
-        fetchHospitalDetails,
-        fetchDoctorDetails,    
-        fetchSubServices,
-      }}
-    >
-      {children}
-    </HospitalContext.Provider>
-  )
-}
+//   const fetchSubServices = async (clinicId) => {
+//     try {
+//       const res = await GetSubServices_ByClinicId(clinicId)
+//       const list = Array.isArray(res?.data) ? res.data : []
+//       const filtered = list.filter((s) => s.hospitalId === clinicId)
+//       setSubServices(filtered)
+//     } catch (err) {
+//       console.error("Fetch subservices error:", err)
+//       setSubServices([])
+//     }
+//   }
 
-export const useHospital = () => useContext(HospitalContext)
+//   return (
+//     <HospitalContext.Provider
+//       value={{
+//         hospitals,             // ✅ all hospitals
+//         selectedHospital,      // ✅ selected one
+//         doctorData,
+//         setDoctorData,         // ✅ expose this so components can update doctor list
+//         subServices,
+//         loading,
+//         errorMessage,
+//         notificationCount,
+//         setNotificationCount,
+//         fetchAllHospitals,
+//         selectHospital, 
+//         fetchHospitalDetails,
+//         fetchDoctorDetails,    
+//         fetchSubServices,
+//              selectedHospital,
+//         doctorData,
+//         subServices,
+//         loading,
+//         errorMessage,
+//         hydrated,
+      
+//         role,
+//         notificationCount,
+ 
+//         setSelectedHospital,
+//         setDoctorData,
+//         setSubServices,
+   
+//         setRole,
+ 
+//         setNotificationCount,
+//         fetchAllData,
+//       }}
+//     >
+//       {children}
+//     </HospitalContext.Provider>
+//   )
+// }
+
+// export const useHospital = () => useContext(HospitalContext)

@@ -32,6 +32,7 @@ import { http, httpPublic } from '../../../Utils/Interceptors'
 import DermaLogo from 'src/assets/images/DermaCare.png' // adjust path if needed
 import { COLORS } from '../../../Constant/Themes'
 import { toast } from 'react-toastify'
+import { showCustomToast } from '../../../Utils/Toaster'
 
 const Login = () => {
   const [activeTab, setActiveTab] = useState('clinic') // clinic | doctor
@@ -95,7 +96,7 @@ const Login = () => {
       if (res?.status === 200) {
         const payload = res.data
         if (!payload) {
-          toast.error(res?.message || 'Invalid login response')
+          showCustomToast(res?.message || 'Invalid login response','error')
           return
         }
 
@@ -169,7 +170,7 @@ const Login = () => {
           setHospitalId(HospitalId)
           localStorage.setItem('HospitalId', HospitalId)
           await fetchAllData(HospitalId)
-          toast.success(res.data?.message || 'Login successful!')
+          showCustomToast(res.data?.message || 'Login successful!','success')
           navigate('/dashboard') // immediately navigates to dashboard with context updated
         }
       }
@@ -181,17 +182,17 @@ const Login = () => {
       if (backendMessage) {
         if (backendMessage.toLowerCase().includes('username')) {
           setErrorMessage('Invalid username. Please try again.')
-          toast.error('Invalid username. Please try again.')
+          showCustomToast('Invalid username. Please try again.','error')
         } else if (backendMessage.toLowerCase().includes('password')) {
           setErrorMessage('Invalid password. Please try again.')
-          toast.error('Invalid password. Please try again.')
+          showCustomToast('Invalid password. Please try again.','error')
         } else {
           setErrorMessage(backendMessage)
-          toast.error(backendMessage)
+          showCustomToast(backendMessage,'error')
         }
       } else {
         setErrorMessage('An unexpected error occurred. Please try again later.')
-        toast.error('An unexpected error occurred. Please try again later.')
+        showCustomToast('An unexpected error occurred. Please try again later.','error')
       }
     } finally {
       setIsLoading(false)

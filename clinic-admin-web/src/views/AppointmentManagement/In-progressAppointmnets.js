@@ -16,6 +16,7 @@ import {
   CCard,
   CCardBody,
   CFormInput,
+  CCollapse,
 } from '@coreui/react'
 import { Edit, Save } from 'lucide-react'
 import { format } from 'date-fns'
@@ -29,6 +30,7 @@ import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
 import LoadingIndicator from '../../Utils/loader'
 import capitalizeWords from '../../Utils/capitalizeWords'
 import { getFollowOptions } from '../../APIs/FollowOptions'
+import { showCustomToast } from '../../Utils/Toaster'
 
 // const followOptions = [
 //   { label: 'Follow-up Required', value: 'followup' },
@@ -69,6 +71,7 @@ const InProgressAppointmentsPage = () => {
   const [showAllSlots, setShowAllSlots] = useState(false)
   const [reschedule, setReschedule] = useState(false)
   // Whenever appointments are fetched, set edit mode
+  const [expandedPatient, setExpandedPatient] = useState(null)
   const [followOptions, setFollowOptions] = useState([])
   useEffect(() => {
     fetchData()
@@ -186,7 +189,7 @@ const InProgressAppointmentsPage = () => {
   // Booking payload and API call
   const bookSlot = async () => {
     if (!modalData || selectedSlots.length === 0) {
-      toast.warning('Please select a slot before booking.')
+     showCustomToast('Please select a slot before booking.','warning')
       return
     }
 
@@ -196,7 +199,7 @@ const InProgressAppointmentsPage = () => {
       patientId: modalData.patientId,
       visitType: 'Follow-Up',
       serviceDate: selectedDate,
-      servicetime: selectedSlots[0],
+      servicetime: selectedSlots,
       mobileNumber: modalData.mobileNumber,
     }
 
@@ -214,19 +217,19 @@ const InProgressAppointmentsPage = () => {
           bookingId: modalData.bookingId,
           followupStatus: status,
           serviceDate: selectedDate,
-          servicetime: selectedSlots[0],
+          servicetime: selectedSlots,
         }
 
         await bookingUpdate(reschedulePayload)
-        toast.info('Booking has been rescheduled successfully.')
+        showCustomToast('Booking has been rescheduled successfully.','success')
       } else {
         // 🔹 Normal booking flow
         const response = await axios.post(`${Booking_sevice}/customer/bookService`, payload)
 
         if (response?.data?.success) {
-          toast.success(response.data.message || 'Booking successful!')
+          showCustomToast(response.data.message || 'Booking successful!','success')
         } else {
-          toast.error(response?.data?.message || 'Booking failed. Please try again.')
+          showCustomToast(response?.data?.message || 'Booking failed. Please try again.','error')
         }
       }
 
@@ -238,7 +241,7 @@ const InProgressAppointmentsPage = () => {
         error?.response?.data?.message ||
         error?.message ||
         'Something went wrong while booking. Please try again.'
-      toast.error(msg)
+      showCustomToast(msg,'error')
       console.error('Booking failed:', error)
     }
   }
@@ -369,6 +372,30 @@ const InProgressAppointmentsPage = () => {
     )
 
   if (error) return <p>{error}</p>
+  const groupedAppointments = sortedAppointments.reduce((acc, apt) => {
+    if (!acc[apt.patientId]) acc[apt.patientId] = []
+    acc[apt.patientId].push(apt)
+    return acc
+  }, {})
+
+  if (sortedAppointments.length === 0) {
+    return (
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ minHeight: '300px' }}
+      >
+        <h6
+          style={{
+            color: 'var(--color-black)',
+            fontWeight: 'normal',
+            textAlign: 'center',
+          }}
+        >
+          No Active Appointments
+        </h6>
+      </div>
+    )
+  }
 
   return (
     <div className="container my-2">
@@ -413,132 +440,160 @@ const InProgressAppointmentsPage = () => {
         {/* </div> */}
       </div>
       {/* Table Section */}
-      {inprogressApt.length === 0 ? (
-        <div
-          className="d-flex justify-content-center align-items-center"
-          style={{ minHeight: '300px' }}
-        >
-          <h6 style={{ color: 'var(--color-black)', fontWeight: 'normal', textAlign: 'center' }}>
-            No Active appointments
-          </h6>
-        </div>
-      ) : (
-        <CTable bordered hover responsive>
-          <CTableHead>
-            <CTableRow className="pink-table  w-auto">
-              <CTableHeaderCell>Patient Id</CTableHeaderCell>
-              <CTableHeaderCell>Patient Name</CTableHeaderCell>
-              <CTableHeaderCell>Doctor</CTableHeaderCell>
-              <CTableHeaderCell>Mobile Number</CTableHeaderCell>
-              <CTableHeaderCell>Consultation</CTableHeaderCell>
+      <div className="mt-4">
+        {Object.entries(groupedAppointments).map(([patientId, appointments]) => (
+          <CCard key={patientId} className="mb-3">
+            {/* Accordion Header */}
+            <div
+              onClick={() => setExpandedPatient(expandedPatient === patientId ? null : patientId)}
+              style={{
+                cursor: 'pointer',
+                backgroundColor: 'var(--color-bgcolor)',
+                padding: '10px 15px',
+                fontWeight: '500',
+                borderBottom: '1px solid #dee2e6',
+                color: 'var(--color-black)',
+              }}
+            >
+              {capitalizeWords(appointments[0].name)} — {appointments.length} Appointment
+              {appointments.length > 1 ? 's' : ''}
+              <span style={{ float: 'right' }}>{expandedPatient === patientId ? '▲' : '▼'}</span>
+            </div>
 
-              <CTableHeaderCell onClick={toggleSort} style={{ cursor: 'pointer' }}>
-                Follow-Up Date {sortOrder === 'asc' ? '↑' : '↓'}
-              </CTableHeaderCell>
-              <CTableHeaderCell>Follow-Up Status</CTableHeaderCell>
-              <CTableHeaderCell></CTableHeaderCell>
-            </CTableRow>
-          </CTableHead>
-          <CTableBody className="pink-table">
-            {sortedAppointments.map((apt) => (
-              <CTableRow key={apt.bookingId}>
-                <CTableDataCell>{apt.patientId}</CTableDataCell>
-                <CTableDataCell>{capitalizeWords(apt.name)}</CTableDataCell>
-                <CTableDataCell>{capitalizeWords(apt.doctorName)}</CTableDataCell>
-                <CTableDataCell>{apt.mobileNumber}</CTableDataCell>
-                <CTableDataCell>{apt.consultationType}</CTableDataCell>
-
-                <CTableDataCell>{apt.followupDate}</CTableDataCell>
-                <CTableDataCell>
-                  <div className="d-flex align-items-center gap-2">
-                    <CFormSelect
-                      size="sm"
-                      value={
-                        followStatuses[apt.bookingId]?.saved ||
-                        followStatuses[apt.bookingId]?.value ||
-                        apt.followupStatus ||
-                        ''
-                      }
-                      onChange={(e) => {
-                        const selectedValue = e.target.value
-
-                        setFollowStatuses((prev) => ({
-                          ...prev,
-                          [apt.bookingId]: { ...prev[apt.bookingId], value: selectedValue },
-                        }))
-
-                        const rescheduleStatuses = ['reschedule-doctor', 'reschedule-patient']
-                        console.log(selectedValue)
-                        // Only open modal if user just selected reschedule status (not existing one)
-                        if (rescheduleStatuses.includes(selectedValue)) {
-                          openBookingModal(apt)
-                          setReschedule(true)
-                        } else {
-                          setReschedule(false)
-                        }
-                      }}
-                      disabled={!editMode[apt.bookingId]} // enable only in edit mode
+            {/* Accordion Body */}
+            <CCollapse visible={expandedPatient === patientId}>
+              <CCardBody style={{ padding: '0' }}>
+                <CTable bordered hover responsive>
+                  <CTableHead>
+                    <CTableRow
+                      style={{ backgroundColor: '#ffe6f0' }}
+                      className="pink-table  w-auto"
                     >
-                      <option value="">Select</option>
-                      {followOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                      <option value="other">Other</option>
-                    </CFormSelect>
+                      <CTableHeaderCell>Patient ID</CTableHeaderCell>
+                      <CTableHeaderCell>Doctor</CTableHeaderCell>
+                      <CTableHeaderCell>Mobile Number</CTableHeaderCell>
+                      <CTableHeaderCell>Consultation</CTableHeaderCell>
+                      <CTableHeaderCell onClick={toggleSort} style={{ cursor: 'pointer' }}>
+                        Follow-Up Date {sortOrder === 'asc' ? '↑' : '↓'}
+                      </CTableHeaderCell>
+                      <CTableHeaderCell>Follow-Up Status</CTableHeaderCell>
+                      <CTableHeaderCell>Action</CTableHeaderCell>
+                    </CTableRow>
+                  </CTableHead>
+                  <CTableBody className="pink-table">
+                    {appointments.map((apt) => (
+                      <CTableRow key={apt.bookingId}>
+                        <CTableDataCell>{apt.patientId}</CTableDataCell>
+                        <CTableDataCell>{capitalizeWords(apt.doctorName)}</CTableDataCell>
+                        <CTableDataCell>{apt.mobileNumber}</CTableDataCell>
+                        <CTableDataCell>{apt.consultationType}</CTableDataCell>
+                        <CTableDataCell>{apt.followupDate}</CTableDataCell>
 
-                    {(followStatuses[apt.bookingId]?.value === 'other' ||
-                      apt.followupStatus === 'other') &&
-                      editMode[apt.bookingId] && (
-                        <CFormInput
-                          size="sm"
-                          placeholder="Type reason if needed"
-                          value={followStatuses[apt.bookingId]?.custom || ''}
-                          onChange={(e) =>
-                            setFollowStatuses((prev) => ({
-                              ...prev,
-                              [apt.bookingId]: { ...prev[apt.bookingId], custom: e.target.value },
-                            }))
-                          }
-                        />
-                      )}
+                        <CTableDataCell>
+                          <div className="d-flex align-items-center gap-2">
+                            <CFormSelect
+                              size="sm"
+                              value={
+                                followStatuses[apt.bookingId]?.saved ||
+                                followStatuses[apt.bookingId]?.value ||
+                                apt.followupStatus ||
+                                ''
+                              }
+                              onChange={(e) => {
+                                const selectedValue = e.target.value
+                                setFollowStatuses((prev) => ({
+                                  ...prev,
+                                  [apt.bookingId]: {
+                                    ...prev[apt.bookingId],
+                                    value: selectedValue,
+                                  },
+                                }))
 
-                    <CButton
-                      size="sm"
-                      onClick={() => {
-                        if (editMode[apt.bookingId]) {
-                          handleSave(apt.bookingId) // save current selection
-                        } else {
-                          setEditMode((prev) => ({ ...prev, [apt.bookingId]: true })) // switch to edit
-                        }
-                      }}
-                    >
-                      {editMode[apt.bookingId] ? (
-                        <Save size={16} style={{ color: 'var(--color-black)' }} />
-                      ) : (
-                        <Edit size={16} style={{ color: 'var(--color-bgcolor)' }} />
-                      )}
-                    </CButton>
-                  </div>
-                </CTableDataCell>
+                                const rescheduleStatuses = [
+                                  'reschedule-doctor',
+                                  'reschedule-patient',
+                                ]
+                                if (rescheduleStatuses.includes(selectedValue)) {
+                                  openBookingModal(apt)
 
-                <CTableDataCell>
-                  <CButton
-                    style={{
-                      backgroundColor: 'var(--color-bgcolor)',
-                      color: 'var(--color-black)',
-                    }}
-                    onClick={() => openBookingModal(apt)}
-                  >
-                    BOOK
-                  </CButton>
-                </CTableDataCell>
-              </CTableRow>
-            ))}
-          </CTableBody>
-        </CTable>
-      )}
+                                  setReschedule(true)
+                                } else {
+                                  setReschedule(false)
+                                }
+                              }}
+                              disabled={!editMode[apt.bookingId]}
+                            >
+                              <option value="">Select</option>
+                              {followOptions.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                              <option value="other">Other</option>
+                            </CFormSelect>
+
+                            {(followStatuses[apt.bookingId]?.value === 'other' ||
+                              apt.followupStatus === 'other') &&
+                              editMode[apt.bookingId] && (
+                                <CFormInput
+                                  size="sm"
+                                  placeholder="Type reason if needed"
+                                  value={followStatuses[apt.bookingId]?.custom || ''}
+                                  onChange={(e) =>
+                                    setFollowStatuses((prev) => ({
+                                      ...prev,
+                                      [apt.bookingId]: {
+                                        ...prev[apt.bookingId],
+                                        custom: e.target.value,
+                                      },
+                                    }))
+                                  }
+                                />
+                              )}
+
+                            <CButton
+                              size="sm"
+                              onClick={() => {
+                                if (editMode[apt.bookingId]) {
+                                  handleSave(apt.bookingId)
+                                } else {
+                                  setEditMode((prev) => ({
+                                    ...prev,
+                                    [apt.bookingId]: true,
+                                  }))
+                                }
+                              }}
+                            >
+                              {editMode[apt.bookingId] ? (
+                                <Save size={16} style={{ color: 'var(--color-black)' }} />
+                              ) : (
+                                <Edit size={16} style={{ color: 'var(--color-bgcolor)' }} />
+                              )}
+                            </CButton>
+                          </div>
+                        </CTableDataCell>
+
+                        <CTableDataCell>
+                          <CButton
+                            style={{
+                              backgroundColor: 'var(--color-bgcolor)',
+                              color: 'var(--color-black)',
+                            }}
+                            onClick={() => openBookingModal(apt)}
+                          >
+                            BOOK
+                          </CButton>
+                        </CTableDataCell>
+                      </CTableRow>
+                    ))}
+                  </CTableBody>
+                </CTable>
+              </CCardBody>
+            </CCollapse>
+          </CCard>
+        ))}
+      </div>
+
       {!loading && (
         <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
           {Array.from({ length: Math.ceil(filteredData.length / rowsPerPage) }, (_, index) => (
@@ -628,49 +683,86 @@ const InProgressAppointmentsPage = () => {
             <CCardBody>
               {modalLoading ? (
                 // Show spinner while fetching slots
-                <div className="text-center py-4">
+                <div className="text-center py-4" style={{ color: 'var(--color-black)' }}>
                   <CSpinner style={{ width: '40px', height: '40px' }} />
-                  <p style={{ marginTop: '8px', color: '#666' }}>Loading available slots...</p>
+                  <p style={{ marginTop: '8px', color: 'var(--color-black)' }}>
+                    Loading available slots...
+                  </p>
                 </div>
               ) : filteredSlots.length > 0 ? (
                 <>
-                  <div className="d-flex flex-wrap gap-2 mb-2">
-                    {filteredSlots
-                      .slice(0, showAllSlots ? filteredSlots.length : 15) // Show first 15 slots initially
-                      .map((slotObj, i) => {
-                        const isSelected = selectedSlots.includes(slotObj.slot)
-                        const isBooked =
-                          slotObj.slotbooked === true || slotObj.slotbooked === 'true'
-
-                        return (
+                  <div className="slot-grid mt-3">
+                    <CCard className="mb-4">
+                      <CCardBody>
+                        {loading ? (
+                          <LoadingIndicator message="Loading slots..." />
+                        ) : (
                           <div
-                            key={i}
-                            onClick={() => !isBooked && handleSlotClick(slotObj)}
+                            className="slot-container d-grid"
                             style={{
-                              cursor: isBooked ? 'not-allowed' : 'pointer',
-                              width: '80px',
-                              height: '40px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              borderRadius: '6px',
-                              border: '1px solid var(--color-black)',
-                              backgroundColor: isBooked
-                                ? '#ccc'
-                                : isSelected
-                                  ? 'var(--color-black)'
-                                  : 'white',
-                              color: isBooked || isSelected ? 'white' : 'var(--color-black)',
-                              fontWeight: 500,
-                              opacity: isBooked ? 0.6 : 1,
-                              transition: 'all 0.2s',
-                              textAlign: 'center',
+                              display: 'grid',
+                              color: 'var(--color-black)',
+                              gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+                              gap: '12px',
                             }}
                           >
-                            {slotObj.slot}
+                            {slotsForSelectedDate.map((slotObj, i) => {
+                              const isSelected = selectedSlots === slotObj.slot // ✅ Only one selected slot
+                              const isBooked = slotObj?.slotbooked
+
+                              return (
+                                <div
+                                  key={i}
+                                  className={`slot-item text-center border rounded   ${
+                                    isBooked
+                                      ? 'bg-danger text-white'
+                                      : isSelected
+                                        ? 'text-white'
+                                        : 'bg-light var(--color-black)'
+                                  }`}
+                                  onClick={() => {
+                                    if (isBooked) return // booked slots not clickable
+                                    if (isSelected) {
+                                      setSelectedSlots(null) // deselect if already selected
+                                    } else {
+                                      setSelectedSlots(slotObj.slot) // select only this slot
+                                    }
+                                  }}
+                                  style={{
+                                    padding: '10px 0',
+                                    borderRadius: '8px',
+                                    cursor: isBooked ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    opacity: isBooked ? 0.7 : 1,
+                                    color: 'var(--color-black)',
+                                    backgroundColor: isBooked
+                                      ? 'red'
+                                      : isSelected
+                                        ? 'var(--color-black)'
+                                        : undefined,
+                                  }}
+                                  title={isBooked ? 'Booked' : 'Not Booked'}
+                                >
+                                  {slotObj?.slot}
+                                </div>
+                              )
+                            })}
+
+                            {slotsForSelectedDate.length === 0 && (
+                              <p
+                                style={{
+                                  gridColumn: '1 / -1',
+                                  textAlign: 'center',
+                                  color: 'var(--color-black)',
+                                }}
+                              >
+                                No available slots for this date
+                              </p>
+                            )}
                           </div>
-                        )
-                      })}
+                        )}
+                      </CCardBody>
+                    </CCard>
                   </div>
 
                   {filteredSlots.length > 15 && (
@@ -692,7 +784,7 @@ const InProgressAppointmentsPage = () => {
                 </>
               ) : (
                 // No slots available for this date
-                <p style={{ textAlign: 'center', color: '#666', margin: 0 }}>
+                <p style={{ textAlign: 'center', color: 'var(--color-black)', margin: 0 }}>
                   No slots available for this date
                 </p>
               )}
@@ -713,7 +805,7 @@ const InProgressAppointmentsPage = () => {
               onClick={bookSlot}
             >
               {!reschedule
-                ? `Book Selected Slot ${selectedSlots[0] ? `(${selectedSlots[0]})` : ''}`
+                ? `Book Selected Slot ${selectedSlots ? `(${selectedSlots})` : ''}`
                 : 'Reschedule'}
             </CButton>
           </div>

@@ -22,6 +22,7 @@ import ConfirmationModal from '../../../components/ConfirmationModal'
 import LoadingIndicator from '../../../Utils/loader'
 import { addNurse, deleteNurse, getAllNurses, updateNurse } from './NurseAPI'
 import { useHospital } from '../../Usecontext/HospitalContext'
+import { showCustomToast } from '../../../Utils/Toaster'
 
 const NurseManagement = () => {
   const [nurses, setNurses] = useState([])
@@ -41,6 +42,7 @@ const NurseManagement = () => {
   const { searchQuery } = useGlobalSearch()
   const { user } = useHospital()
   const hospitalId = localStorage.getItem('HospitalId')
+  const branchId = localStorage.getItem('branchId')
 
   const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
 
@@ -49,7 +51,7 @@ const NurseManagement = () => {
     setLoading(true)
     try {
       if (hospitalId) {
-        const res = await getAllNurses(hospitalId)
+        const res = await getAllNurses(hospitalId, branchId)
         setNurses(res.data?.data || [])
       }
     } catch (err) {
@@ -101,93 +103,13 @@ const NurseManagement = () => {
   const handleSave = async (formData) => {
     try {
       if (selectedNurse) {
-        // Update nurse
-        // Construct full payload before PUT
-        // const payload = {
-        //   fullName: formData.fullName || null,
-        //   gender: formData.gender || null,
-        //   dateOfBirth: formData.dateOfBirth || null,
-        //   nurseContactNumber: formData.nurseContactNumber || null,
-        //   emailId: formData.emailId || null,
-        //   governmentId: formData.governmentId || null,
-        //   qualifications: formData.qualifications || null,
-        //   dateOfJoining: formData.dateOfJoining || null,
-        //   department: formData.department || null,
-        //   yearsOfExperience: formData.yearsOfExperience || null,
-
-        //   shiftTimingOrAvailability: formData.shiftTimingOrAvailability || null,
-        //   emergencyContactNumber: formData.emergencyContactNumber || null,
-        //   vaccinationStatus: formData.vaccinationStatus || null,
-        //   previousEmploymentHistory: formData.previousEmploymentHistory || null,
-
-        //   // Nested Address
-        //   address: {
-        //     houseNo: formData.address?.houseNo || null,
-        //     street: formData.address?.street || null,
-        //     landmark: formData.address?.landmark || null,
-        //     city: formData.address?.city || null,
-        //     state: formData.address?.state || null,
-        //     postalCode: formData.address?.postalCode || null,
-        //     country: formData.address?.country || null,
-        //   },
-
-        //   // Nested Bank Account Details
-        //   bankAccountDetails: {
-        //     accountNumber: formData.bankAccountDetails?.accountNumber || null,
-        //     accountHolderName: formData.bankAccountDetails?.accountHolderName || null,
-        //     ifscCode: formData.bankAccountDetails?.ifscCode || null,
-        //     bankName: formData.bankAccountDetails?.bankName || null,
-        //     branchName: formData.bankAccountDetails?.branchName || null,
-        //     panCardNumber: formData.bankAccountDetails?.panCardNumber || null,
-        //   },
-
-        //   // Documents / Files
-        //   medicalFitnessCertificate: decodeImage(formData.medicalFitnessCertificate || null),
-        //   profilePicture: decodeImage(formData.profilePicture || null),
-        //   nursingLicense: formData.nursingLicense || null,
-        //   nursingDegreeOrDiplomaCertificate: formData.nursingDegreeOrDiplomaCertificate || null,
-        //   nursingCouncilRegistration: formData.nursingCouncilRegistration || null,
-
-        //   // Permissions
-        //   permissions: formData.permissions || {},
-
-        //   // You can include any other optional fields your backend expects
-        // }
-
-        // const payload = {
-        //   fullName: formData.fullName || '',
-        //   emailId: formData.emailId || '',
-        //   nurseContactNumber: formData.nurseContactNumber || '',
-        //   gender: formData.gender || '',
-        //   dateOfBirth: formData.dateOfBirth || '',
-        //   department: formData.department || '',
-        //   yearsOfExperience: formData.yearsOfExperience || '',
-        //   shiftTimingOrAvailability: formData.shiftTimingOrAvailability || '',
-        //   vaccinationStatus: formData.vaccinationStatus || '',
-        //   address: formData.address || {},
-        //   bankAccountDetails: formData.bankAccountDetails || {},
-        //   previousEmploymentHistory: formData.previousEmploymentHistory || '',
-        //   governmentId: formData.governmentId || '',
-        //   nursingCouncilRegistration: formData.nursingCouncilRegistration || '',
-        //   dateOfJoining: formData.dateOfJoining || '',
-        //   // medicalFitnessCertificate: formData.medicalFitnessCertificate || null,
-        //   // profilePicture: formData.profilePicture || null,
-        //   // nursingLicense: formData.nursingLicense || null,
-        //   // nursingDegreeOrDiplomaCertificate: formData.nursingDegreeOrDiplomaCertificate || null,
-        //   nursingCouncilRegistration: formData.nursingCouncilRegistration || null,
-
-        //   // Permissions
-        //   permissions: formData.permissions || {},
-        // }
-
-        // updateNurse(hospitalId, formData.id, payload)
-
         await updateNurse(hospitalId, selectedNurse.nurseId, formData)
-        toast.success('Nurse updated successfully!')
-      } else {
+        showCustomToast('Nurse updated successfully!','success')
+      }
+      else {
         // Add new nurse
         const res = await addNurse({ ...formData, hospitalId: hospitalId })
-        toast.success('Nurse added successfully!')
+        showCustomToast('Nurse added successfully!','success')
         setModalData({
           username: res.data.data.userName,
           password: res.data.data.password,
@@ -201,7 +123,7 @@ const NurseManagement = () => {
       setViewMode(false)
     } catch (err) {
       console.error('API error:', err)
-      toast.error('❌ Failed to save nurse.')
+      showCustomToast('❌ Failed to save nurse.','error')
     }
   }
 
@@ -211,10 +133,10 @@ const NurseManagement = () => {
     try {
       await deleteNurse(hospitalId, nurseId)
       setNurses((prev) => prev.filter((n) => n.nurseId !== nurseId))
-      toast.success('Nurse deleted successfully!')
+      showCustomToast('Nurse deleted successfully!','success')
     } catch (err) {
       console.error('Delete error:', err)
-      toast.error('Failed to delete nurse.')
+     showCustomToast('Failed to delete nurse.','error')
     } finally {
       setIsModalVisible(false)
       setDeleteId(null)

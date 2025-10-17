@@ -586,6 +586,7 @@ const WidgetsDropdown = (props) => {
               />
             )} */}
             <CButton
+            className='mx-2'
               style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
               onClick={() => navigate('/in-progress')}
             >

@@ -50,9 +50,10 @@ import {
   FaMapMarkerAlt,
   FaPhone,
   FaTransgender,
-  FaUser,
+  FaUser,FaIdBadge,FaUserFriends ,FaGift ,FaIdCard 
 } from 'react-icons/fa'
 import { emailPattern } from '../../Constant/Constants'
+import { showCustomToast } from '../../Utils/Toaster'
 const CustomerManagement = () => {
   const navigate = useNavigate()
   const [customerData, setCustomerData] = useState([])
@@ -243,7 +244,7 @@ const CustomerManagement = () => {
       setIsViewModalVisible(true)
     } catch (error) {
       console.error('Failed to fetch customer:', error)
-      toast.error('Failed to load customer data')
+      showCustomToast('Failed to load customer data','error')
     } finally {
       setLoading(false)
     }
@@ -256,12 +257,12 @@ const CustomerManagement = () => {
 
     try {
       await deleteCustomerData(customerId)
-      toast.success('Customer deleted successfully')
+      showCustomToast('Customer deleted successfully','success')
       const updatedData = customerData.filter((customer) => customer?.customerId !== customerId)
       setCustomerData(updatedData)
     } catch (error) {
       console.error('Delete failed:', error)
-      toast.error('Failed to delete customer')
+      showCustomToast('Failed to delete customer','error')
     }
   }
 
@@ -340,7 +341,7 @@ const CustomerManagement = () => {
       // setIsViewModalVisible(true)
     } catch (error) {
       console.error('Failed to fetch customer:', error)
-      toast.error('Failed to load customer data')
+      showCustomToast('Failed to load customer data','error')
     } finally {
       setLoading(false)
     }
@@ -405,11 +406,11 @@ const CustomerManagement = () => {
       if (isEditing) {
         // ✅ Update customer
         await updateCustomerData(formData.customerId, updatedFormData)
-        toast.success('Customer updated successfully')
+        showCustomToast('Customer updated successfully','success')
       } else {
         // ✅ Add customer
         await addCustomer(updatedFormData)
-        toast.success('Customer added successfully')
+        showCustomToast('Customer added successfully','success')
         setFormData({
           title: '',
           firstName: '',
@@ -437,9 +438,9 @@ const CustomerManagement = () => {
     } catch (error) {
       console.error('Error submitting customer:', error)
       if (error?.response?.status === 409) {
-        toast.error('Customer already exists with this mobile number or email.')
+        showCustomToast('Customer already exists with this mobile number or email.','error')
       } else {
-        toast.error('Something went wrong while submitting.')
+        showCustomToast('Something went wrong while submitting.','error')
       }
     }
   }
@@ -531,7 +532,7 @@ const CustomerManagement = () => {
   const confirmDeleteCustomer = async () => {
     try {
       await deleteCustomerData(customerIdToDelete)
-      toast.success('Customer deleted successfully')
+      showCustomToast('Customer deleted successfully','success')
 
       const updatedData = customerData.filter(
         (customer) => customer?.customerId !== customerIdToDelete,
@@ -540,7 +541,7 @@ const CustomerManagement = () => {
       setCustomerData(updatedData)
     } catch (error) {
       console.error('Delete failed:', error)
-      toast.error('Failed to delete customer')
+      showCustomToast('Failed to delete customer','error')
     } finally {
       setIsModalVisible(false)
       setCustomerIdToDelete(null)
@@ -790,6 +791,7 @@ const CustomerManagement = () => {
                 visible={isViewModalVisible}
                 onClose={() => setIsViewModalVisible(false)}
                 size="lg"
+                scrollable
               >
                 <CModalHeader>
                   <CModalTitle>Customer Details</CModalTitle>
@@ -798,79 +800,60 @@ const CustomerManagement = () => {
                   {loading ? (
                     <div className="text-center py-5">Loading...</div>
                   ) : viewCustomerData ? (
-                    <CRow className="mb-3 g-3">
-                      <CCol md={6}>
-                        <strong>
-                          <FaHashtag className="me-1" />
-                        </strong>{' '}
-                        {viewCustomerData.customerId || '-'}
-                      </CCol>
-                      <CCol md={6}>
-                        <strong>
-                          <FaUser className="me-1" />
-                        </strong>{' '}
-                        {viewCustomerData.fullName || '-'}
-                      </CCol>
-                      <CCol md={6}>
-                        <strong>
-                          <FaPhone className="me-1" />
-                        </strong>{' '}
-                        {viewCustomerData.mobileNumber || '-'}
-                      </CCol>
-                      <CCol md={6}>
-                        <strong>
-                          <FaEnvelope className="me-1" />
-                        </strong>{' '}
-                        {viewCustomerData.email || '-'}
-                      </CCol>
-                      <CCol md={6}>
-                        <strong>
-                          <FaTransgender className="me-1" />
-                        </strong>{' '}
-                        {viewCustomerData.gender || '-'}
-                      </CCol>
-                      <CCol md={6}>
-                        <strong>
-                          <FaBirthdayCake className="me-1" />
-                        </strong>{' '}
-                        {viewCustomerData.dateOfBirth || '-'}
-                      </CCol>
-                      <CCol md={6}>
-                        <strong>
-                          <FaCalendarAlt className="me-1" />
-                        </strong>{' '}
-                        {viewCustomerData.age || '-'} Yrs
-                      </CCol>
+                    <div className="customer-details-modal">
+                      {/* Personal Info */}
+                      <CRow className="mb-4">
+                        <CCol md={6} className="mb-2">
+                          <strong><FaIdCard  className="me-2" />Customer ID:</strong> {viewCustomerData.customerId || 'N/A'}
+                        </CCol>
+                        <CCol md={6} className="mb-2">
+                          <strong><FaUser className="me-2" />Full Name:</strong> {viewCustomerData.fullName || 'N/A'}
+                        </CCol>
+                        <CCol md={6} className="mb-2">
+                          <strong><FaTransgender className="me-2" />Gender:</strong> {viewCustomerData.gender || 'N/A'}
+                        </CCol>
+                        <CCol md={6} className="mb-2">
+                          <strong><FaBirthdayCake className="me-2" />DOB:</strong> {viewCustomerData.dateOfBirth || 'N/A'}
+                        </CCol>
+                        <CCol md={6}>
+                          <strong><FaCalendarAlt className="me-2" />Age:</strong> {viewCustomerData.age || 'N/A'} Yrs
+                        </CCol>
+                        <CCol md={6} className="mb-2">
+                          <strong><FaPhone className="me-2" />Mobile:</strong> {viewCustomerData.mobileNumber || 'N/A'}
+                        </CCol>
+                        <CCol md={6} className="mb-2">
+                          <strong><FaEnvelope className="me-2" />Email:</strong> {viewCustomerData.email || 'N/A'}
+                        </CCol>
+                        <CCol md={6} className="mb-2">
+                          <strong>
+                            <FaIdBadge className="me-2" /> Patient ID:
+                          </strong>{' '}
+                          {viewCustomerData.patientId || 'N/A'}
+                        </CCol>
 
-                      <CCol md={6} className="mt-3">
-                        <h6></h6>
-                        <p className="ms-3">Patient-ID: {viewCustomerData.patientId || 'N/A'}</p>
-                      </CCol>
-                      <CCol md={6} className="mt-3">
-                        <h6></h6>
-                        <p className="ms-3">Referred By: {viewCustomerData.referredBy || 'N/A'}</p>
-                      </CCol>
-                      <CCol md={6} className="mt-3">
-                        <h6></h6>
-                        <p className="ms-3">
-                          referralCode: {viewCustomerData.referralCode || 'N/A'}
-                        </p>
-                      </CCol>
-                      <CCol md={6} className="mt-3">
-                        <h6>
-                          <FaMapMarkerAlt className="me-1" />
-                        </h6>
-                        <p className="ms-3">
-                          {viewCustomerData.address?.houseNo || ''},{' '}
-                          {viewCustomerData.address?.street || ''},{' '}
-                          {viewCustomerData.address?.landmark || ''},<br />
-                          {viewCustomerData.address?.city || ''},{' '}
-                          {viewCustomerData.address?.state || ''},{' '}
-                          {viewCustomerData.address?.postalCode || ''},{' '}
-                          {viewCustomerData.address?.country || ''}
-                        </p>
-                      </CCol>
-                    </CRow>
+                        <CCol md={6} className="mb-2">
+                          <strong>
+                            <FaUserFriends className="me-2" /> Referred By:
+                          </strong>{' '}
+                          {viewCustomerData.referredBy || 'N/A'}
+                        </CCol>
+
+                        <CCol md={6} className="mb-2">
+                          <strong>
+                            <FaGift className="me-2" /> Referral Code:
+                          </strong>{' '}
+                          {viewCustomerData.referralCode || 'N/A'}
+                        </CCol>
+
+                        <CCol md={12}>
+                          <strong><FaMapMarkerAlt className="me-2" />Address:</strong>
+                          <p className="ms-4 mb-0">
+                            {viewCustomerData.address?.houseNo || ''}, {viewCustomerData.address?.street || ''}, {viewCustomerData.address?.landmark || ''},<br />
+                            {viewCustomerData.address?.city || ''}, {viewCustomerData.address?.state || ''}, {viewCustomerData.address?.postalCode || ''}, {viewCustomerData.address?.country || ''}
+                          </p>
+                        </CCol>
+                      </CRow>
+                    </div>
                   ) : (
                     <p className="text-center text-muted py-4">No customer data available.</p>
                   )}
@@ -881,6 +864,7 @@ const CustomerManagement = () => {
                   </CButton>
                 </CModalFooter>
               </CModal>
+
 
               {!loading && (
                 <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>

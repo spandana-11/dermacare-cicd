@@ -12,6 +12,8 @@ import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { attachInterceptors } from './Utils/Interceptors' // <-- interceptor file
 import './views/Style/toastify.css'
+import { NavigationProvider } from './views/Usecontext/NavigationProvider'
+import { BrowserRouter } from 'react-router-dom'
 function Root() {
   // attach interceptors once when app mounts
   // useEffect(() => {
@@ -25,21 +27,25 @@ function Root() {
 
   return (
     <Provider store={store}>
-      <GlobalSearchProvider>
-        <HospitalProvider>
-          <App />
-          {/* ✅ Toast container globally */}
-          <ToastContainer
-            position="top-right"
-            limit={3}
-            theme="dark" // base dark theme
-            toastStyle={{
-              backgroundColor: 'var(--color-black)',
-              color: 'white',
-            }}
-          />
-        </HospitalProvider>
-      </GlobalSearchProvider>
+      <BrowserRouter>
+        <NavigationProvider>
+          <GlobalSearchProvider>
+            <HospitalProvider>
+              {/* ✅ Toast container globally */}
+              <ToastContainer
+                position="top-right"
+                limit={3}
+                theme="dark" // base dark theme
+                toastStyle={{
+                  backgroundColor: 'var(--color-black)',
+                  color: 'white',
+                }}
+              />
+              <App />
+            </HospitalProvider>
+          </GlobalSearchProvider>
+        </NavigationProvider>
+      </BrowserRouter>
     </Provider>
   )
 }

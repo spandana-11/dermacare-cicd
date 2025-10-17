@@ -26,6 +26,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import axios from 'axios'
 import { useHospital } from '../Usecontext/HospitalContext'
 import DoctorManagement from '../Doctors/DoctorManagement'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const DoctorNotifications = () => {
   const [notifications, setNotifications] = useState([])
@@ -54,7 +55,7 @@ const DoctorNotifications = () => {
       const res = await postNotifyData(payload)
 
       if (res.status === 200) {
-        toast.success(`Notification ${status} successfully`)
+        showCustomToast(`Notification ${status} successfully`,'success')
 
         // Close modals
         setShowViewModal(false)
@@ -70,7 +71,7 @@ const DoctorNotifications = () => {
         setNotificationCount((prev) => prev - 1)
       }
     } catch (err) {
-      toast.error('Something went wrong!')
+      showCustomToast('Something went wrong!','error')
     }
   }
 
@@ -93,7 +94,7 @@ const DoctorNotifications = () => {
       }
     } catch (error) {
       console.error('Error in fetchNotifications:', error)
-      toast.error('Failed to fetch notifications')
+      showCustomToast('Failed to fetch notifications','error')
       setNotifications([])
     }
   }
@@ -103,7 +104,7 @@ const DoctorNotifications = () => {
       setLoading(true) // start loading
       const hospitalId = localStorage.getItem('HospitalId')
       if (!hospitalId) {
-        toast.error('Missing Hospital ID in localStorage')
+        showCustomToast('Missing Hospital ID in localStorage','error')
         setLoading(false) // stop loading even on early return
         return
       }
@@ -137,7 +138,7 @@ const DoctorNotifications = () => {
           setNotifications([])
         }
       } catch (error) {
-        toast.error('Error fetching doctor list.')
+        showCustomToast('Error fetching doctor list.','error')
       } finally {
         setLoading(false) // ✅ stop loading after everything
       }
@@ -305,7 +306,7 @@ const DoctorNotifications = () => {
             className="text-white"
             onClick={() => {
               if (!rejectReason.trim()) {
-                toast.warning('Please provide a reason.')
+               showCustomToast('Please provide a reason.','warning')
                 return
               }
               handleResponse('Rejected', rejectReason)

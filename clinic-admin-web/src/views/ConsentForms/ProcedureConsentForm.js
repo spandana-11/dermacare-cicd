@@ -35,6 +35,7 @@ import Select from 'react-select'
 import { toast } from 'react-toastify'
 import capitalizeWords from '../../Utils/capitalizeWords'
 import ConfirmationModal from '../../components/ConfirmationModal'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const ProcedureConsentForm = () => {
   const [category, setCategory] = useState([])
@@ -343,7 +344,7 @@ const ProcedureConsentForm = () => {
     try {
       const form = procedureForms[index]
       if (!form) {
-        toast.error('Selected form not found')
+        showCustomToast('Selected form not found','error')
         return
       }
 
@@ -425,7 +426,7 @@ const ProcedureConsentForm = () => {
       }
     } catch (err) {
       console.error('Error in editProcedureForm:', err)
-      toast.error('Unable to prepare edit form. Check console for details.')
+      showCustomToast('Unable to prepare edit form. Check console for details.','error')
     }
   }
 
@@ -433,7 +434,7 @@ const ProcedureConsentForm = () => {
     const form = procedureForms[index]
     const formId = form?.id || form?.consentFormId || form?.formId
     if (!form?.id) {
-      toast.error('This form does not have an ID and cannot be deleted.')
+      showCustomToast('This form does not have an ID and cannot be deleted.','error')
       return
     }
 
@@ -443,7 +444,7 @@ const ProcedureConsentForm = () => {
       setProcedureForms(updated)
     } catch (error) {
       console.error('Error deleting Procedure Form:', error)
-      toast.error('Failed to delete procedure form.')
+      showCustomToast('Failed to delete procedure form.','error')
     }
   }
 

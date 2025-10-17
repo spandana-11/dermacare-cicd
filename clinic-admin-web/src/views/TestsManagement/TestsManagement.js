@@ -38,6 +38,7 @@ import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
 import capitalizeWords from '../../Utils/capitalizeWords'
 import LoadingIndicator from '../../Utils/loader'
 import { useHospital } from '../Usecontext/HospitalContext'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const TestsManagement = () => {
   // const [searchQuery, setSearchQuery] = useState('')
@@ -97,11 +98,11 @@ const TestsManagement = () => {
   const handleConfirmDelete = async () => {
     try {
       await deleteTestData(testIdToDelete, hospitalIdToDelete)
-      toast.success('Test deleted successfully!', { position: 'top-right' })
+      showCustomToast('Test deleted successfully!', { position: 'top-right' },'success')
       // fetchData()
       fetchDataById(hospitalId)
     } catch (error) {
-      toast.error('Failed to delete test.')
+      showCustomToast('Failed to delete test.','error')
       console.error('Delete error:', error)
     }
     setIsModalVisible(false)
@@ -172,7 +173,7 @@ const TestsManagement = () => {
       (t) => t.testName.trim().toLowerCase() === newTest.testName.trim().toLowerCase(),
     )
     if (duplicate) {
-      toast.error(`Duplicate test name,Add another test - ${newTest.testName} already exists!`, {
+     showCustomToast(`Duplicate test name,Add another test - ${newTest.testName} already exists!`,'error', {
         position: 'top-right',
       })
       setModalVisible(false)
@@ -188,7 +189,7 @@ const TestsManagement = () => {
       }
 
       await postTestData(payload)
-      toast.success('Test added successfully!')
+      showCustomToast('Test added successfully!','success')
       fetchDataById(hospitalId)
       setModalVisible(false)
       setNewTest({ testName: '', description: '', purpose: '' })
@@ -197,7 +198,7 @@ const TestsManagement = () => {
         error.response?.data?.message ||
         error.response?.statusText ||
         'An unexpected error occurred.'
-      toast.error(`Error adding test: ${errorMessage}`, { position: 'top-right' })
+      showCustomToast(`Error adding test: ${errorMessage}`, { position: 'top-right' },'error')
     }
   }
 
@@ -224,7 +225,7 @@ const TestsManagement = () => {
         t.id !== testToEdit.id,
     )
     if (duplicate) {
-      toast.error(`Duplicate test name - ${testToEdit.testName} already exists!`, {
+      showCustomToast(`Duplicate test name - ${testToEdit.testName} already exists!`,'error' ,{
         position: 'top-right',
       })
       return
@@ -233,13 +234,13 @@ const TestsManagement = () => {
     try {
       const { id: testId, hospitalId } = testToEdit
       await updateTestData(testToEdit, testId, hospitalId)
-      toast.success('Test updated successfully!')
+      showCustomToast('Test updated successfully!','success')
       setEditTestMode(false)
       // fetchData()
       fetchDataById(hospitalId)
     } catch (error) {
       console.error('Update error:', error)
-      toast.error('Failed to update test.')
+      showCustomToast('Failed to update test.','error')
     }
   }
 
@@ -320,7 +321,7 @@ const TestsManagement = () => {
       </CForm>
 
       {viewTest && (
-        <CModal visible={!!viewTest} onClose={() => setViewTest(null)} backdrop="static">
+        <CModal visible={!!viewTest} onClose={() => setViewTest(null)} backdrop="static"  alignment="center" >
           <CModalHeader>
             <CModalTitle>Test Details</CModalTitle>
           </CModalHeader>

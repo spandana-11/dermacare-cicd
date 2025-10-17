@@ -26,7 +26,7 @@ import {
 } from './LabTechnicianAPI'
 import { toast } from 'react-toastify'
 import { useHospital } from '../../Usecontext/HospitalContext'
-import { showToast } from '../../../Utils/Toaster'
+import { showCustomToast } from '../../../Utils/Toaster'
 
 const LabTechnicianManagement = () => {
   const [technicians, setTechnicians] = useState([])
@@ -48,8 +48,9 @@ const LabTechnicianManagement = () => {
     setLoading(true)
     try {
       const clinicID = localStorage.getItem('HospitalId')
+      const branchID = localStorage.getItem('branchId')
       if (clinicID) {
-        const res = await getAllLabTechnicians(clinicID) // wait for API
+        const res = await getAllLabTechnicians(clinicID, branchID) // wait for API
         console.log('API Response:', res)
         setLoading(false)
         // ✅ update state with actual data, not Promise
@@ -103,6 +104,7 @@ const LabTechnicianManagement = () => {
       if (selectedTech) {
         // ✅ Update Technician
         res = await updateLabTechnician(selectedTech.id, formData)
+        showCustomToast('Technician updated successfully!', 'success')
         await fetchTechs()
         setModalVisible(false)
       } else {
@@ -122,15 +124,16 @@ const LabTechnicianManagement = () => {
           })
           setModalTVisible(true)
         }
-
-        showToast(res.data?.message || 'Technician saved successfully!')
+        showCustomToast('Technician added successfully!', 'success')
+        // showToast(res.data?.message || 'Technician saved successfully!')
 
         setModalVisible(false)
-        return
+        return res
       }
 
       // ❌ Backend responded but with an error (e.g. status 409)
-      showToast(res.data?.message || 'Failed to save technician.')
+      // showCustomToast(res.data?.message || 'Failed to save technician.')
+      return res
     } catch (err) {
       // ❌ API or network failure
       const backendMessage =
@@ -145,9 +148,9 @@ const LabTechnicianManagement = () => {
     try {
       await deleteLabTechnician(id) // ✅ call backend
       setTechnicians((prev) => prev.filter((t) => t.id !== id))
-      toast.success('Technician deleted successfully!')
+      showCustomToast('Technician deleted successfully!','success')
     } catch (err) {
-      toast.error('❌ Failed to delete technician.')
+      showCustomToast('❌ Failed to delete technician.','error')
       console.error('Delete error:', err)
     } finally {
       setIsModalVisible(false) // close modal after action
@@ -194,7 +197,7 @@ const LabTechnicianManagement = () => {
             }}
             onClick={() => setModalVisible(true)}
           >
-            Add Technician
+            Add Lab Technician
           </CButton>
         </div>
       )}

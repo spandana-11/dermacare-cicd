@@ -3,8 +3,8 @@ import { http } from '../../../Utils/Interceptors'
 
 // If not using interceptor, you can manually attach token
 
-export const getAllFrontDeskAPI = (clinicID) => {
-  return http.get(`/receptionists/${clinicID}`)
+export const getAllFrontDeskAPI = (clinicID,branchId) => {
+  return http.get(`/getReceptionistsByClinicIdAndBranchId/${clinicID}/${branchId}`)
 }
 
 export const addFrontDeskAPI = (data) => {

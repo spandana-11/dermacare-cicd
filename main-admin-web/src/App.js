@@ -9,7 +9,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import ProtectedRoute from './components/ProtectedRoute'
 
 // ✅ Import HospitalProvider
-import { HospitalProvider } from './Usecontext/HospitalContext'
+// import { HospitalProvider } from './Usecontext/HospitalContext'
 
 // Lazy-loaded components
 const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'))
@@ -38,7 +38,7 @@ const App = () => {
   }, [storedTheme, isColorModeSet, setColorMode])
 
   return (
-    <HospitalProvider>   {/* ✅ Wrap everything */}
+
       <BrowserRouter>
         <ToastContainer
           position="top-right"
@@ -70,7 +70,7 @@ const App = () => {
           </Routes>
         </Suspense>
       </BrowserRouter>
-    </HospitalProvider>
+   
   )
 }
 

@@ -37,6 +37,7 @@ import { BASE_URL, subService_URL, updateSubservices, getService } from '../../b
 import { postSubService, getAllSubServices, deleteSubServiceData, getSubServiceId } from './ProcedureAPI'
 import { getServiceByCategoryId } from '../servicesManagement/ServiceAPI'
 import { ConfirmationModal } from '../../Utils/ConfirmationDelete'
+import { Edit2, Eye, Trash2 } from 'lucide-react'
 
 const ProcedureManagement = () => {
   const [category, setCategory] = useState([])
@@ -292,8 +293,11 @@ const handleViewService = async (subServiceId) => {
         for (const sub of selectedSubServices) {
           const normalized = normalize(sub.subServiceName)
           if (existingSubNames.includes(normalized)) {
-            toast.error(`SubService "${sub.subServiceName}" already exists!`)
-            return
+            setErrors((prev)=>({
+              ...prev,
+              subService:`Procedure "${sub.subServiceName}" already exists.`,
+            }));
+            return;
           }
         }
 
@@ -330,8 +334,10 @@ const handleViewService = async (subServiceId) => {
         for (const sub of selectedSubServices) {
           const normalized = normalize(sub.subServiceName)
           if (existingSubNames.includes(normalized)) {
-            toast.error(`SubService "${sub.subServiceName}" already exists!`)
-            return
+setErrors((prev) => ({
+  ...prev,
+  subService: `Procedure "${sub.subServiceName}" already exists.`,
+}));            return
           }
         }
 
@@ -463,16 +469,16 @@ const handleViewService = async (subServiceId) => {
       ):(
         <>
          <CTable striped hover responsive>
-        <CTableHead>
+        <CTableHead className="pink-table">
           <CTableRow>
             <CTableHeaderCell style={{ width: '120px' }}>S.No</CTableHeaderCell>
             <CTableHeaderCell>Procedure</CTableHeaderCell>
             <CTableHeaderCell>Category</CTableHeaderCell>
             <CTableHeaderCell>Service</CTableHeaderCell>
-            <CTableHeaderCell>Actions</CTableHeaderCell>
+            <CTableHeaderCell className="text-end">Actions</CTableHeaderCell>
           </CTableRow>
         </CTableHead>
-          <CTableBody>
+          <CTableBody className="pink-table">
           {currentItems && currentItems.length > 0 ? (
             currentItems.map((row, index) => (
               <CTableRow key={row.id}>
@@ -480,43 +486,28 @@ const handleViewService = async (subServiceId) => {
                 <CTableDataCell>{row.name}</CTableDataCell>
                 <CTableDataCell>{row.category}</CTableDataCell>
                 <CTableDataCell>{row.service}</CTableDataCell>
-                <CTableDataCell>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      width: '230px',
-                    }}
-                  >
-                   <CButton
-  color="primary"
-  className="ms-2"
-  size="sm"
+                <CTableDataCell className="text-end">
+                  <div className="d-flex justify-content-end gap-2">
+                   <button
+  className="actionBtn"
     onClick={() => handleViewService(row.id)} // ✅ pass row.id directly
-
-  style={{ width: '80px' }}
->
-  View
-</CButton>
-                    <CButton
-                      color="warning"
-                      className="ms-2"
-                      size="sm"
+    title="View">
+  <Eye size={18} />
+</button>
+                    <button
+                      className="actionBtn"
                       onClick={() => handleCategoryEdit(row)}
-                      style={{ width: '80px' }}
+                      title="Edit"
                     >
-                      Edit
-                    </CButton>
-                    <CButton
-                      color="danger"
-                      className="ms-2"
-                      size="sm"
+                      <Edit2 size={18} />
+                    </button>
+                    <button
+                      className="actionBtn"
                       onClick={() => confirmDelete(row.id)}
-                      style={{ width: '80px' }}
+                      title="Delete"
                     >
-                      Delete
-                    </CButton>
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 </CTableDataCell>
               </CTableRow>
@@ -684,7 +675,21 @@ const handleViewService = async (subServiceId) => {
                       className="text-white"
                       onClick={() => {
                         const trimmedInput = subServiceInput.trim()
-                        if (!trimmedInput) return
+                        let errorMsg = '';
+    if (!trimmedInput) {
+      errorMsg = 'Procedure name is required.';
+    } else if (!/^[A-Za-z0-9\s]+$/.test(trimmedInput)) {
+      errorMsg = 'Procedure name can only contain letters, numbers, and spaces.';
+    } else if (/^\d+$/.test(trimmedInput)) {
+      errorMsg = 'Procedure name cannot contain only numbers.';
+    } else if (trimmedInput.length < 3) {
+      errorMsg = 'Procedure name must be at least 3 characters long.';
+    }
+    if (errorMsg) {
+      setErrors((prev) => ({ ...prev, subService: errorMsg }));
+      return;
+    }
+
 
                         const selectedService = serviceOptions.find(
                           (s) => s.serviceId === newService.serviceId,
@@ -739,13 +744,27 @@ const handleViewService = async (subServiceId) => {
                       value={selectedSubServices[0]?.subServiceName || ''}
                       onChange={(e) => {
                         const value = e.target.value
+    const trimmedValue = value.trim();
+                              let errorMsg = '';
+
+    if (!trimmedValue) {
+      errorMsg = 'Procedure name is required.';
+    } else if (!/^[A-Za-z0-9\s]+$/.test(trimmedValue)) {
+      errorMsg = 'Procedure name can only contain letters, numbers, and spaces.';
+    } else if (/^\d+$/.test(trimmedValue)) {
+      errorMsg = 'Procedure name cannot contain only numbers.';
+    } else if (trimmedValue.length < 3) {
+      errorMsg = 'Procedure name must be at least 3 characters long.';
+    }
+        setErrors((prev) => ({ ...prev, subService: errorMsg }));
+
                         setSelectedSubServices([
                           { ...selectedSubServices[0], subServiceName: value },
                         ])
                         // Clear error while typing
-                        if (value.trim() !== '') {
-                          setErrors((prev) => ({ ...prev, subService: '' }))
-                        }
+                        // if (value.trim() !== '') {
+                        //   setErrors((prev) => ({ ...prev, subService: '' }))
+                        // }
                       }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
@@ -807,7 +826,7 @@ const handleViewService = async (subServiceId) => {
               className="text-white"
               form="procedureForm"
             >
-              <h6>{editMode ? 'Update Procedure' : 'Add Procedure'}</h6>
+              <h6 className="text-white">{editMode ? 'Update Procedure' : 'Add Procedure'}</h6>
             </CButton>
           </CModalFooter>
         </CForm>

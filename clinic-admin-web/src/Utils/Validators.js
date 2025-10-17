@@ -180,22 +180,7 @@ export const validateField = (field, value, formData = {}, technicians = []) => 
     case 'dateOfJoining':
       if (!value) {
         error = 'Date of Joining is required.'
-      } else {
-        const today = new Date()
-        today.setHours(0, 0, 0, 0) // reset to midnight for clean comparison
-
-        const joiningDate = new Date(value)
-
-        // 3 months from today
-        const threeMonthsLater = new Date()
-        threeMonthsLater.setMonth(today.getMonth() + 3)
-
-        if (joiningDate < today) {
-          error = 'Date of Joining cannot be in the past.'
-        } else if (joiningDate > threeMonthsLater) {
-          error = 'Date of Joining must be within the next 3 months.'
-        }
-      }
+      } 
       break
     case 'vaccinationStatus':
       if (!value || value.trim() === '') {

@@ -26,6 +26,7 @@ import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
 import { useHospital } from '../Usecontext/HospitalContext'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const ReportDetails = () => {
   const { id } = useParams()
@@ -181,7 +182,7 @@ const ReportDetails = () => {
       !newReport.reportType ||
       !newReport.reportFile
     ) {
-      toast.error('Please fill all required fields and upload a file.')
+      showCustomToast('Please fill all required fields and upload a file.','error')
       return
     }
 
@@ -217,7 +218,7 @@ const ReportDetails = () => {
       console.log('Report uploaded:', response)
 
       setUploadModal(false) // Close the upload modal
-      toast.success('Report uploaded successfully!')
+      showCustomToast('Report uploaded successfully!','success')
       fetchReportDetails() // Refresh the report list
 
       // Reset the form state after successful upload (clears fields)
@@ -231,7 +232,7 @@ const ReportDetails = () => {
       })
     } catch (err) {
       console.error('Error uploading report:', err)
-      toast.error('Upload failed')
+      showCustomToast('Upload failed','error')
     }
   }
 

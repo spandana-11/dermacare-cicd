@@ -27,6 +27,7 @@ import {
 } from './ReferDoctorAPI.js'
 import { toast } from 'react-toastify'
 import { useHospital } from '../../Usecontext/HospitalContext.js'
+import { showCustomToast } from '../../../Utils/Toaster.js'
 
 const ReferDoctorManagement = () => {
   const [technicians, setTechnicians] = useState([])
@@ -75,7 +76,7 @@ const ReferDoctorManagement = () => {
         fetchTechs()
 
         // setTechnicians((prev) => [...prev, res.data.data])
-        toast.success('ReferDoctor updated successfully!')
+        showCustomToast('ReferDoctor updated successfully!','success')
       } else {
         const res = await addReferDoctor(formData)
         await fetchTechs() // refresh from API
@@ -86,10 +87,10 @@ const ReferDoctorManagement = () => {
         // })
         setModalVisible(false)
         // setModalTVisible(true)
-        toast.success('ReferDoctor added successfully!')
+        showCustomToast('ReferDoctor added successfully!','success')
       }
     } catch (err) {
-      toast.error('❌ Failed to save ReferDoctor.')
+      showCustomToast('❌ Failed to save ReferDoctor.','error')
       console.error('API error:', err)
     }
   }
@@ -100,9 +101,9 @@ const ReferDoctorManagement = () => {
     try {
       await deleteReferDoctor(id) // ✅ call backend
       setTechnicians((prev) => prev.filter((t) => t.id !== id))
-      toast.success('ReferDoctor deleted successfully!')
+      showCustomToast('ReferDoctor deleted successfully!','success')
     } catch (err) {
-      toast.error('❌ Failed to delete ReferDoctor.')
+      showCustomToast('❌ Failed to delete ReferDoctor.','error')
       console.error('Delete error:', err)
     } finally {
       setIsModalVisible(false) // close modal after action
@@ -219,9 +220,8 @@ const ReferDoctorManagement = () => {
               {/* <CTableHeaderCell>Photo</CTableHeaderCell> */}
               <CTableHeaderCell>Name</CTableHeaderCell>
               <CTableHeaderCell>Contact</CTableHeaderCell>
-              <CTableHeaderCell>Sex</CTableHeaderCell>
-              {/* <CTableHeaderCell>Specialization</CTableHeaderCell> */}
-              <CTableHeaderCell>Experience</CTableHeaderCell>
+              <CTableHeaderCell>Adress</CTableHeaderCell>
+              <CTableHeaderCell>ClinicName</CTableHeaderCell>
               <CTableHeaderCell className="text-end">Actions</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
@@ -230,40 +230,16 @@ const ReferDoctorManagement = () => {
               displayData.map((tech, index) => (
                 <CTableRow key={tech.id}>
                   <CTableDataCell>{(currentPage - 1) * rowsPerPage + index + 1}</CTableDataCell>
-                  {/* <CTableDataCell>
-                    {tech.profilePicture ? (
-                      <img
-                        src={decodeImage(tech.profilePicture)} // ✅ decode first
-                        alt={tech.fullName}
-                        width="40"
-                        height="40"
-                        style={{
-                          borderRadius: '50%',
-                          objectFit: 'cover',
-                          border: '1px solid var(--color-black)',
-                        }}
-                      />
-                    ) : (
-                      <img
-                        src="/assets/images/default-avatar.png"
-                        alt="No profile"
-                        width="40"
-                        height="40"
-                        style={{
-                          borderRadius: '50%',
-                          objectFit: 'cover',
-                          border: '1px solid var(--color-black)',
-                        }}
-                      />
-                    )}
-                  </CTableDataCell> */}
 
                   <CTableDataCell>{capitalizeWords(tech.fullName)}</CTableDataCell>
                   <CTableDataCell>{capitalizeWords(tech.mobileNumber)}</CTableDataCell>
-                  <CTableDataCell>{capitalizeWords(tech.gender)}</CTableDataCell>
-                  {/* <CTableDataCell>{tech.specialization || 'NA'}</CTableDataCell> */}
+                  <CTableDataCell>
+                    {tech.address
+                      ? `${tech.address.houseNo || ''}, ${tech.address.street || ''}, ${tech.address.landmark || ''}, ${tech.address.city || ''}, ${tech.address.state || ''}, ${tech.address.country || ''} - ${tech.address.postalCode || ''}`
+                      : 'NA'}
+                  </CTableDataCell>
 
-                  <CTableDataCell>{tech.yearsOfExperience}</CTableDataCell>
+                  <CTableDataCell>{tech.currentHospitalName}</CTableDataCell>
 
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
