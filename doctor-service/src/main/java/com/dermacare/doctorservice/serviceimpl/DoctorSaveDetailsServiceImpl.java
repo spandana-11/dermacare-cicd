@@ -2066,16 +2066,20 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                 status = "Completed";
             }
 
-            // ----------------------- Step 11: Update Booking Service -----------------------
+         // ----------------------- Step 11: Update Booking Service -----------------------
             bookingData.setFreeFollowUpsLeft(Math.max(freeFollowUpsLeft, 0));
             bookingData.setStatus(status);
 
-            // ✅ Set sitting summary fields for Booking service
+            // ✅ Set sitting summary
             bookingData.setTotalSittings(overallTotalSittings);
             bookingData.setTakenSittings(overallTakenSittings);
             bookingData.setPendingSittings(overallPendingSittings);
             bookingData.setCurrentSitting(overallCurrentSitting);
 
+            // ✅ Include the full treatment details
+            bookingData.setTreatments(treatmentResponseDTO);
+
+            // ✅ Update the booking service
             bookingFeignClient.updateAppointment(bookingData);
 
             // ----------------------- Step 12: Build Response -----------------------
