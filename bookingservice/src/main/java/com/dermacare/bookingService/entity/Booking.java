@@ -7,6 +7,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.dermacare.bookingService.dto.TreatmentDetailsDTO;
+import com.dermacare.bookingService.dto.TreatmentResponseDTO;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import lombok.AllArgsConstructor;
@@ -74,7 +75,7 @@ public class Booking  {
     private Integer currentSitting;
 
     // ------------------- NEW: Treatments and dates -------------------
-    private Map<String, TreatmentDetailsDTO> treatments; // treatmentName -> treatment details
+    private TreatmentResponseDTO treatments; // treatmentName -> treatment details
 
     public Booking(Booking booking) {
         this.bookingId = booking.getBookingId();
