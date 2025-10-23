@@ -76,7 +76,7 @@ const FrontDeskManagement = () => {
       let res
       if (selectedTech) {
         res = await updateFrontDeskAPI(selectedTech.id, formData)
-        showCustomToast('Receptionist updated successfully!','success')
+        // showCustomToast('Receptionist updated successfully!','success')
         fetchTechs()
 
         // setReceptionist((prev) => [...prev, res.data.data])

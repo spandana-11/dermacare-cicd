@@ -777,7 +777,7 @@ const FrontDeskForm = ({
                   <CFormInput
                     value={formData.department}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '')
+                      const value = e.target.value
 
                       // Update value
                       handleChange('department', value)
@@ -836,7 +836,7 @@ const FrontDeskForm = ({
                   <CFormInput
                     value={formData.qualification}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/[^A-Za-z\s]/g, '')
+                      const value = e.target.value
                       handleChange('qualification', value)
                       const err = validateField('qualification', value) // ensure this exists in your validators.js
                       setErrors((prev) => ({ ...prev, qualification: err }))

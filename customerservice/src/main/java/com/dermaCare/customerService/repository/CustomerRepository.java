@@ -28,5 +28,7 @@ public interface CustomerRepository extends MongoRepository<Customer, String> {
 	 
 	 public Customer findByEmailIdAndMobileNumber(String email,String mobileNumber);
 	
+	 public Customer findByDeviceId(String deviceId);
+
 
 }

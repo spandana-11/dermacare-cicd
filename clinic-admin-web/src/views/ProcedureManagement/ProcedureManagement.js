@@ -26,6 +26,7 @@ import {
   CTableBody,
   CTableDataCell,
   CSpinner,
+  CFormTextarea,
 } from '@coreui/react'
 import DataTable from 'react-data-table-component'
 import CIcon from '@coreui/icons-react'
@@ -1451,12 +1452,11 @@ const ServiceManagement = () => {
                 <h6>
                   View Description <span className="text-danger">*</span>
                 </h6>
-                <CFormInput
+                <CFormTextarea
                   type="text"
                   placeholder="View Description"
                   name="viewDescription"
                   value={newService.viewDescription || ''}
-                  maxLength={100}
                   onChange={handleChange}
                 />
                 {errors.viewDescription && (

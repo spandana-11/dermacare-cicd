@@ -1495,4 +1495,17 @@ public boolean blockSlot(TempBlockingSlot tempBlockingSlot) {
 }
 
 
+public CustomerDTO getCustomerByToken(String token){
+try {	
+	Customer cstmr = customerRepository.findByDeviceId(token);
+	if(cstmr != null) {
+	CustomerDTO cusmrdto = new ObjectMapper().convertValue(cstmr, CustomerDTO.class);
+	return cusmrdto;}
+	else {
+		return null;
+	}
+}catch(FeignException e) {	
+	return null;	
+}}
+
 }

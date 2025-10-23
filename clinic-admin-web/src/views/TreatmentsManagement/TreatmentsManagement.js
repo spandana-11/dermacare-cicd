@@ -136,7 +136,7 @@ const TreatmentsManagement = () => {
     setHospitalIdToDelete(null)
     setIsModalVisible(false)
   }
-  const nameRegex = /^[A-Za-z\s.\-()\/']+$/
+ const nameRegex = /^[A-Za-z0-9\s.\-()\/']+$/
 
   // Add treatment
   const handleAddTreatment = async () => {
@@ -148,7 +148,9 @@ const TreatmentsManagement = () => {
       return
     }
     if (!nameRegex.test(trimmedName)) {
-      setErrors({ treatmentName: 'Only alphabets, spaces, and "." are allowed.' })
+     setErrors({ 
+        treatmentName: "Only alphabets, numbers, spaces, and limited symbols (.-()/') are allowed", 
+    })
       return
     }
 

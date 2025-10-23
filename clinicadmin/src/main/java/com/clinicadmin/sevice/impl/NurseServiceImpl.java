@@ -239,25 +239,59 @@ public class NurseServiceImpl implements NurseService {
     public Response deleteNurse(String hospitalId, String nurseId) {
         Response response = new Response();
 
-        if (hospitalId == null || hospitalId.isBlank() || nurseId == null || nurseId.isBlank()) {
+        try {
+            // 1️⃣ Validate inputs
+            if (hospitalId == null || hospitalId.isBlank() || nurseId == null || nurseId.isBlank()) {
+                response.setSuccess(false);
+                response.setMessage("Hospital ID and Nurse ID must not be empty");
+                response.setStatus(HttpStatus.BAD_REQUEST.value());
+                return response;
+            }
+
+            // 2️⃣ Normalize inputs (trim whitespace)
+            String normalizedHospitalId = hospitalId.trim();
+            String normalizedNurseId = nurseId.trim();
+
+            // 3️⃣ Find nurse by nurseId (and optionally hospitalId)
+            Optional<Nurse> existingNurse = nurseRepository.findByNurseId(normalizedNurseId);
+
+            if (existingNurse.isEmpty()) {
+                response.setSuccess(false);
+                response.setMessage("Nurse not found");
+                response.setStatus(HttpStatus.NOT_FOUND.value());
+                return response;
+            }
+
+            // Optional: check hospitalId matches
+            if (!existingNurse.get().getHospitalId().equalsIgnoreCase(normalizedHospitalId)) {
+                response.setSuccess(false);
+                response.setMessage("Nurse does not belong to this hospital");
+                response.setStatus(HttpStatus.CONFLICT.value());
+                return response;
+            }
+
+            // 4️⃣ Delete nurse record
+            nurseRepository.deleteById(existingNurse.get().getId());
+
+            // 5️⃣ Delete corresponding login credentials safely
+            credentialsRepository.findByStaffId(normalizedNurseId)
+                .filter(cred -> "Nurse".equalsIgnoreCase(cred.getRole()))
+                .ifPresent(cred -> credentialsRepository.deleteById(cred.getId()));
+
+            // 6️⃣ Return success response
+            response.setSuccess(true);
+            response.setMessage("Nurse and credentials deleted successfully");
+            response.setStatus(HttpStatus.OK.value());
+
+        } catch (Exception e) {
             response.setSuccess(false);
-            response.setMessage("Hospital ID and Nurse ID must not be empty");
-            response.setStatus(HttpStatus.BAD_REQUEST.value());
-            return response;
+            response.setMessage("Error deleting nurse: " + e.getMessage());
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
 
-        if (nurseRepository.findByHospitalIdAndNurseId(hospitalId, nurseId).isPresent()) {
-            nurseRepository.deleteByHospitalIdAndNurseId(hospitalId, nurseId);
-            response.setSuccess(true);
-            response.setMessage("Nurse deleted successfully");
-            response.setStatus(HttpStatus.NO_CONTENT.value());
-        } else {
-            response.setSuccess(false);
-            response.setMessage("Nurse not found");
-            response.setStatus(HttpStatus.NOT_FOUND.value());
-        }
         return response;
     }
+
 
     // ------------------- Mapper Methods ----------------------
 

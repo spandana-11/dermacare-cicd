@@ -3,6 +3,10 @@ package com.clinicadmin.dto;
 import java.util.List;
 import java.util.Map;
 
+import com.clinicadmin.validations.RequiredChecks;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,8 +30,11 @@ public class PharmacistDTO {
 	private String contactNumber;
 	private String governmentId;
 	private String pharmacyLicense;
+    private String yearsOfExperience;
 	private String dateOfJoining;
 	private String department;
+	@Valid
+	@NotNull(message = "Bank account details are required", groups = RequiredChecks.class)
 	private BankAccountDetails bankAccountDetails;
 	private Address address;
 	// Optional Fields
@@ -40,7 +47,6 @@ public class PharmacistDTO {
     private String experienceCertificates;
     private Map<String, List<String>> permissions;
     private String shiftTimingsOrAvailability;
-
 	
 	private String userName;
 	private String password;

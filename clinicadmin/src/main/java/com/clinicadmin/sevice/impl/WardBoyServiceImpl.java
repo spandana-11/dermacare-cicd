@@ -2,6 +2,7 @@ package com.clinicadmin.sevice.impl;
 
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -154,6 +155,9 @@ public class WardBoyServiceImpl implements WardBoyService {
 			existing.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
 		if (dto.getEmergencyContact() != null)
 			existing.setEmergencyContact(dto.getEmergencyContact());
+		
+		if (dto.getPermissions() != null)
+			existing.setPermissions(dto.getPermissions());
 
 		if (dto.getMedicalFitnessCertificate() != null)
 			existing.setMedicalFitnessCertificate(WardBoyMapper.toEntity(dto).getMedicalFitnessCertificate());
@@ -186,14 +190,44 @@ public class WardBoyServiceImpl implements WardBoyService {
 
 	@Override
 	public ResponseStructure<Void> deleteWardBoy(String id) {
-		if (!wardBoyRepository.existsById(id)) {
-			throw new RuntimeException("WardBoy not found with ID: " + id);
-		}
-		wardBoyRepository.deleteById(id);
+	    try {
+	        // ✅ Step 1: Check if WardBoy exists
+	        if (!wardBoyRepository.existsById(id)) {
+	            return ResponseStructure.buildResponse(
+	                null,
+	                "WardBoy not found with ID: " + id,
+	                HttpStatus.NOT_FOUND,
+	                HttpStatus.NOT_FOUND.value()
+	            );
+	        }
 
-		return ResponseStructure.buildResponse(null, "WardBoy deleted successfully", HttpStatus.OK,
-				HttpStatus.OK.value());
+	        // ✅ Step 2: Delete WardBoy record
+	        wardBoyRepository.deleteById(id);
+
+	        // ✅ Step 3: Delete corresponding login credentials (if exist)
+	        Optional<DoctorLoginCredentials> credentials = credentialsRepository.findByStaffId(id);
+	        if (credentials.isPresent()) {
+	            credentialsRepository.deleteById(credentials.get().getId());
+	        }
+
+	        // ✅ Step 4: Return success response
+	        return ResponseStructure.buildResponse(
+	            null,
+	            "WardBoy and credentials deleted successfully",
+	            HttpStatus.OK,
+	            HttpStatus.OK.value()
+	        );
+
+	    } catch (Exception e) {
+	        return ResponseStructure.buildResponse(
+	            null,
+	            "Error deleting WardBoy: " + e.getMessage(),
+	            HttpStatus.INTERNAL_SERVER_ERROR,
+	            HttpStatus.INTERNAL_SERVER_ERROR.value()
+	        );
+	    }
 	}
+
 
 	@Override
 	public ResponseStructure<List<WardBoyDTO>> getWardBoysByClinicId(String clinicId) {

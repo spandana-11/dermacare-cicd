@@ -186,8 +186,10 @@ const PrivacyPolicyManager = () => {
     <div style={{ padding: '20px', maxWidth: '700px' }}>
       {/* File input for new uploads */}
       {!editingPolicyId &&
-        policies >= 0 && ( // showFileInput controls visibility
+        policies >= 0 && ( 
+          // showFileInput controls visibility
           <div style={{ marginBottom: '20px' }}>
+            <h4>Existing Policies</h4>
             <label
               htmlFor="fileUpload"
               style={{
@@ -200,6 +202,7 @@ const PrivacyPolicyManager = () => {
                 cursor: 'pointer',
               }}
             >
+
               {selectedFile ? selectedFile.name : 'Select File'}
             </label>
 
@@ -280,10 +283,11 @@ const PrivacyPolicyManager = () => {
 
       <hr style={{ margin: '20px 0' }} />
 
-      <h4>Existing Policies</h4>
-      {policies.length === 0 && <p>No policies found.</p>}
+      
+      {policies.length === 0 && <p style={{textAlign:"center"}}>No policies found.</p>}
 
       {policies.map((policy) => (
+        
         <div key={policy.id}>
           <FilePreview
             label="Privacy and Policy"

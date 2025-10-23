@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.MonthDay;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -12,34 +13,38 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import com.dermacare.notification_service.config.FirbaseConfig;
 import com.dermacare.notification_service.dto.BookingResponse;
+import com.dermacare.notification_service.dto.CustomerDTO;
 import com.dermacare.notification_service.dto.DoctorSaveDetails;
 import com.dermacare.notification_service.dto.Medicines;
 import com.dermacare.notification_service.dto.NotificationDTO;
 import com.dermacare.notification_service.dto.NotificationResponse;
 import com.dermacare.notification_service.dto.NotificationToCustomer;
+import com.dermacare.notification_service.dto.PriceDropAlertDto;
 import com.dermacare.notification_service.dto.ResBody;
 import com.dermacare.notification_service.dto.Response;
 import com.dermacare.notification_service.dto.ResponseStructure;
 import com.dermacare.notification_service.entity.Booking;
 import com.dermacare.notification_service.entity.NotificationEntity;
+import com.dermacare.notification_service.entity.PriceDropAlertEntity;
 import com.dermacare.notification_service.feign.BookServiceFeign;
 import com.dermacare.notification_service.feign.CllinicFeign;
+import com.dermacare.notification_service.feign.CustomerServiceFeignClient;
 import com.dermacare.notification_service.feign.DoctorFeign;
 import com.dermacare.notification_service.notificationFactory.SendAppNotification;
 import com.dermacare.notification_service.repository.NotificationRepository;
+import com.dermacare.notification_service.repository.PriceDropAlertNotifications;
 import com.dermacare.notification_service.service.ServiceInterface;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import feign.FeignException;
 
 
@@ -60,7 +65,16 @@ public class ServiceImpl implements ServiceInterface{
 		  
     @Autowired
     private DoctorFeign doctorFeign;
-	
+    
+    @Autowired
+    private CustomerServiceFeignClient customerServiceFeignClient;
+    
+    @Autowired
+    private PriceDropAlertNotifications priceDropAlertNotifications;
+    
+    @Autowired
+    private FirbaseConfig firbaseConfig;
+    	
 	public String jwtToken;
 	public String tokenExpireTime;
 
@@ -69,7 +83,10 @@ public class ServiceImpl implements ServiceInterface{
 	 BookingResponse bookingResponse;
 	 
 	 private boolean isCalledAlready;
-	
+	 
+	 String imag = null;
+	 
+	 
 	@Override
 	public void createNotification(BookingResponse bookingDTO) {
 		if(!bookings.contains(bookingDTO.getBookingId())) {
@@ -844,4 +861,104 @@ public class ServiceImpl implements ServiceInterface{
 	        }
 	    }
 		
+	 
+	 public ResponseEntity<?> sendImageNotifications(PriceDropAlertDto priceDropAlertDto){
+		 Response res = new Response();
+		 try {
+			 if(priceDropAlertDto.getImage() != null) {
+				 imag = priceDropAlertDto.getImage();
+				// firbaseConfig.uploadBase64Image(imag);
+			 }else {
+				 imag = "";
+			 }			 
+			 if(priceDropAlertDto.getSendAll()) {
+			 List<CustomerDTO> cusmr =  new ObjectMapper().convertValue(customerServiceFeignClient.getAllCustomers().getBody().getData(), new TypeReference< List<CustomerDTO>>() {});			 
+			 cusmr.stream().map(n->{
+			 appNotification.sendPushNotificationForImage(n.getDeviceId(),priceDropAlertDto.getTitle(),priceDropAlertDto.getBody(), "BOOKING",
+					    "BookingScreen","default","https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?auto=format&fit=crop&w=200&h=300\r\n"
+					    		+ "");
+			 return n;}).toList();
+			 }else {
+				 priceDropAlertDto.getTokens().stream().map(t->{appNotification.sendPushNotificationForImage(t,priceDropAlertDto.getTitle(),priceDropAlertDto.getBody(), "BOOKING",
+						    "BookingScreen","default","https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?auto=format&fit=crop&w=200&h=300\r\n"
+						    		+ "");
+				 return t;}).toList(); 
+			 }
+			 PriceDropAlertEntity enty = new ObjectMapper().convertValue(priceDropAlertDto, PriceDropAlertEntity.class);
+			 priceDropAlertNotifications.save(enty);
+			 res.setStatus(200);
+             res.setMessage("successfully sent notification");
+             res.setSuccess(true);
+		 }catch(Exception e) {
+			 res.setStatus(500);
+             res.setMessage(e.getMessage());
+             res.setSuccess(false);
+		 }
+		 return ResponseEntity.status(res.getStatus()).body(res);
+	 }
+	 
+	 
+	 public ResponseEntity<?> priceDropNotifications(String clinicId,String branchId){
+		 Response res = new Response();
+		 try {
+			 List<PriceDropAlertEntity> enty = priceDropAlertNotifications.findByClinicIdAndBranchId(clinicId, branchId);
+			 List<PriceDropAlertDto> dtoList = new ArrayList<>();
+			 CustomerDTO cdto = null;
+			 for(PriceDropAlertEntity p : enty) {
+				 if(p != null) {
+				 for(String s : p.getTokens()){
+				 PriceDropAlertDto d = new ObjectMapper().convertValue(p, PriceDropAlertDto.class);					
+				 try {
+				 cdto = customerServiceFeignClient.getCustomerByToken(s);
+				 }catch(Exception e) {}
+				 if(cdto != null) {	
+				 d.setTokens(null);
+				 d.setCustomerName(cdto.getFullName());
+				 d.setMobileNumber(cdto.getMobileNumber());}
+				 dtoList.add(d);
+				 }}}
+			 res.setData(dtoList);
+			 res.setMessage("fetched successfully");
+			 res.setStatus(200);
+			 res.setSuccess(true);
+		 }catch(Exception e) {
+			 res.setMessage(e.getMessage());
+			 res.setStatus(500);
+			 res.setSuccess(false);
+		 }
+		 return ResponseEntity.status(res.getStatus()).body(res);		 
+	 }
+	 	
+	 
+	 @Scheduled(cron = "0 30 8 * * ?")
+	 public void sendBirthdayWishes() {
+		 try {
+			 List<CustomerDTO> cusmr =  new ObjectMapper().convertValue(customerServiceFeignClient.getAllCustomers().getBody().getData(), new TypeReference< List<CustomerDTO>>() {});
+			 //System.out.println(cusmr);
+			 cusmr.stream().map(n->{ 
+				 if(n.getDateOfBirth() != null) {
+				 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+			        LocalDate dob = LocalDate.parse(n.getDateOfBirth(), formatter);	
+			        //System.out.println(dob);
+			        LocalDate today = LocalDate.now();	
+			       // System.out.println(today);
+			        MonthDay customerdobMonthDay = MonthDay.from(dob);
+			        //System.out.println(customerdobMonthDay);
+			        MonthDay todayMonthDay = MonthDay.from(today);	
+			       // System.out.println(customerdobMonthDay);
+			        if (customerdobMonthDay.equals(todayMonthDay)) {
+			        	//System.out.println(n);
+			        	if(n.getDeviceId() != null) {
+			        		//System.out.println(n.getDeviceId());
+			 appNotification.sendPushNotification(n.getDeviceId(),"🎉 Happy Birthday, " + n.getFullName() + "!","Your health and happiness are our priority. Have a great birthday!", "birthdayGreeting",
+					    "bithdayGreetingsScreen","default");
+			        	//System.out.println("notifications sent successfully");
+			 }}
+			 return n;}return null;}).toList();
+		 }catch(Exception e) {
+			 System.out.println(e.getMessage());
+		 }
+		 
+	 }	 
+	 
 }

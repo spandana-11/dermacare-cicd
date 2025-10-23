@@ -157,7 +157,7 @@ const TestsManagement = () => {
   }
   const isValidObjectId = (id) => /^[a-f\d]{24}$/i.test(id)
 
-  const nameRegex = /^[A-Za-z\s.\-()\/']+$/
+ const nameRegex = /^[A-Za-z0-9\s.\-()\/']+$/
 
   const handleAddTest = async () => {
     if (!newTest.testName.trim()) {
@@ -165,7 +165,9 @@ const TestsManagement = () => {
       return
     }
     if (!nameRegex.test(newTest.testName.trim())) {
-      setErrors({ testName: 'Only alphabets, spaces, and "." are allowed.' })
+     setErrors({
+        testName: "Only alphabets, numbers, spaces, and limited symbols (.-()/') are allowed.",
+      })
       return
     }
 

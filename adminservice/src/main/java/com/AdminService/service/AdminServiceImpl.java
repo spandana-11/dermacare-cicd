@@ -96,7 +96,8 @@ public class AdminServiceImpl implements AdminService {
 	
 	@Autowired
 	private MongoOperations mongoOperations;
-//	@Autowired
+	
+	//	@Autowired
 //	private QuetionsAndAnswerForAddClinicRepository quetionsAndAnswerForAddClinicRepository;
 
 	@Override
@@ -3011,8 +3012,7 @@ public class AdminServiceImpl implements AdminService {
 		return rawMessage;
 	}
 	
-
-}
-
+	
+	}
 
 

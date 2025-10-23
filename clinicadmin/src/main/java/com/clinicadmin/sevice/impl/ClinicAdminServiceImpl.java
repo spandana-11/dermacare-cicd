@@ -78,7 +78,6 @@ public class ClinicAdminServiceImpl implements ClinicAdminService {
            return res;}
         }
 
-
     @Override
     public Response deleteClinic(String hospitalId) {
     	try {

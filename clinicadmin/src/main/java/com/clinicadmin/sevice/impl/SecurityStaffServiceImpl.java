@@ -156,16 +156,33 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 
 	@Override
 	public ResponseStructure<String> deleteSecurityStaff(String staffId) {
-		Optional<SecurityStaff> existing = repository.findById(staffId);
-		if (existing.isEmpty()) {
-			return ResponseStructure.buildResponse(null, "Staff not found", HttpStatus.NOT_FOUND,
-					HttpStatus.NOT_FOUND.value());
-		}
+	    Optional<SecurityStaff> existing = repository.findById(staffId);
+	    if (existing.isEmpty()) {
+	        return ResponseStructure.buildResponse(
+	            null,
+	            "Staff not found",
+	            HttpStatus.NOT_FOUND,
+	            HttpStatus.NOT_FOUND.value()
+	        );
+	    }
 
-		repository.deleteById(staffId);
-		return ResponseStructure.buildResponse(staffId, "Staff deleted successfully", HttpStatus.OK,
-				HttpStatus.OK.value());
+	    // ✅ Delete staff record
+	    repository.deleteById(staffId);
+
+	    // ✅ Delete corresponding credentials if exist
+	    Optional<DoctorLoginCredentials> credentials = credentialsRepository.findByStaffId(staffId);
+	    if (credentials.isPresent()) {
+	        credentialsRepository.deleteById(credentials.get().getId());
+	    }
+
+	    return ResponseStructure.buildResponse(
+	        staffId,
+	        "Staff and credentials deleted successfully",
+	        HttpStatus.OK,
+	        HttpStatus.OK.value()
+	    );
 	}
+
 	
 	@Override
 	public ResponseStructure<List<SecurityStaffDTO>> getSecurityStaffByClinicIdAndBranchId(String clinicId, String branchId) {

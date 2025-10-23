@@ -1005,36 +1005,41 @@ const DoctorManagement = () => {
                 License Number
                 <span className="text-danger">*</span>
               </CFormLabel>
-              <CFormInput
-                value={form.doctorLicence}
-                onChange={(e) => {
-                  let value = e.target.value
+             <CFormInput
+  value={form.doctorLicence}
+  onChange={(e) => {
+    let value = e.target.value
 
-                  // Remove invalid characters (allow only letters, digits, spaces, dashes)
-                  value = value.replace(/[^A-Za-z0-9\s-]/g, '')
+    // ✅ Optionally remove unwanted characters as user types
+    // Allow letters, numbers, spaces, / . -
+    value = value.replace(/[^A-Za-z0-9\s/.-]/g, '')
 
-                  setForm((prev) => ({ ...prev, doctorLicence: value }))
+    setForm((prev) => ({ ...prev, doctorLicence: value }))
 
-                  // Validation
-                  let error = ''
-                  if (!value.trim()) {
-                    error = 'License Number is required.'
-                  } else if (value.trim().length < 3 || value.trim().length > 20) {
-                    error = 'License Number must be between 3 and 20 characters.'
-                  } else {
-                    // Check duplicate
-                    const isDuplicate = doctorData?.data?.some(
-                      (doctor) => doctor.doctorLicence === value.trim(),
-                    )
-                    if (isDuplicate) {
-                      error = 'This License Number already exists.'
-                    }
-                  }
+    // Validation
+    let error = ''
+    const trimmedValue = value.trim()
+    if (!trimmedValue) {
+      error = 'License Number is required.'
+    } else if (trimmedValue.length < 3 || trimmedValue.length > 20) {
+      error = 'License Number must be between 3 and 20 characters.'
+    } else if (!/[A-Za-z0-9]/.test(trimmedValue)) {
+      error = 'License Number cannot contain only special characters.'
+    } else {
+      // Check duplicate
+      const isDuplicate = doctorData?.data?.some(
+        (doctor) => doctor.doctorLicence === trimmedValue,
+      )
+      if (isDuplicate) {
+        error = 'This License Number already exists.'
+      }
+    }
 
-                  setFormErrors((prev) => ({ ...prev, doctorLicence: error }))
-                }}
-                invalid={!!formErrors?.doctorLicence}
-              />
+    setFormErrors((prev) => ({ ...prev, doctorLicence: error }))
+  }}
+  invalid={!!formErrors?.doctorLicence}
+/>
+
               {formErrors?.doctorLicence && (
                 <small className="text-danger">{formErrors.doctorLicence}</small>
               )}

@@ -784,13 +784,13 @@ const PharmacistForm = ({
                       const value = e.target.value
 
                       // Allow only letters and spaces
-                      if (/^[A-Za-z\s]*$/.test(value)) {
+                      
                         handleChange('department', value)
 
                         // Run validation
                         const error = validateField('department', value)
                         setErrors((prev) => ({ ...prev, department: error }))
-                      }
+                      
                     }}
                   />
                   {errors.department && <div className="text-danger mt-1">{errors.department}</div>}
@@ -1124,14 +1124,14 @@ const PharmacistForm = ({
 
                 {/* State Pharmacy Council Registration */}
                 <div className="col-md-4">
-                  <CFormLabel>dPharma/BPharma Certificate</CFormLabel>
+                  <CFormLabel>DPharma/BPharma Certificate</CFormLabel>
                   <CFormInput
                     type="file"
                     onChange={(e) => handleFileUpload(e, 'dpharmaOrBPharmaCertificate')}
                   />
                 </div>
                 <div className="col-md-4">
-                  <CFormLabel>statePharmacyCouncilRegistration</CFormLabel>
+                  <CFormLabel>State Pharmacy Council Registration Certificate</CFormLabel>
                   <CFormInput
                     type="file"
                     onChange={(e) => handleFileUpload(e, 'statePharmacyCouncilRegistration')}

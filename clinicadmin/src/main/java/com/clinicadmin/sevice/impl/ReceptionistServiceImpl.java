@@ -139,6 +139,8 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 			existing.setAddress(dto.getAddress());
 		if (dto.getEmergencyContact() != null)
 			existing.setEmergencyContact(dto.getEmergencyContact());
+		if (dto.getPermissions() != null)
+			existing.setPermissions(dto.getPermissions());
 		if (dto.getBankAccountDetails() != null)
 			existing.setBankAccountDetails(dto.getBankAccountDetails());
 		if (dto.getEmailId() != null)
@@ -178,15 +180,43 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 
 	@Override
 	public ResponseStructure<String> deleteReceptionist(String id) {
-		Optional<ReceptionistEntity> optional = repository.findById(id);
-		if (optional.isEmpty()) {
-			return ResponseStructure.buildResponse(null, "Receptionist not found", HttpStatus.NOT_FOUND,
-					HttpStatus.NOT_FOUND.value());
-		}
-		repository.deleteById(id);
-		return ResponseStructure.buildResponse("Deleted Successfully", "Receptionist deleted successfully",
-				HttpStatus.OK, HttpStatus.OK.value());
+	    try {
+	        Optional<ReceptionistEntity> optional = repository.findById(id);
+	        if (optional.isEmpty()) {
+	            return ResponseStructure.buildResponse(
+	                null,
+	                "Receptionist not found",
+	                HttpStatus.NOT_FOUND,
+	                HttpStatus.NOT_FOUND.value()
+	            );
+	        }
+
+	        // ✅ Delete receptionist record
+	        repository.deleteById(id);
+
+	        // ✅ Delete corresponding login credentials (if any)
+	        Optional<DoctorLoginCredentials> credentials = credentialsRepository.findByStaffId(id);
+	        if (credentials.isPresent()) {
+	            credentialsRepository.deleteById(credentials.get().getId());
+	        }
+
+	        return ResponseStructure.buildResponse(
+	            id,
+	            "Receptionist and credentials deleted successfully",
+	            HttpStatus.OK,
+	            HttpStatus.OK.value()
+	        );
+
+	    } catch (Exception e) {
+	        return ResponseStructure.buildResponse(
+	            null,
+	            "Error deleting receptionist: " + e.getMessage(),
+	            HttpStatus.INTERNAL_SERVER_ERROR,
+	            HttpStatus.INTERNAL_SERVER_ERROR.value()
+	        );
+	    }
 	}
+
 
 //    @Override
 //    public OnBoardResponse login(String userName, String password) {
