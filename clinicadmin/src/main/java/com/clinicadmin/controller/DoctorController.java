@@ -404,6 +404,12 @@ public class DoctorController {
 			    return ResponseEntity.status(response.getStatus()).body(response);
 			
 		}
+		@GetMapping("/clinics/getAllDoctorWithRespectiveClinics/{consultationType}")
+		public ResponseEntity<Response> getClinicsWithDoctors(@PathVariable int consultationType) {
+		    Response response = doctorService.getAllDoctorsWithRespectiveClinic(consultationType);
+		    return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
+		}
+
 		
 // --------------------Login By Using roles-------------------
 		@PostMapping("/loginUsingRoles")
