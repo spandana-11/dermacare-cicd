@@ -2671,6 +2671,58 @@ public class DoctorServiceImpl implements DoctorService {
 
 		return response;
 	}
+	@Override
+	public Response getAllDoctorsWithRespectiveClinic(int consultationType) {
+	    Response response = new Response();
+
+	    try {
+	        // 1. Get list of clinics (recommended ones)
+	        ResponseEntity<Response> clinicsResponse = adminServiceClient.firstRecommendedTureClincs();
+	        Object clinicObj = clinicsResponse.getBody().getData();
+
+	        // Convert to list of ClinicDTO
+	        List<ClinicDTO> clinics = objectMapper.convertValue(clinicObj, new TypeReference<List<ClinicDTO>>() {});
+
+	        // 2. Map each clinic -> doctors belonging to that clinic
+	        List<ClinicWithDoctorsDTO> clinicsWithDoctors = clinics.stream().map(clinicDTO -> {
+
+	            // Fetch all doctors by hospitalId
+	            List<Doctors> doctorsDbData = doctorsRepository.findByHospitalId(clinicDTO.getHospitalId());
+
+	            // Map to DTOs and filter by consultation type
+	            List<DoctorsDTO> doctorDTOs = doctorsDbData.stream()
+	                    .map(DoctorMapper::mapDoctorEntityToDoctorDTO)
+	                    .filter(dto -> {
+	                        ConsultationTypeDTO consultation = dto.getConsultation();
+	                        if (consultation == null) return false;
+
+	                        // 1 → InClinic, 2 → VideoOrOnline
+	                        return (consultationType == 1 && consultation.getInClinic() == 1)
+	                                || (consultationType == 2 && consultation.getVideoOrOnline() == 1);
+	                    })
+	                    .collect(Collectors.toList());
+
+	            // Map ClinicDTO -> ClinicWithDoctorsDTO
+	            ClinicWithDoctorsDTO clDTO = objectMapper.convertValue(clinicDTO, ClinicWithDoctorsDTO.class);
+	            clDTO.setDoctors(doctorDTOs);
+
+	            return clDTO;
+	        }).collect(Collectors.toList());
+
+	        // 3. Wrap response
+	        response.setSuccess(true);
+	        response.setData(clinicsWithDoctors);
+	        response.setMessage("Fetched clinics with respective doctors filtered by consultation type");
+	        response.setStatus(HttpStatus.OK.value());
+
+	    } catch (Exception e) {
+	        response.setSuccess(false);
+	        response.setMessage("Error fetching clinics and doctors: " + e.getMessage());
+	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	    }
+
+	    return response;
+	}
 
 //	// ------------------------------Universal
 //	// Login---------------------------------------------------

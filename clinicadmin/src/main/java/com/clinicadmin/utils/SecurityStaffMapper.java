@@ -9,13 +9,13 @@ import com.clinicadmin.entity.SecurityStaff;
 public class SecurityStaffMapper {
 
     // Always encode string to Base64
-    private static String encode(String input) {
+    public static String encode(String input) {
         if (input == null) return null;
         return Base64.getEncoder().encodeToString(input.getBytes(StandardCharsets.UTF_8));
     }
 
     // Always decode Base64 to string
-    private static String decode(String base64) {
+    public static String decode(String base64) {
         if (base64 == null) return null;
         return new String(Base64.getDecoder().decode(base64), StandardCharsets.UTF_8);
     }
