@@ -8,6 +8,7 @@ import com.dermacare.notification_service.dto.BookingResponse;
 import com.dermacare.notification_service.dto.NotificationDTO;
 import com.dermacare.notification_service.dto.NotificationResponse;
 import com.dermacare.notification_service.dto.NotificationToCustomer;
+import com.dermacare.notification_service.dto.PriceDropAlertDto;
 import com.dermacare.notification_service.dto.ResBody;
 
 
@@ -30,4 +31,9 @@ public interface ServiceInterface {
 			 String customerMobileNumber);
     
     public void sendAlertNotifications();
+    
+    public ResponseEntity<?> sendImageNotifications(PriceDropAlertDto priceDropAlertDto);
+   
+    public ResponseEntity<?> priceDropNotifications(String clinicId,String branchId);
+    	
 }

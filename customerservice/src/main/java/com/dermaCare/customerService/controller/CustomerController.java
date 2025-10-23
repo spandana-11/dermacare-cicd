@@ -568,5 +568,11 @@ public ResponseEntity<Response> getAverageRatingByDoctorId( @PathVariable String
 		  @RequestBody TempBlockingSlot tempBlockingSlot){
 	   return customerService.blockSlot(tempBlockingSlot);
  }
+   
+   @GetMapping("/gcmToken/{token}")
+   public CustomerDTO getCustomerByToken(
+			 @PathVariable String token ){
+	   return customerService.getCustomerByToken(token);
+ }
 
 }

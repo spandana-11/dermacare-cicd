@@ -66,7 +66,6 @@ public class WardBoyController {
         return wardBoyService.getWardBoyByIdAndClinicId(wardBoyId, clinicId);
     }
 
-
     @DeleteMapping("/deleteWardBoyById/{id}")
     public ResponseEntity<ResponseStructure<Void>> deleteWardBoy(@PathVariable String id) {
         ResponseStructure<Void> response = wardBoyService.deleteWardBoy(id);

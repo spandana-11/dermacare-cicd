@@ -363,8 +363,8 @@ const PharmacyManagement = () => {
                     <CTableHeaderCell>Duration</CTableHeaderCell>
                     <CTableHeaderCell>Frequency</CTableHeaderCell>
                     <CTableHeaderCell>Time</CTableHeaderCell>
-                    <CTableHeaderCell>Instructions</CTableHeaderCell>
-                    <CTableHeaderCell>Notes</CTableHeaderCell>
+                    {/* <CTableHeaderCell>Instructions</CTableHeaderCell>
+                    <CTableHeaderCell>Notes</CTableHeaderCell> */}
                     <CTableHeaderCell>Actions</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
@@ -387,8 +387,8 @@ const PharmacyManagement = () => {
                         </CTableDataCell>
                         <CTableDataCell>{med.remindWhen}</CTableDataCell>
                         <CTableDataCell>{med.times?.join(', ')}</CTableDataCell>
-                        <CTableDataCell>{med.food}</CTableDataCell>
-                        <CTableDataCell>{med.note}</CTableDataCell>
+                        {/* <CTableDataCell>{med.food}</CTableDataCell> */}
+                        {/* <CTableDataCell>{med.note}</CTableDataCell> */}
                         <CTableDataCell className="text-center">
                           {' '}
                           {/* Change from text-end to text-center */}

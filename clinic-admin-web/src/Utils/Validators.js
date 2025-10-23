@@ -167,15 +167,23 @@ export const validateField = (field, value, formData = {}, technicians = []) => 
         error = ''
       }
       break
-    case 'specialization':
-      if (value.length < 2 || value.length > 50) {
-        error = 'Specialization must be between 2 and 50 characters.'
-      } else if (/\d/.test(value)) {
-        error = 'Specialization cannot contain numbers.'
-      } else {
-        error = ''
-      }
-      break
+case 'specialization':
+  if (!value || value.trim() === '') {
+    error = 'Specialization is required.'
+  } else if (value.trim().length < 2 || value.trim().length > 50) {
+    error = 'Specialization must be between 2 and 50 characters.'
+  } else if (/\d/.test(value)) {
+    error = 'Specialization cannot contain numbers.'
+  } else if (!/^[A-Za-z\s&/.-]+$/.test(value)) {
+    // Only allow letters, spaces, and allowed special characters
+    error = 'Specialization contains invalid characters.'
+  } else {
+    error = ''
+  }
+  break
+
+
+
 
     case 'dateOfJoining':
       if (!value) {
@@ -190,27 +198,41 @@ export const validateField = (field, value, formData = {}, technicians = []) => 
       }
       break
 
-    case 'department':
-      if (!value || value.trim() === '') error = 'Department is required.'
-      else if (value.length < 2 || value.length > 50)
-        error = 'Department must be between 2 and 50 characters.'
-      break
+  case 'department':
+  if (!value || value.trim() === '') {
+    error = 'Department is required.'
+  } else if (value.trim().length < 2 || value.trim().length > 50) {
+    error = 'Department must be between 2 and 50 characters.'
+  } else if (!/[A-Za-z0-9]/.test(value)) {
+    // Ensure at least one letter or number
+    error = 'Department cannot contain only special characters.'
+  } else if (!/^[A-Za-z0-9\s&/.\-()]+$/.test(value)) {
+    // Only allow letters, numbers, spaces, and related special characters
+    error = 'Department contains invalid characters.'
+  } else {
+    error = ''
+  }
+  break
 
-    case 'nursingCouncilRegistration':
-      if (!value || value.trim() === '') {
-        error = 'Nursing Council Registration cannot be empty.'
-      } else if (value.length < 2 || value.length > 20) {
-        error = 'Nursing Council Registration must be between 2 and 20 characters.'
-      } else {
-        const hasNumber = /\d/.test(value)
-        const hasSymbol = /[^a-zA-Z0-9]/.test(value) // any symbol
-        if (!(hasNumber || hasSymbol)) {
-          error = 'Nursing Council Registration must contain at least one number or symbol.'
-        } else {
-          error = '' // ✅ valid input
-        }
-      }
-      break
+
+
+
+   case 'nursingCouncilRegistration':
+  if (!value || value.trim() === '') {
+    error = 'Nursing Council Registration cannot be empty.'
+  } else if (value.trim().length < 2 || value.trim().length > 20) {
+    error = 'Nursing Council Registration must be between 2 and 20 characters.'
+  } else if (!/[A-Za-z]/.test(value)) {
+    // Ensure at least one letter is present
+    error = 'Nursing Council Registration must contain at least one letter.'
+  } else if (!/^[A-Za-z0-9/.-]+$/.test(value)) {
+    // Only allow letters, numbers, / . -
+    error = 'Nursing Council Registration contains invalid characters.'
+  } else {
+    error = '' // ✅ valid input
+  }
+  break
+
     case 'role':
       if (!value || value.trim() === '') error = 'Role is required.'
       else if (value.length < 2 || value.length > 50)
@@ -227,14 +249,21 @@ export const validateField = (field, value, formData = {}, technicians = []) => 
         error = 'Shift Timing / Availability must be between 2 and 50 characters.'
       break
     case 'labLicenseOrRegistration':
-      if (!/^[A-Za-z0-9\s\-]+$/.test(value)) {
-        error = 'Lab License / Registration can contain only letters, numbers, spaces, and hyphens.'
-      } else if (value.length < 3 || value.length > 50) {
-        error = 'Lab License / Registration must be between 3 and 50 characters.'
-      } else {
-        error = ''
-      }
-      break
+  if (!value || value.trim() === '') {
+    error = 'Lab License / Registration is required.'
+  } else if (value.trim().length < 3 || value.trim().length > 50) {
+    error = 'Lab License / Registration must be between 3 and 50 characters.'
+  } else if (!/[A-Za-z0-9]/.test(value)) {
+    // Ensure at least one letter or number
+    error = 'Lab License / Registration cannot contain only special characters.'
+  } else if (!/^[A-Za-z0-9\s/.-]+$/.test(value)) {
+    // Allow only letters, numbers, spaces, and / . -
+    error = 'Lab License / Registration contains invalid characters.'
+  } else {
+    error = ''
+  }
+  break
+
 
     case 'emergencyContact':
       if (!value || value.trim() === '') {
@@ -298,14 +327,21 @@ export const validateField = (field, value, formData = {}, technicians = []) => 
       }
       break
     case 'departmentOrAssignedLab':
-      if (value.length < 3 || value.length > 50) {
-        error = 'Department / Assigned Lab must be between 3 and 50 characters.'
-      } else if (!/^[A-Za-z\s]+$/.test(value)) {
-        error = 'Department / Assigned Lab can contain only letters and spaces.'
-      } else {
-        error = ''
-      }
-      break
+  if (!value || value.trim() === '') {
+    error = 'Department / Assigned Lab is required.'
+  } else if (value.trim().length < 3 || value.trim().length > 50) {
+    error = 'Department / Assigned Lab must be between 3 and 50 characters.'
+  } else if (!/[A-Za-z0-9]/.test(value)) {
+    // Ensure at least one letter or number
+    error = 'Department / Assigned Lab cannot contain only special characters.'
+  } else if (!/^[A-Za-z0-9\s/.-]+$/.test(value)) {
+    // Allow letters, numbers, spaces, / . -
+    error = 'Department / Assigned Lab contains invalid characters.'
+  } else {
+    error = ''
+  }
+  break
+
 
     case 'ifscCode':
       if (!value || value.trim() === '') error = 'IFSC Code is required.'
@@ -318,6 +354,8 @@ export const validateField = (field, value, formData = {}, technicians = []) => 
       else if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(value))
         error = 'Invalid PAN format (e.g., ABCDE1234F).'
       break
+  
+
 
     case 'profilePicture':
       if (!value || value.trim() === '') {

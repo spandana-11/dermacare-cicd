@@ -32,6 +32,7 @@ public class Pharmacist {
 	private String contactNumber;
 	private String governmentId;
 	private String pharmacyLicense;
+	private String yearsOfExperience;
 	private String dateOfJoining;
 	private String department;
 	private BankAccountDetails bankAccountDetails;
@@ -47,6 +48,7 @@ public class Pharmacist {
 	private String dpharmaOrBPharmaCertificate;
 	private String experienceCertificates;
 	private Map<String, List<String>> permissions;
+	
 
 
 }

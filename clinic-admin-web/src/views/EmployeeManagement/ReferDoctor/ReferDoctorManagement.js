@@ -134,7 +134,7 @@ const ReferDoctorManagement = () => {
 
   return (
     <div>
-      {can('Reffer Doctor', 'create') && (
+      {can('Refer Doctor', 'create') && (
         <div
           className="mb-3 w-100"
           style={{ display: 'flex', justifyContent: 'end', alignContent: 'end', alignItems: 'end' }}
@@ -243,7 +243,7 @@ const ReferDoctorManagement = () => {
 
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
-                      {can('Reffer Doctor', 'read') && (
+                      {can('Refer Doctor', 'read') && (
                         <button
                           className="actionBtn"
                           onClick={() => {
@@ -256,7 +256,7 @@ const ReferDoctorManagement = () => {
                           <Eye size={18} />
                         </button>
                       )}
-                      {can('Reffer Doctor', 'update') && (
+                      {can('Refer Doctor', 'update') && (
                         <button
                           className="actionBtn"
                           onClick={() => {
@@ -269,7 +269,7 @@ const ReferDoctorManagement = () => {
                           <Edit2 size={18} />
                         </button>
                       )}
-                      {can('Reffer Doctor', 'delete') && (
+                      {can('Refer Doctor', 'delete') && (
                         <button
                           className="actionBtn"
                           onClick={() => {

@@ -138,8 +138,7 @@ const DiseasesManagement = () => {
   }
 
   // Allow letters, spaces, ., (, ), -, /, '
-  const nameRegex = /^[A-Za-z\s.\-()/']+$/
-
+  const nameRegex = /^[A-Za-z0-9\s.\-()/']+$/
   const handleAddDisease = async () => {
     const trimmedName = newDisease.diseaseName.trim()
 
@@ -152,7 +151,7 @@ const DiseasesManagement = () => {
     // Regex validation
     if (!nameRegex.test(trimmedName)) {
       setErrors({
-        diseaseName: 'Only alphabets, spaces, ".", "(", ")", "-", "/", and "\'" are allowed.',
+        diseaseName: "Only alphabets, numbers, spaces, and limited symbols (.-()/') are allowed.",
       })
       return
     }

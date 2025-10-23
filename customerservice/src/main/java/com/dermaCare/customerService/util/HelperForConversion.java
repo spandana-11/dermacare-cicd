@@ -21,6 +21,7 @@ public class HelperForConversion {
         customerDto.setDeviceId(customer.getFcm());
         customerDto.setDateOfBirth(customer.getDateOfBirth());
         customerDto.setReferCode(customer.getReferCode());
+        customerDto.setDeviceId(customer.getDeviceId());
         return  customerDto;
        
     }

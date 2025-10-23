@@ -1,4 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
+import { BASE_URL } from '../../baseUrl'
+import { useHospital } from '../Usecontext/HospitalContext'
+import { Edit2, Eye, Trash2 } from 'lucide-react'
 import {
   CFormInput,
   CFormLabel,
@@ -31,6 +34,8 @@ const FCMNotification = () => {
   const [loading, setLoading] = useState(false)
   const [customerOptions, setCustomerOptions] = useState([])
   const [selectedCustomers, setSelectedCustomers] = useState([])
+  const { user } = useHospital()
+  const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
 
   // 🖼️ Handle Image
   const handleImageChange = (e) => {
@@ -68,7 +73,7 @@ const FCMNotification = () => {
       // 👇 Add this line to log what’s being sent
       console.log('📦 Notification Payload:', payload)
 
-      const res = await fetch('http://localhost:5000/send-notification', {
+      const res = await fetch(`${BASE_URL}/pricedrop`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -229,18 +234,20 @@ const FCMNotification = () => {
             </p>
           ) : (
             <CTable bordered hover responsive align="middle">
-              <CTableHead color="dark">
-                <CTableRow>
+              <CTableHead className="custom-modal">
+                <CTableRow className="pink-table  w-auto">
                   <CTableHeaderCell>#</CTableHeaderCell>
                   <CTableHeaderCell>Title</CTableHeaderCell>
                   <CTableHeaderCell>Body</CTableHeaderCell>
                   <CTableHeaderCell>Target</CTableHeaderCell>
                   <CTableHeaderCell>Status</CTableHeaderCell>
                   <CTableHeaderCell>Time</CTableHeaderCell>
+
                   <CTableHeaderCell>Image</CTableHeaderCell>
+                  <CTableHeaderCell>Actions</CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
-              <CTableBody>
+              <CTableBody className="pink-table">
                 {sentNotifications.map((n, index) => (
                   <CTableRow key={index}>
                     <CTableDataCell>{index + 1}</CTableDataCell>
@@ -259,6 +266,48 @@ const FCMNotification = () => {
                       ) : (
                         '-'
                       )}
+                    </CTableDataCell>
+                    <CTableDataCell className="text-end">
+                      <div className="d-flex justify-content-end gap-2  ">
+                        {can('Push Notification', 'read') && (
+                          <button
+                            className="actionBtn"
+                            // onClick={() => {
+                            //   setSelectedTech(tech)
+                            //   setViewMode(true)
+                            //   setModalVisible(true)
+                            // }}
+                            title="View"
+                          >
+                            <Eye size={18} />
+                          </button>
+                        )}
+                        {can('Push Notification', 'update') && (
+                          <button
+                            className="actionBtn"
+                            // onClick={() => {
+                            //   setSelectedTech(tech)
+                            //   setViewMode(false)
+                            //   setModalVisible(true)
+                            // }}
+                            title="Edit"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                        )}
+                        {can('Push Notification', 'delete') && (
+                          <button
+                            className="actionBtn"
+                            // onClick={() => {
+                            //   setDeleteId(tech.id) // store id
+                            //   setIsModalVisible(true) // show confirmation modal
+                            // }}
+                            title="Delete"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
+                      </div>
                     </CTableDataCell>
                   </CTableRow>
                 ))}

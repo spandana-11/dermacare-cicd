@@ -1094,7 +1094,7 @@ const [referDoctor, setReferDoctor] = useState([])
           <div>
             <h6 className="mb-3 border-bottom pb-2">Appointment Type</h6>
             <CRow className="mb-4">
-              <CCol md={4}>
+              <CCol md={6}>
                 <CFormCheck
                   type="radio"
                   label="Services & Treatment"
@@ -1111,7 +1111,7 @@ const [referDoctor, setReferDoctor] = useState([])
                   }}
                 />
               </CCol>
-              <CCol md={4}>
+              <CCol md={6}>
                 <CFormCheck
                   type="radio"
                   label="In-Clinic"
@@ -1129,7 +1129,7 @@ const [referDoctor, setReferDoctor] = useState([])
                   }}
                 />
               </CCol>
-              <CCol md={4}>
+              {/* <CCol md={4}>
                 <CFormCheck
                   type="radio"
                   label="Online"
@@ -1142,7 +1142,7 @@ const [referDoctor, setReferDoctor] = useState([])
                     setBookingDetails((prev) => ({ ...prev, consultationType: 'online' }))
                   }}
                 />
-              </CCol>
+              </CCol> */}
             </CRow>
             {errors.appointmentType && (
               <div className="text-danger mb-3">{errors.appointmentType}</div>
@@ -1930,7 +1930,7 @@ const [referDoctor, setReferDoctor] = useState([])
 
             <CCol md={6}>
              <CFormLabel style={{color:'var(--color-black)'}}>
-                    Attachments<span className="text-danger">*</span>
+                    Attachments
                   </CFormLabel>
               <CFormInput
                 type="file"
@@ -2126,9 +2126,25 @@ const [referDoctor, setReferDoctor] = useState([])
 
         {/* Buttons */}
         <div className="mt-4 text-end d-flex justify-content-end gap-2">
-          <CButton color="secondary" onClick={onClose}>
-            Cancel
-          </CButton>
+            <CButton
+  color="secondary"
+  onClick={() => {
+    setBookingDetails(initialBookingDetails) // reset form data
+     // close the modal
+  }}
+>
+  Reset
+</CButton>
+         <CButton
+  color="secondary"
+  onClick={() => {
+    setBookingDetails(initialBookingDetails) // reset form data
+    onClose() // close the modal
+  }}
+>
+  Cancel
+</CButton>
+
 
           {visitType === 'followup' ? (
             <CButton

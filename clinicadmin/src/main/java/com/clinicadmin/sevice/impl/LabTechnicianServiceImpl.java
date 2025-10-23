@@ -205,18 +205,46 @@ public class LabTechnicianServiceImpl implements LabTechnicianService {
 	}
 
 
-	// ✅ Delete
 	@Override
 	public ResponseStructure<String> deleteLabTechnician(String id) {
-		Optional<LabTechnicianEntity> optional = repository.findById(id);
-		if (optional.isEmpty()) {
-			return ResponseStructure.buildResponse(null, "Lab Technician not found", HttpStatus.NOT_FOUND,
-					HttpStatus.NOT_FOUND.value());
-		}
-		repository.deleteById(id);
-		return ResponseStructure.buildResponse("Deleted Successfully", "Lab Technician deleted successfully",
-				HttpStatus.OK, HttpStatus.OK.value());
+	    try {
+	        // 1️⃣ Check if Lab Technician exists
+	        Optional<LabTechnicianEntity> optional = repository.findById(id);
+	        if (optional.isEmpty()) {
+	            return ResponseStructure.buildResponse(
+	                null,
+	                "Lab Technician not found",
+	                HttpStatus.NOT_FOUND,
+	                HttpStatus.NOT_FOUND.value()
+	            );
+	        }
+
+	        // 2️⃣ Delete Lab Technician record
+	        repository.deleteById(id);
+
+	        // 3️⃣ Delete corresponding login credentials safely
+	        credentialsRepository.findByStaffId(id)
+	            .filter(cred -> "LabTechnician".equalsIgnoreCase(cred.getRole()))
+	            .ifPresent(cred -> credentialsRepository.deleteById(cred.getId()));
+
+	        // 4️⃣ Return success response
+	        return ResponseStructure.buildResponse(
+	            id,
+	            "Lab Technician and credentials deleted successfully",
+	            HttpStatus.OK,
+	            HttpStatus.OK.value()
+	        );
+
+	    } catch (Exception e) {
+	        return ResponseStructure.buildResponse(
+	            null,
+	            "Error deleting Lab Technician: " + e.getMessage(),
+	            HttpStatus.INTERNAL_SERVER_ERROR,
+	            HttpStatus.INTERNAL_SERVER_ERROR.value()
+	        );
+	    }
 	}
+
 
 	// ✅ Get all Lab Technicians by Clinic Id
 	@Override

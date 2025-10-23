@@ -327,7 +327,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
     try {
       const res = await onSave(formData)
       console.log(res) // Now this will log actual API response
-      if (res != undefined) {
+      if (res) {
         setFormData(emptyForm)
       }else{
         onClose()
@@ -444,7 +444,10 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
     <>
       <CModal
         visible={visible}
-        onClose={onClose}
+         onClose={() => {
+    setFormData(emptyForm)  // ✅ reset on close
+    onClose()
+  }}
         size="lg"
         className="custom-modal"
         backdrop="static"
@@ -760,7 +763,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
 
                 <div className="col-md-4">
                   <CFormLabel>
-                    Nursing Council Registration<span style={{ color: 'red' }}>*</span>
+                    Nursing Council Registration No<span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput
                     type="text" // ✅ very important, don't use "number"
@@ -802,29 +805,25 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                   )}
                 </div>
               </div>
+<div className="col-md-4">
+  <CFormLabel>
+    Department<span style={{ color: 'red' }}>*</span>
+  </CFormLabel>
+  <CFormInput
+    value={formData.department}
+    onChange={(e) => {
+      const value = e.target.value
 
-              <div className="row mb-3">
-                <div className="col-md-4">
-                  <CFormLabel>
-                    Department<span style={{ color: 'red' }}>*</span>
-                  </CFormLabel>
-                  <CFormInput
-                    value={formData.department}
-                    onChange={(e) => {
-                      const value = e.target.value
+      // ✅ Allow all characters (including special characters)
+      handleChange('department', value)
 
-                      // allow only letters + spaces
-                      if (/^[A-Za-z\s]*$/.test(value)) {
-                        handleChange('department', value)
-
-                        const error = validateField('department', value)
-                        setErrors((prev) => ({ ...prev, department: error }))
-                      }
-                    }}
-                  />
-                  {errors.department && <div className="text-danger mt-1">{errors.department}</div>}
-                </div>
-                <div className="col-md-4">
+      const error = validateField('department', value)
+      setErrors((prev) => ({ ...prev, department: error }))
+    }}
+  />
+  {errors.department && <div className="text-danger mt-1">{errors.department}</div>}
+</div>
+  <div className="col-md-4">
                   <CFormLabel>
                     Years of Experience <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
@@ -844,30 +843,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                     <div className="text-danger mt-1">{errors.yearsOfExperience}</div>
                   )}
                 </div>
-                <div className="col-md-4">
-                  <CFormLabel>
-                    Qualifications <span style={{ color: 'red' }}>*</span>
-                  </CFormLabel>
-                  <CFormInput
-                    value={formData.qualifications}
-                    onChange={(e) => {
-                      const value = e.target.value
 
-                      // Allow only letters and spaces
-                      if (/^[A-Za-z\s]*$/.test(value)) {
-                        handleChange('qualifications', value)
-
-                        const error = validateField('qualifications', value)
-                        setErrors((prev) => ({ ...prev, qualifications: error }))
-                      }
-                    }}
-                  />
-
-                  {errors.qualifications && (
-                    <div className="text-danger mt-1">{errors.qualifications}</div>
-                  )}
-                </div>
-              </div>
 
               <div className="row mb-3">
                 <div className="col-md-4">
@@ -1157,7 +1133,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                 {/* Nursing License */}
                 <div className="col-md-4 mb-3">
                   <CFormLabel>
-                    Nursing License <span style={{ color: 'red' }}>*</span>
+                    Nursing License Certificate <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
                   <CFormInput type="file" onChange={(e) => handleFileUpload(e, 'nursingLicense')} />
                 </div>

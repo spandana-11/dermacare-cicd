@@ -1,11 +1,8 @@
 package com.AdminService.service;
 
 import java.util.List;
-
 import org.springframework.http.ResponseEntity;
-
 import com.AdminService.dto.AdminHelper;
-import com.AdminService.dto.BookingResponse;
 import com.AdminService.dto.CategoryDto;
 import com.AdminService.dto.ClinicCredentialsDTO;
 import com.AdminService.dto.ClinicDTO;
@@ -106,6 +103,8 @@ ResponseEntity<ResponseStructure<SubServicesDto>> updateBySubServiceId(String ho
 ResponseEntity<ResponseStructure<SubServicesDto>> getSubServiceByServiceId( String hospitalId, String subServiceId);
 
 ResponseEntity<ResponseStructure<List<SubServicesDto>>> getSubServiceByHospitalId(String hospitalId);
+
+
 }
 
 

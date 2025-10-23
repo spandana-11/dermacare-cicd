@@ -100,7 +100,7 @@ const OtherStaffForm = ({
     'profilePicture',
     'department',
     'clinicId',
-    'medicalFitnessCertificate', // also mandatory
+    // 'medicalFitnessCertificate', // also mandatory
     'role', // if you want to enforce role as mandatory in UI
     'shiftTimingsOrAvailability',
     // Address nested fields (if Address has @NotBlank on these)
@@ -672,7 +672,7 @@ const OtherStaffForm = ({
 
                 <div className="col-md-4">
                   <CFormLabel>
-                    Email <span style={{ color: 'red' }}>*</span>
+                    Email 
                   </CFormLabel>
                   <CFormInput
                     type="email"
@@ -1070,7 +1070,7 @@ const OtherStaffForm = ({
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>
-                    Medical Fitness Certificate <span style={{ color: 'red' }}>*</span>
+                    Medical Fitness Certificate 
                   </CFormLabel>
                   <CFormInput
                     type="file"

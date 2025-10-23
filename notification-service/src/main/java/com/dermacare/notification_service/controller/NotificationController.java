@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.dermacare.notification_service.dto.NotificationDTO;
 import com.dermacare.notification_service.dto.NotificationResponse;
 import com.dermacare.notification_service.dto.NotificationToCustomer;
+import com.dermacare.notification_service.dto.PriceDropAlertDto;
 import com.dermacare.notification_service.dto.ResBody;
 import com.dermacare.notification_service.service.ServiceInterface;
 
@@ -81,5 +82,17 @@ public class NotificationController {
 		 return null;
 	}	
 	
+	@PostMapping("/pricedrop/notification")
+	public ResponseEntity<?> pricedrop(@RequestBody PriceDropAlertDto priceDropAlertDto){
+		return notificationService.sendImageNotifications(priceDropAlertDto);
+		 
+	}	
+	
+	
+	@GetMapping("/retrieve/priceDropNotification/{clinicId}/{branchId}")
+	public ResponseEntity<?> priceDropNotification(@PathVariable String clinicId,@PathVariable String branchId ){
+		return notificationService.priceDropNotifications(clinicId, branchId);
+}	
+		
 	
 }

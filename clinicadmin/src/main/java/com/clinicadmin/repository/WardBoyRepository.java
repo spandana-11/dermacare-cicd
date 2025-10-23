@@ -22,6 +22,6 @@ public interface WardBoyRepository extends MongoRepository<WardBoy, String> {
 
 //	List<WardBoy> findByClinicIdAndBranchId(String clinicId, String branchId);
 
-	Optional<WardBoy> findAllByClinicIdAndBranchId(String clinicId, String branchId);
+    List<WardBoy> findAllByClinicIdAndBranchId(String clinicId, String branchId);
 
 }
