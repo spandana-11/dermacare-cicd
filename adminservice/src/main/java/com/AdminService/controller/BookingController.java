@@ -12,7 +12,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.AdminService.dto.BookingRequest;
+
+import com.AdminService.dto.BookingRequset;
 import com.AdminService.dto.BookingResponse;
 import com.AdminService.dto.BookingResponseDTO;
 import com.AdminService.service.BookingServiceImpl;
@@ -26,8 +27,9 @@ public class BookingController {
 
     @Autowired
     private BookingServiceImpl serviceImpl;
+    
     @PostMapping("/bookService")
-    public ResponseEntity<?> bookService(@RequestBody BookingRequest req) {
+    public ResponseEntity<?> bookService(@RequestBody BookingRequset req) {
         Response response = serviceImpl.bookService(req);
         return ResponseEntity.status(response.getStatus()).body(response);
     }

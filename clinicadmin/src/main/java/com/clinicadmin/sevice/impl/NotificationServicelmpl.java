@@ -93,4 +93,31 @@ public class NotificationServicelmpl implements NotificationService {
 	}
 	
 	
+	public ResponseEntity<?> updatePriceDropNotification(String clinicId, String branchId, PriceDropAlertDto dto ){
+		Response response = new Response();		
+		try {
+			return notificationFeign.updatePriceDropNotification(clinicId, branchId,dto);
+		}catch(Exception e) {
+			response.setSuccess(false);	  	       
+  	        response.setMessage(e.getMessage());
+  	        response.setStatus(500);	
+		}
+		return ResponseEntity.status(response.getStatus()).body(response);		
+		
+	}
+	
+	
+	public ResponseEntity<?> deletePriceDropNotification(String clinicId, String branchId){
+		Response response = new Response();		
+		try {
+			return notificationFeign.deletePriceDropNotification(clinicId, branchId);
+		}catch(Exception e) {
+			response.setSuccess(false);	  	       
+  	        response.setMessage(e.getMessage());
+  	        response.setStatus(500);	
+		}
+		return ResponseEntity.status(response.getStatus()).body(response);		
+		
+	}
+
 }

@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import com.AdminService.dto.BookingRequest;
+import com.AdminService.dto.BookingRequset;
 import com.AdminService.dto.BookingResponse;
 import com.AdminService.dto.BookingResponseDTO;
 import com.AdminService.feign.BookingFeign;
@@ -22,7 +22,7 @@ public class BookingServiceImpl implements BookingService {
     @Autowired
     private BookingFeign bookingFeign;
     @Override
-    public Response bookService(BookingRequest req) {
+    public Response bookService(BookingRequset req) {
         try {
             ResponseEntity<?> res = bookingFeign.bookService(req); // call POST API
             Response response = new Response();

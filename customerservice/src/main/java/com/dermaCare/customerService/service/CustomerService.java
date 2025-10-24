@@ -134,4 +134,7 @@ public interface CustomerService {
 	public boolean blockSlot(TempBlockingSlot tempBlockingSlot);
 	
 	public CustomerDTO getCustomerByToken(String token);
+
+	Response getDoctorsByHospitalBranchAndSubService(String hospitalId, String branchId, String subServiceId,
+			int consultationType) throws JsonProcessingException;
 }

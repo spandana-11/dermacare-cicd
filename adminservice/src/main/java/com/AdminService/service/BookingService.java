@@ -2,7 +2,7 @@ package com.AdminService.service;
 
 import java.util.List;
 
-import com.AdminService.dto.BookingRequest;
+import com.AdminService.dto.BookingRequset;
 import com.AdminService.dto.BookingResponse;
 import com.AdminService.dto.BookingResponseDTO;
 import com.AdminService.util.Response;
@@ -26,5 +26,5 @@ public interface BookingService {
 
     Response getInProgressAppointments(String mobileNumber);
 
-	Response bookService(BookingRequest req);
+	Response bookService(BookingRequset req);
 }

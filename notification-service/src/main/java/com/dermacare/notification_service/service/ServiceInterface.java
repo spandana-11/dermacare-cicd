@@ -35,5 +35,14 @@ public interface ServiceInterface {
     public ResponseEntity<?> sendImageNotifications(PriceDropAlertDto priceDropAlertDto);
    
     public ResponseEntity<?> priceDropNotifications(String clinicId,String branchId);
+    
+    public ResponseEntity<?> updatePriceDropAlert(
+	         String clinicId,
+	        String branchId,
+	        PriceDropAlertDto dto) ;
+    
+    public ResponseEntity<?> deletePriceDropAlerts(
+	         String clinicId,
+	        String branchId);
     	
 }

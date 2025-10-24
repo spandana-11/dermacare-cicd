@@ -204,8 +204,8 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 	        return ResponseStructure.buildResponse(
 	                null,
 	                "No security staff found for Clinic ID: " + clinicId + " and Branch ID: " + branchId,
-	                HttpStatus.NOT_FOUND,
-	                HttpStatus.NOT_FOUND.value()
+	                HttpStatus.OK,
+	                HttpStatus.OK.value()
 	        );
 	    }
 

@@ -274,8 +274,8 @@ public class WardBoyServiceImpl implements WardBoyService {
 	        return ResponseStructure.buildResponse(
 	                null,
 	                "No WardBoys found for clinicId: " + clinicId + " and branchId: " + branchId,
-	                HttpStatus.NOT_FOUND,
-	                HttpStatus.NOT_FOUND.value()
+	                HttpStatus.OK,
+	                HttpStatus.OK.value()
 	        );
 	    }
 

@@ -185,6 +185,8 @@ public class PharmacistServiceImpl implements PharmacistService {
 						Base64CompressionUtil.compressBase64(dto.getDpharmaOrBPharmaCertificate()));
 			if (dto.getProfilePicture() != null)
 				existing.setProfilePicture(Base64CompressionUtil.compressBase64(dto.getProfilePicture()));
+			if (dto.getPermissions() != null)
+				existing.setPermissions(dto.getPermissions());
 
 			Pharmacist updated = pharmacistRepository.save(existing);
 

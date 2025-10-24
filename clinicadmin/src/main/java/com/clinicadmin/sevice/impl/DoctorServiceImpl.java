@@ -103,12 +103,12 @@ public class DoctorServiceImpl implements DoctorService {
 
 	@Autowired
 	private MongoOperations mongoOperations;
-	
+
 	@Autowired
-	private  BookingFeign bookingFeign;
-	
+	private BookingFeign bookingFeign;
+
 	private List<TempBlockingSlot> slots = new CopyOnWriteArrayList<>();
-	
+
 	BookingResponse bkng = new BookingResponse();
 
 	public DoctorServiceImpl(DoctorsRepository doctorsRepository,
@@ -914,56 +914,55 @@ public class DoctorServiceImpl implements DoctorService {
 	// doctorId-----------------------------------------
 	@Override
 	public Response deleteDoctorSlot(String doctorId, String branchId, String date, String slotToDelete) {
-	    Response response = new Response();
-	    try {
-	        // Fetch slot by doctorId, branchId, and date
-	        DoctorSlot doctorSlot = slotRepository.findByDoctorIdAndBranchIdAndDate(doctorId, branchId, date);
+		Response response = new Response();
+		try {
+			// Fetch slot by doctorId, branchId, and date
+			DoctorSlot doctorSlot = slotRepository.findByDoctorIdAndBranchIdAndDate(doctorId, branchId, date);
 
-	        if (doctorSlot == null) {
-	            response.setSuccess(false);
-	            response.setData(null);
-	            response.setMessage("No slot found for the doctor in this branch on the given date");
-	            response.setStatus(HttpStatus.NOT_FOUND.value());
-	            return response;
-	        }
+			if (doctorSlot == null) {
+				response.setSuccess(false);
+				response.setData(null);
+				response.setMessage("No slot found for the doctor in this branch on the given date");
+				response.setStatus(HttpStatus.NOT_FOUND.value());
+				return response;
+			}
 
-	        boolean slotExists = doctorSlot.getAvailableSlots().stream()
-	                .anyMatch(s -> slotToDelete.equals(s.getSlot()) && !s.isSlotbooked());
+			boolean slotExists = doctorSlot.getAvailableSlots().stream()
+					.anyMatch(s -> slotToDelete.equals(s.getSlot()) && !s.isSlotbooked());
 
-	        if (!slotExists) {
-	            response.setSuccess(false);
-	            response.setData(null);
-	            response.setMessage("Slot not found or already booked");
-	            response.setStatus(HttpStatus.BAD_REQUEST.value());
-	            return response;
-	        }
+			if (!slotExists) {
+				response.setSuccess(false);
+				response.setData(null);
+				response.setMessage("Slot not found or already booked");
+				response.setStatus(HttpStatus.BAD_REQUEST.value());
+				return response;
+			}
 
-	        List<DoctorAvailableSlotDTO> updatedSlots = doctorSlot.getAvailableSlots().stream()
-	                .filter(s -> !(slotToDelete.equals(s.getSlot()) && !s.isSlotbooked()))
-	                .collect(Collectors.toList());
+			List<DoctorAvailableSlotDTO> updatedSlots = doctorSlot.getAvailableSlots().stream()
+					.filter(s -> !(slotToDelete.equals(s.getSlot()) && !s.isSlotbooked())).collect(Collectors.toList());
 
-	        doctorSlot.setAvailableSlots(updatedSlots);
-	        slotRepository.save(doctorSlot);
+			doctorSlot.setAvailableSlots(updatedSlots);
+			slotRepository.save(doctorSlot);
 
-	        DoctorSlotDTO dto = new DoctorSlotDTO();
-	        dto.setDoctorId(doctorSlot.getDoctorId());
-	        dto.setHospitalId(doctorSlot.getHospitalId());
-	        dto.setBranchId(doctorSlot.getBranchId());
-	        dto.setBranchName(doctorSlot.getBranchName());
-	        dto.setDate(doctorSlot.getDate());
-	        dto.setAvailableSlots(updatedSlots);
+			DoctorSlotDTO dto = new DoctorSlotDTO();
+			dto.setDoctorId(doctorSlot.getDoctorId());
+			dto.setHospitalId(doctorSlot.getHospitalId());
+			dto.setBranchId(doctorSlot.getBranchId());
+			dto.setBranchName(doctorSlot.getBranchName());
+			dto.setDate(doctorSlot.getDate());
+			dto.setAvailableSlots(updatedSlots);
 
-	        response.setSuccess(true);
-	        response.setData(dto);
-	        response.setMessage("Slot deleted successfully for the given branch");
-	        response.setStatus(HttpStatus.OK.value());
-	    } catch (Exception e) {
-	        response.setSuccess(false);
-	        response.setData(null);
-	        response.setMessage("Internal server error occurred: " + e.getMessage());
-	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-	    }
-	    return response;
+			response.setSuccess(true);
+			response.setData(dto);
+			response.setMessage("Slot deleted successfully for the given branch");
+			response.setStatus(HttpStatus.OK.value());
+		} catch (Exception e) {
+			response.setSuccess(false);
+			response.setData(null);
+			response.setMessage("Internal server error occurred: " + e.getMessage());
+			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+		}
+		return response;
 	}
 
 	@Override
@@ -1096,124 +1095,120 @@ public class DoctorServiceImpl implements DoctorService {
 		return response;
 
 	}
+
 	@Override
 	public Response deleteDoctorSlotbyDate(String doctorId, String branchId, String date) {
-	    Response response = new Response();
+		Response response = new Response();
 
-	    try {
-	        // Fetch doctor slot by doctorId, branchId, and date
-	        DoctorSlot doctorSlot = slotRepository.findByDoctorIdAndBranchIdAndDate(doctorId, branchId, date);
+		try {
+			// Fetch doctor slot by doctorId, branchId, and date
+			DoctorSlot doctorSlot = slotRepository.findByDoctorIdAndBranchIdAndDate(doctorId, branchId, date);
 
-	        if (doctorSlot == null) {
-	            response.setSuccess(false);
-	            response.setData(null);
-	            response.setMessage("No slots found for the doctor in this branch on the given date");
-	            response.setStatus(HttpStatus.NOT_FOUND.value());
-	            return response;
-	        }
+			if (doctorSlot == null) {
+				response.setSuccess(false);
+				response.setData(null);
+				response.setMessage("No slots found for the doctor in this branch on the given date");
+				response.setStatus(HttpStatus.NOT_FOUND.value());
+				return response;
+			}
 
-	        // Keep only booked slots
-	        List<DoctorAvailableSlotDTO> bookedSlots = doctorSlot.getAvailableSlots()
-	                .stream()
-	                .filter(DoctorAvailableSlotDTO::isSlotbooked) // retain only booked ones
-	                .collect(Collectors.toList());
+			// Keep only booked slots
+			List<DoctorAvailableSlotDTO> bookedSlots = doctorSlot.getAvailableSlots().stream()
+					.filter(DoctorAvailableSlotDTO::isSlotbooked) // retain only booked ones
+					.collect(Collectors.toList());
 
-	        if (bookedSlots.isEmpty()) {
-	            // If no booked slots exist, delete the entire slot document
-	            slotRepository.delete(doctorSlot);
-	            response.setSuccess(true);
-	            response.setData(null);
-	            response.setMessage("All unbooked slots deleted successfully (no booked slots found).");
-	            response.setStatus(HttpStatus.OK.value());
-	            return response;
-	        }
+			if (bookedSlots.isEmpty()) {
+				// If no booked slots exist, delete the entire slot document
+				slotRepository.delete(doctorSlot);
+				response.setSuccess(true);
+				response.setData(null);
+				response.setMessage("All unbooked slots deleted successfully (no booked slots found).");
+				response.setStatus(HttpStatus.OK.value());
+				return response;
+			}
 
-	        // Update the document to retain only booked slots
-	        doctorSlot.setAvailableSlots(bookedSlots);
-	        slotRepository.save(doctorSlot);
+			// Update the document to retain only booked slots
+			doctorSlot.setAvailableSlots(bookedSlots);
+			slotRepository.save(doctorSlot);
 
-	        response.setSuccess(true);
-	        response.setData(bookedSlots);
-	        response.setMessage("Unbooked slots deleted successfully, booked slots retained.");
-	        response.setStatus(HttpStatus.OK.value());
-	    } catch (Exception e) {
-	        response.setSuccess(false);
-	        response.setData(null);
-	        response.setMessage("Internal server error occurred: " + e.getMessage());
-	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-	    }
+			response.setSuccess(true);
+			response.setData(bookedSlots);
+			response.setMessage("Unbooked slots deleted successfully, booked slots retained.");
+			response.setStatus(HttpStatus.OK.value());
+		} catch (Exception e) {
+			response.setSuccess(false);
+			response.setData(null);
+			response.setMessage("Internal server error occurred: " + e.getMessage());
+			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+		}
 
-	    return response;
+		return response;
 	}
 
+	public boolean updateSlot(String doctorId, String branchId, String date, String time) {
+		if (doctorId == null || date == null || time == null) {
+			return false;
+		}
+		try {
+			// Fetch doctor slots from repository
+			DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDateAndBranchId(doctorId, date, branchId);
 
-	public boolean updateSlot(String doctorId, String branchId,String date, String time) {
-	    if (doctorId == null || date == null || time == null) {
-	        return false;
-	    }
-	    try {
-	        // Fetch doctor slots from repository
-	        DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDateAndBranchId(doctorId,date,branchId);
+			if (doctorSlots == null || doctorSlots.getAvailableSlots() == null
+					|| doctorSlots.getAvailableSlots().isEmpty()) {
+				return false;
+			}
+			// Find the slot that matches the time
+			Optional<DoctorAvailableSlotDTO> matchingSlotOpt = doctorSlots.getAvailableSlots().stream()
+					.filter(slot -> time.equalsIgnoreCase(slot.getSlot())).findFirst();
+			if (matchingSlotOpt.isPresent()) {
+				DoctorAvailableSlotDTO matchingSlot = matchingSlotOpt.get();
 
-	        if (doctorSlots == null || doctorSlots.getAvailableSlots() == null || doctorSlots.getAvailableSlots().isEmpty()) {	           
-	            return false;
-	        }
-	        // Find the slot that matches the time
-	        Optional<DoctorAvailableSlotDTO> matchingSlotOpt = doctorSlots.getAvailableSlots()
-	                .stream()
-	                .filter(slot -> time.equalsIgnoreCase(slot.getSlot()))
-	                .findFirst();
-	        if (matchingSlotOpt.isPresent()) {
-	            DoctorAvailableSlotDTO matchingSlot = matchingSlotOpt.get();
-	            
-	            // Check if slot already booked
-	            if (matchingSlot.isSlotbooked()) {                
-	                return false;
-	            }
-	            // Mark the slot as booked
-	            matchingSlot.setSlotbooked(true);
-	            slotRepository.save(doctorSlots);	          
-	            return true;
-	        } else {	          
-	            return false;
-	        }
-	    } catch (Exception e) {
-	        return false;
-	    }
+				// Check if slot already booked
+				if (matchingSlot.isSlotbooked()) {
+					return false;
+				}
+				// Mark the slot as booked
+				matchingSlot.setSlotbooked(true);
+				slotRepository.save(doctorSlots);
+				return true;
+			} else {
+				return false;
+			}
+		} catch (Exception e) {
+			return false;
+		}
 	}
 
+	public boolean makingFalseDoctorSlot(String doctorId, String branchId, String date, String time) {
+		if (doctorId == null || date == null || time == null) {
+			return false;
+		}
 
-	public boolean makingFalseDoctorSlot(String doctorId,String branchId, String date, String time) {
-	    if (doctorId == null || date == null || time == null) {
-	        return false;
-	    }
+		try {
+			DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDateAndBranchId(doctorId, date, branchId);
 
-	    try {
-	        DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDateAndBranchId(doctorId, date,branchId);
+			if (doctorSlots == null || doctorSlots.getAvailableSlots() == null
+					|| doctorSlots.getAvailableSlots().isEmpty()) {
+				return false;
+			}
 
-	        if (doctorSlots == null || doctorSlots.getAvailableSlots() == null || doctorSlots.getAvailableSlots().isEmpty()) {
-	            return false;
-	        }
+			Optional<DoctorAvailableSlotDTO> matchingSlot = doctorSlots.getAvailableSlots().stream()
+					.filter(slot -> time.equalsIgnoreCase(slot.getSlot())).findFirst();
 
-	        Optional<DoctorAvailableSlotDTO> matchingSlot = doctorSlots.getAvailableSlots()
-	                .stream()
-	                .filter(slot -> time.equalsIgnoreCase(slot.getSlot()))
-	                .findFirst();
+			if (matchingSlot.isPresent()) {
+				DoctorAvailableSlotDTO slot = matchingSlot.get();
+				if (slot.isSlotbooked()) {
+					slot.setSlotbooked(false);
+					slotRepository.save(doctorSlots);
+				}
+				return true;
+			}
 
-	        if (matchingSlot.isPresent()) {
-	            DoctorAvailableSlotDTO slot = matchingSlot.get();
-	            if (slot.isSlotbooked()) {
-	                slot.setSlotbooked(false);
-	                slotRepository.save(doctorSlots);
-	            }
-	            return true;
-	        }
+			return false;
 
-	        return false;
-
-	    } catch (Exception e) {
-	        return false;
-	    }
+		} catch (Exception e) {
+			return false;
+		}
 	}
 
 	// ---------------------------------------------Slots using
@@ -1406,36 +1401,29 @@ public class DoctorServiceImpl implements DoctorService {
 			List<DoctorSlot> doctorSlotsOnDate = slotRepository.findAllByDoctorIdAndDate(doctorId, dto.getDate());
 
 			// ✅ Prepare slots with availability info
-			List<DoctorAvailableSlotDTO> slotsWithAvailability = dto.getAvailableSlots().stream()
-			        .map(incomingSlot -> {
-			            Optional<DoctorSlot> conflictingSlot = doctorSlotsOnDate.stream()
-			                    .filter(slot -> slot.getAvailableSlots()
-			                            .stream()
-			                            .anyMatch(s -> s.getSlot().equals(incomingSlot.getSlot())))
-			                    .findFirst();
+			List<DoctorAvailableSlotDTO> slotsWithAvailability = dto.getAvailableSlots().stream().map(incomingSlot -> {
+				Optional<DoctorSlot> conflictingSlot = doctorSlotsOnDate.stream().filter(slot -> slot
+						.getAvailableSlots().stream().anyMatch(s -> s.getSlot().equals(incomingSlot.getSlot())))
+						.findFirst();
 
-			            if (conflictingSlot.isPresent()) {
-			                String existingBranchName = conflictingSlot.get().getBranchName();
-			                incomingSlot.setAvailable(false);
-			                incomingSlot.setReason("Already exists in " + existingBranchName + " Branch");
-			            } else {
-			                incomingSlot.setAvailable(true);
-			                incomingSlot.setReason(null);
-			            }
+				if (conflictingSlot.isPresent()) {
+					String existingBranchName = conflictingSlot.get().getBranchName();
+					incomingSlot.setAvailable(false);
+					incomingSlot.setReason("Already exists in " + existingBranchName + " Branch");
+				} else {
+					incomingSlot.setAvailable(true);
+					incomingSlot.setReason(null);
+				}
 
-			            return incomingSlot;
-			        })
-			        // ✅ Sort after mapping
-			        .sorted(Comparator.comparing(slot -> {
-			            DateTimeFormatter formatter = new DateTimeFormatterBuilder()
-			                    .parseCaseInsensitive()
-			                    .appendPattern("h:mm a")
-			                    .toFormatter(Locale.ENGLISH);
+				return incomingSlot;
+			})
+					// ✅ Sort after mapping
+					.sorted(Comparator.comparing(slot -> {
+						DateTimeFormatter formatter = new DateTimeFormatterBuilder().parseCaseInsensitive()
+								.appendPattern("h:mm a").toFormatter(Locale.ENGLISH);
 
-			            return LocalTime.parse(normalizeTime(slot.getSlot()), formatter);
-			        }))
-			        .toList();
-
+						return LocalTime.parse(normalizeTime(slot.getSlot()), formatter);
+					})).toList();
 
 			// ✅ Filter only slots that are available to save in this branch
 			List<DoctorAvailableSlotDTO> slotsToSave = slotsWithAvailability.stream()
@@ -1721,7 +1709,6 @@ public class DoctorServiceImpl implements DoctorService {
 //	    return false;
 //	}
 
-	
 //	@Override
 //	public Response generateDoctorSlots(String doctorId, String branchId, String date, int intervalMinutes,
 //	                                    String openingTime, String closingTime) {
@@ -1797,187 +1784,178 @@ public class DoctorServiceImpl implements DoctorService {
 
 	@Override
 	public Response generateDoctorSlots(String doctorId, String branchId, String date, int intervalMinutes,
-	                                    String openingTime, String closingTime) {
+			String openingTime, String closingTime) {
 
-	    Response response = new Response();
+		Response response = new Response();
 
-	    try {
-	        // ✅ Normalize times
-	        openingTime = normalizeTime(URLDecoder.decode(openingTime, StandardCharsets.UTF_8));
-	        closingTime = normalizeTime(URLDecoder.decode(closingTime, StandardCharsets.UTF_8));
+		try {
+			// ✅ Normalize times
+			openingTime = normalizeTime(URLDecoder.decode(openingTime, StandardCharsets.UTF_8));
+			closingTime = normalizeTime(URLDecoder.decode(closingTime, StandardCharsets.UTF_8));
 
-	        // ✅ Detect local timezone (default to Asia/Kolkata)
-	        ZoneId zoneId = ZoneId.of("Asia/Kolkata"); // <-- change if your clinic is elsewhere
-	        ZonedDateTime nowZoned = ZonedDateTime.now(zoneId);
-	        LocalDate today = nowZoned.toLocalDate();
-	        LocalTime now = nowZoned.toLocalTime();
+			// ✅ Detect local timezone (default to Asia/Kolkata)
+			ZoneId zoneId = ZoneId.of("Asia/Kolkata"); // <-- change if your clinic is elsewhere
+			ZonedDateTime nowZoned = ZonedDateTime.now(zoneId);
+			LocalDate today = nowZoned.toLocalDate();
+			LocalTime now = nowZoned.toLocalTime();
 
-	        // ✅ Generate slots
-	        List<DoctorAvailableSlotDTO> generatedSlots = generateSlots(openingTime, closingTime, intervalMinutes, date, zoneId);
+			// ✅ Generate slots
+			List<DoctorAvailableSlotDTO> generatedSlots = generateSlots(openingTime, closingTime, intervalMinutes, date,
+					zoneId);
 
-	        // ✅ Fetch existing slots
-	        List<DoctorSlot> doctorSlotsOnDate = slotRepository.findAllByDoctorIdAndDate(doctorId, date);
+			// ✅ Fetch existing slots
+			List<DoctorSlot> doctorSlotsOnDate = slotRepository.findAllByDoctorIdAndDate(doctorId, date);
 
-	        // ✅ Flatten existing slots
-	        List<DoctorAvailableSlotDTO> existingSlots = doctorSlotsOnDate.stream()
-	                .flatMap(ds -> ds.getAvailableSlots().stream().map(s -> {
-	                    DoctorAvailableSlotDTO dto = new DoctorAvailableSlotDTO();
-	                    dto.setSlot(normalizeTime(s.getSlot()));
-	                    dto.setAvailable(s.isAvailable());
-	                    dto.setReason(ds.getBranchName());
-	                    return dto;
-	                }))
-	                .toList();
+			// ✅ Flatten existing slots
+			List<DoctorAvailableSlotDTO> existingSlots = doctorSlotsOnDate.stream()
+					.flatMap(ds -> ds.getAvailableSlots().stream().map(s -> {
+						DoctorAvailableSlotDTO dto = new DoctorAvailableSlotDTO();
+						dto.setSlot(normalizeTime(s.getSlot()));
+						dto.setAvailable(s.isAvailable());
+						dto.setReason(ds.getBranchName());
+						return dto;
+					})).toList();
 
-	        DateTimeFormatter formatter = new DateTimeFormatterBuilder()
-	                .parseCaseInsensitive()
-	                .appendPattern("h:mm a")
-	                .toFormatter(Locale.ENGLISH);
+			DateTimeFormatter formatter = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern("h:mm a")
+					.toFormatter(Locale.ENGLISH);
 
-	        LocalDate slotDate = LocalDate.parse(date);
-	        List<DoctorAvailableSlotDTO> finalSlots = new ArrayList<>();
+			LocalDate slotDate = LocalDate.parse(date);
+			List<DoctorAvailableSlotDTO> finalSlots = new ArrayList<>();
 
-	        for (DoctorAvailableSlotDTO slot : generatedSlots) {
-	            LocalTime slotTime = LocalTime.parse(normalizeTime(slot.getSlot()), formatter);
-	            boolean available = slot.isAvailable();
-	            String reason = slot.getReason();
+			for (DoctorAvailableSlotDTO slot : generatedSlots) {
+				LocalTime slotTime = LocalTime.parse(normalizeTime(slot.getSlot()), formatter);
+				boolean available = slot.isAvailable();
+				String reason = slot.getReason();
 
-	            // 🔹 Branch overlap
-	            if (available) {
-	                DoctorAvailableSlotDTO conflictSlot = existingSlots.stream()
-	                        .filter(existing -> isOverlapping(slot.getSlot(), intervalMinutes, List.of(existing), 30))
-	                        .findFirst()
-	                        .orElse(null);
+				// 🔹 Branch overlap
+				if (available) {
+					DoctorAvailableSlotDTO conflictSlot = existingSlots.stream()
+							.filter(existing -> isOverlapping(slot.getSlot(), intervalMinutes, List.of(existing), 30))
+							.findFirst().orElse(null);
 
-	                if (conflictSlot != null) {
-	                    available = false;
-	                    reason = "Already exists in " + conflictSlot.getReason() + " Branch";
-	                }
-	            }
+					if (conflictSlot != null) {
+						available = false;
+						reason = "Already exists in " + conflictSlot.getReason() + " Branch";
+					}
+				}
 
-	            // 🔹 Date/time checks (timezone aware)
-	            if (slotDate.isBefore(today)) {
-	                available = false;
-	                reason = "Date already passed";
-	            } else if (slotDate.equals(today) && slotTime.isBefore(now)) {
-	                available = false;
-	                reason = "Time already passed";
-	            }
+				// 🔹 Date/time checks (timezone aware)
+				if (slotDate.isBefore(today)) {
+					available = false;
+					reason = "Date already passed";
+				} else if (slotDate.equals(today) && slotTime.isBefore(now)) {
+					available = false;
+					reason = "Time already passed";
+				}
 
-	            slot.setAvailable(available);
-	            slot.setReason(reason);
-	            finalSlots.add(slot);
-	        }
+				slot.setAvailable(available);
+				slot.setReason(reason);
+				finalSlots.add(slot);
+			}
 
-	        // ✅ Logging
-	        System.out.println("Final generated slots:");
-	        finalSlots.forEach(s ->
-	                System.out.println(s.getSlot() + " | Available: " + s.isAvailable() + " | Reason: " + s.getReason())
-	        );
+			// ✅ Logging
+			System.out.println("Final generated slots:");
+			finalSlots.forEach(s -> System.out
+					.println(s.getSlot() + " | Available: " + s.isAvailable() + " | Reason: " + s.getReason()));
 
-	        long unavailableCount = finalSlots.stream().filter(s -> !s.isAvailable()).count();
+			long unavailableCount = finalSlots.stream().filter(s -> !s.isAvailable()).count();
 
-	        response.setSuccess(true);
-	        response.setData(finalSlots);
-	        response.setMessage("Slots generated successfully. " + unavailableCount
-	                + " slot(s) are unavailable due to branch conflicts or past time.");
-	        response.setStatus(200);
+			response.setSuccess(true);
+			response.setData(finalSlots);
+			response.setMessage("Slots generated successfully. " + unavailableCount
+					+ " slot(s) are unavailable due to branch conflicts or past time.");
+			response.setStatus(200);
 
-	    } catch (Exception e) {
-	        response.setSuccess(false);
-	        response.setMessage("Error generating slots: " + e.getMessage());
-	        response.setStatus(500);
-	    }
+		} catch (Exception e) {
+			response.setSuccess(false);
+			response.setMessage("Error generating slots: " + e.getMessage());
+			response.setStatus(500);
+		}
 
-	    return response;
+		return response;
 	}
-
 
 	// ---------------- Helper Methods ----------------
 
-	private List<DoctorAvailableSlotDTO> generateSlots(String openingTime, String closingTime, int intervalMinutes, String date, ZoneId zoneId) {
-    DateTimeFormatter formatter = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .appendPattern("h:mm a")
-            .toFormatter(Locale.ENGLISH);
+	private List<DoctorAvailableSlotDTO> generateSlots(String openingTime, String closingTime, int intervalMinutes,
+			String date, ZoneId zoneId) {
+		DateTimeFormatter formatter = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern("h:mm a")
+				.toFormatter(Locale.ENGLISH);
 
-    LocalTime start;
-    LocalTime end;
+		LocalTime start;
+		LocalTime end;
 
-    try {
-        start = LocalTime.parse(openingTime.trim().toUpperCase(), formatter);
-        end = LocalTime.parse(closingTime.trim().toUpperCase(), formatter);
-    } catch (DateTimeParseException e) {
-        throw new RuntimeException("Failed to parse time: " + e.getParsedString(), e);
-    }
+		try {
+			start = LocalTime.parse(openingTime.trim().toUpperCase(), formatter);
+			end = LocalTime.parse(closingTime.trim().toUpperCase(), formatter);
+		} catch (DateTimeParseException e) {
+			throw new RuntimeException("Failed to parse time: " + e.getParsedString(), e);
+		}
 
-    List<DoctorAvailableSlotDTO> slots = new ArrayList<>();
-    LocalDate today = ZonedDateTime.now(zoneId).toLocalDate();
-    LocalTime now = ZonedDateTime.now(zoneId).toLocalTime();
-    LocalDate slotDate = LocalDate.parse(date);
+		List<DoctorAvailableSlotDTO> slots = new ArrayList<>();
+		LocalDate today = ZonedDateTime.now(zoneId).toLocalDate();
+		LocalTime now = ZonedDateTime.now(zoneId).toLocalTime();
+		LocalDate slotDate = LocalDate.parse(date);
 
-    // ❌ If selected date is before today — no slots at all
-    if (slotDate.isBefore(today)) {
-        return slots;
-    }
+		// ❌ If selected date is before today — no slots at all
+		if (slotDate.isBefore(today)) {
+			return slots;
+		}
 
-    while (!start.isAfter(end.minusMinutes(intervalMinutes))) {
+		while (!start.isAfter(end.minusMinutes(intervalMinutes))) {
 
-        // ⏰ Skip past slots for today's date
-        if (slotDate.equals(today) && start.isBefore(now)) {
-            start = start.plusMinutes(intervalMinutes);
-            continue;
-        }
+			// ⏰ Skip past slots for today's date
+			if (slotDate.equals(today) && start.isBefore(now)) {
+				start = start.plusMinutes(intervalMinutes);
+				continue;
+			}
 
-        DoctorAvailableSlotDTO slot = new DoctorAvailableSlotDTO();
-        slot.setSlot(start.format(formatter));
-        slot.setSlotbooked(false);
-        slot.setAvailable(true);
-        slot.setReason(null);
+			DoctorAvailableSlotDTO slot = new DoctorAvailableSlotDTO();
+			slot.setSlot(start.format(formatter));
+			slot.setSlotbooked(false);
+			slot.setAvailable(true);
+			slot.setReason(null);
 
-        slots.add(slot);
-        start = start.plusMinutes(intervalMinutes);
-    }
+			slots.add(slot);
+			start = start.plusMinutes(intervalMinutes);
+		}
 
-    return slots;
-}
-
-
+		return slots;
+	}
 
 	private String normalizeTime(String time) {
-	    time = time.trim().replaceAll("\\s+", " ").toUpperCase();
-	    time = time.replaceAll("(?<=\\d)(AM|PM)", " $1");
-	    return time;
+		time = time.trim().replaceAll("\\s+", " ").toUpperCase();
+		time = time.replaceAll("(?<=\\d)(AM|PM)", " $1");
+		return time;
 	}
 
-	private boolean isOverlapping(String newSlot, int newInterval, List<DoctorAvailableSlotDTO> existingSlots, int existingInterval) {
-	    DateTimeFormatter formatter = new DateTimeFormatterBuilder()
-	            .parseCaseInsensitive()
-	            .appendPattern("h:mm a")
-	            .toFormatter(Locale.ENGLISH);
+	private boolean isOverlapping(String newSlot, int newInterval, List<DoctorAvailableSlotDTO> existingSlots,
+			int existingInterval) {
+		DateTimeFormatter formatter = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern("h:mm a")
+				.toFormatter(Locale.ENGLISH);
 
-	    newSlot = normalizeTime(newSlot);
-	    LocalTime newStart = LocalTime.parse(newSlot, formatter);
-	    LocalTime newEnd = newStart.plusMinutes(newInterval);
+		newSlot = normalizeTime(newSlot);
+		LocalTime newStart = LocalTime.parse(newSlot, formatter);
+		LocalTime newEnd = newStart.plusMinutes(newInterval);
 
-	    for (DoctorAvailableSlotDTO existing : existingSlots) {
-	        if (existing.getSlot() == null) continue;
+		for (DoctorAvailableSlotDTO existing : existingSlots) {
+			if (existing.getSlot() == null)
+				continue;
 
-	        String existingSlotStr = normalizeTime(existing.getSlot());
-	        LocalTime existStart = LocalTime.parse(existingSlotStr, formatter);
+			String existingSlotStr = normalizeTime(existing.getSlot());
+			LocalTime existStart = LocalTime.parse(existingSlotStr, formatter);
 
-	        int effectiveInterval = existingInterval > 0 ? existingInterval : newInterval;
-	        LocalTime existEnd = existStart.plusMinutes(effectiveInterval);
+			int effectiveInterval = existingInterval > 0 ? existingInterval : newInterval;
+			LocalTime existEnd = existStart.plusMinutes(effectiveInterval);
 
-	        boolean overlaps = newStart.isBefore(existEnd) && newEnd.isAfter(existStart);
-	        if (overlaps) {
-	            return true;
-	        }
-	    }
-	    return false;
+			boolean overlaps = newStart.isBefore(existEnd) && newEnd.isAfter(existStart);
+			if (overlaps) {
+				return true;
+			}
+		}
+		return false;
 	}
 
-	
 //	private boolean isOverlapping(String newSlot, int newInterval, List<DoctorAvailableSlotDTO> existingSlots,
 //			int existingInterval) {
 //		DateTimeFormatter formatter = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern("h:mm a")
@@ -2003,25 +1981,77 @@ public class DoctorServiceImpl implements DoctorService {
 
 	// -------------------------Get Slots by Doctors
 	// -------------------------------------------
+//	@Override
+//	public Response getDoctorSlots(String hospitalId, String branchId, String doctorId) {
+//		List<DoctorSlot> slots = slotRepository.findByHospitalIdAndBranchIdAndDoctorId(hospitalId, branchId, doctorId);
+//
+//		Response response = new Response();
+//		if (slots == null || slots.isEmpty()) {
+//			response.setSuccess(true);
+//			response.setData(null);
+//			response.setMessage("Slots Not Found");
+//			response.setStatus(HttpStatus.OK.value());
+//			return response;
+//		}
+//
+//		response.setSuccess(true);
+//		response.setData(slots);
+//		response.setMessage("Slots fetched successfully");
+//		response.setStatus(HttpStatus.OK.value());
+//		return response;
+//	}
 	@Override
 	public Response getDoctorSlots(String hospitalId, String branchId, String doctorId) {
-		List<DoctorSlot> slots = slotRepository.findByHospitalIdAndBranchIdAndDoctorId(hospitalId, branchId, doctorId);
+	    List<DoctorSlot> slots = slotRepository.findByHospitalIdAndBranchIdAndDoctorId(hospitalId, branchId, doctorId);
 
-		Response response = new Response();
-		if (slots == null || slots.isEmpty()) {
-			response.setSuccess(true);
-			response.setData(null);
-			response.setMessage("Slots Not Found");
-			response.setStatus(HttpStatus.OK.value());
-			return response;
-		}
+	    Response response = new Response();
+	    if (slots == null || slots.isEmpty()) {
+	        response.setSuccess(true);
+	        response.setData(null);
+	        response.setMessage("Slots Not Found");
+	        response.setStatus(HttpStatus.OK.value());
+	        return response;
+	    }
 
-		response.setSuccess(true);
-		response.setData(slots);
-		response.setMessage("Slots fetched successfully");
-		response.setStatus(HttpStatus.OK.value());
-		return response;
+	    // 🔹 Time processing
+	    ZoneId zoneId = ZoneId.of("Asia/Kolkata");
+	    LocalDate today = ZonedDateTime.now(zoneId).toLocalDate();
+	    LocalTime now = ZonedDateTime.now(zoneId).toLocalTime();
+
+	    DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+	            .parseCaseInsensitive()
+	            .appendPattern("h:mm a")
+	            .toFormatter(Locale.ENGLISH);
+
+	    // Update availability based on time and booking status
+	    for (DoctorSlot slotEntity : slots) {
+	        LocalDate slotDate = LocalDate.parse(slotEntity.getDate());
+	        for (DoctorAvailableSlotDTO slot : slotEntity.getAvailableSlots()) {
+	            LocalTime slotTime = LocalTime.parse(normalizeTime(slot.getSlot()), formatter);
+
+	            if (slot.isSlotbooked()) {
+	                slot.setAvailable(false);
+	                slot.setReason("Already booked");
+	            } else if (slotDate.isBefore(today)) {
+	                slot.setAvailable(false);
+	                slot.setReason("Date already passed");
+	            } else if (slotDate.equals(today) && slotTime.isBefore(now)) {
+	                slot.setAvailable(false);
+	                slot.setReason("Time already passed");
+	            } else {
+	                slot.setAvailable(true);
+	                slot.setReason(null);
+	            }
+	        }
+	    }
+
+	    response.setSuccess(true);
+	    response.setData(slots);
+	    response.setMessage("Slots fetched successfully");
+	    response.setStatus(HttpStatus.OK.value());
+	    return response;
 	}
+
 
 //	-----------------------------slots end------------------------------------------------------------------
 
@@ -2671,58 +2701,183 @@ public class DoctorServiceImpl implements DoctorService {
 
 		return response;
 	}
+
 	@Override
 	public Response getAllDoctorsWithRespectiveClinic(int consultationType) {
-	    Response response = new Response();
+		Response response = new Response();
 
-	    try {
-	        // 1. Get list of clinics (recommended ones)
-	        ResponseEntity<Response> clinicsResponse = adminServiceClient.firstRecommendedTureClincs();
-	        Object clinicObj = clinicsResponse.getBody().getData();
+		try {
+			// 1. Get list of recommended clinics
+			ResponseEntity<Response> clinicsResponse = adminServiceClient.firstRecommendedTureClincs();
+			Object clinicObj = clinicsResponse.getBody().getData();
 
-	        // Convert to list of ClinicDTO
-	        List<ClinicDTO> clinics = objectMapper.convertValue(clinicObj, new TypeReference<List<ClinicDTO>>() {});
+			// Convert to list of ClinicDTO
+			List<ClinicDTO> clinics = objectMapper.convertValue(clinicObj, new TypeReference<List<ClinicDTO>>() {
+			});
 
-	        // 2. Map each clinic -> doctors belonging to that clinic
-	        List<ClinicWithDoctorsDTO> clinicsWithDoctors = clinics.stream().map(clinicDTO -> {
+			// 2. Map each clinic to its respective doctors filtered by consultation type
+			List<ClinicWithDoctorsDTO> clinicsWithDoctors = clinics.stream().map(clinicDTO -> {
+				// Fetch doctors by hospitalId
+				List<Doctors> doctorsDbData = doctorsRepository.findByHospitalId(clinicDTO.getHospitalId());
 
-	            // Fetch all doctors by hospitalId
-	            List<Doctors> doctorsDbData = doctorsRepository.findByHospitalId(clinicDTO.getHospitalId());
+				// Convert to DTOs and filter based on consultation type
+				List<DoctorsDTO> doctorDTOs = doctorsDbData.stream().map(DoctorMapper::mapDoctorEntityToDoctorDTO)
+						.filter(dto -> {
+							ConsultationTypeDTO consultation = dto.getConsultation();
+							if (consultation == null)
+								return false;
 
-	            // Map to DTOs and filter by consultation type
-	            List<DoctorsDTO> doctorDTOs = doctorsDbData.stream()
-	                    .map(DoctorMapper::mapDoctorEntityToDoctorDTO)
-	                    .filter(dto -> {
-	                        ConsultationTypeDTO consultation = dto.getConsultation();
-	                        if (consultation == null) return false;
+							switch (consultationType) {
+							case 1:
+								return consultation.getInClinic() == 1;
+							case 2:
+								return consultation.getVideoOrOnline() == 2;
+							case 3:
+								return consultation.getServiceAndTreatments() == 3;
+							default:
+								return false;
+							}
+						}).collect(Collectors.toList());
 
-	                        // 1 → InClinic, 2 → VideoOrOnline
-	                        return (consultationType == 1 && consultation.getInClinic() == 1)
-	                                || (consultationType == 2 && consultation.getVideoOrOnline() == 1);
-	                    })
-	                    .collect(Collectors.toList());
+				// Map ClinicDTO to ClinicWithDoctorsDTO
+				ClinicWithDoctorsDTO clDTO = objectMapper.convertValue(clinicDTO, ClinicWithDoctorsDTO.class);
+				clDTO.setDoctors(doctorDTOs);
 
-	            // Map ClinicDTO -> ClinicWithDoctorsDTO
-	            ClinicWithDoctorsDTO clDTO = objectMapper.convertValue(clinicDTO, ClinicWithDoctorsDTO.class);
-	            clDTO.setDoctors(doctorDTOs);
+				return clDTO;
+			}).collect(Collectors.toList());
 
-	            return clDTO;
-	        }).collect(Collectors.toList());
+			// 3. Wrap response
+			response.setSuccess(true);
+			response.setData(clinicsWithDoctors);
+			response.setMessage("Fetched clinics with respective doctors filtered by consultation type");
+			response.setStatus(HttpStatus.OK.value());
 
-	        // 3. Wrap response
-	        response.setSuccess(true);
-	        response.setData(clinicsWithDoctors);
-	        response.setMessage("Fetched clinics with respective doctors filtered by consultation type");
-	        response.setStatus(HttpStatus.OK.value());
+		} catch (Exception e) {
+			response.setSuccess(false);
+			response.setMessage("Error fetching clinics and doctors: " + e.getMessage());
+			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+		}
 
-	    } catch (Exception e) {
-	        response.setSuccess(false);
-	        response.setMessage("Error fetching clinics and doctors: " + e.getMessage());
-	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-	    }
-
-	    return response;
+		return response;
 	}
+
+@Override
+public Response getAllDoctorsWithRespectiveClinic(String hospitalId, int consultationType) {
+    Response response = new Response();
+
+    try {
+        // 1. Get list of recommended clinics
+        ResponseEntity<Response> clinicsResponse = adminServiceClient.firstRecommendedTureClincs();
+        Object clinicObj = clinicsResponse.getBody().getData();
+
+        // Convert to list of ClinicDTO
+        List<ClinicDTO> clinics = objectMapper.convertValue(clinicObj, new TypeReference<List<ClinicDTO>>() {});
+
+        // 2. Filter clinics by hospitalId
+        List<ClinicDTO> filteredClinics = clinics.stream()
+                .filter(clinic -> clinic.getHospitalId().equals(hospitalId))
+                .collect(Collectors.toList());
+
+        // 3. Map each clinic to its respective doctors filtered by consultation type
+        List<ClinicWithDoctorsDTO> clinicsWithDoctors = filteredClinics.stream()
+                .map(clinicDTO -> {
+                    // Fetch doctors by hospitalId
+                    List<Doctors> doctorsDbData = doctorsRepository.findByHospitalId(clinicDTO.getHospitalId());
+
+                    // Convert to DTOs and filter based on consultation type
+                    List<DoctorsDTO> doctorDTOs = doctorsDbData.stream()
+                            .map(DoctorMapper::mapDoctorEntityToDoctorDTO)
+                            .filter(dto -> {
+                                ConsultationTypeDTO consultation = dto.getConsultation();
+                                if (consultation == null) return false;
+
+                                switch (consultationType) {
+                                    case 1:
+                                        return consultation.getInClinic() == 1;
+                                    case 2:
+                                        return consultation.getVideoOrOnline() == 2;
+                                    case 3:
+                                        return consultation.getServiceAndTreatments() == 3;
+                                    default:
+                                        return false;
+                                }
+                            })
+                            .collect(Collectors.toList());
+
+                    // Map ClinicDTO to ClinicWithDoctorsDTO
+                    ClinicWithDoctorsDTO clDTO = objectMapper.convertValue(clinicDTO, ClinicWithDoctorsDTO.class);
+                    clDTO.setDoctors(doctorDTOs);
+
+                    return clDTO;
+                })
+                .collect(Collectors.toList());
+
+        // 4. Wrap response
+        response.setSuccess(true);
+        response.setData(clinicsWithDoctors);
+        response.setMessage("Fetched clinics with respective doctors filtered by hospitalId and consultation type");
+        response.setStatus(HttpStatus.OK.value());
+
+    } catch (Exception e) {
+        response.setSuccess(false);
+        response.setMessage("Error fetching clinics and doctors: " + e.getMessage());
+        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+    }
+
+    return response;
+}
+
+	//	public Response getAllDoctorsWithRespectiveClinic(int consultationType) {
+//	    Response response = new Response();
+//
+//	    try {
+//	        // 1. Get list of clinics (recommended ones)
+//	        ResponseEntity<Response> clinicsResponse = adminServiceClient.firstRecommendedTureClincs();
+//	        Object clinicObj = clinicsResponse.getBody().getData();
+//
+//	        // Convert to list of ClinicDTO
+//	        List<ClinicDTO> clinics = objectMapper.convertValue(clinicObj, new TypeReference<List<ClinicDTO>>() {});
+//
+//	        // 2. Map each clinic -> doctors belonging to that clinic
+//	        List<ClinicWithDoctorsDTO> clinicsWithDoctors = clinics.stream().map(clinicDTO -> {
+//
+//	            // Fetch all doctors by hospitalId
+//	            List<Doctors> doctorsDbData = doctorsRepository.findByHospitalId(clinicDTO.getHospitalId());
+//
+//	            // Map to DTOs and filter by consultation type
+//	            List<DoctorsDTO> doctorDTOs = doctorsDbData.stream()
+//	                    .map(DoctorMapper::mapDoctorEntityToDoctorDTO)
+//	                    .filter(dto -> {
+//	                        ConsultationTypeDTO consultation = dto.getConsultation();
+//	                        if (consultation == null) return false;
+//
+//	                        // 1 → InClinic, 2 → VideoOrOnline
+//	                        return (consultationType == 1 && consultation.getInClinic() == 1)
+//	                                || (consultationType == 2 && consultation.getVideoOrOnline() == 2);
+//	                    })
+//	                    .collect(Collectors.toList());
+//
+//	            // Map ClinicDTO -> ClinicWithDoctorsDTO
+//	            ClinicWithDoctorsDTO clDTO = objectMapper.convertValue(clinicDTO, ClinicWithDoctorsDTO.class);
+//	            clDTO.setDoctors(doctorDTOs);
+//
+//	            return clDTO;
+//	        }).collect(Collectors.toList());
+//
+//	        // 3. Wrap response
+//	        response.setSuccess(true);
+//	        response.setData(clinicsWithDoctors);
+//	        response.setMessage("Fetched clinics with respective doctors filtered by consultation type");
+//	        response.setStatus(HttpStatus.OK.value());
+//
+//	    } catch (Exception e) {
+//	        response.setSuccess(false);
+//	        response.setMessage("Error fetching clinics and doctors: " + e.getMessage());
+//	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+//	    }
+//
+//	    return response;
+//	}
 
 //	// ------------------------------Universal
 //	// Login---------------------------------------------------
@@ -2952,6 +3107,80 @@ public class DoctorServiceImpl implements DoctorService {
 	}
 
 	@Override
+	public Response getRecommendedClinicsAndDoctors(List<String> keyPointsFromUser, int consultationType) {
+		Logger log = LoggerFactory.getLogger(getClass());
+
+		ResponseEntity<Response> responseEntity = adminServiceClient.getHospitalUsingRecommendentaion();
+		Response responseBody = responseEntity.getBody();
+
+		ClinicWithDoctorsDTO bestClinic = null;
+		DoctorsDTO bestDoctor = null;
+		int bestScore = 0;
+
+		if (responseBody != null && responseBody.isSuccess()) {
+			Object rawData = responseBody.getData();
+			List<ClinicWithDoctorsDTO> clinics = new ObjectMapper().convertValue(rawData,
+					new TypeReference<List<ClinicWithDoctorsDTO>>() {
+					});
+
+			for (ClinicWithDoctorsDTO clinic : clinics) {
+				if (clinic.getHospitalId() == null)
+					continue;
+
+				List<Doctors> doctorEntities = doctorsRepository.findByHospitalId(clinic.getHospitalId());
+
+				for (Doctors doctor : doctorEntities) {
+					DoctorsDTO dto = DoctorMapper.mapDoctorEntityToDoctorDTO(doctor);
+
+					// 🧠 Step 1: Filter based on consultation type (numeric)
+					if (!matchesConsultationType(dto.getConsultation(), consultationType)) {
+						continue;
+					}
+
+					// 🧠 Step 2: Calculate doctor score
+					int score = calculateDoctorScore(dto, keyPointsFromUser);
+					log.info("Doctor: {} | Score: {}", dto.getDoctorName(), score);
+
+					if (score > bestScore) {
+						bestScore = score;
+						bestDoctor = dto;
+						bestClinic = clinic;
+					}
+				}
+			}
+		}
+
+		if (bestDoctor != null && bestClinic != null) {
+			bestClinic.setDoctors(List.of(bestDoctor));
+			return Response.builder().success(true).status(HttpStatus.OK.value()).data(bestClinic).message(
+					"Best doctor recommendation based on consultation type, keywords, ratings, and qualifications")
+					.build();
+		}
+
+		return Response.builder().success(false).status(HttpStatus.NOT_FOUND.value())
+				.message("No matching doctor found for the given consultation type").build();
+	}
+
+	/**
+	 * ✅ Helper method to check numeric consultation type
+	 */
+	private boolean matchesConsultationType(ConsultationTypeDTO doctorConsultation, int consultationType) {
+		if (doctorConsultation == null)
+			return false;
+
+		switch (consultationType) {
+		case 1:
+			return doctorConsultation.getInClinic() == 1;
+		case 2:
+			return doctorConsultation.getVideoOrOnline() == 2;
+		case 3:
+			return doctorConsultation.getServiceAndTreatments() == 3;
+		default:
+			return false;
+		}
+	}
+
+	@Override
 	public Response getDoctorsByHospitalIdAndBranchId(String hospitalId, String branchId) {
 		Response response = new Response();
 		try {
@@ -2984,96 +3213,88 @@ public class DoctorServiceImpl implements DoctorService {
 		}
 		return response;
 	}
-	
-	
+
 	public boolean blockingSlot(TempBlockingSlot tempBlockingSlot) {
-	    // Validate input
-	    if (tempBlockingSlot == null ||
-	        tempBlockingSlot.getDoctorId() == null ||
-	        tempBlockingSlot.getServiceDate() == null ||
-	        tempBlockingSlot.getServicetime() == null) {
-	        return false;}
-	    try {
-	        // Fetch doctor slots for that date
-	        DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDateAndBranchId(
-	                tempBlockingSlot.getDoctorId(),
-	                tempBlockingSlot.getServiceDate(),
-	                tempBlockingSlot.getBranchId()
-	        );
-	        if (doctorSlots == null ||
-	            doctorSlots.getAvailableSlots() == null ||
-	            doctorSlots.getAvailableSlots().isEmpty()) {
-	            return false;
-	        }
-	        // Find matching slot by time
-	        Optional<DoctorAvailableSlotDTO> matchingSlotOpt = doctorSlots.getAvailableSlots()
-	                .stream()
-	                .filter(slot -> tempBlockingSlot.getServicetime().equalsIgnoreCase(slot.getSlot()))
-	                .findFirst();
-	        if (matchingSlotOpt.isPresent()) {
-	            DoctorAvailableSlotDTO matchingSlot = matchingSlotOpt.get();
-	            // Check if slot already booked
-	            if (matchingSlot.isSlotbooked()) {
-	                return true;
-	            }else{
-	            // Mark slot as booked
-	            matchingSlot.setSlotbooked(true);
-	            slotRepository.save(doctorSlots);
-	            tempBlockingSlot.setTimeInMillis(System.currentTimeMillis());
-	            slots.add(tempBlockingSlot);
-	            return true;} // Successfully blocked
-	        }else{
-	            return false;} // No matching slot found
-	        }catch(Exception e) {
-	        // Log error for debugging (important for production)
-	        System.err.println("Error while blocking slot: " + e.getMessage());
-	        return false;
-	    } finally {
-	        // Optional cleanup or logging
-	        System.out.println("Slot blocking process completed for doctor: " + tempBlockingSlot.getDoctorId());
-	    }
+		// Validate input
+		if (tempBlockingSlot == null || tempBlockingSlot.getDoctorId() == null
+				|| tempBlockingSlot.getServiceDate() == null || tempBlockingSlot.getServicetime() == null) {
+			return false;
+		}
+		try {
+			// Fetch doctor slots for that date
+			DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDateAndBranchId(tempBlockingSlot.getDoctorId(),
+					tempBlockingSlot.getServiceDate(), tempBlockingSlot.getBranchId());
+			if (doctorSlots == null || doctorSlots.getAvailableSlots() == null
+					|| doctorSlots.getAvailableSlots().isEmpty()) {
+				return false;
+			}
+			// Find matching slot by time
+			Optional<DoctorAvailableSlotDTO> matchingSlotOpt = doctorSlots.getAvailableSlots().stream()
+					.filter(slot -> tempBlockingSlot.getServicetime().equalsIgnoreCase(slot.getSlot())).findFirst();
+			if (matchingSlotOpt.isPresent()) {
+				DoctorAvailableSlotDTO matchingSlot = matchingSlotOpt.get();
+				// Check if slot already booked
+				if (matchingSlot.isSlotbooked()) {
+					return true;
+				} else {
+					// Mark slot as booked
+					matchingSlot.setSlotbooked(true);
+					slotRepository.save(doctorSlots);
+					tempBlockingSlot.setTimeInMillis(System.currentTimeMillis());
+					slots.add(tempBlockingSlot);
+					return true;
+				} // Successfully blocked
+			} else {
+				return false;
+			} // No matching slot found
+		} catch (Exception e) {
+			// Log error for debugging (important for production)
+			System.err.println("Error while blocking slot: " + e.getMessage());
+			return false;
+		} finally {
+			// Optional cleanup or logging
+			System.out.println("Slot blocking process completed for doctor: " + tempBlockingSlot.getDoctorId());
+		}
 	}
-	
-	
+
 	@Scheduled(fixedRate = 30000)
 	public void checkingSlots() {
-	    try {
-	        long currentMillis = System.currentTimeMillis();
-	        // Filter only expired slots (diff >= 90 seconds)
-	        List<TempBlockingSlot> objectsToRemove = new CopyOnWriteArrayList<>();	    	
-	        List<TempBlockingSlot> expiredSlots = slots.stream()
-	                .filter(n -> Math.abs(currentMillis - n.getTimeInMillis()) >= 90000)
-	                .collect(Collectors.toList());
-	        expiredSlots.forEach(n -> {
-	            try {
-	                BookingResponse bkng = null;
-	                try {
-	                    bkng = bookingFeign.blockingSlot(n);
-	                } catch (Exception e) {
-	                    System.err.println("Feign error: " + e.getMessage());
-	                }
-	                if (bkng == null) {
-	                    DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDateAndBranchId(
-	                            n.getDoctorId(), n.getServiceDate(), n.getBranchId()
-	                    );
-	                    if (doctorSlots != null) {
-	                        doctorSlots.getAvailableSlots().stream()
-	                                .filter(slot -> slot.getSlot().equalsIgnoreCase(n.getServicetime()))
-	                                .forEach(slot -> slot.setSlotbooked(false));
+		try {
+			long currentMillis = System.currentTimeMillis();
+			// Filter only expired slots (diff >= 90 seconds)
+			List<TempBlockingSlot> objectsToRemove = new CopyOnWriteArrayList<>();
+			List<TempBlockingSlot> expiredSlots = slots.stream()
+					.filter(n -> Math.abs(currentMillis - n.getTimeInMillis()) >= 90000).collect(Collectors.toList());
+			expiredSlots.forEach(n -> {
+				try {
+					BookingResponse bkng = null;
+					try {
+						bkng = bookingFeign.blockingSlot(n);
+					} catch (Exception e) {
+						System.err.println("Feign error: " + e.getMessage());
+					}
+					if (bkng == null) {
+						DoctorSlot doctorSlots = slotRepository.findByDoctorIdAndDateAndBranchId(n.getDoctorId(),
+								n.getServiceDate(), n.getBranchId());
+						if (doctorSlots != null) {
+							doctorSlots.getAvailableSlots().stream()
+									.filter(slot -> slot.getSlot().equalsIgnoreCase(n.getServicetime()))
+									.forEach(slot -> slot.setSlotbooked(false));
 
-	                        slotRepository.save(doctorSlots);
-	                        objectsToRemove.add(n);
-	                    }
-	                }else {
-	                	   objectsToRemove.add(n);
-	                }
-	            }catch(Exception e) {
-	                System.err.println("Error processing slot: " + e.getMessage());
-	            }});
-	        slots.removeAll(objectsToRemove);
-	    } catch (Exception e) {
-	        System.err.println("Error in checkingSlots: " + e.getMessage());
-	    }
+							slotRepository.save(doctorSlots);
+							objectsToRemove.add(n);
+						}
+					} else {
+						objectsToRemove.add(n);
+					}
+				} catch (Exception e) {
+					System.err.println("Error processing slot: " + e.getMessage());
+				}
+			});
+			slots.removeAll(objectsToRemove);
+		} catch (Exception e) {
+			System.err.println("Error in checkingSlots: " + e.getMessage());
+		}
 	}
 
 }
