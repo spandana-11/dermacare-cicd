@@ -66,6 +66,18 @@ public class BookingController {
     public ResponseEntity<?> getInProgressAppointments(@PathVariable String mobileNumber) {
         return bookingService.getInProgressAppointments(mobileNumber);
     }
+    // 8. Get all appointments by doctor ID
+
+    @GetMapping("/getAllAppointmentsByDoctorId/{doctorId}")
+    public ResponseEntity<?> getAllBookedServicesByDoctorId(@PathVariable String doctorId) {
+        return bookingService.getAllBookedServicesByDoctorId(doctorId);
+    }
+    
+ // 9. ✅ Get upcoming/future appointments (within next 15 days)
+    @GetMapping("/getFutureDoctorappointmentsByDoctorId/{doctorId}")
+    public ResponseEntity<?> getDoctorFutureAppointments(@PathVariable String doctorId) {
+        return bookingService.getDoctorFutureAppointments(doctorId);
+    }
 
 }
 

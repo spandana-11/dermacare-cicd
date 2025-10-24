@@ -864,17 +864,6 @@ public class ServiceImpl implements ServiceInterface{
 	 public ResponseEntity<?> sendImageNotifications(PriceDropAlertDto priceDropAlertDto){
 		 Response res = new Response();
 		 try {
-			 PriceDropAlertEntity enty = priceDropAlertNotifications.findByClinicIdAndBranchId(priceDropAlertDto.getClinicId(), priceDropAlertDto.getBranchId());
-			// System.out.println(enty);
-			 if(enty != null) {
-				 PriceDropAlertEntity en = new ObjectMapper().convertValue(priceDropAlertDto, PriceDropAlertEntity.class);
-				 en.setId(enty.getId());
-				 priceDropAlertNotifications.save(en); 
-				 //System.out.println(en);
-			 }else {
-				 PriceDropAlertEntity en = new ObjectMapper().convertValue(priceDropAlertDto, PriceDropAlertEntity.class);				
-				 priceDropAlertNotifications.save(en); 				 //System.out.println(en);
-			 }
 			 if(priceDropAlertDto.getImage() != null) {
 				 imag = priceDropAlertDto.getImage();
 				// firbaseConfig.uploadBase64Image(imag);
@@ -893,8 +882,10 @@ public class ServiceImpl implements ServiceInterface{
 			 }else {
 				 priceDropAlertDto.getTokens().stream().map(t->{appNotification.sendPushNotificationForImage(t,priceDropAlertDto.getTitle(),priceDropAlertDto.getBody(), "BOOKING",
 						    "BookingScreen","default","");
-				 return t;}).toList(); 
-			 }
+				 return t;}).toList();}
+			 PriceDropAlertEntity en = new ObjectMapper().convertValue(priceDropAlertDto, PriceDropAlertEntity.class);
+			 en.setLocalDateTime(LocalDateTime.now(ZoneId.of("Asia/Kolkata")));
+			 priceDropAlertNotifications.save(en); 
 			 res.setStatus(200);
              res.setMessage("successfully sent notification");
              res.setSuccess(true);
@@ -910,7 +901,7 @@ public class ServiceImpl implements ServiceInterface{
 	 public ResponseEntity<?> priceDropNotifications(String clinicId,String branchId){
 		 Response res = new Response();
 		 try {
-			 PriceDropAlertEntity enty = priceDropAlertNotifications.findByClinicIdAndBranchId(clinicId, branchId);
+			List<PriceDropAlertEntity> enty = priceDropAlertNotifications.findByClinicIdAndBranchId(clinicId, branchId);
 			//System.out.println(enty);
 			 PriceDropAlertDto dto = null;
 			 CustomerOnbordingDTO cdto = null;
@@ -918,8 +909,9 @@ public class ServiceImpl implements ServiceInterface{
 				 dto = new ObjectMapper().convertValue(enty, PriceDropAlertDto.class);				
 				 dto.setTokens(null);
 				 dto.setImage(null);
-				 if(enty.getTokens() != null) {
-				 for(String s : enty.getTokens()){
+				 for(PriceDropAlertEntity obj : enty){
+				 if(obj.getTokens() != null) {
+				 for(String s : obj.getTokens()){
 				 try {
 				 cdto = cllinicFeign.getCustomerByToken(s);
 				// System.out.println(cdto);
@@ -935,12 +927,11 @@ public class ServiceImpl implements ServiceInterface{
 				 List<Map<String,CustomerInfo>> customerData =	dto.getCustomerData();
 				 customerData.add(info);
 				 dto.setCustomerData(customerData);
-				 }
-				 else {
+				 }else{
 				 List<Map<String,CustomerInfo>> customerData = new ArrayList<>();
 				 customerData.add(info);
 				 dto.setCustomerData(customerData);
-				 }}}}}
+				 }}}}}}
 			 res.setData(dto);
 			 res.setMessage("fetched successfully");
 			 res.setStatus(200);
@@ -989,12 +980,12 @@ public class ServiceImpl implements ServiceInterface{
 	 public ResponseEntity<?> updatePriceDropAlert(
 	         String clinicId,
 	        String branchId,
+	        String id,
 	        PriceDropAlertDto dto) {
 
 	     Response res = new Response();
 	     try {
-	         PriceDropAlertEntity existingList = priceDropAlertNotifications.findByClinicIdAndBranchId(clinicId, branchId);
-
+	         PriceDropAlertEntity existingList = priceDropAlertNotifications.findByClinicIdAndBranchIdAndId(clinicId, branchId,id);
 	         if (existingList == null) {
 	             res.setMessage("No Price Drop Alert found for Clinic ID: " + clinicId + " and Branch ID: " + branchId);
 	             res.setStatus(404);
@@ -1012,40 +1003,35 @@ public class ServiceImpl implements ServiceInterface{
 	         res.setMessage("Price drop alert(s) updated successfully");
 	         res.setStatus(200);
 	         res.setSuccess(true);
-
 	     } catch (Exception e) {
 	         res.setMessage(e.getMessage());
 	         res.setStatus(500);
 	         res.setSuccess(false);
 	     }
-
 	     return ResponseEntity.status(res.getStatus()).body(res);
 	 }
 
 	 	 
 	 public ResponseEntity<?> deletePriceDropAlerts(
 	         String clinicId,
-	        String branchId) {
+	        String branchId,
+	        String id) {
 
 	     Response res = new Response();
 	     try {
 	         // Fetch all matching records
-	         PriceDropAlertEntity existingList = priceDropAlertNotifications.findByClinicIdAndBranchId(clinicId, branchId);
-
+	         PriceDropAlertEntity existingList = priceDropAlertNotifications.findByClinicIdAndBranchIdAndId(clinicId, branchId,id);
 	         if (existingList == null) {
 	             res.setMessage("No Price Drop Alerts found for Clinic ID: " + clinicId + " and Branch ID: " + branchId);
 	             res.setStatus(404);
 	             res.setSuccess(false);
 	             return ResponseEntity.status(404).body(res);
 	         }
-
 	         // Delete all matching records
 	         priceDropAlertNotifications.delete(existingList);
-
 	         res.setMessage("Price drop alerts deleted successfully for Clinic ID: " + clinicId + " and Branch ID: " + branchId);
 	         res.setStatus(200);
 	         res.setSuccess(true);	        
-
 	     } catch (Exception e) {
 	         res.setMessage(e.getMessage());
 	         res.setStatus(500);

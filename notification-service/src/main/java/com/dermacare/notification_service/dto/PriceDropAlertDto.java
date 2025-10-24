@@ -1,5 +1,6 @@
 package com.dermacare.notification_service.dto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -20,6 +21,7 @@ public class PriceDropAlertDto {
 	private boolean sendAll;
 	private List<String> tokens;
 	private List<Map<String,CustomerInfo>> customerData;
+	private LocalDateTime localDateTime;
 
 	
 	public boolean getSendAll() {

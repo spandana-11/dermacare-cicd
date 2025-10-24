@@ -19,5 +19,9 @@ public interface BookingService {
     ResponseEntity<?> getConsultationTypeCounts(String clinicId, String doctorId);
 
 	ResponseEntity<?> getInProgressAppointments(String mobileNumber);
+
+	ResponseEntity<?> getAllBookedServicesByDoctorId(String doctorId);
+
+	ResponseEntity<?> getDoctorFutureAppointments(String doctorId);
 }
 

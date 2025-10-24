@@ -12,8 +12,8 @@ public interface NotificationService {
 	public byte[] getImageForNotification();	
 	public ResponseEntity<?> pricedrop(PriceDropAlertDto priceDropAlertDto);
 	public ResponseEntity<?> priceDropNotification(String clinicId, String branchId );
-	public ResponseEntity<?> updatePriceDropNotification(String clinicId, String branchId, PriceDropAlertDto dto );
-	public ResponseEntity<?> deletePriceDropNotification(String clinicId, String branchId);
+	public ResponseEntity<?> updatePriceDropNotification(String clinicId, String branchId,String id, PriceDropAlertDto dto );
+	public ResponseEntity<?> deletePriceDropNotification(String clinicId, String branchId,String id);
 		
 			
 	

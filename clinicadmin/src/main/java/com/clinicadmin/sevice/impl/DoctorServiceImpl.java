@@ -3179,6 +3179,70 @@ public Response getAllDoctorsWithRespectiveClinic(String hospitalId, int consult
 			return false;
 		}
 	}
+	@Override
+	public Response getRecommendedClinicsAndDoctors(String hospitalId, List<String> keyPointsFromUser, int consultationType) {
+	    Logger log = LoggerFactory.getLogger(getClass());
+
+	    ResponseEntity<Response> responseEntity = adminServiceClient.getHospitalUsingRecommendentaion();
+	    Response responseBody = responseEntity.getBody();
+
+	    ClinicWithDoctorsDTO bestClinic = null;
+	    DoctorsDTO bestDoctor = null;
+	    int bestScore = 0;
+
+	    if (responseBody != null && responseBody.isSuccess()) {
+	        Object rawData = responseBody.getData();
+	        List<ClinicWithDoctorsDTO> clinics = new ObjectMapper().convertValue(
+	                rawData,
+	                new TypeReference<List<ClinicWithDoctorsDTO>>() {}
+	        );
+
+	        // 🔍 Filter only clinics that match the given hospitalId
+	        for (ClinicWithDoctorsDTO clinic : clinics) {
+	            if (clinic.getHospitalId() == null || !clinic.getHospitalId().equals(hospitalId))
+	                continue;
+
+	            // Fetch doctors only for this hospital
+	            List<Doctors> doctorEntities = doctorsRepository.findByHospitalId(hospitalId);
+
+	            for (Doctors doctor : doctorEntities) {
+	                DoctorsDTO dto = DoctorMapper.mapDoctorEntityToDoctorDTO(doctor);
+
+	                // ✅ Step 1: Filter by consultation type
+	                if (!matchesConsultationType(dto.getConsultation(), consultationType)) {
+	                    continue;
+	                }
+
+	                // ✅ Step 2: Score based on key points
+	                int score = calculateDoctorScore(dto, keyPointsFromUser);
+	                log.info("Doctor: {} | Score: {}", dto.getDoctorName(), score);
+
+	                if (score > bestScore) {
+	                    bestScore = score;
+	                    bestDoctor = dto;
+	                    bestClinic = clinic;
+	                }
+	            }
+	        }
+	    }
+
+	    if (bestDoctor != null && bestClinic != null) {
+	        bestClinic.setDoctors(List.of(bestDoctor));
+	        return Response.builder()
+	                .success(true)
+	                .status(HttpStatus.OK.value())
+	                .data(bestClinic)
+	                .message("Best doctor recommendation for given hospital, consultation type, and keywords.")
+	                .build();
+	    }
+
+	    return Response.builder()
+	            .success(false)
+	            .status(HttpStatus.NOT_FOUND.value())
+	            .message("No matching doctor found for the given hospital and consultation type.")
+	            .build();
+	}
+
 
 	@Override
 	public Response getDoctorsByHospitalIdAndBranchId(String hospitalId, String branchId) {
