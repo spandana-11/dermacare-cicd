@@ -1,6 +1,7 @@
 package com.dermaCare.customerService.dto;
 
 import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -66,4 +67,7 @@ public class BookingResponse {
 	private Integer takenSittings;
 	private Integer currentSitting;
 	private String followupDate;
+	
+	// ✅ Add treatments info
+    private TreatmentResponseDTO treatments;
 }
