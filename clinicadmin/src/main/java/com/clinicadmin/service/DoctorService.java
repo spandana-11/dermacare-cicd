@@ -106,4 +106,6 @@ public interface DoctorService {
 
 	Response getAllDoctorsWithRespectiveClinic(String hospitalId, int consultationType);
 
+	Response getRecommendedClinicsAndDoctors(String hospitalId, List<String> keyPointsFromUser, int consultationType);
+
 }

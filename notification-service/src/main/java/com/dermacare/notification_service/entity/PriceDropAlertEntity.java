@@ -1,5 +1,6 @@
 package com.dermacare.notification_service.entity;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -24,5 +25,7 @@ public class PriceDropAlertEntity {
 	private List<String> tokens;
 	private String customerName;
 	private String mobileNumber;
+	private LocalDateTime localDateTime;
+
 
 }

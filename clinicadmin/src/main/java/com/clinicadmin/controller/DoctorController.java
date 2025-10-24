@@ -493,6 +493,21 @@ public class DoctorController {
 		     // Return proper HTTP response
 		     return ResponseEntity.status(response.getStatus()).body(response);
 		 }
+		 @GetMapping("/getBestDoctorByKeyWords/{hospitalId}/{keyPoints}/{consultationType}")
+		 public ResponseEntity<Response> getRecommendedClinicsAndDoctors(
+		         @PathVariable String hospitalId,
+		         @PathVariable String keyPoints,
+		         @PathVariable int consultationType) {
+
+		     // Convert comma-separated key points to List<String>
+		     List<String> keyPointList = Arrays.stream(keyPoints.split(","))
+		             .map(String::trim)
+		             .collect(Collectors.toList());
+
+		     Response response = doctorService.getRecommendedClinicsAndDoctors(hospitalId, keyPointList, consultationType);
+		     return ResponseEntity.status(response.getStatus()).body(response);
+		 }
+
 
 		 @PostMapping("/block/slot")
 		    public boolean blockSlot(@RequestBody TempBlockingSlot tempBlockingSlot) {

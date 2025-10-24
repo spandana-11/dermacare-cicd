@@ -16,6 +16,7 @@ import com.AdminService.dto.LabTestDTO;
 import com.AdminService.dto.ProbableDiagnosisDTO;
 import com.AdminService.dto.SubServicesDto;
 import com.AdminService.dto.TreatmentDTO;
+import com.AdminService.dto.UpdateSlotRequestDTO;
 import com.AdminService.util.Response;
 import com.AdminService.util.ResponseStructure;
 
@@ -148,4 +149,67 @@ public interface ClinicAdminFeign {
     ResponseEntity<Response> getDoctorSlots(@PathVariable("hospitalId") String hospitalId,
                                             @PathVariable("branchId") String branchId,
                                             @PathVariable("doctorId") String doctorId);
+    
+    
+    @PutMapping("/clinic-admin/doctor/update-slot")
+	public ResponseEntity<Response> updateDoctorSlot(@RequestBody UpdateSlotRequestDTO request) ;
+	
+    
+    @GetMapping("/clinic-admin/getDoctorslots/{hospitalId}/{doctorId}")
+	public ResponseEntity<Response> getDoctorSlot(@PathVariable String hospitalId, @PathVariable String doctorId);
+    
+    @DeleteMapping("/clinic-admin/doctorId/{doctorId}/branchId/{branchId}/date/{date}/slot/{slot}")
+	public  ResponseEntity<Response>deleteDoctorSlot(
+	        @PathVariable String doctorId,
+	        @PathVariable String branchId,
+	        @PathVariable String date,
+	        @PathVariable String slot);
+    
+    
+    @DeleteMapping("/clinic-admin/doctorId/{doctorId}/{date}/{slot}/slots")
+	public Response deleteDoctorSlot(@PathVariable String doctorId, @PathVariable String date,
+			@PathVariable String slot);
+    
+    @DeleteMapping("/clinic-admin/delete-by-date/{doctorId}/{date}")
+	public ResponseEntity<Response> deleteDoctorSlotsByDate(@PathVariable String doctorId, @PathVariable String date);
+    
+    
+    @DeleteMapping("/clinic-admin/delete-by-date/{doctorId}/{branchId}/{date}")
+	public ResponseEntity<Response> deleteDoctorSlotsByDate(
+	        @PathVariable String doctorId,
+	        @PathVariable String branchId,
+	        @PathVariable String date);
+    
+    
+    
+    @PutMapping("/clinic-admin/updateDoctorSlotWhileBooking/{doctorId}/{branchId}/{date}/{time}")
+	public boolean updateDoctorSlotWhileBooking(@PathVariable String doctorId,@PathVariable String branchId, @PathVariable String date,
+			@PathVariable String time);
+    
+    
+    
+    @PutMapping("/clinic-admin/makingFalseDoctorSlot/{doctorId}/{branchId}/{date}/{time}")
+	public boolean makingFalseDoctorSlot(@PathVariable String doctorId,@PathVariable String branchId, @PathVariable String date,
+			@PathVariable String time);
+    
+    
+    @GetMapping("/clinic-admin/generateDoctorSlots/{doctorId}/{branchId}/{date}/{intervalMinutes}/{openingTime}/{closingTime}")
+	public Response generateSlots(
+	        @PathVariable String doctorId,
+	        @PathVariable String branchId,
+	        @PathVariable String date,
+	        @PathVariable int intervalMinutes,
+	        @PathVariable String openingTime,
+	        @PathVariable String closingTime
+	);
+    
+    
+    @GetMapping("/clinic-admin/getDoctorSlots/{hospitalId}/{branchId}/{doctorId}")
+	public ResponseEntity<Response> getDoctorSlot(
+	        @PathVariable String hospitalId, 
+	        @PathVariable String branchId,
+	        @PathVariable String doctorId);
+    
+    
+    
 }

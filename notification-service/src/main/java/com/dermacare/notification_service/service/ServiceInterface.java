@@ -39,10 +39,12 @@ public interface ServiceInterface {
     public ResponseEntity<?> updatePriceDropAlert(
 	         String clinicId,
 	        String branchId,
+	        String id,
 	        PriceDropAlertDto dto) ;
     
     public ResponseEntity<?> deletePriceDropAlerts(
 	         String clinicId,
-	        String branchId);
+	        String branchId,
+	        String id);
     	
 }

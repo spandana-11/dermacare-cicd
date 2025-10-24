@@ -1,5 +1,7 @@
 package com.dermacare.doctorservice.feignclient;
 
+import java.util.List;
+
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,5 +46,10 @@ public interface  BookingFeignClient {
 	
 	@GetMapping("/api/v1/getDoctorFutureAppointments/{doctorId}")
 	public ResponseEntity<?> getDoctorFutureAppointments(@PathVariable String doctorId);
+	
+	@GetMapping("/api/v1/getAllBookedServices/{doctorId}")
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingByDoctorId(@PathVariable String doctorId);
+	
+	
 	
 }

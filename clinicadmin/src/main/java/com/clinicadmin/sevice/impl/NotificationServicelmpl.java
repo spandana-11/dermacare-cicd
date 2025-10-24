@@ -93,10 +93,10 @@ public class NotificationServicelmpl implements NotificationService {
 	}
 	
 	
-	public ResponseEntity<?> updatePriceDropNotification(String clinicId, String branchId, PriceDropAlertDto dto ){
+	public ResponseEntity<?> updatePriceDropNotification(String clinicId, String branchId,String id, PriceDropAlertDto dto ){
 		Response response = new Response();		
 		try {
-			return notificationFeign.updatePriceDropNotification(clinicId, branchId,dto);
+			return notificationFeign.updatePriceDropNotification(clinicId, branchId,id,dto);
 		}catch(Exception e) {
 			response.setSuccess(false);	  	       
   	        response.setMessage(e.getMessage());
@@ -107,10 +107,10 @@ public class NotificationServicelmpl implements NotificationService {
 	}
 	
 	
-	public ResponseEntity<?> deletePriceDropNotification(String clinicId, String branchId){
+	public ResponseEntity<?> deletePriceDropNotification(String clinicId, String branchId,String id){
 		Response response = new Response();		
 		try {
-			return notificationFeign.deletePriceDropNotification(clinicId, branchId);
+			return notificationFeign.deletePriceDropNotification(clinicId, branchId,id);
 		}catch(Exception e) {
 			response.setSuccess(false);	  	       
   	        response.setMessage(e.getMessage());

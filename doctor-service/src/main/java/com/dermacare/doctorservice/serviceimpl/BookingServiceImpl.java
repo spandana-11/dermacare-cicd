@@ -76,6 +76,23 @@ public class BookingServiceImpl implements BookingService {
             return ResponseEntity.status(ex.status()).body(ex.contentUTF8());
         }
     }
+    
+    @Override
+    public ResponseEntity<?> getAllBookedServicesByDoctorId(String doctorId) {
+        try {
+            return bookingFeignClient.getBookingByDoctorId(doctorId);
+        } catch (FeignException ex) {
+            return ResponseEntity.status(ex.status()).body(ex.contentUTF8());
+        }
+    }
+    @Override
+    public ResponseEntity<?> getDoctorFutureAppointments(String doctorId) {
+        try {
+            return bookingFeignClient.getDoctorFutureAppointments(doctorId);
+        } catch (FeignException ex) {
+            return ResponseEntity.status(ex.status()).body(ex.contentUTF8());
+        }
+    }
 
 }
 

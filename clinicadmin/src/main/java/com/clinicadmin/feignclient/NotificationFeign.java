@@ -26,9 +26,9 @@ public interface NotificationFeign {
 	
 	@PutMapping("/api/notificationservice/update/priceDropNotification/{clinicId}/{branchId}")
 	public ResponseEntity<?> updatePriceDropNotification(@PathVariable String clinicId,@PathVariable String branchId,
-			@RequestBody  PriceDropAlertDto dto );
+			@PathVariable String id,@RequestBody PriceDropAlertDto dto );
 	
 	@DeleteMapping("/api/notificationservice/delete/priceDropNotification/{clinicId}/{branchId}")
-	public ResponseEntity<?> deletePriceDropNotification(@PathVariable String clinicId,@PathVariable String branchId );
+	public ResponseEntity<?> deletePriceDropNotification(@PathVariable String clinicId,@PathVariable String branchId,@PathVariable String id);
 		
 }
