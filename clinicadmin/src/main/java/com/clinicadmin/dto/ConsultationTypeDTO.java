@@ -8,9 +8,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ConsultationTypeDTO {
-	private int serviceAndTreatments;
 	private int inClinic;
 	private int videoOrOnline;
+	private int serviceAndTreatments;
 	
 
 }

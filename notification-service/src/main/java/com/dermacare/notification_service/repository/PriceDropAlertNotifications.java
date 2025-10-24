@@ -7,6 +7,6 @@ import com.dermacare.notification_service.entity.PriceDropAlertEntity;
 
 public interface PriceDropAlertNotifications extends MongoRepository<PriceDropAlertEntity, String> {
 
-	List<PriceDropAlertEntity> findByClinicIdAndBranchId(String cid,String bid);
+	PriceDropAlertEntity findByClinicIdAndBranchId(String cid,String bid);
 	
 }

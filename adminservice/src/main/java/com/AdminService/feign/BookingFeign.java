@@ -13,12 +13,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-import com.AdminService.dto.BookingRequest;
+import com.AdminService.dto.BookingRequset;
 import com.AdminService.dto.BookingResponse;
 import com.AdminService.dto.BookingResponseDTO;
 import com.AdminService.util.Response;
 import com.AdminService.util.ResponseStructure;
-
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 @FeignClient(value = "bookingservice")
@@ -27,7 +26,7 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 public interface BookingFeign {
 	
 	@PostMapping("/api/v1//bookService")
-	public  ResponseEntity<?> bookService(@RequestBody BookingRequest req);
+	public  ResponseEntity<?> bookService(@RequestBody BookingRequset req);
 	
 	@GetMapping("/api/v1/getAllBookedServices")
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getAllBookedService();

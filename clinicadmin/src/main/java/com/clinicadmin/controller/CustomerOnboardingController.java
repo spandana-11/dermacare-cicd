@@ -11,12 +11,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.clinicadmin.dto.CustomerLoginDTO;
 import com.clinicadmin.dto.CustomerOnbordingDTO;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.service.CustomerOnboardingService;
-
 import jakarta.validation.Valid;
 
 @RestController
@@ -105,4 +103,11 @@ public class CustomerOnboardingController {
 //		Response response = customerOnboardingService.resetPassword(username, oldPassword, newPassword);
 //		return ResponseEntity.status(response.getStatus()).body(response);
 //	}
+    
+    
+    @GetMapping("/gcmToken/{token}")
+    public CustomerOnbordingDTO getCustomerByToken(
+ 			 @PathVariable String token ){
+ 	   return customerOnboardingService.getCustomerByToken(token);
+  }
 }

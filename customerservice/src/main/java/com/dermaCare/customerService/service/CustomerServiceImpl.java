@@ -1379,6 +1379,76 @@ public Response getDoctorsByHospitalBranchAndSubService( String hospitalId,
 	}
 	return response;
 }
+@Override
+public Response getDoctorsByHospitalBranchAndSubService(
+        String hospitalId,
+        String branchId,
+        String subServiceId,
+        int consultationType) throws JsonProcessingException {
+
+    Response response = new Response();
+
+    try {
+        // 1. Get hospital/clinic info
+        Response hospitalResponse = adminFeign.getClinicById(hospitalId);
+
+        if (hospitalResponse.getData() != null) {
+
+            // 2. Get doctors by hospital, branch, and subService
+            ResponseEntity<Response> doctorsResponse =
+                    clinicAdminFeign.getDoctorsByHospitalBranchAndSubService(hospitalId, branchId, subServiceId);
+
+            Object obj = doctorsResponse.getBody().getData();
+
+            // 3. Convert to list of DoctorsDTO
+            List<DoctorsDTO> doctors = new ObjectMapper().convertValue(obj, new TypeReference<List<DoctorsDTO>>() {});
+
+            if (doctors != null && !doctors.isEmpty()) {
+
+                // 4. Filter by consultation type
+                List<DoctorsDTO> filteredDoctors = doctors.stream()
+                        .filter(dto -> {
+                            if (dto.getConsultation() == null) return false;
+                            switch (consultationType) {
+                                case 1:
+                                    return dto.getConsultation().getInClinic() == 1;
+                                case 2:
+                                    return dto.getConsultation().getVideoOrOnline() == 2;
+                                case 3:
+                                    return dto.getConsultation().getServiceAndTreatments() == 3;
+                                default:
+                                    return false;
+                            }
+                        })
+                        .collect(Collectors.toList());
+
+                ClinicDTO hospital = new ObjectMapper().convertValue(hospitalResponse.getData(), ClinicDTO.class);
+
+                ClinicAndDoctorsResponse combinedData = new ClinicAndDoctorsResponse(hospital, filteredDoctors);
+
+                response.setSuccess(true);
+                response.setData(combinedData);
+                response.setMessage("Hospital and doctors fetched successfully");
+                response.setStatus(HttpStatus.OK.value());
+
+            } else {
+                response.setData(doctorsResponse.getBody());
+                response.setStatus(doctorsResponse.getBody().getStatus());
+            }
+
+        } else {
+            response.setData(hospitalResponse);
+            response.setStatus(hospitalResponse.getStatus());
+        }
+
+    } catch (FeignException e) {
+        response.setSuccess(false);
+        response.setMessage(ExtractFeignMessage.clearMessage(e));
+        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+    }
+
+    return response;
+}
 
 
 public ResponseEntity<Response> getRecommendedClinicsAndOnDoctors(String keyPoints){

@@ -1,15 +1,17 @@
 package com.AdminService.dto;
 
 import java.util.List;
-
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class BookingRequest {
-
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class BookingRequset {
+	
 	private String bookingId;
 	private String bookingFor;
 	private String relation;
@@ -22,8 +24,8 @@ public class BookingRequest {
 	private String age;
 	private String gender;
 	private String mobileNumber;
-	private String customerId;
 	private String consultationExpiration;
+	private String customerId;
 	private String customerDeviceId;
 	private String problem;
 	private String symptomsDuration;
@@ -40,6 +42,7 @@ public class BookingRequest {
 	private String subServiceName;
 	private String serviceDate;
 	private String servicetime;
+	private String followupDate;
 	private String consultationType;
 	private double consultationFee;
 	private double totalFee;
@@ -48,5 +51,6 @@ public class BookingRequest {
 	private String consentFormPdf;
 	private String doctorRefCode;
 	private String bookedAt;
+	private String followupStatus;
 
 }

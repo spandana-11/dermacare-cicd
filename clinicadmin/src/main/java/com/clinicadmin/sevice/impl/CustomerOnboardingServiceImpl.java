@@ -3,11 +3,9 @@ package com.clinicadmin.sevice.impl;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import com.clinicadmin.dto.CustomerLoginDTO;
 import com.clinicadmin.dto.CustomerOnbordingDTO;
 import com.clinicadmin.dto.Response;
@@ -17,6 +15,7 @@ import com.clinicadmin.repository.CustomerCredentialsRepository;
 import com.clinicadmin.repository.CustomerOnboardingRepository;
 import com.clinicadmin.service.CustomerOnboardingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.FeignException;
 
 @Service
 public class CustomerOnboardingServiceImpl implements CustomerOnboardingService {
@@ -478,4 +477,18 @@ public class CustomerOnboardingServiceImpl implements CustomerOnboardingService 
 
 		return dto;
 	}
+	
+	
+	public CustomerOnbordingDTO getCustomerByToken(String token){
+		try {	
+			CustomerOnbording cstmr = onboardingRepository.findByDeviceId(token);
+			if(cstmr != null) {
+		    CustomerOnbordingDTO cusmrdto = new ObjectMapper().convertValue(cstmr, CustomerOnbordingDTO.class);
+			return cusmrdto;}
+			else {
+				return null;
+			}
+		}catch(FeignException e) {	
+			return null;	
+		}}
 }

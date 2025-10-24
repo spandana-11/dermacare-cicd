@@ -11,8 +11,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +22,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import com.dermacare.notification_service.config.FirbaseConfig;
 import com.dermacare.notification_service.dto.BookingResponse;
-import com.dermacare.notification_service.dto.CustomerDTO;
+import com.dermacare.notification_service.dto.CustomerInfo;
+import com.dermacare.notification_service.dto.CustomerOnbordingDTO;
 import com.dermacare.notification_service.dto.DoctorSaveDetails;
 import com.dermacare.notification_service.dto.Medicines;
 import com.dermacare.notification_service.dto.NotificationDTO;
@@ -35,7 +38,6 @@ import com.dermacare.notification_service.entity.NotificationEntity;
 import com.dermacare.notification_service.entity.PriceDropAlertEntity;
 import com.dermacare.notification_service.feign.BookServiceFeign;
 import com.dermacare.notification_service.feign.CllinicFeign;
-import com.dermacare.notification_service.feign.CustomerServiceFeignClient;
 import com.dermacare.notification_service.feign.DoctorFeign;
 import com.dermacare.notification_service.notificationFactory.SendAppNotification;
 import com.dermacare.notification_service.repository.NotificationRepository;
@@ -65,9 +67,6 @@ public class ServiceImpl implements ServiceInterface{
 		  
     @Autowired
     private DoctorFeign doctorFeign;
-    
-    @Autowired
-    private CustomerServiceFeignClient customerServiceFeignClient;
     
     @Autowired
     private PriceDropAlertNotifications priceDropAlertNotifications;
@@ -865,6 +864,17 @@ public class ServiceImpl implements ServiceInterface{
 	 public ResponseEntity<?> sendImageNotifications(PriceDropAlertDto priceDropAlertDto){
 		 Response res = new Response();
 		 try {
+			 PriceDropAlertEntity enty = priceDropAlertNotifications.findByClinicIdAndBranchId(priceDropAlertDto.getClinicId(), priceDropAlertDto.getBranchId());
+			// System.out.println(enty);
+			 if(enty != null) {
+				 PriceDropAlertEntity en = new ObjectMapper().convertValue(priceDropAlertDto, PriceDropAlertEntity.class);
+				 en.setId(enty.getId());
+				 priceDropAlertNotifications.save(en); 
+				 //System.out.println(en);
+			 }else {
+				 PriceDropAlertEntity en = new ObjectMapper().convertValue(priceDropAlertDto, PriceDropAlertEntity.class);				
+				 priceDropAlertNotifications.save(en); 				 //System.out.println(en);
+			 }
 			 if(priceDropAlertDto.getImage() != null) {
 				 imag = priceDropAlertDto.getImage();
 				// firbaseConfig.uploadBase64Image(imag);
@@ -872,20 +882,19 @@ public class ServiceImpl implements ServiceInterface{
 				 imag = "";
 			 }			 
 			 if(priceDropAlertDto.getSendAll()) {
-			 List<CustomerDTO> cusmr =  new ObjectMapper().convertValue(customerServiceFeignClient.getAllCustomers().getBody().getData(), new TypeReference< List<CustomerDTO>>() {});			 
-			 cusmr.stream().map(n->{
+			 List<CustomerOnbordingDTO> cusmr =  new ObjectMapper().convertValue(cllinicFeign.getAllCustomers().getBody().getData(), new TypeReference< List<CustomerOnbordingDTO>>() {});			 
+			// System.out.println(cusmr);
+			 cusmr.stream().map(n->{  if(n.getDeviceId() != null) {
 			 appNotification.sendPushNotificationForImage(n.getDeviceId(),priceDropAlertDto.getTitle(),priceDropAlertDto.getBody(), "BOOKING",
-					    "BookingScreen","default","https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?auto=format&fit=crop&w=200&h=300\r\n"
-					    		+ "");
+					    "BookingScreen","default","");
+			// System.out.println("notification sent successfully");
+			 }
 			 return n;}).toList();
 			 }else {
 				 priceDropAlertDto.getTokens().stream().map(t->{appNotification.sendPushNotificationForImage(t,priceDropAlertDto.getTitle(),priceDropAlertDto.getBody(), "BOOKING",
-						    "BookingScreen","default","https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?auto=format&fit=crop&w=200&h=300\r\n"
-						    		+ "");
+						    "BookingScreen","default","");
 				 return t;}).toList(); 
 			 }
-			 PriceDropAlertEntity enty = new ObjectMapper().convertValue(priceDropAlertDto, PriceDropAlertEntity.class);
-			 priceDropAlertNotifications.save(enty);
 			 res.setStatus(200);
              res.setMessage("successfully sent notification");
              res.setSuccess(true);
@@ -901,23 +910,38 @@ public class ServiceImpl implements ServiceInterface{
 	 public ResponseEntity<?> priceDropNotifications(String clinicId,String branchId){
 		 Response res = new Response();
 		 try {
-			 List<PriceDropAlertEntity> enty = priceDropAlertNotifications.findByClinicIdAndBranchId(clinicId, branchId);
-			 List<PriceDropAlertDto> dtoList = new ArrayList<>();
-			 CustomerDTO cdto = null;
-			 for(PriceDropAlertEntity p : enty) {
-				 if(p != null) {
-				 for(String s : p.getTokens()){
-				 PriceDropAlertDto d = new ObjectMapper().convertValue(p, PriceDropAlertDto.class);					
+			 PriceDropAlertEntity enty = priceDropAlertNotifications.findByClinicIdAndBranchId(clinicId, branchId);
+			//System.out.println(enty);
+			 PriceDropAlertDto dto = null;
+			 CustomerOnbordingDTO cdto = null;
+				 if(enty != null) {
+				 dto = new ObjectMapper().convertValue(enty, PriceDropAlertDto.class);				
+				 dto.setTokens(null);
+				 dto.setImage(null);
+				 if(enty.getTokens() != null) {
+				 for(String s : enty.getTokens()){
 				 try {
-				 cdto = customerServiceFeignClient.getCustomerByToken(s);
-				 }catch(Exception e) {}
+				 cdto = cllinicFeign.getCustomerByToken(s);
+				// System.out.println(cdto);
+				 }catch(Exception e) {}				
 				 if(cdto != null) {	
-				 d.setTokens(null);
-				 d.setCustomerName(cdto.getFullName());
-				 d.setMobileNumber(cdto.getMobileNumber());}
-				 dtoList.add(d);
-				 }}}
-			 res.setData(dtoList);
+				 Map<String,CustomerInfo> info = new HashMap<>();
+				 CustomerInfo cInfo = new CustomerInfo();
+				 cInfo.setMobileNumber(cdto.getMobileNumber());
+				 cInfo.setCustomerId(cdto.getCustomerId());
+				 cInfo.setPatientId(cdto.getPatientId());
+				 info.put(cdto.getFullName(), cInfo);
+				 if(dto.getCustomerData() != null) {
+				 List<Map<String,CustomerInfo>> customerData =	dto.getCustomerData();
+				 customerData.add(info);
+				 dto.setCustomerData(customerData);
+				 }
+				 else {
+				 List<Map<String,CustomerInfo>> customerData = new ArrayList<>();
+				 customerData.add(info);
+				 dto.setCustomerData(customerData);
+				 }}}}}
+			 res.setData(dto);
 			 res.setMessage("fetched successfully");
 			 res.setStatus(200);
 			 res.setSuccess(true);
@@ -933,11 +957,11 @@ public class ServiceImpl implements ServiceInterface{
 	 @Scheduled(cron = "0 30 8 * * ?")
 	 public void sendBirthdayWishes() {
 		 try {
-			 List<CustomerDTO> cusmr =  new ObjectMapper().convertValue(customerServiceFeignClient.getAllCustomers().getBody().getData(), new TypeReference< List<CustomerDTO>>() {});
+			 List<CustomerOnbordingDTO> cusmr =  new ObjectMapper().convertValue(cllinicFeign.getAllCustomers().getBody().getData(), new TypeReference< List<CustomerOnbordingDTO>>() {});
 			 //System.out.println(cusmr);
 			 cusmr.stream().map(n->{ 
 				 if(n.getDateOfBirth() != null) {
-				 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+				 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 			        LocalDate dob = LocalDate.parse(n.getDateOfBirth(), formatter);	
 			        //System.out.println(dob);
 			        LocalDate today = LocalDate.now();	
@@ -945,11 +969,11 @@ public class ServiceImpl implements ServiceInterface{
 			        MonthDay customerdobMonthDay = MonthDay.from(dob);
 			        //System.out.println(customerdobMonthDay);
 			        MonthDay todayMonthDay = MonthDay.from(today);	
-			       // System.out.println(customerdobMonthDay);
+			        //System.out.println(customerdobMonthDay);
 			        if (customerdobMonthDay.equals(todayMonthDay)) {
 			        	//System.out.println(n);
 			        	if(n.getDeviceId() != null) {
-			        		//System.out.println(n.getDeviceId());
+			        		System.out.println(n.getDeviceId());
 			 appNotification.sendPushNotification(n.getDeviceId(),"🎉 Happy Birthday, " + n.getFullName() + "!","Your health and happiness are our priority. Have a great birthday!", "birthdayGreeting",
 					    "bithdayGreetingsScreen","default");
 			        	//System.out.println("notifications sent successfully");
@@ -959,6 +983,76 @@ public class ServiceImpl implements ServiceInterface{
 			 System.out.println(e.getMessage());
 		 }
 		 
-	 }	 
+	 }	
+	 
+	 	
+	 public ResponseEntity<?> updatePriceDropAlert(
+	         String clinicId,
+	        String branchId,
+	        PriceDropAlertDto dto) {
+
+	     Response res = new Response();
+	     try {
+	         PriceDropAlertEntity existingList = priceDropAlertNotifications.findByClinicIdAndBranchId(clinicId, branchId);
+
+	         if (existingList == null) {
+	             res.setMessage("No Price Drop Alert found for Clinic ID: " + clinicId + " and Branch ID: " + branchId);
+	             res.setStatus(404);
+	             res.setSuccess(false);
+	             return ResponseEntity.status(404).body(res);
+	         }
+	         ObjectMapper mapper = new ObjectMapper();
+	         List<PriceDropAlertEntity> updatedList = new ArrayList<>();
+	             // Map DTO → temporary entity
+	             PriceDropAlertEntity updatedEntity = mapper.convertValue(dto, PriceDropAlertEntity.class);	            
+	             updatedEntity.setId(existingList.getId());	            
+	             updatedEntity = priceDropAlertNotifications.save(updatedEntity);
+	             updatedList.add(updatedEntity);	        
+	         res.setData(updatedList);
+	         res.setMessage("Price drop alert(s) updated successfully");
+	         res.setStatus(200);
+	         res.setSuccess(true);
+
+	     } catch (Exception e) {
+	         res.setMessage(e.getMessage());
+	         res.setStatus(500);
+	         res.setSuccess(false);
+	     }
+
+	     return ResponseEntity.status(res.getStatus()).body(res);
+	 }
+
+	 	 
+	 public ResponseEntity<?> deletePriceDropAlerts(
+	         String clinicId,
+	        String branchId) {
+
+	     Response res = new Response();
+	     try {
+	         // Fetch all matching records
+	         PriceDropAlertEntity existingList = priceDropAlertNotifications.findByClinicIdAndBranchId(clinicId, branchId);
+
+	         if (existingList == null) {
+	             res.setMessage("No Price Drop Alerts found for Clinic ID: " + clinicId + " and Branch ID: " + branchId);
+	             res.setStatus(404);
+	             res.setSuccess(false);
+	             return ResponseEntity.status(404).body(res);
+	         }
+
+	         // Delete all matching records
+	         priceDropAlertNotifications.delete(existingList);
+
+	         res.setMessage("Price drop alerts deleted successfully for Clinic ID: " + clinicId + " and Branch ID: " + branchId);
+	         res.setStatus(200);
+	         res.setSuccess(true);	        
+
+	     } catch (Exception e) {
+	         res.setMessage(e.getMessage());
+	         res.setStatus(500);
+	         res.setSuccess(false);
+	     }
+
+	     return ResponseEntity.status(res.getStatus()).body(res);
+	 } 
 	 
 }
