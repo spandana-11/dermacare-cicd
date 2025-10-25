@@ -62,7 +62,7 @@ public class BookingResponse {
 	private List<String> prescriptionPdf;
 	private String doctorRefCode;
 	private String paymentType;
-	private String followupStatus;
+//	private String followupStatus;
 	private Integer totalSittings;
 	private Integer pendingSittings;
 	private Integer takenSittings;
