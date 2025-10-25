@@ -57,7 +57,7 @@ public class CategoryController {
 					HttpStatus.OK, HttpStatus.OK.value()));
 		}
 
-		// If categories exist, return 200 OK with category data
+		// If categories_exist, return 200 OK with category data
 		return ResponseEntity.ok(ResponseStructure.buildResponse(listOfCategories, "Categories fetched successfully",
 				HttpStatus.OK, HttpStatus.OK.value()));
 	}
