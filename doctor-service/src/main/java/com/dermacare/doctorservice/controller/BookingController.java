@@ -73,7 +73,7 @@ public class BookingController {
         return bookingService.getAllBookedServicesByDoctorId(doctorId);
     }
     
- // 9. ✅ Get upcoming/future appointments (within next 15 days)
+ // 9. ✅ Get upcoming/future appointments (with_in next 15 days)
     @GetMapping("/getFutureDoctorappointmentsByDoctorId/{doctorId}")
     public ResponseEntity<?> getDoctorFutureAppointments(@PathVariable String doctorId) {
         return bookingService.getDoctorFutureAppointments(doctorId);
