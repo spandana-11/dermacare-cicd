@@ -95,14 +95,14 @@ public class NotificationController {
 		return notificationService.priceDropNotifications(clinicId, branchId);
 }	
 	
-	@PutMapping("/update/priceDropNotification/{clinicId}/{branchId}")
+	@PutMapping("/update/priceDropNotification/{clinicId}/{branchId}/{id}")
 	public ResponseEntity<?> updatePriceDropNotification(@PathVariable String clinicId,@PathVariable String branchId,
 		@PathVariable String id,@RequestBody PriceDropAlertDto dto ){
 		return notificationService.updatePriceDropAlert(clinicId, branchId, id,dto);
 }	
 	
 	
-	@DeleteMapping("/delete/priceDropNotification/{clinicId}/{branchId}")
+	@DeleteMapping("/delete/priceDropNotification/{clinicId}/{branchId}/{id}")
 	public ResponseEntity<?> deletePriceDropNotification(@PathVariable String clinicId,@PathVariable String branchId,@PathVariable String id ){
 		return notificationService.deletePriceDropAlerts(clinicId, branchId,id);
 }	
