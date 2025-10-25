@@ -24,11 +24,11 @@ public interface NotificationFeign {
 	@GetMapping("/api/notificationservice/retrieve/priceDropNotification/{clinicId}/{branchId}")
 	public ResponseEntity<?> priceDropNotification(@PathVariable String clinicId,@PathVariable String branchId );
 	
-	@PutMapping("/api/notificationservice/update/priceDropNotification/{clinicId}/{branchId}")
+	@PutMapping("/api/notificationservice/update/priceDropNotification/{clinicId}/{branchId}/{id}")
 	public ResponseEntity<?> updatePriceDropNotification(@PathVariable String clinicId,@PathVariable String branchId,
 			@PathVariable String id,@RequestBody PriceDropAlertDto dto );
 	
-	@DeleteMapping("/api/notificationservice/delete/priceDropNotification/{clinicId}/{branchId}")
+	@DeleteMapping("/api/notificationservice/delete/priceDropNotification/{clinicId}/{branchId}/{id}")
 	public ResponseEntity<?> deletePriceDropNotification(@PathVariable String clinicId,@PathVariable String branchId,@PathVariable String id);
 		
 }
