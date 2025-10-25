@@ -72,95 +72,250 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	public DoctorSaveDetailsDTO sd = new DoctorSaveDetailsDTO();
 	 LocalDate exp = null;
 
-	@Override
-	public ResponseEntity<?> addService(BookingRequset request) {
-	    ResponseStructure<BookingResponse> response = new ResponseStructure<>();
-	    Booking entity = toEntity(request);
+//	@Override
+//	public ResponseEntity<?> addService(BookingRequset request) {
+//	    ResponseStructure<BookingResponse> response = new ResponseStructure<>();
+//	    Booking entity = toEntity(request);
+//
+//	    if (request.getVisitType().equalsIgnoreCase("follow-up")) {
+//	        Booking b = repository.findByMobileNumberAndPatientIdAndBookingId(
+//	                request.getMobileNumber(), request.getPatientId(), request.getBookingId());
+//	        if (b != null) {
+//	            if (b.getStatus().equalsIgnoreCase("In-Progress")) {
+//	                DateTimeFormatter date = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+//	                LocalDate previousServiceDate = LocalDate.parse(b.getServiceDate(), date);
+//
+//	                // ✅ Safer expiration parsing
+//	                int days = Integer.parseInt(b.getConsultationExpiration().split(" ")[0]);
+//	                LocalDate plusDays = previousServiceDate.plusDays(days);
+//
+//	                LocalDate currentAppointmentServiceDate = LocalDate.parse(request.getServiceDate(), date);
+//
+//	                boolean isEligible = false;
+//	                if (!currentAppointmentServiceDate.isBefore(previousServiceDate)
+//	                        && !currentAppointmentServiceDate.isAfter(plusDays)
+//	                        && b.getFreeFollowUpsLeft() > 0) {
+//	                    isEligible = true;
+//	                }
+//
+//	                if (isEligible) {
+//	                    b.setStatus("Confirmed");
+//	                    b.setServicetime(request.getServicetime());
+//	                    b.setFollowupDate(request.getServiceDate());
+//	                    b.setVisitType(request.getVisitType());
+//
+//	                    // Decrement free follow-ups left
+//	                    //b.setFreeFollowUpsLeft(b.getFreeFollowUpsLeft() - 1);
+//
+//	                    Booking ety = repository.save(b);
+//	                    ety.setReports(null);
+//	                    ety.setNotes(null);
+//	                    ety.setAttachments(null);
+//	                    ety.setConsentFormPdf(null);
+//	                    ety.setPrescriptionPdf(null);
+//
+//	                    try {
+//	                        kafkaProducer.publishBooking(ety);
+//	                    } catch (Exception e) {
+//	                        throw new RuntimeException("Unable to book service");
+//	                    }
+//
+//	                    BookingResponse res = new ObjectMapper().convertValue(ety, BookingResponse.class);
+//	                    response = ResponseStructure.buildResponse(res, "Service Booked Successfully",
+//	                            HttpStatus.OK, HttpStatus.OK.value());
+//
+//	                } else {
+//	                    response = ResponseStructure.buildResponse(null,
+//	                            "Unable to proceed with booking. Please check the service date and your available free follow-ups.",
+//	                            HttpStatus.PAYMENT_REQUIRED, HttpStatus.PAYMENT_REQUIRED.value());
+//	                }
+//	            } else {
+//	                response = ResponseStructure.buildResponse(null,
+//	                        "No In Progress Appointments Found With Provided AppointmentId.",
+//	                        HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value());
+//	            }
+//	        } else {
+//	            response = ResponseStructure.buildResponse(null,
+//	                    "No Appointment Found.",
+//	                    HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value());
+//	        }
+//	    } else {
+//	        entity.setStatus("Confirmed");
+//	        Booking res = repository.save(entity);
+//	        res.setReports(null);
+//	        res.setNotes(null);
+//	        res.setAttachments(null);
+//	        res.setConsentFormPdf(null);
+//	        res.setPrescriptionPdf(null);
+//
+//	        try {
+//	            kafkaProducer.publishBooking(res);
+//	        } catch (Exception e) {
+//	            throw new RuntimeException("Unable to book service");
+//	        }
+//
+//	        BookingResponse bRes = new ObjectMapper().convertValue(res, BookingResponse.class);
+//	        response = ResponseStructure.buildResponse(bRes, "Service Booked Successfully",
+//	                HttpStatus.CREATED, HttpStatus.CREATED.value());
+//	    }
+//
+//	    return ResponseEntity.status(response.getStatusCode()).body(response);
+//	}
 
-	    if (request.getVisitType().equalsIgnoreCase("follow-up")) {
-	        Booking b = repository.findByMobileNumberAndPatientIdAndBookingId(
-	                request.getMobileNumber(), request.getPatientId(), request.getBookingId());
-	        if (b != null) {
-	            if (b.getStatus().equalsIgnoreCase("In-Progress")) {
-	                DateTimeFormatter date = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-	                LocalDate previousServiceDate = LocalDate.parse(b.getServiceDate(), date);
+	 @Override
+	 public ResponseEntity<?> addService(BookingRequset request) {
+	     ResponseStructure<BookingResponse> response = new ResponseStructure<>();
+	     Booking entity = toEntity(request);
 
-	                // ✅ Safer expiration parsing
-	                int days = Integer.parseInt(b.getConsultationExpiration().split(" ")[0]);
-	                LocalDate plusDays = previousServiceDate.plusDays(days);
+	     try {
+	         // 🧩 Handle null or empty visitType safely
+	         if (request.getVisitType() == null) {
+	             response = ResponseStructure.buildResponse(null,
+	                     "Visit type is required.",
+	                     HttpStatus.BAD_REQUEST,
+	                     HttpStatus.BAD_REQUEST.value());
+	             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+	         }
 
-	                LocalDate currentAppointmentServiceDate = LocalDate.parse(request.getServiceDate(), date);
+	         // 🩺 FOLLOW-UP CASE
+	         if (request.getVisitType().equalsIgnoreCase("follow-up")) {
+	             Booking b = repository.findByMobileNumberAndPatientIdAndBookingId(
+	                     request.getMobileNumber(), request.getPatientId(), request.getBookingId());
 
-	                boolean isEligible = false;
-	                if (!currentAppointmentServiceDate.isBefore(previousServiceDate)
-	                        && !currentAppointmentServiceDate.isAfter(plusDays)
-	                        && b.getFreeFollowUpsLeft() > 0) {
-	                    isEligible = true;
-	                }
+	             if (b == null) {
+	                 response = ResponseStructure.buildResponse(null,
+	                         "No Appointment Found.",
+	                         HttpStatus.NOT_FOUND,
+	                         HttpStatus.NOT_FOUND.value());
+	                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+	             }
 
-	                if (isEligible) {
-	                    b.setStatus("Confirmed");
-	                    b.setServicetime(request.getServicetime());
-	                    b.setFollowupDate(request.getServiceDate());
-	                    b.setVisitType(request.getVisitType());
+	             if (!"In-Progress".equalsIgnoreCase(b.getStatus())) {
+	                 response = ResponseStructure.buildResponse(null,
+	                         "No In-Progress Appointments Found With Provided AppointmentId.",
+	                         HttpStatus.NOT_FOUND,
+	                         HttpStatus.NOT_FOUND.value());
+	                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+	             }
 
-	                    // Decrement free follow-ups left
-	                    //b.setFreeFollowUpsLeft(b.getFreeFollowUpsLeft() - 1);
+	             DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-	                    Booking ety = repository.save(b);
-	                    ety.setReports(null);
-	                    ety.setNotes(null);
-	                    ety.setAttachments(null);
-	                    ety.setConsentFormPdf(null);
-	                    ety.setPrescriptionPdf(null);
+	             // 🧠 Safe date parsing
+	             LocalDate previousServiceDate;
+	             try {
+	                 previousServiceDate = LocalDate.parse(b.getServiceDate(), dateFormatter);
+	             } catch (Exception e) {
+	                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                         .body(ResponseStructure.buildResponse(null,
+	                                 "Invalid previous service date format for bookingId: " + b.getBookingId(),
+	                                 HttpStatus.BAD_REQUEST,
+	                                 HttpStatus.BAD_REQUEST.value()));
+	             }
 
-	                    try {
-	                        kafkaProducer.publishBooking(ety);
-	                    } catch (Exception e) {
-	                        throw new RuntimeException("Unable to book service");
-	                    }
+	             // 🧠 Safe consultation expiration parsing
+	             int days = 7; // default fallback
+	             try {
+	                 String exp = b.getConsultationExpiration();
+	                 if (exp != null && exp.matches("\\d+.*")) {
+	                     days = Integer.parseInt(exp.split(" ")[0]);
+	                 }
+	             } catch (Exception e) {
+	                 // fallback already handled
+	             }
 
-	                    BookingResponse res = new ObjectMapper().convertValue(ety, BookingResponse.class);
-	                    response = ResponseStructure.buildResponse(res, "Service Booked Successfully",
-	                            HttpStatus.OK, HttpStatus.OK.value());
+	             LocalDate plusDays = previousServiceDate.plusDays(days);
 
-	                } else {
-	                    response = ResponseStructure.buildResponse(null,
-	                            "Unable to proceed with booking. Please check the service date and your available free follow-ups.",
-	                            HttpStatus.PAYMENT_REQUIRED, HttpStatus.PAYMENT_REQUIRED.value());
-	                }
-	            } else {
-	                response = ResponseStructure.buildResponse(null,
-	                        "No In Progress Appointments Found With Provided AppointmentId.",
-	                        HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value());
-	            }
-	        } else {
-	            response = ResponseStructure.buildResponse(null,
-	                    "No Appointment Found.",
-	                    HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value());
-	        }
-	    } else {
-	        entity.setStatus("Confirmed");
-	        Booking res = repository.save(entity);
-	        res.setReports(null);
-	        res.setNotes(null);
-	        res.setAttachments(null);
-	        res.setConsentFormPdf(null);
-	        res.setPrescriptionPdf(null);
+	             // 🧠 Safe current service date parsing
+	             LocalDate currentAppointmentServiceDate;
+	             try {
+	                 currentAppointmentServiceDate = LocalDate.parse(request.getServiceDate(), dateFormatter);
+	             } catch (Exception e) {
+	                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                         .body(ResponseStructure.buildResponse(null,
+	                                 "Invalid service date format in request: " + request.getServiceDate(),
+	                                 HttpStatus.BAD_REQUEST,
+	                                 HttpStatus.BAD_REQUEST.value()));
+	             }
 
-	        try {
-	            kafkaProducer.publishBooking(res);
-	        } catch (Exception e) {
-	            throw new RuntimeException("Unable to book service");
-	        }
+	             boolean isEligible = !currentAppointmentServiceDate.isBefore(previousServiceDate)
+	                     && !currentAppointmentServiceDate.isAfter(plusDays)
+	                     && (b.getFreeFollowUpsLeft() != null && b.getFreeFollowUpsLeft() > 0);
 
-	        BookingResponse bRes = new ObjectMapper().convertValue(res, BookingResponse.class);
-	        response = ResponseStructure.buildResponse(bRes, "Service Booked Successfully",
-	                HttpStatus.CREATED, HttpStatus.CREATED.value());
-	    }
+	             if (!isEligible) {
+	                 response = ResponseStructure.buildResponse(null,
+	                         "Unable to proceed with booking. Please check service date and free follow-ups.",
+	                         HttpStatus.PAYMENT_REQUIRED,
+	                         HttpStatus.PAYMENT_REQUIRED.value());
+	                 return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(response);
+	             }
 
-	    return ResponseEntity.status(response.getStatusCode()).body(response);
-	}
+	             // 🧩 Update booking
+	             b.setStatus("Confirmed");
+	             b.setServicetime(request.getServicetime());
+	             b.setFollowupDate(request.getServiceDate());
+	             b.setVisitType(request.getVisitType());
+	             // optionally decrement follow-ups left if needed
+	             // b.setFreeFollowUpsLeft(b.getFreeFollowUpsLeft() - 1);
+
+	             Booking updatedBooking = repository.save(b);
+	             nullifyLargeFields(updatedBooking);
+
+	             try {
+	                 kafkaProducer.publishBooking(updatedBooking);
+	             } catch (Exception e) {
+	                 // Don’t throw 500 — just log and continue
+	                 e.printStackTrace();
+	                 System.err.println("⚠️ Kafka publish failed: " + e.getMessage());
+	             }
+
+	             BookingResponse res = new ObjectMapper().convertValue(updatedBooking, BookingResponse.class);
+	             response = ResponseStructure.buildResponse(res,
+	                     "Service Booked Successfully",
+	                     HttpStatus.OK,
+	                     HttpStatus.OK.value());
+	             return ResponseEntity.status(HttpStatus.OK).body(response);
+	         }
+
+	         // 🩺 NEW BOOKING (non-follow-up)
+	         entity.setStatus("Confirmed");
+	         Booking savedBooking = repository.save(entity);
+	         nullifyLargeFields(savedBooking);
+
+	         try {
+	             kafkaProducer.publishBooking(savedBooking);
+	         } catch (Exception e) {
+	             e.printStackTrace();
+	             System.err.println("⚠️ Kafka publish failed: " + e.getMessage());
+	         }
+
+	         BookingResponse bRes = new ObjectMapper().convertValue(savedBooking, BookingResponse.class);
+	         response = ResponseStructure.buildResponse(bRes,
+	                 "Service Booked Successfully",
+	                 HttpStatus.CREATED,
+	                 HttpStatus.CREATED.value());
+	         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
+	     } catch (Exception e) {
+	         // ✅ Never leak stack traces to Feign
+	         e.printStackTrace();
+	         response = ResponseStructure.buildResponse(null,
+	                 "Internal Server Error: " + e.getMessage(),
+	                 HttpStatus.INTERNAL_SERVER_ERROR,
+	                 HttpStatus.INTERNAL_SERVER_ERROR.value());
+	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	     }
+	 }
+
+	 /**
+	  * Helper to nullify heavy fields before returning the booking
+	  */
+	 private void nullifyLargeFields(Booking booking) {
+	     booking.setReports(null);
+	     booking.setNotes(null);
+	     booking.setAttachments(null);
+	     booking.setConsentFormPdf(null);
+	     booking.setPrescriptionPdf(null);
+	 }
 
 		
 	private Booking toEntity(BookingRequset request) {
