@@ -50,15 +50,21 @@ import {
   FaMapMarkerAlt,
   FaPhone,
   FaTransgender,
-  FaUser,FaIdBadge,FaUserFriends ,FaGift ,FaIdCard 
+  FaUser,
+  FaIdBadge,
+  FaUserFriends,
+  FaGift,
+  FaIdCard,
 } from 'react-icons/fa'
 import { emailPattern } from '../../Constant/Constants'
 import { showCustomToast } from '../../Utils/Toaster'
+import Pagination from '../../Utils/Pagination'
 const CustomerManagement = () => {
   const navigate = useNavigate()
   const [customerData, setCustomerData] = useState([])
   // const [filteredData, setFilteredData] = useState([])
   const [loading, setLoading] = useState(false)
+  const [delloading, setDelLoading] = useState(false)
   const [error, setError] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
@@ -74,6 +80,7 @@ const CustomerManagement = () => {
   const [isEditing, setIsEditing] = useState(false)
   const [isViewModalVisible, setIsViewModalVisible] = useState(false)
   const [viewCustomerData, setViewCustomerData] = useState(null)
+  const [saveloading, setSaveLoading] = useState(false)
 
   const [formData, setFormData] = useState({
     hospitalId: localStorage.getItem('HospitalId') || '',
@@ -244,7 +251,7 @@ const CustomerManagement = () => {
       setIsViewModalVisible(true)
     } catch (error) {
       console.error('Failed to fetch customer:', error)
-      showCustomToast('Failed to load customer data','error')
+      showCustomToast('Failed to load customer data', 'error')
     } finally {
       setLoading(false)
     }
@@ -257,12 +264,12 @@ const CustomerManagement = () => {
 
     try {
       await deleteCustomerData(customerId)
-      showCustomToast('Customer deleted successfully','success')
+      showCustomToast('Customer deleted successfully', 'success')
       const updatedData = customerData.filter((customer) => customer?.customerId !== customerId)
       setCustomerData(updatedData)
     } catch (error) {
       console.error('Delete failed:', error)
-      showCustomToast('Failed to delete customer','error')
+      showCustomToast('Failed to delete customer', 'error')
     }
   }
 
@@ -341,7 +348,7 @@ const CustomerManagement = () => {
       // setIsViewModalVisible(true)
     } catch (error) {
       console.error('Failed to fetch customer:', error)
-      showCustomToast('Failed to load customer data','error')
+      showCustomToast('Failed to load customer data', 'error')
     } finally {
       setLoading(false)
     }
@@ -380,7 +387,7 @@ const CustomerManagement = () => {
 
     // ✅ Validate the form first
     if (!validateForm()) return
-
+    setSaveLoading(true)
     try {
       const updatedFormData = {
         ...formData,
@@ -406,11 +413,11 @@ const CustomerManagement = () => {
       if (isEditing) {
         // ✅ Update customer
         await updateCustomerData(formData.customerId, updatedFormData)
-        showCustomToast('Customer updated successfully','success')
+        showCustomToast('Customer updated successfully', 'success')
       } else {
         // ✅ Add customer
         await addCustomer(updatedFormData)
-        showCustomToast('Customer added successfully','success')
+        showCustomToast('Customer added successfully', 'success')
         setFormData({
           title: '',
           firstName: '',
@@ -438,10 +445,12 @@ const CustomerManagement = () => {
     } catch (error) {
       console.error('Error submitting customer:', error)
       if (error?.response?.status === 409) {
-        showCustomToast('Customer already exists with this mobile number or email.','error')
+        showCustomToast('Customer already exists with this mobile number or email.', 'error')
       } else {
-        showCustomToast('Something went wrong while submitting.','error')
+        showCustomToast('Something went wrong while submitting.', 'error')
       }
+    } finally {
+      setSaveLoading(false)
     }
   }
 
@@ -531,8 +540,9 @@ const CustomerManagement = () => {
 
   const confirmDeleteCustomer = async () => {
     try {
+      setDelLoading(true)
       await deleteCustomerData(customerIdToDelete)
-      showCustomToast('Customer deleted successfully','success')
+      showCustomToast('Customer deleted successfully', 'success')
 
       const updatedData = customerData.filter(
         (customer) => customer?.customerId !== customerIdToDelete,
@@ -541,9 +551,10 @@ const CustomerManagement = () => {
       setCustomerData(updatedData)
     } catch (error) {
       console.error('Delete failed:', error)
-      showCustomToast('Failed to delete customer','error')
+      showCustomToast('Failed to delete customer', 'error')
     } finally {
       setIsModalVisible(false)
+      setDelLoading(false)
       setCustomerIdToDelete(null)
     }
   }
@@ -677,6 +688,7 @@ const CustomerManagement = () => {
             isVisible={isModalVisible}
             title="Delete Customer"
             message="Are you sure you want to delete this Customer? This action cannot be undone."
+            isLoading={delloading}
             confirmText="Yes, Delete"
             cancelText="Cancel"
             confirmColor="danger"
@@ -804,25 +816,53 @@ const CustomerManagement = () => {
                       {/* Personal Info */}
                       <CRow className="mb-4">
                         <CCol md={6} className="mb-2">
-                          <strong><FaIdCard  className="me-2" />Customer ID:</strong> {viewCustomerData.customerId || 'N/A'}
+                          <strong>
+                            <FaIdCard className="me-2" />
+                            Customer ID:
+                          </strong>{' '}
+                          {viewCustomerData.customerId || 'N/A'}
                         </CCol>
                         <CCol md={6} className="mb-2">
-                          <strong><FaUser className="me-2" />Full Name:</strong> {viewCustomerData.fullName || 'N/A'}
+                          <strong>
+                            <FaUser className="me-2" />
+                            Full Name:
+                          </strong>{' '}
+                          {viewCustomerData.fullName || 'N/A'}
                         </CCol>
                         <CCol md={6} className="mb-2">
-                          <strong><FaTransgender className="me-2" />Gender:</strong> {viewCustomerData.gender || 'N/A'}
+                          <strong>
+                            <FaTransgender className="me-2" />
+                            Gender:
+                          </strong>{' '}
+                          {viewCustomerData.gender || 'N/A'}
                         </CCol>
                         <CCol md={6} className="mb-2">
-                          <strong><FaBirthdayCake className="me-2" />DOB:</strong> {viewCustomerData.dateOfBirth || 'N/A'}
+                          <strong>
+                            <FaBirthdayCake className="me-2" />
+                            DOB:
+                          </strong>{' '}
+                          {viewCustomerData.dateOfBirth || 'N/A'}
                         </CCol>
                         <CCol md={6}>
-                          <strong><FaCalendarAlt className="me-2" />Age:</strong> {viewCustomerData.age || 'N/A'} Yrs
+                          <strong>
+                            <FaCalendarAlt className="me-2" />
+                            Age:
+                          </strong>{' '}
+                          {viewCustomerData.age || 'N/A'} Yrs
                         </CCol>
                         <CCol md={6} className="mb-2">
-                          <strong><FaPhone className="me-2" />Mobile:</strong> {viewCustomerData.mobileNumber || 'N/A'}
+                          <strong>
+                            <FaPhone className="me-2" />
+                            Mobile:
+                          </strong>{' '}
+                          {viewCustomerData.mobileNumber || 'N/A'}
                         </CCol>
                         <CCol md={6} className="mb-2">
-                          <strong><FaEnvelope className="me-2" />Email:</strong> {viewCustomerData.email || 'N/A'}
+                          <strong>
+                            <FaEnvelope className="me-2" />
+                            Email:
+                          </strong>{' '}
+                          {viewCustomerData.email || 'N/A'}
                         </CCol>
                         <CCol md={6} className="mb-2">
                           <strong>
@@ -846,10 +886,18 @@ const CustomerManagement = () => {
                         </CCol>
 
                         <CCol md={12}>
-                          <strong><FaMapMarkerAlt className="me-2" />Address:</strong>
+                          <strong>
+                            <FaMapMarkerAlt className="me-2" />
+                            Address:
+                          </strong>
                           <p className="ms-4 mb-0">
-                            {viewCustomerData.address?.houseNo || ''}, {viewCustomerData.address?.street || ''}, {viewCustomerData.address?.landmark || ''},<br />
-                            {viewCustomerData.address?.city || ''}, {viewCustomerData.address?.state || ''}, {viewCustomerData.address?.postalCode || ''}, {viewCustomerData.address?.country || ''}
+                            {viewCustomerData.address?.houseNo || ''},{' '}
+                            {viewCustomerData.address?.street || ''},{' '}
+                            {viewCustomerData.address?.landmark || ''},<br />
+                            {viewCustomerData.address?.city || ''},{' '}
+                            {viewCustomerData.address?.state || ''},{' '}
+                            {viewCustomerData.address?.postalCode || ''},{' '}
+                            {viewCustomerData.address?.country || ''}
                           </p>
                         </CCol>
                       </CRow>
@@ -865,30 +913,14 @@ const CustomerManagement = () => {
                 </CModalFooter>
               </CModal>
 
-
-              {!loading && (
-                <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
-                  {Array.from(
-                    { length: Math.ceil(filteredData.length / rowsPerPage) },
-                    (_, index) => (
-                      <CButton
-                        key={index}
-                        style={{
-                          backgroundColor:
-                            currentPage === index + 1 ? 'var(--color-black)' : '#fff',
-                          color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
-                          border: '1px solid #ccc',
-                          borderRadius: '5px',
-                          cursor: 'pointer',
-                        }}
-                        className="ms-2"
-                        onClick={() => setCurrentPage(index + 1)}
-                      >
-                        {index + 1}
-                      </CButton>
-                    ),
-                  )}
-                </div>
+              {displayData.length > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={Math.ceil(filteredData.length / rowsPerPage)}
+                  pageSize={rowsPerPage}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setRowsPerPage}
+                />
               )}
             </>
           )}
@@ -1034,7 +1066,7 @@ const CustomerManagement = () => {
                   onPaste={(e) => e.preventDefault()} // block pasting
                   maxLength={10}
                   invalid={!!formErrors.mobileNumber}
-                  disabled={isEditing}
+                  // disabled={isEditing}
                 />
 
                 {formErrors.mobileNumber && (
@@ -1206,7 +1238,7 @@ const CustomerManagement = () => {
             </CRow>
 
             <br />
-            <div className="d-flex justify-content-end">
+            <div className="d-flex justify-content-end mb-2">
               <CButton color="secondary" className="me-2" onClick={handleCancel}>
                 Cancel
               </CButton>
@@ -1214,8 +1246,18 @@ const CustomerManagement = () => {
                 type="submit"
                 color="success"
                 style={{ backgroundColor: 'var(--color-black)', color: 'white', border: 'none' }}
+                disabled={saveloading}
               >
-                {isEditing ? 'Update' : 'Submit'}
+                {saveloading && (
+                  <span className="spinner-border text-white spinner-border-sm ms-2 mx-2"></span>
+                )}
+                {saveloading
+                  ? isEditing
+                    ? 'Updating...'
+                    : 'Saving...'
+                  : isEditing
+                    ? 'Update'
+                    : 'Submit'}
               </CButton>
             </div>
           </CForm>

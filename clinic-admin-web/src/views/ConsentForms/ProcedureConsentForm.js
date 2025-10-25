@@ -36,6 +36,7 @@ import { toast } from 'react-toastify'
 import capitalizeWords from '../../Utils/capitalizeWords'
 import ConfirmationModal from '../../components/ConfirmationModal'
 import { showCustomToast } from '../../Utils/Toaster'
+import Pagination from '../../Utils/Pagination'
 
 const ProcedureConsentForm = () => {
   const [category, setCategory] = useState([])
@@ -51,6 +52,7 @@ const ProcedureConsentForm = () => {
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [deleteIndex, setDeleteIndex] = useState(null)
   const [procedureName, setProcedureName] = useState(null)
+  const [saveloading, setSaveLoading] = useState(false)
   // form state
   const [newService, setNewService] = useState({
     categoryId: '',
@@ -68,7 +70,13 @@ const ProcedureConsentForm = () => {
   const [errors, setErrors] = useState({}) // State for form validation errors
   const hospitalId = localStorage.getItem('HospitalId')
   const consentFormType = '2' // from your Postman example
-
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(5)
+  const indexOfLast = currentPage * rowsPerPage
+  const indexOfFirst = indexOfLast - rowsPerPage
+  const currentForms = procedureForms.slice(indexOfFirst, indexOfLast)
+  const totalPages = Math.ceil(procedureForms.length / rowsPerPage)
+  const [delloading, setDelLoading] = useState(false)
   // Refactored API fetching to use the correct IDs
   // Fetch categories
   useEffect(() => {
@@ -307,13 +315,22 @@ const ProcedureConsentForm = () => {
     }))
 
     try {
+      setSaveLoading(true)
       if (editIndex !== null) {
         // Update only the one being edited
         await updateConsentData(formattedForms[0], hospitalId, consentFormType)
       } else {
         // Add all selected subservices
         for (const form of formattedForms) {
-          await AddConsentFormData(form, hospitalId, consentFormType)
+          const res = await AddConsentFormData(form, hospitalId, consentFormType)
+          if (res.status == 200 || res.status == 201) {
+            showCustomToast(
+              `${res.message || 'Procedure form submitted successfully...!'} `,
+              'success',
+            )
+          } else {
+            showCustomToast(`${res.message || 'Procedure already exisit'}  `, 'warning')
+          }
         }
       }
 
@@ -337,6 +354,8 @@ const ProcedureConsentForm = () => {
     } catch (error) {
       console.error('Error saving Procedure Form:', error)
       // toast.error('Failed to save procedure form. Please try again.')
+    } finally {
+      setSaveLoading(false)
     }
   }
 
@@ -344,7 +363,7 @@ const ProcedureConsentForm = () => {
     try {
       const form = procedureForms[index]
       if (!form) {
-        showCustomToast('Selected form not found','error')
+        showCustomToast('Selected form not found', 'error')
         return
       }
 
@@ -426,7 +445,7 @@ const ProcedureConsentForm = () => {
       }
     } catch (err) {
       console.error('Error in editProcedureForm:', err)
-      showCustomToast('Unable to prepare edit form. Check console for details.','error')
+      showCustomToast('Unable to prepare edit form. Check console for details.', 'error')
     }
   }
 
@@ -434,17 +453,20 @@ const ProcedureConsentForm = () => {
     const form = procedureForms[index]
     const formId = form?.id || form?.consentFormId || form?.formId
     if (!form?.id) {
-      showCustomToast('This form does not have an ID and cannot be deleted.','error')
+      showCustomToast('This form does not have an ID and cannot be deleted.', 'error')
       return
     }
 
     try {
+      setDelLoading(true)
       await deleteConsentData(formId) // call API
       const updated = procedureForms.filter((_, i) => i !== index)
       setProcedureForms(updated)
     } catch (error) {
       console.error('Error deleting Procedure Form:', error)
-      showCustomToast('Failed to delete procedure form.','error')
+      showCustomToast('Failed to delete procedure form.', 'error')
+    } finally {
+      setDelLoading(false)
     }
   }
 
@@ -751,8 +773,21 @@ const ProcedureConsentForm = () => {
                   border: 'none',
                 }}
                 onClick={saveProcedureForm}
+                disabled={saveloading} // disable button while saving/updating
               >
-                {editIndex !== null ? 'Update Procedure Form' : 'Save Procedure Form'}
+                {saveloading ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2 text-dark"
+                      role="status"
+                    />
+                    {editIndex !== null ? 'Updating...' : 'Saving...'}
+                  </>
+                ) : editIndex !== null ? (
+                  'Update Procedure Form'
+                ) : (
+                  'Save Procedure Form'
+                )}
               </CButton>
             </div>
           </CForm>
@@ -761,12 +796,32 @@ const ProcedureConsentForm = () => {
           <>
             <h6>Saved Procedure Forms</h6>
             <CAccordion>
-              {procedureForms.map((form, i) => (
+              {currentForms.map((form, i) => (
                 <>
                   <CAccordionItem key={i} itemKey={i}>
-                    <CAccordionHeader>
-                      {capitalizeWords(form.subServiceName) || 'Unnamed Procedure'}
+                    <CAccordionHeader className="d-flex justify-content-between align-items-center w-100  ">
+                      {/* Procedure Name */}
+                      <span className="flex-grow-1">
+                        {capitalizeWords(form.subServiceName) || 'Unnamed Procedure'}
+                      </span>
+
+                      {/* Edit / Delete Buttons */}
+                      <div className="d-flex gap-3 ms-3 mx-3">
+                        <FaEdit
+                          onClick={() => editProcedureForm(i)}
+                          style={{ color: 'var(--color-black)', cursor: 'pointer' }}
+                        />
+                        <FaTrash
+                          onClick={() => {
+                            setDeleteIndex(i) // store which form to delete
+                            setIsModalVisible(true) // open confirmation modal
+                            setProcedureName(form.subServiceName)
+                          }}
+                          style={{ color: 'var(--color-black)', cursor: 'pointer' }}
+                        />
+                      </div>
                     </CAccordionHeader>
+
                     <CAccordionBody>
                       {Array.isArray(form.consentFormQuestions) &&
                         form.consentFormQuestions.map((section, j) => (
@@ -788,7 +843,7 @@ const ProcedureConsentForm = () => {
                           </div>
                         ))}
 
-                      <div className="d-flex gap-3 mt-2">
+                      {/* <div className="d-flex gap-3 mt-2">
                         <FaEdit
                           onClick={() => editProcedureForm(i)}
                           style={{ color: 'var(--color-black)', cursor: 'pointer' }}
@@ -802,7 +857,7 @@ const ProcedureConsentForm = () => {
                           }}
                           style={{ color: 'var(--color-black)', cursor: 'pointer' }}
                         />
-                      </div>
+                      </div> */}
                     </CAccordionBody>
                   </CAccordionItem>
                 </>
@@ -819,6 +874,7 @@ const ProcedureConsentForm = () => {
         cancelText="Cancel"
         confirmColor="danger"
         cancelColor="secondary"
+        isLoading={delloading}
         onConfirm={() => {
           if (deleteIndex !== null) {
             removeProcedureForm(deleteIndex) // delete only after confirm
@@ -831,6 +887,15 @@ const ProcedureConsentForm = () => {
           setIsModalVisible(false) // close modal
         }} // ✅ just close modal
       />
+      <div className="mb-3 mx-3">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          pageSize={rowsPerPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setRowsPerPage}
+        />
+      </div>
     </CCard>
   )
 }

@@ -40,11 +40,14 @@ import { Button } from 'bootstrap'
 import LoadingIndicator from '../../Utils/loader'
 import { useHospital } from '../Usecontext/HospitalContext'
 import { showCustomToast } from '../../Utils/Toaster'
+import Pagination from '../../Utils/Pagination'
 const DiseasesManagement = () => {
   // const [searchQuery, setSearchQuery] = useState('')
   const [diseases, setDiseases] = useState([])
   // const [filteredData, setFilteredData] = useState([])
   const [loading, setLoading] = useState(false)
+  const [delloading, setDelLoading] = useState(false)
+  const [saveloading, setSaveLoading] = useState(false)
   const [error, setError] = useState(null)
   const [modalVisible, setModalVisible] = useState(false)
   const [viewDisease, setViewDisease] = useState(null)
@@ -99,14 +102,18 @@ const DiseasesManagement = () => {
 
   const handleConfirmDelete = async () => {
     try {
+       setDelLoading(true)
       await deleteDiseaseData(diseaseIdToDelete, hospitalIdToDelete)
-      showCustomToast('Disease deleted successfully!', { position: 'top-right' },'success')
+      showCustomToast('Disease deleted successfully!', { position: 'top-right' }, 'success')
       // fetchData()
       fetchDataByHid(hospitalId)
     } catch (error) {
-      showCustomToast('Failed to delete disease.','error')
+      showCustomToast('Failed to delete disease.', 'error')
       console.error('Delete error:', error)
     }
+     finally {
+      setDelLoading(false)
+     }
     setIsModalVisible(false)
   }
 
@@ -161,7 +168,7 @@ const DiseasesManagement = () => {
       (t) => t.diseaseName.trim().toLowerCase() === trimmedName.toLowerCase(),
     )
     if (duplicate) {
-      showCustomToast(`Duplicate disease name - ${trimmedName} already exists!`,'error', {
+      showCustomToast(`Duplicate disease name - ${trimmedName} already exists!`, 'error', {
         position: 'top-right',
       })
       setModalVisible(false)
@@ -170,6 +177,7 @@ const DiseasesManagement = () => {
 
     // Proceed with API call
     try {
+      setSaveLoading(true)
       const payload = {
         diseaseName: trimmedName,
         hospitalId,
@@ -189,14 +197,16 @@ const DiseasesManagement = () => {
       setDiseases((prev) => [newDiseaseRow, ...prev])
       setNewDisease({ diseaseName: '', probableSymptoms: '', notes: '' })
       fetchDataByHid(hospitalId)
-      showCustomToast('Disease added successfully!','success')
+      showCustomToast('Disease added successfully!', 'success')
       setModalVisible(false)
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
         error.response?.statusText ||
         'An unexpected error occurred.'
-      showCustomToast(`Error adding disease: ${errorMessage}`,'error')
+      showCustomToast(`Error adding disease: ${errorMessage}`, 'error')
+    } finally {
+      setSaveLoading(false)
     }
   }
 
@@ -217,13 +227,18 @@ const DiseasesManagement = () => {
         d.id !== diseaseToEdit.id,
     )
     if (duplicate) {
-      showCustomToast(`Duplicate disease name - ${diseaseToEdit.diseaseName} already exists!`,'error', {
-        position: 'top-right',
-      })
+      showCustomToast(
+        `Duplicate disease name - ${diseaseToEdit.diseaseName} already exists!`,
+        'error',
+        {
+          position: 'top-right',
+        },
+      )
       return
     }
 
     try {
+      setSaveLoading(true)
       await updateDiseaseData(
         {
           diseaseName: diseaseToEdit.diseaseName,
@@ -239,13 +254,15 @@ const DiseasesManagement = () => {
         prev.map((d) => (d.id === diseaseToEdit.id ? { ...d, ...diseaseToEdit } : d)),
       )
 
-      showCustomToast('Disease updated successfully!','success')
+      showCustomToast('Disease updated successfully!', 'success')
       setEditDiseaseMode(false)
     } catch (error) {
       console.error('Update error:', error)
-      showCustomToast('Failed to update disease.','error')
+      showCustomToast('Failed to update disease.', 'error')
     }
-  }
+     finally {
+      setSaveLoading(false)
+  }}
 
   const handleDiseaseEdit = (disease) => {
     setDiseaseToEdit({ ...disease, hospitalId })
@@ -366,6 +383,18 @@ const DiseasesManagement = () => {
           </CForm>
         </CModalBody>
         <CModalFooter>
+          <CButton
+            color="secondary"
+            onClick={() =>
+              setNewDisease({
+                diseaseName: '',
+                probableSymptoms: '',
+                notes: '',
+              })
+            }
+          >
+            Reset
+          </CButton>
           <CButton color="secondary" onClick={() => setModalVisible(false)}>
             Cancel
           </CButton>
@@ -373,8 +402,16 @@ const DiseasesManagement = () => {
             style={{ backgroundColor: 'var(--color-black)' }}
             className="text-white"
             onClick={handleAddDisease}
+            disabled={saveloading}
           >
-            Add
+            {saveloading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2 text-white" role="status" />
+                Saving...
+              </>
+            ) : (
+              'Save'
+            )}
           </CButton>
         </CModalFooter>
       </CModal>
@@ -429,13 +466,25 @@ const DiseasesManagement = () => {
           <CButton color="secondary" onClick={() => setEditDiseaseMode(false)}>
             Cancel
           </CButton>
-          <CButton
-            style={{ backgroundColor: 'var(--color-black)' }}
-            className="text-white"
-            onClick={handleUpdateDisease}
-          >
-            Update
-          </CButton>
+         <CButton
+  style={{ backgroundColor: 'var(--color-black)' }}
+  className="text-white"
+  onClick={handleUpdateDisease}
+  disabled={saveloading} // disable when loading
+>
+  {saveloading ? (
+    <>
+      <span
+        className="spinner-border spinner-border-sm me-2 text-white"
+        role="status"
+      />
+      Updating...
+    </>
+  ) : (
+    'Update'
+  )}
+</CButton>
+
         </CModalFooter>
       </CModal>
 
@@ -443,6 +492,7 @@ const DiseasesManagement = () => {
         isVisible={isModalVisible}
         title="Delete Doctor"
         message="Are you sure you want to delete this disease? This action cannot be undone."
+        isLoading={delloading}
         confirmText="Yes, Delete"
         cancelText="Cancel"
         confirmColor="danger"
@@ -532,25 +582,14 @@ const DiseasesManagement = () => {
         </CTable>
       )}
       {/* Pagination */}
-      {!loading && (
-        <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
-          {Array.from({ length: Math.ceil(filteredData.length / rowsPerPage) }, (_, index) => (
-            <CButton
-              key={index}
-              style={{
-                backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
-                color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
-                border: '1px solid #ccc',
-                borderRadius: '5px',
-                cursor: 'pointer',
-              }}
-              className="ms-2"
-              onClick={() => setCurrentPage(index + 1)}
-            >
-              {index + 1}
-            </CButton>
-          ))}
-        </div>
+      {displayData.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(filteredData.length / rowsPerPage)}
+          pageSize={rowsPerPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setRowsPerPage}
+        />
       )}
     </div>
   )

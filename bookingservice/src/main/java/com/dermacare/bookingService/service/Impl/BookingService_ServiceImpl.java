@@ -1417,9 +1417,24 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	        if (bookingResponse.getFreeFollowUps() != null) entity.setFreeFollowUps(bookingResponse.getFreeFollowUps());
 	        if (bookingResponse.getVisitCount() != null) entity.setVisitCount(bookingResponse.getVisitCount());
 //	        if (bookingResponse.getFollowupStatus() != null) entity.setFollowupStatus(bookingResponse.getFollowupStatus());
-	        if (bookingResponse.getTreatments() != null && bookingResponse.getTreatments().getFollowupStatus() != null) {
-	            entity.setFollowupStatus(bookingResponse.getTreatments().getFollowupStatus());
-	        }
+//	        if (bookingResponse.getTreatments() != null && bookingResponse.getTreatments().getFollowupStatus() != null) {
+//	            entity.setFollowupStatus(bookingResponse.getTreatments().getFollowupStatus());
+//	        }
+	        if (bookingResponse.getTreatments() != null 
+	        	    && bookingResponse.getTreatments().getGeneratedData() != null) {
+
+	        	    for (Map.Entry<String, TreatmentDetailsDTO> entry : bookingResponse.getTreatments().getGeneratedData().entrySet()) {
+	        	        TreatmentDetailsDTO treatmentDetails = entry.getValue();
+
+	        	        if (treatmentDetails.getDates() != null && !treatmentDetails.getDates().isEmpty()) {
+	        	            String followupStatus = treatmentDetails.getDates().get(0).getFollowupStatus(); // assuming first date carries status
+	        	            if (followupStatus != null) {
+	        	                entity.setFollowupStatus(followupStatus);
+	        	                break; // stop after first valid status
+	        	            }
+	        	        }
+	        	    }
+	        	}
 
 	        if (bookingResponse.getFollowupDate() != null) entity.setFollowupDate(bookingResponse.getFollowupDate());
 
@@ -3593,10 +3608,25 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 //			        entity.setStatus("Completed");
 //			    }
 
-			    if (dto.getTreatments() != null && dto.getTreatments().getFollowupStatus() != null 
-			    	    && dto.getTreatments().getFollowupStatus().equalsIgnoreCase("no-followup")) {
-			    	    entity.setStatus("Completed");
-			    	}
+//			    if (dto.getTreatments() != null && dto.getTreatments().getFollowupStatus() != null 
+//			    	    && dto.getTreatments().getFollowupStatus().equalsIgnoreCase("no-followup")) {
+//			    	    entity.setStatus("Completed");
+//			    	}
+			    
+			    if (dto.getTreatments() != null && dto.getTreatments().getGeneratedData() != null) {
+			        for (Map.Entry<String, TreatmentDetailsDTO> entry : dto.getTreatments().getGeneratedData().entrySet()) {
+			            TreatmentDetailsDTO treatmentDetails = entry.getValue();
+
+			            if (treatmentDetails.getDates() != null && !treatmentDetails.getDates().isEmpty()) {
+			                String followupStatus = treatmentDetails.getDates().get(0).getFollowupStatus(); // assuming first date carries status
+			                if ("no-followup".equalsIgnoreCase(followupStatus)) {
+			                    entity.setStatus("Completed");
+			                    break; // stop after first valid match
+			                }
+			            }
+			        }
+			    }
+
 
 			    if (dto.getVisitCount() != null) {
 			        entity.setVisitCount(dto.getVisitCount());
@@ -3632,9 +3662,24 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 //			        entity.setFollowupStatus(dto.getFollowupStatus());
 //			    }
 		    
-			    if (dto.getTreatments() != null && dto.getTreatments().getFollowupStatus() != null) {
-			        entity.setFollowupStatus(dto.getTreatments().getFollowupStatus());
+//			    if (dto.getTreatments() != null && dto.getTreatments().getFollowupStatus() != null) {
+//			        entity.setFollowupStatus(dto.getTreatments().getFollowupStatus());
+//			    }
+			    
+			    if (dto.getTreatments() != null && dto.getTreatments().getGeneratedData() != null) {
+			        for (Map.Entry<String, TreatmentDetailsDTO> entry : dto.getTreatments().getGeneratedData().entrySet()) {
+			            TreatmentDetailsDTO treatmentDetails = entry.getValue();
+
+			            if (treatmentDetails.getDates() != null && !treatmentDetails.getDates().isEmpty()) {
+			                String followupStatus = treatmentDetails.getDates().get(0).getFollowupStatus(); // assuming first date carries status
+			                if (followupStatus != null) {
+			                    entity.setFollowupStatus(followupStatus);
+			                    break; // stop after first valid status
+			                }
+			            }
+			        }
 			    }
+
 
 			    Booking e = repository.save(entity);			
 				if(e != null){	

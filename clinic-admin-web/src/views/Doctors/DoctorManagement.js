@@ -44,6 +44,8 @@ import { faUserDoctor } from '@fortawesome/free-solid-svg-icons'
 import { http } from '../../Utils/Interceptors'
 import { GetClinicBranches } from './DoctorAPI'
 import { showCustomToast } from '../../Utils/Toaster'
+import Pagination from '../../Utils/Pagination'
+import { emailPattern } from '../../Constant/Constants'
 const DoctorManagement = () => {
   const {
     doctorData,
@@ -97,7 +99,7 @@ const DoctorManagement = () => {
     })
   }
 
-  const [form, setForm] = useState({
+  const initialForm = {
     doctorPicture: null, // file input or image URL
     doctorLicence: '',
     doctorMobileNumber: '',
@@ -123,8 +125,13 @@ const DoctorManagement = () => {
     languages: [],
     highlights: [],
     availableConsultations: [],
-  })
-
+    consultation: {
+      inClinic: 0,
+      videoOrOnline: 0,
+      serviceAndTreatments: 0,
+    },
+  }
+  const [form, setForm] = useState(initialForm)
   // console.log(doctorData.data)
 
   const [startDay, setStartDay] = useState('')
@@ -143,11 +150,14 @@ const DoctorManagement = () => {
   const [selectedCategory, setSelectedCategory] = useState('')
   const [formErrors, setFormErrors] = useState({})
   const [loading, setLoading] = useState(false)
+  const [saveloading, setSaveLoading] = useState(false)
   const [showErrorMessage, setShowErrorMessage] = useState('')
 
   const [serviceOptionsFormatted, setServiceOptionsFormatted] = useState([]) // ✅ Add this
   const [isSubServiceComplete, setIsSubServiceComplete] = useState(true)
   const [errors, setErrors] = useState({})
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(5)
 
   const availableDays = (value, type) => {
     if (type === 'start') {
@@ -452,7 +462,6 @@ const DoctorManagement = () => {
       isValid = false
     }
 
-
     const convertTo24Hrs = (time) => {
       const [rawTime, modifier] = time.split(' ')
       let [hours, minutes] = rawTime.split(':').map(Number)
@@ -480,18 +489,18 @@ const DoctorManagement = () => {
       isValid = false
     }
     if (!startTime) {
-      errors.startTime = 'Start time is required';
-      isValid = false;
+      errors.startTime = 'Start time is required'
+      isValid = false
     }
 
     if (!endTime) {
-      errors.endTime = 'End time is required';
-      isValid = false;
+      errors.endTime = 'End time is required'
+      isValid = false
     }
 
     if (startTime && endTime && times.indexOf(startTime) > times.indexOf(endTime)) {
-      errors.endTime = 'End time cannot be before start time';
-      isValid = false;
+      errors.endTime = 'End time cannot be before start time'
+      isValid = false
     }
     setFormErrors(errors)
     return isValid
@@ -547,15 +556,15 @@ const DoctorManagement = () => {
       const emailExists = doctorData.data?.some((doc) => doc.doctorEmail === form.doctorEmail)
 
       if (mobileExists) {
-        showCustomToast('A doctor with this mobile number already exists','error')
+        showCustomToast('A doctor with this mobile number already exists', 'error')
         return
       }
 
       if (emailExists) {
-        showCustomToast('A doctor with this email already exists','error')
+        showCustomToast('A doctor with this email already exists', 'error')
         return
       }
-
+      setSaveLoading(true)
       const payload = {
         branchId: localStorage.getItem('branchId'),
         hospitalId,
@@ -593,6 +602,11 @@ const DoctorManagement = () => {
           inClinicFee: form.doctorFees.inClinicFee,
           vedioConsultationFee: form.doctorFees.vedioConsultationFee,
         },
+        consultation: {
+          serviceAndTreatments: enabledTypes.serviceTreatment ? 3 : 0,
+          inClinic: enabledTypes.inClinic ? 1 : 0,
+          videoOrOnline: enabledTypes.online ? 2 : 0,
+        },
       }
       console.log(payload)
       const response = await http.post(`/addDoctor`, payload, {
@@ -618,7 +632,7 @@ const DoctorManagement = () => {
           clinicName: hospitalName,
         })
 
-        showCustomToast(response.data.message || 'Doctor added successfully','success', {
+        showCustomToast(response.data.message || 'Doctor added successfully', 'success', {
           position: 'top-right',
         })
         //  ✅ Reset form
@@ -668,31 +682,44 @@ const DoctorManagement = () => {
       const errorMessage = error?.response?.data?.message || 'Something went wrong'
 
       if (status === 400 && errorMessage.includes('mobile number')) {
-        showCustomToast(errorMessage, {
-          position: 'top-right',
-        },'error')
+        showCustomToast(
+          errorMessage,
+          {
+            position: 'top-right',
+          },
+          'error',
+        )
         setErrors((prev) => ({
           ...prev,
           doctorMobileNumber: errorMessage,
         }))
         setModalVisible(true) // ❌ Keep modal open so user can fix input
       } else if (status === 400 && errorMessage.includes('email')) {
-        showCustomToast(errorMessage, {
-          position: 'top-right',
-        },'error')
+        showCustomToast(
+          errorMessage,
+          {
+            position: 'top-right',
+          },
+          'error',
+        )
         setErrors((prev) => ({
           ...prev,
           doctorEmail: errorMessage,
         }))
         setModalVisible(true)
       } else {
-        showCustomToast(errorMessage, {
-          position: 'top-right',
-        },'error')
+        showCustomToast(
+          errorMessage,
+          {
+            position: 'top-right',
+          },
+          'error',
+        )
         setModalVisible(false) // ✅ Optional: Close modal on other errors
       }
     } finally {
       setIsSaving(false)
+      setSaveLoading(false)
     }
   }
 
@@ -788,12 +815,19 @@ const DoctorManagement = () => {
     },
   )
 
+  const totalDoctors = filteredDoctors.length
+  const totalPages = Math.ceil(totalDoctors / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedDoctors = filteredDoctors.slice(startIndex, endIndex)
+
   return (
     <div>
       <ToastContainer />
       <div className="d-flex justify-content-end mb-3">
         <button
-          className="btn btn-info text-white d-flex align-items-center gap-2 shadow-sm rounded-pill px-4 py-2"
+          className="btn btn-info text-white d-flex align-items-center gap-2 shadow-sm px-4 py-2"
+
           onClick={() => {
             setFormErrors({})
             setModalVisible(true)
@@ -834,10 +868,21 @@ const DoctorManagement = () => {
       ) : (
         <div className="row">
           {filteredDoctors.length > 0 ? (
-            filteredDoctors.map((doctor, index) => <DoctorCard key={index} doctor={doctor} />)
+            paginatedDoctors.map((doctor, index) => <DoctorCard key={index} doctor={doctor} />)
           ) : (
             <div className="text-center w-100 py-5">
               <p>No doctors match your search.</p>
+            </div>
+          )}
+          {totalDoctors > 0 && (
+            <div className="mb-3 mx-3">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+              />
             </div>
           )}
         </div>
@@ -1005,40 +1050,40 @@ const DoctorManagement = () => {
                 License Number
                 <span className="text-danger">*</span>
               </CFormLabel>
-             <CFormInput
-  value={form.doctorLicence}
-  onChange={(e) => {
-    let value = e.target.value
+              <CFormInput
+                value={form.doctorLicence}
+                onChange={(e) => {
+                  let value = e.target.value
 
-    // ✅ Optionally remove unwanted characters as user types
-    // Allow letters, numbers, spaces, / . -
-    value = value.replace(/[^A-Za-z0-9\s/.-]/g, '')
+                  // ✅ Optionally remove unwanted characters as user types
+                  // Allow letters, numbers, spaces, / . -
+                  value = value.replace(/[^A-Za-z0-9\s/.-]/g, '')
 
-    setForm((prev) => ({ ...prev, doctorLicence: value }))
+                  setForm((prev) => ({ ...prev, doctorLicence: value }))
 
-    // Validation
-    let error = ''
-    const trimmedValue = value.trim()
-    if (!trimmedValue) {
-      error = 'License Number is required.'
-    } else if (trimmedValue.length < 3 || trimmedValue.length > 20) {
-      error = 'License Number must be between 3 and 20 characters.'
-    } else if (!/[A-Za-z0-9]/.test(trimmedValue)) {
-      error = 'License Number cannot contain only special characters.'
-    } else {
-      // Check duplicate
-      const isDuplicate = doctorData?.data?.some(
-        (doctor) => doctor.doctorLicence === trimmedValue,
-      )
-      if (isDuplicate) {
-        error = 'This License Number already exists.'
-      }
-    }
+                  // Validation
+                  let error = ''
+                  const trimmedValue = value.trim()
+                  if (!trimmedValue) {
+                    error = 'License Number is required.'
+                  } else if (trimmedValue.length < 3 || trimmedValue.length > 20) {
+                    error = 'License Number must be between 3 and 20 characters.'
+                  } else if (!/[A-Za-z0-9]/.test(trimmedValue)) {
+                    error = 'License Number cannot contain only special characters.'
+                  } else {
+                    // Check duplicate
+                    const isDuplicate = doctorData?.data?.some(
+                      (doctor) => doctor.doctorLicence === trimmedValue,
+                    )
+                    if (isDuplicate) {
+                      error = 'This License Number already exists.'
+                    }
+                  }
 
-    setFormErrors((prev) => ({ ...prev, doctorLicence: error }))
-  }}
-  invalid={!!formErrors?.doctorLicence}
-/>
+                  setFormErrors((prev) => ({ ...prev, doctorLicence: error }))
+                }}
+                invalid={!!formErrors?.doctorLicence}
+              />
 
               {formErrors?.doctorLicence && (
                 <small className="text-danger">{formErrors.doctorLicence}</small>
@@ -1279,9 +1324,9 @@ const DoctorManagement = () => {
               <CFormSelect
                 value={startDay}
                 onChange={(e) => {
-                  setStartDay(e.target.value);
-                  availableDays(e.target.value, 'start');
-                  setFormErrors((prev) => ({ ...prev, startDay: '' })); // clear startDay error
+                  setStartDay(e.target.value)
+                  availableDays(e.target.value, 'start')
+                  setFormErrors((prev) => ({ ...prev, startDay: '' })) // clear startDay error
                 }}
               >
                 <option value="">Select</option>
@@ -1301,9 +1346,9 @@ const DoctorManagement = () => {
               <CFormSelect
                 value={endDay}
                 onChange={(e) => {
-                  setEndDay(e.target.value);
-                  availableDays(e.target.value, 'end');
-                  setFormErrors((prev) => ({ ...prev, endDay: '' })); // clear endDay error
+                  setEndDay(e.target.value)
+                  availableDays(e.target.value, 'end')
+                  setFormErrors((prev) => ({ ...prev, endDay: '' })) // clear endDay error
                 }}
               >
                 <option value="">Select</option>
@@ -1322,9 +1367,9 @@ const DoctorManagement = () => {
               <CFormSelect
                 value={startTime}
                 onChange={(e) => {
-                  setStartTime(e.target.value);
-                  handleTimeChange(e.target.value, 'start');
-                  setFormErrors((prev) => ({ ...prev, startTime: '' })); // clear startTime error
+                  setStartTime(e.target.value)
+                  handleTimeChange(e.target.value, 'start')
+                  setFormErrors((prev) => ({ ...prev, startTime: '' })) // clear startTime error
                 }}
               >
                 <option value="">Select</option>
@@ -1344,9 +1389,9 @@ const DoctorManagement = () => {
               <CFormSelect
                 value={endTime}
                 onChange={(e) => {
-                  setEndTime(e.target.value);
-                  handleTimeChange(e.target.value, 'end');
-                  setFormErrors((prev) => ({ ...prev, endTime: '' })); // clear endTime error
+                  setEndTime(e.target.value)
+                  handleTimeChange(e.target.value, 'end')
+                  setFormErrors((prev) => ({ ...prev, endTime: '' })) // clear endTime error
                 }}
               >
                 <option value="">Select</option>
@@ -1358,7 +1403,6 @@ const DoctorManagement = () => {
               </CFormSelect>
               {formErrors.endTime && <div className="text-danger">{formErrors.endTime}</div>}
             </CCol>
-
           </CRow>
 
           <hr />
@@ -1512,7 +1556,6 @@ const DoctorManagement = () => {
                   if (!value.trim()) {
                     error = 'Email is required.'
                   } else {
-                    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
                     if (!emailPattern.test(value.trim())) {
                       error = 'Enter a valid email address.'
                     }
@@ -1598,16 +1641,24 @@ const DoctorManagement = () => {
             label="Area of Expertise"
             items={form.focusAreas}
             onAdd={(items) => {
-              // update form state
-              setForm((prev) => ({ ...prev, focusAreas: items }))
+              // ✅ Filter out items that are all numbers
+              const validItems = items.filter((item) => !/^\d+$/.test(item.trim()))
 
-              // validation: must have at least one item
+              // ✅ Show toast if some items were rejected
+              if (validItems.length < items.length) {
+                showCustomToast('Numbers are not allowed in Area of Expertise', 'error')
+              }
+
+              // ✅ Update form state with only valid items
+              setForm((prev) => ({ ...prev, focusAreas: validItems }))
+
+              // ✅ Validation: must have at least one valid item
               setFormErrors((prev) => ({
                 ...prev,
                 focusAreas:
-                  items && items.length > 0
-                    ? '' // clear error
-                    : 'Please add at least one focus area',
+                  validItems.length > 0
+                    ? ''
+                    : 'Please add at least one valid focus area (no numbers)',
               }))
             }}
           />
@@ -1621,13 +1672,28 @@ const DoctorManagement = () => {
               label="Languages Known"
               items={form.languages}
               onAdd={(items) => {
-                setForm((prev) => ({ ...prev, languages: items }))
+                // ✅ Filter out items that contain numbers
+                const validItems = items.filter((item) => /^[A-Za-z\s]+$/.test(item.trim()))
 
-                // ✅ Validation: At least one language should be added
+                // ✅ Show toast if invalid items were removed
+                if (validItems.length < items.length) {
+                  showCustomToast('Only alphabets are allowed in Languages Known', 'error')
+                }
+
+                // ✅ Update form state
+                setForm((prev) => ({ ...prev, languages: validItems }))
+
+                // ✅ Validation: At least one valid language
                 setFormErrors((prev) => ({
                   ...prev,
-                  languages: items.length > 0 ? '' : 'Please add at least one language',
+                  languages:
+                    validItems.length > 0
+                      ? ''
+                      : 'Please add at least one valid language (alphabets only)',
                 }))
+              }}
+              inputProps={{
+                placeholder: 'Add language',
               }}
             />
             {formErrors.languages && <div className="text-danger mt-1">{formErrors.languages}</div>}
@@ -1639,12 +1705,24 @@ const DoctorManagement = () => {
             label="Achievements / Awards"
             items={form.highlights}
             onAdd={(items) => {
-              setForm((prev) => ({ ...prev, highlights: items }))
+              // ✅ Filter out items that are all numbers
+              const validItems = items.filter((item) => !/^\d+$/.test(item.trim()))
 
-              // ✅ Validation: Optional, but you can enforce at least one achievement if required
+              // ✅ Show toast if some invalid items were removed
+              if (validItems.length < items.length) {
+                showCustomToast('Numbers are not allowed in Achievements / Awards', 'error')
+              }
+
+              // ✅ Update form state with only valid items
+              setForm((prev) => ({ ...prev, highlights: validItems }))
+
+              // ✅ Optional validation: at least one valid achievement
               setFormErrors((prev) => ({
                 ...prev,
-                highlights: items.length > 0 ? '' : 'Please add at least one achievement',
+                highlights:
+                  validItems.length > 0
+                    ? ''
+                    : 'Please add at least one valid achievement (no numbers)',
               }))
             }}
           />
@@ -1768,11 +1846,34 @@ const DoctorManagement = () => {
         </CModalBody>
 
         <CModalFooter>
-          <CButton color="secondary" onClick={() => setModalVisible(false)}>
+          <CButton color="secondary" onClick={() => setForm(initialForm)}>
+            Reset
+          </CButton>
+          <CButton
+            color="secondary"
+            onClick={() => {
+              setForm(initialForm)
+              setModalVisible(false)
+            }}
+          >
             Cancel
           </CButton>
-          <CButton color="info" className="text-white" onClick={handleSubmit}>
-            Submit
+          <CButton
+            style={{
+              backgroundColor: 'var(--color-black)',
+              color: 'white',
+            }}
+            onClick={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2 text-white" role="status" />
+                Saving...
+              </>
+            ) : (
+              'Save'
+            )}
           </CButton>
         </CModalFooter>
       </CModal>

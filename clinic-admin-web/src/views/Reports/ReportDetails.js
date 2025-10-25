@@ -27,6 +27,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
 import { useHospital } from '../Usecontext/HospitalContext'
 import { showCustomToast } from '../../Utils/Toaster'
+import { Delete, Download, Edit, Eye, Trash } from 'lucide-react'
 
 const ReportDetails = () => {
   const { id } = useParams()
@@ -44,6 +45,7 @@ const ReportDetails = () => {
 
   const [report, setReport] = useState([])
   const [showModal, setShowModal] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   // State for previewing both images and PDFs
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
@@ -63,9 +65,10 @@ const ReportDetails = () => {
   const { user } = useHospital()
   const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
 
+  console.log(appointmentInfo)
   // Initial state for new report, with reportDate not prefilled
   const [newReport, setNewReport] = useState({
-    customerId: appointmentInfo?.customerId,
+    customerId: appointmentInfo?.item.customerId,
     reportName: '',
     reportDate: '', // No prefill for date
     reportStatus: 'Normal',
@@ -73,6 +76,7 @@ const ReportDetails = () => {
     reportFile: null,
     bookingId: appointmentInfo?.bookingId || '', // Ensure bookingId is safe to access
     patientId: appointmentInfo?.patientId || '',
+    customerMobileNumber: appointmentInfo?.item.mobileNumber,
   })
   console.info(appointmentInfo?.customerId)
 
@@ -182,13 +186,14 @@ const ReportDetails = () => {
       !newReport.reportType ||
       !newReport.reportFile
     ) {
-      showCustomToast('Please fill all required fields and upload a file.','error')
+      showCustomToast('Please fill all required fields and upload a file.', 'error')
       return
     }
 
     try {
+      setLoading(true)
       const payload = {
-        customerId: newReport.customerId,
+        customerId: appointmentInfo?.item.customerId,
         reportsList: [
           {
             ...newReport,
@@ -218,7 +223,7 @@ const ReportDetails = () => {
       console.log('Report uploaded:', response)
 
       setUploadModal(false) // Close the upload modal
-      showCustomToast('Report uploaded successfully!','success')
+      showCustomToast('Report uploaded successfully!', 'success')
       fetchReportDetails() // Refresh the report list
 
       // Reset the form state after successful upload (clears fields)
@@ -232,7 +237,9 @@ const ReportDetails = () => {
       })
     } catch (err) {
       console.error('Error uploading report:', err)
-      showCustomToast('Upload failed','error')
+      showCustomToast('Upload failed', 'error')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -312,7 +319,7 @@ const ReportDetails = () => {
               <CTableHeaderCell>Date</CTableHeaderCell>
               <CTableHeaderCell>Status</CTableHeaderCell>
               <CTableHeaderCell>Type</CTableHeaderCell>
-              <CTableHeaderCell>Action</CTableHeaderCell>
+              <CTableHeaderCell className="text-end">Action</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
           <CTableBody>
@@ -342,13 +349,17 @@ const ReportDetails = () => {
                     <CTableDataCell>{reportItem.reportType}</CTableDataCell>
 
                     {/* Actions: Preview + Download */}
-                    <CTableDataCell>
+                    <CTableDataCell className="d-flex justify-content-end">
                       {base64File ? (
                         <div className="d-flex gap-2">
                           {/* 👁️ Preview Button */}
                           {/* {can('Reports', 'read') && ( */}
                           <CButton
-                            className="bg-info text-white border-0"
+                            className="  border-0 "
+                            style={{
+                              backgroundColor: 'var(--color-bgcolor)',
+                              color: 'var(--color-black)',
+                            }}
                             size="sm"
                             onClick={() => {
                               // Set state for modal preview
@@ -357,18 +368,55 @@ const ReportDetails = () => {
                               setShowModal(true)
                             }}
                           >
-                            <FaEye />
+                            <Eye size={20} />
                           </CButton>
                           {/* )} */}
                           {/* ⬇️ Download Button */}
                           <a
                             href={fileUrl}
                             download={`${reportItem.reportName || 'report'}_${index + 1}.${fileExt}`}
-                            className="btn btn-sm btn-outline-success"
+                            className="btn btn-sm  "
+                            style={{
+                              backgroundColor: 'var(--color-bgcolor)',
+                              color: 'var(--color-black)',
+                            }}
                             title="Download"
                           >
-                            <FaDownload />
+                            <Download size={20} />
                           </a>
+                          <CButton
+                            className="  border-0"
+                            size="sm"
+                            disabled={true}
+                            style={{
+                              backgroundColor: 'var(--color-bgcolor)',
+                              color: 'var(--color-black)',
+                            }}
+                            onClick={() => {
+                              // Set state for modal preview
+                              setIsPreviewPdf(isPdf)
+                              setPreviewFileUrl(fileUrl)
+                              setShowModal(true)
+                            }}
+                          >
+                            <Edit size={20} />
+                          </CButton>
+                          <CButton
+                            className="  border-0"
+                            disabled={true}
+                            style={{
+                              backgroundColor: 'var(--color-bgcolor)',
+                              color: 'var(--color-black)',
+                            }}
+                            onClick={() => {
+                              // Set state for modal preview
+                              setIsPreviewPdf(isPdf)
+                              setPreviewFileUrl(fileUrl)
+                              setShowModal(true)
+                            }}
+                          >
+                            <Trash size={20} />
+                          </CButton>
                         </div>
                       ) : (
                         'No File'
@@ -518,7 +566,18 @@ const ReportDetails = () => {
             onClick={handleUploadSubmit}
             style={{ color: 'var(--color-black)', backgroundColor: 'var(--color-bgcolor)' }}
           >
-            Submit
+            {loading ? (
+              <>
+                <span
+                  className="spinner-border spinner-border-sm me-2  "
+                  role="status"
+                  style={{ color: 'var(--color-black)' }}
+                />
+                Uploading...
+              </>
+            ) : (
+              'Upload'
+            )}
           </CButton>
         </CModalFooter>
       </CModal>

@@ -16,6 +16,7 @@ import { AppointmentData } from '../AppointmentManagement/appointmentAPI'
 import { useNavigate } from 'react-router-dom'
 import LoadingIndicator from '../../Utils/loader'
 import { useHospital } from '../Usecontext/HospitalContext'
+import Pagination from '../../Utils/Pagination'
 const ReportsManagement = () => {
   // const [viewService, setViewService] = useState(null)
   const [filteredData, setFilteredData] = useState([])
@@ -26,7 +27,7 @@ const ReportsManagement = () => {
   const [filterTypes, setFilterTypes] = useState([])
   const [statusFilters, setStatusFilters] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 7
+  const [pageSize, setPageSize] = useState(5)
   const [availableServiceTypes, setAvailableServiceTypes] = useState([])
   const [selectedAppointment, setSelectedAppointment] = useState([])
   const [availableConsultationTypes, setAvailableConsultationTypes] = useState([])
@@ -269,46 +270,48 @@ const ReportsManagement = () => {
 
             <CTableBody>
               {filteredData.length > 0 ? (
-                filteredData.map((item, index) => (
-                  <CTableRow key={`${item.bookingId}-${index}`} className="pink-table">
-                    <CTableDataCell>{index + 1}</CTableDataCell>
-                    <CTableDataCell>{item.name}</CTableDataCell>
-                    <CTableDataCell>{item.consultationType}</CTableDataCell>
-                    <CTableDataCell>{item.serviceDate}</CTableDataCell>
-                    <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
-                    <CTableDataCell>
-                      {normalize(item.status) === 'in-progress' ? 'Active' : item.status}
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      {can('Appointments', 'read') && (
-                        <CButton
-                          style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
-                          className="text-white"
-                          size="sm"
-                          onClick={() =>
-                            navigate(`/report-details/${item.bookingId}`, {
-                              state: {
-                                report: item,
-                                appointmentInfo: {
-                                  name: item.name,
-                                  age: item.age,
-                                  gender: item.gender,
-                                  problem: item.problem,
-                                  bookingId: item.bookingId,
-                                  patientId: item.patientId || selectedAppointment?.patientId, // ✅ Use correct path
-                                  item: item,
-                                  selectedAppointment: selectedAppointment,
+                filteredData
+                  .slice((currentPage - 1) * pageSize, currentPage * pageSize)
+                  .map((item, index) => (
+                    <CTableRow key={`${item.bookingId}-${index}`} className="pink-table">
+                      <CTableDataCell>{index + 1}</CTableDataCell>
+                      <CTableDataCell>{item.name}</CTableDataCell>
+                      <CTableDataCell>{item.consultationType}</CTableDataCell>
+                      <CTableDataCell>{item.serviceDate}</CTableDataCell>
+                      <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
+                      <CTableDataCell>
+                        {normalize(item.status) === 'in-progress' ? 'Active' : item.status}
+                      </CTableDataCell>
+                      <CTableDataCell>
+                        {can('Appointments', 'read') && (
+                          <CButton
+                            style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+                            className="text-white"
+                            size="sm"
+                            onClick={() =>
+                              navigate(`/report-details/${item.bookingId}`, {
+                                state: {
+                                  report: item,
+                                  appointmentInfo: {
+                                    name: item.name,
+                                    age: item.age,
+                                    gender: item.gender,
+                                    problem: item.problem,
+                                    bookingId: item.bookingId,
+                                    patientId: item.patientId || selectedAppointment?.patientId, // ✅ Use correct path
+                                    item: item,
+                                    selectedAppointment: selectedAppointment,
+                                  },
                                 },
-                              },
-                            })
-                          }
-                        >
-                          View
-                        </CButton>
-                      )}
-                    </CTableDataCell>
-                  </CTableRow>
-                ))
+                              })
+                            }
+                          >
+                            View
+                          </CButton>
+                        )}
+                      </CTableDataCell>
+                    </CTableRow>
+                  ))
               ) : (
                 // ✅ Show only after loading is done and no data
                 <CTableRow>
@@ -325,8 +328,26 @@ const ReportsManagement = () => {
           </CTable>
         )}
       </div>
-      {/* {viewService && (
-       
+
+      {filteredData.length > 0 && (
+        <div className="mb-3  mt-3">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredData.length / pageSize)}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
+        </div>
+      )}
+      {/* {filteredMedicines.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(filteredMedicines.length / pageSize)}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       )} */}
     </div>
   )
