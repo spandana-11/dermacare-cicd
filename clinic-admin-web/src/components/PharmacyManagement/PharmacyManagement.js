@@ -41,6 +41,7 @@ import {
 import { Edit2, Eye, Trash2 } from 'lucide-react'
 import ConfirmationModal from '../ConfirmationModal'
 import { showCustomToast } from '../../Utils/Toaster'
+import Pagination from '../../Utils/Pagination'
 
 const PharmacyManagement = () => {
   const [activeKey, setActiveKey] = useState(0)
@@ -53,6 +54,10 @@ const PharmacyManagement = () => {
   const [formErrors, setFormErrors] = useState({})
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false)
   const [medicineIdToDelete, setMedicineIdToDelete] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(5)
+  const [loading, setLoading] = useState(false)
+  const [delloading, setDelLoading] = useState(false)
   const slotOptions = [
     { value: 'morning', label: 'Morning' },
     { value: 'afternoon', label: 'Afternoon' },
@@ -155,6 +160,7 @@ const PharmacyManagement = () => {
     if (!validateForm()) return
 
     try {
+      setLoading(true)
       if (formData.id) {
         // UPDATE FLOW
         console.log('Updating medicine with ID:', formData.id)
@@ -184,6 +190,8 @@ const PharmacyManagement = () => {
     } catch (error) {
       console.error('Error saving medicine:', error)
       showCustomToast('Failed to save medicine!', 'error')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -269,12 +277,13 @@ const PharmacyManagement = () => {
   }
   const confirmDeleteMedicine = async () => {
     if (!medicineIdToDelete) return
-
+    setDelLoading(true)
     const success = await deletePrescriptionById(medicineIdToDelete)
     if (success) {
       setMedicines((prev) => prev.filter((med) => med.id !== medicineIdToDelete))
       showCustomToast(`Medicine deleted successfully!`, 'success')
     } else {
+      setDelLoading(false)
       showCustomToast('Failed to delete medicine!', 'error')
     }
 
@@ -373,7 +382,7 @@ const PharmacyManagement = () => {
                   {filteredMedicines.length > 0 ? (
                     filteredMedicines.map((med, index) => (
                       <CTableRow key={med.id}>
-                        <CTableDataCell>{index + 1}</CTableDataCell> {/* Serial Number */}
+                        <CTableDataCell>{(currentPage - 1) * pageSize + index + 1}</CTableDataCell>
                         <CTableDataCell>{med.name}</CTableDataCell>
                         <CTableDataCell>{med.dose}</CTableDataCell>
                         <CTableDataCell>{med.medicineType}</CTableDataCell>
@@ -432,6 +441,15 @@ const PharmacyManagement = () => {
                   )}
                 </CTableBody>
               </CTable>
+              {filteredMedicines.length > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={Math.ceil(filteredMedicines.length / pageSize)}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                />
+              )}
             </div>
           </CTabPane>
 
@@ -782,16 +800,31 @@ const PharmacyManagement = () => {
           </CRow>
         </CModalBody>
 
-        <CModalFooter className="d-flex justify-content-between">
-          <CButton color="secondary" variant="outline" onClick={() => setShowModal(false)}>
+        <CModalFooter className="d-flex justify-content-end">
+          <CButton color="secondary" onClick={() => setFormData(initialFormData)}>
+            Reset
+          </CButton>
+          <CButton color="secondary" onClick={() => setShowModal(false)}>
             Cancel
           </CButton>
 
           <CButton
             onClick={handleSave}
+            disabled={loading}
             style={{ backgroundColor: 'var(--color-bgcolor)', color: 'var(--color-black)' }}
           >
-            Save Medicine
+            {loading ? (
+              <>
+                <span
+                  className="spinner-border spinner-border-sm me-2 "
+                  style={{ color: 'var(--color-black)' }}
+                  role="status"
+                />
+                Saving...
+              </>
+            ) : (
+              'Save Medicine'
+            )}
           </CButton>
         </CModalFooter>
       </CModal>
@@ -908,6 +941,7 @@ const PharmacyManagement = () => {
         isVisible={isDeleteModalVisible}
         title="Delete Medicine"
         message="Are you sure you want to delete this medicine? This action cannot be undone."
+       isLoading={delloading}
         confirmText="Yes, Delete"
         cancelText="Cancel"
         confirmColor="danger"

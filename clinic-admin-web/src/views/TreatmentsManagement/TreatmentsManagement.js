@@ -39,12 +39,15 @@ import ConfirmationModal from '../../components/ConfirmationModal'
 import LoadingIndicator from '../../Utils/loader'
 import { useHospital } from '../Usecontext/HospitalContext'
 import { showCustomToast } from '../../Utils/Toaster'
+import Pagination from '../../Utils/Pagination'
 
 const TreatmentsManagement = () => {
   // const [searchQuery, setSearchQuery] = useState('')
   const [treatment, setTreatment] = useState([])
   // const [filteredData, setFilteredData] = useState([])
   const [loading, setLoading] = useState(false)
+  const [delloading, setDelLoading] = useState(false)
+  const [saveloading, setSaveLoading] = useState(false)
   const [error, setError] = useState(null)
 
   const [modalVisible, setModalVisible] = useState(false)
@@ -120,13 +123,16 @@ const TreatmentsManagement = () => {
   // Delete confirm
   const handleConfirmDelete = async () => {
     try {
+      setDelLoading(true)
       await deleteTreatmentData(treatmentIdToDelete, hospitalIdToDelete)
-      showCustomToast('Treatment deleted successfully!', { position: 'top-right' },'success')
+      showCustomToast('Treatment deleted successfully!', { position: 'top-right' }, 'success')
       // fetchData()
       fetchDataBy_HId(hospitalId)
     } catch (error) {
-      showCustomToast('Failed to delete treatment.','error')
+      showCustomToast('Failed to delete treatment.', 'error')
       console.error('Delete error:', error)
+    }finally{
+      setDelLoading(false)
     }
     setIsModalVisible(false)
   }
@@ -136,7 +142,7 @@ const TreatmentsManagement = () => {
     setHospitalIdToDelete(null)
     setIsModalVisible(false)
   }
- const nameRegex = /^[A-Za-z0-9\s.\-()\/']+$/
+  const nameRegex = /^[A-Za-z0-9\s.\-()\/']+$/
 
   // Add treatment
   const handleAddTreatment = async () => {
@@ -148,9 +154,9 @@ const TreatmentsManagement = () => {
       return
     }
     if (!nameRegex.test(trimmedName)) {
-     setErrors({ 
-        treatmentName: "Only alphabets, numbers, spaces, and limited symbols (.-()/') are allowed", 
-    })
+      setErrors({
+        treatmentName: "Only alphabets, numbers, spaces, and limited symbols (.-()/') are allowed",
+      })
       return
     }
 
@@ -159,13 +165,14 @@ const TreatmentsManagement = () => {
       (t) => t.treatmentName.trim().toLowerCase() === trimmedName.toLowerCase(),
     )
     if (duplicate) {
-      showCustomToast(`Duplicate treatment name - "${trimmedName}" already exists!`,'error', {
+      showCustomToast(`Duplicate treatment name - "${trimmedName}" already exists!`, 'error', {
         position: 'top-right',
       })
       return
     }
 
     try {
+      setSaveLoading(true)
       const payload = {
         treatmentName: trimmedName,
         hospitalId: hospitalId,
@@ -181,7 +188,7 @@ const TreatmentsManagement = () => {
       }
       setTreatment((prev) => [...prev, newTreatmentRow]) // new last
 
-      showCustomToast('Treatment added successfully!','success')
+      showCustomToast('Treatment added successfully!', 'success')
       setModalVisible(false)
       setNewTreatment({ treatmentName: '' })
     } catch (error) {
@@ -189,7 +196,9 @@ const TreatmentsManagement = () => {
         error.response?.data?.message ||
         error.response?.statusText ||
         'An unexpected error occurred.'
-      showCustomToast(`Error adding treatment: ${errorMessage}`, { position: 'top-right' },'error')
+      showCustomToast(`Error adding treatment: ${errorMessage}`, { position: 'top-right' }, 'error')
+    } finally {
+      setSaveLoading(false)
     }
   }
   const handleUpdateTreatment = async () => {
@@ -212,20 +221,21 @@ const TreatmentsManagement = () => {
         t.id !== treatmentId && t.treatmentName.trim().toLowerCase() === trimmedName.toLowerCase(),
     )
     if (duplicate) {
-      showCustomToast(`Duplicate treatment name - "${trimmedName}" already exists!`, 'error',{
+      showCustomToast(`Duplicate treatment name - "${trimmedName}" already exists!`, 'error', {
         position: 'top-right',
       })
       return
     }
 
     try {
+      setSaveLoading(true)
       await updateTreatmentData(
         { treatmentName: trimmedName, hospitalId: hospitalId },
         treatmentId,
         hospitalId,
       )
 
-      showCustomToast('Treatment updated successfully!','success')
+      showCustomToast('Treatment updated successfully!', 'success')
 
       // 🔹 Update state immediately (no need to refetch)
       setTreatment((prev) =>
@@ -235,7 +245,9 @@ const TreatmentsManagement = () => {
       setEditTreatmentMode(false)
     } catch (error) {
       console.error('Update error:', error)
-      showCustomToast('Failed to update treatment.','error')
+      showCustomToast('Failed to update treatment.', 'error')
+    } finally {
+      setSaveLoading(false)
     }
   }
 
@@ -336,7 +348,7 @@ const TreatmentsManagement = () => {
 
   return (
     <div>
-      <ToastContainer />
+      {/* <ToastContainer /> */}
       <CForm className="d-flex justify-content-between mb-3">
         {/* <CInputGroup className="mb-3" style={{ width: '300px', marginLeft: '40px' }}>
           <CFormInput
@@ -443,7 +455,7 @@ const TreatmentsManagement = () => {
                 }
               }}
               placeholder="Enter Treatment Name"
-              className={errors.treatmentName ? 'is-invalid' : ''}
+              className={(errors.treatmentName ? 'is-invalid' : '', 'mb-3')}
             />
             {errors.treatmentName && (
               <div className="invalid-feedback" style={{ color: 'red' }}>
@@ -451,6 +463,9 @@ const TreatmentsManagement = () => {
               </div>
             )}
             <CModalFooter>
+              <CButton color="secondary" onClick={() => setNewTreatment({ treatmentName: '' })}>
+                Reset
+              </CButton>
               <CButton color="secondary" onClick={() => setModalVisible(false)}>
                 Cancel
               </CButton>
@@ -458,8 +473,19 @@ const TreatmentsManagement = () => {
                 type="submit" // ✅ triggers form submit (handled above)
                 style={{ backgroundColor: 'var(--color-black)' }}
                 className="text-white"
+                disabled={saveloading}
               >
-                Add
+                {saveloading ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2 text-white"
+                      role="status"
+                    />
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
               </CButton>
             </CModalFooter>
           </CForm>
@@ -509,8 +535,17 @@ const TreatmentsManagement = () => {
             style={{ backgroundColor: 'var(--color-black)' }}
             className="text-white"
             onClick={handleUpdateTreatment}
+            disabled={saveloading}
           >
-            Update
+            {saveloading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2 text-white" role="status" />
+                Updating...
+              </>
+            ) : (
+              'Update'
+            )}
+            {/* {saveloading ? "Updating..." : "Update"}  */}
           </CButton>
         </CModalFooter>
       </CModal>
@@ -527,6 +562,7 @@ const TreatmentsManagement = () => {
         isVisible={isModalVisible}
         title="Delete Treatment"
         message="Are you sure you want to delete this treatment? This action cannot be undone."
+        isLoading={delloading}
         confirmText="Yes, Delete"
         cancelText="Cancel"
         confirmColor="danger"
@@ -640,32 +676,14 @@ const TreatmentsManagement = () => {
         </CTable>
       )}
       {/* Pagination Controls */}
-      {!loading && (
-        <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
-          {Array.from(
-            {
-              length: Math.ceil(
-                (filteredData.length ? filteredData.length : treatment.length) / rowsPerPage,
-              ),
-            },
-            (_, index) => (
-              <CButton
-                key={index}
-                style={{
-                  backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
-                  color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
-                  border: '1px solid #ccc',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                }}
-                className="ms-2"
-                onClick={() => setCurrentPage(index + 1)}
-              >
-                {index + 1}
-              </CButton>
-            ),
-          )}
-        </div>
+      {displayData.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(filteredData.length / rowsPerPage)}
+          pageSize={rowsPerPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setRowsPerPage}
+        />
       )}
     </div>
   )

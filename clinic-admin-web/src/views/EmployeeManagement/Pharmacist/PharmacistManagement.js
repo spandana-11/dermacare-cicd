@@ -33,6 +33,7 @@ import {
 import { toast } from 'react-toastify'
 import { useHospital } from '../../Usecontext/HospitalContext'
 import { showCustomToast } from '../../../Utils/Toaster'
+import Pagination from '../../../Utils/Pagination'
 
 const PharmacistManagement = () => {
   const [pharmacist, setPharmacist] = useState([])
@@ -43,6 +44,7 @@ const PharmacistManagement = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const { searchQuery, setSearchQuery } = useGlobalSearch()
   const [loading, setLoading] = useState(false)
+  const [delloading, setDelLoading] = useState(false)
   const [error, setError] = useState(null)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
@@ -132,6 +134,7 @@ const PharmacistManagement = () => {
   // Delete pharmacist
   const handleDelete = async (pharmacistId) => {
     try {
+      setDelLoading(true)
       await DeletePharmacistById(pharmacistId)
       setPharmacist((prev) => prev.filter((p) => p.pharmacistId !== pharmacistId))
       showCustomToast('Pharmacist deleted successfully!', 'success')
@@ -140,6 +143,7 @@ const PharmacistManagement = () => {
       showCustomToast('❌ Failed to delete pharmacist.', 'error')
     } finally {
       setIsModalVisible(false)
+      setDelLoading(false)
     }
   }
   //permission
@@ -224,6 +228,7 @@ const PharmacistManagement = () => {
         isVisible={isModalVisible}
         title="Delete Pharmacist"
         message="Are you sure you want to delete this pharmacist? This action cannot be undone."
+        isLoading={delloading}
         confirmText="Yes, Delete"
         cancelText="Cancel"
         confirmColor="danger"
@@ -357,25 +362,32 @@ const PharmacistManagement = () => {
           </CTableBody>
         </CTable>
       )}
-      {!loading && (
-        <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
-          {Array.from({ length: Math.ceil(filteredData.length / rowsPerPage) }, (_, index) => (
-            <CButton
-              key={index}
-              style={{
-                backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
-                color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
-                border: '1px solid #ccc',
-                borderRadius: '5px',
-                cursor: 'pointer',
-              }}
-              className="ms-2"
-              onClick={() => setCurrentPage(index + 1)}
-            >
-              {index + 1}
-            </CButton>
-          ))}
-        </div>
+      {displayData.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(filteredData.length / rowsPerPage)}
+          pageSize={rowsPerPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setRowsPerPage}
+        />
+        // <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
+        //   {Array.from({ length: Math.ceil(filteredData.length / rowsPerPage) }, (_, index) => (
+        //     <CButton
+        //       key={index}
+        //       style={{
+        //         backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
+        //         color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
+        //         border: '1px solid #ccc',
+        //         borderRadius: '5px',
+        //         cursor: 'pointer',
+        //       }}
+        //       className="ms-2"
+        //       onClick={() => setCurrentPage(index + 1)}
+        //     >
+        //       {index + 1}
+        //     </CButton>
+        //   ))}
+        // </div>
       )}
       <PharmacistForm
         visible={modalVisible}

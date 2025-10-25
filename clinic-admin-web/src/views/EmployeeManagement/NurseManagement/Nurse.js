@@ -23,6 +23,7 @@ import LoadingIndicator from '../../../Utils/loader'
 import { addNurse, deleteNurse, getAllNurses, updateNurse } from './NurseAPI'
 import { useHospital } from '../../Usecontext/HospitalContext'
 import { showCustomToast } from '../../../Utils/Toaster'
+import Pagination from '../../../Utils/Pagination'
 
 const NurseManagement = () => {
   const [nurses, setNurses] = useState([])
@@ -30,8 +31,9 @@ const NurseManagement = () => {
   const [selectedNurse, setSelectedNurse] = useState(null)
   const [viewMode, setViewMode] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [rowsPerPage] = useState(10)
+  const [rowsPerPage, setRowsPerPage] = useState(5)
   const [loading, setLoading] = useState(false)
+  const [delloading, setDelLoading] = useState(false)
   const [error, setError] = useState(null)
 
   const [isModalVisible, setIsModalVisible] = useState(false)
@@ -104,12 +106,11 @@ const NurseManagement = () => {
     try {
       if (selectedNurse) {
         await updateNurse(hospitalId, selectedNurse.nurseId, formData)
-        showCustomToast('Nurse updated successfully!','success')
-      }
-      else {
+        showCustomToast('Nurse updated successfully!', 'success')
+      } else {
         // Add new nurse
         const res = await addNurse({ ...formData, hospitalId: hospitalId })
-        showCustomToast('Nurse added successfully!','success')
+        showCustomToast('Nurse added successfully!', 'success')
         setModalData({
           username: res.data.data.userName,
           password: res.data.data.password,
@@ -123,7 +124,7 @@ const NurseManagement = () => {
       setViewMode(false)
     } catch (err) {
       console.error('API error:', err)
-      showCustomToast('❌ Failed to save nurse.','error')
+      showCustomToast('❌ Failed to save nurse.', 'error')
     }
   }
 
@@ -131,13 +132,15 @@ const NurseManagement = () => {
   const handleDelete = async (nurseId) => {
     const hospitalId = localStorage.getItem('HospitalId')
     try {
+      setDelLoading(true)
       await deleteNurse(hospitalId, nurseId)
       setNurses((prev) => prev.filter((n) => n.nurseId !== nurseId))
-      showCustomToast('Nurse deleted successfully!','success')
+      showCustomToast('Nurse deleted successfully!', 'success')
     } catch (err) {
       console.error('Delete error:', err)
-     showCustomToast('Failed to delete nurse.','error')
+      showCustomToast('Failed to delete nurse.', 'error')
     } finally {
+      setDelLoading(false)
       setIsModalVisible(false)
       setDeleteId(null)
     }
@@ -216,6 +219,7 @@ const NurseManagement = () => {
         isVisible={isModalVisible}
         title="Delete Nurse"
         message="Are you sure you want to delete this nurse? This action cannot be undone."
+        isLoading={delloading}
         confirmText="Yes, Delete"
         cancelText="Cancel"
         confirmColor="danger"
@@ -358,25 +362,32 @@ const NurseManagement = () => {
       )}
 
       {/* Pagination */}
-      {!loading && (
-        <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
-          {Array.from({ length: Math.ceil(filteredData.length / rowsPerPage) }, (_, index) => (
-            <CButton
-              key={index}
-              style={{
-                backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
-                color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
-                border: '1px solid #ccc',
-                borderRadius: '5px',
-                cursor: 'pointer',
-              }}
-              className="ms-2"
-              onClick={() => setCurrentPage(index + 1)}
-            >
-              {index + 1}
-            </CButton>
-          ))}
-        </div>
+      {displayData.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(filteredData.length / rowsPerPage)}
+          pageSize={rowsPerPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setRowsPerPage}
+        />
+        // <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
+        //   {Array.from({ length: Math.ceil(filteredData.length / rowsPerPage) }, (_, index) => (
+        //     <CButton
+        //       key={index}
+        //       style={{
+        //         backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
+        //         color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
+        //         border: '1px solid #ccc',
+        //         borderRadius: '5px',
+        //         cursor: 'pointer',
+        //       }}
+        //       className="ms-2"
+        //       onClick={() => setCurrentPage(index + 1)}
+        //     >
+        //       {index + 1}
+        //     </CButton>
+        //   ))}
+        // </div>
       )}
 
       {/* Nurse Form Modal */}

@@ -40,11 +40,16 @@ const CustomToast = ({ message, type = 'success' }) => {
 export const showCustomToast = (message, type = 'success') => {
   toast(<CustomToast message={message} type={type} />, {
     position: 'top-right',
-    autoClose: 2000,
+    autoClose: 3000,
     hideProgressBar: false,
     closeOnClick: true,
     pauseOnHover: true,
     draggable: true,
     progress: undefined,
+    closeButton: (
+      <span style={{ color: 'white', fontWeight: 'bold', fontSize: '18px', marginRight: '10px' }}>
+        ×
+      </span>
+    ),
   })
 }

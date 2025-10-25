@@ -12,7 +12,7 @@ import {
   CFormTextarea,
   CFormSelect,
 } from '@coreui/react'
-import { toast } from 'react-toastify'
+import { toast, ToastContainer } from 'react-toastify'
 import { actions, features } from '../../../Constant/Features'
 import capitalizeWords from '../../../Utils/capitalizeWords'
 import UserPermissionModal from '../UserPermissionModal'
@@ -88,7 +88,8 @@ const FrontDeskForm = ({
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
   const [errors, setErrors] = useState({})
-
+  const [loading, setLoading] = useState(false)
+  const [ifscLoading, setIfscLoading] = useState(false)
   // Mandatory fields
   const mandatoryFields = [
     'fullName',
@@ -228,7 +229,7 @@ const FrontDeskForm = ({
 
     // ✅ Enforce 250 KB max
     if (file.size > 250 * 1024) {
-      showCustomToast('File size must be less than 250KB.','error', {
+      showCustomToast('File size must be less than 250KB.', 'error', {
         position: 'top-right',
         autoClose: 3000,
         hideProgressBar: false,
@@ -256,7 +257,7 @@ const FrontDeskForm = ({
     const missing = validateMandatoryFields(formData, mandatoryFields)
 
     if (missing.length > 0) {
-      showCustomToast(`Please fill required fields: ${missing.join(', ')}`,'error')
+      showCustomToast(`Please fill required fields: ${missing.join(', ')}`, 'error')
       return
     }
 
@@ -271,7 +272,7 @@ const FrontDeskForm = ({
       const actualAge = isBeforeBirthday ? age - 1 : age
 
       if (actualAge < 18) {
-        showCustomToast('Technician must be at least 18 years old.','error')
+        showCustomToast('Technician must be at least 18 years old.', 'error')
         return
       }
     }
@@ -279,18 +280,18 @@ const FrontDeskForm = ({
     // ✅ Mobile validation (10 digits, starting with 6-9)
     const mobileRegex = /^[6-9]\d{9}$/
     if (!mobileRegex.test(formData.contactNumber)) {
-      showCustomToast('Contact number must be 10 digits and start with 6-9.','error')
+      showCustomToast('Contact number must be 10 digits and start with 6-9.', 'error')
       return
     }
     // ✅ Emergency contact and Nurse contact must not be same
     if (formData.contactNumber === formData.emergencyContact) {
-      showCustomToast('Contact Number and Emergency Contact cannot be the same.','error')
+      showCustomToast('Contact Number and Emergency Contact cannot be the same.', 'error')
       return
     }
     // ✅ Email validation
 
     if (!emailPattern.test(formData.emailId)) {
-      showCustomToast('Please enter a valid email address.','error')
+      showCustomToast('Please enter a valid email address.', 'error')
       return
     }
 
@@ -299,7 +300,7 @@ const FrontDeskForm = ({
       (t) => t.contactNumber === formData.contactNumber && t.id !== formData.id,
     )
     if (duplicateContact) {
-      showCustomToast('Contact number already exists!','error')
+      showCustomToast('Contact number already exists!', 'error')
       return
     }
 
@@ -308,7 +309,7 @@ const FrontDeskForm = ({
       (t) => t.emailId === formData.emailId && t.id !== formData.id,
     )
     if (duplicateEmail) {
-      showCustomToast('Email already exists!','error')
+      showCustomToast('Email already exists!', 'error')
       return
     }
     return true
@@ -317,11 +318,12 @@ const FrontDeskForm = ({
   // 🔹 Save handler
   const handleSubmit = async () => {
     if (Object.keys(formData.permissions).length === 0) {
-      showCustomToast('Please assign at least one user permission before saving.','error')
+      showCustomToast('Please assign at least one user permission before saving.', 'error')
       return
     }
 
     try {
+      setLoading(true)
       const res = await onSave(formData)
       console.log(res.data.statusCode) // Now this will log actual API response
       if (res?.data?.data != null) {
@@ -331,6 +333,8 @@ const FrontDeskForm = ({
       }
     } catch (err) {
       console.error('Submit failed', err)
+    } finally {
+      setLoading(false)
     }
 
     // console.log(formData)
@@ -434,6 +438,7 @@ const FrontDeskForm = ({
 
   return (
     <>
+      <ToastContainer />
       <CModal
         visible={visible}
         onClose={onClose}
@@ -448,121 +453,166 @@ const FrontDeskForm = ({
           {viewMode ? (
             // ✅ VIEW MODE
 
-          <div className="container my-4">
-  {/* Profile Header */}
-  <div className="card p-4 mb-4 shadow-sm border-light">
-    <div className="d-flex flex-column flex-md-row align-items-center">
-      {/* Profile Image */}
-      <div className="text-center me-md-4 mb-3 mb-md-0">
-        <img
-          src={formData.profilePicture || "/assets/images/default-avatar.png"}
-          alt={formData.fullName}
-          width="100"
-          height="100"
-          className="rounded-circle border"
-          style={{ objectFit: "cover", borderColor: "#ccc" }}
-        />
-      </div>
+            <div className="container my-4">
+              {/* Profile Header */}
+              <div className="card p-4 mb-4 shadow-sm border-light">
+                <div className="d-flex flex-column flex-md-row align-items-center">
+                  {/* Profile Image */}
+                  <div className="text-center me-md-4 mb-3 mb-md-0">
+                    <img
+                      src={formData.profilePicture || '/assets/images/default-avatar.png'}
+                      alt={formData.fullName}
+                      width="100"
+                      height="100"
+                      className="rounded-circle border"
+                      style={{ objectFit: 'cover', borderColor: '#ccc' }}
+                    />
+                  </div>
 
-      {/* Basic Info */}
-      <div className="flex-grow-1 text-center text-md-start">
-        <h4 className="fw-bold mb-1" style={{ color: '#7e3a93' }}>
-          {formData.fullName}
-        </h4>
-        <p className="text-muted mb-1"><strong>Email:</strong> {formData.emailId}</p>
-        <p className="text-muted mb-1"><strong>Contact:</strong> {formData.contactNumber}</p>
-        <div>
-          <span className="badge bg-secondary mt-2">ID: {formData.id}</span>
-        </div>
-      </div>
-    </div>
-  </div>
+                  {/* Basic Info */}
+                  <div className="flex-grow-1 text-center text-md-start">
+                    <h4 className="fw-bold mb-1" style={{ color: '#7e3a93' }}>
+                      {formData.fullName}
+                    </h4>
+                    <p className="text-muted mb-1">
+                      <strong>Email:</strong> {formData.emailId}
+                    </p>
+                    <p className="text-muted mb-1">
+                      <strong>Contact:</strong> {formData.contactNumber}
+                    </p>
+                    <div>
+                      <span className="badge bg-secondary mt-2">ID: {formData.id}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-  {/* Personal Information */}
-  <div className="card p-3 mb-4 shadow-sm border-light">
-    <h5 className="mb-3 border-bottom pb-2">Personal Information</h5>
-    <div className="row g-3">
-      <div className="col-md-4"><Row label="Full Name" value={formData.fullName} /></div>
-      <div className="col-md-4"><Row label="Email" value={formData.emailId} /></div>
-      <div className="col-md-4"><Row label="Contact" value={formData.contactNumber} /></div>
-      <div className="col-md-4"><Row label="Date of Birth" value={formData.dateOfBirth} /></div>
-      <div className="col-md-4"><Row label="Government ID" value={formData.governmentId} /></div>
-    </div>
-  </div>
+              {/* Personal Information */}
+              <div className="card p-3 mb-4 shadow-sm border-light">
+                <h5 className="mb-3 border-bottom pb-2">Personal Information</h5>
+                <div className="row g-3">
+                  <div className="col-md-4">
+                    <Row label="Full Name" value={formData.fullName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Email" value={formData.emailId} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Contact" value={formData.contactNumber} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Date of Birth" value={formData.dateOfBirth} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Government ID" value={formData.governmentId} />
+                  </div>
+                </div>
+              </div>
 
-  {/* Work Information */}
-  <div className="card p-3 mb-4 shadow-sm border-light">
-    <h5 className="mb-3 border-bottom pb-2">Work Information</h5>
-    <div className="row g-3">
-      <div className="col-md-4"><Row label="Date of Joining" value={formData.dateOfJoining} /></div>
-      <div className="col-md-4"><Row label="Department / Lab" value={formData.department} /></div>
-      <div className="col-md-4"><Row label="Qualification" value={formData.qualification} /></div>
-      <div className="col-md-4"><Row label="Emergency Contact" value={formData.emergencyContact} /></div>
-      <div className="col-md-4"><Row label="Experience" value={formData.yearOfExperience} /></div>
-     {/* <div className="col-md-4"><Row label="Specialization" value={formData.specialization} /></div> */}
-    </div>
-  </div>
+              {/* Work Information */}
+              <div className="card p-3 mb-4 shadow-sm border-light">
+                <h5 className="mb-3 border-bottom pb-2">Work Information</h5>
+                <div className="row g-3">
+                  <div className="col-md-4">
+                    <Row label="Date of Joining" value={formData.dateOfJoining} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Department / Lab" value={formData.department} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Qualification" value={formData.qualification} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Emergency Contact" value={formData.emergencyContact} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Experience" value={formData.yearOfExperience} />
+                  </div>
+                  {/* <div className="col-md-4"><Row label="Specialization" value={formData.specialization} /></div> */}
+                </div>
+              </div>
 
-  {/* Address */}
-  <div className="card p-3 mb-4 shadow-sm border-light">
-    <h5 className="mb-3 border-bottom pb-2">Address</h5>
-    <RowFull
-      value={`${formData.address.houseNo}, ${formData.address.street}, ${formData.address.city}, ${formData.address.state} - ${formData.address.postalCode}, ${formData.address.country}`}
-    />
-  </div>
+              {/* Address */}
+              <div className="card p-3 mb-4 shadow-sm border-light">
+                <h5 className="mb-3 border-bottom pb-2">Address</h5>
+                <RowFull
+                  value={`${formData.address.houseNo}, ${formData.address.street}, ${formData.address.city}, ${formData.address.state} - ${formData.address.postalCode}, ${formData.address.country}`}
+                />
+              </div>
 
-  {/* Bank Details */}
-  <div className="card p-3 mb-4 shadow-sm border-light">
-    <h5 className="mb-3 border-bottom pb-2">Bank Details</h5>
-    <div className="row g-3">
-      <div className="col-md-4"><Row label="Account Number" value={formData.bankAccountDetails.accountNumber} /></div>
-      <div className="col-md-4"><Row label="Account Holder Name" value={formData.bankAccountDetails.accountHolderName} /></div>
-      <div className="col-md-4"><Row label="IFSC Code" value={formData.bankAccountDetails.ifscCode} /></div>
-      <div className="col-md-4"><Row label="Bank Name" value={formData.bankAccountDetails.bankName} /></div>
-      <div className="col-md-4"><Row label="Branch Name" value={formData.bankAccountDetails.branchName} /></div>
-      <div className="col-md-4"><Row label="PAN Card" value={formData.bankAccountDetails.panCardNumber} /></div>
-    </div>
-  </div>
+              {/* Bank Details */}
+              <div className="card p-3 mb-4 shadow-sm border-light">
+                <h5 className="mb-3 border-bottom pb-2">Bank Details</h5>
+                <div className="row g-3">
+                  <div className="col-md-4">
+                    <Row label="Account Number" value={formData.bankAccountDetails.accountNumber} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row
+                      label="Account Holder Name"
+                      value={formData.bankAccountDetails.accountHolderName}
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="IFSC Code" value={formData.bankAccountDetails.ifscCode} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Bank Name" value={formData.bankAccountDetails.bankName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Branch Name" value={formData.bankAccountDetails.branchName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="PAN Card" value={formData.bankAccountDetails.panCardNumber} />
+                  </div>
+                </div>
+              </div>
 
-  {/* Documents */}
-  <div className="card p-3 mb-4 shadow-sm border-light">
-    <h5 className="mb-3 border-bottom pb-2">Documents</h5>
-    <div className="row g-3">
-      {formData.graduationCertificate ? (
-        <div className="col-md-6">
-          <FilePreview
-            label="Qualification / Certifications"
-            type={formData.graduationCertificateType}
-            data={formData.graduationCertificate}
-          />
-        </div>
-      ) : (
-        <p className="col-md-6 text-muted">Not Provided Graduation Certificate</p>
-      )}
-      {formData.computerSkillsProof ? (
-        <div className="col-md-6">
-          <FilePreview
-            label="Computer Skills Proof"
-            type={formData.computerSkillsProofType || "application/pdf"}
-            data={formData.computerSkillsProof}
-          />
-        </div>
-      ) : (
-        <p className="col-md-6 text-muted">Not Provided Computer Skills Proof</p>
-      )}
-    </div>
-  </div>
+              {/* Documents */}
+              <div className="card p-3 mb-4 shadow-sm border-light">
+                <h5 className="mb-3 border-bottom pb-2">Documents</h5>
+                <div className="row g-3">
+                  {formData.graduationCertificate ? (
+                    <div className="col-md-6">
+                      <FilePreview
+                        label="Qualification / Certifications"
+                        type={formData.graduationCertificateType}
+                        data={formData.graduationCertificate}
+                      />
+                    </div>
+                  ) : (
+                    <p className="col-md-6 text-muted">Not Provided Graduation Certificate</p>
+                  )}
+                  {formData.computerSkillsProof ? (
+                    <div className="col-md-6">
+                      <FilePreview
+                        label="Computer Skills Proof"
+                        type={formData.computerSkillsProofType || 'application/pdf'}
+                        data={formData.computerSkillsProof}
+                      />
+                    </div>
+                  ) : (
+                    <p className="col-md-6 text-muted">Not Provided Computer Skills Proof</p>
+                  )}
+                </div>
+              </div>
 
-  {/* Other Information */}
-  <div className="card p-3 mb-4 shadow-sm border-light">
-    <h5 className="mb-3 border-bottom pb-2">Other Information</h5>
-    <div className="row g-3">
-      <div className="col-md-6"><Row label="Vaccination Status" value={formData.vaccinationStatus} /></div>
-      <div className="col-md-6"><RowFull label="Previous Employment" value={formData.previousEmploymentHistory} /></div>
-    </div>
-  </div>
-</div>
-
+              {/* Other Information */}
+              <div className="card p-3 mb-4 shadow-sm border-light">
+                <h5 className="mb-3 border-bottom pb-2">Other Information</h5>
+                <div className="row g-3">
+                  <div className="col-md-6">
+                    <Row label="Vaccination Status" value={formData.vaccinationStatus} />
+                  </div>
+                  <div className="col-md-6">
+                    <RowFull
+                      label="Previous Employment"
+                      value={formData.previousEmploymentHistory}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : (
             // ✅ EDIT MODE
             <CForm>
@@ -948,6 +998,12 @@ const FrontDeskForm = ({
 
                         <CFormInput
                           value={formData.bankAccountDetails[field]}
+                          disabled={ifscLoading && (field === 'bankName' || field === 'branchName')}
+                          placeholder={
+                            ifscLoading && (field === 'bankName' || field === 'branchName')
+                              ? 'Fetching...'
+                              : ''
+                          }
                           maxLength={
                             field === 'accountNumber'
                               ? 20
@@ -1167,14 +1223,31 @@ const FrontDeskForm = ({
               >
                 Clear
               </CButton>
-              <CButton color="secondary" onClick={onClose}>
+              <CButton
+                color="secondary"
+                onClick={() => {
+                  setFormData(emptyForm)
+                  onClose()
+                }}
+              >
                 Cancel
               </CButton>
               <CButton
                 style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
                 onClick={handleSubmit}
+                disabled={loading}
               >
-                Save
+                {loading ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2 text-white"
+                      role="status"
+                    />
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
               </CButton>
             </>
           )}

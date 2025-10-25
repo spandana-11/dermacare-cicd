@@ -25,9 +25,10 @@ import {
   getAllReferDoctors, // match exactly
   updateReferDoctor, // match exactly
 } from './ReferDoctorAPI.js'
-import { toast } from 'react-toastify'
+import { toast, ToastContainer } from 'react-toastify'
 import { useHospital } from '../../Usecontext/HospitalContext.js'
 import { showCustomToast } from '../../../Utils/Toaster.js'
+import Pagination from '../../../Utils/Pagination.js'
 
 const ReferDoctorManagement = () => {
   const [technicians, setTechnicians] = useState([])
@@ -38,6 +39,7 @@ const ReferDoctorManagement = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const { searchQuery, setSearchQuery } = useGlobalSearch()
   const [loading, setLoading] = useState(false)
+  const [delloading, setDelLoading] = useState(false)
   const [error, setError] = useState(null)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
@@ -76,7 +78,7 @@ const ReferDoctorManagement = () => {
         fetchTechs()
 
         // setTechnicians((prev) => [...prev, res.data.data])
-        showCustomToast('ReferDoctor updated successfully!','success')
+        showCustomToast('ReferDoctor updated successfully!', 'success')
       } else {
         const res = await addReferDoctor(formData)
         await fetchTechs() // refresh from API
@@ -87,10 +89,10 @@ const ReferDoctorManagement = () => {
         // })
         setModalVisible(false)
         // setModalTVisible(true)
-        showCustomToast('ReferDoctor added successfully!','success')
+        showCustomToast('ReferDoctor added successfully!', 'success')
       }
     } catch (err) {
-      showCustomToast('❌ Failed to save ReferDoctor.','error')
+      showCustomToast('❌ Failed to save ReferDoctor.', 'error')
       console.error('API error:', err)
     }
   }
@@ -99,14 +101,16 @@ const ReferDoctorManagement = () => {
   const handleDelete = async (id) => {
     console.log(id)
     try {
+      setDelLoading(true)
       await deleteReferDoctor(id) // ✅ call backend
       setTechnicians((prev) => prev.filter((t) => t.id !== id))
-      showCustomToast('ReferDoctor deleted successfully!','success')
+      showCustomToast('ReferDoctor deleted successfully!', 'success')
     } catch (err) {
-      showCustomToast('❌ Failed to delete ReferDoctor.','error')
+      showCustomToast('❌ Failed to delete ReferDoctor.', 'error')
       console.error('Delete error:', err)
     } finally {
       setIsModalVisible(false) // close modal after action
+      setDelLoading(false)
     }
   }
   //permission
@@ -134,6 +138,7 @@ const ReferDoctorManagement = () => {
 
   return (
     <div>
+      <ToastContainer />
       {can('Refer Doctor', 'create') && (
         <div
           className="mb-3 w-100"
@@ -146,7 +151,7 @@ const ReferDoctorManagement = () => {
             }}
             onClick={() => setModalVisible(true)}
           >
-            Add ReferDoctor
+            Add Refer Doctor
           </CButton>
         </div>
       )}
@@ -188,6 +193,7 @@ const ReferDoctorManagement = () => {
         title="Delete ReferDoctor"
         message="Are you sure you want to delete this ReferDoctor? This action cannot be undone."
         confirmText="Yes, Delete"
+        isLoading={delloading}
         cancelText="Cancel"
         confirmColor="danger"
         cancelColor="secondary"
@@ -305,24 +311,15 @@ const ReferDoctorManagement = () => {
           </CTableBody>
         </CTable>
       )}
-      {!loading && (
-        <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
-          {Array.from({ length: Math.ceil(filteredData.length / rowsPerPage) }, (_, index) => (
-            <CButton
-              key={index}
-              style={{
-                backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
-                color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
-                border: '1px solid #ccc',
-                borderRadius: '5px',
-                cursor: 'pointer',
-              }}
-              className="ms-2"
-              onClick={() => setCurrentPage(index + 1)}
-            >
-              {index + 1}
-            </CButton>
-          ))}
+      {filteredData.length > 0 && (
+        <div className="mb-3  mt-3">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(displayData.length / rowsPerPage)}
+            pageSize={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setRowsPerPage}
+          />
         </div>
       )}
       <ReferDoctorForm

@@ -63,10 +63,11 @@ const DoctorDetailsPage = () => {
   const [categoryOptions, setCategoryOptions] = useState([])
   const [serviceOptions, setServiceOptions] = useState([])
   const [subServiceOptions, setSubServiceOptions] = useState([])
-
+  const [delloading, setDelLoading] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [selectedServices, setSelectedServices] = useState([])
   const [selectedSubServices, setSelectedSubServices] = useState([])
+  const [saveloading, setSaveLoading] = useState(false)
 
   const { state } = useLocation()
   const [doctorData, setDoctorData] = useState(state?.doctor || {})
@@ -111,6 +112,7 @@ const DoctorDetailsPage = () => {
   const handleEditToggle = () => setIsEditing(!isEditing)
 
   const handleDeleteToggleE = async (id) => {
+    setDelLoading(true)
     setShowModal(false) // Close modal after confirmation
     const isDeleted = await handleDeleteToggle(id)
     console.log(isDeleted)
@@ -119,6 +121,7 @@ const DoctorDetailsPage = () => {
       fetchDoctors()
       showCustomToast('Doctor deleted successfully','success')
     } else {
+      setDelLoading(false)
       // toast.error(`${isDeleted.message}` || 'Failed to delete doctor')
     }
   }
@@ -138,12 +141,14 @@ const DoctorDetailsPage = () => {
   }, [doctorData?.doctorId])
   const fetchDoctor = async () => {
     try {
+       
       const res = await http.get(`/getDoctorById/${doctorId}`)
       setDoctorData(res.data)
       setFormData(res.data)
     } catch (err) {
       console.error('Error fetching doctor', err)
     }
+    
   }
 
   const [showModal, setShowModal] = useState(false)
@@ -193,6 +198,7 @@ const DoctorDetailsPage = () => {
   }
   const handleUpdate = async () => {
     try {
+      setSaveLoading(true)
       const payload = {
         ...formData,
         branches:
@@ -232,6 +238,9 @@ const DoctorDetailsPage = () => {
     } catch (err) {
       console.error('Update error:', err)
      showCustomToast('Error while updating doctor','error')
+    }
+    finally{
+      setSaveLoading(false)
     }
   }
 
@@ -1667,37 +1676,67 @@ const DoctorDetailsPage = () => {
                       </CCol>
                     </CRow>
 
-                    <div className="text-end mt-4">
-                      {isEditing ? (
-                        <>
-                          <CButton className="me-2" color="secondary" onClick={handleEditToggle}>
-                            Cancel
-                          </CButton>
-                          <CButton
-                            color="success"
-                            className="text-white"
-                            onClick={handleUpdateWithValidation}
-                          >
-                            Update
-                          </CButton>
-                        </>
-                      ) : (
-                        <div>
-                          <CButton color="info" className="text-white" onClick={handleEditToggle}>
-                            Edit
-                          </CButton>
-                          <CButton color="danger ms-2" className="text-white" onClick={handleShow}>
-                            Delete
-                          </CButton>
-                        </div>
-                      )}
-                    </div>
+                 <div className="text-end mt-4">
+  {isEditing ? (
+    <>
+      {/* Cancel Button */}
+      <CButton className="me-2" color="secondary" onClick={handleEditToggle}>
+        Cancel
+      </CButton>
+
+      {/* Update Button with loading spinner */}
+      <CButton
+        color="success"
+        className="text-white"
+        onClick={handleUpdateWithValidation}
+        disabled={saveloading}
+      >
+        {saveloading ? (
+          <>
+            <span
+              className="spinner-border spinner-border-sm me-2 text-white"
+              role="status"
+            />
+            Updating...
+          </>
+        ) : (
+          'Update'
+        )}
+      </CButton>
+    </>
+  ) : (
+    <div>
+      {/* Edit Button */}
+      <CButton color="info" className="text-white" onClick={handleEditToggle}>
+        Edit
+      </CButton>
+
+      {/* Delete Button */}
+      <CButton color="danger ms-2" className="text-white" onClick={handleShow}>
+        Delete
+      </CButton>
+    </div>
+  )}
+</div>
+
 
                     <ConfirmationModal
                       isVisible={showModal}
                       title="Delete Doctor"
                       message="Are you sure you want to delete this doctor? This action cannot be undone."
-                      confirmText="Yes, Delete"
+                      confirmText={
+                        delloading ? (
+                          <>
+                            <span
+                              className="spinner-border spinner-border-sm me-2 text-white"
+                              role="status"
+                            />
+                            Deleting...
+                          </>
+                        ) : (
+                          'Yes, Delete'
+                        )
+                      }
                       cancelText="Cancel"
                       confirmColor="danger"
                       cancelColor="secondary"

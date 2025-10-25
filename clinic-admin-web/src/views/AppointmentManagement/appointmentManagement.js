@@ -35,6 +35,7 @@ import BookAppointmentModal from './BookAppointmentModal '
 import { COLORS } from '../../Constant/Themes'
 import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
 import LoadingIndicator from '../../Utils/loader'
+import Pagination from '../../Utils/Pagination'
 const appointmentManagement = () => {
   const [viewService, setViewService] = useState(null)
   const [selectedServiceTypes, setSelectedServiceTypes] = useState([])
@@ -51,6 +52,7 @@ const appointmentManagement = () => {
   const [filterTypes, setFilterTypes] = useState([])
   const [statusFilters, setStatusFilters] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(5)
   const [loading, setLoading] = useState(true)
   const [visible, setVisible] = useState(false)
 
@@ -461,7 +463,17 @@ const appointmentManagement = () => {
           </CTableBody>
         </CTable>
 
-        {filteredData.length > itemsPerPage && (
+        {paginatedData.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredData.length / rowsPerPage)}
+            pageSize={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setRowsPerPage}
+          />
+        )}
+
+        {/* {filteredData.length > itemsPerPage && (
           <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
             {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }, (_, index) => (
               <button
@@ -481,7 +493,7 @@ const appointmentManagement = () => {
               </button>
             ))}
           </div>
-        )}
+        )} */}
       </div>
     </div>
   )

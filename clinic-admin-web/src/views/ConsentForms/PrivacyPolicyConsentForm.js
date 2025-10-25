@@ -18,6 +18,7 @@ const PrivacyPolicyManager = () => {
   const [editingPolicyId, setEditingPolicyId] = useState(null) // which policy is being edited
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [handleDeleteId, setHandleDeleteId] = useState()
+  const [saveloading, setSaveLoading] = useState(false)
   const editFileRef = useRef(null)
   // fetch policies from backend
   const fetchPolicies = async () => {
@@ -152,6 +153,7 @@ const PrivacyPolicyManager = () => {
     reader.onload = async () => {
       const base64File = reader.result.split(',')[1]
       try {
+        setSaveLoading(true)
         await axios.put(
           `${BASE_URL}/updatePolicy/${editingPolicyId}`,
           { privacyPolicy: base64File },
@@ -165,6 +167,8 @@ const PrivacyPolicyManager = () => {
       } catch (err) {
         console.error('Update error:', err.response || err)
         showCustomToast(`Update failed.`, 'success')
+      } finally {
+        setSaveLoading(false)
       }
     }
   }
@@ -185,54 +189,52 @@ const PrivacyPolicyManager = () => {
   return (
     <div style={{ padding: '20px', maxWidth: '700px' }}>
       {/* File input for new uploads */}
-      {!editingPolicyId &&
-        policies >= 0 && ( 
-          // showFileInput controls visibility
-          <div style={{ marginBottom: '20px' }}>
-            <h4>Existing Policies</h4>
-            <label
-              htmlFor="fileUpload"
+      {!editingPolicyId && policies >= 0 && (
+        // showFileInput controls visibility
+        <div style={{ marginBottom: '20px' }}>
+          <h4>Existing Policies</h4>
+          <label
+            htmlFor="fileUpload"
+            style={{
+              display: 'inline-block',
+              padding: '10px 20px',
+              backgroundColor: 'var(--color-bgcolor)', // gray if disabled
+              color: 'var(--color-black)',
+              fontWeight: '500',
+              borderRadius: '8px',
+              cursor: 'pointer',
+            }}
+          >
+            {selectedFile ? selectedFile.name : 'Select File'}
+          </label>
+
+          <input
+            id="fileUpload"
+            type="file"
+            accept="application/pdf"
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
+
+          {selectedFile && (
+            <button
+              onClick={handleSubmit}
               style={{
-                display: 'inline-block',
+                marginLeft: '15px',
                 padding: '10px 20px',
-                backgroundColor: 'var(--color-bgcolor)', // gray if disabled
-                color: 'var(--color-black)',
-                fontWeight: '500',
+                backgroundColor: 'var(--color-black)',
+                color: '#fff',
+                border: 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',
+                fontWeight: '500',
               }}
             >
-
-              {selectedFile ? selectedFile.name : 'Select File'}
-            </label>
-
-            <input
-              id="fileUpload"
-              type="file"
-              accept="application/pdf"
-              onChange={handleFileChange}
-              style={{ display: 'none' }}
-            />
-
-            {selectedFile && (
-              <button
-                onClick={handleSubmit}
-                style={{
-                  marginLeft: '15px',
-                  padding: '10px 20px',
-                  backgroundColor: 'var(--color-black)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontWeight: '500',
-                }}
-              >
-                Upload
-              </button>
-            )}
-          </div>
-        )}
+              Upload
+            </button>
+          )}
+        </div>
+      )}
 
       {/* File input for editing an existing policy */}
       {editingPolicyId && (
@@ -264,6 +266,7 @@ const PrivacyPolicyManager = () => {
           {selectedFile && (
             <button
               onClick={handleUpdate}
+              disabled={saveloading}
               style={{
                 marginLeft: '15px',
                 padding: '10px 20px',
@@ -275,7 +278,14 @@ const PrivacyPolicyManager = () => {
                 fontWeight: '500',
               }}
             >
-              Update
+              {saveloading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm text-white" role="status" />
+                  Updating...
+                </>
+              ) : (
+                'Update'
+              )}
             </button>
           )}
         </div>
@@ -283,11 +293,9 @@ const PrivacyPolicyManager = () => {
 
       <hr style={{ margin: '20px 0' }} />
 
-      
-      {policies.length === 0 && <p style={{textAlign:"center"}}>No policies found.</p>}
+      {policies.length === 0 && <p style={{ textAlign: 'center' }}>No policies found.</p>}
 
       {policies.map((policy) => (
-        
         <div key={policy.id}>
           <FilePreview
             label="Privacy and Policy"

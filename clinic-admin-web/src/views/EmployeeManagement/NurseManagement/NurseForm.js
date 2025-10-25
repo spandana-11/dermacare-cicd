@@ -12,7 +12,7 @@ import {
   CFormTextarea,
   CFormSelect,
 } from '@coreui/react'
-import { toast } from 'react-toastify'
+import { toast, ToastContainer } from 'react-toastify'
 import { actions, features } from '../../../Constant/Features'
 import capitalizeWords from '../../../Utils/capitalizeWords'
 import { useHospital } from '../../Usecontext/HospitalContext'
@@ -21,7 +21,6 @@ import { validateField } from '../../../Utils/Validators'
 import { emailPattern } from '../../../Constant/Constants'
 import FilePreview from '../../../Utils/FilePreview'
 import { showCustomToast } from '../../../Utils/Toaster'
-
 
 const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fetchNurses }) => {
   const emptyPermissions = {} // ✅ no feature is selected by default
@@ -83,12 +82,14 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
   // 🔹 State
   const [formData, setFormData] = useState(emptyForm)
   const [clinicId, setClinicID] = useState(localStorage.getItem('HospitalId'))
-
+  const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [showPModal, setShowPModal] = useState(false)
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
   const [errors, setErrors] = useState({})
+  const [ifscLoading, setIfscLoading] = useState(false)
+  const [saveloading, setSaveLoading] = useState(false)
 
   //search
   // Mandatory fields
@@ -248,74 +249,70 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
       }))
     }
     reader.readAsDataURL(file)
-
-   
   }
-   const validateForm = () => {
-      const missing = validateMandatoryFields(formData, mandatoryFields)
+  const validateForm = () => {
+    const missing = validateMandatoryFields(formData, mandatoryFields)
 
-      if (missing.length > 0) {
-        showCustomToast(`Please fill required fields: ${missing.join(', ')}`, 'error')
-        return
-      }
-
-      // ✅ Age validation
-      if (formData.dob) {
-        const dob = new Date(formData.dob)
-        const today = new Date()
-        const age = today.getFullYear() - dob.getFullYear()
-        const isBeforeBirthday =
-          today.getMonth() < dob.getMonth() ||
-          (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())
-
-        const actualAge = isBeforeBirthday ? age - 1 : age
-
-        if (actualAge < 18) {
-          showCustomToast('Nurse must be at least 18 years old.', 'error')
-          return
-        }
-      }
-
-      // ✅ Mobile validation (10 digits, starting with 6-9)
-      const mobileRegex = /^[6-9]\d{9}$/ // corrected (was 5-9 before!)
-      if (!mobileRegex.test(formData.nurseContactNumber)) {
-        showCustomToast('Contact number must be 10 digits and start with 6-9.', 'error')
-        return
-      }
-
-      // ✅ Emergency contact and Nurse contact must not be same
-      if (formData.nurseContactNumber === formData.emergencyContactNumber) {
-        showCustomToast('Nurse Contact Number and Emergency Contact cannot be the same.', 'error')
-        return
-      }
-
-      // ✅ Email validation
-
-      const email = formData.emailId.trim()
-      if (!emailPattern.test(email)) {
-        showCustomToast('Please enter a valid email address.', 'error')
-        return
-      }
-
-      // ✅ Check duplicate contact number
-      const duplicateContact = nurses?.some(
-        (t) => t.nurseContactNumber === formData.nurseContactNumber && t.id !== formData.id,
-      )
-      if (duplicateContact) {
-        showCustomToast('Contact number already exists!', 'error')
-        return
-      }
-
-      // ✅ Check duplicate email
-      const duplicateEmail = nurses?.some(
-        (t) => t.email === formData.emailId && t.id !== formData.id,
-      )
-      if (duplicateEmail) {
-        showCustomToast('Email already exists!', 'error')
-        return
-      }
-      return true
+    if (missing.length > 0) {
+      showCustomToast(`Please fill required fields: ${missing.join(', ')}`, 'error')
+      return
     }
+
+    // ✅ Age validation
+    if (formData.dob) {
+      const dob = new Date(formData.dob)
+      const today = new Date()
+      const age = today.getFullYear() - dob.getFullYear()
+      const isBeforeBirthday =
+        today.getMonth() < dob.getMonth() ||
+        (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())
+
+      const actualAge = isBeforeBirthday ? age - 1 : age
+
+      if (actualAge < 18) {
+        showCustomToast('Nurse must be at least 18 years old.', 'error')
+        return
+      }
+    }
+
+    // ✅ Mobile validation (10 digits, starting with 6-9)
+    const mobileRegex = /^[6-9]\d{9}$/ // corrected (was 5-9 before!)
+    if (!mobileRegex.test(formData.nurseContactNumber)) {
+      showCustomToast('Contact number must be 10 digits and start with 6-9.', 'error')
+      return
+    }
+
+    // ✅ Emergency contact and Nurse contact must not be same
+    if (formData.nurseContactNumber === formData.emergencyContactNumber) {
+      showCustomToast('Nurse Contact Number and Emergency Contact cannot be the same.', 'error')
+      return
+    }
+
+    // ✅ Email validation
+
+    const email = formData.emailId.trim()
+    if (!emailPattern.test(email)) {
+      showCustomToast('Please enter a valid email address.', 'error')
+      return
+    }
+
+    // ✅ Check duplicate contact number
+    const duplicateContact = nurses?.some(
+      (t) => t.nurseContactNumber === formData.nurseContactNumber && t.id !== formData.id,
+    )
+    if (duplicateContact) {
+      showCustomToast('Contact number already exists!', 'error')
+      return
+    }
+
+    // ✅ Check duplicate email
+    const duplicateEmail = nurses?.some((t) => t.email === formData.emailId && t.id !== formData.id)
+    if (duplicateEmail) {
+      showCustomToast('Email already exists!', 'error')
+      return
+    }
+    return true
+  }
 
   // 🔹 Save handler
   const handleSubmit = async () => {
@@ -325,15 +322,18 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
     }
 
     try {
+      setLoading(true)
       const res = await onSave(formData)
       console.log(res) // Now this will log actual API response
       if (res) {
         setFormData(emptyForm)
-      }else{
+      } else {
         onClose()
       }
     } catch (err) {
       console.error('Submit failed', err)
+    } finally {
+      setLoading(false)
     }
 
     // console.log('Saving nurse data:', formData)
@@ -442,12 +442,13 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
 
   return (
     <>
+      <ToastContainer />
       <CModal
         visible={visible}
-         onClose={() => {
-    setFormData(emptyForm)  // ✅ reset on close
-    onClose()
-  }}
+        onClose={() => {
+          setFormData(emptyForm) // ✅ reset on close
+          onClose()
+        }}
         size="lg"
         className="custom-modal"
         backdrop="static"
@@ -459,14 +460,14 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
           {viewMode ? (
             // ✅ VIEW MODE
 
-         <div className="container my-4">
+            <div className="container my-4">
               {/* Profile Header */}
               <div className="card p-4 mb-4 shadow-sm border-light">
                 <div className="d-flex flex-column flex-md-row align-items-center">
                   {/* Avatar */}
                   <div className="text-center me-md-4 mb-3 mb-md-0">
                     <img
-                      src={formData.profilePicture || "/assets/images/default-avatar.png"}
+                      src={formData.profilePicture || '/assets/images/default-avatar.png'}
                       alt={formData.fullName}
                       width="100"
                       height="100"
@@ -487,7 +488,6 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                     </p>
                     <span className="badge bg-secondary mt-2">ID: {formData.id}</span>
                   </div>
-
                 </div>
               </div>
 
@@ -495,12 +495,24 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="mb-3 border-bottom pb-2">Personal Information</h5>
                 <div className="row g-3">
-                  <div className="col-md-4"><Row label="Full Name" value={formData.fullName} /></div>
-                  <div className="col-md-4"><Row label="Email" value={formData.emailId} /></div>
-                  <div className="col-md-4"><Row label="Contact" value={formData.nurseContactNumber} /></div>
-                  <div className="col-md-4"><Row label="Gender" value={formData.gender} /></div>
-                  <div className="col-md-4"><Row label="Date of Birth" value={formData.dateOfBirth} /></div>
-                  <div className="col-md-4"><Row label="Government ID" value={formData.governmentId} /></div>
+                  <div className="col-md-4">
+                    <Row label="Full Name" value={formData.fullName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Email" value={formData.emailId} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Contact" value={formData.nurseContactNumber} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Gender" value={formData.gender} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Date of Birth" value={formData.dateOfBirth} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Government ID" value={formData.governmentId} />
+                  </div>
                 </div>
               </div>
 
@@ -508,13 +520,30 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="mb-3 border-bottom pb-2">Work Information</h5>
                 <div className="row g-3">
-                  <div className="col-md-4"><Row label="Date of Joining" value={formData.dateOfJoining} /></div>
-                  <div className="col-md-4"><Row label="Department" value={formData.department} /></div>
-                  <div className="col-md-4"><Row label="Experience" value={formData.yearsOfExperience} /></div>
-                  <div className="col-md-4"><Row label="Qualifications" value={formData.qualifications} /></div>
-                  <div className="col-md-4"><Row label="Nursing Council Registration" value={formData.nursingCouncilRegistration} /></div>
-                  <div className="col-md-4"><Row label="Shift Timings" value={formData.shiftTimingOrAvailability} /></div>
-                  <div className="col-md-4"><Row label="Emergency Contact" value={formData.emergencyContactNumber} /></div>
+                  <div className="col-md-4">
+                    <Row label="Date of Joining" value={formData.dateOfJoining} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Department" value={formData.department} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Experience" value={formData.yearsOfExperience} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Qualifications" value={formData.qualifications} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row
+                      label="Nursing Council Registration"
+                      value={formData.nursingCouncilRegistration}
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Shift Timings" value={formData.shiftTimingOrAvailability} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Emergency Contact" value={formData.emergencyContactNumber} />
+                  </div>
                 </div>
               </div>
 
@@ -530,12 +559,27 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="mb-3 border-bottom pb-2">Bank Details</h5>
                 <div className="row g-3">
-                  <div className="col-md-4"><Row label="Account Number" value={formData.bankAccountDetails.accountNumber} /></div>
-                  <div className="col-md-4"><Row label="Account Holder Name" value={formData.bankAccountDetails.accountHolderName} /></div>
-                  <div className="col-md-4"><Row label="IFSC Code" value={formData.bankAccountDetails.ifscCode} /></div>
-                  <div className="col-md-4"><Row label="Bank Name" value={formData.bankAccountDetails.bankName} /></div>
-                  <div className="col-md-4"><Row label="Branch Name" value={formData.bankAccountDetails.branchName} /></div>
-                  <div className="col-md-4"><Row label="PAN Card" value={formData.bankAccountDetails.panCardNumber} /></div>
+                  <div className="col-md-4">
+                    <Row label="Account Number" value={formData.bankAccountDetails.accountNumber} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row
+                      label="Account Holder Name"
+                      value={formData.bankAccountDetails.accountHolderName}
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="IFSC Code" value={formData.bankAccountDetails.ifscCode} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Bank Name" value={formData.bankAccountDetails.bankName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Branch Name" value={formData.bankAccountDetails.branchName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="PAN Card" value={formData.bankAccountDetails.panCardNumber} />
+                  </div>
                 </div>
               </div>
 
@@ -577,15 +621,21 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                     <p className="col-md-6">Nursing License not provided</p>
                   )}
                 </div>
-
               </div>
 
               {/* Other Information */}
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="mb-3 border-bottom pb-2">Other Information</h5>
                 <div className="row g-3">
-                  <div className="col-md-6"><Row label="Vaccination Status" value={formData.vaccinationStatus} /></div>
-                  <div className="col-md-6"><RowFull label="Previous Employment" value={formData.previousEmploymentHistory} /></div>
+                  <div className="col-md-6">
+                    <Row label="Vaccination Status" value={formData.vaccinationStatus} />
+                  </div>
+                  <div className="col-md-6">
+                    <RowFull
+                      label="Previous Employment"
+                      value={formData.previousEmploymentHistory}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -805,45 +855,44 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                   )}
                 </div>
               </div>
-<div className="col-md-4">
-  <CFormLabel>
-    Department<span style={{ color: 'red' }}>*</span>
-  </CFormLabel>
-  <CFormInput
-    value={formData.department}
-    onChange={(e) => {
-      const value = e.target.value
+              <div className="col-md-4">
+                <CFormLabel>
+                  Department<span style={{ color: 'red' }}>*</span>
+                </CFormLabel>
+                <CFormInput
+                  value={formData.department}
+                  onChange={(e) => {
+                    const value = e.target.value
 
-      // ✅ Allow all characters (including special characters)
-      handleChange('department', value)
+                    // ✅ Allow all characters (including special characters)
+                    handleChange('department', value)
 
-      const error = validateField('department', value)
-      setErrors((prev) => ({ ...prev, department: error }))
-    }}
-  />
-  {errors.department && <div className="text-danger mt-1">{errors.department}</div>}
-</div>
-  <div className="col-md-4">
-                  <CFormLabel>
-                    Years of Experience <span style={{ color: 'red' }}>*</span>
-                  </CFormLabel>
-                  <CFormInput
-                    type="number"
-                    value={formData.yearsOfExperience}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      handleChange('yearsOfExperience', value)
+                    const error = validateField('department', value)
+                    setErrors((prev) => ({ ...prev, department: error }))
+                  }}
+                />
+                {errors.department && <div className="text-danger mt-1">{errors.department}</div>}
+              </div>
+              <div className="col-md-4">
+                <CFormLabel>
+                  Years of Experience <span style={{ color: 'red' }}>*</span>
+                </CFormLabel>
+                <CFormInput
+                  type="number"
+                  value={formData.yearsOfExperience}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    handleChange('yearsOfExperience', value)
 
-                      // ✅ Validate using switch case
-                      const error = validateField('yearsOfExperience', value)
-                      setErrors((prev) => ({ ...prev, yearsOfExperience: error }))
-                    }}
-                  />
-                  {errors.yearsOfExperience && (
-                    <div className="text-danger mt-1">{errors.yearsOfExperience}</div>
-                  )}
-                </div>
-
+                    // ✅ Validate using switch case
+                    const error = validateField('yearsOfExperience', value)
+                    setErrors((prev) => ({ ...prev, yearsOfExperience: error }))
+                  }}
+                />
+                {errors.yearsOfExperience && (
+                  <div className="text-danger mt-1">{errors.yearsOfExperience}</div>
+                )}
+              </div>
 
               <div className="row mb-3">
                 <div className="col-md-4">
@@ -991,6 +1040,12 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                         </CFormLabel>
                         <CFormInput
                           value={formData.bankAccountDetails[field]}
+                          disabled={ifscLoading && (field === 'bankName' || field === 'branchName')}
+                          placeholder={
+                            ifscLoading && (field === 'bankName' || field === 'branchName')
+                              ? 'Fetching...'
+                              : ''
+                          }
                           maxLength={
                             field === 'accountNumber'
                               ? 20
@@ -1055,18 +1110,31 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                             if (field === 'panCardNumber' && value.length === 10) {
                               const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
                               if (!panRegex.test(value))
-                                showCustomToast('Invalid PAN format (e.g., ABCDE1234F)','error')
+                                showCustomToast('Invalid PAN format (e.g., ABCDE1234F)', 'error')
                             }
 
                             // IFSC validation
                             if (field === 'ifscCode' && value.length === 11) {
                               const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
                               if (!ifscRegex.test(value)) {
-                                showCustomToast('Invalid IFSC format (e.g., HDFC0001234)','error')
+                                showCustomToast('Invalid IFSC format (e.g., HDFC0001234)', 'error')
                                 handleNestedChange('bankAccountDetails', 'bankName', '')
                                 handleNestedChange('bankAccountDetails', 'branchName', '')
                               } else {
                                 try {
+                                  // ✅ Show loading in UI
+                                  setIfscLoading(true)
+                                  handleNestedChange(
+                                    'bankAccountDetails',
+                                    'bankName',
+                                    'Fetching...',
+                                  )
+                                  handleNestedChange(
+                                    'bankAccountDetails',
+                                    'branchName',
+                                    'Fetching...',
+                                  )
+
                                   const res = await fetch(`https://ifsc.razorpay.com/${value}`)
                                   if (res.ok) {
                                     const data = await res.json()
@@ -1080,11 +1148,18 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                                       'branchName',
                                       data.BRANCH || '',
                                     )
+                                  } else {
+                                    showCustomToast('Invalid IFSC code', 'error')
+                                    handleNestedChange('bankAccountDetails', 'bankName', '')
+                                    handleNestedChange('bankAccountDetails', 'branchName', '')
                                   }
                                 } catch (err) {
-                                  showCustomToast('Error fetching bank details','error')
+                                  showCustomToast('Error fetching bank details', 'error')
                                   handleNestedChange('bankAccountDetails', 'bankName', '')
                                   handleNestedChange('bankAccountDetails', 'branchName', '')
+                                } finally {
+                                  // ✅ Hide loading
+                                  setIfscLoading(false)
                                 }
                               }
                             }
@@ -1119,7 +1194,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                         // ✅ Validate using validators.js
                         const error = validateField('profilePicture', base64)
                         if (error) {
-                          showCustomToast(error,'error') // show error message
+                          showCustomToast(error, 'error') // show error message
                           return // do not save invalid file
                         }
 
@@ -1222,8 +1297,19 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
               <CButton
                 style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
                 onClick={handleSubmit}
+                disabled={loading}
               >
-                Save
+                {loading ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2 text-white"
+                      role="status"
+                    />
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
               </CButton>
             </>
           )}

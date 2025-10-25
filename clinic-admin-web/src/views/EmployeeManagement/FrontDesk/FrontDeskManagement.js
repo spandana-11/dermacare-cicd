@@ -28,6 +28,7 @@ import { toast } from 'react-toastify'
 import { useHospital } from '../../Usecontext/HospitalContext'
 import FrontDeskForm from './FrontDeskForm'
 import { showCustomToast } from '../../../Utils/Toaster'
+import Pagination from '../../../Utils/Pagination'
 
 const FrontDeskManagement = () => {
   const [receptionist, setReceptionist] = useState([])
@@ -38,6 +39,7 @@ const FrontDeskManagement = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const { searchQuery, setSearchQuery } = useGlobalSearch()
   const [loading, setLoading] = useState(false)
+    const [delloading, setDelLoading] = useState(false)
   const [error, setError] = useState(null)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
@@ -121,7 +123,7 @@ const FrontDeskManagement = () => {
       // setModalVisible(false)
       // setSelectedTech(null)
     } catch (err) {
-      showCustomToast('❌ Failed to save receptionist.','error')
+      showCustomToast('❌ Failed to save receptionist.', 'error')
       console.error('API error:', err)
     }
   }
@@ -129,14 +131,16 @@ const FrontDeskManagement = () => {
   // ✅ Delete
   const handleDelete = async (id) => {
     try {
+           setDelLoading(true)
       await deleteFrontDeskAPI(id) // ✅ call backend
       setReceptionist((prev) => prev.filter((t) => t.id !== id))
-      showCustomToast('Receptionist deleted successfully!','success')
+      showCustomToast('Receptionist deleted successfully!', 'success')
     } catch (err) {
-      showCustomToast('❌ Failed to delete receptionist.','error')
+      showCustomToast('❌ Failed to delete receptionist.', 'error')
       console.error('Delete error:', err)
     } finally {
       setIsModalVisible(false) // close modal after action
+      setDelLoading(false)
     }
   }
   //permission
@@ -217,6 +221,7 @@ const FrontDeskManagement = () => {
         isVisible={isModalVisible}
         title="Delete receptionist"
         message="Are you sure you want to delete this receptionist? This action cannot be undone."
+        isLoading={delloading}
         confirmText="Yes, Delete"
         cancelText="Cancel"
         confirmColor="danger"
@@ -359,25 +364,32 @@ const FrontDeskManagement = () => {
           </CTableBody>
         </CTable>
       )}
-      {!loading && (
-        <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
-          {Array.from({ length: Math.ceil(filteredData.length / rowsPerPage) }, (_, index) => (
-            <CButton
-              key={index}
-              style={{
-                backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
-                color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
-                border: '1px solid #ccc',
-                borderRadius: '5px',
-                cursor: 'pointer',
-              }}
-              className="ms-2"
-              onClick={() => setCurrentPage(index + 1)}
-            >
-              {index + 1}
-            </CButton>
-          ))}
-        </div>
+      {displayData.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(filteredData.length / rowsPerPage)}
+          pageSize={rowsPerPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setRowsPerPage}
+        />
+        // <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
+        //   {Array.from({ length: Math.ceil(filteredData.length / rowsPerPage) }, (_, index) => (
+        //     <CButton
+        //       key={index}
+        //       style={{
+        //         backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
+        //         color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
+        //         border: '1px solid #ccc',
+        //         borderRadius: '5px',
+        //         cursor: 'pointer',
+        //       }}
+        //       className="ms-2"
+        //       onClick={() => setCurrentPage(index + 1)}
+        //     >
+        //       {index + 1}
+        //     </CButton>
+        //   ))}
+        // </div>
       )}
       <FrontDeskForm
         visible={modalVisible}
