@@ -12,7 +12,7 @@ import {
   CFormTextarea,
   CFormSelect,
 } from '@coreui/react'
-import { toast } from 'react-toastify'
+import { toast, ToastContainer } from 'react-toastify'
 import { actions, features } from '../../../Constant/Features'
 import capitalizeWords from '../../../Utils/capitalizeWords'
 import UserPermissionModal from '../UserPermissionModal'
@@ -81,12 +81,13 @@ const LabTechnicianForm = ({
   // 🔹 State
   const [formData, setFormData] = useState(emptyForm)
   const [clinicId, setClinicID] = useState(localStorage.getItem('HospitalId'))
-
   const [showModal, setShowModal] = useState(false)
   const [showPModal, setShowPModal] = useState(false)
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
   const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(false)
+  const [ifscLoading, setIfscLoading] = useState(false)
 
   // Mandatory fields
   const mandatoryFields = [
@@ -311,6 +312,7 @@ const LabTechnicianForm = ({
 
     // ✅ 8️⃣ If everything passed → Save technician
     try {
+      setLoading(true)
       const res = await onSave(formData)
       console.log(res) // Now this will log actual API response
       if (res != undefined) {
@@ -318,6 +320,8 @@ const LabTechnicianForm = ({
       }
     } catch (err) {
       console.error('Submit failed', err)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -417,6 +421,7 @@ const LabTechnicianForm = ({
 
   return (
     <>
+      <ToastContainer />
       <CModal
         visible={visible}
         onClose={onClose}
@@ -440,12 +445,12 @@ const LabTechnicianForm = ({
                   {/* Profile Image */}
                   <div className="text-center me-md-4 mb-3 mb-md-0">
                     <img
-                      src={formData.profilePicture || "/assets/images/default-avatar.png"}
+                      src={formData.profilePicture || '/assets/images/default-avatar.png'}
                       alt={formData.fullName}
                       width="100"
                       height="100"
                       className="rounded-circle border"
-                      style={{ objectFit: "cover", borderColor: "#ccc" }}
+                      style={{ objectFit: 'cover', borderColor: '#ccc' }}
                     />
                   </div>
 
@@ -454,11 +459,14 @@ const LabTechnicianForm = ({
                     <h4 className="fw-bold mb-1" style={{ color: '#7e3a93' }}>
                       {formData.fullName}
                     </h4>
-                    <p className="text-muted mb-1"><strong>Email:</strong> {formData.emailId}</p>
-                    <p className="text-muted mb-1"><strong>Contact:</strong> {formData.contactNumber}</p>
+                    <p className="text-muted mb-1">
+                      <strong>Email:</strong> {formData.emailId}
+                    </p>
+                    <p className="text-muted mb-1">
+                      <strong>Contact:</strong> {formData.contactNumber}
+                    </p>
                     <div>
                       <span className="badge bg-secondary mt-2">ID: {formData.id}</span>
-
                     </div>
                   </div>
                 </div>
@@ -468,12 +476,24 @@ const LabTechnicianForm = ({
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="mb-3 border-bottom pb-2">Personal Information</h5>
                 <div className="row g-3">
-                  <div className="col-md-4"><Row label="Full Name" value={formData.fullName} /></div>
-                  <div className="col-md-4"><Row label="Email" value={formData.emailId} /></div>
-                  <div className="col-md-4"><Row label="Contact" value={formData.contactNumber} /></div>
-                  <div className="col-md-4"><Row label="Gender" value={formData.gender} /></div>
-                  <div className="col-md-4"><Row label="Date of Birth" value={formData.dateOfBirth} /></div>
-                  <div className="col-md-4"><Row label="Government ID" value={formData.governmentId} /></div>
+                  <div className="col-md-4">
+                    <Row label="Full Name" value={formData.fullName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Email" value={formData.emailId} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Contact" value={formData.contactNumber} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Gender" value={formData.gender} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Date of Birth" value={formData.dateOfBirth} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Government ID" value={formData.governmentId} />
+                  </div>
                 </div>
               </div>
 
@@ -481,13 +501,27 @@ const LabTechnicianForm = ({
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="mb-3 border-bottom pb-2">Work Information</h5>
                 <div className="row g-3">
-                  <div className="col-md-4"><Row label="Date of Joining" value={formData.dateOfJoining} /></div>
-                  <div className="col-md-4"><Row label="Department/Lab" value={formData.departmentOrAssignedLab} /></div>
-                  <div className="col-md-4"><Row label="Lab License" value={formData.labLicenseOrRegistration} /></div>
-                  <div className="col-md-4"><Row label="Experience" value={formData.yearOfExperience} /></div>
-                  <div className="col-md-4"><Row label="Emergency Contact" value={formData.emergencyContact} /></div>
-                  <div className="col-md-4"><Row label="Shift Timings" value={formData.shiftTimingsOrAvailability} /></div>
-                  <div className="col-md-4"><Row label="Specialization" value={formData.specialization} /></div>
+                  <div className="col-md-4">
+                    <Row label="Date of Joining" value={formData.dateOfJoining} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Department/Lab" value={formData.departmentOrAssignedLab} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Lab License" value={formData.labLicenseOrRegistration} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Experience" value={formData.yearOfExperience} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Emergency Contact" value={formData.emergencyContact} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Shift Timings" value={formData.shiftTimingsOrAvailability} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Specialization" value={formData.specialization} />
+                  </div>
                 </div>
               </div>
 
@@ -503,15 +537,29 @@ const LabTechnicianForm = ({
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="mb-3 border-bottom pb-2">Bank Details</h5>
                 <div className="row g-3">
-                  <div className="col-md-4"><Row label="Account Number" value={formData.bankAccountDetails.accountNumber} /></div>
-                  <div className="col-md-4"><Row label="Account Holder Name" value={formData.bankAccountDetails.accountHolderName} /></div>
-                  <div className="col-md-4"><Row label="IFSC Code" value={formData.bankAccountDetails.ifscCode} /></div>
-                  <div className="col-md-4"><Row label="Bank Name" value={formData.bankAccountDetails.bankName} /></div>
-                  <div className="col-md-4"><Row label="Branch Name" value={formData.bankAccountDetails.branchName} /></div>
-                  <div className="col-md-4"><Row label="PAN Card" value={formData.bankAccountDetails.panCardNumber} /></div>
+                  <div className="col-md-4">
+                    <Row label="Account Number" value={formData.bankAccountDetails.accountNumber} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row
+                      label="Account Holder Name"
+                      value={formData.bankAccountDetails.accountHolderName}
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="IFSC Code" value={formData.bankAccountDetails.ifscCode} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Bank Name" value={formData.bankAccountDetails.bankName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Branch Name" value={formData.bankAccountDetails.branchName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="PAN Card" value={formData.bankAccountDetails.panCardNumber} />
+                  </div>
                 </div>
               </div>
-
 
               {/* Documents */}
               <div className="card p-3 mb-4 shadow-sm border-light">
@@ -526,13 +574,15 @@ const LabTechnicianForm = ({
                       />
                     </div>
                   ) : (
-                    <p className="col-md-6 text-muted">Not Provided Qualification / Certifications</p>
+                    <p className="col-md-6 text-muted">
+                      Not Provided Qualification / Certifications
+                    </p>
                   )}
                   {formData.medicalFitnessCertificate ? (
                     <div className="col-md-6">
                       <FilePreview
                         label="Medical Fitness Certificate"
-                        type={formData.medicalFitnessCertificateType || "application/pdf"}
+                        type={formData.medicalFitnessCertificateType || 'application/pdf'}
                         data={formData.medicalFitnessCertificate}
                       />
                     </div>
@@ -546,9 +596,15 @@ const LabTechnicianForm = ({
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="mb-3 border-bottom pb-2">Other Information</h5>
                 <div className="row g-3">
-
-                  <div className="col-md-6"><Row label="Vaccination Status" value={formData.vaccinationStatus} /></div>
-                  <div className="col-md-6"><RowFull label="Previous Employment" value={formData.previousEmploymentHistory} /></div>
+                  <div className="col-md-6">
+                    <Row label="Vaccination Status" value={formData.vaccinationStatus} />
+                  </div>
+                  <div className="col-md-6">
+                    <RowFull
+                      label="Previous Employment"
+                      value={formData.previousEmploymentHistory}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -959,6 +1015,12 @@ const LabTechnicianForm = ({
                         </CFormLabel>
                         <CFormInput
                           value={formData.bankAccountDetails[field]}
+                          disabled={ifscLoading && (field === 'bankName' || field === 'branchName')}
+                          placeholder={
+                            ifscLoading && (field === 'bankName' || field === 'branchName')
+                              ? 'Fetching...'
+                              : ''
+                          }
                           maxLength={
                             field === 'accountNumber'
                               ? 20
@@ -1030,6 +1092,19 @@ const LabTechnicianForm = ({
                                 handleNestedChange('bankAccountDetails', 'branchName', '')
                               } else {
                                 try {
+                                  // ✅ Show loading in UI
+                                  setIfscLoading(true)
+                                  handleNestedChange(
+                                    'bankAccountDetails',
+                                    'bankName',
+                                    'Fetching...',
+                                  )
+                                  handleNestedChange(
+                                    'bankAccountDetails',
+                                    'branchName',
+                                    'Fetching...',
+                                  )
+
                                   const res = await fetch(`https://ifsc.razorpay.com/${value}`)
                                   if (res.ok) {
                                     const data = await res.json()
@@ -1043,11 +1118,19 @@ const LabTechnicianForm = ({
                                       'branchName',
                                       data.BRANCH || '',
                                     )
+                                  } else {
+                                    showCustomToast('Invalid IFSC code', 'error')
+                                    handleNestedChange('bankAccountDetails', 'bankName', '')
+                                    handleNestedChange('bankAccountDetails', 'branchName', '')
                                   }
                                 } catch (err) {
                                   showCustomToast('Error fetching bank details', 'error')
                                   handleNestedChange('bankAccountDetails', 'bankName', '')
                                   handleNestedChange('bankAccountDetails', 'branchName', '')
+                                 
+                                } finally {
+                                  // ✅ Hide loading
+                                  setIfscLoading(false)
                                 }
                               }
                             }
@@ -1165,14 +1248,34 @@ const LabTechnicianForm = ({
               >
                 Clear
               </CButton>
-              <CButton color="secondary" onClick={onClose}>
+              <CButton
+                color="secondary"
+                onClick={() => {
+                  setFormData(emptyForm)
+                  onClose()
+                }}
+              >
                 Cancel
               </CButton>
               <CButton
-                style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+                style={{
+                  backgroundColor: 'var(--color-black)',
+                  color: 'white',
+                }}
                 onClick={handleSubmit}
+                disabled={loading}
               >
-                Save
+                {loading ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2 text-white"
+                      role="status"
+                    />
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
               </CButton>
             </>
           )}

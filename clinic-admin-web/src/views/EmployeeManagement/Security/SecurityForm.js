@@ -12,7 +12,7 @@ import {
   CFormTextarea,
   CFormSelect,
 } from '@coreui/react'
-import { toast } from 'react-toastify'
+import { toast, ToastContainer } from 'react-toastify'
 import { actions, features } from '../../../Constant/Features'
 import capitalizeWords from '../../../Utils/capitalizeWords'
 import UserPermissionModal from '../UserPermissionModal'
@@ -91,7 +91,8 @@ const SecurityForm = ({
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
   const [errors, setErrors] = useState({})
-
+  const [loading, setLoading] = useState(false)
+  const [ifscLoading, setIfscLoading] = useState(false)
   // Mandatory fields
   const mandatoryFields = [
     'fullName',
@@ -303,26 +304,26 @@ const SecurityForm = ({
   // 🔹 Save handler
   const handleSubmit = async () => {
     const isValid = validateForm()
-    if (!isValid) return
-    // if (Object.keys(formData.permissions).length === 0) {
-    //   toast.error('Please assign at least one user permission before saving.')
-    //   return
-    // }
-
-    try {
-      const res = await onSave(formData)
-      console.log(res) // Now this will log actual API response
-      if (res != undefined) {
-        setFormData(emptyForm)
-      }
-    } catch (err) {
-      console.error('Submit failed', err)
+    if (!isValid) {
+      console.warn('⚠️ Validation failed. Please check required fields.')
+      return
     }
 
-    // console.log(formData)
-    // onSave(formData)
-    // setFormData(emptyForm)
-    // onClose()
+    try {
+      setLoading(true)
+      const res = await onSave(formData) // call handleSave directly
+
+      // Only clear form & close modal if API returned success
+      if (res && (res.status === 201 || (res.status === 200 && res.data?.success))) {
+        setFormData(emptyForm)
+        onClose()
+      }
+      // If conflict (409) or failure, modal stays open
+    } catch (err) {
+      console.error('Submit failed', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleUserPermission = () => {
@@ -469,6 +470,7 @@ const SecurityForm = ({
 
   return (
     <>
+      <ToastContainer />
       <CModal
         visible={visible}
         onClose={onClose}
@@ -490,12 +492,12 @@ const SecurityForm = ({
                   {/* Profile Image */}
                   <div className="text-center me-md-4 mb-3 mb-md-0">
                     <img
-                      src={formData.profilePicture || "/assets/images/default-avatar.png"}
+                      src={formData.profilePicture || '/assets/images/default-avatar.png'}
                       alt={formData.fullName}
                       width="100"
                       height="100"
                       className="rounded-circle border"
-                      style={{ objectFit: "cover", borderColor: "#ccc" }}
+                      style={{ objectFit: 'cover', borderColor: '#ccc' }}
                     />
                   </div>
 
@@ -504,10 +506,16 @@ const SecurityForm = ({
                     <h4 className="fw-bold mb-1" style={{ color: '#7e3a93' }}>
                       {formData.fullName}
                     </h4>
-                    <p className="text-muted mb-1"><strong>Email:</strong> {formData.emailId}</p>
-                    <p className="text-muted mb-1"><strong>Contact:</strong> {formData.contactNumber}</p>
+                    <p className="text-muted mb-1">
+                      <strong>Email:</strong> {formData.emailId}
+                    </p>
+                    <p className="text-muted mb-1">
+                      <strong>Contact:</strong> {formData.contactNumber}
+                    </p>
                     <div>
-                      <span className="badge bg-secondary mt-2">ID: {formData.securityStaffId}</span>
+                      <span className="badge bg-secondary mt-2">
+                        ID: {formData.securityStaffId}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -517,12 +525,24 @@ const SecurityForm = ({
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="mb-3 border-bottom pb-2">Personal Information</h5>
                 <div className="row g-3">
-                  <div className="col-md-4"><Row label="Full Name" value={formData.fullName} /></div>
-                  <div className="col-md-4"><Row label="Email" value={formData.emailId} /></div>
-                  <div className="col-md-4"><Row label="Contact" value={formData.contactNumber} /></div>
-                  <div className="col-md-4"><Row label="Gender" value={formData.gender} /></div>
-                  <div className="col-md-4"><Row label="Date of Birth" value={formData.dateOfBirth} /></div>
-                  <div className="col-md-4"><Row label="Government ID" value={formData.govermentId} /></div>
+                  <div className="col-md-4">
+                    <Row label="Full Name" value={formData.fullName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Email" value={formData.emailId} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Contact" value={formData.contactNumber} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Gender" value={formData.gender} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Date of Birth" value={formData.dateOfBirth} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Government ID" value={formData.govermentId} />
+                  </div>
                 </div>
               </div>
 
@@ -530,9 +550,18 @@ const SecurityForm = ({
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="mb-3 border-bottom pb-2">Work Information</h5>
                 <div className="row g-3">
-                  <div className="col-md-4"><Row label="Date of Joining" value={formData.dateOfJoining} /></div>
-                  <div className="col-md-4"><Row label="Department" value={formData.department} /></div>
-                  <div className="col-md-4"><Row label="shiftTimingsOrAvailability" value={formData.shiftTimingsOrAvailability} /></div>
+                  <div className="col-md-4">
+                    <Row label="Date of Joining" value={formData.dateOfJoining} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Department" value={formData.department} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row
+                      label="shiftTimingsOrAvailability"
+                      value={formData.shiftTimingsOrAvailability}
+                    />
+                  </div>
                   {/* Add more work info if required */}
                 </div>
               </div>
@@ -549,12 +578,27 @@ const SecurityForm = ({
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="mb-3 border-bottom pb-2">Bank Details</h5>
                 <div className="row g-3">
-                  <div className="col-md-4"><Row label="Account Number" value={formData.bankAccountDetails.accountNumber} /></div>
-                  <div className="col-md-4"><Row label="Account Holder Name" value={formData.bankAccountDetails.accountHolderName} /></div>
-                  <div className="col-md-4"><Row label="IFSC Code" value={formData.bankAccountDetails.ifscCode} /></div>
-                  <div className="col-md-4"><Row label="Bank Name" value={formData.bankAccountDetails.bankName} /></div>
-                  <div className="col-md-4"><Row label="Branch Name" value={formData.bankAccountDetails.branchName} /></div>
-                  <div className="col-md-4"><Row label="PAN Card" value={formData.bankAccountDetails.panCardNumber} /></div>
+                  <div className="col-md-4">
+                    <Row label="Account Number" value={formData.bankAccountDetails.accountNumber} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row
+                      label="Account Holder Name"
+                      value={formData.bankAccountDetails.accountHolderName}
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="IFSC Code" value={formData.bankAccountDetails.ifscCode} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Bank Name" value={formData.bankAccountDetails.bankName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Branch Name" value={formData.bankAccountDetails.branchName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="PAN Card" value={formData.bankAccountDetails.panCardNumber} />
+                  </div>
                 </div>
               </div>
 
@@ -566,7 +610,7 @@ const SecurityForm = ({
                     <div className="col-md-6">
                       <FilePreview
                         label="Training / Guard License"
-                        type={formData.traningOrGuardLicenseType || "application/pdf"}
+                        type={formData.traningOrGuardLicenseType || 'application/pdf'}
                         data={formData.traningOrGuardLicense}
                       />
                     </div>
@@ -577,7 +621,7 @@ const SecurityForm = ({
                     <div className="col-md-6">
                       <FilePreview
                         label="Medical Fitness Certificate"
-                        type={formData.medicalFitnessCertificateType || "application/pdf"}
+                        type={formData.medicalFitnessCertificateType || 'application/pdf'}
                         data={formData.medicalFitnessCertificate}
                       />
                     </div>
@@ -591,13 +635,16 @@ const SecurityForm = ({
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="mb-3 border-bottom pb-2">Other Information</h5>
                 <div className="row g-3">
-                  <div className="col-md-6"><Row label="Police Verification" value={formData.policeVerification} /></div>
+                  <div className="col-md-6">
+                    <Row label="Police Verification" value={formData.policeVerification} />
+                  </div>
                   {/* <div className="col-md-6"><Row label="Vaccination Status" value={formData.vaccinationStatus} /></div> */}
-                  <div className="col-md-6"><RowFull label="Previous Employment" value={formData.previousEmployeeHistory} /></div>
+                  <div className="col-md-6">
+                    <RowFull label="Previous Employment" value={formData.previousEmployeeHistory} />
+                  </div>
                 </div>
               </div>
             </div>
-
           ) : (
             // ✅ EDIT MODE
             <CForm>
@@ -989,6 +1036,12 @@ const SecurityForm = ({
                         </CFormLabel>
                         <CFormInput
                           value={formData.bankAccountDetails[field]}
+                          disabled={ifscLoading && (field === 'bankName' || field === 'branchName')}
+                          placeholder={
+                            ifscLoading && (field === 'bankName' || field === 'branchName')
+                              ? 'Fetching...'
+                              : ''
+                          }
                           maxLength={
                             field === 'accountNumber'
                               ? 20
@@ -1086,6 +1139,19 @@ const SecurityForm = ({
                                 handleNestedChange('bankAccountDetails', 'branchName', '')
                               } else {
                                 try {
+                                  // ✅ Show loading in UI
+                                  setIfscLoading(true)
+                                  handleNestedChange(
+                                    'bankAccountDetails',
+                                    'bankName',
+                                    'Fetching...',
+                                  )
+                                  handleNestedChange(
+                                    'bankAccountDetails',
+                                    'branchName',
+                                    'Fetching...',
+                                  )
+
                                   const res = await fetch(`https://ifsc.razorpay.com/${value}`)
                                   if (res.ok) {
                                     const data = await res.json()
@@ -1099,11 +1165,18 @@ const SecurityForm = ({
                                       'branchName',
                                       data.BRANCH || '',
                                     )
+                                  } else {
+                                    showCustomToast('Invalid IFSC code', 'error')
+                                    handleNestedChange('bankAccountDetails', 'bankName', '')
+                                    handleNestedChange('bankAccountDetails', 'branchName', '')
                                   }
                                 } catch (err) {
                                   showCustomToast('Error fetching bank details', 'error')
                                   handleNestedChange('bankAccountDetails', 'bankName', '')
                                   handleNestedChange('bankAccountDetails', 'branchName', '')
+                                } finally {
+                                  // ✅ Hide loading
+                                  setIfscLoading(false)
                                 }
                               }
                             }
@@ -1214,14 +1287,31 @@ const SecurityForm = ({
               >
                 Clear
               </CButton>
-              <CButton color="secondary" onClick={onClose}>
+              <CButton
+                color="secondary"
+                onClick={() => {
+                  setFormData(emptyForm)
+                  onClose()
+                }}
+              >
                 Cancel
               </CButton>
               <CButton
                 style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
                 onClick={handleSubmit}
+                disabled={loading}
               >
-                Save
+                {loading ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2 text-white"
+                      role="status"
+                    />
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
               </CButton>
             </>
           )}
