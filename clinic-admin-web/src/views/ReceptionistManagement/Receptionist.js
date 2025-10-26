@@ -37,7 +37,7 @@ const ReceptionistManagement = () => {
   const [formData, setFormData] = useState({ id: null, name: '', email: '', phone: '', shift: '' })
   const [modalVisible, setModalVisible] = useState(false)
   const [viewData, setViewData] = useState(null)
-
+  const [delloading, setDelLoading] = useState(false)
   // ✅ Add / Edit
   const handleSave = () => {
     if (!formData.name || !formData.email || !formData.phone) {

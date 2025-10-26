@@ -60,6 +60,7 @@ import LoadingIndicator from '../../Utils/loader'
 import { http } from '../../Utils/Interceptors'
 import { useHospital } from '../Usecontext/HospitalContext'
 import { showCustomToast } from '../../Utils/Toaster'
+import Pagination from '../../Utils/Pagination'
 
 const ServiceManagement = () => {
   // const [searchQuery, setSearchQuery] = useState('')
@@ -67,6 +68,7 @@ const ServiceManagement = () => {
   const [category, setCategory] = useState([])
   // const [filteredData, setFilteredData] = useState([])
   const [loading, setLoading] = useState(false)
+  const [delloading, setDelLoading] = useState(false)
   const [error, setError] = useState(null)
   const [timeInput, setTimeInput] = useState('')
   const [timeSlots, setTimeSlots] = useState([])
@@ -85,6 +87,7 @@ const ServiceManagement = () => {
   const { searchQuery, setSearchQuery } = useGlobalSearch()
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [saveloading, setSaveLoading] = useState(false)
 
   const { user } = useHospital()
   const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
@@ -731,6 +734,7 @@ const ServiceManagement = () => {
 
     // 5. API call
     try {
+      setSaveLoading(true)
       const response = await postServiceData(payload, newService.subServiceId)
       console.log('Response received:', response)
 
@@ -745,6 +749,8 @@ const ServiceManagement = () => {
       showCustomToast(error.response?.data?.message || 'Something went wrong', 'error', {
         position: 'top-right',
       })
+    } finally {
+      setSaveLoading(false)
     }
 
     // 6. Reset form
@@ -811,6 +817,8 @@ const ServiceManagement = () => {
 
   const handleUpdateService = async () => {
     try {
+      setSaveLoading(true)
+
       const hospitalId = localStorage.getItem('HospitalId')
 
       let base64ImageToSend = ''
@@ -867,6 +875,8 @@ const ServiceManagement = () => {
     } catch (error) {
       console.error('Update failed:', error)
       showCustomToast('Error updating service.', { position: 'top-right' }, 'error')
+    } finally {
+      setSaveLoading(false)
     }
   }
 
@@ -890,6 +900,7 @@ const ServiceManagement = () => {
     console.log(serviceIdToDelete)
     const hospitalId = localStorage.getItem('HospitalId')
     try {
+      setDelLoading(true)
       const result = await deleteServiceData(serviceIdToDelete, hospitalId)
       console.log('Service deleted:', result)
       showCustomToast('Procedure deleted successfully!', { position: 'top-right' }, 'success')
@@ -897,6 +908,8 @@ const ServiceManagement = () => {
       fetchData()
     } catch (error) {
       console.error('Error deleting Procedure:', error)
+    } finally {
+      setDelLoading(false)
     }
     setIsModalVisible(false)
   }
@@ -1146,17 +1159,13 @@ const ServiceManagement = () => {
           className="custom-modal"
         >
           <CModalHeader className=" text-white">
-            <CModalTitle className="w-100 text-center fs-5 fw-bold">
-              Procedure Details
-            </CModalTitle>
+            <CModalTitle className="w-100 text-center fs-5 fw-bold">Procedure Details</CModalTitle>
           </CModalHeader>
 
           <CModalBody className="bg-light text-dark">
             {/* --- Basic Details --- */}
             <div className="p-3 mb-4 bg-white rounded shadow-sm">
-              <h6 className="fw-bold border-bottom pb-2 mb-3">
-                Basic Information
-              </h6>
+              <h6 className="fw-bold border-bottom pb-2 mb-3">Basic Information</h6>
               <CRow className="gy-2">
                 <CCol sm={6}>
                   <p className="mb-1 fw-semibold">Procedure Name:</p>
@@ -1187,8 +1196,9 @@ const ServiceManagement = () => {
                 <CCol sm={6}>
                   <p className="mb-1 fw-semibold">Status:</p>
                   <span
-                    className={`badge ${viewService.status === 'Active' ? 'bg-success' : 'bg-secondary'
-                      }`}
+                    className={`badge ${
+                      viewService.status === 'Active' ? 'bg-success' : 'bg-secondary'
+                    }`}
                   >
                     {viewService.status}
                   </span>
@@ -1200,26 +1210,53 @@ const ServiceManagement = () => {
             <div className="p-3 mb-4 bg-white rounded shadow-sm">
               <h6 className="fw-bold border-bottom pb-2 mb-3">Pricing Details</h6>
               <CRow className="gy-2">
-                <CCol sm={4}><strong>Price:</strong> ₹ {Math.round(viewService.price)}</CCol>
-                <CCol sm={4}><strong>Discount %:</strong> {Math.round(viewService.discountPercentage)}%</CCol>
-                <CCol sm={4}><strong>Discount Amount:</strong> ₹ {Math.round(viewService.discountAmount)}</CCol>
-                <CCol sm={4}><strong>Discounted Cost:</strong> ₹ {Math.round(viewService.discountedCost)}</CCol>
-                <CCol sm={4}><strong>Tax %:</strong> {Math.round(viewService.taxPercentage)}%</CCol>
-                <CCol sm={4}><strong>Tax Amount:</strong> ₹ {Math.round(viewService.taxAmount)}</CCol>
-                <CCol sm={4}><strong>Platform Fee %:</strong> {Math.round(viewService.platformFeePercentage)}%</CCol>
-                <CCol sm={4}><strong>Platform Fee:</strong> ₹ {Math.round(viewService.platformFee)}</CCol>
-                <CCol sm={4}><strong>Clinic Pay:</strong> ₹ {Math.round(viewService.clinicPay)}</CCol>
-                <CCol sm={4}><strong>GST:</strong> {Math.round(viewService.gst)}</CCol>
-                <CCol sm={4}><strong>Consultation Fee:</strong> ₹ {viewService.consultationFee}</CCol>
-                <CCol sm={4}><strong>Final Cost:</strong> ₹ {Math.round(viewService.finalCost)}</CCol>
-                <CCol sm={4}><strong>Service Time:</strong> {formatMinutes(viewService.minTime)}</CCol>
+                <CCol sm={4}>
+                  <strong>Price:</strong> ₹ {Math.round(viewService.price)}
+                </CCol>
+                <CCol sm={4}>
+                  <strong>Discount %:</strong> {Math.round(viewService.discountPercentage)}%
+                </CCol>
+                <CCol sm={4}>
+                  <strong>Discount Amount:</strong> ₹ {Math.round(viewService.discountAmount)}
+                </CCol>
+                <CCol sm={4}>
+                  <strong>Discounted Cost:</strong> ₹ {Math.round(viewService.discountedCost)}
+                </CCol>
+                <CCol sm={4}>
+                  <strong>Tax %:</strong> {Math.round(viewService.taxPercentage)}%
+                </CCol>
+                <CCol sm={4}>
+                  <strong>Tax Amount:</strong> ₹ {Math.round(viewService.taxAmount)}
+                </CCol>
+                <CCol sm={4}>
+                  <strong>Platform Fee %:</strong> {Math.round(viewService.platformFeePercentage)}%
+                </CCol>
+                <CCol sm={4}>
+                  <strong>Platform Fee:</strong> ₹ {Math.round(viewService.platformFee)}
+                </CCol>
+                <CCol sm={4}>
+                  <strong>Clinic Pay:</strong> ₹ {Math.round(viewService.clinicPay)}
+                </CCol>
+                <CCol sm={4}>
+                  <strong>GST:</strong> {Math.round(viewService.gst)}
+                </CCol>
+                <CCol sm={4}>
+                  <strong>Consultation Fee:</strong> ₹ {viewService.consultationFee}
+                </CCol>
+                <CCol sm={4}>
+                  <strong>Final Cost:</strong> ₹ {Math.round(viewService.finalCost)}
+                </CCol>
+                <CCol sm={4}>
+                  <strong>Service Time:</strong> {formatMinutes(viewService.minTime)}
+                </CCol>
               </CRow>
             </div>
 
             {/* --- Q&A Sections --- */}
             <div className="p-3 mb-4 bg-white rounded shadow-sm">
               <h6 className="fw-bold border-bottom pb-2 mb-3">Pre-Procedure QA</h6>
-              {Array.isArray(viewService.preProcedureQA) && viewService.preProcedureQA.length > 0 ? (
+              {Array.isArray(viewService.preProcedureQA) &&
+              viewService.preProcedureQA.length > 0 ? (
                 viewService.preProcedureQA.map((qa, index) => {
                   const question = Object.keys(qa)[0]
                   const answers = qa[question]
@@ -1263,7 +1300,8 @@ const ServiceManagement = () => {
 
             <div className="p-3 mb-4 bg-white rounded shadow-sm">
               <h6 className="fw-bold border-bottom pb-2 mb-3">Post-Procedure QA</h6>
-              {Array.isArray(viewService.postProcedureQA) && viewService.postProcedureQA.length > 0 ? (
+              {Array.isArray(viewService.postProcedureQA) &&
+              viewService.postProcedureQA.length > 0 ? (
                 viewService.postProcedureQA.map((qa, index) => {
                   const question = Object.keys(qa)[0]
                   const answers = qa[question]
@@ -1318,7 +1356,6 @@ const ServiceManagement = () => {
             </CButton>
           </CModalFooter>
         </CModal>
-
       )}
 
       <CModal
@@ -1646,8 +1683,18 @@ const ServiceManagement = () => {
             color="info"
             className="pink-Btn"
             onClick={modalMode === 'edit' ? handleUpdateService : handleAddService}
+            disabled={saveloading}
           >
-            {modalMode === 'edit' ? 'Update' : 'Add'}
+            {saveloading && (
+              <span className="spinner-border text-white spinner-border-sm me-2"></span>
+            )}
+            {saveloading
+              ? modalMode === 'edit'
+                ? 'Updating...'
+                : 'Saving...'
+              : modalMode === 'edit'
+                ? 'Update'
+                : 'Save'}
           </CButton>
         </CModalFooter>
       </CModal>
@@ -1724,7 +1771,19 @@ const ServiceManagement = () => {
                         isVisible={isModalVisible}
                         title="Delete Procedure"
                         message="Are you sure you want to delete this procedure? This action cannot be undone."
-                        confirmText="Yes, Delete"
+                        confirmText={
+                          !delloading ? (
+                            <>
+                              <span
+                                className="spinner-border spinner-border-sm me-2 text-white"
+                                role="status"
+                              />
+                              Deleting...
+                            </>
+                          ) : (
+                            'Yes, Delete'
+                          )
+                        }
                         cancelText="Cancel"
                         confirmColor="danger"
                         cancelColor="secondary"
@@ -1770,34 +1829,14 @@ const ServiceManagement = () => {
           </CTableBody>
         </CTable>
       )}
-      {!loading && (
-        <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
-          {Array.from(
-            {
-              length: Math.ceil(
-                (filteredData.length ? filteredData.length : service.length) / rowsPerPage,
-              ),
-            },
-            (_, index) => (
-              <CButton
-                key={index}
-                style={{
-                  margin: '0 5px',
-                  padding: '5px 10px',
-                  backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
-                  color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
-                  border: '1px solid #ccc',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                }}
-                className="ms-2"
-                onClick={() => setCurrentPage(index + 1)}
-              >
-                {index + 1}
-              </CButton>
-            ),
-          )}
-        </div>
+      {displayData.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(filteredData.length / rowsPerPage)}
+          pageSize={rowsPerPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setRowsPerPage}
+        />
       )}
     </div>
   )

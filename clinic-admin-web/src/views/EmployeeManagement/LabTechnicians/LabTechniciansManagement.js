@@ -27,6 +27,7 @@ import {
 import { toast } from 'react-toastify'
 import { useHospital } from '../../Usecontext/HospitalContext'
 import { showCustomToast } from '../../../Utils/Toaster'
+import Pagination from '../../../Utils/Pagination'
 
 const LabTechnicianManagement = () => {
   const [technicians, setTechnicians] = useState([])
@@ -34,9 +35,11 @@ const LabTechnicianManagement = () => {
   const [selectedTech, setSelectedTech] = useState(null)
   const [viewMode, setViewMode] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [rowsPerPage, setRowsPerPage] = useState(5)
+  const [pageSize, setPageSize] = useState(5)
   const { searchQuery, setSearchQuery } = useGlobalSearch()
   const [loading, setLoading] = useState(false)
+  const [delloading, setDelLoading] = useState(false)
   const [error, setError] = useState(null)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
@@ -146,15 +149,17 @@ const LabTechnicianManagement = () => {
   // ✅ Delete
   const handleDelete = async (id) => {
     try {
+      setDelLoading(true)
       await deleteLabTechnician(id) // ✅ call backend
       setTechnicians((prev) => prev.filter((t) => t.id !== id))
-      showCustomToast('Technician deleted successfully!','success')
+      showCustomToast('Technician deleted successfully!', 'success')
     } catch (err) {
-      showCustomToast('❌ Failed to delete technician.','error')
+      showCustomToast('❌ Failed to delete technician.', 'error')
       console.error('Delete error:', err)
     } finally {
       setIsModalVisible(false) // close modal after action
     }
+    setDelLoading(false)
   }
   //permission
   const { user } = useHospital()
@@ -169,6 +174,11 @@ const LabTechnicianManagement = () => {
   }, [searchQuery, technicians])
 
   const displayData = filteredData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+
+  //   const paginatedNotifications = sentNotifications.slice(
+  //   (currentPage - 1) * pageSize,
+  //   currentPage * pageSize,
+  // )
   //decode image
   const decodeImage = (data) => {
     try {
@@ -238,6 +248,7 @@ const LabTechnicianManagement = () => {
         isVisible={isModalVisible}
         title="Delete Technician"
         message="Are you sure you want to delete this technician? This action cannot be undone."
+        isLoading={delloading}
         confirmText="Yes, Delete"
         cancelText="Cancel"
         confirmColor="danger"
@@ -368,7 +379,7 @@ const LabTechnicianManagement = () => {
                   className="text-center"
                   style={{ color: 'var(--color-black)' }}
                 >
-                  No Laboratory found.
+                  No Lab Technician found.
                 </CTableDataCell>
               </CTableRow>
               //   <CTableRow>
@@ -380,25 +391,41 @@ const LabTechnicianManagement = () => {
           </CTableBody>
         </CTable>
       )}
-      {!loading && (
-        <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
-          {Array.from({ length: Math.ceil(filteredData.length / rowsPerPage) }, (_, index) => (
-            <CButton
-              key={index}
-              style={{
-                backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
-                color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
-                border: '1px solid #ccc',
-                borderRadius: '5px',
-                cursor: 'pointer',
-              }}
-              className="ms-2"
-              onClick={() => setCurrentPage(index + 1)}
-            >
-              {index + 1}
-            </CButton>
-          ))}
-        </div>
+      {displayData.length > 0 && (
+        // <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
+        //   {Array.from({ length: Math.ceil(filteredData.length / rowsPerPage) }, (_, index) => (
+        //     <CButton
+        //       key={index}
+        //       style={{
+        //         backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
+        //         color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
+        //         border: '1px solid #ccc',
+        //         borderRadius: '5px',
+        //         cursor: 'pointer',
+        //       }}
+        //       className="ms-2"
+        //       onClick={() => setCurrentPage(index + 1)}
+        //     >
+        //       {index + 1}
+        //     </CButton>
+        //   ))}
+        // </div>
+
+        // <Pagination
+        //   currentPage={currentPage}
+        //   totalPages={Math.ceil(displayData.length / pageSize)}
+        //   pageSize={pageSize}
+        //   onPageChange={setCurrentPage}
+        //   onPageSizeChange={setRowsPerPage}
+        // />
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(filteredData.length / rowsPerPage)}
+          pageSize={rowsPerPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setRowsPerPage}
+        />
       )}
       <LabTechnicianForm
         visible={modalVisible}

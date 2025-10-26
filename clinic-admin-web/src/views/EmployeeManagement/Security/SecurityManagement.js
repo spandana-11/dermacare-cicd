@@ -22,6 +22,7 @@ import { addSecurity, deleteSecurity, getAllSecuritys, updateSecurity } from './
 import { toast } from 'react-toastify'
 import { useHospital } from '../../Usecontext/HospitalContext'
 import { showCustomToast } from '../../../Utils/Toaster'
+import Pagination from '../../../Utils/Pagination'
 
 const SecurityManagement = () => {
   const [technicians, setTechnicians] = useState([])
@@ -32,6 +33,7 @@ const SecurityManagement = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const { searchQuery, setSearchQuery } = useGlobalSearch()
   const [loading, setLoading] = useState(false)
+    const [delloading, setDelLoading] = useState(false)
   const [error, setError] = useState(null)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
@@ -64,29 +66,57 @@ const SecurityManagement = () => {
   }, [])
   // ✅ Save (Add / Edit)
 
+  // const handleSave = async (formData) => {
+  //   try {
+  //     if (selectedTech) {
+  //       await updateSecurity(selectedTech.securityStaffId, formData)
+  //       fetchTechs()
+
+  //       // setTechnicians((prev) => [...prev, res.data.data])
+  //       showCustomToast('Security updated successfully!', 'success')
+  //     } else {
+  //       const res = await addSecurity(formData)
+  //       await fetchTechs() // refresh from API
+  //       console.log(res)
+  //       // setModalData({
+  //       //   username: res.data.data.userName,
+  //       //   password: res.data.data.password,
+  //       // })
+  //       setModalVisible(false)
+  //       // setModalTVisible(true)
+  //       showCustomToast('Security added successfully!', 'success')
+  //       return res
+  //     }
+  //   } catch (err) {
+  //     // toast.error('❌ Failed to save security.')
+  //     console.error('API error:', err)
+  //   }
+  // }
+
   const handleSave = async (formData) => {
     try {
       if (selectedTech) {
         await updateSecurity(selectedTech.securityStaffId, formData)
         fetchTechs()
-
-        // setTechnicians((prev) => [...prev, res.data.data])
-        showCustomToast('Security updated successfully!','success')
+        showCustomToast('Security updated successfully!', 'success')
+        return { status: 200, data: { success: true } } // simulate success for update
       } else {
         const res = await addSecurity(formData)
-        await fetchTechs() // refresh from API
-        console.log(res)
-        setModalData({
-          username: res.data.data.userName,
-          password: res.data.data.password,
-        })
-        setModalVisible(false)
-        setModalTVisible(true)
-        showCustomToast('Security added successfully!','success')
+        if (res.status === 201 || (res.status === 200 && res.data?.success)) {
+          await fetchTechs()
+          showCustomToast('Security added successfully!', 'success')
+          setModalVisible(false)
+        }
+        return res
       }
     } catch (err) {
-      // toast.error('❌ Failed to save security.')
-      console.error('API error:', err)
+      if (err.response?.status === 409) {
+        // showCustomToast('Conflict: Staff already exists!', 'error')
+        setModalVisible(true) // keep modal open
+      } else {
+        console.error('API error:', err)
+        showCustomToast('Failed to save Other Staff.', 'error')
+      }
     }
   }
 
@@ -94,14 +124,16 @@ const SecurityManagement = () => {
   const handleDelete = async (id) => {
     console.log(id)
     try {
+       setDelLoading(true)
       await deleteSecurity(id) // ✅ call backend
       setTechnicians((prev) => prev.filter((t) => t.securityStaffId !== id))
-      showCustomToast('Security deleted successfully!','success')
+      showCustomToast('Security deleted successfully!', 'success')
     } catch (err) {
-      showCustomToast('❌ Failed to delete security.','error')
+      showCustomToast('❌ Failed to delete security.', 'error')
       console.error('Delete error:', err)
     } finally {
       setIsModalVisible(false) // close modal after action
+       setDelLoading(false)
     }
   }
   //permission
@@ -182,6 +214,7 @@ const SecurityManagement = () => {
         isVisible={isModalVisible}
         title="Delete Security"
         message="Are you sure you want to delete this Security? This action cannot be undone."
+           isLoading={delloading}
         confirmText="Yes, Delete"
         cancelText="Cancel"
         confirmColor="danger"
@@ -325,26 +358,18 @@ const SecurityManagement = () => {
           </CTableBody>
         </CTable>
       )}
-      {!loading && (
-        <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
-          {Array.from({ length: Math.ceil(filteredData.length / rowsPerPage) }, (_, index) => (
-            <CButton
-              key={index}
-              style={{
-                backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
-                color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
-                border: '1px solid #ccc',
-                borderRadius: '5px',
-                cursor: 'pointer',
-              }}
-              className="ms-2"
-              onClick={() => setCurrentPage(index + 1)}
-            >
-              {index + 1}
-            </CButton>
-          ))}
-        </div>
-      )}
+      <div className="mb-3">
+        {displayData.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredData.length / rowsPerPage)}
+            pageSize={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setRowsPerPage}
+          />
+        )}
+      </div>
+
       <SecurityForm
         visible={modalVisible}
         onClose={() => {

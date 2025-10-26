@@ -27,6 +27,7 @@ import {
 import { toast } from 'react-toastify'
 import { useHospital } from '../../Usecontext/HospitalContext'
 import { showCustomToast } from '../../../Utils/Toaster'
+import Pagination from '../../../Utils/Pagination'
 
 const OtherStaffManagement = () => {
   const [technicians, setTechnicians] = useState([])
@@ -37,6 +38,7 @@ const OtherStaffManagement = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const { searchQuery, setSearchQuery } = useGlobalSearch()
   const [loading, setLoading] = useState(false)
+   const [delloading, setDelLoading] = useState(false)
   const [error, setError] = useState(null)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
@@ -72,32 +74,34 @@ const OtherStaffManagement = () => {
   const handleSave = async (formData) => {
     try {
       if (selectedTech) {
-        await updateOtherStaff(selectedTech.wardBoyId, formData)
-        fetchTechs()
-
-        // setTechnicians((prev) => [...prev, res.data.data])
+        const res = await updateOtherStaff(selectedTech.wardBoyId, formData)
+        await fetchTechs()
         showCustomToast('Other Staff updated successfully!', 'success')
+        return { status: 200, data: { success: true } } // simulate success for update
       } else {
         const res = await addOtherStaff(formData)
-        await fetchTechs() // refresh from API
-        console.log(res)
-        setModalData({
-          username: res.data.data.userName,
-          password: res.data.data.password,
-        })
-        setModalVisible(false)
-        setModalTVisible(true)
-        showCustomToast('Other Staff added successfully!', 'success')
+        if (res.status === 201 || (res.status === 200 && res.data?.success)) {
+          await fetchTechs()
+          showCustomToast('Other Staff added successfully!', 'success')
+           setModalVisible(false)
+        }
+        return res
       }
     } catch (err) {
-      // toast.error('❌ Failed to save Other Staff.')
-      console.error('API error:', err)
+      if (err.response?.status === 409) {
+        // showCustomToast('Conflict: Staff already exists!', 'error')
+        setModalVisible(true) // keep modal open
+      } else {
+        console.error('API error:', err)
+        showCustomToast('Failed to save Other Staff.', 'error')
+      }
     }
   }
 
   // ✅ Delete
   const handleDelete = async (id) => {
     try {
+            setDelLoading(true)
       await deleteOtherStaff(id) // ✅ call backend
       setTechnicians((prev) => prev.filter((t) => t.id !== id))
       showCustomToast('Other Staff deleted successfully!', 'success')
@@ -107,6 +111,7 @@ const OtherStaffManagement = () => {
       console.error('Delete error:', err)
     } finally {
       setIsModalVisible(false) // close modal after action
+            setDelLoading(false)
     }
   }
   //permission
@@ -187,6 +192,7 @@ const OtherStaffManagement = () => {
         isVisible={isModalVisible}
         title="Delete Other Staff"
         message="Are you sure you want to delete this Other staff? This action cannot be undone."
+         isLoading={delloading}
         confirmText="Yes, Delete"
         cancelText="Cancel"
         confirmColor="danger"
@@ -329,25 +335,14 @@ const OtherStaffManagement = () => {
           </CTableBody>
         </CTable>
       )}
-      {!loading && (
-        <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
-          {Array.from({ length: Math.ceil(filteredData.length / rowsPerPage) }, (_, index) => (
-            <CButton
-              key={index}
-              style={{
-                backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
-                color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
-                border: '1px solid #ccc',
-                borderRadius: '5px',
-                cursor: 'pointer',
-              }}
-              className="ms-2"
-              onClick={() => setCurrentPage(index + 1)}
-            >
-              {index + 1}
-            </CButton>
-          ))}
-        </div>
+      {displayData.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(filteredData.length / rowsPerPage)}
+          pageSize={rowsPerPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setRowsPerPage}
+        />
       )}
       <OtherStaffForm
         visible={modalVisible}
