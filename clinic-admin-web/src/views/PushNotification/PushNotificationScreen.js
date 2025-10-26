@@ -1,7 +1,4 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { BASE_URL } from '../../baseUrl'
-import { useHospital } from '../Usecontext/HospitalContext'
-import { Edit2, Eye, Trash2 } from 'lucide-react'
 import {
   CFormInput,
   CFormLabel,
@@ -13,31 +10,60 @@ import {
   CCardHeader,
   CRow,
   CCol,
+  CAlert,
   CTable,
   CTableBody,
   CTableDataCell,
   CTableHead,
   CTableHeaderCell,
   CTableRow,
-  CAlert,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter,
 } from '@coreui/react'
 import Select from 'react-select'
+import { Edit2, Eye, Trash2 } from 'lucide-react'
+import { useHospital } from '../Usecontext/HospitalContext'
 import { CustomerData } from '../customerManagement/CustomerManagementAPI'
-
+import { http } from '../../Utils/Interceptors'
+import { BASE_URL } from '../../baseUrl'
+import Pagination from '../../Utils/Pagination'
+import { showCustomToast } from '../../Utils/Toaster'
+import { ToastContainer } from 'react-toastify'
+import '../Style/CustomModal.css'
 const FCMNotification = () => {
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
-  const [sendToAll, setSendToAll] = useState(false)
   const [image, setImage] = useState(null)
+  const [sendAll, setSendAll] = useState(false)
   const [responseLog, setResponseLog] = useState(null)
+  const [responseMessage, setResponseMessage] = useState(null)
   const [sentNotifications, setSentNotifications] = useState([])
-  const [loading, setLoading] = useState(false)
   const [customerOptions, setCustomerOptions] = useState([])
   const [selectedCustomers, setSelectedCustomers] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [selectedItem, setSelectedItem] = useState(null)
+  const [viewMode, setViewMode] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editId, setEditId] = useState(null)
+
   const { user } = useHospital()
   const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
 
-  // 🖼️ Handle Image
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(5)
+  const paginatedNotifications = sentNotifications.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  )
+  const totalPages = Math.ceil(sentNotifications.length / pageSize)
+
+  // 🖼 Handle image
   const handleImageChange = (e) => {
     const file = e.target.files[0]
     if (file) {
@@ -47,74 +73,32 @@ const FCMNotification = () => {
     }
   }
 
-  // 📩 Send Notification
-  const handleSend = async () => {
-    if (!title.trim() || !body.trim()) {
-      setResponseLog({ error: 'Title and Body are required!' })
-      return
-    }
-
-    if (!sendToAll && selectedCustomers.length === 0) {
-      setResponseLog({ error: 'Please select at least one customer!' })
-      return
-    }
-
-    const tokens = sendToAll ? 'ALL_USERS' : selectedCustomers.map((c) => c.value)
-
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    const clinicId = localStorage.getItem('HospitalId')
+    const branchId = localStorage.getItem('branchId')
     try {
-      const payload = {
-        title,
-        body,
-        image,
-        sendToAll,
-        tokens,
+      const res = await http.get(`/priceDropNotification/${clinicId}/${branchId}`)
+      console.log(res)
+      if (res.data.success) {
+        const dataList = Array.isArray(res.data.data) ? res.data.data : [res.data.data]
+        const mapped = dataList.map((n) => ({
+          ...n,
+          selectedCustomers:
+            n.tokens?.map((token) => customerOptions.find((c) => c.value === token)) || [],
+        }))
+        setSentNotifications(mapped)
       }
-
-      // 👇 Add this line to log what’s being sent
-      console.log('📦 Notification Payload:', payload)
-
-      const res = await fetch(`${BASE_URL}/pricedrop`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-
-      const data = await res.json()
-      console.log('📩 Server Response:', data) // 👈 also log response
-      setResponseLog(data)
-
-      // Save notification in log table
-      setSentNotifications((prev) => [
-        {
-          title,
-          body,
-          image,
-          sendToAll,
-          token: sendToAll ? 'All Users' : selectedCustomers.map((c) => c.label).join(', '),
-          status: data?.success ? '✅ Sent' : '❌ Failed',
-          time: new Date().toLocaleString(),
-        },
-        ...prev,
-      ])
-
-      // Reset fields
-      setTitle('')
-      setBody('')
-      setImage(null)
-      setSelectedCustomers([])
-      setSendToAll(false)
     } catch (error) {
-      console.error('Error:', error)
-      setResponseLog({ error: error.message })
+      console.error('Error fetching notifications:', error)
     }
   }
 
-  // 👥 Fetch Customers
+  // Fetch customers
   const fetchCustomers = useCallback(async () => {
     setLoading(true)
     try {
       const response = await CustomerData()
-      console.log('API Response:', response) // 👈 Add this line
       const customers = response || []
       const options = customers
         .filter((c) => c.fullName && c.deviceId)
@@ -122,11 +106,9 @@ const FCMNotification = () => {
           value: c.deviceId,
           label: `${c.fullName} (${c.patientId})`,
         }))
-      console.log('Dropdown Options:', options) // 👈 Add this line
       setCustomerOptions(options)
     } catch (error) {
-      console.error('Error fetching customers:', error)
-      setCustomerOptions([])
+      console.error(error)
     } finally {
       setLoading(false)
     }
@@ -136,21 +118,114 @@ const FCMNotification = () => {
     fetchCustomers()
   }, [fetchCustomers])
 
-  console.log(selectedCustomers)
+  useEffect(() => {
+    fetchNotifications()
+  }, [])
+
+  // Submit form (send or update)
+  const handleSubmit = async () => {
+    if (!title.trim() || !body.trim()) {
+      showCustomToast(`Title and Body are required!`, 'error')
+
+      return
+    }
+
+    const clinicId = localStorage.getItem('HospitalId')
+    const branchId = localStorage.getItem('branchId')
+    const tokens = sendAll ? [] : selectedCustomers.map((c) => c.value)
+
+    const payload = {
+      clinicId,
+      branchId,
+      title,
+      body,
+      image,
+      sendAll,
+      tokens,
+    }
+
+    try {
+      setIsLoading(true)
+      let res
+      if (isEditing && editId) {
+        // 🔄 Update existing (PUT)
+        res = await http.put(`${BASE_URL}/pricedrop/${editId}`, payload)
+      } else {
+        // 🆕 Send new (POST)
+        res = await http.post(`${BASE_URL}/pricedrop`, payload)
+      }
+
+      if (res.data.success) {
+        showCustomToast(`${isEditing ? 'Updated successfully!' : 'Sent successfully!'}`)
+        // setResponseLog({ success: })
+        fetchNotifications()
+        // Reset form
+        setTitle('')
+        setBody('')
+        setImage(null)
+        setSelectedCustomers([])
+        setSendAll(false)
+        setIsEditing(false)
+        setEditId(null)
+      } else {
+        showCustomToast(`Operation failed!`, 'error')
+        // setResponseLog({ error: 'Operation failed!' })
+      }
+    } catch (error) {
+      showCustomToast(`${error.message}`, 'error')
+      // setResponseLog({ error: error.message })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Delete notification
+  const handleDelete = async () => {
+    try {
+      const res = await http.delete(`${BASE_URL}/pricedrop/${selectedItem._id}`)
+      if (res.data.success) {
+        setResponseMessage({ success: 'Notification deleted successfully!' })
+        fetchNotifications()
+      }
+    } catch (error) {
+      setResponseMessage({ error: 'Error while deleting notification' })
+    } finally {
+      setDeleteConfirm(false)
+      setSelectedItem(null)
+    }
+  }
+
+  // Load notification into form for editing
+  const handleEdit = (n) => {
+    setTitle(n.title)
+    setBody(n.body)
+    setImage(n.image || null)
+    setSendAll(n.sendAll || false)
+    setSelectedCustomers(n.selectedCustomers || [])
+    setIsEditing(true)
+    setEditId(n._id)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // View notification
+  const handleView = (n) => {
+    setSelectedItem(n)
+    setViewMode(true)
+  }
 
   return (
-    <div className="container mt-1" style={{ maxWidth: '900px', color: 'var(--color-black)' }}>
-      {/* 🟦 Send Notification Section */}
+    <div className="container mt-1" style={{ maxWidth: '900px' }}>
+      <ToastContainer />
+      {/* Form */}
       <CCard className="shadow-sm border-0 mb-4" style={{ color: 'var(--color-black)' }}>
         <CCardBody>
           <CRow>
-            {/* LEFT: Title + Image */}
             <CCol md={5}>
               <CFormLabel>Title</CFormLabel>
               <CFormInput
-                placeholder="Enter notification title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter Title..."
               />
 
               <CFormLabel className="mt-3">Image (Optional)</CFormLabel>
@@ -159,163 +234,283 @@ const FCMNotification = () => {
                 <img
                   src={image}
                   alt="preview"
-                  style={{
-                    width: '100%',
-                    borderRadius: 8,
-                    marginTop: 10,
-                    boxShadow: '0 0 5px rgba(0,0,0,0.2)',
-                  }}
+                  style={{ width: '100%', borderRadius: 8, marginTop: 10 }}
                 />
               )}
             </CCol>
-
-            {/* RIGHT: Body + Target */}
             <CCol md={7}>
               <CFormLabel>Body</CFormLabel>
               <CFormTextarea
                 rows="4"
-                placeholder="Enter notification message"
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
+                placeholder="Enter Message..."
               />
 
               <CFormCheck
                 className="mt-3"
                 type="checkbox"
                 label="Send to all users"
-                checked={sendToAll}
-                onChange={(e) => setSendToAll(e.target.checked)}
+                checked={sendAll}
+                onChange={(e) => setSendAll(e.target.checked)}
               />
             </CCol>
-            {!sendToAll && (
-              <div className=" p-3 ">
-                <CFormLabel>Select Customers</CFormLabel>
-                <Select
-                  classNamePrefix="select"
-                  isMulti
-                  isSearchable
-                  placeholder="Search and select patients..."
-                  options={customerOptions}
-                  value={selectedCustomers}
-                  onChange={setSelectedCustomers}
-                  isLoading={loading}
-                />
-              </div>
-            )}
           </CRow>
+          {!sendAll && (
+            <div className="mt-3">
+              <CFormLabel>Select Customers</CFormLabel>
+              <Select
+                isMulti
+                options={customerOptions}
+                value={selectedCustomers}
+                onChange={(selected) => setSelectedCustomers(selected || [])}
+                isLoading={loading}
+                placeholder="🔍 Search & Select Customers..."
+                closeMenuOnSelect={false}
+                menuPlacement="auto"
+                menuPortalTarget={document.body}
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    borderColor: '#ccc',
+                    boxShadow: 'none',
+                    '&:hover': { borderColor: '#999' },
+                  }),
+                  option: (base, { isFocused, isSelected }) => ({
+                    ...base,
+                    backgroundColor: isSelected ? '#000' : isFocused ? '#f1f1f1' : 'white',
+                    color: isSelected ? 'white' : '#000',
+                    cursor: 'pointer',
+                  }),
+                }}
+              />
+            </div>
+          )}
 
           {responseLog && (
-            <CAlert color={responseLog?.error ? 'danger' : 'success'} className="mt-3" dismissible>
-              {responseLog?.error
-                ? `Error: ${responseLog.error}`
-                : 'Notification sent successfully!'}
+            <CAlert color={responseLog.error ? 'danger' : 'success'} className="mt-3">
+              {responseLog.error || responseLog.success}
             </CAlert>
           )}
 
           <CButton
-            style={{ color: 'white', backgroundColor: 'var(--color-black)' }}
             className="mt-4 w-100"
-            onClick={handleSend}
+            onClick={handleSubmit}
+            disabled={isLoading}
+            style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
           >
-            🚀 Send Notification
+            {isLoading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2 text-white" role="status" />
+                {isEditing ? 'Updating...' : 'Sending...'}
+              </>
+            ) : (
+              <>{isEditing ? '💾 Update Notification' : '🚀 Send Notification'}</>
+            )}
           </CButton>
         </CCardBody>
       </CCard>
 
-      {/* 🧾 Sent Notifications Log */}
-      <CCard >
+      {/* Table */}
+      <CCard className="mb-2">
         <CCardHeader className="bg-light">
           <h6 className="mb-0">📋 Sent Notifications Log</h6>
         </CCardHeader>
-        <CCardBody style={{ overflowX: 'auto' }}>
-          {sentNotifications.length === 0 ? (
-            <p className="text-center   my-3" style={{ color: 'var(--color-black)' }}>
-              No notifications sent yet.
-            </p>
-          ) : (
-            <CTable bordered hover responsive align="middle">
-              <CTableHead className="custom-modal">
-                <CTableRow className="pink-table  w-auto">
-                  <CTableHeaderCell>#</CTableHeaderCell>
-                  <CTableHeaderCell>Title</CTableHeaderCell>
-                  <CTableHeaderCell>Body</CTableHeaderCell>
-                  <CTableHeaderCell>Target</CTableHeaderCell>
-                  <CTableHeaderCell>Status</CTableHeaderCell>
-                  <CTableHeaderCell>Time</CTableHeaderCell>
-
-                  <CTableHeaderCell>Image</CTableHeaderCell>
-                  <CTableHeaderCell>Actions</CTableHeaderCell>
-                </CTableRow>
-              </CTableHead>
-              <CTableBody className="pink-table">
-                {sentNotifications.map((n, index) => (
-                  <CTableRow key={index}>
-                    <CTableDataCell>{index + 1}</CTableDataCell>
-                    <CTableDataCell>{n.title}</CTableDataCell>
-                    <CTableDataCell>{n.body}</CTableDataCell>
-                    <CTableDataCell>{n.token}</CTableDataCell>
-                    <CTableDataCell>{n.status}</CTableDataCell>
-                    <CTableDataCell>{n.time}</CTableDataCell>
-                    <CTableDataCell>
-                      {n.image ? (
-                        <img
-                          src={n.image}
-                          alt="img"
-                          style={{ width: 50, height: 50, borderRadius: 5 }}
-                        />
-                      ) : (
-                        '-'
-                      )}
-                    </CTableDataCell>
-                    <CTableDataCell className="text-end">
-                      <div className="d-flex justify-content-end gap-2  ">
-                        {can('Push Notification', 'read') && (
-                          <button
-                            className="actionBtn"
-                            // onClick={() => {
-                            //   setSelectedTech(tech)
-                            //   setViewMode(true)
-                            //   setModalVisible(true)
-                            // }}
-                            title="View"
-                          >
-                            <Eye size={18} />
-                          </button>
-                        )}
-                        {can('Push Notification', 'update') && (
-                          <button
-                            className="actionBtn"
-                            // onClick={() => {
-                            //   setSelectedTech(tech)
-                            //   setViewMode(false)
-                            //   setModalVisible(true)
-                            // }}
-                            title="Edit"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                        )}
-                        {can('Push Notification', 'delete') && (
-                          <button
-                            className="actionBtn"
-                            // onClick={() => {
-                            //   setDeleteId(tech.id) // store id
-                            //   setIsModalVisible(true) // show confirmation modal
-                            // }}
-                            title="Delete"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        )}
-                      </div>
-                    </CTableDataCell>
-                  </CTableRow>
-                ))}
-              </CTableBody>
-            </CTable>
+        <CCardBody>
+          {responseMessage && (
+            <CAlert color={responseMessage.error ? 'danger' : 'success'}>
+              {responseMessage.error || responseMessage.success}
+            </CAlert>
           )}
+
+          <CTable bordered hover responsive align="middle">
+            <CTableHead>
+              <CTableRow className="pink-table  w-auto">
+                <CTableHeaderCell style={{ width: '5%' }}>#</CTableHeaderCell>
+                <CTableHeaderCell style={{ width: '20%' }}>Title</CTableHeaderCell>
+                <CTableHeaderCell style={{ width: '40%' }}>Body</CTableHeaderCell>
+                <CTableHeaderCell>Date</CTableHeaderCell>
+                <CTableHeaderCell>Image</CTableHeaderCell>
+                <CTableHeaderCell className="text-end">Actions</CTableHeaderCell>
+              </CTableRow>
+            </CTableHead>
+            <CTableBody className="pink-table">
+              {paginatedNotifications.map((n, idx) => (
+                <CTableRow key={idx}>
+                  <CTableDataCell>{(currentPage - 1) * pageSize + idx + 1}</CTableDataCell>
+                  <CTableDataCell>{n.title}</CTableDataCell>
+                  <CTableDataCell>{n.body}</CTableDataCell>
+                  <CTableDataCell>{new Date().toLocaleString()}</CTableDataCell>
+                  <CTableDataCell>
+                    {n.image ? (
+                      <img src={n.image} alt="notif" style={{ width: 50, borderRadius: 5 }} />
+                    ) : (
+                      '-'
+                    )}
+                  </CTableDataCell>
+                  <CTableDataCell className="text-end">
+                    <div className="d-flex justify-content-end gap-2">
+                      {can('Push Notification', 'read') && (
+                        <button className="actionBtn" title="View" onClick={() => handleView(n)}>
+                          <Eye size={18} />
+                        </button>
+                      )}
+                      {can('Push Notification', 'update') && (
+                        <button className="actionBtn" title="Edit" onClick={() => handleEdit(n)}>
+                          <Edit2 size={18} />
+                        </button>
+                      )}
+                      {can('Push Notification', 'delete') && (
+                        <button
+                          className="actionBtn"
+                          title="Delete"
+                          onClick={() => {
+                            setSelectedItem(n)
+                            setDeleteConfirm(true)
+                          }}
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
+                    </div>
+                  </CTableDataCell>
+                </CTableRow>
+              ))}
+            </CTableBody>
+          </CTable>
+
+          {/* Pagination */}
+          <div className="mt-3">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+            />
+          </div>
         </CCardBody>
       </CCard>
+
+      {/* View Modal */}
+      <CModal
+        visible={viewMode}
+        onClose={() => setViewMode(false)}
+        backdrop="static"
+        className="custom-modal"
+        size="lg"
+      >
+        <CModalHeader>
+          <CModalTitle>View Notification</CModalTitle>
+        </CModalHeader>
+
+        <CModalBody>
+          {selectedItem && (
+            <>
+              <div className="row mb-3" style={{ color: 'var(-color-black)' }}>
+                <div className="col-md-4 mb-2">
+                  <strong>Clinic ID:</strong> {selectedItem.clinicId || '—'}
+                </div>
+                <div className="col-md-4 mb-2">
+                  <strong>Branch ID:</strong> {selectedItem.branchId || '—'}
+                </div>
+                <div className="col-md-4 mb-2">
+                  <strong>Title:</strong> {selectedItem.title || '—'}
+                </div>
+
+                <div className="col-md-4 mb-2">
+                  <strong>Body:</strong> {selectedItem.body || '—'}
+                </div>
+                <div className="col-md-4 mb-2">
+                  <strong>Send All:</strong> {selectedItem.sendAll ? 'Yes' : 'No'}
+                </div>
+                <div className="col-md-4 mb-2">
+                  <strong>Tokens:</strong>{' '}
+                  {selectedItem.tokens ? selectedItem.tokens.join(', ') : '—'}
+                </div>
+              </div>
+
+              {selectedItem.image && (
+                <div className="mb-4">
+                  <strong>Image:</strong>
+                  <img
+                    src={selectedItem.image}
+                    alt="Notification Preview"
+                    style={{
+                      width: '100%',
+                      borderRadius: 8,
+                      marginTop: '5px',
+                      border: '2px solid var(--main-color)',
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* ✅ Customer Data Grid */}
+              {selectedItem.customerData && selectedItem.customerData.length > 0 && (
+                <div>
+                  <h6 className="mb-3" style={{ color: 'var(--main-color)' }}>
+                    Customer Data:
+                  </h6>
+
+                  <div className="customer-grid">
+                    {selectedItem.customerData.map((cust, idx) => {
+                      const name = Object.keys(cust)[0]
+                      const details = cust[name]
+                      return (
+                        <div className="customer-card" key={idx}>
+                          <div className="col-item">
+                            <strong style={{ color: 'var(--main-color)' }}>{name}</strong>
+                            <p>📞 {details.mobileNumber}</p>
+                          </div>
+                          <div className="col-item">
+                            <strong>Customer ID:</strong>
+                            <p>{details.customerId}</p>
+                          </div>
+                          <div className="col-item">
+                            <strong>Patient ID:</strong>
+                            <p>{details.patientId}</p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {selectedItem.createdAt && (
+                <p className="mt-3">
+                  <strong>Created At:</strong> {new Date(selectedItem.createdAt).toLocaleString()}
+                </p>
+              )}
+            </>
+          )}
+        </CModalBody>
+
+        <CModalFooter>
+          <CButton color="secondary" onClick={() => setViewMode(false)}>
+            Close
+          </CButton>
+        </CModalFooter>
+      </CModal>
+
+      {/* Delete Modal */}
+      <CModal visible={deleteConfirm} onClose={() => setDeleteConfirm(false)}>
+        <CModalHeader>
+          <CModalTitle>Delete Confirmation</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          Are you sure you want to delete <strong>{selectedItem?.title}</strong>?
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="secondary" onClick={() => setDeleteConfirm(false)}>
+            Cancel
+          </CButton>
+          <CButton color="danger" onClick={handleDelete}>
+            Delete
+          </CButton>
+        </CModalFooter>
+      </CModal>
     </div>
   )
 }

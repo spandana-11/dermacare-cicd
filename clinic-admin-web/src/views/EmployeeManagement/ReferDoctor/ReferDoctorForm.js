@@ -85,7 +85,7 @@ const ReferDoctorForm = ({
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
   const [errors, setErrors] = useState({})
-
+  const [loading, setLoading] = useState(false)
   // Mandatory fields
   const mandatoryFields = [
     'fullName',
@@ -242,7 +242,7 @@ const ReferDoctorForm = ({
   }
 
   // 🔹 Save handler
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const missing = validateMandatoryFields(formData, mandatoryFields)
 
     if (missing.length > 0) {
@@ -309,10 +309,23 @@ const ReferDoctorForm = ({
     //   return
     // }
 
-    console.log(formData)
-    onSave(formData)
-    setFormData(emptyForm)
-    onClose()
+    try {
+      setLoading(true)
+      const res = await onSave(formData)
+      console.log(res) // Now this will log actual API response
+      if (res != undefined) {
+        setFormData(emptyForm)
+      }
+    } catch (err) {
+      console.error('Submit failed', err)
+    } finally {
+      setLoading(false)
+    }
+
+    // console.log(formData)
+    // onSave(formData)
+    // setFormData(emptyForm)
+    // onClose()
   }
 
   const handleUserPermission = () => {
@@ -480,15 +493,23 @@ const ReferDoctorForm = ({
                   {/* Left Section */}
                   <div>
                     <h4 className="fw-bold mb-2">Name: {formData.fullName}</h4>
-                    <p className="mb-1"><strong>Doctor ID: </strong> {formData.referralId}</p>
-                    <p className="mb-1"><strong>Email:</strong> {formData.email}</p>
-                    <p className="mb-1"><strong>Contact:</strong> {formData.mobileNumber}</p>
-
+                    <p className="mb-1">
+                      <strong>Doctor ID: </strong> {formData.referralId}
+                    </p>
+                    <p className="mb-1">
+                      <strong>Email:</strong> {formData.email}
+                    </p>
+                    <p className="mb-1">
+                      <strong>Contact:</strong> {formData.mobileNumber}
+                    </p>
                   </div>
 
                   {/* Right Section */}
                   <div className="text-md-end text-center mt-3 mt-md-0">
-                    <p className="mb-1"><strong>Doctor ID:</strong>{formData.referralId || 'N/A'}</p>
+                    <p className="mb-1">
+                      <strong>Doctor ID:</strong>
+                      {formData.referralId || 'N/A'}
+                    </p>
                     <p className="mb-0"></p>
                   </div>
                 </div>
@@ -498,13 +519,27 @@ const ReferDoctorForm = ({
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="border-bottom pb-2 mb-3">Personal Information</h5>
                 <div className="row g-3">
-                  <div className="col-md-4"><Row label="Full Name" value={formData.fullName} /></div>
-                  <div className="col-md-4"><Row label="Email" value={formData.email} /></div>
-                  <div className="col-md-4"><Row label="Contact" value={formData.mobileNumber} /></div>
-                  <div className="col-md-4"><Row label="Gender" value={formData.gender} /></div>
-                  <div className="col-md-4"><Row label="Date of Birth" value={formData.dateOfBirth} /></div>
-                  <div className="col-md-4"><Row label="Government ID" value={formData.governmentId} /></div>
-                  <div className="col-md-4"><Row label="Status" value={formData.status} /></div>
+                  <div className="col-md-4">
+                    <Row label="Full Name" value={formData.fullName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Email" value={formData.email} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Contact" value={formData.mobileNumber} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Gender" value={formData.gender} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Date of Birth" value={formData.dateOfBirth} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Government ID" value={formData.governmentId} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Status" value={formData.status} />
+                  </div>
                 </div>
               </div>
 
@@ -512,11 +547,21 @@ const ReferDoctorForm = ({
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="border-bottom pb-2 mb-3">Work Information</h5>
                 <div className="row g-3">
-                  <div className="col-md-4"><Row label="Department" value={formData.department} /></div>
-                  <div className="col-md-4"><Row label="Experience" value={formData.yearsOfExperience} /></div>
-                  <div className="col-md-4"><Row label="Specialization" value={formData.specialization} /></div>
-                  <div className="col-md-4"><Row label="Current Hospital Name" value={formData.currentHospitalName} /></div>
-                  <div className="col-md-4"><Row label="Medical Reg. No." value={formData.medicalRegistrationNumber} /></div>
+                  <div className="col-md-4">
+                    <Row label="Department" value={formData.department} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Experience" value={formData.yearsOfExperience} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Specialization" value={formData.specialization} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Current Hospital Name" value={formData.currentHospitalName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Medical Reg. No." value={formData.medicalRegistrationNumber} />
+                  </div>
                 </div>
               </div>
 
@@ -532,12 +577,27 @@ const ReferDoctorForm = ({
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="border-bottom pb-2 mb-3">Bank Details</h5>
                 <div className="row g-3">
-                  <div className="col-md-4"><Row label="Account Number" value={formData.bankAccountNumber.accountNumber} /></div>
-                  <div className="col-md-4"><Row label="Account Holder Name" value={formData.bankAccountNumber.accountHolderName} /></div>
-                  <div className="col-md-4"><Row label="IFSC Code" value={formData.bankAccountNumber.ifscCode} /></div>
-                  <div className="col-md-4"><Row label="Bank Name" value={formData.bankAccountNumber.bankName} /></div>
-                  <div className="col-md-4"><Row label="Branch Name" value={formData.bankAccountNumber.branchName} /></div>
-                  <div className="col-md-4"><Row label="PAN Card" value={formData.bankAccountNumber.panCardNumber} /></div>
+                  <div className="col-md-4">
+                    <Row label="Account Number" value={formData.bankAccountNumber.accountNumber} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row
+                      label="Account Holder Name"
+                      value={formData.bankAccountNumber.accountHolderName}
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="IFSC Code" value={formData.bankAccountNumber.ifscCode} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Bank Name" value={formData.bankAccountNumber.bankName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Branch Name" value={formData.bankAccountNumber.branchName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="PAN Card" value={formData.bankAccountNumber.panCardNumber} />
+                  </div>
                 </div>
               </div>
 
@@ -562,7 +622,6 @@ const ReferDoctorForm = ({
   </div>
   */}
             </div>
-
           ) : (
             // ✅ EDIT MODE
             <CForm>
@@ -616,9 +675,7 @@ const ReferDoctorForm = ({
                   )}
                 </div>
                 <div className="col-md-4">
-                  <CFormLabel>
-                    Gender 
-                  </CFormLabel>
+                  <CFormLabel>Gender</CFormLabel>
                   <CFormSelect
                     value={formData.gender}
                     onChange={(e) => handleChange('gender', e.target.value)}
@@ -633,9 +690,7 @@ const ReferDoctorForm = ({
 
               <div className="row mb-3">
                 <div className="col-md-4">
-                  <CFormLabel>
-                    Date of Birth 
-                  </CFormLabel>
+                  <CFormLabel>Date of Birth</CFormLabel>
                   <CFormInput
                     type="date"
                     value={formData.dateOfBirth}
@@ -649,9 +704,7 @@ const ReferDoctorForm = ({
                 </div>
 
                 <div className="col-md-4">
-                  <CFormLabel>
-                    Mobile Number 
-                  </CFormLabel>
+                  <CFormLabel>Mobile Number</CFormLabel>
                   <CFormInput
                     type="text"
                     maxLength={10} // ✅ Restrict to 10 digits
@@ -696,9 +749,7 @@ const ReferDoctorForm = ({
 
               <div className="row mb-3">
                 <div className="col-md-4">
-                  <CFormLabel>
-                    GovernmentID(AadharCard No) 
-                  </CFormLabel>
+                  <CFormLabel>GovernmentID(AadharCard No)</CFormLabel>
                   <CFormInput
                     maxLength={12}
                     value={formData.governmentId}
@@ -722,9 +773,7 @@ const ReferDoctorForm = ({
                 </div>
 
                 <div className="col-md-4">
-                  <CFormLabel>
-                    Medical Registration Number
-                  </CFormLabel>
+                  <CFormLabel>Medical Registration Number</CFormLabel>
                   <CFormInput
                     value={capitalizeWords(formData.medicalRegistrationNumber)}
                     onChange={(e) => {
@@ -746,9 +795,7 @@ const ReferDoctorForm = ({
                   )}
                 </div>
                 <div className="col-md-4">
-                  <CFormLabel>
-                    Department 
-                  </CFormLabel>
+                  <CFormLabel>Department</CFormLabel>
                   <CFormInput
                     value={capitalizeWords(formData.department)}
                     onChange={(e) => {
@@ -768,9 +815,7 @@ const ReferDoctorForm = ({
                   {errors.department && <div className="text-danger mt-1">{errors.department}</div>}
                 </div>
                 <div className="col-md-4">
-                  <CFormLabel>
-                    Specialization
-                  </CFormLabel>
+                  <CFormLabel>Specialization</CFormLabel>
                   <CFormInput
                     type="text"
                     value={formData.specialization}
@@ -927,9 +972,7 @@ const ReferDoctorForm = ({
                   <div className="row mb-3" key={rowIndex}>
                     {rowFields.map((field) => (
                       <div className="col-md-4" key={field}>
-                        <CFormLabel className="text-capitalize">
-                          {field} 
-                        </CFormLabel>
+                        <CFormLabel className="text-capitalize">{field}</CFormLabel>
                         <CFormInput
                           type="text"
                           maxLength={field === 'postalCode' ? 6 : undefined}
@@ -978,9 +1021,7 @@ const ReferDoctorForm = ({
                   <div className="row mb-3" key={rowIndex}>
                     {rowFields.map((field) => (
                       <div className="col-md-4" key={field}>
-                        <CFormLabel className="text-capitalize">
-                          {field} 
-                        </CFormLabel>
+                        <CFormLabel className="text-capitalize">{field}</CFormLabel>
                         <CFormInput
                           value={formData.bankAccountNumber[field]}
                           maxLength={
@@ -1255,8 +1296,19 @@ const ReferDoctorForm = ({
               <CButton
                 style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
                 onClick={handleSubmit}
+                disabled={loading}
               >
-                Save
+                {loading ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2 text-white"
+                      role="status"
+                    />
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
               </CButton>
             </>
           )}

@@ -41,6 +41,8 @@ const GenericConsentForm = () => {
   const [procedureName, setProcedureName] = useState(null)
   // Add a new state to track if a form is being added
   const [isAdding, setIsAdding] = useState(false)
+  const [saveloading, setSaveLoading] = useState(false)
+  const [delloading, setDelLoading] = useState(false)
 
   const hospitalId = localStorage.getItem('HospitalId')
   const consentFormType = '1'
@@ -96,13 +98,13 @@ const GenericConsentForm = () => {
     if (!trimmedQuestion || answers.length === 0) {
       // Only show toast if user actually clicked without proper input
       if (trimmedQuestion === '' && answers.length === 0) return
-      showCustomToast('Please add a question and at least one answer.','error')
+      showCustomToast('Please add a question and at least one answer.', 'error')
       return
     }
 
     // Prevent duplicate question
     if (qaList.some((qa) => qa.question === trimmedQuestion)) {
-      showCustomToast('This question already exists.','error')
+      showCustomToast('This question already exists.', 'error')
       return
     }
 
@@ -132,6 +134,7 @@ const GenericConsentForm = () => {
     }
 
     try {
+      setSaveLoading(true)
       if (editIndex !== null) {
         await updateConsentData(formattedForm, hospitalId, consentFormType)
       } else {
@@ -147,13 +150,15 @@ const GenericConsentForm = () => {
       setIsAdding(false) // ✅ enable button again
     } catch (error) {
       console.error('Error saving Generic Form:', error)
+    } finally {
+      setSaveLoading(false)
     }
   }
 
   const editProcedureForm = (index) => {
     const form = procedureForms[index]
     if (!form) {
-      showCustomToast('Selected form not found','error')
+      showCustomToast('Selected form not found', 'error')
       return
     }
 
@@ -171,16 +176,19 @@ const GenericConsentForm = () => {
     const form = procedureForms[index]
     const formId = form?.id || form?.consentFormId || form?.formId
     if (!formId) {
-      showCustomToast('This form cannot be deleted.','error')
+      showCustomToast('This form cannot be deleted.', 'error')
       return
     }
     try {
+      setDelLoading(true)
       await deleteConsentData(formId)
       setProcedureForms(procedureForms.filter((_, i) => i !== index))
       setIsAdding(false) // ✅ enable adding after delete
     } catch (error) {
       console.error('Error deleting Generic Form:', error)
-      showCustomToast('Failed to delete form.','error')
+      showCustomToast('Failed to delete form.', 'error')
+    } finally {
+      setDelLoading(false)
     }
   }
 
@@ -335,8 +343,21 @@ const GenericConsentForm = () => {
                   border: 'none',
                 }}
                 onClick={saveProcedureForm}
+                disabled={saveloading} // disable when saving/updating
               >
-                {editIndex !== null ? 'Update Generic Form' : 'Save Generic Form'}
+                {saveloading ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2 text-dark"
+                      role="status"
+                    />
+                    {editIndex !== null ? 'Updating...' : 'Saving...'}
+                  </>
+                ) : editIndex !== null ? (
+                  'Update Generic Form'
+                ) : (
+                  'Save Generic Form'
+                )}
               </CButton>
             </div>
           </CForm>
@@ -348,8 +369,23 @@ const GenericConsentForm = () => {
             <CAccordion>
               {procedureForms.map((form, i) => (
                 <CAccordionItem key={i} itemKey={i}>
-                  <CAccordionHeader>
-                    {capitalizeWords(form.subServiceName) || ' Generic Consent Form'}
+                  <CAccordionHeader style={{ color: 'var(--color-black)' }}>
+                    <span className="flex-grow-1">Generic Consent Form</span>
+
+                    <div className="d-flex gap-3 ms-3 mx-3">
+                      <FaEdit
+                        onClick={() => editProcedureForm(i)}
+                        style={{ color: 'var(--color-black)', cursor: 'pointer' }}
+                      />
+                      <FaTrash
+                        onClick={() => {
+                          setDeleteIndex(i) // store which form to delete
+                          setIsModalVisible(true) // open confirmation modal
+                          setProcedureName(form.subServiceName)
+                        }}
+                        style={{ color: 'var(--color-black)', cursor: 'pointer' }}
+                      />
+                    </div>
                   </CAccordionHeader>
                   <CAccordionBody>
                     {Array.isArray(form.consentFormQuestions) &&
@@ -372,7 +408,7 @@ const GenericConsentForm = () => {
                         </div>
                       ))}
 
-                    <div className="d-flex gap-3 mt-2">
+                    {/* <div className="d-flex gap-3 mt-2">
                       <FaEdit
                         onClick={() => editProcedureForm(i)}
                         style={{ color: 'var(--color-black)', cursor: 'pointer' }}
@@ -385,7 +421,7 @@ const GenericConsentForm = () => {
                         }}
                         style={{ color: 'var(--color-black)', cursor: 'pointer' }}
                       />
-                    </div>
+                    </div> */}
                   </CAccordionBody>
                 </CAccordionItem>
               ))}
@@ -397,8 +433,9 @@ const GenericConsentForm = () => {
       <ConfirmationModal
         isVisible={isModalVisible}
         title="Delete ProcedureConsentForm"
-        message={`Are you sure you want to delete this "${procedureName}" ? This action cannot be undone.`}
+        message={`Are you sure you want to delete this Generic Consent Form ? This action cannot be undone.`}
         confirmText="Yes, Delete"
+        isLoading={delloading}
         cancelText="Cancel"
         confirmColor="danger"
         cancelColor="secondary"

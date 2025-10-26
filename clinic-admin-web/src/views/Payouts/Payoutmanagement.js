@@ -27,6 +27,7 @@ import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
 import { Edit2, Eye, Trash2 } from 'lucide-react'
 import LoadingIndicator from '../../Utils/loader'
 import { showCustomToast } from '../../Utils/Toaster'
+import Pagination from '../../Utils/Pagination'
 
 // ✅ Dummy API methods
 // replace these with your real API methods
@@ -158,13 +159,13 @@ const PayoutManagement = () => {
 
   const handleAdd = async () => {
     if (!formData.amount || !formData.paymentMethod || !formData.userEmail) {
-      showCustomToast('Fill all required fields','error')
+      showCustomToast('Fill all required fields', 'error')
       return
     }
     try {
       const res = await postPayoutsData(formData)
       setPayouts([res.data, ...payouts])
-      showCustomToast('Added successfully','success')
+      showCustomToast('Added successfully', 'success')
       setFormData({
         transactionId: '',
         amount: '',
@@ -176,7 +177,7 @@ const PayoutManagement = () => {
         billingAddress: '',
       })
     } catch (err) {
-      showCustomToast(err?.response?.data?.message || 'Add failed','error')
+      showCustomToast(err?.response?.data?.message || 'Add failed', 'error')
     }
   }
 
@@ -261,29 +262,25 @@ const PayoutManagement = () => {
         </CTable>
       )}
 
-      {!loading && (
-        <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
-          {Array.from({ length: Math.ceil(filteredData.length / rowsPerPage) }, (_, index) => (
-            <CButton
-              key={index}
-              style={{
-                backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
-                color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
-                border: '1px solid #ccc',
-                borderRadius: '5px',
-                cursor: 'pointer',
-              }}
-              className="ms-2"
-              onClick={() => setCurrentPage(index + 1)}
-            >
-              {index + 1}
-            </CButton>
-          ))}
+      {filteredData.length > 0 && (
+        <div className="mb-3  mt-3">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(displayData.length / rowsPerPage)}
+            pageSize={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setRowsPerPage}
+          />
         </div>
       )}
 
       {/* View Modal */}
-      <CModal visible={!!viewData} onClose={() => setViewData(null)}  alignment="center" backdrop="static">
+      <CModal
+        visible={!!viewData}
+        onClose={() => setViewData(null)}
+        alignment="center"
+        backdrop="static"
+      >
         <CModalHeader>
           <CModalTitle>Transaction Details</CModalTitle>
         </CModalHeader>

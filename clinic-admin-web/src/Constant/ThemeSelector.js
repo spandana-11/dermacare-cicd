@@ -8,7 +8,12 @@ const themeOptions = {
   classic: { name: 'Classic', bgcolor: '#a5c4d4ff', black: '#7e3a93' }, // default
   light: { name: 'Light', bgcolor: '#ffffff', black: '#bd2d2dff' },
   neutral: { name: 'Neutral', bgcolor: '#f3f4f7', black: '#333333' },
-  ocean: { name: 'Ocean', bgcolor: '#6898c9ff', black: '#1b4ca0ff' },
+  Ocean: { name: 'Ocean', bgcolor: '#6898c9ff', black: '#1b4ca0ff' },
+  // Midnight: { name: 'Midnight Black', bgcolor: '#1E1E2F', black: '#6b6666ff' },
+  // Sunset: { name: 'Sunset Orange', bgcolor: '#FF6B35', black: '#FFFFFF' },
+  // OceanBlue: { name: 'Ocean Blue', bgcolor: '#1B98E0', black: '#F0F8FF' },
+  // Mint: { name: 'Mint Green', bgcolor: '#3EB489', black: '#FFFFFF' },
+  // Lavender: { name: 'Lavender Purple', bgcolor: '#7E5BEF', black: '#FFFFFF' },
 }
 
 const ThemeSelector = () => {

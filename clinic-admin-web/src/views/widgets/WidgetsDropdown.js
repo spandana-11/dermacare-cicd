@@ -38,6 +38,7 @@ import './Widget.css'
 import LoadingIndicator from '../../Utils/loader'
 import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
 import { http } from '../../Utils/Interceptors'
+import Pagination from '../../Utils/Pagination'
 
 const WidgetsDropdown = (props) => {
   const [slides, setSlides] = useState([])
@@ -66,6 +67,8 @@ const WidgetsDropdown = (props) => {
   const [selectedServiceTypes, setSelectedServiceTypes] = useState([])
   const [selectedConsultationTypes, setSelectedConsultationTypes] = useState([])
   const [inprogressApt, setInprogressApt] = useState([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(5)
 
   const [showAppointments, setShowAppointments] = useState(false)
   const statusLabelMap = {
@@ -586,7 +589,7 @@ const WidgetsDropdown = (props) => {
               />
             )} */}
             <CButton
-            className='mx-2'
+              className="mx-2"
               style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
               onClick={() => navigate('/in-progress')}
             >
@@ -682,43 +685,54 @@ const WidgetsDropdown = (props) => {
                 }
 
                 // 5. Render the filtered data
-                return finalFilteredData.map((item, index) => (
-                  <CTableRow key={`${item.id}-${index}`} className="pink-table">
-                    <CTableDataCell>{index + 1}</CTableDataCell>
-                    <CTableDataCell>{item.patientId}</CTableDataCell>
-                    <CTableDataCell>{item.name}</CTableDataCell>
-                    <CTableDataCell>{item.doctorName}</CTableDataCell>
-                    <CTableDataCell>{item.consultationType}</CTableDataCell>
-                    <CTableDataCell>{item.serviceDate}</CTableDataCell>
-                    <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
-                    <CTableDataCell>
-                      <CBadge
-                        style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
-                      >
-                        {statusLabelMap[item.status] || item.status}
-                      </CBadge>
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      <CButton
-                        style={{ backgroundColor: 'var(--color-black)' }}
-                        className="text-white"
-                        size="sm"
-                        onClick={() =>
-                          navigate(`/appointment-details/${item.bookingId}`, {
-                            state: { appointment: item },
-                          })
-                        }
-                      >
-                        View
-                      </CButton>
-                    </CTableDataCell>
-                  </CTableRow>
-                ))
+                return finalFilteredData
+                  .slice((currentPage - 1) * pageSize, currentPage * pageSize)
+                  .map((item, index) => (
+                    <CTableRow key={`${item.id}-${index}`} className="pink-table">
+                      <CTableDataCell>{(currentPage - 1) * pageSize + index + 1}</CTableDataCell>
+                      <CTableDataCell>{item.patientId}</CTableDataCell>
+                      <CTableDataCell>{item.name}</CTableDataCell>
+                      <CTableDataCell>{item.doctorName}</CTableDataCell>
+                      <CTableDataCell>{item.consultationType}</CTableDataCell>
+                      <CTableDataCell>{item.serviceDate}</CTableDataCell>
+                      <CTableDataCell>{item.slot || item.servicetime}</CTableDataCell>
+                      <CTableDataCell>
+                        <CBadge
+                          style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
+                        >
+                          {statusLabelMap[item.status] || item.status}
+                        </CBadge>
+                      </CTableDataCell>
+                      <CTableDataCell>
+                        <CButton
+                          style={{ backgroundColor: 'var(--color-black)' }}
+                          className="text-white"
+                          size="sm"
+                          onClick={() =>
+                            navigate(`/appointment-details/${item.bookingId}`, {
+                              state: { appointment: item },
+                            })
+                          }
+                        >
+                          View
+                        </CButton>
+                      </CTableDataCell>
+                    </CTableRow>
+                  ))
               })()
             )}
           </CTableBody>
         </CTable>
       </div>
+      {todayBookings.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(todayBookings.length / pageSize)}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
+      )}
     </>
   )
 }

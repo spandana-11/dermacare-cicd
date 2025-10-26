@@ -39,12 +39,14 @@ import capitalizeWords from '../../Utils/capitalizeWords'
 import LoadingIndicator from '../../Utils/loader'
 import { useHospital } from '../Usecontext/HospitalContext'
 import { showCustomToast } from '../../Utils/Toaster'
+import Pagination from '../../Utils/Pagination'
 
 const TestsManagement = () => {
   // const [searchQuery, setSearchQuery] = useState('')
   const [test, setTest] = useState([])
   // const [filteredData, setFilteredData] = useState([])
   const [loading, setLoading] = useState(false)
+  const [saveloading, setSaveLoading] = useState(false)
   const [error, setError] = useState(null)
   const [modalVisible, setModalVisible] = useState(false)
   const [viewTest, setViewTest] = useState(null)
@@ -56,6 +58,8 @@ const TestsManagement = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const { searchQuery, setSearchQuery } = useGlobalSearch()
+   const [delloading, setDelLoading] = useState(false)
+   
   const [newTest, setNewTest] = useState({
     testName: '',
     hospitalId: '',
@@ -83,27 +87,29 @@ const TestsManagement = () => {
     }
   }
   const fetchDataById = async (hospitalId) => {
-  setLoading(true)
-  try {
-    const response = await TestDataById(hospitalId)
-    setTest(normalizeTests(response.data))   // ❌ no .reverse()
-  } catch (error) {
-    setError('Failed to fetch test data.')
-  } finally {
-    setLoading(false)
+    setLoading(true)
+    try {
+      const response = await TestDataById(hospitalId)
+      setTest(normalizeTests(response.data)) // ❌ no .reverse()
+    } catch (error) {
+      setError('Failed to fetch test data.')
+    } finally {
+      setLoading(false)
+    }
   }
-}
-
 
   const handleConfirmDelete = async () => {
     try {
+      setDelLoading(true)
       await deleteTestData(testIdToDelete, hospitalIdToDelete)
-      showCustomToast('Test deleted successfully!', { position: 'top-right' },'success')
+      showCustomToast('Test deleted successfully!', { position: 'top-right' }, 'success')
       // fetchData()
       fetchDataById(hospitalId)
     } catch (error) {
-      showCustomToast('Failed to delete test.','error')
+      showCustomToast('Failed to delete test.', 'error')
       console.error('Delete error:', error)
+    }finally{
+       setDelLoading(false)
     }
     setIsModalVisible(false)
   }
@@ -157,7 +163,7 @@ const TestsManagement = () => {
   }
   const isValidObjectId = (id) => /^[a-f\d]{24}$/i.test(id)
 
- const nameRegex = /^[A-Za-z0-9\s.\-()\/']+$/
+  const nameRegex = /^[A-Za-z0-9\s.\-()\/']+$/
 
   const handleAddTest = async () => {
     if (!newTest.testName.trim()) {
@@ -165,7 +171,7 @@ const TestsManagement = () => {
       return
     }
     if (!nameRegex.test(newTest.testName.trim())) {
-     setErrors({
+      setErrors({
         testName: "Only alphabets, numbers, spaces, and limited symbols (.-()/') are allowed.",
       })
       return
@@ -175,14 +181,19 @@ const TestsManagement = () => {
       (t) => t.testName.trim().toLowerCase() === newTest.testName.trim().toLowerCase(),
     )
     if (duplicate) {
-     showCustomToast(`Duplicate test name,Add another test - ${newTest.testName} already exists!`,'error', {
-        position: 'top-right',
-      })
+      showCustomToast(
+        `Duplicate test name,Add another test - ${newTest.testName} already exists!`,
+        'error',
+        {
+          position: 'top-right',
+        },
+      )
       setModalVisible(false)
       return
     }
 
     try {
+      setSaveLoading(true)
       const payload = {
         testName: newTest.testName,
         hospitalId: hospitalId,
@@ -191,7 +202,7 @@ const TestsManagement = () => {
       }
 
       await postTestData(payload)
-      showCustomToast('Test added successfully!','success')
+      showCustomToast('Test added successfully!', 'success')
       fetchDataById(hospitalId)
       setModalVisible(false)
       setNewTest({ testName: '', description: '', purpose: '' })
@@ -200,7 +211,9 @@ const TestsManagement = () => {
         error.response?.data?.message ||
         error.response?.statusText ||
         'An unexpected error occurred.'
-      showCustomToast(`Error adding test: ${errorMessage}`, { position: 'top-right' },'error')
+      showCustomToast(`Error adding test: ${errorMessage}`, { position: 'top-right' }, 'error')
+    } finally {
+      setSaveLoading(flase)
     }
   }
 
@@ -227,22 +240,26 @@ const TestsManagement = () => {
         t.id !== testToEdit.id,
     )
     if (duplicate) {
-      showCustomToast(`Duplicate test name - ${testToEdit.testName} already exists!`,'error' ,{
+      showCustomToast(`Duplicate test name - ${testToEdit.testName} already exists!`, 'error', {
         position: 'top-right',
       })
       return
     }
 
     try {
+      setSaveLoading(true)
       const { id: testId, hospitalId } = testToEdit
       await updateTestData(testToEdit, testId, hospitalId)
-      showCustomToast('Test updated successfully!','success')
+      showCustomToast('Test updated successfully!', 'success')
       setEditTestMode(false)
       // fetchData()
       fetchDataById(hospitalId)
     } catch (error) {
       console.error('Update error:', error)
-      showCustomToast('Failed to update test.','error')
+      showCustomToast('Failed to update test.', 'error')
+    }
+    finally {
+      setSaveLoading(false)
     }
   }
 
@@ -323,7 +340,12 @@ const TestsManagement = () => {
       </CForm>
 
       {viewTest && (
-        <CModal visible={!!viewTest} onClose={() => setViewTest(null)} backdrop="static"  alignment="center" >
+        <CModal
+          visible={!!viewTest}
+          onClose={() => setViewTest(null)}
+          backdrop="static"
+          alignment="center"
+        >
           <CModalHeader>
             <CModalTitle>Test Details</CModalTitle>
           </CModalHeader>
@@ -359,7 +381,6 @@ const TestsManagement = () => {
         }}
         backdrop="static"
       >
-
         <CModalHeader>
           <CModalTitle>Add New Test</CModalTitle>
         </CModalHeader>
@@ -381,8 +402,8 @@ const TestsManagement = () => {
                   setErrors((prev) => ({ ...prev, testName: '' }))
                 }
               }}
-              placeholder="Enter test name"
-              className={errors.testName ? 'is-invalid' : ''}
+              // placeholder="Enter test name"
+              className={(errors.testName ? 'is-invalid' : '', 'mb-3')}
             />
             {errors.testName && (
               <div className="invalid-feedback" style={{ color: 'red' }}>
@@ -403,8 +424,8 @@ const TestsManagement = () => {
                   setErrors((prev) => ({ ...prev, description: '' }))
                 }
               }}
-              placeholder="Enter description"
-              className={errors.description ? 'is-invalid' : ''}
+              // placeholder="Enter description"
+              className={(errors.description ? 'is-invalid' : '', 'mb-3')}
             />
             <h6>Purpose</h6>
             <CFormInput
@@ -420,12 +441,25 @@ const TestsManagement = () => {
                   setErrors((prev) => ({ ...prev, purpose: '' }))
                 }
               }}
-              placeholder="Enter purpose"
+              // placeholder="Enter purpose"
               className={errors.purpose ? 'is-invalid' : ''}
             />
           </CForm>
         </CModalBody>
         <CModalFooter>
+          <CButton
+            color="secondary"
+            onClick={() =>
+              setNewTest({
+                testName: '',
+                hospitalId: '',
+                description: '',
+                purpose: '',
+              })
+            }
+          >
+            Reset
+          </CButton>
           <CButton color="secondary" onClick={() => setModalVisible(false)}>
             Cancel
           </CButton>
@@ -433,8 +467,16 @@ const TestsManagement = () => {
             style={{ backgroundColor: 'var(--color-black)' }}
             className="text-white"
             onClick={handleAddTest}
+            disabled={saveloading}
           >
-            Add
+            {saveloading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2 text-white" role="status" />
+                Saving...
+              </>
+            ) : (
+              'Save'
+            )}
           </CButton>
         </CModalFooter>
       </CModal>
@@ -484,13 +526,25 @@ const TestsManagement = () => {
           <CButton color="secondary" onClick={() => setEditTestMode(false)}>
             Cancel
           </CButton>
-          <CButton
-            style={{ backgroundColor: 'var(--color-black)' }}
-            className="text-white"
-            onClick={handleUpdateTest}
-          >
-            Update
-          </CButton>
+         <CButton
+  style={{ backgroundColor: 'var(--color-black)' }}
+  className="text-white"
+  onClick={handleUpdateTest}
+  disabled={saveloading} // Disable while loading
+>
+  {saveloading ? (
+    <>
+      <span
+        className="spinner-border spinner-border-sm me-2 text-white"
+        role="status"
+      />
+      Updating...
+    </>
+  ) : (
+    'Update'
+  )}
+</CButton>
+
         </CModalFooter>
       </CModal>
 
@@ -498,6 +552,7 @@ const TestsManagement = () => {
         isVisible={isModalVisible}
         title="Delete Doctor"
         message="Are you sure you want to delete this test? This action cannot be undone."
+        isLoading={delloading}
         confirmText="Yes, Delete"
         cancelText="Cancel"
         confirmColor="danger"
@@ -539,9 +594,9 @@ const TestsManagement = () => {
                   <CTableDataCell style={{ paddingLeft: '40px' }}>
                     {(currentPage - 1) * rowsPerPage + index + 1}
                   </CTableDataCell>
-                  <CTableDataCell>{(test.testName)}</CTableDataCell>
-                  <CTableDataCell>{(test.description || 'NA')}</CTableDataCell>
-                  <CTableDataCell>{(test.purpose || 'NA')}</CTableDataCell>
+                  <CTableDataCell>{test.testName}</CTableDataCell>
+                  <CTableDataCell>{test.description || 'NA'}</CTableDataCell>
+                  <CTableDataCell>{test.purpose || 'NA'}</CTableDataCell>
                   <CTableDataCell className="text-end">
                     <div className="d-flex justify-content-end gap-2  ">
                       {can('Tests', 'read') && (
@@ -614,34 +669,14 @@ const TestsManagement = () => {
         </CTable>
       )}
       {/* Pagination Controls */}
-      {!loading && (
-        <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
-          {Array.from(
-            {
-              length: Math.ceil(
-                (filteredData.length ? filteredData.length : test.length) / rowsPerPage,
-              ),
-            },
-            (_, index) => (
-              <CButton
-                key={index}
-                style={{
-                  margin: '0 5px',
-                  padding: '5px 10px',
-                  backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
-                  color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
-                  border: '1px solid #ccc',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                }}
-                className="ms-2"
-                onClick={() => setCurrentPage(index + 1)}
-              >
-                {index + 1}
-              </CButton>
-            ),
-          )}
-        </div>
+      {displayData.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(filteredData.length / rowsPerPage)}
+          pageSize={rowsPerPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setRowsPerPage}
+        />
       )}
     </div>
   )

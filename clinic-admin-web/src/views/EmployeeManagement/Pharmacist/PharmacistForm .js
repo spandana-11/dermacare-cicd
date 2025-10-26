@@ -12,7 +12,7 @@ import {
   CFormTextarea,
   CFormSelect,
 } from '@coreui/react'
-import { toast } from 'react-toastify'
+import { toast, ToastContainer } from 'react-toastify'
 import { actions, features } from '../../../Constant/Features'
 import capitalizeWords from '../../../Utils/capitalizeWords'
 import UserPermissionModal from '../UserPermissionModal'
@@ -52,6 +52,7 @@ const PharmacistForm = ({
     dateOfJoining: '',
     department: '',
     qualification: '',
+    yearsOfExperience: '',
     // specialization: '',
     role: 'pharmacist',
     address: {
@@ -82,14 +83,14 @@ const PharmacistForm = ({
   // 🔹 State
   const [formData, setFormData] = useState(emptyForm)
   const [hospitalId, setHospitalId] = useState(localStorage.getItem('HospitalId'))
-
+  const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [showPModal, setShowPModal] = useState(false)
   const [previewFileUrl, setPreviewFileUrl] = useState(null)
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
   const [pharmacist, setPharmacist] = useState([]) // ✅ correct name
   const [errors, setErrors] = useState({})
-
+  const [ifscLoading, setIfscLoading] = useState(false)
   // Mandatory fields
   const mandatoryFields = [
     'fullName',
@@ -104,7 +105,7 @@ const PharmacistForm = ({
     'profilePicture',
     'role',
     'qualification',
-
+    'yearsOfExperience',
     'shiftTimingsOrAvailability',
     // address fields
     'address.houseNo',
@@ -234,7 +235,7 @@ const PharmacistForm = ({
 
     // ✅ Check file size (bytes → KB)
     if (file.size > 250 * 1024) {
-      showCustomToast('File size must be less than 250KB.','error', {
+      showCustomToast('File size must be less than 250KB.', 'error', {
         position: 'top-right',
         autoClose: 3000,
         hideProgressBar: false,
@@ -262,7 +263,7 @@ const PharmacistForm = ({
     const missing = validateMandatoryFields(formData, mandatoryFields)
 
     if (missing.length > 0) {
-      showCustomToast(`Please fill required fields: ${missing.join(', ')}`,'error')
+      showCustomToast(`Please fill required fields: ${missing.join(', ')}`, 'error')
       return
     }
 
@@ -277,21 +278,21 @@ const PharmacistForm = ({
       const actualAge = isBeforeBirthday ? age - 1 : age
 
       if (actualAge < 18) {
-       showCustomToast('Pharmacist must be at least 18 years old.','error')
+        showCustomToast('Pharmacist must be at least 18 years old.', 'error')
         return
       }
     }
 
     const mobileRegex = /^[6-9]\d{9}$/
     if (!mobileRegex.test(formData.contactNumber)) {
-      showCustomToast('Contact number must be 10 digits and start with 6-9.','error')
+      showCustomToast('Contact number must be 10 digits and start with 6-9.', 'error')
       return
     }
 
     // ✅ Email validation
 
     if (!emailPattern.test(formData.emailID)) {
-      showCustomToast('Please enter a valid email address.','error')
+      showCustomToast('Please enter a valid email address.', 'error')
       return
     }
 
@@ -299,7 +300,7 @@ const PharmacistForm = ({
       (t) => t.contactNumber === formData.contactNumber && t.pharmacistId !== formData.pharmacistId,
     )
     if (duplicateContact) {
-      showCustomToast('Contact number already exists!','error')
+      showCustomToast('Contact number already exists!', 'error')
       return
     }
 
@@ -307,7 +308,7 @@ const PharmacistForm = ({
       (t) => t.emailID === formData.emailID && t.pharmacistId !== formData.pharmacistId,
     )
     if (duplicateEmail) {
-      showCustomToast('Email already exists!','error')
+      showCustomToast('Email already exists!', 'error')
       return
     }
     return true
@@ -322,23 +323,25 @@ const PharmacistForm = ({
       })
 
       if (!hasAtLeastOnePermission) {
-        showCustomToast('Please assign at least one user permission before saving.','error')
+        showCustomToast('Please assign at least one user permission before saving.', 'error')
         return
       }
     }
 
     try {
+      setLoading(true)
       const res = await onSave(formData)
       console.log(res) // Now this will log actual API response
       if (res != undefined) {
         setFormData(emptyForm)
         onClose()
-      }
-      else{
-        onClose() 
+      } else {
+        onClose()
       }
     } catch (err) {
       console.error('Submit failed', err)
+    } finally {
+      setLoading(false)
     }
 
     // Save
@@ -449,6 +452,7 @@ const PharmacistForm = ({
 
   return (
     <>
+      <ToastContainer />
       <CModal
         visible={visible}
         onClose={onClose}
@@ -462,13 +466,13 @@ const PharmacistForm = ({
         <CModalBody>
           {viewMode ? (
             // ✅ VIEW MODE
-<div className="container my-4">
+            <div className="container my-4">
               <div className="card p-4 mb-4 shadow-sm border-light">
                 <div className="d-flex flex-column flex-md-row align-items-center">
                   {/* Avatar */}
                   <div className="text-center me-md-4 mb-3 mb-md-0">
                     <img
-                      src={formData.profilePicture || "/assets/images/default-avatar.png"}
+                      src={formData.profilePicture || '/assets/images/default-avatar.png'}
                       alt={formData.fullName}
                       width="100"
                       height="100"
@@ -496,12 +500,24 @@ const PharmacistForm = ({
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="mb-3 border-bottom pb-2">Personal Information</h5>
                 <div className="row g-3">
-                  <div className="col-md-4"><Row label="Full Name" value={formData.fullName} /></div>
-                  <div className="col-md-4"><Row label="Email" value={formData.emailID} /></div>
-                  <div className="col-md-4"><Row label="Contact" value={formData.contactNumber} /></div>
-                  <div className="col-md-4"><Row label="Gender" value={formData.gender} /></div>
-                  <div className="col-md-4"><Row label="Date of Birth" value={formData.dateOfBirth} /></div>
-                  <div className="col-md-4"><Row label="Government ID" value={formData.governmentId} /></div>
+                  <div className="col-md-4">
+                    <Row label="Full Name" value={formData.fullName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Email" value={formData.emailID} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Contact" value={formData.contactNumber} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Gender" value={formData.gender} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Date of Birth" value={formData.dateOfBirth} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Government ID" value={formData.governmentId} />
+                  </div>
                 </div>
               </div>
 
@@ -509,12 +525,24 @@ const PharmacistForm = ({
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="mb-3 border-bottom pb-2">Work Information</h5>
                 <div className="row g-3">
-                  <div className="col-md-4"><Row label="Date of Joining" value={formData.dateOfJoining} /></div>
-                  <div className="col-md-4"><Row label="Department" value={formData.department} /></div>
-                  <div className="col-md-4"><Row label="Qualification" value={formData.qualification} /></div>
-                  <div className="col-md-4"><Row label="Emergency Contact" value={formData.emergencyContactNumber} /></div>
-                  <div className="col-md-4"><Row label="Shift Timings" value={formData.shiftTimingsOrAvailability} /></div>
-                  <div className="col-md-4"><Row label="Pharmacy License" value={formData.pharmacyLicense} /></div>
+                  <div className="col-md-4">
+                    <Row label="Date of Joining" value={formData.dateOfJoining} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Department" value={formData.department} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Qualification" value={formData.qualification} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Emergency Contact" value={formData.emergencyContactNumber} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Shift Timings" value={formData.shiftTimingsOrAvailability} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Pharmacy License" value={formData.pharmacyLicense} />
+                  </div>
                 </div>
               </div>
 
@@ -530,12 +558,27 @@ const PharmacistForm = ({
               <div className="card p-3 mb-4 shadow-sm border-light">
                 <h5 className="mb-3 border-bottom pb-2">Bank Details</h5>
                 <div className="row g-3">
-                  <div className="col-md-4"><Row label="Account Number" value={formData.bankAccountDetails.accountNumber} /></div>
-                  <div className="col-md-4"><Row label="Account Holder Name" value={formData.bankAccountDetails.accountHolderName} /></div>
-                  <div className="col-md-4"><Row label="IFSC Code" value={formData.bankAccountDetails.ifscCode} /></div>
-                  <div className="col-md-4"><Row label="Bank Name" value={formData.bankAccountDetails.bankName} /></div>
-                  <div className="col-md-4"><Row label="Branch Name" value={formData.bankAccountDetails.branchName} /></div>
-                  <div className="col-md-4"><Row label="PAN Card" value={formData.bankAccountDetails.panCardNumber} /></div>
+                  <div className="col-md-4">
+                    <Row label="Account Number" value={formData.bankAccountDetails.accountNumber} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row
+                      label="Account Holder Name"
+                      value={formData.bankAccountDetails.accountHolderName}
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="IFSC Code" value={formData.bankAccountDetails.ifscCode} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Bank Name" value={formData.bankAccountDetails.bankName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="Branch Name" value={formData.bankAccountDetails.branchName} />
+                  </div>
+                  <div className="col-md-4">
+                    <Row label="PAN Card" value={formData.bankAccountDetails.panCardNumber} />
+                  </div>
                 </div>
               </div>
 
@@ -551,7 +594,9 @@ const PharmacistForm = ({
                         data={formData.dpharmaOrBPharmaCertificate}
                       />
                     </div>
-                  ) : <p className="col-md-6">Not Provided D Pharma / B Pharma Certificate</p>}
+                  ) : (
+                    <p className="col-md-6">Not Provided D Pharma / B Pharma Certificate</p>
+                  )}
 
                   {formData.statePharmacyCouncilRegistration ? (
                     <div className="col-md-6">
@@ -561,7 +606,9 @@ const PharmacistForm = ({
                         data={formData.statePharmacyCouncilRegistration}
                       />
                     </div>
-                  ) : <p className="col-md-6">Not Provided State Pharmacy Council Registration</p>}
+                  ) : (
+                    <p className="col-md-6">Not Provided State Pharmacy Council Registration</p>
+                  )}
 
                   {formData.experienceCertificates ? (
                     <div className="col-md-6">
@@ -571,7 +618,9 @@ const PharmacistForm = ({
                         data={formData.experienceCertificates}
                       />
                     </div>
-                  ) : <p className="col-md-6">Not Provided Experience Certificates</p>}
+                  ) : (
+                    <p className="col-md-6">Not Provided Experience Certificates</p>
+                  )}
                 </div>
               </div>
 
@@ -580,7 +629,10 @@ const PharmacistForm = ({
                 <h5 className="mb-3 border-bottom pb-2">Other Information</h5>
                 <div className="row g-3">
                   <div className="col-md-12">
-                    <RowFull label="Previous Employment" value={formData.previousEmploymentHistory} />
+                    <RowFull
+                      label="Previous Employment"
+                      value={formData.previousEmploymentHistory}
+                    />
                   </div>
                 </div>
               </div>
@@ -784,13 +836,12 @@ const PharmacistForm = ({
                       const value = e.target.value
 
                       // Allow only letters and spaces
-                      
-                        handleChange('department', value)
 
-                        // Run validation
-                        const error = validateField('department', value)
-                        setErrors((prev) => ({ ...prev, department: error }))
-                      
+                      handleChange('department', value)
+
+                      // Run validation
+                      const error = validateField('department', value)
+                      setErrors((prev) => ({ ...prev, department: error }))
                     }}
                   />
                   {errors.department && <div className="text-danger mt-1">{errors.department}</div>}
@@ -869,6 +920,26 @@ const PharmacistForm = ({
 
                   {errors.shiftTimingsOrAvailability && (
                     <div className="text-danger mt-1">{errors.shiftTimingsOrAvailability}</div>
+                  )}
+                </div>
+                <div className="col-md-4">
+                  <CFormLabel>
+                    Years of Experience <span style={{ color: 'red' }}>*</span>
+                  </CFormLabel>
+                  <CFormInput
+                    type="number"
+                    value={formData.yearsOfExperience}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      handleChange('yearsOfExperience', value)
+
+                      // ✅ Validate using switch case
+                      const error = validateField('yearsOfExperience', value)
+                      setErrors((prev) => ({ ...prev, yearsOfExperience: error }))
+                    }}
+                  />
+                  {errors.yearsOfExperience && (
+                    <div className="text-danger mt-1">{errors.yearsOfExperience}</div>
                   )}
                 </div>
                 {/* <div className="col-md-4">
@@ -968,6 +1039,12 @@ const PharmacistForm = ({
                         </CFormLabel>
                         <CFormInput
                           value={formData.bankAccountDetails[field]}
+                          disabled={ifscLoading && (field === 'bankName' || field === 'branchName')}
+                          placeholder={
+                            ifscLoading && (field === 'bankName' || field === 'branchName')
+                              ? 'Fetching...'
+                              : ''
+                          }
                           maxLength={
                             field === 'accountNumber'
                               ? 20
@@ -1032,18 +1109,31 @@ const PharmacistForm = ({
                             if (field === 'panCardNumber' && value.length === 10) {
                               const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
                               if (!panRegex.test(value))
-                                showCustomToast('Invalid PAN format (e.g., ABCDE1234F)','error')
+                                showCustomToast('Invalid PAN format (e.g., ABCDE1234F)', 'error')
                             }
 
                             // IFSC validation
                             if (field === 'ifscCode' && value.length === 11) {
                               const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
                               if (!ifscRegex.test(value)) {
-                                showCustomToast('Invalid IFSC format (e.g., HDFC0001234)','error')
+                                showCustomToast('Invalid IFSC format (e.g., HDFC0001234)', 'error')
                                 handleNestedChange('bankAccountDetails', 'bankName', '')
                                 handleNestedChange('bankAccountDetails', 'branchName', '')
                               } else {
                                 try {
+                                  // ✅ Show loading in UI
+                                  setIfscLoading(true)
+                                  handleNestedChange(
+                                    'bankAccountDetails',
+                                    'bankName',
+                                    'Fetching...',
+                                  )
+                                  handleNestedChange(
+                                    'bankAccountDetails',
+                                    'branchName',
+                                    'Fetching...',
+                                  )
+
                                   const res = await fetch(`https://ifsc.razorpay.com/${value}`)
                                   if (res.ok) {
                                     const data = await res.json()
@@ -1057,11 +1147,18 @@ const PharmacistForm = ({
                                       'branchName',
                                       data.BRANCH || '',
                                     )
+                                  } else {
+                                    showCustomToast('Invalid IFSC code', 'error')
+                                    handleNestedChange('bankAccountDetails', 'bankName', '')
+                                    handleNestedChange('bankAccountDetails', 'branchName', '')
                                   }
                                 } catch (err) {
-                                  showCustomToast('Error fetching bank details','error')
+                                  showCustomToast('Error fetching bank details', 'error')
                                   handleNestedChange('bankAccountDetails', 'bankName', '')
                                   handleNestedChange('bankAccountDetails', 'branchName', '')
+                                } finally {
+                                  // ✅ Hide loading
+                                  setIfscLoading(false)
                                 }
                               }
                             }
@@ -1205,14 +1302,31 @@ const PharmacistForm = ({
               >
                 Clear
               </CButton>
-              <CButton color="secondary" onClick={onClose}>
+              <CButton
+                color="secondary"
+                onClick={() => {
+                  setFormData(emptyForm)
+                  onClose()
+                }}
+              >
                 Cancel
               </CButton>
               <CButton
                 style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
                 onClick={handleSubmit}
+                disabled={loading}
               >
-                Save
+                {loading ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2 text-white"
+                      role="status"
+                    />
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
               </CButton>
             </>
           )}
