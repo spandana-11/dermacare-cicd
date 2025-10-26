@@ -1872,144 +1872,6 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                 }
             }
 
-         // ----------------------- Step 7: Update Treatments & Calculate Sitting Summary -----------------------
-            LocalDateTime lastSittingDateTime = null;
-            boolean hasTreatments = false;
-
-            // Prepare DTO to return in response
-            TreatmentResponseDTO treatmentResponseDTO = new TreatmentResponseDTO();
-            Map<String, TreatmentDetailsDTO> generatedDataDTO = new HashMap<>();
-
-            // Overall counters for all treatments
-            int overallTotalSittings = 0;
-            int overallTakenSittings = 0;
-            int overallPendingSittings = 0;
-            int overallCurrentSitting = 0;
-
-            // Check if treatments exist in saved visit
-            if (savedVisit.getTreatments() != null && savedVisit.getTreatments().getGeneratedData() != null) {
-                hasTreatments = true;
-                Map<String, TreatmentDetails> generatedData = savedVisit.getTreatments().getGeneratedData();
-
-                for (Map.Entry<String, TreatmentDetails> entry : generatedData.entrySet()) {
-                    TreatmentDetails entityTreatment = entry.getValue();
-
-                    int total = Optional.ofNullable(entityTreatment.getTotalSittings()).orElse(0);
-                    int completed = 0;
-                    int currentSittingForThisTreatment = 0;
-
-                    // Convert entity Dates -> DatesDTO for DTO
-                    List<DatesDTO> datesDTOList = new ArrayList<>();
-                    if (entityTreatment.getDates() != null && !entityTreatment.getDates().isEmpty()) {
-                        AtomicInteger counter = new AtomicInteger(1);
-
-                        for (Dates d : entityTreatment.getDates()) {
-                            try {
-                                LocalDate sittingDate = LocalDate.parse(d.getDate());
-                                LocalDateTime sittingDateTime = sittingDate.atStartOfDay();
-
-                                String sittingStatus = "Pending";
-
-                                // Count completed sittings (past or today)
-                                if (!sittingDate.isAfter(LocalDate.now())) {
-                                    completed++;
-                                    currentSittingForThisTreatment = counter.get();
-                                    overallCurrentSitting = Math.max(overallCurrentSitting, currentSittingForThisTreatment);
-                                    sittingStatus = "Completed"; // ✅ mark status
-                                }
-
-                                // Track last sitting date
-                                if (lastSittingDateTime == null || sittingDateTime.isAfter(lastSittingDateTime)) {
-                                    lastSittingDateTime = sittingDateTime;
-                                }
-
-                                // Assign sitting number if missing
-                                if (d.getSitting() == null || d.getSitting() == 0) {
-                                    d.setSitting(counter.getAndIncrement());
-                                }
-
-                                // ✅ Update entity status
-                                d.setStatus(sittingStatus);
-
-                                // Convert to DTO
-                                DatesDTO dtoDate = DatesDTO.builder()
-                                        .date(d.getDate())
-                                        .sitting(d.getSitting())
-                                        .status(sittingStatus)
-                                        .build();
-                                datesDTOList.add(dtoDate);
-
-                            } catch (Exception ignored) {}
-                        }
-                    }
-
-                    // Build TreatmentDetailsDTO for response
-                    TreatmentDetailsDTO dtoTreatment = TreatmentDetailsDTO.builder()
-                            .dates(datesDTOList)
-                            .reason(entityTreatment.getReason())
-                            .frequency(entityTreatment.getFrequency())
-                            .startDate(entityTreatment.getStartDate())
-                            .sittings(Math.max(total - completed, 0))
-                            .totalSittings(total)
-                            .takenSittings(completed)
-                            .pendingSittings(Math.max(total - completed, 0))
-                            .currentSitting(currentSittingForThisTreatment)
-                            .build();
-
-                    // Add to map for response DTO
-                    generatedDataDTO.put(entry.getKey(), dtoTreatment);
-
-                    // Update overall counters
-                    overallTotalSittings += total;
-                    overallTakenSittings += completed;
-                    overallPendingSittings += Math.max(total - completed, 0);
-
-                    // ✅ Update entity itself for DB
-                    entityTreatment.setSittings(Math.max(total - completed, 0));
-                    entityTreatment.setTakenSittings(completed);
-                    entityTreatment.setPendingSittings(Math.max(total - completed, 0));
-                    entityTreatment.setCurrentSitting(currentSittingForThisTreatment);
-                }
-            }
-
-            // Set the response DTO fields with overall summary
-            treatmentResponseDTO.setGeneratedData(generatedDataDTO);
-            treatmentResponseDTO.setTotalSittings(overallTotalSittings);
-            treatmentResponseDTO.setTakenSittings(overallTakenSittings);
-            treatmentResponseDTO.setPendingSittings(overallPendingSittings);
-            treatmentResponseDTO.setCurrentSitting(overallCurrentSitting);
-
-            // ✅ Save back to entity with status
-            TreatmentResponse treatmentEntity = TreatmentResponse.builder()
-                    .generatedData(generatedDataDTO.entrySet().stream()
-                            .collect(Collectors.toMap(
-                                    Map.Entry::getKey,
-                                    e -> TreatmentDetails.builder()
-                                            .dates(e.getValue().getDates().stream()
-                                                    .map(d -> new Dates(d.getDate(), d.getSitting(), d.getStatus()))
-                                                    .collect(Collectors.toList()))
-                                            .reason(e.getValue().getReason())
-                                            .frequency(e.getValue().getFrequency())
-                                            .startDate(e.getValue().getStartDate())
-                                            .sittings(e.getValue().getSittings())
-                                            .totalSittings(e.getValue().getTotalSittings())
-                                            .takenSittings(e.getValue().getTakenSittings())
-                                            .pendingSittings(e.getValue().getPendingSittings())
-                                            .currentSitting(e.getValue().getCurrentSitting())
-                                            .build()
-                            ))
-                    )
-                    .selectedTestTreatment(savedVisit.getTreatments() != null
-                            ? savedVisit.getTreatments().getSelectedTestTreatment() : null)
-                    .totalSittings(overallTotalSittings)
-                    .takenSittings(overallTakenSittings)
-                    .pendingSittings(overallPendingSittings)
-                    .currentSitting(overallCurrentSitting)
-                    .build();
-
-            savedVisit.setTreatments(treatmentEntity);
-            repository.save(savedVisit);
-
 //         // ----------------------- Step 7: Update Treatments & Calculate Sitting Summary -----------------------
 //            LocalDateTime lastSittingDateTime = null;
 //            boolean hasTreatments = false;
@@ -2117,11 +1979,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
 //            treatmentResponseDTO.setPendingSittings(overallPendingSittings);
 //            treatmentResponseDTO.setCurrentSitting(overallCurrentSitting);
 //
-//            // ✅ Set followupStatus based on pending sittings
-//            String followupStatus = (overallPendingSittings == 0) ? "no-followup" : "followup-required";
-//            treatmentResponseDTO.setFollowupStatus(followupStatus);
-//
-//            // ✅ Save back to entity with status and followupStatus
+//            // ✅ Save back to entity with status
 //            TreatmentResponse treatmentEntity = TreatmentResponse.builder()
 //                    .generatedData(generatedDataDTO.entrySet().stream()
 //                            .collect(Collectors.toMap(
@@ -2147,11 +2005,153 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
 //                    .takenSittings(overallTakenSittings)
 //                    .pendingSittings(overallPendingSittings)
 //                    .currentSitting(overallCurrentSitting)
-//                    .followupStatus(followupStatus)
 //                    .build();
 //
 //            savedVisit.setTreatments(treatmentEntity);
 //            repository.save(savedVisit);
+
+         // ----------------------- Step 7: Update Treatments & Calculate Sitting Summary -----------------------
+            LocalDateTime lastSittingDateTime = null;
+            boolean hasTreatments = false;
+
+            // Prepare DTO to return in response
+            TreatmentResponseDTO treatmentResponseDTO = new TreatmentResponseDTO();
+            Map<String, TreatmentDetailsDTO> generatedDataDTO = new HashMap<>();
+
+            // Overall counters for all treatments
+            int overallTotalSittings = 0;
+            int overallTakenSittings = 0;
+            int overallPendingSittings = 0;
+            int overallCurrentSitting = 0;
+
+            // Check if treatments exist in saved visit
+            if (savedVisit.getTreatments() != null && savedVisit.getTreatments().getGeneratedData() != null) {
+                hasTreatments = true;
+                Map<String, TreatmentDetails> generatedData = savedVisit.getTreatments().getGeneratedData();
+
+                for (Map.Entry<String, TreatmentDetails> entry : generatedData.entrySet()) {
+                    TreatmentDetails entityTreatment = entry.getValue();
+
+                    int total = Optional.ofNullable(entityTreatment.getTotalSittings()).orElse(0);
+                    int completed = 0;
+                    int currentSittingForThisTreatment = 0;
+
+                    // Convert entity Dates -> DatesDTO for DTO
+                    List<DatesDTO> datesDTOList = new ArrayList<>();
+                    if (entityTreatment.getDates() != null && !entityTreatment.getDates().isEmpty()) {
+                        AtomicInteger counter = new AtomicInteger(1);
+
+                        for (Dates d : entityTreatment.getDates()) {
+                            try {
+                                LocalDate sittingDate = LocalDate.parse(d.getDate());
+                                LocalDateTime sittingDateTime = sittingDate.atStartOfDay();
+
+                                String sittingStatus = "Pending";
+
+                                // Count completed sittings (past or today)
+                                if (!sittingDate.isAfter(LocalDate.now())) {
+                                    completed++;
+                                    currentSittingForThisTreatment = counter.get();
+                                    overallCurrentSitting = Math.max(overallCurrentSitting, currentSittingForThisTreatment);
+                                    sittingStatus = "Completed"; // ✅ mark status
+                                }
+
+                                // Track last sitting date
+                                if (lastSittingDateTime == null || sittingDateTime.isAfter(lastSittingDateTime)) {
+                                    lastSittingDateTime = sittingDateTime;
+                                }
+
+                                // Assign sitting number if missing
+                                if (d.getSitting() == null || d.getSitting() == 0) {
+                                    d.setSitting(counter.getAndIncrement());
+                                }
+
+                                // ✅ Update entity status
+                                d.setStatus(sittingStatus);
+
+                                // Convert to DTO
+                                DatesDTO dtoDate = DatesDTO.builder()
+                                        .date(d.getDate())
+                                        .sitting(d.getSitting())
+                                        .status(sittingStatus)
+                                        .build();
+                                datesDTOList.add(dtoDate);
+
+                            } catch (Exception ignored) {}
+                        }
+                    }
+
+                    // Build TreatmentDetailsDTO for response
+                    TreatmentDetailsDTO dtoTreatment = TreatmentDetailsDTO.builder()
+                            .dates(datesDTOList)
+                            .reason(entityTreatment.getReason())
+                            .frequency(entityTreatment.getFrequency())
+                            .startDate(entityTreatment.getStartDate())
+                            .sittings(Math.max(total - completed, 0))
+                            .totalSittings(total)
+                            .takenSittings(completed)
+                            .pendingSittings(Math.max(total - completed, 0))
+                            .currentSitting(currentSittingForThisTreatment)
+                            .build();
+
+                    // Add to map for response DTO
+                    generatedDataDTO.put(entry.getKey(), dtoTreatment);
+
+                    // Update overall counters
+                    overallTotalSittings += total;
+                    overallTakenSittings += completed;
+                    overallPendingSittings += Math.max(total - completed, 0);
+
+                    // ✅ Update entity itself for DB
+                    entityTreatment.setSittings(Math.max(total - completed, 0));
+                    entityTreatment.setTakenSittings(completed);
+                    entityTreatment.setPendingSittings(Math.max(total - completed, 0));
+                    entityTreatment.setCurrentSitting(currentSittingForThisTreatment);
+                }
+            }
+
+            // Set the response DTO fields with overall summary
+            treatmentResponseDTO.setGeneratedData(generatedDataDTO);
+            treatmentResponseDTO.setTotalSittings(overallTotalSittings);
+            treatmentResponseDTO.setTakenSittings(overallTakenSittings);
+            treatmentResponseDTO.setPendingSittings(overallPendingSittings);
+            treatmentResponseDTO.setCurrentSitting(overallCurrentSitting);
+
+            // ✅ Set followupStatus based on pending sittings
+            String followupStatus = (overallPendingSittings == 0) ? "no-followup" : "followup-required";
+            treatmentResponseDTO.setFollowupStatus(followupStatus);
+
+            // ✅ Save back to entity with status and followupStatus
+            TreatmentResponse treatmentEntity = TreatmentResponse.builder()
+                    .generatedData(generatedDataDTO.entrySet().stream()
+                            .collect(Collectors.toMap(
+                                    Map.Entry::getKey,
+                                    e -> TreatmentDetails.builder()
+                                            .dates(e.getValue().getDates().stream()
+                                                    .map(d -> new Dates(d.getDate(), d.getSitting(), d.getStatus()))
+                                                    .collect(Collectors.toList()))
+                                            .reason(e.getValue().getReason())
+                                            .frequency(e.getValue().getFrequency())
+                                            .startDate(e.getValue().getStartDate())
+                                            .sittings(e.getValue().getSittings())
+                                            .totalSittings(e.getValue().getTotalSittings())
+                                            .takenSittings(e.getValue().getTakenSittings())
+                                            .pendingSittings(e.getValue().getPendingSittings())
+                                            .currentSitting(e.getValue().getCurrentSitting())
+                                            .build()
+                            ))
+                    )
+                    .selectedTestTreatment(savedVisit.getTreatments() != null
+                            ? savedVisit.getTreatments().getSelectedTestTreatment() : null)
+                    .totalSittings(overallTotalSittings)
+                    .takenSittings(overallTakenSittings)
+                    .pendingSittings(overallPendingSittings)
+                    .currentSitting(overallCurrentSitting)
+                    .followupStatus(followupStatus)
+                    .build();
+
+            savedVisit.setTreatments(treatmentEntity);
+            repository.save(savedVisit);
             
             // ----------------------- Step 8: Consultation Start & Expiry -----------------------
             LocalDateTime consultationStartDate = hasTreatments && lastSittingDateTime != null
