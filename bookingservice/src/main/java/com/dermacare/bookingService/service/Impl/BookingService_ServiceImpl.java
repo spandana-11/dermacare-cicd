@@ -3558,7 +3558,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			ResponseStructure< List<BookingResponse>> res = new ResponseStructure< List<BookingResponse>>();		  
 			try {	
 				 List<Booking> bookings = repository.findByClinicIdAndBranchIdAndServiceDateOrderByServicetimeAsc(cinicId, branchId, date);
-				// System.out.println(todayBookings);
+				//System.out.println(todayBookings);
 				 bookings = bookings.stream().filter(n->n.getStatus().equalsIgnoreCase("In-Progress")).toList();
 				 List<BookingResponse> todayBookingsDto = toResponses(bookings);
 				 if(todayBookingsDto!= null && !todayBookingsDto.isEmpty()) {
