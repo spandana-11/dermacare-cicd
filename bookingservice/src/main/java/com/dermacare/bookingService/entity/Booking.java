@@ -67,7 +67,7 @@ public class Booking  {
     private double totalFee;
     private String doctorRefCode;
     private String consultationExpiration;
-
+    private String followupStatus;
     private Integer sittings;
     private Integer totalSittings;
     private Integer pendingSittings;
@@ -124,7 +124,7 @@ public class Booking  {
         this.totalFee = booking.getTotalFee();
         this.doctorRefCode = booking.getDoctorRefCode();
         this.consultationExpiration = booking.getConsultationExpiration();
-       
+        this.followupStatus = booking.getFollowupStatus();
         this.totalSittings = booking.getTotalSittings();
         this.pendingSittings = booking.getPendingSittings();
         this.takenSittings = booking.getTakenSittings();
