@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class DatesDTO {
-	private String followupStatus;
     private String date;
     private Integer sitting;
     private String status; 

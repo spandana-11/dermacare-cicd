@@ -300,15 +300,13 @@ public class BookingServiceController {
 		}
 	
 			
-		@GetMapping("/appointments/byInput/{input}")	
-		public ResponseEntity<?> retrieveAppointnmentsByInput(@PathVariable String input) {
-
-			List<BookingInfoByInput> response = service.bookingByInput(input);
+		@GetMapping("/appointments/byInput/{input}/{clinicId}")	
+		public ResponseEntity<?> retrieveAppointnmentsByInput(@PathVariable String input,@PathVariable String clinicId){
+			List<BookingInfoByInput> response = service.bookingByInput(input,clinicId);
 			if (response == null || response.isEmpty()) {
 				return new ResponseEntity<>(ResponseStructure.buildResponse(null,
 						"No booking yet" + input, HttpStatus.OK, HttpStatus.OK.value()),
-						HttpStatus.OK);
-			}
+						HttpStatus.OK);}
 			return new ResponseEntity<>(ResponseStructure.buildResponse(response,
 					"Booking fetched sucessfully on clinicId" + input, HttpStatus.OK, HttpStatus.OK.value()),
 					HttpStatus.OK);

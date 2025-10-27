@@ -406,100 +406,22 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
         }
     }
     
-//    private DoctorTemplateDTO convertToDto(DoctorTemplate entity) {
-//        return DoctorTemplateDTO.builder()
-//                .title(entity.getTitle())
-//                .clinicId(entity.getClinicId())
-//                .createdAt(entity.getCreatedAt())
-//                .symptoms(entity.getSymptoms())
-//                
-////                .symptoms(entity.getSymptoms() != null ? 
-////                    com.dermacare.doctorservice.dto.SymptomDetailsDTO.builder()
-////                        .symptomDetails(entity.getSymptoms().getSymptomDetails())
-////                        .doctorObs(entity.getSymptoms().getDoctorObs())
-////                        .diagnosis(entity.getSymptoms().getDiagnosis())
-////                        .duration(entity.getSymptoms().getDuration())
-////                       .reports(encodeFileToBase64(entity.getSymptoms().getReports())) // <-- Base64 here
-////                        .build()
-////                    : null)
-//
-//                .tests(entity.getTests() != null ?
-//                    com.dermacare.doctorservice.dto.TestDetailsDTO.builder()
-//                        .selectedTests(entity.getTests().getSelectedTests())
-//                        .testReason(entity.getTests().getTestReason())
-//                        .build()
-//                    : null)
-//
-//                .treatments(
-//                        entity.getTreatments() != null
-//                            ? TreatmentResponseDTO.builder()
-//                                .selectedTestTreatment(entity.getTreatments().getSelectedTestTreatment())
-//                                .generatedData(
-//                                    entity.getTreatments().getGeneratedData() != null
-//                                        ? entity.getTreatments().getGeneratedData().entrySet().stream()
-//                                            .collect(Collectors.toMap(
-//                                                Map.Entry::getKey,
-//                                                entry -> TreatmentDetailsDTO.builder()
-//                                                    .dates(
-//                                                        entry.getValue().getDates() != null
-//                                                            ? entry.getValue().getDates().stream()
-//                                                                .map(d -> new DatesDTO(d.getDate(), d.getSitting(),d.getStatus()))
-//                                                                .collect(Collectors.toList())
-//                                                            : null
-//                                                    )
-//                                                    .reason(entry.getValue().getReason())
-//                                                    .frequency(entry.getValue().getFrequency())
-//                                                    .sittings(entry.getValue().getSittings())
-//                                                    .startDate(entry.getValue().getStartDate())
-//                                                    .build()
-//                                            ))
-//                                        : null
-//                                )
-//                                .build()
-//                            : null
-//                    )
-//
-//
-//
-//
-//                .followUp(entity.getFollowUp() != null ?
-//                    com.dermacare.doctorservice.dto.FollowUpDetailsDTO.builder()
-//                        .durationValue(entity.getFollowUp().getDurationValue())
-//                        .durationUnit(entity.getFollowUp().getDurationUnit())
-//                        .nextFollowUpDate(entity.getFollowUp().getNextFollowUpDate())
-//                        .followUpNote(entity.getFollowUp().getFollowUpNote())
-//                        .build()
-//                    : null)
-//
-//                .prescription(entity.getPrescription() != null ?
-//                    com.dermacare.doctorservice.dto.PrescriptionDetailsDTO.builder()
-//                        .medicines(entity.getPrescription().getMedicines().stream()
-//                            .map(med -> com.dermacare.doctorservice.dto.MedicinesDTO.builder()
-//                                    .id(med.getId() != null ? med.getId().toString() : null)
-//                                    .name(med.getName())
-//                                    .dose(med.getDose())
-//                                    .duration(med.getDuration())
-//                                    .durationUnit(med.getDurationUnit())
-//                                    .medicineType(med.getMedicineType())
-//                                    .note(med.getNote())
-//                                    .food(med.getFood())
-//                                    .remindWhen(med.getRemindWhen())
-//                                    .times(med.getTimes())
-//                                    .others(med.getOthers())
-//                                    .build())
-//                            .collect(Collectors.toList()))
-//                        .build()
-//                    : null)
-//
-//                .build();
-//    }
-
     private DoctorTemplateDTO convertToDto(DoctorTemplate entity) {
         return DoctorTemplateDTO.builder()
                 .title(entity.getTitle())
                 .clinicId(entity.getClinicId())
                 .createdAt(entity.getCreatedAt())
                 .symptoms(entity.getSymptoms())
+                
+//                .symptoms(entity.getSymptoms() != null ? 
+//                    com.dermacare.doctorservice.dto.SymptomDetailsDTO.builder()
+//                        .symptomDetails(entity.getSymptoms().getSymptomDetails())
+//                        .doctorObs(entity.getSymptoms().getDoctorObs())
+//                        .diagnosis(entity.getSymptoms().getDiagnosis())
+//                        .duration(entity.getSymptoms().getDuration())
+//                       .reports(encodeFileToBase64(entity.getSymptoms().getReports())) // <-- Base64 here
+//                        .build()
+//                    : null)
 
                 .tests(entity.getTests() != null ?
                     com.dermacare.doctorservice.dto.TestDetailsDTO.builder()
@@ -509,46 +431,36 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
                     : null)
 
                 .treatments(
-                    entity.getTreatments() != null
-                        ? TreatmentResponseDTO.builder()
-                            .selectedTestTreatment(entity.getTreatments().getSelectedTestTreatment())
-                            .generatedData(
-                                entity.getTreatments().getGeneratedData() != null
-                                    ? entity.getTreatments().getGeneratedData().entrySet().stream()
-                                        .collect(Collectors.toMap(
-                                            Map.Entry::getKey,
-                                            entry -> TreatmentDetailsDTO.builder()
-                                                .dates(
-                                                    entry.getValue().getDates() != null
-                                                        ? entry.getValue().getDates().stream()
-                                                            .map(d -> DatesDTO.builder()
-                                                                    .date(d.getDate())
-                                                                    .sitting(d.getSitting())
-                                                                    .status(d.getStatus())
-                                                                    .followupStatus(entity.getTreatments().getFollowupStatus()) // set from entity
-                                                                    .build())
-                                                            .collect(Collectors.toList())
-                                                        : null
-                                                )
-                                                .reason(entry.getValue().getReason())
-                                                .frequency(entry.getValue().getFrequency())
-                                                .sittings(entry.getValue().getSittings())
-                                                .startDate(entry.getValue().getStartDate())
-                                                .totalSittings(entry.getValue().getTotalSittings())
-                                                .takenSittings(entry.getValue().getTakenSittings())
-                                                .pendingSittings(entry.getValue().getPendingSittings())
-                                                .currentSitting(entry.getValue().getCurrentSitting())
-                                                .build()
-                                        ))
-                                    : null
-                            )
-                            .totalSittings(entity.getTreatments().getTotalSittings())
-                            .takenSittings(entity.getTreatments().getTakenSittings())
-                            .pendingSittings(entity.getTreatments().getPendingSittings())
-                            .currentSitting(entity.getTreatments().getCurrentSitting())
-                            .build()
-                        : null
-                )
+                        entity.getTreatments() != null
+                            ? TreatmentResponseDTO.builder()
+                                .selectedTestTreatment(entity.getTreatments().getSelectedTestTreatment())
+                                .generatedData(
+                                    entity.getTreatments().getGeneratedData() != null
+                                        ? entity.getTreatments().getGeneratedData().entrySet().stream()
+                                            .collect(Collectors.toMap(
+                                                Map.Entry::getKey,
+                                                entry -> TreatmentDetailsDTO.builder()
+                                                    .dates(
+                                                        entry.getValue().getDates() != null
+                                                            ? entry.getValue().getDates().stream()
+                                                                .map(d -> new DatesDTO(d.getDate(), d.getSitting(),d.getStatus()))
+                                                                .collect(Collectors.toList())
+                                                            : null
+                                                    )
+                                                    .reason(entry.getValue().getReason())
+                                                    .frequency(entry.getValue().getFrequency())
+                                                    .sittings(entry.getValue().getSittings())
+                                                    .startDate(entry.getValue().getStartDate())
+                                                    .build()
+                                            ))
+                                        : null
+                                )
+                                .build()
+                            : null
+                    )
+
+
+
 
                 .followUp(entity.getFollowUp() != null ?
                     com.dermacare.doctorservice.dto.FollowUpDetailsDTO.builder()
@@ -581,8 +493,6 @@ public class DoctorTemplateServiceImpl implements DoctorTemplateService {
 
                 .build();
     }
-
-    
     @Override
     public Response getTemplatesByClinicId(String clinicId) {
         try {

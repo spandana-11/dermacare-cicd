@@ -12,11 +12,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class TreatmentResponseDTO {
+	
     private List<String> selectedTestTreatment;
-    private Map<String, TreatmentDetailsDTO> generatedData; // dynamic treatment names
-    private String followupStatus;
-    private Integer totalSittings;
-    private Integer pendingSittings;
-    private Integer takenSittings;
-    private Integer currentSitting;
+    private Map<String, TreatmentDetailsDTO> generatedData; // dynamic treatment names 
+    private int totalSittings;
+    private int pendingSittings;
+    private int takenSittings;
+    private int currentSitting;
+
+   
 }

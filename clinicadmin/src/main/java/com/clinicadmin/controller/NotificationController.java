@@ -47,14 +47,14 @@ public class NotificationController {
 	    }
 
 	    
-	    @PutMapping("/updatePriceDropNotification/{clinicId}/{branchId}")
+	    @PutMapping("/updatePriceDropNotification/{clinicId}/{branchId}/{id}")
 	   	public ResponseEntity<?> updatePriceDropNotification(@PathVariable String clinicId,@PathVariable String branchId,
 	   			@PathVariable String id,@RequestBody PriceDropAlertDto dto){
 	       	 return serviceImpl.updatePriceDropNotification(clinicId, branchId,id, dto);
 	    }
 	    
 	    
-	    @DeleteMapping("/deletePriceDropNotification/{clinicId}/{branchId}")
+	    @DeleteMapping("/deletePriceDropNotification/{clinicId}/{branchId}/{id}")
 	   	public ResponseEntity<?> deletePriceDropNotification(@PathVariable String clinicId,@PathVariable String branchId
 	   			,@PathVariable String id){
 	       	 return serviceImpl.deletePriceDropNotification(clinicId, branchId,id);

@@ -1,4 +1,4 @@
-package com.dermacare.doctorservice.dto;
+package com.clinicadmin.dto;
 
 import java.util.List;
 import java.util.Map;

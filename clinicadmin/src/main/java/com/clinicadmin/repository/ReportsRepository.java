@@ -16,4 +16,6 @@ public interface ReportsRepository extends MongoRepository<ReportsList, String> 
 	
 	List<ReportsList> findByCustomerId(String customerId);
 
+	List<ReportsList> findByReportsListPatientIdAndReportsListBookingId(String patientId, String bookingId);
+
 }

@@ -1,4 +1,4 @@
-package com.dermacare.doctorservice.dto;
+package com.clinicadmin.dto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -51,6 +51,6 @@ public class BookingRequset {
 	private List<String> attachments;
 	private String consentFormPdf;
 	private String doctorRefCode;
+	private String foc;
 	private String bookedAt;
-
 }

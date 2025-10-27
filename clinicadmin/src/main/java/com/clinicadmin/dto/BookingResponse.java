@@ -1,7 +1,6 @@
 package com.clinicadmin.dto;
 
 import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -15,7 +14,6 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class BookingResponse {
 	
-
 	private String bookingId;
 	private String bookingFor;
 	private String name;
@@ -23,15 +21,22 @@ public class BookingResponse {
 	private String patientMobileNumber;
 	private String patientId;
 	private String visitType;
+	private Integer freeFollowUpsLeft;
+	private Integer freeFollowUps;
+	private String patientAddress;
 	private String age;
 	private String gender;
 	private String mobileNumber;
+	private String customerId;
+	private String consultationExpiration;
 	private String customerDeviceId;
 	private String problem;
 	private String symptomsDuration;
 	private String clinicId;
 	private String clinicDeviceId;
 	private String clinicName;
+	private String branchId;
+	private String branchname;
 	private String doctorId;
 	private String doctorName;
 	private String doctorMobileDeviceId;
@@ -42,6 +47,7 @@ public class BookingResponse {
 	private String servicetime;
 	private String consultationType;
 	private double consultationFee;
+	private Integer visitCount;
 	private String channelId;
 	private String reasonForCancel;
 	private String notes;
@@ -50,7 +56,20 @@ public class BookingResponse {
 	private String status;
 	private double totalFee;
 	private List<String> attachments;
-	private String paymentType;
-	private String address;
+	private String consentFormPdf;
+	private List<String> prescriptionPdf;
+	private String doctorRefCode;
+	private String paymentType;	
+	private Integer totalSittings;
+	private Integer pendingSittings;
+	private Integer takenSittings;
+	private Integer currentSitting;
+	private String followupDate;
+	private String foc;
+	private String followupStatus;
+	private String treatmentName;
+	private String treatmentDate;
+	// ✅ Add treatments info
+    private TreatmentResponseDTO treatments;
 		
 }

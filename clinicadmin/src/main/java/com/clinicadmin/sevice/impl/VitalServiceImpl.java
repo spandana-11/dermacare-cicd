@@ -2,13 +2,12 @@ package com.clinicadmin.sevice.impl;
 
 import java.util.Collections;
 import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import com.clinicadmin.dto.BookingResponseDTO;
+import com.clinicadmin.dto.BookingResponse;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.ResponseStructure;
 import com.clinicadmin.dto.VitalsDTO;
@@ -39,9 +38,9 @@ public class VitalServiceImpl implements VitalService {
 	            return res;
 	        }
 
-	        ResponseEntity<ResponseStructure<BookingResponseDTO>> bookingResponse =
+	        ResponseEntity<ResponseStructure<BookingResponse>> bookingResponse =
 	                bookingFeign.getBookedService(bookingId);
-	        BookingResponseDTO resbody = bookingResponse.getBody().getData();
+	        BookingResponse resbody = bookingResponse.getBody().getData();
 
 	        if (!resbody.getBookingId().equals(bookingId)) {
 	            res.setSuccess(false);

@@ -6,7 +6,8 @@ import java.util.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import com.clinicadmin.dto.BookingResponseDTO;
+
+import com.clinicadmin.dto.BookingResponse;
 import com.clinicadmin.dto.ClinicDTO;
 import com.clinicadmin.dto.PatientConsentFormDTO;
 import com.clinicadmin.dto.Response;
@@ -52,7 +53,7 @@ public class PatientConsentFormServiceImpl implements PatientConsentFormService 
 			return response;
 		}
 		
-		BookingResponseDTO bookingDto = objectMapper.convertValue(resData.getData(), BookingResponseDTO.class);
+		BookingResponse bookingDto = objectMapper.convertValue(resData.getData(), BookingResponse.class);
 
 		Doctors doctordata = doctorsRepository.findByDoctorId(bookingDto.getDoctorId()).orElse(null);
 		if (doctordata == null) {

@@ -571,13 +571,7 @@ public ResponseEntity<Response> getAverageRatingByDoctorId( @PathVariable String
 	   return customerService.retrieveAppointnmentsByPatientId(patientId);
  }
    
-   
-   @GetMapping("/bookings/byInput/{input}")
-   public ResponseEntity<?> getInprogressBookingsByInput(
-			 @PathVariable String input){
-	   return customerService.retrieveAppointnmentsByInput(input);
- }
-   
+ 
    @PostMapping("/block/slot/whileBooking")
    public boolean blockSlot(
 		  @RequestBody TempBlockingSlot tempBlockingSlot){

@@ -15,6 +15,7 @@ public class ReportsList {
 	@Id
 	private String id;
 	private String customerId;
+	private String patientId;
 	private List<Reports> reportsList;
 
 }

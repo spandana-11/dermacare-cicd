@@ -33,6 +33,12 @@ public class DoctorSaveDetailsController {
         Response response = service.updateDoctorDetails(id, dto);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
+    
+    @PutMapping("updateDoctorSaveDetailsByBookingId/{id}")
+    public ResponseEntity<Response> updateDoctorSaveDetailsByBookingId(@PathVariable String id, @RequestBody DoctorSaveDetailsDTO dto) {
+        Response response = service.updateDoctorDetailsByBookingId(id, dto);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
 
     @DeleteMapping("/deleteDoctorsaveDetailsById/{id}")
     public ResponseEntity<Response> deleteDoctorsaveDetails(@PathVariable String id) {
@@ -83,7 +89,8 @@ public class DoctorSaveDetailsController {
     public ResponseEntity<Response> getDoctorSaveDetailsByBookingId(@PathVariable String bookingId) {
         Response response = service.getDoctorDetailsByBookingId(bookingId);
         return ResponseEntity.status(response.getStatus()).body(response);
-    }      
+    } 
+    
     @GetMapping("/getDoctorSaveDetailsByCustomerId/{customerId}")
     public ResponseEntity<Response> getDoctorSaveDetailsByCustomerId(@PathVariable String customerId) {
         Response response = service.getDoctorDetailsByCustomerId(customerId);

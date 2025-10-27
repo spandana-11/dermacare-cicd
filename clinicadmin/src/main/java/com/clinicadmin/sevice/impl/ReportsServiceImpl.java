@@ -4,14 +4,12 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.clinicadmin.dto.BookingResponse;
-import com.clinicadmin.dto.BookingResponseDTO;
 import com.clinicadmin.dto.ReportsDTO;
 import com.clinicadmin.dto.ReportsDtoList;
 import com.clinicadmin.dto.Response;
@@ -29,136 +27,264 @@ import feign.FeignException;
 @Service
 public class ReportsServiceImpl implements ReportsService {
 
-	@Autowired
-	private ReportsRepository reportsRepository;
-	
-	@Autowired
-	private BookingFeign bookingFeign;
-//-----------------------------------------Add Reports-----------------------------------------------------
-	String bkngId ;
-	@Override
-	public Response saveReports(ReportsDtoList dto) {
-		try {
-			ReportsList reportsList = new ReportsList();
-			List<Reports> reports = new ArrayList<>();
-			for (ReportsDTO d : dto.getReportsList()) {
-				List<byte[]> list = new ArrayList<>();
-				bkngId = d.getBookingId();
-				if (d.getReportFile() != null) {
-					for (String s : d.getReportFile()) {
-						byte[] decodedFile = Base64.getDecoder().decode(s);
-						list.add(decodedFile);
-					}
-				}
-				Reports report = Reports.builder().bookingId(d.getBookingId()).reportName(d.getReportName())
-						.reportDate(d.getReportDate()).reportStatus(d.getReportStatus()).reportType(d.getReportType())
-						.customerMobileNumber(d.getCustomerMobileNumber()).reportFile(list).build();
-				reports.add(report);
-			}
-			ResponseEntity<ResponseStructure<BookingResponseDTO>> r = bookingFeign.getBookedService(bkngId);
-			BookingResponseDTO res = r.getBody().getData();
-			if (res != null) {
-				List<ReportsDtoList> rep = res.getReports();
-				if(rep == null ) {
-				List<ReportsDtoList> nw = new ArrayList<>();
-				nw.add(dto);
-				res.setReports(nw);
-				bookingFeign.updateAppointment(res);
-				}else{
-				rep.add(dto);
-				res.setReports(rep);
-				bookingFeign.updateAppointment(res);}}
-			reportsList.setCustomerId(dto.getCustomerId());
-			reportsList.setReportsList(reports);
-			ReportsList saved = reportsRepository.save(reportsList);
-			return Response.builder().success(true).data(saved).message("Report uploaded successfully")
-					.status(HttpStatus.CREATED.value()).build();
-		 }catch (FeignException e) {
-			return Response.builder().success(false).data(null).message(e.getMessage())
-					.status(HttpStatus.INTERNAL_SERVER_ERROR.value()).build();
-		}
-	}
-//	---------------------------------------Get Reports By BookingId--------------------------------------------
-	@Override
-	public Response getReportsByBookingId(String bookingId) {
-		Response res = new Response();
-	    try {
-	        List<ReportsList> reportsListData = reportsRepository.findByReportsListBookingId(bookingId);
-	        List<ReportsDtoList> toDTO = new ObjectMapper().convertValue(reportsListData,new TypeReference<List<ReportsDtoList>>() {});
-			if (toDTO != null && !toDTO.isEmpty()) {
-				res.setSuccess(true);
-				res.setStatus(200);
-				res.setMessage("Records Fetched Successfully");
-				res.setData(toDTO);
-			} else {
-				res.setSuccess(true);
-				res.setStatus(200);
-				res.setMessage("Records Not Found");
-				res.setData(Collections.emptyList());
-			}
-		} catch (Exception e) {
-			res.setSuccess(false);
-			res.setStatus(500);
-			res.setMessage(e.getMessage());
-			res.setData(null);
-		}
-		return res;
-	}
-	
+    @Autowired
+    private ReportsRepository reportsRepository;
 
-//----------------------------------------Get All reports-------------------------------------------------------
-	@Override
-	public Response getAllReports() {
-		Response res = new Response();
-		try {
-			List<ReportsList> reportList = reportsRepository.findAll();
-			List<ReportsDtoList> toDTO = new ObjectMapper().convertValue(reportList,
-					new TypeReference<List<ReportsDtoList>>() {});
-			if (toDTO != null && !toDTO.isEmpty()) {
-				res.setSuccess(true);
-				res.setStatus(200);
-				res.setMessage("Records Fetched Successfully");
-				res.setData(toDTO);
-			} else {
-				res.setSuccess(true);
-				res.setStatus(200);
-				res.setMessage("Records Not Found");
-				res.setData(Collections.emptyList());
-			}
-		} catch (Exception e) {
-			res.setSuccess(false);
-			res.setStatus(500);
-			res.setMessage(e.getMessage());
-			res.setData(null);
-		}
-		return res;
-	}
-	
-	
-	@Override
-	public Response getReportsByCustomerId(String cId) {
-		Response res = new Response();
-	    try {
-	        List<ReportsList> reportsListData = reportsRepository.findByCustomerId(cId);
-	        List<ReportsDtoList> toDTO = new ObjectMapper().convertValue(reportsListData,new TypeReference<List<ReportsDtoList>>() {});
-			if (toDTO != null && !toDTO.isEmpty()) {
-				res.setSuccess(true);
-				res.setStatus(200);
-				res.setMessage("Records Fetched Successfully");
-				res.setData(toDTO);
-			} else {
-				res.setSuccess(true);
-				res.setStatus(200);
-				res.setMessage("Records Not Found");
-				res.setData(Collections.emptyList());
-			}
-		} catch (Exception e) {
-			res.setSuccess(false);
-			res.setStatus(500);
-			res.setMessage(e.getMessage());
-			res.setData(null);
-		}
-		return res;
-	}
+    @Autowired
+    private BookingFeign bookingFeign;
+
+    // ----------------------------------------- Add Reports -----------------------------------------------------
+    @Override
+    public Response saveReports(ReportsDtoList dto) {
+        try {
+            if (dto == null || dto.getReportsList() == null || dto.getReportsList().isEmpty()) {
+                return Response.builder()
+                        .success(false)
+                        .message("Invalid request: no report data provided")
+                        .status(HttpStatus.BAD_REQUEST.value())
+                        .data(null)
+                        .build();
+            }
+
+            ReportsList reportsList = new ReportsList();
+            List<Reports> reports = new ArrayList<>();
+            String bookingId = null;
+
+            // ✅ Convert DTO to Entity and decode Base64 files
+            for (ReportsDTO reportDTO : dto.getReportsList()) {
+                if (reportDTO.getBookingId() == null || reportDTO.getBookingId().isEmpty()) {
+                    return Response.builder()
+                            .success(false)
+                            .message("Booking ID cannot be null or empty in report")
+                            .status(HttpStatus.BAD_REQUEST.value())
+                            .data(null)
+                            .build();
+                }
+
+                bookingId = reportDTO.getBookingId();
+                List<byte[]> decodedFiles = new ArrayList<>();
+
+                if (reportDTO.getReportFile() != null) {
+                    for (String encoded : reportDTO.getReportFile()) {
+                        decodedFiles.add(Base64.getDecoder().decode(encoded));
+                    }
+                }
+
+                Reports report = Reports.builder()
+                        .bookingId(reportDTO.getBookingId())
+                        .patientId(reportDTO.getPatientId())
+                        .reportName(reportDTO.getReportName())
+                        .reportDate(reportDTO.getReportDate())
+                        .reportStatus(reportDTO.getReportStatus())
+                        .reportType(reportDTO.getReportType())
+                        .customerMobileNumber(reportDTO.getCustomerMobileNumber())
+                        .reportFile(decodedFiles)
+                        .build();
+
+                reports.add(report);
+            }
+
+            // ✅ Fetch booking details via Feign Client
+            ResponseEntity<ResponseStructure<BookingResponse>> response = bookingFeign.getBookedService(bookingId);
+            BookingResponse bookingData = response.getBody() != null ? response.getBody().getData() : null;
+
+            if (bookingData != null) {
+                // Update booking with new reports
+                List<ReportsDtoList> existingReports = bookingData.getReports();
+                if (existingReports == null) existingReports = new ArrayList<>();
+                existingReports.add(dto);
+                bookingData.setReports(existingReports);
+
+                // Set IDs from booking service
+                dto.setCustomerId(bookingData.getCustomerId());
+                dto.setPatientId(bookingData.getPatientId());
+
+                // Update booking service record
+                bookingFeign.updateAppointment(bookingData);
+            }
+
+            // ✅ Save report in MongoDB
+            reportsList.setCustomerId(dto.getCustomerId());
+            reportsList.setPatientId(dto.getPatientId());
+            reportsList.setReportsList(reports);
+
+            ReportsList saved = reportsRepository.save(reportsList);
+
+            return Response.builder()
+                    .success(true)
+                    .data(saved)
+                    .message("Report uploaded successfully")
+                    .status(HttpStatus.CREATED.value())
+                    .build();
+
+        } catch (FeignException e) {
+            return Response.builder()
+                    .success(false)
+                    .data(null)
+                    .message("Error communicating with Booking Service: " + e.getMessage())
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                    .build();
+
+        } catch (Exception e) {
+            return Response.builder()
+                    .success(false)
+                    .data(null)
+                    .message("Unexpected error: " + e.getMessage())
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                    .build();
+        }
+    }
+
+    // --------------------------------------- Get Reports By BookingId --------------------------------------------
+    @Override
+    public Response getReportsByBookingId(String bookingId) {
+        Response res = new Response();
+        try {
+            List<ReportsList> reportsListData = reportsRepository.findByReportsListBookingId(bookingId);
+            List<ReportsDtoList> toDTO = new ObjectMapper().convertValue(
+                    reportsListData, new TypeReference<List<ReportsDtoList>>() {});
+
+            if (toDTO != null && !toDTO.isEmpty()) {
+                res.setSuccess(true);
+                res.setStatus(HttpStatus.OK.value());
+                res.setMessage("Reports fetched successfully for given bookingId");
+                res.setData(toDTO);
+            } else {
+                res.setSuccess(true);
+                res.setStatus(HttpStatus.OK.value());
+                res.setMessage("No reports found for given bookingId");
+                res.setData(Collections.emptyList());
+            }
+
+        } catch (Exception e) {
+            res.setSuccess(false);
+            res.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            res.setMessage("Error fetching reports: " + e.getMessage());
+            res.setData(null);
+        }
+        return res;
+    }
+
+    // ---------------------------------------- Get All Reports -------------------------------------------------------
+    @Override
+    public Response getAllReports() {
+        Response res = new Response();
+        try {
+            List<ReportsList> reportList = reportsRepository.findAll();
+            List<ReportsDtoList> toDTO = new ObjectMapper().convertValue(
+                    reportList, new TypeReference<List<ReportsDtoList>>() {});
+
+            if (toDTO != null && !toDTO.isEmpty()) {
+                res.setSuccess(true);
+                res.setStatus(HttpStatus.OK.value());
+                res.setMessage("All reports fetched successfully");
+                res.setData(toDTO);
+            } else {
+                res.setSuccess(true);
+                res.setStatus(HttpStatus.OK.value());
+                res.setMessage("No reports found");
+                res.setData(Collections.emptyList());
+            }
+
+        } catch (Exception e) {
+            res.setSuccess(false);
+            res.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            res.setMessage("Error fetching all reports: " + e.getMessage());
+            res.setData(null);
+        }
+        return res;
+    }
+
+    // --------------------------------------- Get Reports By CustomerId --------------------------------------------
+    @Override
+    public Response getReportsByCustomerId(String customerId) {
+        Response res = new Response();
+        try {
+            List<ReportsList> reportsListData = reportsRepository.findByCustomerId(customerId);
+            List<ReportsDtoList> toDTO = new ObjectMapper().convertValue(
+                    reportsListData, new TypeReference<List<ReportsDtoList>>() {});
+
+            if (toDTO != null && !toDTO.isEmpty()) {
+                res.setSuccess(true);
+                res.setStatus(HttpStatus.OK.value());
+                res.setMessage("Reports fetched successfully for given customerId");
+                res.setData(toDTO);
+            } else {
+                res.setSuccess(true);
+                res.setStatus(HttpStatus.OK.value());
+                res.setMessage("No reports found for given customerId");
+                res.setData(Collections.emptyList());
+            }
+
+        } catch (Exception e) {
+            res.setSuccess(false);
+            res.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            res.setMessage("Error fetching reports: " + e.getMessage());
+            res.setData(null);
+        }
+        return res;
+    }
+
+    // --------------------------------------- Get Reports By PatientId + BookingId -----------------------------------
+    @Override
+    public Response getReportsByPatientIdAndBookingId(String patientId, String bookingId) {
+        Response res = new Response();
+        try {
+            List<ReportsList> reportsListData =
+                    reportsRepository.findByReportsListPatientIdAndReportsListBookingId(patientId, bookingId);
+
+            List<ReportsDtoList> toDTO = new ObjectMapper().convertValue(
+                    reportsListData, new TypeReference<List<ReportsDtoList>>() {});
+
+            if (toDTO != null && !toDTO.isEmpty()) {
+                res.setSuccess(true);
+                res.setStatus(HttpStatus.OK.value());
+                res.setMessage("Reports fetched successfully for given patient and booking");
+                res.setData(toDTO);
+            } else {
+                res.setSuccess(true);
+                res.setStatus(HttpStatus.OK.value());
+                res.setMessage("No reports found for given patient and booking");
+                res.setData(Collections.emptyList());
+            }
+
+        } catch (Exception e) {
+            res.setSuccess(false);
+            res.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            res.setMessage("Error fetching reports: " + e.getMessage());
+            res.setData(null);
+        }
+
+        return res;
+    }
+    @Override
+    public Response deleteReport(String reportId) {
+        try {
+            boolean exists = reportsRepository.existsById(reportId);
+            if (!exists) {
+                return Response.builder()
+                        .success(false)
+                        .message("Report not found")
+                        .status(HttpStatus.NOT_FOUND.value())
+                        .data(null)
+                        .build();
+            }
+
+            reportsRepository.deleteById(reportId);
+            return Response.builder()
+                    .success(true)
+                    .message("Report deleted successfully")
+                    .status(HttpStatus.OK.value())
+                    .data("Deleted ID: " + reportId)
+                    .build();
+        } catch (Exception e) {
+            return Response.builder()
+                    .success(false)
+                    .message("Error while deleting report: " + e.getMessage())
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                    .data(null)
+                    .build();
+        }
+    }
 
 }

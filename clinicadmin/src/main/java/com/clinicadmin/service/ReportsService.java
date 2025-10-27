@@ -2,7 +2,6 @@ package com.clinicadmin.service;
 
 import org.springframework.stereotype.Service;
 
-import com.clinicadmin.dto.ReportsDTO;
 import com.clinicadmin.dto.ReportsDtoList;
 import com.clinicadmin.dto.Response;
 
@@ -15,6 +14,9 @@ public interface ReportsService {
 
 	Response getReportsByBookingId(String bookingId);
 	public Response getReportsByCustomerId(String cId);
-	
+
+	Response getReportsByPatientIdAndBookingId(String patientId, String bookingId);
+
+	Response deleteReport(String reportId);
 
 }
