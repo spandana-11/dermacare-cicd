@@ -3534,7 +3534,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 			        entity.setDoctorName(dto.getDoctorName());
 			    }
 
-			    // Mapping: doctorMobileDeviceId → doctorDeviceId (different field names)
+			    // Mapping:doctorMobileDeviceId → doctorDeviceId (different field names)
 			    if (dto.getDoctorMobileDeviceId() != null && !dto.getDoctorMobileDeviceId().isEmpty()) {
 			        entity.setDoctorDeviceId(dto.getDoctorMobileDeviceId());
 			    }
