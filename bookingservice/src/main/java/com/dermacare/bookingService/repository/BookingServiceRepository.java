@@ -34,4 +34,9 @@ public interface BookingServiceRepository extends MongoRepository<Booking,String
 	public Booking findByPatientIdAndFollowupDate(String pId,String followupdate);
 	public List<Booking> findByNameIgnoreCase(String input);
 	public Booking findByServiceDateAndServicetimeAndDoctorId(String date, String time, String doctorId);
+    
+	public List<Booking> findByCustomerIdAndClinicId(String customerId,String clinicId);
+	public List<Booking> findByNameIgnoreCaseAndClinicId(String input,String clinicId);
+	public List<Booking> findByPatientIdAndClinicId(String patientId,String clinicId);
+	public  List<Booking> findByMobileNumberAndClinicId(String mobileNumber,String clinicId);
 }

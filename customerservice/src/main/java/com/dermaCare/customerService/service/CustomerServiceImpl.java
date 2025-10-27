@@ -1545,17 +1545,6 @@ public ResponseEntity<?> retrieveAppointnmentsByPatientId(String patientId) {
 }
 
 @Override
-public ResponseEntity<?> retrieveAppointnmentsByInput(String input) {
-    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
-    try {
-        return bookingFeign.retrieveAppointnmentsByInput(input);
-    } catch (FeignException e) {
-        res = new ResponseStructure<>(null, ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR, e.status());
-        return ResponseEntity.status(res.getStatusCode()).body(res);
-    }
-}
-
-@Override
 public boolean blockSlot(TempBlockingSlot tempBlockingSlot) {
     try {
         return clinicAdminFeign.blockSlot(tempBlockingSlot);

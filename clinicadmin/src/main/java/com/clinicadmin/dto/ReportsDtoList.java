@@ -12,6 +12,7 @@ public class ReportsDtoList {
 	
 	private String id;
 	private String customerId;
+	private String patientId;
 	private List<ReportsDTO> reportsList;
 	
 

@@ -2262,7 +2262,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
     @Override
     public Response getDoctorDetailsById(String id) {
         Optional<DoctorSaveDetails> optional = repository.findById(id);
-        return optional.map(data -> buildResponse(true, data, "Doctor details found", HttpStatus.OK.value()))
+        return optional.map(data -> buildResponse(true,new ObjectMapper().convertValue(data, DoctorSaveDetailsDTO.class), "Doctor details found", HttpStatus.OK.value()))
                 .orElseGet(() -> buildResponse(false, null, "Doctor details not found", HttpStatus.NOT_FOUND.value()));
     }
 
@@ -2270,7 +2270,10 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
     public Response updateDoctorDetails(String id, DoctorSaveDetailsDTO dto) {
         Optional<DoctorSaveDetails> optional = repository.findById(id);
         if (optional.isPresent()) {
-            DoctorSaveDetails updated = convertToEntity(dto);
+        	ObjectMapper mapper = new ObjectMapper();
+        	mapper.registerModule(new JavaTimeModule());
+        	mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+            DoctorSaveDetails updated = mapper.convertValue(dto, DoctorSaveDetails.class);
             updated.setId(id);
             DoctorSaveDetails saved = repository.save(updated);
             DoctorSaveDetailsDTO savedDto = convertToDto(saved);
@@ -2280,6 +2283,23 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
         }
     }
 
+    @Override
+    public Response updateDoctorDetailsByBookingId(String id, DoctorSaveDetailsDTO dto) {
+        DoctorSaveDetails optional = repository.findByBookingId(id);
+        if (optional != null) {
+        	ObjectMapper mapper = new ObjectMapper();
+        	mapper.registerModule(new JavaTimeModule());
+        	mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+            DoctorSaveDetails updated = mapper.convertValue(dto, DoctorSaveDetails.class);
+            updated.setId(dto.getId());
+            DoctorSaveDetails saved = repository.save(updated);
+            DoctorSaveDetailsDTO savedDto = convertToDto(saved);
+            return buildResponse(true, savedDto, "Doctor details updated successfully", HttpStatus.OK.value());
+        } else {
+            return buildResponse(false, null, "Doctor details not found", HttpStatus.NOT_FOUND.value());
+        }
+    }
+    
     @Override
     public Response deleteDoctorDetails(String id) {
         Optional<DoctorSaveDetails> optional = repository.findById(id);

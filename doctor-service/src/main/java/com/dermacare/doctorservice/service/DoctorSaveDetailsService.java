@@ -26,4 +26,7 @@ public interface DoctorSaveDetailsService {
     Response getDoctorDetailsByBookingId(String bookingId);
 
 	Response getDoctorDetailsByCustomerId(String customerId);
+	
+	public Response updateDoctorDetailsByBookingId(String id, DoctorSaveDetailsDTO dto);
+	    
 	}

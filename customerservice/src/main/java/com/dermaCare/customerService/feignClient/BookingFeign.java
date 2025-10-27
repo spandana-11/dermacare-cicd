@@ -83,9 +83,6 @@ public interface BookingFeign {
 	@GetMapping("/api/v1/appointments/patientId/{patientId}")	
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingByPatientId(@PathVariable String patientId);
 	
-	@GetMapping("/api/v1/appointments/byInput/{input}")
-	public ResponseEntity<?> retrieveAppointnmentsByInput(@PathVariable String input);
-	
 	@GetMapping("/api/v1/appointments/Inprogress/patientId/{patientId}")
 	public ResponseEntity<?> getInprogressAppointmentsByPatientId(@PathVariable String patientId);
 	

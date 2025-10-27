@@ -73,7 +73,7 @@ public class Booking  {
     private Integer pendingSittings;
     private Integer takenSittings;
     private Integer currentSitting;
-
+    private String foc;
     // ------------------- NEW: Treatments and dates -------------------
     private TreatmentResponseDTO treatments; // treatmentName -> treatment details
 

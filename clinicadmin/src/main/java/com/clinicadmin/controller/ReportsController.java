@@ -2,6 +2,7 @@ package com.clinicadmin.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,6 +44,21 @@ public class ReportsController {
      @GetMapping("/getReportsBycustomerId/{customerId}")
      public ResponseEntity<Response> getReportsBycustomerId(@PathVariable String customerId) {
     	 Response response = reportsService.getReportsByCustomerId(customerId);
+         return ResponseEntity.status(response.getStatus()).body(response);
+     }
+     
+     @GetMapping("/getReportsByPatientIdAndBookingId/{patientId}/{bookingId}")
+     public ResponseEntity<Response> getReportsByPatientIdAndBookingId(
+             @PathVariable String patientId,
+             @PathVariable String bookingId) {
+         Response response = reportsService.getReportsByPatientIdAndBookingId(patientId, bookingId);
+         return ResponseEntity.status(response.getStatus()).body(response);
+     }
+     
+   
+     @DeleteMapping("/deleteReport/{reportId}")
+     public ResponseEntity<Response> deleteReport(@PathVariable String reportId) {
+         Response response = reportsService.deleteReport(reportId);
          return ResponseEntity.status(response.getStatus()).body(response);
      }
 }

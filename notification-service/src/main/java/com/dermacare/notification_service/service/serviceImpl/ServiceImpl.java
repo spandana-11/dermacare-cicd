@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -874,14 +875,14 @@ public class ServiceImpl implements ServiceInterface{
 			 List<CustomerOnbordingDTO> cusmr =  new ObjectMapper().convertValue(cllinicFeign.getAllCustomers().getBody().getData(), new TypeReference< List<CustomerOnbordingDTO>>() {});			 
 			// System.out.println(cusmr);
 			 cusmr.stream().map(n->{  if(n.getDeviceId() != null) {
-			 appNotification.sendPushNotificationForImage(n.getDeviceId(),priceDropAlertDto.getTitle(),priceDropAlertDto.getBody(), "BOOKING",
-					    "BookingScreen","default","");
+			 appNotification.sendPushNotificationForImage(n.getDeviceId(),priceDropAlertDto.getTitle(),priceDropAlertDto.getBody(), "Notification",
+					    "NotificationScreen","default","");
 			// System.out.println("notification sent successfully");
 			 }
 			 return n;}).toList();
 			 }else {
-				 priceDropAlertDto.getTokens().stream().map(t->{appNotification.sendPushNotificationForImage(t,priceDropAlertDto.getTitle(),priceDropAlertDto.getBody(), "BOOKING",
-						    "BookingScreen","default","");
+				 priceDropAlertDto.getTokens().stream().map(t->{appNotification.sendPushNotificationForImage(t,priceDropAlertDto.getTitle(),priceDropAlertDto.getBody(), "Notification",
+						    "NotificationScreen","default","");
 				 return t;}).toList();}
 			 PriceDropAlertEntity en = new ObjectMapper().convertValue(priceDropAlertDto, PriceDropAlertEntity.class);
 			 en.setLocalDateTime(LocalDateTime.now(ZoneId.of("Asia/Kolkata")));
@@ -903,19 +904,24 @@ public class ServiceImpl implements ServiceInterface{
 		 try {
 			List<PriceDropAlertEntity> enty = priceDropAlertNotifications.findByClinicIdAndBranchId(clinicId, branchId);
 			//System.out.println(enty);
-			 PriceDropAlertDto dto = null;
+			List<PriceDropAlertDto> dto = null;
+			List<PriceDropAlertDto> response = new LinkedList<>();
 			 CustomerOnbordingDTO cdto = null;
-				 if(enty != null) {
-				 dto = new ObjectMapper().convertValue(enty, PriceDropAlertDto.class);				
-				 dto.setTokens(null);
-				 dto.setImage(null);
-				 for(PriceDropAlertEntity obj : enty){
+				 if(enty != null) {	
+				 ObjectMapper mapper = new ObjectMapper();
+				 mapper.registerModule(new JavaTimeModule());
+			     mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+				 dto = mapper.convertValue(enty,new TypeReference<List<PriceDropAlertDto>>(){});				
+				 //System.out.println(dto);
+				 for(PriceDropAlertDto obj : dto){
+					// System.out.println(obj);
+				 obj.setImage(null);
 				 if(obj.getTokens() != null) {
 				 for(String s : obj.getTokens()){
 				 try {
 				 cdto = cllinicFeign.getCustomerByToken(s);
-				// System.out.println(cdto);
-				 }catch(Exception e) {}				
+				//System.out.println(cdto);
+				 }catch(Exception e) {System.out.println(e.getMessage());}				
 				 if(cdto != null) {	
 				 Map<String,CustomerInfo> info = new HashMap<>();
 				 CustomerInfo cInfo = new CustomerInfo();
@@ -923,16 +929,18 @@ public class ServiceImpl implements ServiceInterface{
 				 cInfo.setCustomerId(cdto.getCustomerId());
 				 cInfo.setPatientId(cdto.getPatientId());
 				 info.put(cdto.getFullName(), cInfo);
-				 if(dto.getCustomerData() != null) {
-				 List<Map<String,CustomerInfo>> customerData =	dto.getCustomerData();
+				 if(obj.getCustomerData() != null) {
+				 List<Map<String,CustomerInfo>> customerData =	obj.getCustomerData();
 				 customerData.add(info);
-				 dto.setCustomerData(customerData);
+				 obj.setCustomerData(customerData);
 				 }else{
 				 List<Map<String,CustomerInfo>> customerData = new ArrayList<>();
 				 customerData.add(info);
-				 dto.setCustomerData(customerData);
-				 }}}}}}
-			 res.setData(dto);
+				 obj.setCustomerData(customerData);
+				 }}}}
+				 obj.setTokens(null);
+				 response.add(obj);}}
+			 res.setData(response);
 			 res.setMessage("fetched successfully");
 			 res.setStatus(200);
 			 res.setSuccess(true);

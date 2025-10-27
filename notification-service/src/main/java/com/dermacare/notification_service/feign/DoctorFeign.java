@@ -11,5 +11,5 @@ public interface DoctorFeign {
 	 @GetMapping("/api/doctors/getAllDoctorSaveDetails")
 	    public ResponseEntity<Response> getAllDoctorSaveDetails();
 	
-
+	     
 }
