@@ -36,6 +36,7 @@ import com.dermacare.bookingService.dto.DatesDTO;
 import com.dermacare.bookingService.dto.DoctorSaveDetailsDTO;
 import com.dermacare.bookingService.dto.RelationInfoDTO;
 import com.dermacare.bookingService.dto.TreatmentDetailsDTO;
+import com.dermacare.bookingService.dto.TreatmentResponseDTO;
 import com.dermacare.bookingService.entity.Booking;
 import com.dermacare.bookingService.entity.ReportsList;
 import com.dermacare.bookingService.feign.ClinicAdminFeign;
@@ -1417,24 +1418,9 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 //	        if (bookingResponse.getFreeFollowUps() != null) entity.setFreeFollowUps(bookingResponse.getFreeFollowUps());
 //	        if (bookingResponse.getVisitCount() != null) entity.setVisitCount(bookingResponse.getVisitCount());
 ////	        if (bookingResponse.getFollowupStatus() != null) entity.setFollowupStatus(bookingResponse.getFollowupStatus());
-////	        if (bookingResponse.getTreatments() != null && bookingResponse.getTreatments().getFollowupStatus() != null) {
-////	            entity.setFollowupStatus(bookingResponse.getTreatments().getFollowupStatus());
-////	        }
-//	        if (bookingResponse.getTreatments() != null 
-//	        	    && bookingResponse.getTreatments().getGeneratedData() != null) {
-//
-//	        	    for (Map.Entry<String, TreatmentDetailsDTO> entry : bookingResponse.getTreatments().getGeneratedData().entrySet()) {
-//	        	        TreatmentDetailsDTO treatmentDetails = entry.getValue();
-//
-//	        	        if (treatmentDetails.getDates() != null && !treatmentDetails.getDates().isEmpty()) {
-//	        	            String followupStatus = treatmentDetails.getDates().get(0).getFollowupStatus(); // assuming first date carries status
-//	        	            if (followupStatus != null) {
-//	        	                entity.setFollowupStatus(followupStatus);
-//	        	                break; // stop after first valid status
-//	        	            }
-//	        	        }
-//	        	    }
-//	        	}
+//	        if (bookingResponse.getTreatments() != null && bookingResponse.getTreatments().getFollowupStatus() != null) {
+//	            entity.setFollowupStatus(bookingResponse.getTreatments().getFollowupStatus());
+//	        }
 //
 //	        if (bookingResponse.getFollowupDate() != null) entity.setFollowupDate(bookingResponse.getFollowupDate());
 //
@@ -1529,7 +1515,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	        Booking entity = repository.findByBookingId(bookingResponse.getBookingId())
 	                .orElseThrow(() -> new RuntimeException("Invalid Booking Id. Please provide a valid Id."));
 
-	        // --- Update basic fields from bookingResponse to entity ---
+	        // --- Basic info update ---
 	        if (bookingResponse.getAge() != null) entity.setAge(bookingResponse.getAge());
 	        if (bookingResponse.getBookedAt() != null) entity.setBookedAt(bookingResponse.getBookedAt());
 	        if (bookingResponse.getBookingFor() != null) entity.setBookingFor(bookingResponse.getBookingFor());
@@ -1548,8 +1534,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	        if (bookingResponse.getReports() != null) {
 	            entity.setReports(new ObjectMapper().convertValue(
 	                    bookingResponse.getReports(),
-	                    new TypeReference<List<ReportsList>>() {}
-	            ));
+	                    new TypeReference<List<ReportsList>>() {}));
 	        }
 	        if (bookingResponse.getSubServiceId() != null) entity.setSubServiceId(bookingResponse.getSubServiceId());
 	        if (bookingResponse.getSubServiceName() != null) entity.setSubServiceName(bookingResponse.getSubServiceName());
@@ -1558,41 +1543,47 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	        if (bookingResponse.getFreeFollowUpsLeft() != null) entity.setFreeFollowUpsLeft(bookingResponse.getFreeFollowUpsLeft());
 	        if (bookingResponse.getFreeFollowUps() != null) entity.setFreeFollowUps(bookingResponse.getFreeFollowUps());
 	        if (bookingResponse.getVisitCount() != null) entity.setVisitCount(bookingResponse.getVisitCount());
-	        if (bookingResponse.getFollowupDate() != null) entity.setFollowupDate(bookingResponse.getFollowupDate());
-
-	        // --- Handle treatments and nested follow-up statuses ---
-	        if (bookingResponse.getTreatments() != null 
-	                && bookingResponse.getTreatments().getGeneratedData() != null) {
-
-	            // Optional: log or inspect nested follow-up statuses
-	            for (Map.Entry<String, TreatmentDetailsDTO> entry : bookingResponse.getTreatments().getGeneratedData().entrySet()) {
-	                TreatmentDetailsDTO treatmentDetails = entry.getValue();
-
-	                if (treatmentDetails != null && treatmentDetails.getDates() != null) {
-	                    for (DatesDTO date : treatmentDetails.getDates()) {
-	                        if (date.getFollowupStatus() != null) {
-	                            // Just log or handle internally; do not set on Booking
-	                            System.out.println("Follow-up status found for treatment [" 
-	                                + entry.getKey() + "]: " + date.getFollowupStatus());
-	                        }
-	                    }
-	                }
-	            }
-
-	            // ✅ Save entire treatments structure (includes follow-up info inside DatesDTO)
-	            entity.setTreatments(bookingResponse.getTreatments());
-	        }
 
 	        // --- Update sitting summary ---
 	        if (bookingResponse.getTotalSittings() != null) entity.setTotalSittings(bookingResponse.getTotalSittings());
 	        if (bookingResponse.getTakenSittings() != null) entity.setTakenSittings(bookingResponse.getTakenSittings());
 	        if (bookingResponse.getPendingSittings() != null) entity.setPendingSittings(bookingResponse.getPendingSittings());
 	        if (bookingResponse.getCurrentSitting() != null) entity.setCurrentSitting(bookingResponse.getCurrentSitting());
+	        if (bookingResponse.getFollowupDate() != null) entity.setFollowupDate(bookingResponse.getFollowupDate());
+
+	        // --- Update Treatments + Extract Followup Info ---
+	        if (bookingResponse.getTreatments() != null) {
+	            TreatmentResponseDTO treatments = bookingResponse.getTreatments();
+
+	            // ✅ Set treatment-level summary
+	            if (treatments.getTotalSittings() != null) entity.setTotalSittings(treatments.getTotalSittings());
+	            if (treatments.getPendingSittings() != null) entity.setPendingSittings(treatments.getPendingSittings());
+	            if (treatments.getTakenSittings() != null) entity.setTakenSittings(treatments.getTakenSittings());
+	            if (treatments.getCurrentSitting() != null) entity.setCurrentSitting(treatments.getCurrentSitting());
+
+	            // ✅ Extract latest follow-up status from DatesDTO (if present)
+	            if (treatments.getGeneratedData() != null && !treatments.getGeneratedData().isEmpty()) {
+	                for (TreatmentDetailsDTO details : treatments.getGeneratedData().values()) {
+	                    if (details.getDates() != null && !details.getDates().isEmpty()) {
+	                        DatesDTO latestDate = details.getDates().get(details.getDates().size() - 1);
+	                        if (latestDate.getFollowupStatus() != null) {
+	                            entity.setFollowupStatus(latestDate.getFollowupStatus());
+	                        }
+	                        if (latestDate.getDate() != null) {
+	                            entity.setFollowupDate(latestDate.getDate());
+	                        }
+	                    }
+	                }
+	            }
+
+	            // ✅ Save full treatment structure in entity
+	            entity.setTreatments(treatments);
+	        }
 
 	        // --- Save updated booking ---
 	        Booking updatedBooking = repository.save(entity);
 
-	        // --- Build response DTO ---
+	        // --- Build Response DTO ---
 	        BookingResponse responseDTO = new BookingResponse();
 	        responseDTO.setBookingId(updatedBooking.getBookingId());
 	        responseDTO.setBookingFor(updatedBooking.getBookingFor());
@@ -1626,6 +1617,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	        responseDTO.setConsultationFee(updatedBooking.getConsultationFee());
 	        responseDTO.setStatus(updatedBooking.getStatus());
 	        responseDTO.setTotalFee(updatedBooking.getTotalFee());
+	        responseDTO.setBookedAt(updatedBooking.getBookedAt());
 
 	        // ✅ Sitting summary
 	        responseDTO.setTotalSittings(updatedBooking.getTotalSittings());
@@ -1633,12 +1625,12 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	        responseDTO.setTakenSittings(updatedBooking.getTakenSittings());
 	        responseDTO.setCurrentSitting(updatedBooking.getCurrentSitting());
 
-	        responseDTO.setBookedAt(updatedBooking.getBookedAt());
-
-	        // ✅ Treatments (with nested follow-up info)
+	        // ✅ Treatments (with dates + followup info)
 	        responseDTO.setTreatments(updatedBooking.getTreatments());
+	        responseDTO.setFollowupDate(updatedBooking.getFollowupDate());
+//	        responseDTO.setFollowupStatus(updatedBooking.getFollowupStatus());
 
-	        // --- Return wrapped response ---
+	        // --- Return response ---
 	        return new ResponseEntity<>(
 	                ResponseStructure.buildResponse(
 	                        responseDTO,
@@ -1661,7 +1653,6 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	        );
 	    }
 	}
-
 	
 //	@Scheduled(cron = "0 01 0 * * ?")
 //	////@Scheduled(fixedRate = 20000)
@@ -3748,25 +3739,10 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 ////			        entity.setStatus("Completed");
 ////			    }
 //
-////			    if (dto.getTreatments() != null && dto.getTreatments().getFollowupStatus() != null 
-////			    	    && dto.getTreatments().getFollowupStatus().equalsIgnoreCase("no-followup")) {
-////			    	    entity.setStatus("Completed");
-////			    	}
-//			    
-//			    if (dto.getTreatments() != null && dto.getTreatments().getGeneratedData() != null) {
-//			        for (Map.Entry<String, TreatmentDetailsDTO> entry : dto.getTreatments().getGeneratedData().entrySet()) {
-//			            TreatmentDetailsDTO treatmentDetails = entry.getValue();
-//
-//			            if (treatmentDetails.getDates() != null && !treatmentDetails.getDates().isEmpty()) {
-//			                String followupStatus = treatmentDetails.getDates().get(0).getFollowupStatus(); // assuming first date carries status
-//			                if ("no-followup".equalsIgnoreCase(followupStatus)) {
-//			                    entity.setStatus("Completed");
-//			                    break; // stop after first valid match
-//			                }
-//			            }
-//			        }
-//			    }
-//
+//			    if (dto.getTreatments() != null && dto.getTreatments().getFollowupStatus() != null 
+//			    	    && dto.getTreatments().getFollowupStatus().equalsIgnoreCase("no-followup")) {
+//			    	    entity.setStatus("Completed");
+//			    	}
 //
 //			    if (dto.getVisitCount() != null) {
 //			        entity.setVisitCount(dto.getVisitCount());
@@ -3802,24 +3778,9 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 ////			        entity.setFollowupStatus(dto.getFollowupStatus());
 ////			    }
 //		    
-////			    if (dto.getTreatments() != null && dto.getTreatments().getFollowupStatus() != null) {
-////			        entity.setFollowupStatus(dto.getTreatments().getFollowupStatus());
-////			    }
-//			    
-//			    if (dto.getTreatments() != null && dto.getTreatments().getGeneratedData() != null) {
-//			        for (Map.Entry<String, TreatmentDetailsDTO> entry : dto.getTreatments().getGeneratedData().entrySet()) {
-//			            TreatmentDetailsDTO treatmentDetails = entry.getValue();
-//
-//			            if (treatmentDetails.getDates() != null && !treatmentDetails.getDates().isEmpty()) {
-//			                String followupStatus = treatmentDetails.getDates().get(0).getFollowupStatus(); // assuming first date carries status
-//			                if (followupStatus != null) {
-//			                    entity.setFollowupStatus(followupStatus);
-//			                    break; // stop after first valid status
-//			                }
-//			            }
-//			        }
+//			    if (dto.getTreatments() != null && dto.getTreatments().getFollowupStatus() != null) {
+//			        entity.setFollowupStatus(dto.getTreatments().getFollowupStatus());
 //			    }
-//
 //
 //			    Booking e = repository.save(entity);			
 //				if(e != null){	
@@ -3835,122 +3796,15 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 //							e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.value()),
 //							HttpStatus.INTERNAL_SERVER_ERROR);
 //				}}
-//			
+			
 		
-//		public ResponseEntity<?> updateAppointmentBasedOnBookingId(BookingResponse dto) {
-//		    try {
-//		        Booking entity = repository.findByBookingId(dto.getBookingId())
-//		                .orElseThrow(() -> new RuntimeException("Invalid Booking Id Please provide Valid Id"));
-//
-//		        // Standard field mappings (unchanged)
-//		        if (dto.getBookingId() != null && !dto.getBookingId().isEmpty()) entity.setBookingId(dto.getBookingId());
-//		        if (dto.getBookingFor() != null && !dto.getBookingFor().isEmpty()) entity.setBookingFor(dto.getBookingFor());
-//		        if (dto.getRelation() != null && !dto.getRelation().isEmpty()) entity.setRelation(dto.getRelation());
-//		        if (dto.getPatientMobileNumber() != null && !dto.getPatientMobileNumber().isEmpty()) entity.setPatientMobileNumber(dto.getPatientMobileNumber());
-//		        if (dto.getPatientAddress() != null && !dto.getPatientAddress().isEmpty()) entity.setPatientAddress(dto.getPatientAddress());
-//		        if (dto.getPatientId() != null && !dto.getPatientId().isEmpty()) entity.setPatientId(dto.getPatientId());
-//		        if (dto.getFreeFollowUpsLeft() != null) entity.setFreeFollowUpsLeft(dto.getFreeFollowUpsLeft());
-//		        if (dto.getFreeFollowUps() != null) entity.setFreeFollowUps(dto.getFreeFollowUps());
-//		        if (dto.getVisitType() != null && !dto.getVisitType().isEmpty()) entity.setVisitType(dto.getVisitType());
-//		        if (dto.getName() != null && !dto.getName().isEmpty()) entity.setName(dto.getName());
-//		        if (dto.getAge() != null && !dto.getAge().isEmpty()) entity.setAge(dto.getAge());
-//		        if (dto.getGender() != null && !dto.getGender().isEmpty()) entity.setGender(dto.getGender());
-//		        if (dto.getMobileNumber() != null && !dto.getMobileNumber().isEmpty()) entity.setMobileNumber(dto.getMobileNumber());
-//		        if (dto.getCustomerId() != null && !dto.getCustomerId().isEmpty()) entity.setCustomerId(dto.getCustomerId());
-//		        if (dto.getCustomerDeviceId() != null && !dto.getCustomerDeviceId().isEmpty()) entity.setCustomerDeviceId(dto.getCustomerDeviceId());
-//		        if (dto.getProblem() != null && !dto.getProblem().isEmpty()) entity.setProblem(dto.getProblem());
-//		        if (dto.getSymptomsDuration() != null && !dto.getSymptomsDuration().isEmpty()) entity.setSymptomsDuration(dto.getSymptomsDuration());
-//		        if (dto.getClinicId() != null && !dto.getClinicId().isEmpty()) entity.setClinicId(dto.getClinicId());
-//		        if (dto.getClinicName() != null && !dto.getClinicName().isEmpty()) entity.setClinicName(dto.getClinicName());
-//		        if (dto.getBranchId() != null && !dto.getBranchId().isEmpty()) entity.setBranchId(dto.getBranchId());
-//		        if (dto.getBranchname() != null && !dto.getBranchname().isEmpty()) entity.setBranchname(dto.getBranchname());
-//		        if (dto.getClinicDeviceId() != null && !dto.getClinicDeviceId().isEmpty()) entity.setClinicDeviceId(dto.getClinicDeviceId());
-//		        if (dto.getDoctorId() != null && !dto.getDoctorId().isEmpty()) entity.setDoctorId(dto.getDoctorId());
-//		        if (dto.getDoctorName() != null && !dto.getDoctorName().isEmpty()) entity.setDoctorName(dto.getDoctorName());
-//		        if (dto.getDoctorMobileDeviceId() != null && !dto.getDoctorMobileDeviceId().isEmpty()) entity.setDoctorDeviceId(dto.getDoctorMobileDeviceId());
-//		        if (dto.getDoctorWebDeviceId() != null && !dto.getDoctorWebDeviceId().isEmpty()) entity.setDoctorWebDeviceId(dto.getDoctorWebDeviceId());
-//		        if (dto.getSubServiceId() != null && !dto.getSubServiceId().isEmpty()) entity.setSubServiceId(dto.getSubServiceId());
-//		        if (dto.getSubServiceName() != null && !dto.getSubServiceName().isEmpty()) entity.setSubServiceName(dto.getSubServiceName());
-//		        if (dto.getServiceDate() != null && !dto.getServiceDate().isEmpty()) entity.setServiceDate(dto.getServiceDate());
-//		        if (dto.getServicetime() != null && !dto.getServicetime().isEmpty()) entity.setServicetime(dto.getServicetime());
-//		        if (dto.getConsultationType() != null && !dto.getConsultationType().isEmpty()) entity.setConsultationType(dto.getConsultationType());
-//		        if (dto.getConsultationFee() > 0) entity.setConsultationFee(dto.getConsultationFee());
-//		        if (dto.getReasonForCancel() != null && !dto.getReasonForCancel().isEmpty()) entity.setReasonForCancel(dto.getReasonForCancel());
-//		        if (dto.getNotes() != null && !dto.getNotes().isEmpty()) entity.setNotes(dto.getNotes());
-//		        if (dto.getReports() != null && !dto.getReports().isEmpty()) {
-//		            List<ReportsList> lst = new ObjectMapper().convertValue(dto.getReports(), new TypeReference<List<ReportsList>>() {});
-//		            entity.setReports(lst);
-//		        }
-//		        if (dto.getChannelId() != null && !dto.getChannelId().isEmpty()) entity.setChannelId(dto.getChannelId());
-//		        if (dto.getBookedAt() != null && !dto.getBookedAt().isEmpty()) entity.setBookedAt(dto.getBookedAt());
-//		        if (dto.getVisitCount() != null) entity.setVisitCount(dto.getVisitCount());
-//		        if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
-//		            List<byte[]> bte = new ObjectMapper().convertValue(dto.getAttachments(), new TypeReference<List<byte[]>>() {});
-//		            entity.setAttachments(bte);
-//		        }
-//		        if (dto.getConsentFormPdf() != null && !dto.getConsentFormPdf().isEmpty()) {
-//		            entity.setConsentFormPdf(Base64.getDecoder().decode(dto.getConsentFormPdf()));
-//		        }
-//		        if (dto.getPrescriptionPdf() != null && !dto.getPrescriptionPdf().isEmpty()) {
-//		            List<byte[]> bte = new ObjectMapper().convertValue(dto.getPrescriptionPdf(), new TypeReference<List<byte[]>>() {});
-//		            entity.setPrescriptionPdf(bte);
-//		        }
-//		        if (dto.getTotalFee() > 0) entity.setTotalFee(dto.getTotalFee());
-//		        if (dto.getDoctorRefCode() != null && !dto.getDoctorRefCode().isEmpty()) entity.setDoctorRefCode(dto.getDoctorRefCode());
-//		        if (dto.getConsultationExpiration() != null && !dto.getConsultationExpiration().isEmpty()) entity.setConsultationExpiration(dto.getConsultationExpiration());
-//
-//		        // ✅ Follow-up treatment logic
-//		        if ("followup".equalsIgnoreCase(dto.getVisitType()) && dto.getTreatments() != null && dto.getTreatments().getGeneratedData() != null) {
-//		            int totalPending = 0;
-//		            String followupStatus = null;
-//
-//		            for (Map.Entry<String, TreatmentDetailsDTO> entry : dto.getTreatments().getGeneratedData().entrySet()) {
-//		                TreatmentDetailsDTO treatmentDetails = entry.getValue();
-//
-//		                if (treatmentDetails.getPendingSittings() != null) {
-//		                    totalPending += treatmentDetails.getPendingSittings();
-//		                }
-//
-//		                if (treatmentDetails.getDates() != null && !treatmentDetails.getDates().isEmpty()) {
-//		                    String status = treatmentDetails.getDates().get(0).getFollowupStatus();
-//		                    if (status != null) {
-//		                        followupStatus = status;
-//		                    }
-//		                }
-//		            }
-//
-//		            if (followupStatus != null) {
-//		                entity.setFollowupStatus(followupStatus);
-//		                if ("no-followup".equalsIgnoreCase(followupStatus)) {
-//		                    entity.setStatus("Completed");
-//		                }
-//		            }
-//
-//		            entity.setPendingSittings(totalPending);
-//		        }
-//
-//		        Booking updated = repository.save(entity);
-//		        if (updated != null) {
-//		            return new ResponseEntity<>(ResponseStructure.buildResponse(updated,
-//		                    "Booking updated successfully", HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
-//		        } else {
-//		            return new ResponseEntity<>(ResponseStructure.buildResponse(null,
-//		                    "Booking Not Updated", HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
-//		        }
-//
-//		    } catch (Exception e) {
-//		        return new ResponseEntity<>(ResponseStructure.buildResponse(null,
-//		                e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.value()),
-//		                HttpStatus.INTERNAL_SERVER_ERROR);
-//		    }
-//		}
-
+		@Override
 		public ResponseEntity<?> updateAppointmentBasedOnBookingId(BookingResponse dto) {
 		    try {
 		        Booking entity = repository.findByBookingId(dto.getBookingId())
-		                .orElseThrow(() -> new RuntimeException("Invalid Booking Id. Please provide a valid Id"));
+		                .orElseThrow(() -> new RuntimeException("Invalid Booking Id. Please provide a valid Id."));
 
-		        // --- Standard field mappings ---
+		        // --- Update basic booking info ---
 		        if (dto.getBookingId() != null && !dto.getBookingId().isEmpty()) entity.setBookingId(dto.getBookingId());
 		        if (dto.getBookingFor() != null && !dto.getBookingFor().isEmpty()) entity.setBookingFor(dto.getBookingFor());
 		        if (dto.getRelation() != null && !dto.getRelation().isEmpty()) entity.setRelation(dto.getRelation());
@@ -3985,10 +3839,12 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		        if (dto.getConsultationFee() > 0) entity.setConsultationFee(dto.getConsultationFee());
 		        if (dto.getReasonForCancel() != null && !dto.getReasonForCancel().isEmpty()) entity.setReasonForCancel(dto.getReasonForCancel());
 		        if (dto.getNotes() != null && !dto.getNotes().isEmpty()) entity.setNotes(dto.getNotes());
+
 		        if (dto.getReports() != null && !dto.getReports().isEmpty()) {
 		            List<ReportsList> lst = new ObjectMapper().convertValue(dto.getReports(), new TypeReference<List<ReportsList>>() {});
 		            entity.setReports(lst);
 		        }
+
 		        if (dto.getChannelId() != null && !dto.getChannelId().isEmpty()) entity.setChannelId(dto.getChannelId());
 		        if (dto.getBookedAt() != null && !dto.getBookedAt().isEmpty()) entity.setBookedAt(dto.getBookedAt());
 		        if (dto.getVisitCount() != null) entity.setVisitCount(dto.getVisitCount());
@@ -3996,9 +3852,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		            List<byte[]> bte = new ObjectMapper().convertValue(dto.getAttachments(), new TypeReference<List<byte[]>>() {});
 		            entity.setAttachments(bte);
 		        }
-		        if (dto.getConsentFormPdf() != null && !dto.getConsentFormPdf().isEmpty()) {
+		        if (dto.getConsentFormPdf() != null && !dto.getConsentFormPdf().isEmpty())
 		            entity.setConsentFormPdf(Base64.getDecoder().decode(dto.getConsentFormPdf()));
-		        }
 		        if (dto.getPrescriptionPdf() != null && !dto.getPrescriptionPdf().isEmpty()) {
 		            List<byte[]> bte = new ObjectMapper().convertValue(dto.getPrescriptionPdf(), new TypeReference<List<byte[]>>() {});
 		            entity.setPrescriptionPdf(bte);
@@ -4007,47 +3862,62 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		        if (dto.getDoctorRefCode() != null && !dto.getDoctorRefCode().isEmpty()) entity.setDoctorRefCode(dto.getDoctorRefCode());
 		        if (dto.getConsultationExpiration() != null && !dto.getConsultationExpiration().isEmpty()) entity.setConsultationExpiration(dto.getConsultationExpiration());
 
-		        // --- Follow-up treatment logic ---
-		        if ("followup".equalsIgnoreCase(dto.getVisitType()) && dto.getTreatments() != null && dto.getTreatments().getGeneratedData() != null) {
-		            int totalPending = 0;
-		            String followupStatus = null;
+		        // --- ✅ Update treatment-related data ---
+		        if (dto.getTreatments() != null) {
+		            TreatmentResponseDTO treatments = dto.getTreatments();
 
-		            for (TreatmentDetailsDTO treatmentDetails : dto.getTreatments().getGeneratedData().values()) {
-		                if (treatmentDetails.getPendingSittings() != null) {
-		                    totalPending += treatmentDetails.getPendingSittings();
-		                }
+		            // Update sitting summary
+		            if (treatments.getTotalSittings() != null) entity.setTotalSittings(treatments.getTotalSittings());
+		            if (treatments.getPendingSittings() != null) entity.setPendingSittings(treatments.getPendingSittings());
+		            if (treatments.getTakenSittings() != null) entity.setTakenSittings(treatments.getTakenSittings());
+		            if (treatments.getCurrentSitting() != null) entity.setCurrentSitting(treatments.getCurrentSitting());
 
-		                if (treatmentDetails.getDates() != null && !treatmentDetails.getDates().isEmpty()) {
-		                    String status = treatmentDetails.getDates().get(0).getFollowupStatus();
-		                    if (status != null) {
-		                        followupStatus = status;
+		            // Extract follow-up status and date
+		            if (treatments.getGeneratedData() != null && !treatments.getGeneratedData().isEmpty()) {
+		                for (TreatmentDetailsDTO details : treatments.getGeneratedData().values()) {
+		                    if (details.getDates() != null && !details.getDates().isEmpty()) {
+		                        DatesDTO latest = details.getDates().get(details.getDates().size() - 1);
+		                        if (latest.getFollowupStatus() != null) {
+		                            entity.setFollowupStatus(latest.getFollowupStatus());
+		                        }
+		                        if (latest.getDate() != null) {
+		                            entity.setFollowupDate(latest.getDate());
+		                        }
 		                    }
 		                }
 		            }
 
-		            entity.setPendingSittings(totalPending);
-
-		            if ("no-followup".equalsIgnoreCase(followupStatus)) {
-		                entity.setStatus("Completed");
-		            }
+		            // Save treatment structure
+		            entity.setTreatments(treatments);
 		        }
 
-		        Booking updated = repository.save(entity);
-		        if (updated != null) {
-		            return new ResponseEntity<>(ResponseStructure.buildResponse(updated,
-		                    "Booking updated successfully", HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
+		        // ✅ Handle special case: "no-followup" should mark booking as completed
+		        if (entity.getFollowupStatus() != null && entity.getFollowupStatus().equalsIgnoreCase("no-followup")) {
+		            entity.setStatus("Completed");
+		        }
+
+		        // --- Save entity ---
+		        Booking saved = repository.save(entity);
+
+		        if (saved != null) {
+		            return new ResponseEntity<>(
+		                    ResponseStructure.buildResponse(saved, "Booking updated successfully", HttpStatus.OK, HttpStatus.OK.value()),
+		                    HttpStatus.OK
+		            );
 		        } else {
-		            return new ResponseEntity<>(ResponseStructure.buildResponse(null,
-		                    "Booking Not Updated", HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+		            return new ResponseEntity<>(
+		                    ResponseStructure.buildResponse(null, "Booking Not Updated", HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value()),
+		                    HttpStatus.NOT_FOUND
+		            );
 		        }
 
 		    } catch (Exception e) {
-		        return new ResponseEntity<>(ResponseStructure.buildResponse(null,
-		                e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.value()),
-		                HttpStatus.INTERNAL_SERVER_ERROR);
+		        return new ResponseEntity<>(
+		                ResponseStructure.buildResponse(null, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.value()),
+		                HttpStatus.INTERNAL_SERVER_ERROR
+		        );
 		    }
 		}
-
 		
 		public ResponseEntity<?> getRelationsByCustomerId(String customerId) {
 		    ResponseStructure<Map<String, List<RelationInfoDTO>>> res = new ResponseStructure<>();
