@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PriceDropAlertDto {
 
+	private String id;
 	private String clinicId;
 	private String branchId;
 	private String title;

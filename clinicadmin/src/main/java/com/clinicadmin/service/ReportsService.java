@@ -19,4 +19,6 @@ public interface ReportsService {
 
 	Response deleteReport(String reportId);
 
+	Response updateReport(String reportId, ReportsDtoList dto);
+
 }

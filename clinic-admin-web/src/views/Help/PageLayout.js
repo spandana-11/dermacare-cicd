@@ -32,7 +32,7 @@ const PageLayout = ({ title, children, branch }) => {
   }, [hospital?.hospitalId, branch])
 
   return (
-    <CContainer fluid className="p-4">
+    <CContainer fluid className="p-2">
       {/* 🔸 Page Title */}
       {title && (
         <h2
@@ -54,67 +54,72 @@ const PageLayout = ({ title, children, branch }) => {
           className="p-4 rounded shadow-sm mb-5 bg-white"
           style={{ border: '1px solid #f1f1f1' }}
         >
-        <div className="d-flex align-items-start" style={{ gap: '16px', flexWrap: 'wrap' }}>
-  {/* Hospital Logo */}
-  {hospital.hospitalLogo ? (
-    <img
-      src={
-        hospital.hospitalLogo.startsWith('data:')
-          ? hospital.hospitalLogo
-          : `data:image/jpeg;base64,${hospital.hospitalLogo}`
-      }
-      alt={hospital.name || 'Hospital Logo'}
-      style={{
-        width: '80px',
-        height: '80px',
-        objectFit: 'cover',
-        borderRadius: '8px',
-        border: '1px solid #ddd',
-      }}
-    />
-  ) : (
-    <div
-      className="bg-light d-flex align-items-center justify-content-center"
-      style={{
-        width: '80px',
-        height: '80px',
-        borderRadius: '8px',
-        border: '1px solid #ddd',
-      }}
-    >
-      <span className="text-muted">No Logo</span>
-    </div>
-  )}
+          <div className="d-flex align-items-start" style={{ gap: '16px', flexWrap: 'wrap' }}>
+            {/* Hospital Logo */}
+            {hospital.hospitalLogo ? (
+              <img
+                src={
+                  hospital.hospitalLogo.startsWith('data:')
+                    ? hospital.hospitalLogo
+                    : `data:image/jpeg;base64,${hospital.hospitalLogo}`
+                }
+                alt={hospital.name || 'Hospital Logo'}
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  objectFit: 'cover',
+                  borderRadius: '8px',
+                  border: '1px solid #ddd',
+                }}
+              />
+            ) : (
+              <div
+                className="bg-light d-flex align-items-center justify-content-center"
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '8px',
+                  border: '1px solid #ddd',
+                }}
+              >
+                <span className="text-muted">No Logo</span>
+              </div>
+            )}
 
-  {/* Hospital Details */}
-  <div style={{ flex: 1, minWidth: '200px' }}>
-    <h4 className="fw-bold mb-1" style={{ fontSize: '1rem', color: 'var(--color-black)' }}>
-      {hospital.name}
-    </h4>
-    <p className="text-secondary mb-1 d-flex align-items-center gap-2" style={{ fontSize: '0.85rem' }}>
-      <MapPin size={14} /> {hospital.address}
-    </p>
-    <div className="d-flex flex-wrap gap-3" style={{ fontSize: '0.8rem', marginTop: '4px' }}>
-      <span className="d-flex align-items-center gap-2 text-secondary">
-        <Phone size={14} /> {hospital.contactNumber}
-      </span>
-      <span className="d-flex align-items-center gap-2 text-secondary">
-        <Mail size={14} /> {hospital.emailAddress}
-      </span>
-      <span className="d-flex align-items-center gap-2 text-secondary">
-        <Clock size={14} /> {hospital.openingTime} - {hospital.closingTime}
-      </span>
-    </div>
-  </div>
-</div>
-
+            {/* Hospital Details */}
+            <div style={{ flex: 1, minWidth: '200px' }}>
+              <h4
+                className="fw-bold mb-1"
+                style={{ fontSize: '1rem', color: 'var(--color-black)' }}
+              >
+                {hospital.name}
+              </h4>
+              <p
+                className="text-secondary mb-1 d-flex align-items-center gap-2"
+                style={{ fontSize: '0.85rem' }}
+              >
+                <MapPin size={14} /> {hospital.address}
+              </p>
+              <div
+                className="d-flex flex-wrap gap-3"
+                style={{ fontSize: '0.8rem', marginTop: '4px' }}
+              >
+                <span className="d-flex align-items-center gap-2 text-secondary">
+                  <Phone size={14} /> {hospital.contactNumber}
+                </span>
+                <span className="d-flex align-items-center gap-2 text-secondary">
+                  <Mail size={14} /> {hospital.emailAddress}
+                </span>
+                <span className="d-flex align-items-center gap-2 text-secondary">
+                  <Clock size={14} /> {hospital.openingTime} - {hospital.closingTime}
+                </span>
+              </div>
+            </div>
+          </div>
 
           {/* 🔹 Branch Section */}
           <div className="mt-4">
-            <h6
-              className="fw-bold mb-3 pb-2 border-bottom"
-              style={{ color: 'var(--color-black)' }}
-            >
+            <h6 className="fw-bold mb-3 pb-2 border-bottom" style={{ color: 'var(--color-black)' }}>
               🏥 Our Branches
             </h6>
 
@@ -140,10 +145,7 @@ const PageLayout = ({ title, children, branch }) => {
                         e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)'
                       }}
                     >
-                      <h6
-                        className="fw-bold mb-2"
-                        style={{ color: 'var(--color-black)' }}
-                      >
+                      <h6 className="fw-bold mb-2" style={{ color: 'var(--color-black)' }}>
                         {b.branchName}
                       </h6>
                       <p className="mb-1 d-flex align-items-center text-secondary gap-2">
@@ -151,11 +153,10 @@ const PageLayout = ({ title, children, branch }) => {
                       </p>
                       <p className="mb-0 d-flex align-items-center text-secondary gap-2">
                         <Phone size={14} /> {b.contactNumber || '—'}
-                        
                       </p>
-                       <p className="mb-0 d-flex align-items-center text-muted gap-2">
-        <Mail size={14} /> {b.email || '—'}
-      </p>
+                      <p className="mb-0 d-flex align-items-center text-muted gap-2">
+                        <Mail size={14} /> {b.email || '—'}
+                      </p>
                     </div>
                   </div>
                 ))}

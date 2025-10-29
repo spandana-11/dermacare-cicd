@@ -876,13 +876,13 @@ public class ServiceImpl implements ServiceInterface{
 			// System.out.println(cusmr);
 			 cusmr.stream().map(n->{  if(n.getDeviceId() != null) {
 			 appNotification.sendPushNotificationForImage(n.getDeviceId(),priceDropAlertDto.getTitle(),priceDropAlertDto.getBody(), "Notification",
-					    "NotificationScreen","default","");
+					    "NotificationScreen","default",imag);
 			// System.out.println("notification sent successfully");
 			 }
 			 return n;}).toList();
 			 }else {
 				 priceDropAlertDto.getTokens().stream().map(t->{appNotification.sendPushNotificationForImage(t,priceDropAlertDto.getTitle(),priceDropAlertDto.getBody(), "Notification",
-						    "NotificationScreen","default","");
+						    "NotificationScreen","default",imag);
 				 return t;}).toList();}
 			 PriceDropAlertEntity en = new ObjectMapper().convertValue(priceDropAlertDto, PriceDropAlertEntity.class);
 			 en.setLocalDateTime(LocalDateTime.now(ZoneId.of("Asia/Kolkata")));

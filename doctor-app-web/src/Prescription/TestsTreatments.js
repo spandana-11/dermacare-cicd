@@ -29,16 +29,14 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
     seed.selectedTestTreatments ?? [],
   )
   const [snackbar, setSnackbar] = useState({ show: false, message: '', type: '' })
-  const [activeIdx, setActiveIdx] = useState(-1);
+  const [activeIdx, setActiveIdx] = useState(-1)
   const [validationErrors, setValidationErrors] = useState({})
-  // at the top of the component, before any return
   const [selectedTreatmentOption, setSelectedTreatmentOption] = useState(
     formData?.symptoms?.diagnosis
       ? { label: formData.symptoms.diagnosis, value: formData.symptoms.diagnosis }
       : null
   )
 
-  // Per-treatment inputs (now includes reason)
   const [treatmentConfigs, setTreatmentConfigs] = useState(
     (seed.selectedTestTreatments || []).reduce((acc, t) => {
       acc[t] = { ...DEFAULT_CFG }
@@ -49,27 +47,20 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
   const [generatedData, setGeneratedData] = useState(
     seed.generatedData && typeof seed.generatedData === 'object' ? seed.generatedData : {},
   )
+
   const [treatmentReason, setTreatmentReason] = useState(seed.treatmentReason ?? '')
-
-  // to avoid repeated re-init if parent recreates `seed` object every render
   const [initializedFromSeed, setInitializedFromSeed] = useState(false)
-
   const [availableTreatments, setAvailableTreatments] = useState([])
-  const optionsToShow = availableTreatments
-    .map((t) => t.treatmentName)
-    .filter((name) => !selectedTestTreatments.includes(name))
 
   const showSnackbar = (message, type = 'info') => {
     setSnackbar({ show: true, message, type })
     setTimeout(() => setSnackbar({ show: false, message: '', type: '' }), 3000)
   }
 
-  // Derived flags (DO NOT store as state)
   const hasPendingCards = selectedTestTreatments.some((t) => !generatedData[t])
   const hasAnyTable = Object.keys(generatedData).length > 0
-  // If you want the stricter rule, use this instead on the button:
-  // const nextDisabled = hasPendingCards || !hasAnyTable
 
+  // -------------------- FETCH TREATMENTS --------------------
   useEffect(() => {
     const fetchTreatments = async () => {
       try {
@@ -82,7 +73,23 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
     fetchTreatments()
   }, [])
 
-  // Initialize from seed ONCE (prevents loops when parent recreates objects)
+  // -------------------- AUTO ADD RECOMMENDED TREATMENT --------------------
+  useEffect(() => {
+    if (
+      formData?.symptoms?.diagnosis &&
+      !selectedTestTreatments.includes(formData.symptoms.diagnosis) &&
+      !generatedData[formData.symptoms.diagnosis]
+    ) {
+      const diag = formData.symptoms.diagnosis
+      setSelectedTestTreatments((prev) => [...prev, diag])
+      setTreatmentConfigs((prev) => ({
+        ...prev,
+        [diag]: { ...DEFAULT_CFG },
+      }))
+    }
+  }, [formData, selectedTestTreatments, generatedData])
+
+  // -------------------- INITIALIZE FROM SEED --------------------
   useEffect(() => {
     if (initializedFromSeed) return
 
@@ -113,6 +120,14 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
     setInitializedFromSeed(true)
   }, [seed, initializedFromSeed])
 
+  // -------------------- DROPDOWN LOGIC --------------------
+  // 🔹 Show ONLY the recommended treatment in dropdown (hide others)
+  const diagnosisName = formData?.symptoms?.diagnosis || ''
+  const optionsToShow = diagnosisName
+    ? [diagnosisName] // only recommended one
+    : availableTreatments.map((t) => t.treatmentName)
+
+  // -------------------- ADD / REMOVE --------------------
   const addTreatment = (value) => {
     if (!value) return
     if (selectedTestTreatments.includes(value)) {
@@ -140,11 +155,10 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
       delete next[t]
       return next
     })
-    setSelectedTreatmentOption(null) // 🔑 clear the dropdown
+    setSelectedTreatmentOption(null)
   }
 
-
-
+  // -------------------- UPDATE CONFIG --------------------
   const updateCfg = (t, field, value) => {
     setTreatmentConfigs((prev) => {
       const newCfg = {
@@ -153,167 +167,139 @@ const TestTreatments = ({ seed = {}, onNext, formData }) => {
           ...prev[t],
           [field]: field === 'sittings' ? Number(value || 0) : value,
         },
-      };
-
-      // Run validation immediately
-      const errors = [];
-      const cfg = newCfg[t];
-
-      if (!cfg.startDate) errors.push("Start date is required");
-      else {
-        const today = new Date();
-        const selected = new Date(cfg.startDate);
-        today.setHours(0, 0, 0, 0);
-        selected.setHours(0, 0, 0, 0);
-        if (selected < today) errors.push("Start date cannot be in the past");
       }
 
-      if (!cfg.sittings || cfg.sittings < 1) errors.push("Sittings must be at least 1");
+      const errors = []
+      const cfg = newCfg[t]
 
-      // Update validationErrors
+      if (!cfg.startDate) errors.push('Start date is required')
+      else {
+        const today = new Date()
+        const selected = new Date(cfg.startDate)
+        today.setHours(0, 0, 0, 0)
+        selected.setHours(0, 0, 0, 0)
+        if (selected < today) errors.push('Start date cannot be in the past')
+      }
+
+      if (!cfg.sittings || cfg.sittings < 1) errors.push('Sittings must be at least 1')
+
       setValidationErrors((prevErrors) => {
-        const next = { ...prevErrors };
-        if (errors.length > 0) next[t] = errors.join(". ");
-        else delete next[t];
-        return next;
-      });
+        const next = { ...prevErrors }
+        if (errors.length > 0) next[t] = errors.join('. ')
+        else delete next[t]
+        return next
+      })
 
-      return newCfg;
-    });
-  };
-
-
-  const editSchedule = (t) => {
-    setGeneratedData((prev) => {
-      const meta = prev[t]
-      if (!meta) return prev
-
-      // Derive sensible defaults from the existing table
-      const firstDate = meta.startDate || (Array.isArray(meta.dates) && meta.dates[0]?.date) || ''
-      const sittings =
-        typeof meta.sittings === 'number'
-          ? meta.sittings
-          : Array.isArray(meta.dates)
-            ? meta.dates.length
-            : 1
-
-      // Pre-fill the input card with the existing config
-      setTreatmentConfigs((cfgPrev) => ({
-        ...cfgPrev,
-        [t]: {
-          frequency: meta.frequency || 'day',
-          sittings,
-          status,
-          startDate: firstDate,
-          reason: meta.reason || '',
-        },
-      }))
-
-      // Remove the table so the input card shows up again
-      const next = { ...prev }
-      delete next[t]
-      return next
+      return newCfg
     })
-
-    // Make sure the treatment appears in the selected list (just in case)
-    setSelectedTestTreatments((list) => (list.includes(t) ? list : [...list, t]))
   }
 
+  // -------------------- GENERATE SCHEDULE --------------------
   const generateForTreatment = async (t) => {
-    const cfg = treatmentConfigs[t] || DEFAULT_CFG;
-    const { frequency, sittings, startDate, reason } = cfg;
+    const cfg = treatmentConfigs[t] || DEFAULT_CFG
+    const { frequency, sittings, startDate, reason } = cfg
 
     if (!startDate || !sittings || sittings < 1) {
-      showSnackbar(`Please fill start date and sittings for "${t}"`, 'danger');
-      return;
+      showSnackbar(`Please fill start date and sittings for "${t}"`, 'danger')
+      return
     }
 
-    const start = new Date(startDate);
+    const start = new Date(startDate)
     const dates = Array.from({ length: sittings }, (_, i) => {
-      const next = new Date(start);
-      if (frequency === 'day') next.setDate(start.getDate() + i);
-      if (frequency === 'week') next.setDate(start.getDate() + i * 7);
-      if (frequency === 'month') next.setMonth(start.getMonth() + i);
-      return { date: next.toISOString().split('T')[0], sitting: i + 1 };
-    });
+      const next = new Date(start)
+      if (frequency === 'day') next.setDate(start.getDate() + i)
+      if (frequency === 'week') next.setDate(start.getDate() + i * 7)
+      if (frequency === 'month') next.setMonth(start.getMonth() + i)
+      return { date: next.toISOString().split('T')[0], sitting: i + 1 }
+    })
 
     const newGeneratedData = {
       ...generatedData,
       [t]: { frequency, sittings, startDate, reason, dates, bookingId: formData.bookingId },
-    };
+    }
 
-    setGeneratedData(newGeneratedData);
-    setTreatmentConfigs((prev) => ({ ...prev, [t]: { ...DEFAULT_CFG } }));
+    setGeneratedData(newGeneratedData)
+    setTreatmentConfigs((prev) => ({ ...prev, [t]: { ...DEFAULT_CFG } }))
 
-    await updateTreatmentStatuses(newGeneratedData); // pass the updated data
-  };
+    await updateTreatmentStatuses(newGeneratedData)
+  }
 
+  // -------------------- UPDATE STATUSES --------------------
   const updateTreatmentStatuses = async (dataToUpdate) => {
     try {
-      const updatedData = { ...dataToUpdate };
+      const updatedData = { ...dataToUpdate }
 
       for (const treatment of Object.keys(updatedData)) {
-        const meta = updatedData[treatment];
+        const meta = updatedData[treatment]
+        if (!meta.bookingId) continue
 
-        if (!meta.bookingId) continue;
-
-        const statusData = await getTreatmentStatusByVisitId(formData.patientId, meta.bookingId);
+        const statusData = await getTreatmentStatusByVisitId(formData.patientId, meta.bookingId)
 
         if (Array.isArray(meta.dates)) {
           updatedData[treatment].dates = meta.dates.map((d) => {
-            // Find matching status by date
-            const matched = statusData.find(s => s.date === d.date);
-            return {
-              ...d,
-              status: matched?.status || "Pending"
-            };
-          });
+            const matched = statusData.find((s) => s.date === d.date)
+            return { ...d, status: matched?.status || 'Pending' }
+          })
         }
       }
 
-      setGeneratedData(updatedData);
+      setGeneratedData(updatedData)
     } catch (error) {
-      showSnackbar("Failed to update treatment statuses", "error");
-      console.error(error);
+      showSnackbar('Failed to update treatment statuses', 'error')
+      console.error(error)
     }
-  };
+  }
 
-
-
+  // -------------------- DELETE SCHEDULE --------------------
   const deleteSchedule = (t) => {
-    // remove table
     setGeneratedData((prev) => {
       const next = { ...prev }
       delete next[t]
       return next
     })
-
-    // remove from selected list so no input card shows again
     setSelectedTestTreatments((prev) => prev.filter((x) => x !== t))
-
-    // drop any stored config for that treatment
     setTreatmentConfigs((prev) => {
       const next = { ...prev }
       delete next[t]
       return next
     })
-
     showSnackbar(`Removed "${t}"`, 'info')
   }
 
+  // -------------------- HANDLE NEXT --------------------
   const handleNext = () => {
     const payload = {
-      selectedTestTreatments: selectedTestTreatments,
-      // treatmentReason,
-      generatedData, // now includes per-treatment reason too
+      selectedTestTreatments,
+      generatedData,
     }
     console.log(payload)
     onNext?.(payload)
   }
-  // Checks if any date in generatedData is in the past
-  const hasPastDates = Object.values(generatedData).some(meta =>
-    meta.dates?.some(d => new Date(d.date) < new Date(new Date().setHours(0, 0, 0, 0)))
-  );
+
+  // -------------------- PAST DATES CHECK --------------------
+  const hasPastDates = Object.values(generatedData).some((meta) =>
+    meta.dates?.some((d) => new Date(d.date) < new Date(new Date().setHours(0, 0, 0, 0))),
+  )
+
+  const editSchedule = (treatment) => {
+  const meta = generatedData[treatment]
+  setTreatmentConfigs((prev) => ({
+    ...prev,
+    [treatment]: {
+      frequency: meta.frequency,
+      sittings: meta.sittings,
+      startDate: meta.startDate,
+      reason: meta.reason,
+    },
+  }))
+  setGeneratedData((prev) => {
+    const next = { ...prev }
+    delete next[treatment]
+    return next
+  })
+  showSnackbar(`Editing schedule for "${treatment}"`, "info")
+}
+
   return (
     <div className="pb-5 treatment-wrapper">
       {snackbar.show && (

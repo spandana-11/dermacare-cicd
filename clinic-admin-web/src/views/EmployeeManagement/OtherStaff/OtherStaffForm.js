@@ -197,21 +197,23 @@ const OtherStaffForm = ({
       reader.onerror = (error) => reject(error)
     })
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData((prev) => ({
-        ...prev,
-        ...initialData,
-        address: { ...emptyForm.address, ...(initialData.address || {}) },
-        bankAccountDetails: {
-          ...emptyForm.bankAccountDetails,
-          ...(initialData.bankAccountDetails || {}),
-        },
-      }))
-    } else {
-      setFormData(emptyForm)
-    }
-  }, [initialData])
+ useEffect(() => {
+  if (initialData) {
+    setFormData((prev) => ({
+      ...prev,
+      ...initialData,
+      address: { ...emptyForm.address, ...(initialData.address || {}) },
+      bankAccountDetails: {
+        ...emptyForm.bankAccountDetails,
+        ...(initialData.bankAccountDetails || {}),
+      },
+      profilePicture: prev.profilePicture || initialData.profilePicture || '',
+    }))
+  } else {
+    setFormData(emptyForm)
+  }
+}, [initialData])
+
 
   // 🔹 Handle text inputs (top-level fields)
   const handleChange = (field, value) => {
@@ -292,10 +294,10 @@ const OtherStaffForm = ({
     // ✅ Email validation
 
     const email = formData.emailId.trim()
-    if (!emailPattern.test(email)) {
-      showCustomToast('Please enter a valid email address.', 'error')
-      return
-    }
+    // if (!emailPattern.test(email)) {
+    //   showCustomToast('Please enter a valid email address.', 'error')
+    //   return
+    // }
     const duplicateContact = technicians?.some(
       (t) => t.contactNumber === formData.contactNumber && t.id !== formData.id,
     )
@@ -328,6 +330,7 @@ const OtherStaffForm = ({
 
       // Only clear form & close modal if API returned success
       if (res && (res.status === 201 || (res.status === 200 && res.data?.success))) {
+        console.log('🧾 Submitting formData:', formData.profilePicture?.slice(0, 100))
         setFormData(emptyForm)
         onClose()
       }
@@ -729,11 +732,11 @@ const OtherStaffForm = ({
                       handleChange('emailId', value)
 
                       // Run live validation
-                      const err = validateField('emailId', value)
-                      setErrors((prev) => ({ ...prev, emailId: err }))
+                      // const err = validateField('emailId', value)
+                      // setErrors((prev) => ({ ...prev, emailId: err }))
                     }}
                   />
-                  {errors.emailId && <div className="text-danger mt-1">{errors.emailId}</div>}
+                  {/* {errors.emailId && <div className="text-danger mt-1">{errors.emailId}</div>} */}
                 </div>
               </div>
 
@@ -966,154 +969,153 @@ const OtherStaffForm = ({
 
               {/* 🔹 Bank Details */}
               <h5 className="mt-3">Bank Account Details</h5>
-              {Object.keys(formData.bankAccountDetails)
-                .reduce((rows, field, index) => {
-                  if (index % 3 === 0) rows.push([]) // start new row every 3 fields
-                  rows[rows.length - 1].push(field)
-                  return rows
-                }, [])
-                .map((rowFields, rowIndex) => (
-                  <div className="row mb-3" key={rowIndex}>
-                    {rowFields.map((field) => (
-                      <div className="col-md-4" key={field}>
-                        <CFormLabel className="text-capitalize">
-                          {field} <span style={{ color: 'red' }}>*</span>
-                        </CFormLabel>
-                        <CFormInput
-                          value={formData.bankAccountDetails[field]}
-                          disabled={ifscLoading && (field === 'bankName' || field === 'branchName')}
-                          placeholder={
-                            ifscLoading && (field === 'bankName' || field === 'branchName')
-                              ? 'Fetching...'
-                              : ''
-                          }
-                          maxLength={
-                            field === 'accountNumber'
-                              ? 20
-                              : field === 'panCardNumber'
-                                ? 10
-                                : field === 'ifscCode'
-                                  ? 11
-                                  : undefined
-                          }
-                          onChange={async (e) => {
-                            let value = e.target.value
-                            // Account Holder Name → letters & spaces only
-                            if (field === 'accountHolderName') {
-                              value = value.replace(/[^A-Za-z\s]/g, '') // remove numbers/special chars
-                              handleNestedChange('bankAccountDetails', field, value)
-                              return
-                            }
-                            if (field === 'accountNumber') {
-                              if (/^\d*$/.test(value)) {
-                                handleNestedChange('bankAccountDetails', field, value)
-                              }
-                              return
-                            }
-
-                            if (field === 'panCardNumber') {
-                              value = value.toUpperCase()
-                              if (/^[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}$/.test(value)) {
-                                handleNestedChange('bankAccountDetails', field, value)
-                              }
-                              return
-                            }
-
-                            if (field === 'ifscCode') {
-                              value = value.toUpperCase()
-                              if (/^[A-Z0-9]*$/.test(value)) {
-                                handleNestedChange('bankAccountDetails', field, value)
-                              }
-                              return
-                            }
-
-                            handleNestedChange('bankAccountDetails', field, value)
-                          }}
-                          onBlur={async () => {
-                            // Validate the field on blur
-                            const error = validateField(
-                              field,
-                              formData.bankAccountDetails[field],
-                              formData,
-                            )
-                            setErrors((prev) => ({
-                              ...prev,
-                              bankAccountDetails: {
-                                ...prev.bankAccountDetails,
-                                [field]: error,
-                              },
-                            }))
-
-                            // PAN specific validation
-                            if (
-                              field === 'panCardNumber' &&
-                              formData.bankAccountDetails[field].length === 10
-                            ) {
-                              const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
-                              if (!panRegex.test(formData.bankAccountDetails[field])) {
-                                showCustomToast('Invalid PAN format (e.g., ABCDE1234F)', 'error')
-                              }
-                            }
-
-                            // IFSC specific validation & fetch bank info
-                            if (field === 'ifscCode' && value.length === 11) {
-                              const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
-                              if (!ifscRegex.test(value)) {
-                                showCustomToast('Invalid IFSC format (e.g., HDFC0001234)', 'error')
-                                handleNestedChange('bankAccountDetails', 'bankName', '')
-                                handleNestedChange('bankAccountDetails', 'branchName', '')
-                              } else {
-                                try {
-                                  // ✅ Show loading in UI
-                                  setIfscLoading(true)
-                                  handleNestedChange(
-                                    'bankAccountDetails',
-                                    'bankName',
-                                    'Fetching...',
-                                  )
-                                  handleNestedChange(
-                                    'bankAccountDetails',
-                                    'branchName',
-                                    'Fetching...',
-                                  )
-
-                                  const res = await fetch(`https://ifsc.razorpay.com/${value}`)
-                                  if (res.ok) {
-                                    const data = await res.json()
-                                    handleNestedChange(
-                                      'bankAccountDetails',
-                                      'bankName',
-                                      data.BANK || '',
-                                    )
-                                    handleNestedChange(
-                                      'bankAccountDetails',
-                                      'branchName',
-                                      data.BRANCH || '',
-                                    )
-                                  } else {
-                                    showCustomToast('Invalid IFSC code', 'error')
-                                    handleNestedChange('bankAccountDetails', 'bankName', '')
-                                    handleNestedChange('bankAccountDetails', 'branchName', '')
-                                  }
-                                } catch (err) {
-                                  showCustomToast('Error fetching bank details', 'error')
-                                  handleNestedChange('bankAccountDetails', 'bankName', '')
-                                  handleNestedChange('bankAccountDetails', 'branchName', '')
-                                } finally {
-                                  // ✅ Hide loading
-                                  setIfscLoading(false)
-                                }
-                              }
-                            }
-                          }}
-                        />
-                        {errors.bankAccountDetails?.[field] && (
-                          <div className="text-danger mt-1">{errors.bankAccountDetails[field]}</div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ))}
+                          {Object.keys(formData.bankAccountDetails)
+                            .reduce((rows, field, index) => {
+                              if (index % 3 === 0) rows.push([]) // start new row every 3 fields
+                              rows[rows.length - 1].push(field)
+                              return rows
+                            }, [])
+                            .map((rowFields, rowIndex) => (
+                              <div className="row mb-3" key={rowIndex}>
+                                {rowFields.map((field) => (
+                                  <div className="col-md-4" key={field}>
+                                    <CFormLabel className="text-capitalize">
+                                      {field} <span style={{ color: 'red' }}>*</span>
+                                    </CFormLabel>
+                                    <CFormInput
+                                      value={formData.bankAccountDetails[field]}
+                                      disabled={ifscLoading && (field === 'bankName' || field === 'branchName')}
+                                      placeholder={
+                                        ifscLoading && (field === 'bankName' || field === 'branchName')
+                                          ? 'Fetching...'
+                                          : ''
+                                      }
+                                      maxLength={
+                                        field === 'accountNumber'
+                                          ? 20
+                                          : field === 'panCardNumber'
+                                            ? 10
+                                            : field === 'ifscCode'
+                                              ? 11
+                                              : undefined
+                                      }
+                                      onChange={async (e) => {
+                                        let value = e.target.value
+            
+                                        // Account Number → only digits
+                                        if (field === 'accountNumber') {
+                                          if (/^\d*$/.test(value))
+                                            handleNestedChange('bankAccountDetails', field, value)
+                                        }
+                                        // PAN → uppercase, specific format
+                                        else if (field === 'panCardNumber') {
+                                          value = value.toUpperCase()
+                                          if (/^[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}$/.test(value))
+                                            handleNestedChange('bankAccountDetails', field, value)
+                                        }
+                                        // IFSC → uppercase, alphanumeric
+                                        else if (field === 'ifscCode') {
+                                          value = value.toUpperCase()
+                                          if (/^[A-Z0-9]*$/.test(value))
+                                            handleNestedChange('bankAccountDetails', field, value)
+                                        }
+                                        // Account Holder Name → letters and spaces only
+                                        else if (field === 'accountHolderName') {
+                                          if (/^[A-Za-z\s]*$/.test(value))
+                                            handleNestedChange('bankAccountDetails', field, value)
+                                        }
+                                        // Other fields → accept anything
+                                        else {
+                                          handleNestedChange('bankAccountDetails', field, value)
+                                        }
+            
+                                        // Live validation
+                                        const error = validateField(field, value, formData)
+                                        setErrors((prev) => ({
+                                          ...prev,
+                                          bankAccountDetails: {
+                                            ...prev.bankAccountDetails,
+                                            [field]: error,
+                                          },
+                                        }))
+                                      }}
+                                      onBlur={async () => {
+                                        const value = formData.bankAccountDetails[field]
+                                        const error = validateField(field, value, formData)
+                                        setErrors((prev) => ({
+                                          ...prev,
+                                          bankAccountDetails: {
+                                            ...prev.bankAccountDetails,
+                                            [field]: error,
+                                          },
+                                        }))
+            
+                                        // PAN validation
+                                        if (field === 'panCardNumber' && value.length === 10) {
+                                          const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
+                                          if (!panRegex.test(value))
+                                            showCustomToast('Invalid PAN format (e.g., ABCDE1234F)', 'error')
+                                        }
+            
+                                        // IFSC validation
+                                        if (field === 'ifscCode' && value.length === 11) {
+                                          const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
+                                          if (!ifscRegex.test(value)) {
+                                            showCustomToast('Invalid IFSC format (e.g., HDFC0001234)', 'error')
+                                            handleNestedChange('bankAccountDetails', 'bankName', '')
+                                            handleNestedChange('bankAccountDetails', 'branchName', '')
+                                          } else {
+                                            try {
+                                              // ✅ Show loading in UI
+                                              setIfscLoading(true)
+                                              handleNestedChange(
+                                                'bankAccountDetails',
+                                                'bankName',
+                                                'Fetching...',
+                                              )
+                                              handleNestedChange(
+                                                'bankAccountDetails',
+                                                'branchName',
+                                                'Fetching...',
+                                              )
+            
+                                              const res = await fetch(`https://ifsc.razorpay.com/${value}`)
+                                              if (res.ok) {
+                                                const data = await res.json()
+                                                handleNestedChange(
+                                                  'bankAccountDetails',
+                                                  'bankName',
+                                                  data.BANK || '',
+                                                )
+                                                handleNestedChange(
+                                                  'bankAccountDetails',
+                                                  'branchName',
+                                                  data.BRANCH || '',
+                                                )
+                                              } else {
+                                                showCustomToast('Invalid IFSC code', 'error')
+                                                handleNestedChange('bankAccountDetails', 'bankName', '')
+                                                handleNestedChange('bankAccountDetails', 'branchName', '')
+                                              }
+                                            } catch (err) {
+                                              showCustomToast('Error fetching bank details', 'error')
+                                              handleNestedChange('bankAccountDetails', 'bankName', '')
+                                              handleNestedChange('bankAccountDetails', 'branchName', '')
+                                            } finally {
+                                              // ✅ Hide loading
+                                              setIfscLoading(false)
+                                            }
+                                          }
+                                        }
+                                      }}
+                                    />
+                                    {errors.bankAccountDetails?.[field] && (
+                                      <div className="text-danger mt-1">{errors.bankAccountDetails[field]}</div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ))}
 
               {/* 🔹 Documents */}
               <h5 className="mt-3">Documents</h5>
@@ -1130,7 +1132,10 @@ const OtherStaffForm = ({
                       const file = e.target.files[0]
                       if (file) {
                         const base64 = await toBase64(file)
-                        handleChange('profilePicture', base64) // store in formData
+                      setFormData((prev) => ({
+        ...prev,
+        profilePicture: base64,
+      }))// store in formData
                       }
                     }}
                   />

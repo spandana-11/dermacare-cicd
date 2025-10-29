@@ -480,4 +480,68 @@ public class SubServicesServiceImpl implements SubServicesService {
 	    }
 	    
 	    return ResponseEntity.status(res.getStatusCode()).body(res);
-}}
+}
+//------------------------------------Amount calculation 	using cosultation type (1= FOC,2=paid)-----------------------
+	@Override
+	public ResponseEntity<ResponseStructure<SubServicesDto>> getSubServiceCostByConsultationType(
+	        String hospitalId, String subServiceId, String subServiceName, int consultationType) {
+
+	    ResponseStructure<SubServicesDto> response = new ResponseStructure<>();
+
+	    try {
+	        // Fetch subservice using hospitalId, subServiceId, and subServiceName
+	        SubServices subService = subServiceRepository
+	                .findByHospitalIdAndSubServiceIdAndSubServiceNameIgnoreCase(
+	                        hospitalId, new ObjectId(subServiceId), subServiceName);
+
+	        if (subService == null) {
+	            response = new ResponseStructure<>(null,
+	                    "SubService not found for given Hospital ID, SubService ID, and Name",
+	                    null, HttpStatus.NOT_FOUND.value());
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+	        }
+
+	        // Clone to avoid modifying DB entity
+	        SubServices tempSubService = new SubServices();
+	        tempSubService.setSubServiceId(subService.getSubServiceId());
+	        tempSubService.setSubServiceName(subService.getSubServiceName());
+	        tempSubService.setCategoryId(subService.getCategoryId());
+	        tempSubService.setCategoryName(subService.getCategoryName());
+	        tempSubService.setServiceId(subService.getServiceId());
+	        tempSubService.setServiceName(subService.getServiceName());
+	        tempSubService.setHospitalId(subService.getHospitalId());
+	        tempSubService.setPrice(subService.getPrice());
+	        tempSubService.setDiscountPercentage(subService.getDiscountPercentage());
+	        tempSubService.setTaxPercentage(subService.getTaxPercentage());
+	        tempSubService.setPlatformFeePercentage(subService.getPlatformFeePercentage());
+	        tempSubService.setGst(subService.getGst());
+	        tempSubService.setConsultationFee(subService.getConsultationFee());
+
+	        // 🧮 Apply consultation type logic (1 = FOC, 2 = Paid)
+	        if (consultationType == 1) {
+	            tempSubService.setConsultationFee(0); // Free consultation
+	        } else if (consultationType == 2) {
+	            tempSubService.setConsultationFee(subService.getConsultationFee()); // Keep original
+	        } else {
+	            response = new ResponseStructure<>(null,
+	                    "Invalid consultation type. Allowed values: 1 = FOC, 2 = Paid",
+	                    null, HttpStatus.BAD_REQUEST.value());
+	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+	        }
+
+	        // 🧾 Recalculate amount dynamically (no DB save)
+	        calculateAmounts(tempSubService);
+
+	        SubServicesDto dto = HelperForConversion.toDto(tempSubService);
+	        response = new ResponseStructure<>(dto, "Amount calculated successfully", null,
+	                HttpStatus.OK.value());
+	        return ResponseEntity.ok(response);
+
+	    } catch (Exception e) {
+	        response = new ResponseStructure<>(null, e.getMessage(), null,
+	                HttpStatus.INTERNAL_SERVER_ERROR.value());
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	    }
+	}
+
+}

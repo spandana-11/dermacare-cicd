@@ -205,5 +205,22 @@ public class SubServiceServiceImpl implements SubServiceService {
 		}
 		return rawMessage;
 	}
+	
+	
+	// ------------------------------------Amount calculation using cosultation type (1= FOC,2=paid)-----------------------
+	@Override
+	public ResponseEntity<ResponseStructure<SubServicesDto>> getSubServiceCostByConsultationType(
+	        String hospitalId, String subServiceId, String subServiceName, int consultationType) {
+	    try {
+	        ResponseEntity<ResponseStructure<SubServicesDto>> response =
+	                feignClient.getSubServiceCostByConsultationType(hospitalId, subServiceId, subServiceName, consultationType);
+
+	        return ResponseEntity.status(response.getBody().getStatusCode()).body(response.getBody());
+
+	    } catch (FeignException e) {
+	        return buildErrorResponse(ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR.value());
+	    }
+	}
+
 
 }

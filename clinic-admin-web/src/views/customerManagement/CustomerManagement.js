@@ -380,6 +380,17 @@ const CustomerManagement = () => {
       handlePincodeChange(formData.address.postalCode)
     }
   }, [isEditing])
+  // ✅ Auto-select PO during edit
+  useEffect(() => {
+    if (isEditing && postOffices.length > 0 && formData.address.city) {
+      const matchedPO = postOffices.find(
+        (po) => po.Name?.toLowerCase() === formData.address.city.toLowerCase(),
+      )
+      if (matchedPO) {
+        setSelectedPO(matchedPO)
+      }
+    }
+  }, [isEditing, postOffices, formData.address.city])
 
   const handleFormSubmit = async (e) => {
     e.preventDefault()
@@ -1129,12 +1140,13 @@ const CustomerManagement = () => {
                   PO Address <span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormSelect
-                  value={selectedPO?.Name || ''}
+                  value={selectedPO?.Name || formData.address.city || ''} // ✅ use city for restore
                   onChange={(e) => {
                     const po = postOffices.find((po) => po.Name === e.target.value)
                     setSelectedPO(po)
+
                     if (po) {
-                      handleNestedChange('address', 'city', po.Block || '')
+                      handleNestedChange('address', 'city', po.Name || '') // ✅ save PO name as city
                       handleNestedChange('address', 'state', po.State || '')
                     }
                   }}
@@ -1146,6 +1158,7 @@ const CustomerManagement = () => {
                     </option>
                   ))}
                 </CFormSelect>
+
                 {formErrors.postOffice && (
                   <div className="text-danger small">{formErrors.postOffice}</div>
                 )}

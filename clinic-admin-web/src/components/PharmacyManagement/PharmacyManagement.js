@@ -127,9 +127,38 @@ const PharmacyManagement = () => {
     const errors = {}
 
     // Medicine Info
-    if (!formData.name?.trim()) errors.name = 'Medicine Name is required'
-    if (!formData.dose?.trim()) errors.dose = 'Dosage is required'
-    if (!formData.medicineType?.trim()) errors.medicineType = 'Medicine Type is required'
+
+    // ✅ Regex allows alphabets, numbers, and medicine-related symbols
+    const medicineRegex = /^[A-Za-z0-9\s.,\-()\/+%]*$/
+    // ✅ Must contain at least one alphabet
+    const hasAlphabet = /[A-Za-z]/
+
+    // ----------------------------
+    // Medicine Info
+    // ----------------------------
+    if (!formData.name?.trim()) {
+      errors.name = 'Medicine Name is required'
+    } else if (!medicineRegex.test(formData.name.trim())) {
+      errors.name = 'Only letters, numbers, and symbols (.,-/+%) are allowed'
+    } else if (!hasAlphabet.test(formData.name.trim())) {
+      errors.name = 'Medicine Name must include at least one letter'
+    }
+
+    if (!formData.dose?.trim()) {
+      errors.dose = 'Dosage is required'
+    } else if (!medicineRegex.test(formData.dose.trim())) {
+      errors.dose = 'Only letters, numbers, and symbols (.,-/+%) are allowed'
+    } else if (!hasAlphabet.test(formData.dose.trim())) {
+      errors.dose = 'Dosage must include at least one letter'
+    }
+
+    if (!formData.medicineType?.trim()) {
+      errors.medicineType = 'Medicine Type is required'
+    } else if (!medicineRegex.test(formData.medicineType.trim())) {
+      errors.medicineType = 'Only letters, numbers, and symbols (.,-/+%) are allowed'
+    } else if (!hasAlphabet.test(formData.medicineType.trim())) {
+      errors.medicineType = 'Medicine Type must include at least one letter'
+    }
 
     // Prescription Info
     if (!formData.duration) errors.duration = 'Duration is required'
@@ -941,7 +970,7 @@ const PharmacyManagement = () => {
         isVisible={isDeleteModalVisible}
         title="Delete Medicine"
         message="Are you sure you want to delete this medicine? This action cannot be undone."
-       isLoading={delloading}
+        isLoading={delloading}
         confirmText="Yes, Delete"
         cancelText="Cancel"
         confirmColor="danger"

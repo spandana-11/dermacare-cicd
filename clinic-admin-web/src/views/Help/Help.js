@@ -127,7 +127,7 @@ function Help() {
   return (
     <>
       <PageLayout branch={mainBranch} />
-      <div className="help-container p-3">
+      <div className="help-container">
         {/* 🔍 Search Bar */}
         <div className="mb-4 text-center ">
           <CFormInput
@@ -135,20 +135,15 @@ function Help() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
-              maxWidth: '600px',
               margin: '0 auto',
-
-              boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
             }}
           />
         </div>
 
         {/* 📘 Accordion Section */}
         <div
-          className="mx-auto"
+          className="mx-auto mb-4"
           style={{
-            maxWidth: '800px',
-            minHeight: '400px', // Reserve space so it won't jump
             transition: 'all 0.2s ease', // Smooth transition
           }}
         >
@@ -159,7 +154,7 @@ function Help() {
                 <CAccordionBody
                   style={{
                     color: 'var(--color-black)',
-                    lineHeight: '1.7',
+
                     fontSize: '0.95rem',
                     transition: 'all 0.2s ease',
                   }}
@@ -178,7 +173,7 @@ function Help() {
         </div>
 
         {/* 📞 Contact Support Section */}
-        <div className="text-center">
+        <div className="text-center mb-4">
           <h5 className="fw-bold mb-2">Need More Help?</h5>
           <p className="text-muted mb-4">Contact our support team for personalized assistance.</p>
 

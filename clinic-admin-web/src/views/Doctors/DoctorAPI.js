@@ -1,7 +1,7 @@
 // doctorUtils.js
 
 import axios from 'axios'
-import { BASE_URL, getAllDoctors, getDoctorByClinicId, doctorAvailableUrl, GetBranches_ByClinicId } from '../../baseUrl'
+import { BASE_URL, getAllDoctors, getDoctorByClinicId, doctorAvailableUrl, GetBranches_ByClinicId, GetBy_DoctorId } from '../../baseUrl'
 import { toast } from 'react-toastify'
 import { http } from '../../Utils/Interceptors'
 import { showCustomToast } from '../../Utils/Toaster'
@@ -101,7 +101,7 @@ export const getDoctorByClinicIdData = async (clinicId,branchId) => {
 //   }
 // }
 export const getDoctorDetailsById = async (doctorId) => {
-  console.log('doctorData calling')
+  console.log(`doctorData calling ${doctorId}`)
   try {
     const response = await http.get(`/${GetBy_DoctorId}/${doctorId}`)
     console.log(`doctorData calling ${response.data}`)

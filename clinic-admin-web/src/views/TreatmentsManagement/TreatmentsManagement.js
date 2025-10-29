@@ -131,7 +131,7 @@ const TreatmentsManagement = () => {
     } catch (error) {
       showCustomToast('Failed to delete treatment.', 'error')
       console.error('Delete error:', error)
-    }finally{
+    } finally {
       setDelLoading(false)
     }
     setIsModalVisible(false)
@@ -264,74 +264,6 @@ const TreatmentsManagement = () => {
     setIsModalVisible(true)
   }
 
-  //   const columns = [
-  //   {
-  //     name: 'S.No',
-  //     selector: (row, index) => (currentPage - 1) * rowsPerPage + index + 1,
-  //     width: '25%',
-  //     center: true,
-  //     style: { paddingLeft: '12px', paddingRight: '12px' }, // neat spacing
-  //   },
-  //   {
-  //     name: 'Treatment Name',
-  //     selector: (row) => row.treatmentName,
-  //     width: '25%',
-  //     style: { paddingLeft: '25px', paddingRight: '12px' },
-  //   },
-  //   {
-  //     name: 'Actions',
-  //     cell: (row) => (
-  //       <div
-  //         style={{
-  //           display: 'flex',
-  //           justifyContent: 'center',
-  //           gap: '30px', // 👈 evenly spaced buttons
-  //           width: '100%',
-  //         }}
-  //       >
-  //         <span
-  //           onClick={() => setViewTreatment(row)}
-  //           style={{ color: 'green', cursor: 'pointer', fontWeight: 500 }}
-  //         >
-  //           View
-  //         </span>
-  //         <span
-  //           onClick={() => handleTreatmentEdit(row)}
-  //           style={{ color: 'blue', cursor: 'pointer', fontWeight: 500 }}
-  //         >
-  //           Edit
-  //         </span>
-  //         <span
-  //           onClick={() => handleTreatmentDelete(row)}
-  //           style={{ color: 'red', cursor: 'pointer', fontWeight: 500 }}
-  //         >
-  //           Delete
-  //         </span>
-  //       </div>
-  //     ),
-  //     width: '22%',
-  //     center: true,
-  //   },
-  // ]
-
-  // const ConfirmationModal = ({ isVisible, message, onConfirm, onCancel }) => {
-  //   return (
-  //     <CModal visible={isVisible} onClose={onCancel} backdrop="static">
-  //       <CModalHeader>
-  //         <CModalTitle>Confirmation</CModalTitle>
-  //       </CModalHeader>
-  //       <CModalBody>{message}</CModalBody>
-  //       <CModalFooter>
-  //         <CButton color="secondary" onClick={onCancel}>
-  //           Cancel
-  //         </CButton>
-  //         <CButton color="danger" onClick={onConfirm}>
-  //           Confirm
-  //         </CButton>
-  //       </CModalFooter>
-  //     </CModal>
-  //   )
-  // }
   const filteredData = React.useMemo(() => {
     const q = searchQuery.toLowerCase().trim()
     if (!q) return treatment
@@ -350,17 +282,6 @@ const TreatmentsManagement = () => {
     <div>
       {/* <ToastContainer /> */}
       <CForm className="d-flex justify-content-between mb-3">
-        {/* <CInputGroup className="mb-3" style={{ width: '300px', marginLeft: '40px' }}>
-          <CFormInput
-            type="text"
-            placeholder="Search by Treatment Name"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <CInputGroupText>
-            <CIcon icon={cilSearch} />
-          </CInputGroupText>
-        </CInputGroup> */}
         {can('Treatments', 'create') && (
           <div
             className=" w-100"
@@ -455,7 +376,7 @@ const TreatmentsManagement = () => {
                 }
               }}
               placeholder="Enter Treatment Name"
-              className={(errors.treatmentName ? 'is-invalid' : '', 'mb-3')}
+              className={`mb-3 ${errors.treatmentName ? 'is-invalid' : ''}`}
             />
             {errors.treatmentName && (
               <div className="invalid-feedback" style={{ color: 'red' }}>
@@ -515,7 +436,7 @@ const TreatmentsManagement = () => {
                   setErrors((prev) => ({ ...prev, treatmentName: '' }))
                 }
               }}
-              className={errors.treatmentName ? 'is-invalid' : ''}
+              className={`${errors.treatmentName ? 'is-invalid' : ''}`}
             />
             {errors.treatmentName && (
               <div className="invalid-feedback" style={{ color: 'red' }}>
@@ -551,12 +472,6 @@ const TreatmentsManagement = () => {
       </CModal>
 
       {/* Delete Confirmation */}
-      {/* <ConfirmationModal
-        isVisible={isModalVisible}
-        message="Are you sure you want to delete this treatment?"
-        onConfirm={handleConfirmDelete}
-        onCancel={handleCancelDelete}
-      /> */}
 
       <ConfirmationModal
         isVisible={isModalVisible}
@@ -638,31 +553,6 @@ const TreatmentsManagement = () => {
                       )}
                     </div>
                   </CTableDataCell>
-                  {/* <CTableDataCell>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '140px' }}>
-                    <div
-                      onClick={() => setViewTreatment(treatment)}
-                      style={{ color: 'green', cursor: 'pointer' }}
-                    >
-                      View
-                    </div>
-                    <div
-                      onClick={() => {
-                        setTreatmentToEdit(treatment)
-                        setEditTreatmentMode(true)
-                      }}
-                      style={{ color: 'blue', cursor: 'pointer' }}
-                    >
-                      Edit
-                    </div>
-                    <div
-                      onClick={() => handleTreatmentDelete(treatment)}
-                      style={{ color: 'red', cursor: 'pointer' }}
-                    >
-                      Delete
-                    </div>
-                  </div>
-                </CTableDataCell> */}
                 </CTableRow>
               ))
             ) : (

@@ -57,6 +57,7 @@ export const serviceDataH = async () => {
 }
 
 export const serviceData = async (id) => {
+  console.log(id)
   try {
     const response = await http.get(`/${getservice}/${id}`)
     console.log('Service response:', response.data)

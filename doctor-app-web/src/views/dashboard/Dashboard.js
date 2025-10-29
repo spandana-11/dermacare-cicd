@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import 'bootstrap/dist/css/bootstrap.min.css'
+import React, { useEffect, useState, useCallback } from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import {
   CCard,
   CTable,
@@ -12,86 +12,93 @@ import {
   CDropdownToggle,
   CDropdownMenu,
   CDropdownItem,
-} from '@coreui/react'
+} from '@coreui/react';
 
-import Button from '../../components/CustomButton/CustomButton'
-import TooltipButton from '../../components/CustomButton/TooltipButton'
-import { COLORS, SIZES } from '../../Themes'
-import { useDoctorContext } from '../../Context/DoctorContext'
-import { getTodayAppointments } from '../../Auth/Auth'
-import CalendarModal from '../../utils/CalenderModal'
-import { useNavigate } from 'react-router-dom'
+import Button from '../../components/CustomButton/CustomButton';
+import TooltipButton from '../../components/CustomButton/TooltipButton';
+import { COLORS, SIZES } from '../../Themes';
+import { useDoctorContext } from '../../Context/DoctorContext';
+import { getTodayAppointments, getTodayFutureAppointments } from '../../Auth/Auth';
+import CalendarModal from '../../utils/CalenderModal';
+import { useNavigate } from 'react-router-dom';
 
-// Helper function
-const capitalizeFirst = (str) => str?.charAt(0).toUpperCase() + str?.slice(1)
+const capitalizeFirst = (str) => str?.charAt(0).toUpperCase() + str?.slice(1);
 
 const Dashboard = () => {
-  const navigate = useNavigate()
-  const {
-    setPatientData,
-    setTodayAppointments,
-    todayAppointments,
-    doctorDetails,
-  } = useDoctorContext()
+  const navigate = useNavigate();
+  const { setPatientData, setTodayAppointments, todayAppointments, doctorDetails } =
+    useDoctorContext();
 
-  const [selectedType, setSelectedType] = useState(null)
-  const [selectedBranch, setSelectedBranch] = useState(null)
-  const [showCalendar, setShowCalendar] = useState(false)
-  const [branches, setBranches] = useState([])
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(10)
+  const [selectedType, setSelectedType] = useState(null);
+  const [selectedBranch, setSelectedBranch] = useState(null);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [branches, setBranches] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [futureAppointments, setFutureAppointments] = useState([]);
+  const allBranches = doctorDetails?.branches || [];
 
-  const allBranches = doctorDetails?.branches || []
-
-  // Fetch appointments
-  const fetchAppointments = async () => {
+  // Fetch today's appointments
+  const fetchAppointments = useCallback(async () => {
     try {
-      const response = await getTodayAppointments()
+      const response = await getTodayAppointments();
       if (response.statusCode === 200) {
-        setTodayAppointments(response.data)
-        setBranches(allBranches)
+        setTodayAppointments(response.data);
+        setBranches(allBranches);
       }
     } catch (error) {
-      console.error('❌ Error fetching appointments:', error)
+      console.error('❌ Error fetching appointments:', error);
     }
-  }
+  }, [allBranches, setTodayAppointments]);
 
+  // Fetch future appointments (for calendar modal)
+  const fetchFutureAppointments = useCallback(async () => {
+    try {
+      const response = await getTodayFutureAppointments();
+      if (response.statusCode === 200) {
+        setFutureAppointments(response.data);
+      } else {
+        setFutureAppointments([]);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching future appointments:', error);
+      setFutureAppointments([]);
+    }
+  }, []);
+
+  // Auto-refresh today's appointments every 60s
   useEffect(() => {
-    setPatientData(null)
-    fetchAppointments()
+    setPatientData(null);
+    fetchAppointments(); // immediate
 
-    const interval = setInterval(() => {
-      fetchAppointments()
-    }, 10000)
+    const intervalId = setInterval(fetchAppointments, 60000);
+    return () => clearInterval(intervalId);
+  }, [fetchAppointments, setPatientData]);
 
-    return () => clearInterval(interval)
-  }, [doctorDetails])
-
-  // Filter patients based on type and branch
+  // Filter patients by type & branch
   const filteredPatients = todayAppointments.filter((item) => {
-    const typeMatch = selectedType ? item.consultationType === selectedType : true
-    const branchMatch = selectedBranch ? item.branchId === selectedBranch.branchId : true
-    return typeMatch && branchMatch
-  })
+    const typeMatch = selectedType ? item.consultationType === selectedType : true;
+    const branchMatch = selectedBranch ? item.branchId === selectedBranch.branchId : true;
+    return typeMatch && branchMatch;
+  });
 
-  const totalPages = Math.ceil(filteredPatients.length / itemsPerPage)
+  const totalPages = Math.ceil(filteredPatients.length / itemsPerPage);
   const currentPatients = filteredPatients.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
-  )
+  );
 
-  // Count consultations
+  // Consultation counts
   const consultationCounts = todayAppointments.reduce((acc, item) => {
-    acc[item.consultationType] = (acc[item.consultationType] || 0) + 1
-    return acc
-  }, {})
+    acc[item.consultationType] = (acc[item.consultationType] || 0) + 1;
+    return acc;
+  }, {});
 
-  // Handle calendar click (simple navigation)
   const handleCalendarClick = (appointment) => {
-    if (!appointment) return
-    setPatientData(appointment)
-    navigate(`/tab-content/${appointment.patientId}`, { state: { patient: appointment } })
-  }
+    if (!appointment) return;
+    setPatientData(appointment);
+    navigate(`/tab-content/${appointment.patientId}`, { state: { patient: appointment } });
+  };
 
   return (
     <div className="container-fluid mt-3">
@@ -110,8 +117,8 @@ const Dashboard = () => {
                 customColor={COLORS.bgcolor}
                 color={COLORS.black}
                 onClick={() => {
-                  setSelectedType(null)
-                  setSelectedBranch(null) // 🔥 reset branch too
+                  setSelectedType(null);
+                  setSelectedBranch(null);
                 }}
                 size="small"
               >
@@ -130,6 +137,7 @@ const Dashboard = () => {
                 </Button>
               ))}
             </div>
+
             <div className="d-flex gap-2">
               {/* Branch Dropdown */}
               <CDropdown>
@@ -144,19 +152,11 @@ const Dashboard = () => {
                 >
                   {selectedBranch ? selectedBranch.branchName : 'All Branches'}
                 </CDropdownToggle>
-
                 <CDropdownMenu>
-                  {/* All Branches option */}
-                  <CDropdownItem onClick={() => setSelectedBranch(null)}>
-                    All Branches
-                  </CDropdownItem>
-
+                  <CDropdownItem onClick={() => setSelectedBranch(null)}>All Branches</CDropdownItem>
                   {branches.length > 0 ? (
                     branches.map((branch) => (
-                      <CDropdownItem
-                        key={branch.branchId}
-                        onClick={() => setSelectedBranch(branch)}
-                      >
+                      <CDropdownItem key={branch.branchId} onClick={() => setSelectedBranch(branch)}>
                         {branch.branchName}
                       </CDropdownItem>
                     ))
@@ -171,42 +171,35 @@ const Dashboard = () => {
                 customColor={COLORS.bgcolor}
                 color={COLORS.black}
                 size="small"
-                onClick={() => setShowCalendar(true)}
+                onClick={() => {
+                  fetchFutureAppointments();
+                  setShowCalendar(true);
+                }}
               >
                 My Calendar
               </Button>
             </div>
-
           </div>
 
           {/* Appointments Table */}
-          <div
-            style={{ maxHeight: 'calc(100vh - 250px)', overflowY: 'auto', borderRadius: '8px' }}
-          >
+          <div style={{ maxHeight: 'calc(100vh - 250px)', overflowY: 'auto', borderRadius: '8px' }}>
             <CTable className="border">
               <CTableHead>
                 <CTableRow>
-                  {[
-                    'S.No',
-                    'Patient ID',
-                    'Name',
-                    'Mobile',
-                    'Date',
-                    'Time',
-                    'Consultation',
-                    'Branch',
-                    'Action',
-                  ].map((header, i) => (
-                    <CTableHeaderCell
-                      key={i}
-                      className={header === 'Action' ? 'text-center' : ''}
-                      style={{ backgroundColor: COLORS.bgcolor, color: COLORS.black }}
-                    >
-                      {header}
-                    </CTableHeaderCell>
-                  ))}
+                  {['S.No', 'Patient ID', 'Name', 'Mobile', 'Date', 'Time', 'Consultation', 'Branch', 'Action'].map(
+                    (header, i) => (
+                      <CTableHeaderCell
+                        key={i}
+                        className={header === 'Action' ? 'text-center' : ''}
+                        style={{ backgroundColor: COLORS.bgcolor, color: COLORS.black }}
+                      >
+                        {header}
+                      </CTableHeaderCell>
+                    )
+                  )}
                 </CTableRow>
               </CTableHead>
+
               <CTableBody>
                 {currentPatients.length === 0 ? (
                   <CTableRow>
@@ -270,9 +263,7 @@ const Dashboard = () => {
             className="w-100 h-100 d-flex justify-content-center align-items-center"
             style={{ backgroundColor: COLORS.bgcolor }}
           >
-            <span style={{ color: COLORS.black, fontWeight: 'bold', textAlign: 'center' }}>
-              Ad Space
-            </span>
+            <span style={{ color: COLORS.black, fontWeight: 'bold', textAlign: 'center' }}>Ad Space</span>
           </CCard>
         </div>
       </div>
@@ -283,17 +274,16 @@ const Dashboard = () => {
           onClose={() => setShowCalendar(false)}
           todayAppointments={
             selectedBranch
-              ? todayAppointments.filter((a) => a.branchId === selectedBranch.branchId)
-              : todayAppointments
+              ? futureAppointments.filter((a) => a.branchId === selectedBranch.branchId)
+              : futureAppointments
           }
           defaultBookedSlots={[]}
-          handleClick={handleCalendarClick} // simple navigation
-          fetchAppointments={fetchAppointments}
+          handleClick={handleCalendarClick}
+          fetchAppointments={fetchFutureAppointments} // refresh inside modal
         />
       )}
-
     </div>
-  )
-}
+  );
+};
 
-export default Dashboard
+export default Dashboard;
