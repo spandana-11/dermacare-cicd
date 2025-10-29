@@ -207,7 +207,8 @@ const ServiceManagement = () => {
 
   const ConfirmationModal = ({ isVisible, message, onConfirm, onCancel }) => {
     return (
-      <CModal visible={isVisible} onClose={onCancel}>
+      <CModal visible={isVisible} onClose={onCancel}  className="custom-modal"
+        backdrop="static">
         <CHeader style={{ marginLeft: '200px' }}> !Alert</CHeader>
         <CModalBody style={{ textAlign: 'center' }}>{message}</CModalBody>
         <CModalFooter>
@@ -752,7 +753,7 @@ const ServiceManagement = () => {
         </CModal>
       )}
 
-      <CModal visible={modalVisible} onClose={() => setModalVisible(false)} size="lg">
+      <CModal visible={modalVisible} onClose={() => setModalVisible(false)} size="lg" backdrop="static" className='custom-modal'>
         <CModalHeader>
           <CModalTitle style={{ textAlign: 'center', width: '100%' }}>Add New Service</CModalTitle>
         </CModalHeader>

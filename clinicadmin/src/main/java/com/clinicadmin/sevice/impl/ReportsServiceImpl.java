@@ -411,5 +411,73 @@ public class ReportsServiceImpl implements ReportsService {
                     .build();
         }
     }
+    
+    @Override
+    public Response deleteReportFile(String reportId, String bookingId, int fileIndex) {
+        try {
+            Optional<ReportsList> optional = reportsRepository.findById(reportId);
+            if (optional.isEmpty()) {
+                return Response.builder()
+                        .success(false)
+                        .message("No report found with ID: " + reportId)
+                        .status(HttpStatus.NOT_FOUND.value())
+                        .data(null)
+                        .build();
+            }
+
+            ReportsList reportsList = optional.get();
+
+            // Find the specific report by bookingId
+            List<Reports> reportEntries = reportsList.getReportsList();
+            boolean updated = false;
+
+            for (Reports report : reportEntries) {
+                if (report.getBookingId().equals(bookingId)) {
+                    List<byte[]> files = report.getReportFile();
+
+                    if (files == null || fileIndex < 0 || fileIndex >= files.size()) {
+                        return Response.builder()
+                                .success(false)
+                                .message("Invalid file index: " + fileIndex)
+                                .status(HttpStatus.BAD_REQUEST.value())
+                                .data(null)
+                                .build();
+                    }
+
+                    files.remove(fileIndex); 
+                    report.setReportFile(files);
+                    updated = true;
+                    break;
+                }
+            }
+
+            if (!updated) {
+                return Response.builder()
+                        .success(false)
+                        .message("No report found for bookingId: " + bookingId)
+                        .status(HttpStatus.NOT_FOUND.value())
+                        .data(null)
+                        .build();
+            }
+
+            reportsRepository.save(reportsList);
+
+            return Response.builder()
+                    .success(true)
+                    .message("Report file deleted successfully for bookingId: " + bookingId)
+                    .status(HttpStatus.OK.value())
+                    .data(reportsList)
+                    .build();
+
+        } catch (Exception e) {
+            return Response.builder()
+                    .success(false)
+                    .message("Error while deleting report file: " + e.getMessage())
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                    .data(null)
+                    .build();
+        }
+    }
+
 
 }

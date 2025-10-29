@@ -23,12 +23,12 @@ import {
   CFormSelect,
   CFormFeedback,
   CPaginationItem,
-  CPagination ,
+  CPagination,
 } from '@coreui/react'
 import { DoctorAllData } from '../../baseUrl'
 import { getClinicTimings } from './AddClinicAPI'
 import CIcon from '@coreui/icons-react'
-import { cilUser } from '@coreui/icons'  
+import { cilUser } from '@coreui/icons'
 import AddBranchForm from './AddBranchForm'
 import ProcedureManagementDoctor from './ProcedureManagementDoctor'
 
@@ -52,10 +52,10 @@ const ClinicDetails = () => {
   })
   const [timings, setTimings] = useState([])
   const [isEditing, setIsEditing] = useState(false)
-   const navigate = useNavigate();
+  const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(0);
-  
+
   const [loading, setLoading] = useState(true)
   const [loadingTimings, setLoadingTimings] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -64,10 +64,10 @@ const ClinicDetails = () => {
   const [allDoctors, setAllDoctors] = useState([])
   const [isEditingAdditional, setIsEditingAdditional] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
-  const [showBranchForm, setShowBranchForm]=useState(false)
+  const [showBranchForm, setShowBranchForm] = useState(false)
   const tabList = ['Basic Details', 'Additional Details', 'Branches', 'Procedures']
   const [currentPage, setCurrentPage] = useState(1)
-const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
   const documentFields = [
     ['Drug License Certificate', 'drugLicenseCertificate'],
     ['Drug License Form Type', 'drugLicenseFormType'],
@@ -80,84 +80,78 @@ const [itemsPerPage, setItemsPerPage] = useState(10)
     ['Professional Indemnity Insurance', 'professionalIndemnityInsurance'],
     ['Others', 'others'],
   ]
-const validateForm = () => {
-  const errors = {}
+  const validateForm = () => {
+    const errors = {}
 
-  if (activeTab === 0) {
-    // Basic Details tab
-    const name = editableClinicData.name?.trim() || ''
-    if (!name) {
-      errors.name = 'Clinic Name is required'
-    } else if (name.length < 3) {
-      errors.name = 'Clinic Name must be at least 3 characters'
-    } else if (!/^[A-Za-z\s]+$/.test(name)) {
-      errors.name = 'Only alphabets and spaces allowed'
+    if (activeTab === 0) {
+      // Basic Details tab
+      const name = editableClinicData.name?.trim() || ''
+      if (!name) {
+        errors.name = 'Clinic Name is required'
+      } else if (name.length < 3) {
+        errors.name = 'Clinic Name must be at least 3 characters'
+      } 
+
+      const number = editableClinicData.contactNumber?.trim() || ''
+      if (!number) {
+        errors.contactNumber = 'Contact Number is required'
+      } else if (!/^[6-9]\d{9}$/.test(number)) {
+        errors.contactNumber = 'Must start with 6-9 and be exactly 10 digits'
+      }
+
+      const city = editableClinicData.city?.trim() || ''
+      if (!city) {
+        errors.city = 'City is required'
+      }
     }
 
-    const number = editableClinicData.contactNumber?.trim() || ''
-    if (!number) {
-      errors.contactNumber = 'Contact Number is required'
-    } else if (!/^[6-9]\d{9}$/.test(number)) {
-      errors.contactNumber = 'Must start with 6-9 and be exactly 10 digits'
+    if (activeTab === 1) {
+      // Additional Details tab
+      if (!editableClinicData.emailAddress || !editableClinicData.emailAddress.includes('@')) {
+        errors.emailAddress = 'Email must contain "@"'
+      }
+      if (!editableClinicData.website?.trim()) {
+        errors.website = 'Website is required'
+      }
+      if (!editableClinicData.issuingAuthority?.trim()) {
+        errors.issuingAuthority = 'Issuing Authority is required'
+      }
+      if (!editableClinicData.openingTime) {
+        errors.openingTime = 'Opening time is required'
+      }
+      if (!editableClinicData.closingTime) {
+        errors.closingTime = 'Closing time is required'
+      }
+      if (!editableClinicData.subscription) {
+        errors.subscription = 'Subscription is required'
+      }
+      if (!editableClinicData.consultationExpiration) {
+        errors.consultationExpiration = 'Consultation Expiration is required'
+      }
+      if (!editableClinicData.latitude) {
+        errors.latitude = "Latitude is required"
+      }
+      if (!editableClinicData.longitude) {
+        errors.longitude = "Longitude is required"
+      }
+      if (!editableClinicData.walkthrough?.trim()) {
+        errors.walkthrough = "Walkthrough URL is required"
+      }
+      if (!editableClinicData.branch?.trim()) {
+        errors.branch = "Branch name is required"
+      }
+      if (!editableClinicData.freeFollowUps) {
+        errors.freeFollowUps = "Free Follow Ups is required"
+      } else if (isNaN(editableClinicData.freeFollowUps) || editableClinicData.freeFollowUps < 1) {
+        errors.freeFollowUps = "Free Follow Ups must be a positive number"
+      }
     }
 
-    const city = editableClinicData.city?.trim() || ''
-    if (!city) {
-      errors.city = 'City is required'
-    }
+    setFormErrors(errors)
+    console.log('Form Errors:', errors)
+    return Object.keys(errors).length === 0
   }
 
-  if (activeTab === 1) {
-    // Additional Details tab
-    if (!editableClinicData.emailAddress || !editableClinicData.emailAddress.includes('@')) {
-      errors.emailAddress = 'Email must contain "@"'
-    }
-    if (!editableClinicData.website?.trim()) {
-      errors.website = 'Website is required'
-    }
-    if (!editableClinicData.issuingAuthority?.trim()) {
-      errors.issuingAuthority = 'Issuing Authority is required'
-    }
-    if (!editableClinicData.openingTime) {
-      errors.openingTime = 'Opening time is required'
-    }
-    if (!editableClinicData.closingTime) {
-      errors.closingTime = 'Closing time is required'
-    }
-    if (!editableClinicData.subscription) {
-      errors.subscription = 'Subscription is required'
-    }
-    if (!editableClinicData.consultationExpiration) {
-      errors.consultationExpiration = 'Consultation Expiration is required'
-    }
-    if (!editableClinicData.latitude) {
-      errors.latitude = "Latitude is required"
-    }
-    if (!editableClinicData.longitude) {
-      errors.longitude = "Longitude is required"
-    }
-    if (!editableClinicData.walkthrough?.trim()) {
-      errors.walkthrough = "Walkthrough URL is required"
-    }
-    if (!editableClinicData.branch?.trim()) {
-      errors.branch = "Branch name is required"
-    }
-    if (!editableClinicData.freeFollowUps) {
-      errors.freeFollowUps = "Free Follow Ups is required"
-    } else if (isNaN(editableClinicData.freeFollowUps) || editableClinicData.freeFollowUps < 1) {
-      errors.freeFollowUps = "Free Follow Ups must be a positive number"
-    }
-  }
-
-  // Set errors state
-  setFormErrors(errors)
-
-  // Debug log
-  console.log('Form Errors:', errors)
-
-  // Return true if no errors
-  return Object.keys(errors).length === 0
-}
 
   // const timeSlots = [
   //   '08:00 AM',
@@ -173,7 +167,7 @@ const validateForm = () => {
   //   '06:00 PM',
   //   '07:00 PM',
   // ]
- useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get("tab");
     setActiveTab(tab ? Number(tab) : 0);
@@ -196,10 +190,10 @@ const validateForm = () => {
     setLoading(false)
   }
   const indexOfLastItem = currentPage * itemsPerPage
-const indexOfFirstItem = indexOfLastItem - itemsPerPage
-const currentItems = allDoctors.slice(indexOfFirstItem, indexOfLastItem)
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentItems = allDoctors.slice(indexOfFirstItem, indexOfLastItem)
 
-const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
+  const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
 
   const fetchAllDoctors = async () => {
     try {
@@ -280,11 +274,11 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
   return (
     <CCard className="mt-4">
       <CCardHeader className="d-flex justify-content-between align-items-center">
-            <h3 className="mb-0">Branch Details</h3>
-            <CButton color="secondary" onClick={() => navigate(-1)}>
-              Back
-            </CButton>
-          </CCardHeader>
+        <h3 className="mb-0">Branch Details</h3>
+        <CButton color="secondary" onClick={() => navigate(-1)}>
+          Back
+        </CButton>
+      </CCardHeader>
 
 
       <CCardBody>
@@ -292,35 +286,35 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
           <p className="text-center">Loading...</p>
         ) : (
           <>
-         <CNav variant="tabs">
-        <CNavItem>
-          <CNavLink active={activeTab === 0} onClick={() => handleTabChange(0)}>
-            Basic Details
-          </CNavLink>
-        </CNavItem>
-        <CNavItem>
-          
-          <CNavLink active={activeTab === 1} onClick={() => handleTabChange(1)}>
-            Additional Details
-          </CNavLink>
-        </CNavItem>
-        <CNavItem>
-          <CNavLink active={activeTab === 2} onClick={() => handleTabChange(2)}>
-            Branch Details
-          </CNavLink>
-        </CNavItem>
- {/* <CNavItem>
+            <CNav variant="tabs">
+              <CNavItem>
+                <CNavLink active={activeTab === 0} onClick={() => handleTabChange(0)}>
+                  Basic Details
+                </CNavLink>
+              </CNavItem>
+              <CNavItem>
+
+                <CNavLink active={activeTab === 1} onClick={() => handleTabChange(1)}>
+                  Additional Details
+                </CNavLink>
+              </CNavItem>
+              <CNavItem>
+                <CNavLink active={activeTab === 2} onClick={() => handleTabChange(2)}>
+                  Branch Details
+                </CNavLink>
+              </CNavItem>
+              {/* <CNavItem>
      
           <CNavLink active={activeTab === 3} onClick={() => handleTabChange(4)}>
             Appointments
           </CNavLink>
         </CNavItem>  */}
-        <CNavItem>
-          <CNavLink active={activeTab === 3} onClick={() => handleTabChange(3)}>
-            Procedures
-          </CNavLink>
-        </CNavItem>
-      </CNav>
+              <CNavItem>
+                <CNavLink active={activeTab === 3} onClick={() => handleTabChange(3)}>
+                  Procedures
+                </CNavLink>
+              </CNavItem>
+            </CNav>
 
             <CTabContent className="mt-3">
               {/* Tab 1: Basic Details */}
@@ -336,35 +330,32 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
                         disabled={!isEditing}
                         onChange={(e) => {
                           const value = e.target.value
-                          setEditableClinicData((prev)=>({...prev, name:value}))
-                          if(!value.trim()){
-                            setFormErrors((prev)=>({
-                              ...prev,
-                              name:"Clinic Name is required",
-                            }))
-                            return;
-                          }
-                          if(value.trim().length<3){
-                            setFormErrors((prev)=>({
-                              ...prev,
-                              name:'Clinic Name must be at least 3 characters',
-                            }))
-                            return;
-                          }
-                          const regex = /^[A-Za-z\s]*$/
+                          setEditableClinicData((prev) => ({ ...prev, name: value }))
 
-                          if (!regex.test(value)) {
+                          // Validation
+                          if (!value.trim()) {
                             setFormErrors((prev) => ({
                               ...prev,
-                              name: 'Only alphabets and spaces allowed',
+                              name: "Clinic Name is required",
                             }))
-                          } else {
-                            setFormErrors((prev) => ({ ...prev, name: '' }))
+                            return
                           }
+
+                          if (value.trim().length < 3) {
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              name: "Clinic Name must be at least 3 characters",
+                            }))
+                            return
+                          }
+
+                          // ✅ Allow all characters, no regex restriction
+                          setFormErrors((prev) => ({ ...prev, name: "" }))
                         }}
 
-                        //   setEditableClinicData((prev) => ({ ...prev, name: value }))
-                        // }}
+
+                      //   setEditableClinicData((prev) => ({ ...prev, name: value }))
+                      // }}
                       />
                       {formErrors.name && <div className="text-danger mt-1">{formErrors.name}</div>}
                     </CCol>
@@ -373,57 +364,57 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
                   {/* Contact & Location Section */}
                   <CRow className="mb-3">
                     <CCol md={6}>
-  <CFormLabel>
-    Contact Number <span className="text-danger">*</span>
-  </CFormLabel>
-  <CFormInput
-    type="text"
-    maxLength={10}
-    value={editableClinicData.contactNumber || ''}
-    disabled={!isEditing}
-    onChange={(e) => {
-      const value = e.target.value;
+                      <CFormLabel>
+                        Contact Number <span className="text-danger">*</span>
+                      </CFormLabel>
+                      <CFormInput
+                        type="text"
+                        maxLength={10}
+                        value={editableClinicData.contactNumber || ''}
+                        disabled={!isEditing}
+                        onChange={(e) => {
+                          const value = e.target.value;
 
-      // Always update the state
-      setEditableClinicData((prev) => ({ ...prev, contactNumber: value }));
+                          // Always update the state
+                          setEditableClinicData((prev) => ({ ...prev, contactNumber: value }));
 
-      // Validation
-      if (!value.trim()) {
-        setFormErrors((prev) => ({
-          ...prev,
-          contactNumber: 'Contact Number is required',
-        }));
-        return;
-      }
+                          // Validation
+                          if (!value.trim()) {
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              contactNumber: 'Contact Number is required',
+                            }));
+                            return;
+                          }
 
-      if (!/^\d*$/.test(value)) {
-        setFormErrors((prev) => ({
-          ...prev,
-          contactNumber: 'Only numeric values allowed',
-        }));
-        return;
-      }
+                          if (!/^\d*$/.test(value)) {
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              contactNumber: 'Only numeric values allowed',
+                            }));
+                            return;
+                          }
 
-      const regex = /^[6-9][0-9]{9}$/; // exactly 10 digits starting with 6-9
-      if (value.length === 10 && !regex.test(value)) {
-        setFormErrors((prev) => ({
-          ...prev,
-          contactNumber: 'Must start with 6-9 and be 10 digits',
-        }));
-      } else if (value.length < 10) {
-        setFormErrors((prev) => ({
-          ...prev,
-          contactNumber: 'Must be exactly 10 digits',
-        }));
-      } else {
-        setFormErrors((prev) => ({ ...prev, contactNumber: '' }));
-      }
-    }}
-  />
-  {formErrors.contactNumber && (
-    <div className="text-danger mt-1">{formErrors.contactNumber}</div>
-  )}
-</CCol>
+                          const regex = /^[6-9][0-9]{9}$/; // exactly 10 digits starting with 6-9
+                          if (value.length === 10 && !regex.test(value)) {
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              contactNumber: 'Must start with 6-9 and be 10 digits',
+                            }));
+                          } else if (value.length < 10) {
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              contactNumber: 'Must be exactly 10 digits',
+                            }));
+                          } else {
+                            setFormErrors((prev) => ({ ...prev, contactNumber: '' }));
+                          }
+                        }}
+                      />
+                      {formErrors.contactNumber && (
+                        <div className="text-danger mt-1">{formErrors.contactNumber}</div>
+                      )}
+                    </CCol>
 
 
                     <CCol md={6}>
@@ -432,23 +423,23 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
                         type="text"
                         value={editableClinicData.city || ''}
                         disabled={!isEditing}
-                        onChange={(e) =>{
-                          const value=e.target.value;
-                          setEditableClinicData((prev)=>({ ...prev, city: value }))
-                          if(!value.trim()){
-                            setFormErrors((prev)=>({
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setEditableClinicData((prev) => ({ ...prev, city: value }))
+                          if (!value.trim()) {
+                            setFormErrors((prev) => ({
                               ...prev,
-                              city:'Location is required',
+                              city: 'Location is required',
                             }))
-                          }else if(value.trim().length<3){
-                            setFormErrors((prev)=>({
+                          } else if (value.trim().length < 3) {
+                            setFormErrors((prev) => ({
                               ...prev,
-                              city:'Location must be at least 3 characters',
+                              city: 'Location must be at least 3 characters',
                             }))
                             return;
                           }
-                          else{
-                            setFormErrors((prev)=>({...prev, city:''}))
+                          else {
+                            setFormErrors((prev) => ({ ...prev, city: '' }))
                           }
                         }}
                       />
@@ -495,63 +486,63 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
                     </CCol>
                   </CRow>
 
- {isEditing ? (
-  <>
-    <CButton
-  color="success"
-  className="me-2"
-  onClick={async () => {
-    
-    try {
-      // Validate form first
-      const isValid = validateForm();
-      console.log('Form valid?', isValid); // ✅ Check validation
-      if (!isValid) return; // stop if invalid
+                  {isEditing ? (
+                    <>
+                      <CButton
+                        color="success"
+                        className="me-2"
+                        onClick={async () => {
 
-  
-      // Proceed to save
-      await updateClinicData(hospitalId, editableClinicData);
-      await fetchClinicDetails();
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Error updating clinic:', error);
-    }
-  }}
->
-  Save
-</CButton>
+                          try {
+                            // Validate form first
+                            const isValid = validateForm();
+                            console.log('Form valid?', isValid); // ✅ Check validation
+                            if (!isValid) return; // stop if invalid
 
-    <CButton
-      color="secondary"
-      className="me-2"
-      onClick={() => {
-        setIsEditing(false)
-        setEditableClinicData(clinicData) // ✅ reset to original details
-      }}
-    >
-      Cancel
-    </CButton>
-  </>
-) : (
-  <>
-    <CButton
-      color="primary"
-      className="me-2"
-      onClick={() => setIsEditing(true)}
-    >
-      Edit
-    </CButton>
 
-    {/* ✅ Only show Delete when not editing */}
-    <CButton
-      color="danger"
-      style={{ color: 'white' }}
-      onClick={() => setShowDeleteModal(true)}
-    >
-      Delete Clinic
-    </CButton>
-  </>
-)}
+                            // Proceed to save
+                            await updateClinicData(hospitalId, editableClinicData);
+                            await fetchClinicDetails();
+                            setIsEditing(false);
+                          } catch (error) {
+                            console.error('Error updating clinic:', error);
+                          }
+                        }}
+                      >
+                        Save
+                      </CButton>
+
+                      <CButton
+                        color="secondary"
+                        className="me-2"
+                        onClick={() => {
+                          setIsEditing(false)
+                          setEditableClinicData(clinicData) // ✅ reset to original details
+                        }}
+                      >
+                        Cancel
+                      </CButton>
+                    </>
+                  ) : (
+                    <>
+                      <CButton
+                        color="primary"
+                        className="me-2"
+                        onClick={() => setIsEditing(true)}
+                      >
+                        Edit
+                      </CButton>
+
+                      {/* ✅ Only show Delete when not editing */}
+                      <CButton
+                        color="danger"
+                        style={{ color: 'white' }}
+                        onClick={() => setShowDeleteModal(true)}
+                      >
+                        Delete Clinic
+                      </CButton>
+                    </>
+                  )}
 
                   {/* <CButton color="primary" style={{color:'white', float:'right'}} onClick={()=>setShowBranchForm(true)}>Add Branches</CButton> */}
                   {/* <AddBranchForm visible={showBranchForm} onClose={()=>setShowBranchForm(false)} /> */}
@@ -652,32 +643,32 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
                   </CRow>
 
                   <CRow className="mb-3">
-                   <CCol md={6}>
-  <CFormLabel>Opening Time <span className="text-danger">*</span></CFormLabel>
-  <CFormSelect
-    value={editableClinicData.openingTime || ''}
-    disabled={!isEditingAdditional}
-    onChange={(e) => {
-      setEditableClinicData({
-        ...editableClinicData,
-        openingTime: e.target.value,
-      });
-      setFormErrors((prev) => ({ ...prev, openingTime: '' }));
-    }}
-  >
-    <option value="">Select Opening Time <span className="text-danger">*</span></option>
-    {timings.length > 0 &&
-      timings.map((slot, idx) => (
-        <option key={idx} value={slot.openingTime}>
-          {slot.openingTime}
-        </option>
-      ))}
-  </CFormSelect>
+                    <CCol md={6}>
+                      <CFormLabel>Opening Time <span className="text-danger">*</span></CFormLabel>
+                      <CFormSelect
+                        value={editableClinicData.openingTime || ''}
+                        disabled={!isEditingAdditional}
+                        onChange={(e) => {
+                          setEditableClinicData({
+                            ...editableClinicData,
+                            openingTime: e.target.value,
+                          });
+                          setFormErrors((prev) => ({ ...prev, openingTime: '' }));
+                        }}
+                      >
+                        <option value="">Select Opening Time <span className="text-danger">*</span></option>
+                        {timings.length > 0 &&
+                          timings.map((slot, idx) => (
+                            <option key={idx} value={slot.openingTime}>
+                              {slot.openingTime}
+                            </option>
+                          ))}
+                      </CFormSelect>
 
-  {formErrors.openingTime && (
-    <div className="text-danger">{formErrors.openingTime}</div>
-  )}
-</CCol>
+                      {formErrors.openingTime && (
+                        <div className="text-danger">{formErrors.openingTime}</div>
+                      )}
+                    </CCol>
 
 
                     <CCol md={6}>
@@ -694,11 +685,11 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
                         }}
                       >
                         <option value="">Select Closing Time</option>
-                    {timings.map((slot, idx) => (
-                      <option key={idx} value={slot.closingTime}>
-                        {slot.closingTime}
-                      </option>
-                    ))}
+                        {timings.map((slot, idx) => (
+                          <option key={idx} value={slot.closingTime}>
+                            {slot.closingTime}
+                          </option>
+                        ))}
                       </CFormSelect>
                       {formErrors.closingTime && (
                         <div className="text-danger">{formErrors.closingTime}</div>
@@ -706,55 +697,55 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
                     </CCol>
                   </CRow>
                   <CRow>
-                  <CCol md={6}>
-  <CFormLabel>Consultation Expiration (in days) <span className="text-danger">*</span></CFormLabel>
-  <CFormInput
-    type="text"
-    placeholder="Enter number of days"
-    value={editableClinicData.consultationExpiration || ''}
-    disabled={!isEditingAdditional}
-    onChange={(e) =>
-      setEditableClinicData((prev) => ({
-        ...prev,
-        consultationExpiration: e.target.value, // ✅ just a string
-      }))
-    }
-  />
-</CCol>
                     <CCol md={6}>
-  <CFormLabel>Free Follow-Ups (count) <span className="text-danger">*</span></CFormLabel>
-  <CFormInput
-    type="number"
-    min={0}
-    placeholder="Enter number of follow-ups"
-    value={editableClinicData.freeFollowUps || ''}
-    disabled={!isEditingAdditional}
-    onChange={(e) => {
-      const value = e.target.value
-      const isValid = /^\d+$/.test(value) // only digits
-      if (!isValid) {
-        setFormErrors((prev) => ({
-          ...prev,
-          freeFollowUps: 'Only positive numbers allowed',
-        }))
-      } else {
-        setFormErrors((prev) => ({ ...prev, freeFollowUps: '' }))
-      }
-      setEditableClinicData((prev) => ({
-        ...prev,
-        freeFollowUps: value,
-      }))
-    }}
-  />
-  {formErrors.freeFollowUps && (
-    <div className="text-danger">{formErrors.freeFollowUps}</div>
-  )}
-</CCol>
-                   
+                      <CFormLabel>Consultation Expiration (in days) <span className="text-danger">*</span></CFormLabel>
+                      <CFormInput
+                        type="text"
+                        placeholder="Enter number of days"
+                        value={editableClinicData.consultationExpiration || ''}
+                        disabled={!isEditingAdditional}
+                        onChange={(e) =>
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            consultationExpiration: e.target.value, // ✅ just a string
+                          }))
+                        }
+                      />
+                    </CCol>
+                    <CCol md={6}>
+                      <CFormLabel>Free Follow-Ups (count) <span className="text-danger">*</span></CFormLabel>
+                      <CFormInput
+                        type="number"
+                        min={0}
+                        placeholder="Enter number of follow-ups"
+                        value={editableClinicData.freeFollowUps || ''}
+                        disabled={!isEditingAdditional}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          const isValid = /^\d+$/.test(value) // only digits
+                          if (!isValid) {
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              freeFollowUps: 'Only positive numbers allowed',
+                            }))
+                          } else {
+                            setFormErrors((prev) => ({ ...prev, freeFollowUps: '' }))
+                          }
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            freeFollowUps: value,
+                          }))
+                        }}
+                      />
+                      {formErrors.freeFollowUps && (
+                        <div className="text-danger">{formErrors.freeFollowUps}</div>
+                      )}
+                    </CCol>
+
                   </CRow>
 
-<CRow>
-   <CCol md={6}>
+                  <CRow>
+                    <CCol md={6}>
                       <CFormLabel>
                         Subscription<span className="text-danger">*</span>
                       </CFormLabel>
@@ -769,18 +760,18 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
                           setFormErrors((prev) => ({ ...prev, subscription: '' }))
                         }}
                       >
-                        <option value="">Select Subscription</option> 
-                         <option value="Free">Free</option>
-                  <option value="Basic">Basic</option>
-                  <option value="Standard">Standard</option>
-                  <option value="Premium">Premium</option>
+                        <option value="">Select Subscription</option>
+                        <option value="Free">Free</option>
+                        <option value="Basic">Basic</option>
+                        <option value="Standard">Standard</option>
+                        <option value="Premium">Premium</option>
                       </CFormSelect>
 
                       {formErrors.subscription && (
                         <div className="text-danger">{formErrors.subscription}</div>
                       )}
                     </CCol>
-                     <CCol md={6}>
+                    <CCol md={6}>
                       <CFormLabel>License Number <span className="text-danger">*</span></CFormLabel>
                       <CFormInput
                         type="text"
@@ -791,43 +782,43 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
                         }
                       />
                     </CCol>
-</CRow>
+                  </CRow>
                   <CRow>
                     <CCol md={6} className="mt-3">
-                     <CFormLabel>Hospital Documents <span className="text-danger">*</span></CFormLabel>
+                      <CFormLabel>Hospital Documents <span className="text-danger">*</span></CFormLabel>
 
-                       <DocumentField
-    label="HospitalDocuments"
-    base64Data={editableClinicData.hospitalDocuments}
-    clinicName={editableClinicData.name || 'Clinic'}
-    isEditing={isEditingAdditional} // show Upload button only when editing
-    openPdfPreview={openPdfPreview} // your existing function to preview PDFs
-    onFileChange={(newBase64) => {
-      // Update parent state when user uploads a new file
-      setEditableClinicData((prev) => ({
-        ...prev,
-        hospitalDocuments: newBase64,
-      }))
-    }}
-  />
+                      <DocumentField
+                        label="HospitalDocuments"
+                        base64Data={editableClinicData.hospitalDocuments}
+                        clinicName={editableClinicData.name || 'Clinic'}
+                        isEditing={isEditingAdditional} // show Upload button only when editing
+                        openPdfPreview={openPdfPreview} // your existing function to preview PDFs
+                        onFileChange={(newBase64) => {
+                          // Update parent state when user uploads a new file
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            hospitalDocuments: newBase64,
+                          }))
+                        }}
+                      />
                     </CCol>
-                 
-                     <CCol md={6} className="mt-3">
-                     <CFormLabel>Hospital Contract Documents <span className="text-danger">*</span></CFormLabel>
-                    <DocumentField
-                    label="ContractorDocuments"
-                    base64Data={editableClinicData.contractorDocuments}
-                    clinicName={editableClinicData.name || "Clinic"}
-                    isEditing={isEditingAdditional}
-                    openPdfPreview={openPdfPreview}
-                    onFileChange={(newBase64)=>{
-                      setEditableClinicData((prev)=>({
-                        ...prev,
-                        contractorDocuments:newBase64,
-                      }))
-                    }}
-                    />
-                     
+
+                    <CCol md={6} className="mt-3">
+                      <CFormLabel>Hospital Contract Documents <span className="text-danger">*</span></CFormLabel>
+                      <DocumentField
+                        label="ContractorDocuments"
+                        base64Data={editableClinicData.contractorDocuments}
+                        clinicName={editableClinicData.name || "Clinic"}
+                        isEditing={isEditingAdditional}
+                        openPdfPreview={openPdfPreview}
+                        onFileChange={(newBase64) => {
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            contractorDocuments: newBase64,
+                          }))
+                        }}
+                      />
+
                     </CCol>
                   </CRow>
 
@@ -835,36 +826,36 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
                     <CCol md={6} className="mt-3">
                       <CFormLabel>Business Registration Certificate <span className="text-danger">*</span></CFormLabel>
                       <DocumentField
-                      label="BusinessRegistrationCertificate"
-                      base64Data={editableClinicData.businessRegistrationCertificate}
-                      clinicName={editableClinicData.name || "Clinic"}
-                      isEditing={isEditingAdditional}
-                      openPdfPreview={openPdfPreview}
-                      onFileChange={(newBase64)=>{
-                        setEditableClinicData((prev)=>({
-                          ...prev,
-                          businessRegistrationCertificate:newBase64,
-                        }))
-                      }}
+                        label="BusinessRegistrationCertificate"
+                        base64Data={editableClinicData.businessRegistrationCertificate}
+                        clinicName={editableClinicData.name || "Clinic"}
+                        isEditing={isEditingAdditional}
+                        openPdfPreview={openPdfPreview}
+                        onFileChange={(newBase64) => {
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            businessRegistrationCertificate: newBase64,
+                          }))
+                        }}
                       />
-                   </CCol>
+                    </CCol>
                     <CCol md={6} className="mt-3">
                       <CFormLabel>Biomedical Waste Management Auth <span className="text-danger">*</span></CFormLabel>
                       <DocumentField
-                      label="BioMedicalWasteManagementAuth"
-                      base64Data={editableClinicData.biomedicalWasteManagementAuth}
-                      clinicName={editableClinicData.name || "Clinic"}
-                      isEditing={isEditingAdditional}
-                      openPdfPreview={openPdfPreview}
-                      onFileChange={(newBase64)=>{
-                        setEditableClinicData((prev)=>({
-                          ...prev,
-                          biomedicalWasteManagementAuth:newBase64,
-                          
-                        }))
-                      }}
+                        label="BioMedicalWasteManagementAuth"
+                        base64Data={editableClinicData.biomedicalWasteManagementAuth}
+                        clinicName={editableClinicData.name || "Clinic"}
+                        isEditing={isEditingAdditional}
+                        openPdfPreview={openPdfPreview}
+                        onFileChange={(newBase64) => {
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            biomedicalWasteManagementAuth: newBase64,
+
+                          }))
+                        }}
                       />
-                    
+
                     </CCol>
                   </CRow>
 
@@ -872,36 +863,36 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
                     <CCol md={6} className="mt-3">
                       <CFormLabel>Trade License <span className="text-danger">*</span></CFormLabel>
                       <DocumentField
-                      label="TradeLicense"
-                      base64Data={editableClinicData.tradeLicense}
-                      clinicName={editableClinicData.name || "Clinic"}
-                      isEditing={isEditingAdditional}
-                      openPdfPreview={openPdfPreview}
-                      onFileChange={(newBase64)=>{
-                        setEditableClinicData((prev)=>({
-                        ...prev,
-                        tradeLicense:newBase64
-                      }))
-                    }}
-                    />
-                    
+                        label="TradeLicense"
+                        base64Data={editableClinicData.tradeLicense}
+                        clinicName={editableClinicData.name || "Clinic"}
+                        isEditing={isEditingAdditional}
+                        openPdfPreview={openPdfPreview}
+                        onFileChange={(newBase64) => {
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            tradeLicense: newBase64
+                          }))
+                        }}
+                      />
+
                     </CCol>
                     <CCol md={6} className="mt-3">
                       <CFormLabel>Fire Safety Certificate <span className="text-danger">*</span></CFormLabel>
                       <DocumentField
-                      label="FireSafetyCertificate"
-                      base64Data={editableClinicData.fireSafetyCertificate}
-                      clinicName={editableClinicData.name || "Clinic"}
-                      isEditing={isEditingAdditional}
-                      openPdfPreview={openPdfPreview}
-                      onFileChange={(newBase64)=>{
-                        setEditableClinicData((prev)=>({
-                          ...prev,
-                          fireSafetyCertificate:newBase64
-                        }))
-                      }}
+                        label="FireSafetyCertificate"
+                        base64Data={editableClinicData.fireSafetyCertificate}
+                        clinicName={editableClinicData.name || "Clinic"}
+                        isEditing={isEditingAdditional}
+                        openPdfPreview={openPdfPreview}
+                        onFileChange={(newBase64) => {
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            fireSafetyCertificate: newBase64
+                          }))
+                        }}
                       />
-                    
+
                     </CCol>
                   </CRow>
 
@@ -909,39 +900,39 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
                     <CCol md={6} className="mt-3">
                       <CFormLabel>Professional Indemnity Insurance <span className="text-danger">*</span></CFormLabel>
                       <DocumentField
-                      label="ProfessionalIndemnityInsurance"
-                      base64Data={editableClinicData.professionalIndemnityInsurance}
-                      clinciName={editableClinicData.name || "Clinic"}
-                      isEditing={isEditingAdditional}
-                      openPdfPreview={openPdfPreview}
-                      onFileChange={(newBase64)=>{
-                      setEditableClinicData((prev)=>({
-                        ...prev,
-                        professionalIndemnityInsurance:newBase64
-                      }))
-                    }}
-                    />
-                    
+                        label="ProfessionalIndemnityInsurance"
+                        base64Data={editableClinicData.professionalIndemnityInsurance}
+                        clinciName={editableClinicData.name || "Clinic"}
+                        isEditing={isEditingAdditional}
+                        openPdfPreview={openPdfPreview}
+                        onFileChange={(newBase64) => {
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            professionalIndemnityInsurance: newBase64
+                          }))
+                        }}
+                      />
+
                     </CCol>
-        <CCol md={6} className="mt-3">
-  <CFormLabel>
-    Other Documents <span className="text-danger">*</span>
-  </CFormLabel>
-  <DocumentField
-    label="OtherDocuments"
-    base64Data={editableClinicData.others}
-    clinicName={editableClinicData.name || 'Clinic'}
-    isEditing={isEditingAdditional}
-    uploadType="multiple"
-    openPdfPreview={openPdfPreview}
-    onFileChange={(files) =>
-      setEditableClinicData((prev) => ({
-        ...prev,
-        others: files, // ✅ keep as array
-      }))
-    }
-  />
-</CCol>
+                    <CCol md={6} className="mt-3">
+                      <CFormLabel>
+                        Other Documents <span className="text-danger">*</span>
+                      </CFormLabel>
+                      <DocumentField
+                        label="OtherDocuments"
+                        base64Data={editableClinicData.others}
+                        clinicName={editableClinicData.name || 'Clinic'}
+                        isEditing={isEditingAdditional}
+                        uploadType="multiple"
+                        openPdfPreview={openPdfPreview}
+                        onFileChange={(files) =>
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            others: files, // ✅ keep as array
+                          }))
+                        }
+                      />
+                    </CCol>
 
 
                   </CRow>
@@ -950,36 +941,36 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
                     <CCol md={6} className="mt-3">
                       <CFormLabel>Drug License Certificate <span className="text-danger">*</span></CFormLabel>
                       <DocumentField
-                      label="DrugLicenceCertificate"
-                      base64Data={editableClinicData.drugLicenseCertificate}
-                      clinicName={editableClinicData.name || "Clinic"}
-                      isEditing={isEditingAdditional}
-                      openPdfPreview={openPdfPreview}
-                      onFileChange={(newBase64)=>{
-                        setEditableClinicData((prev)=>({
-                          ...prev,
-                          drugLicenseCertificate:newBase64
-                        }))
-                      }}
+                        label="DrugLicenceCertificate"
+                        base64Data={editableClinicData.drugLicenseCertificate}
+                        clinicName={editableClinicData.name || "Clinic"}
+                        isEditing={isEditingAdditional}
+                        openPdfPreview={openPdfPreview}
+                        onFileChange={(newBase64) => {
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            drugLicenseCertificate: newBase64
+                          }))
+                        }}
                       />
 
                     </CCol>
                     <CCol md={6} className="mt-3">
                       <CFormLabel>Drug License Form Type <span className="text-danger">*</span></CFormLabel>
                       <DocumentField
-                      label="DrugLicenceFormType"
-                      base64Data={editableClinicData.drugLicenseFormType}
-                      clinicName={editableClinicData.name || "Clinic"}
-                      isEditing={isEditingAdditional}
-                      openPdfPreview={openPdfPreview}
-                      onFileChange={(newBase64)=>{
-                        setEditableClinicData((prev)=>({
-                          ...prev,
-                          drugLicenseFormType:newBase64
-                        }))
-                      }}
+                        label="DrugLicenceFormType"
+                        base64Data={editableClinicData.drugLicenseFormType}
+                        clinicName={editableClinicData.name || "Clinic"}
+                        isEditing={isEditingAdditional}
+                        openPdfPreview={openPdfPreview}
+                        onFileChange={(newBase64) => {
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            drugLicenseFormType: newBase64
+                          }))
+                        }}
                       />
-                    
+
                     </CCol>
                   </CRow>
 
@@ -987,283 +978,284 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
                     <CCol md={6} className="mt-3">
                       <CFormLabel>Pharmacist Certificate <span className="text-danger">*</span></CFormLabel>
                       <DocumentField
-                      label="pharmacistCertificate"
-                      base64Data={editableClinicData.pharmacistCertificate}
-                      clinicName={editableClinicData.name || "Clinic"}
-                      isEditing={isEditingAdditional}
-                      openPdfPreview={openPdfPreview}
-                      onFileChange={(newBase64)=>{
-                        setEditableClinicData((prev)=>({
-                          ...prev,
-                          pharmacistCertificate:newBase64
-                        }))
-                      }}
+                        label="pharmacistCertificate"
+                        base64Data={editableClinicData.pharmacistCertificate}
+                        clinicName={editableClinicData.name || "Clinic"}
+                        isEditing={isEditingAdditional}
+                        openPdfPreview={openPdfPreview}
+                        onFileChange={(newBase64) => {
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            pharmacistCertificate: newBase64
+                          }))
+                        }}
                       />
-                     
+
                     </CCol>
                     <CCol md={6} className="mt-3">
                       <CFormLabel>Clinical Establishment Certificate <span className="text-danger">*</span></CFormLabel>
                       <DocumentField
-                      label="ClinicalEstablishmentCertificate"
-                      base64Data={editableClinicData.clinicalEstablishmentCertificate}
-                      clinicName={editableClinicData.name || "Clinic"}
-                      isEditing={isEditingAdditional}
-                      openPdfPreview={openPdfPreview}
-                      onFileChange={(newBase64)=>{
-                        setEditableClinicData((prev)=>({
-                          ...prev,
-                          clinicalEstablishmentCertificate:newBase64
-                        }))
-                      }}
+                        label="ClinicalEstablishmentCertificate"
+                        base64Data={editableClinicData.clinicalEstablishmentCertificate}
+                        clinicName={editableClinicData.name || "Clinic"}
+                        isEditing={isEditingAdditional}
+                        openPdfPreview={openPdfPreview}
+                        onFileChange={(newBase64) => {
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            clinicalEstablishmentCertificate: newBase64
+                          }))
+                        }}
                       />
                     </CCol>
                   </CRow>
-    <CRow className="mt-3">
-                <CCol md={6}>
-                  <CFormLabel>Latitude <span className="text-danger">*</span></CFormLabel>
-                  <CFormInput
-                    type="number"
-                    step="any"
-                    value={editableClinicData.latitude ?? ''}
-                    disabled={!isEditingAdditional}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      const numValue = value === '' ? null : parseFloat(value);
-                      setEditableClinicData((prev) => ({
-                        ...prev,
-                        latitude: numValue,
-                      }));
+                  <CRow className="mt-3">
+                    <CCol md={6}>
+                      <CFormLabel>Latitude <span className="text-danger">*</span></CFormLabel>
+                      <CFormInput
+                        type="number"
+                        step="any"
+                        value={editableClinicData.latitude ?? ''}
+                        disabled={!isEditingAdditional}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const numValue = value === '' ? null : parseFloat(value);
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            latitude: numValue,
+                          }));
 
-                      let error=''
-                      if(!value){
-                        error="Latitude is required"
-                      }else if (isNaN(numValue) || numValue<-90||numValue>90){
-                        error="Latitude must be between -90 and 90";
-                      }
-                      setFormErrors((prev)=>{
-                        const newErrors={...prev};
-                        if(error){
-                          newErrors.latitude=error;
-                        }else{
-                          delete newErrors.latitude;
-                        }
-                        return newErrors;
-                      })
-                    }}
-                    invalid={!!formErrors.latitude}
-                    // {formErrors.latitude && <CFormFeedback invalid>{form</CFormFeedback>}
-                  />
-                  {formErrors.latitude &&(
-                    <CFormFeedback invalid>{formErrors.latitude}</CFormFeedback>
+                          let error = ''
+                          if (!value) {
+                            error = "Latitude is required"
+                          } else if (isNaN(numValue) || numValue < -90 || numValue > 90) {
+                            error = "Latitude must be between -90 and 90";
+                          }
+                          setFormErrors((prev) => {
+                            const newErrors = { ...prev };
+                            if (error) {
+                              newErrors.latitude = error;
+                            } else {
+                              delete newErrors.latitude;
+                            }
+                            return newErrors;
+                          })
+                        }}
+                        invalid={!!formErrors.latitude}
+                      // {formErrors.latitude && <CFormFeedback invalid>{form</CFormFeedback>}
+                      />
+                      {formErrors.latitude && (
+                        <CFormFeedback invalid>{formErrors.latitude}</CFormFeedback>
+                      )}
+                    </CCol>
+
+                    <CCol md={6}>
+                      <CFormLabel>Longitude <span className="text-danger">*</span></CFormLabel>
+                      <CFormInput
+                        type="number"
+                        step="any"
+                        value={editableClinicData.longitude ?? ''}
+                        disabled={!isEditingAdditional}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const numValue = value === '' ? null : parseFloat(value);
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            longitude: numValue,
+                          }));
+                          let error = '';
+                          if (!value) {
+                            error = "Longitude is required"
+                          } else if (isNaN(numValue) || numValue < -180 || numValue > 180) {
+                            error = "Longitude must between -180 and 180";
+                          }
+                          setFormErrors((prev) => {
+                            const newErrors = { ...prev };
+                            if (error) {
+                              newErrors.longitude = error;
+                            } else {
+                              delete newErrors.longitude;
+                            }
+                            return newErrors;
+                          })
+                        }}
+                        invalid={!!formErrors.longitude}
+                      />
+                      {formErrors.longitude && (
+                        <CFormFeedback invalid>{formErrors.longitude}</CFormFeedback>
+                      )}
+                    </CCol>
+                  </CRow>
+
+                  <CRow className="mt-3">
+                    <CCol md={6}>
+                      <CFormLabel>Walkthrough</CFormLabel>
+                      <CFormInput
+                        type="text"
+                        value={editableClinicData.walkthrough ?? ''}
+                        disabled={!isEditingAdditional}
+                        onChange={(e) => {
+                          const value = e.target.value;
+
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            walkthrough: value,
+                          }));
+
+                          // ✅ Validation
+                          let error = '';
+                          if (!value.trim()) {
+                            error = 'Walkthrough URL is required';
+                          } else if (
+                            !/^https?:\/\/[^\s]+$/.test(value) // basic URL check
+                          ) {
+                            error = 'Please enter a valid URL (must start with http:// or https://)';
+                          }
+
+                          setFormErrors((prev) => {
+                            const newErrors = { ...prev };
+                            if (error) {
+                              newErrors.walkthrough = error;
+                            } else {
+                              delete newErrors.walkthrough;
+                            }
+                            return newErrors;
+                          });
+                        }}
+                        invalid={!!formErrors.walkthrough}
+                      />
+                      {formErrors.walkthrough && (
+                        <CFormFeedback invalid>{formErrors.walkthrough}</CFormFeedback>
+                      )}
+
+                      {!isEditingAdditional && editableClinicData.walkthrough && !formErrors.walkthrough && (
+                        <a
+                          href={editableClinicData.walkthrough}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary d-block mt-2"
+                        >
+                          Open Walkthrough
+                        </a>
+                      )}
+                    </CCol>
+
+
+                    <CCol md={6}>
+                      <CFormLabel>NABH Score <span className="text-danger">*</span></CFormLabel>
+                      <CFormInput
+                        type="number"
+                        value={editableClinicData.nabhScore ?? ''}
+                        disabled
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const intValue = value === '' ? null : parseInt(value, 10);
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            nabhScore: intValue,
+                          }));
+                        }}
+                      />
+                    </CCol>
+                  </CRow>
+
+                  <CRow className="mt-3">
+                    <CCol md={6}>
+                      <CFormLabel>Branch <span className="text-danger">*</span></CFormLabel>
+                      <CFormInput
+                        type="text"
+                        value={editableClinicData.branch ?? ''}
+                        disabled={!isEditingAdditional}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            branch: value,
+                          }))
+                          let error = '';
+                          if (!value.trim()) {
+                            error = "Branch Name is required"
+                          }
+                          setFormErrors((prev) => {
+                            const newErrors = { ...prev };
+                            if (error) {
+                              newErrors.branch = error;
+                            } else {
+                              delete newErrors.branch;
+                            }
+                            return newErrors;   // ✅ must return
+                          });
+                        }}
+                        invalid={!!formErrors.branch}
+                      />
+                      {formErrors.branch && (
+                        <CFormFeedback invalid>{formErrors.branch}</CFormFeedback>
+                      )}
+                    </CCol>
+                  </CRow>
+
+                  {isEditingAdditional ? (
+                    <>
+                      <CButton
+                        color="success"
+                        className="me-2 mt-3"
+                        onClick={async () => {
+                          try {
+                            const isValid = validateForm();
+                            if (!isValid) {
+                              toast.error("Please fix the errors before saving!");
+                              return; // stop saving
+                            }
+                            localStorage.setItem(
+                              `clinic-${hospitalId}-consultation-expiration`,
+                              editableClinicData.consultationExpiration,
+                            )
+                            await updateClinicData(hospitalId, editableClinicData)
+                            await fetchClinicDetails()
+                            setIsEditingAdditional(false)
+                          } catch (error) {
+                            console.error('Error updating additional details:', error)
+                          }
+                        }}
+                      >
+                        Save
+                      </CButton>
+
+                      <CButton
+                        color="secondary"
+                        className="mt-3"
+                        onClick={() => {
+                          setIsEditingAdditional(false)
+                          setEditableClinicData(clinicData) // ✅ reset to original values
+                        }}
+                      >
+                        Cancel
+                      </CButton>
+                    </>
+                  ) : (
+                    <CButton
+                      color="primary"
+                      className="me-2 mt-3"
+                      onClick={() => setIsEditingAdditional(true)}
+                    >
+                      Edit
+                    </CButton>
                   )}
-                </CCol>
-
-                <CCol md={6}>
-                  <CFormLabel>Longitude <span className="text-danger">*</span></CFormLabel>
-                  <CFormInput
-                    type="number"
-                    step="any"
-                    value={editableClinicData.longitude ?? ''}
-                    disabled={!isEditingAdditional}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      const numValue = value === '' ? null : parseFloat(value);
-                      setEditableClinicData((prev) => ({
-                        ...prev,
-                        longitude: numValue,
-                      }));
-                      let error='';
-                      if(!value){
-                        error="Longitude is required"
-                      }else if(isNaN(numValue) || numValue<-180 || numValue>180){
-                        error="Longitude must between -180 and 180";
-                      }
-                      setFormErrors((prev)=>{
-                        const newErrors={...prev};
-                        if(error){
-                          newErrors.longitude=error;
-                        }else{
-                          delete newErrors.longitude;
-                        }
-                        return newErrors;
-                      })
-                    }}
-                    invalid={!!formErrors.longitude}
-                  />
-                  {formErrors.longitude &&(
-                    <CFormFeedback invalid>{formErrors.longitude}</CFormFeedback>
-                  )}
-                </CCol>
-              </CRow>
-
-             <CRow className="mt-3">
-  <CCol md={6}>
-    <CFormLabel>Walkthrough</CFormLabel>
-    <CFormInput
-      type="text"
-      value={editableClinicData.walkthrough ?? ''}
-      disabled={!isEditingAdditional}
-      onChange={(e) => {
-        const value = e.target.value;
-
-        setEditableClinicData((prev) => ({
-          ...prev,
-          walkthrough: value,
-        }));
-
-        // ✅ Validation
-        let error = '';
-        if (!value.trim()) {
-          error = 'Walkthrough URL is required';
-        } else if (
-          !/^https?:\/\/[^\s]+$/.test(value) // basic URL check
-        ) {
-          error = 'Please enter a valid URL (must start with http:// or https://)';
-        }
-
-        setFormErrors((prev) => {
-          const newErrors = { ...prev };
-          if (error) {
-            newErrors.walkthrough = error;
-          } else {
-            delete newErrors.walkthrough;
-          }
-          return newErrors;
-        });
-      }}
-      invalid={!!formErrors.walkthrough}
-    />
-    {formErrors.walkthrough && (
-      <CFormFeedback invalid>{formErrors.walkthrough}</CFormFeedback>
-    )}
-
-    {!isEditingAdditional && editableClinicData.walkthrough && !formErrors.walkthrough && (
-      <a
-        href={editableClinicData.walkthrough}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-primary d-block mt-2"
-      >
-        Open Walkthrough
-      </a>
-    )}
-  </CCol>
-
-
-                <CCol md={6}>
-                  <CFormLabel>NABH Score <span className="text-danger">*</span></CFormLabel>
-                  <CFormInput
-                    type="number"
-                    value={editableClinicData.nabhScore ?? ''}
-                    disabled
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      const intValue = value === '' ? null : parseInt(value, 10);
-                      setEditableClinicData((prev) => ({
-                        ...prev,
-                        nabhScore: intValue,
-                      }));
-                    }}
-                  />
-                </CCol>
-              </CRow>
-
-              <CRow className="mt-3">
-                <CCol md={6}>
-                  <CFormLabel>Branch <span className="text-danger">*</span></CFormLabel>
-                  <CFormInput
-                    type="text"
-                    value={editableClinicData.branch ?? ''}
-                    disabled={!isEditingAdditional}
-                    onChange={(e) =>{ 
-                      const value=e.target.value;
-                      setEditableClinicData((prev) => ({
-                        ...prev,
-                        branch: value,
-                      }))
-                      let error='';
-                      if(!value.trim()){
-                        error="Branch Name is required"
-                      }
-                     setFormErrors((prev) => {
-                      const newErrors = { ...prev };
-                      if (error) {
-                        newErrors.branch = error;
-                      } else {
-                        delete newErrors.branch;
-                      }
-                      return newErrors;   // ✅ must return
-                    });
-                    }}
-                    invalid={!!formErrors.branch}
-                  />
-                  {formErrors.branch &&(
-                    <CFormFeedback invalid>{formErrors.branch}</CFormFeedback>
-                  )}
-                </CCol>
-              </CRow>
-
-                 {isEditingAdditional ? (
-  <>
-    <CButton
-      color="success"
-      className="me-2 mt-3"
-      onClick={async () => {
-        try {
-           const isValid = validateForm();
-      if (!isValid) {
-        toast.error("Please fix the errors before saving!");
-        return; // stop saving
-      }
-          localStorage.setItem(
-            `clinic-${hospitalId}-consultation-expiration`,
-            editableClinicData.consultationExpiration,
-          )
-          await updateClinicData(hospitalId, editableClinicData)
-          await fetchClinicDetails()
-          setIsEditingAdditional(false)
-        } catch (error) {
-          console.error('Error updating additional details:', error)
-        }
-      }}
-    >
-      Save
-    </CButton>
-
-    <CButton
-      color="secondary"
-      className="mt-3"
-      onClick={() => {
-        setIsEditingAdditional(false)
-        setEditableClinicData(clinicData) // ✅ reset to original values
-      }}
-    >
-      Cancel
-    </CButton>
-  </>
-) : (
-  <CButton
-    color="primary"
-    className="me-2 mt-3"
-    onClick={() => setIsEditingAdditional(true)}
-  >
-    Edit
-  </CButton>
-)}
                 </CForm>
               </CTabPane>
 
 
-<CTabPane visible={activeTab=== 2}>
-  <AddBranchForm clinicId={hospitalId}/>
-</CTabPane>
-           
-             <CTabPane visible={activeTab === 3}>
-        <ProcedureManagementDoctor clinicId={hospitalId} />
-      </CTabPane>
+              <CTabPane visible={activeTab === 2}>
+                <AddBranchForm clinicId={hospitalId} />
+              </CTabPane>
+
+              <CTabPane visible={activeTab === 3}>
+                <ProcedureManagementDoctor clinicId={hospitalId} />
+              </CTabPane>
             </CTabContent>
 
-            <CModal visible={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
+            <CModal visible={showDeleteModal} onClose={() => setShowDeleteModal(false)}  className="custom-modal"
+        backdrop="static">
               <CModalHeader>Delete Clinic</CModalHeader>
               <CModalBody>Are you sure you want to delete this clinic?</CModalBody>
               <CModalFooter>
@@ -1279,7 +1271,7 @@ const totalPages = Math.ceil(allDoctors.length / itemsPerPage)
               visible={showDoctorModal}
               onClose={() => setShowDoctorModal(false)}
               size="lg"
-              backdrop="static"
+              backdrop="static" className='custom-modal'
             >
               <CModalHeader>
                 <CModalTitle>Doctor Profile</CModalTitle>

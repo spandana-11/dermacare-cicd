@@ -42,7 +42,7 @@ const AppointmentDetails = () => {
     }
   }
 
-   useEffect(() => {
+  useEffect(() => {
     const fetchDoctorDetails = async () => {
       if (
         appointment?.status.toLowerCase() === 'confirmed' ||
@@ -60,7 +60,7 @@ const AppointmentDetails = () => {
 
     fetchDoctorDetails()
   }, [appointment])
- const getDoctorImage = (picture) => {
+  const getDoctorImage = (picture) => {
     if (!picture) return '/default-doctor.png'
     return picture.startsWith('data:image') ? picture : `data:image/jpeg;base64,${picture}`
   }
@@ -85,7 +85,7 @@ const AppointmentDetails = () => {
   }
 
   console.log(doctor?.availableDays)
-    console.log(doctor)
+  console.log(doctor)
   return (
     <div className="container mt-4">
       {/* Header Section with blue background */}
@@ -187,11 +187,15 @@ const AppointmentDetails = () => {
             <div className="col-md-4 mb-2">
               <strong>Service ID:</strong> <span className="ms-1">{appointment?.subServiceId}</span>
             </div>
+            {/* ✅ Added Clinic Name */}
+            <div className="col-md-4 mb-2">
+              <strong>Clinic Name:</strong> <span className="ms-1">{appointment?.clinicName||'N/A'}</span>
+            </div>
           </div>
         </div>
       </div>
 
-  
+
 
       {(appointment?.status.toLowerCase() === 'confirmed' ||
         appointment?.status.toLowerCase() === 'completed') &&
@@ -221,7 +225,7 @@ const AppointmentDetails = () => {
                   <strong>Languages:</strong> {doctor.languages?.join(', ')}
                 </p>
               </div>
-            
+
             </div>
           </>
         )}

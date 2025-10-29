@@ -205,7 +205,7 @@ const ServiceAdvertisement = () => {
         </CCard>
 
         {/* Modal Form */}
-        <CModal visible={visible} onClose={() => setVisible(false)} backdrop="static">
+        <CModal visible={visible} onClose={() => setVisible(false)} backdrop="static" className='custom-modal'>
           <CModalHeader>
             <CModalTitle>Add Advertisement</CModalTitle>
           </CModalHeader>

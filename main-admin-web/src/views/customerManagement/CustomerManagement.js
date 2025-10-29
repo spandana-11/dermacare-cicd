@@ -343,7 +343,8 @@ const CustomerManagement = () => {
   // ConfirmationModal.jsx
   const ConfirmationModal = ({ isVisible, message, onConfirm, onCancel }) => {
     return (
-      <CModal visible={isVisible} onClose={onCancel}>
+      <CModal visible={isVisible} onClose={onCancel}  className="custom-modal"
+        backdrop="static">
         <CModalHeader>
           <CModalTitle>Confirm Deletion</CModalTitle>
         </CModalHeader>
@@ -468,6 +469,7 @@ const CustomerManagement = () => {
                     <CTableHeaderCell>Full Name</CTableHeaderCell>
                     <CTableHeaderCell>Mobile Number</CTableHeaderCell>
                     <CTableHeaderCell>Gender</CTableHeaderCell>
+                    <CTableHeaderCell>Date Of Birth</CTableHeaderCell>
                     <CTableHeaderCell>Actions</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
@@ -481,6 +483,7 @@ const CustomerManagement = () => {
                       <CTableDataCell>{customer?.fullName || '-'}</CTableDataCell>
                       <CTableDataCell>{customer?.mobileNumber || '-'}</CTableDataCell>
                       <CTableDataCell>{customer?.gender || '-'}</CTableDataCell>
+                      <CTableDataCell>{customer?.dateOfBirth || '-'}</CTableDataCell>
                       <CTableDataCell>
                         <CButton
                           color="primary"

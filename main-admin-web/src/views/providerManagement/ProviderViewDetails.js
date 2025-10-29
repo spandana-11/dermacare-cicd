@@ -1746,7 +1746,8 @@ const PersonalViewDetails = () => {
 
   return (
     <div>
-      <CModal visible={!!previewUrl} onClose={() => setPreviewUrl(null)}>
+      <CModal visible={!!previewUrl} onClose={() => setPreviewUrl(null)}  className="custom-modal"
+        backdrop="static">
         <CModalHeader>
           <CModalTitle>Preview Certificate </CModalTitle>
         </CModalHeader>
