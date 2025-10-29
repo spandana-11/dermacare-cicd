@@ -7,6 +7,7 @@ export const doctorbaseUrl = `${ipUrl}/clinic-admin/doctor`
 export const reportbaseUrl = `${ipUrl}/clinic-admin`
 export const clinicbaseUrl = `${ipUrl}/admin/getClinicById`
 export const todayappointmentsbaseUrl = `${ipUrl}/api/doctors/appointments/today`
+export const todayfutureappointmentsbaseUrl = `${ipUrl}/api/doctors/getFutureDoctorappointmentsByDoctorId`
 export const appointmentsbaseUrl = `${ipUrl}/api/doctors/appointments/filter`
 export const appointmentsCountbaseUrl = `${ipUrl}/api/doctors/appointments/completed`
 export const savePrescriptionbaseUrl = `${ipUrl}/api/doctors`

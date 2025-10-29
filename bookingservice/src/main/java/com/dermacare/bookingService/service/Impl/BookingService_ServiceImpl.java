@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -181,10 +182,9 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	         }
 
 	         // 🩺 FOLLOW-UP CASE
-	         if (request.getVisitType().equalsIgnoreCase("follow-up")) {
+	         if (request.getVisitType().equalsIgnoreCase("follow-up")){
 	             Booking b = repository.findByMobileNumberAndPatientIdAndBookingId(
 	                     request.getMobileNumber(), request.getPatientId(), request.getBookingId());
-
 	             if (b == null) {
 	                 response = ResponseStructure.buildResponse(null,
 	                         "No Appointment Found.",
@@ -192,7 +192,6 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                         HttpStatus.NOT_FOUND.value());
 	                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 	             }
-
 	             if (!"In-Progress".equalsIgnoreCase(b.getStatus())) {
 	                 response = ResponseStructure.buildResponse(null,
 	                         "No In-Progress Appointments Found With Provided AppointmentId.",
@@ -225,6 +224,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	             } catch (Exception e) {
 	                 // fallback already handled
 	             }
+	             
 
 	             LocalDate plusDays = previousServiceDate.plusDays(days);
 
@@ -240,23 +240,24 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                                 HttpStatus.BAD_REQUEST.value()));
 	             }
 
-	             boolean isEligible = !currentAppointmentServiceDate.isBefore(previousServiceDate)
-	                     && !currentAppointmentServiceDate.isAfter(plusDays)
-	                     && (b.getFreeFollowUpsLeft() != null && b.getFreeFollowUpsLeft() > 0);
-
-	             if (!isEligible) {
-	                 response = ResponseStructure.buildResponse(null,
-	                         "Unable to proceed with booking. Please check service date and free follow-ups.",
-	                         HttpStatus.PAYMENT_REQUIRED,
-	                         HttpStatus.PAYMENT_REQUIRED.value());
-	                 return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(response);
-	             }
+//	             boolean isEligible = !currentAppointmentServiceDate.isBefore(previousServiceDate)
+//	                     && !currentAppointmentServiceDate.isAfter(plusDays)
+//	                     && (b.getFreeFollowUpsLeft() != null && b.getFreeFollowUpsLeft() > 0);
+//
+//	             if (!isEligible) {
+//	                 response = ResponseStructure.buildResponse(null,
+//	                         "Unable to proceed with booking. Please check service date and free follow-ups.",
+//	                         HttpStatus.PAYMENT_REQUIRED,
+//	                         HttpStatus.PAYMENT_REQUIRED.value());
+//	                 return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(response);
+//	             }
 
 	             // 🧩 Update booking
 	             b.setStatus("Confirmed");
 	             b.setServicetime(request.getServicetime());
 	             b.setFollowupDate(request.getServiceDate());
 	             b.setVisitType(request.getVisitType());
+	             b.setBookingId(String.valueOf(new ObjectId()));
 	             // optionally decrement follow-ups left if needed
 	             // b.setFreeFollowUpsLeft(b.getFreeFollowUpsLeft() - 1);
 
@@ -807,7 +808,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	        if(input.contains("_")){
 		    List<Booking> bookgs = repository.findByPatientIdAndClinicId(input,clinicId);
 	    	if( bookgs != null && !bookgs.isEmpty()) {
-		        Booking b = bookgs.get(bookgs.size()-1);	
+		        Booking b = bookgs.get(0);	
 		        BookingInfoByInput bkng = new BookingInfoByInput() ;	
 		        bkng.setAge(b.getAge());
 		        bkng.setClinicId(b.getClinicId());

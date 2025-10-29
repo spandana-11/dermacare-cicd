@@ -382,8 +382,8 @@ const DoctorManagement = () => {
       isValid = false
     }
 
-    if (!form.doctorMobileNumber || !/^[789]\d{9}$/.test(form.doctorMobileNumber)) {
-      errors.doctorMobileNumber = 'Enter a valid 10-digit mobile number starting with 7, 8, or 9'
+    if (!form.doctorMobileNumber || !/^[6789]\d{9}$/.test(form.doctorMobileNumber)) {
+      errors.doctorMobileNumber = 'Enter a valid 10-digit mobile number starting with 6,7, 8, or 9'
       isValid = false
     }
     if (
@@ -827,7 +827,6 @@ const DoctorManagement = () => {
       <div className="d-flex justify-content-end mb-3">
         <button
           className="btn btn-info text-white d-flex align-items-center gap-2 shadow-sm px-4 py-2"
-
           onClick={() => {
             setFormErrors({})
             setModalVisible(true)
@@ -1846,18 +1845,51 @@ const DoctorManagement = () => {
         </CModalBody>
 
         <CModalFooter>
-          <CButton color="secondary" onClick={() => setForm(initialForm)}>
-            Reset
-          </CButton>
           <CButton
             color="secondary"
             onClick={() => {
+              // Reset form to initial state
               setForm(initialForm)
+              setSelectedServices([])
+              setSelectedSubService([])
+              setSubServiceOptions([])
+              setServiceOptionsFormatted([])
+              setFormErrors({})
+              setNewService({
+                categoryId: [],
+                serviceId: [],
+                serviceName: [],
+                subServiceId: [],
+              })
+              setIsSubServiceComplete(true)
+            }}
+          >
+            Reset
+          </CButton>
+
+          <CButton
+            color="secondary"
+            onClick={() => {
+              // Reset and close modal
+              setForm(initialForm)
+              setSelectedServices([])
+              setSelectedSubService([])
+              setSubServiceOptions([])
+              setServiceOptionsFormatted([])
+              setFormErrors({})
+              setNewService({
+                categoryId: [],
+                serviceId: [],
+                serviceName: [],
+                subServiceId: [],
+              })
               setModalVisible(false)
+              setIsSubServiceComplete(true)
             }}
           >
             Cancel
           </CButton>
+
           <CButton
             style={{
               backgroundColor: 'var(--color-black)',

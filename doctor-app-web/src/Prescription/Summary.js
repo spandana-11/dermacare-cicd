@@ -180,26 +180,43 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
 
   // Package all data + pdf (base64) and send it
   // Upload prescription
-  const uploadPrescription = async ({ downloadAfter = false } = {}) => { //TODO:change uploadPrescription to onSaveTemplate
-
+  const uploadPrescription = async ({ downloadAfter = false } = {}) => {
     try {
-      // ✅ Check diagnosis first
-      const diagnosis = formData?.symptoms?.diagnosis?.trim() || ''
+      // ✅ 1️⃣ Check diagnosis first
+      const diagnosis = formData?.symptoms?.diagnosis?.trim() || '';
       if (!diagnosis) {
-        //  alert('Diagnosis is missing. Cannot save or upload the prescription.')
-        warning('"Diagnosis" is missing. Cannot save or upload the prescription.', { title: 'Warning' })
-        return false
+        warning('"Diagnosis" is missing. Cannot save or upload the prescription.', { title: 'Warning' });
+        return false;
       }
 
-      console.log("Preparing to upload prescription...")
-      const blob = await renderPrescriptionPdfBlob()
-      console.log("PDF Blob Generated:", blob)
+      // ✅ 2️⃣ Validate treatment dates (no past dates allowed)
+      const treatmentSchedules = formData?.treatments || {};
+      let hasPastDate = false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // normalize for date-only comparison
 
-      const base64 = await blobToBase64(blob)
-      console.log("Base64 PDF length:", base64.length)
+      Object.values(treatmentSchedules).forEach((meta) => {
+        (meta?.dates || []).forEach((d) => {
+          if (d?.date && new Date(d.date) < today) {
+            hasPastDate = true;
+          }
+        });
+      });
 
-      const safeName = (patientData?.name || 'Prescription').replace(/[^\w\-]+/g, '_')
-      const filename = `${safeName}.pdf`
+      if (hasPastDate) {
+        warning('Please change the date — past dates are not allowed.', { title: 'Warning' });
+        return false; // stop saving
+      }
+
+      console.log("Preparing to upload prescription...");
+      const blob = await renderPrescriptionPdfBlob();
+      console.log("PDF Blob Generated:", blob);
+
+      const base64 = await blobToBase64(blob);
+      console.log("Base64 PDF length:", base64.length);
+
+      const safeName = (patientData?.name || 'Prescription').replace(/[^\w\-]+/g, '_');
+      const filename = `${safeName}.pdf`;
 
       const payload = {
         bookingId: patientData?.bookingId,
@@ -215,31 +232,32 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
         prescription: formData?.prescription,
         prescriptionPdf: [base64],
         subServiceId: patientData?.subServiceId
-        // visitType: patientData?.visitType || "OFFLINE",
-      }
-      console.log("Final Payload to Upload:", payload)
+      };
 
-      const resp = await createDoctorSaveDetails(payload)
-      console.log("API Response:", resp)
+      console.log("Final Payload to Upload:", payload);
+
+      const resp = await createDoctorSaveDetails(payload);
+      console.log("API Response:", resp);
 
       if (resp) {
-        success('Prescription saved successfully!', { title: 'Success' })
+        success('Prescription saved successfully!', { title: 'Success' });
       } else {
-        warning('Saved, but got an unexpected response.')
+        warning('Saved, but got an unexpected response.');
       }
 
       if (downloadAfter) {
-        console.log("Downloading PDF file:", filename)
-        downloadBlob(blob, filename)
+        console.log("Downloading PDF file:", filename);
+        downloadBlob(blob, filename);
       }
 
-      return true
+      return true;
     } catch (e) {
-      console.error("Upload Prescription Error:", e)
-      error('Failed to generate or send the PDF.', { title: 'Error' })
-      return false
+      console.error("Upload Prescription Error:", e);
+      error('Failed to generate or send the PDF.', { title: 'Error' });
+      return false;
     }
-  }
+  };
+
 
 
   // ---------------- Actions ----------------
@@ -557,6 +575,8 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
                           <th style={{ width: "46%", textAlign: "center" }}>Date</th>
                           <th style={{ width: "46%", textAlign: "center" }}>Sitting</th>
                           <th style={{ width: "46%", textAlign: "center" }}>Status</th>
+
+
                         </tr>
 
                       </thead>
@@ -566,7 +586,22 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
                             <td>{i + 1}</td>
                             <td>{d?.date ?? '—'}</td>
                             <td>{d?.sitting ?? '—'}</td>
-                            <td>{d?.status ?? '—'}</td>
+                            <td style={{ textAlign: "center" }}>
+                              <span
+                                className={`badge ${d?.status === "Pending"
+                                    ? "bg-warning text-dark"
+                                    : d?.status === "Completed"
+                                      ? "bg-success"
+                                      : d?.status === "Cancelled"
+                                        ? "bg-danger"
+                                        : "bg-secondary"
+                                  }`}
+                              >
+                                {d?.status || "Pending"}
+                              </span>
+                            </td>
+
+
                           </tr>
                         ))}
                       </tbody>
@@ -683,11 +718,31 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
               aria-modal="true"
               aria-label="Save as template?"
             >
-              <div className="vh-modal">
-                <h6 className="mb-2">Save this as a template?</h6>
+              <div className="vh-modal position-relative p-3">
+                {/* 🔹 X Close Button */}
+                <button
+                  onClick={() => setShowTemplateModal(false)}
+                  style={{
+                    position: "absolute",
+                    top: "8px",
+                    right: "10px",
+                    background: "none",
+                    border: "none",
+                    fontSize: "18px",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                    color: COLORS.black
+                  }}
+                  aria-label="Close modal"
+                >
+                  ✕
+                </button>
+
+                <h6 className="mb-2 mt-3">Save this as a template?</h6>
                 <p className="muted mb-3">
                   You can reuse this prescription layout later for faster entry.
                 </p>
+
                 <div className="d-flex gap-2 justify-content-end">
                   <Button
                     onClick={() => {
@@ -707,6 +762,7 @@ const Summary = ({ onNext, sidebarWidth = 0, onSaveTemplate, patientData, formDa
               </div>
             </div>
           )}
+
         </div>
       </div>
 

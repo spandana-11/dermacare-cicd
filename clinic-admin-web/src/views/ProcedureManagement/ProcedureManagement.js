@@ -1772,7 +1772,7 @@ const ServiceManagement = () => {
                         title="Delete Procedure"
                         message="Are you sure you want to delete this procedure? This action cannot be undone."
                         confirmText={
-                          !delloading ? (
+                          delloading ? (
                             <>
                               <span
                                 className="spinner-border spinner-border-sm me-2 text-white"

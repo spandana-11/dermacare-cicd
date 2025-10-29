@@ -58,8 +58,8 @@ const TestsManagement = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const { searchQuery, setSearchQuery } = useGlobalSearch()
-   const [delloading, setDelLoading] = useState(false)
-   
+  const [delloading, setDelLoading] = useState(false)
+
   const [newTest, setNewTest] = useState({
     testName: '',
     hospitalId: '',
@@ -108,8 +108,8 @@ const TestsManagement = () => {
     } catch (error) {
       showCustomToast('Failed to delete test.', 'error')
       console.error('Delete error:', error)
-    }finally{
-       setDelLoading(false)
+    } finally {
+      setDelLoading(false)
     }
     setIsModalVisible(false)
   }
@@ -166,6 +166,7 @@ const TestsManagement = () => {
   const nameRegex = /^[A-Za-z0-9\s.\-()\/']+$/
 
   const handleAddTest = async () => {
+    console.log(newTest.testName)
     if (!newTest.testName.trim()) {
       setErrors({ testName: 'Test name is required.' })
       return
@@ -213,7 +214,7 @@ const TestsManagement = () => {
         'An unexpected error occurred.'
       showCustomToast(`Error adding test: ${errorMessage}`, { position: 'top-right' }, 'error')
     } finally {
-      setSaveLoading(flase)
+      setSaveLoading(false)
     }
   }
 
@@ -257,8 +258,7 @@ const TestsManagement = () => {
     } catch (error) {
       console.error('Update error:', error)
       showCustomToast('Failed to update test.', 'error')
-    }
-    finally {
+    } finally {
       setSaveLoading(false)
     }
   }
@@ -396,20 +396,18 @@ const TestsManagement = () => {
               onChange={(e) => {
                 const value = e.target.value
                 setNewTest({ ...newTest, testName: value })
-
-                // Clear error for this field as the user types
                 if (errors.testName) {
                   setErrors((prev) => ({ ...prev, testName: '' }))
                 }
               }}
-              // placeholder="Enter test name"
-              className={(errors.testName ? 'is-invalid' : '', 'mb-3')}
+              className={`mb-2 ${errors.testName ? 'is-invalid' : ''}`}
             />
             {errors.testName && (
               <div className="invalid-feedback" style={{ color: 'red' }}>
                 {errors.testName}
               </div>
             )}
+
             <h6>Description</h6>
             <CFormInput
               type="text"
@@ -526,25 +524,21 @@ const TestsManagement = () => {
           <CButton color="secondary" onClick={() => setEditTestMode(false)}>
             Cancel
           </CButton>
-         <CButton
-  style={{ backgroundColor: 'var(--color-black)' }}
-  className="text-white"
-  onClick={handleUpdateTest}
-  disabled={saveloading} // Disable while loading
->
-  {saveloading ? (
-    <>
-      <span
-        className="spinner-border spinner-border-sm me-2 text-white"
-        role="status"
-      />
-      Updating...
-    </>
-  ) : (
-    'Update'
-  )}
-</CButton>
-
+          <CButton
+            style={{ backgroundColor: 'var(--color-black)' }}
+            className="text-white"
+            onClick={handleUpdateTest}
+            disabled={saveloading} // Disable while loading
+          >
+            {saveloading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2 text-white" role="status" />
+                Updating...
+              </>
+            ) : (
+              'Update'
+            )}
+          </CButton>
         </CModalFooter>
       </CModal>
 

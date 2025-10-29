@@ -143,7 +143,7 @@ const BookingSearch = ({
         <CCol md={10}>
           <CFormInput
             type="text"
-            placeholder="Search by Name / Patient ID / Mobile"
+            placeholder={visitType === 'followup' ? "Search by Patient ID":"Search by Name / Patient ID / Mobile"}
             value={patientSearch}
             onChange={(e) => setPatientSearch(e.target.value)}
           />

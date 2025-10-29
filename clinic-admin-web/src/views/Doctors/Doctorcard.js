@@ -46,7 +46,7 @@ const DoctorCard = ({ doctor }) => {
       {/* Middle: Doctor Info */}
       <div className="doctor-info">
         <h2>
-          {capitalizeWords(doctor.doctorName)}, {capitalizeWords(doctor.qualification)}
+          {capitalizeWords(doctor.doctorName)}, {(doctor.qualification)}
         </h2>
         <p className="speciality">{capitalizeWords(doctor.specialization)}</p>
         <p>{doctor.experience} Years of experience</p>

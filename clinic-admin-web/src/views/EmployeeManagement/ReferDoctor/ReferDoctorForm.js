@@ -18,6 +18,7 @@ import { validateField } from '../../../Utils/Validators'
 
 import capitalizeWords from '../../../Utils/capitalizeWords'
 import { showCustomToast } from '../../../Utils/Toaster'
+import { emailPattern } from '../../../Constant/Constants'
 
 const ReferDoctorForm = ({
   visible,
@@ -281,10 +282,11 @@ const ReferDoctorForm = ({
     }
 
     // ✅ Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.email)) {
-      showCustomToast('Please enter a valid email address.', 'error')
-      return
+    if (formData.email != '') {
+      if (!emailPattern.test(formData.email)) {
+        showCustomToast('Please enter a valid email address.', 'error')
+        return
+      }
     }
 
     // ✅ Check duplicate contact number
@@ -315,6 +317,8 @@ const ReferDoctorForm = ({
       console.log(res) // Now this will log actual API response
       if (res != undefined) {
         setFormData(emptyForm)
+      } else {
+        onClose()
       }
     } catch (err) {
       console.error('Submit failed', err)
@@ -739,11 +743,11 @@ const ReferDoctorForm = ({
                       handleChange('email', value)
 
                       // Run live validation using your validateField function
-                      const err = validateField('emailId', value, formData)
-                      setErrors((prev) => ({ ...prev, email: err }))
+                      // const err = validateField('emailId', value, formData)
+                      // setErrors((prev) => ({ ...prev, email: err }))
                     }}
                   />
-                  {errors.email && <div className="text-danger mt-1">{errors.email}</div>}
+                  {/* {errors.email && <div className="text-danger mt-1">{errors.email}</div>} */}
                 </div>
               </div>
 
@@ -877,9 +881,7 @@ const ReferDoctorForm = ({
 
               <div className="row mb-3">
                 <div className="col-md-4">
-                  <CFormLabel>
-                    Status <span style={{ color: 'red' }}>*</span>
-                  </CFormLabel>
+                  <CFormLabel>Status</CFormLabel>
                   <CFormSelect
                     value={formData.status || ''} // empty initially
                     onChange={(e) => {
@@ -898,7 +900,7 @@ const ReferDoctorForm = ({
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                   </CFormSelect>
-                  {errors.status && <div className="text-danger mt-1">{errors.status}</div>}
+                  {/* {errors.status && <div className="text-danger mt-1">{errors.status}</div>} */}
                 </div>
               </div>
 

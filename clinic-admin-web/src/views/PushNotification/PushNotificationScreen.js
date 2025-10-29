@@ -24,6 +24,7 @@ import {
   CModalFooter,
 } from '@coreui/react'
 import Select from 'react-select'
+import ConfirmationModal from '../../components/ConfirmationModal'
 import { Edit2, Eye, Trash2 } from 'lucide-react'
 import { useHospital } from '../Usecontext/HospitalContext'
 import { CustomerData } from '../customerManagement/CustomerManagementAPI'
@@ -74,25 +75,50 @@ const FCMNotification = () => {
   }
 
   // Fetch notifications
-  const fetchNotifications = async () => {
-    const clinicId = localStorage.getItem('HospitalId')
-    const branchId = localStorage.getItem('branchId')
-    try {
-      const res = await http.get(`/priceDropNotification/${clinicId}/${branchId}`)
-      console.log(res)
-      if (res.data.success) {
-        const dataList = Array.isArray(res.data.data) ? res.data.data : [res.data.data]
-        const mapped = dataList.map((n) => ({
+const fetchNotifications = async () => {
+  const clinicId = localStorage.getItem('HospitalId')
+  const branchId = localStorage.getItem('branchId')
+
+  try {
+    const res = await http.get(`/priceDropNotification/${clinicId}/${branchId}`)
+    if (res.data.success) {
+      const dataList = Array.isArray(res.data.data) ? res.data.data : [res.data.data]
+
+      const mapped = dataList.map((n) => {
+        let selectedCustomers = []
+
+        // If tokens exist, use them
+        if (n.tokens && Array.isArray(n.tokens)) {
+          selectedCustomers = n.tokens
+            .map((token) => customerOptions.find((c) => c.value === token))
+            .filter(Boolean)
+        }
+
+        // If tokens are null, extract from customerData
+        else if (n.customerData && Array.isArray(n.customerData)) {
+          selectedCustomers = n.customerData.map((c) => {
+            const name = Object.keys(c)[0]
+            const data = c[name]
+            return {
+              value: data.customerId || data.patientId || name,
+              label: `${name} (${data.patientId || data.customerId || ''})`,
+            }
+          })
+        }
+
+        return {
           ...n,
-          selectedCustomers:
-            n.tokens?.map((token) => customerOptions.find((c) => c.value === token)) || [],
-        }))
-        setSentNotifications(mapped)
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error)
+          selectedCustomers,
+        }
+      })
+
+      setSentNotifications(mapped)
     }
+  } catch (error) {
+    console.error('Error fetching notifications:', error)
   }
+}
+
 
   // Fetch customers
   const fetchCustomers = useCallback(async () => {
@@ -118,9 +144,12 @@ const FCMNotification = () => {
     fetchCustomers()
   }, [fetchCustomers])
 
-  useEffect(() => {
+ useEffect(() => {
+  if (customerOptions.length > 0) {
     fetchNotifications()
-  }, [])
+  }
+}, [customerOptions])
+
 
   // Submit form (send or update)
   const handleSubmit = async () => {
@@ -180,20 +209,36 @@ const FCMNotification = () => {
   }
 
   // Delete notification
-  const handleDelete = async () => {
-    try {
-      const res = await http.delete(`${BASE_URL}/pricedrop/${selectedItem._id}`)
-      if (res.data.success) {
-        setResponseMessage({ success: 'Notification deleted successfully!' })
-        fetchNotifications()
-      }
-    } catch (error) {
-      setResponseMessage({ error: 'Error while deleting notification' })
-    } finally {
-      setDeleteConfirm(false)
-      setSelectedItem(null)
+ const handleDelete = async () => {
+  const clinicId = localStorage.getItem('HospitalId')
+  const branchId = localStorage.getItem('branchId')
+
+ 
+
+  try {
+    // Optional: show a loading state
+    setIsLoading(true)
+
+    const res = await http.delete(
+      `${BASE_URL}/deletePriceDropNotification/${clinicId}/${branchId}/${selectedItem}`
+    )
+
+    if (res.data.success) {
+      showCustomToast('Notification deleted successfully!')
+      fetchNotifications()
+    } else {
+      showCustomToast('Failed to delete notification', 'error')
     }
+  } catch (error) {
+    console.error('Error deleting notification:', error)
+    showCustomToast('Error while deleting notification', 'error')
+  } finally {
+    setIsLoading(false)
+    setDeleteConfirm(false)
+  
   }
+}
+
 
   // Load notification into form for editing
   const handleEdit = (n) => {
@@ -201,7 +246,8 @@ const FCMNotification = () => {
     setBody(n.body)
     setImage(n.image || null)
     setSendAll(n.sendAll || false)
-    setSelectedCustomers(n.selectedCustomers || [])
+   setSelectedCustomers(n.sendAll ? [] : n.selectedCustomers || [])
+
     setIsEditing(true)
     setEditId(n._id)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -279,7 +325,7 @@ const FCMNotification = () => {
                   option: (base, { isFocused, isSelected }) => ({
                     ...base,
                     backgroundColor: isSelected ? '#000' : isFocused ? '#f1f1f1' : 'white',
-                    color: isSelected ? 'white' : '#000',
+                    color: isSelected ? 'white' : 'var(--color-black)',
                     cursor: 'pointer',
                   }),
                 }}
@@ -365,9 +411,9 @@ const FCMNotification = () => {
                           className="actionBtn"
                           title="Delete"
                           onClick={() => {
-                            setSelectedItem(n)
-                            setDeleteConfirm(true)
-                          }}
+    setSelectedItem(n.id)      // store the selected item
+    setDeleteConfirm(true)  // show confirmation modal
+  }}
                         >
                           <Trash2 size={18} />
                         </button>
@@ -495,22 +541,20 @@ const FCMNotification = () => {
       </CModal>
 
       {/* Delete Modal */}
-      <CModal visible={deleteConfirm} onClose={() => setDeleteConfirm(false)}>
-        <CModalHeader>
-          <CModalTitle>Delete Confirmation</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          Are you sure you want to delete <strong>{selectedItem?.title}</strong>?
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" onClick={() => setDeleteConfirm(false)}>
-            Cancel
-          </CButton>
-          <CButton color="danger" onClick={handleDelete}>
-            Delete
-          </CButton>
-        </CModalFooter>
-      </CModal>
+  <ConfirmationModal
+  isVisible={deleteConfirm}
+  title="Delete Notification"
+  message={`Are you sure you want to delete this notification? This action cannot be undone.`}
+  isLoading={isLoading}
+  confirmText="Yes, Delete"
+  cancelText="Cancel"
+  confirmColor="danger"
+  cancelColor="secondary"
+  onConfirm={handleDelete}
+  onCancel={() => setDeleteConfirm(false)}
+/>
+
+
     </div>
   )
 }

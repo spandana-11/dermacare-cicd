@@ -1,15 +1,10 @@
 package com.dermacare.bookingService.entity;
 
 import java.util.List;
-import java.util.Map;
-
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import com.dermacare.bookingService.dto.TreatmentDetailsDTO;
 import com.dermacare.bookingService.dto.TreatmentResponseDTO;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -65,6 +60,7 @@ public class Booking  {
     private byte[] consentFormPdf;
     private List<byte[]> prescriptionPdf;
     private double totalFee;
+	private String paymentType;
     private String doctorRefCode;
     private String consultationExpiration;
     private String followupStatus;

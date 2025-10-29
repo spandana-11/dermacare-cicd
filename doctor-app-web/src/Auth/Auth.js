@@ -23,7 +23,8 @@ import {
   baseUrl,
   labtestsupdatedbase,
   addtreatmentUrl,
-  visitHistoryBypatientIdAndBookingId
+  visitHistoryBypatientIdAndBookingId,
+  todayfutureappointmentsbaseUrl
 } from './BaseUrl'
 
 export const postLogin = async (payload, endpoint) => {
@@ -107,7 +108,29 @@ export const getTodayAppointments = async () => {
   }
 };
 
+export const getTodayFutureAppointments = async () => {
+  const doctorId = localStorage.getItem("doctorId");
+  const hospitalId = localStorage.getItem("hospitalId");
 
+  try {
+    const response = await api.get(
+      `${todayfutureappointmentsbaseUrl}/${doctorId}`,
+       { responseType: 'json' }
+    );
+
+    return {
+      statusCode: response.data?.statusCode ?? response.status ?? 500,
+      data: Array.isArray(response.data?.data) ? response.data.data : [],
+      message: response.data?.message ?? "No message from server",
+    };
+  } catch (error) {
+    return {
+      statusCode: error.response?.status ?? 500,
+      data: [],
+      message: error.message ?? "Network Error",
+    };
+  }
+};
 
 export const getAppointments = async (number) => {
   const doctorId = localStorage.getItem('doctorId')

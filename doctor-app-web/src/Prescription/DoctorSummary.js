@@ -561,7 +561,20 @@ const DoctorSummary = ({
                                 <td>{i + 1}</td>
                                 <td>{d?.date ?? '—'}</td>
                                 <td>{d?.sitting ?? '—'}</td>
-                                <td>{d?.status ?? '—'}</td>
+                                <td style={{ textAlign: "center" }}>
+                              <span
+                                className={`badge ${d?.status === "Pending"
+                                    ? "bg-warning text-dark"
+                                    : d?.status === "Completed"
+                                      ? "bg-success"
+                                      : d?.status === "Cancelled"
+                                        ? "bg-danger"
+                                        : "bg-secondary"
+                                  }`}
+                              >
+                                {d?.status || "Pending"}
+                              </span>
+                            </td>
                               </tr>
                             ))}
                           </tbody>

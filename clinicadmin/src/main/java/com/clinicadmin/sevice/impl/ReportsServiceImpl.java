@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+
+import java.util.Optional;
+
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -224,6 +228,127 @@ public class ReportsServiceImpl implements ReportsService {
         }
         return res;
     }
+    
+    @Override
+    public Response updateReport(String reportId, ReportsDtoList dto) {
+        try {
+            Optional<ReportsList> optional = reportsRepository.findById(reportId);
+            if (optional.isEmpty()) {
+                return Response.builder()
+                        .success(false)
+                        .data(null)
+                        .message("Report not found")
+                        .status(HttpStatus.NOT_FOUND.value())
+                        .build();
+            }
+
+            ReportsList existing = optional.get();
+
+            // Update top-level fields if provided
+            if (dto.getPatientId() != null) existing.setPatientId(dto.getPatientId());
+            if (dto.getCustomerId() != null) existing.setCustomerId(dto.getCustomerId());
+
+            // If no nested list provided, just save top-level changes
+            if (dto.getReportsList() == null || dto.getReportsList().isEmpty()) {
+                ReportsList savedNoNested = reportsRepository.save(existing);
+                return Response.builder()
+                        .success(true)
+                        .data(savedNoNested)
+                        .message("Report updated successfully (top-level only)")
+                        .status(HttpStatus.OK.value())
+                        .build();
+            }
+
+            List<Reports> existingReports = existing.getReportsList();
+            if (existingReports == null) existingReports = new ArrayList<>();
+
+            // For each incoming ReportsDTO, update or add
+            for (ReportsDTO incoming : dto.getReportsList()) {
+                boolean updated = false;
+
+                // Decode Base64 files if present
+                List<byte[]> decodedFiles = null;
+                if (incoming.getReportFile() != null) {
+                    decodedFiles = new ArrayList<>();
+                    for (String enc : incoming.getReportFile()) {
+                        decodedFiles.add(Base64.getDecoder().decode(enc));
+                    }
+                }
+
+                for (int i = 0; i < existingReports.size(); i++) {
+                    Reports r = existingReports.get(i);
+
+                    boolean bookingMatches = incoming.getBookingId() != null && incoming.getBookingId().equals(r.getBookingId());
+                    boolean patientMatches = incoming.getPatientId() != null && incoming.getPatientId().equals(r.getPatientId());
+
+                    boolean isMatch = false;
+                    if (incoming.getBookingId() != null && incoming.getPatientId() != null) {
+                        isMatch = bookingMatches && patientMatches;
+                    } else if (incoming.getBookingId() != null) {
+                        isMatch = bookingMatches;
+                    } else if (incoming.getPatientId() != null) {
+                        isMatch = patientMatches;
+                    }
+
+                    if (isMatch) {
+                        // Update only non-null fields
+                        if (incoming.getCustomerMobileNumber() != null)
+                            r.setCustomerMobileNumber(incoming.getCustomerMobileNumber());
+                        if (incoming.getReportName() != null)
+                            r.setReportName(incoming.getReportName());
+                        if (incoming.getReportDate() != null)
+                            r.setReportDate(incoming.getReportDate());
+                        if (incoming.getReportStatus() != null)
+                            r.setReportStatus(incoming.getReportStatus());
+                        if (incoming.getReportType() != null)
+                            r.setReportType(incoming.getReportType());
+                        if (decodedFiles != null)
+                            r.setReportFile(decodedFiles);
+
+                        existingReports.set(i, r);
+                        updated = true;
+                        break;
+                    }
+                }
+
+                // Add new report if not matched
+                if (!updated) {
+                    Reports newReport = Reports.builder()
+                            .bookingId(incoming.getBookingId())
+                            .patientId(incoming.getPatientId())
+                            .customerMobileNumber(incoming.getCustomerMobileNumber())
+                            .reportName(incoming.getReportName())
+                            .reportDate(incoming.getReportDate())
+                            .reportStatus(incoming.getReportStatus())
+                            .reportType(incoming.getReportType())
+                            .reportFile(decodedFiles)
+                            .build();
+
+                    existingReports.add(newReport);
+                }
+            }
+
+            existing.setReportsList(existingReports);
+            ReportsList updated = reportsRepository.save(existing);
+
+            return Response.builder()
+                    .success(true)
+                    .data(updated)
+                    .message("Report updated successfully")
+                    .status(HttpStatus.OK.value())
+                    .build();
+
+        } catch (Exception e) {
+            return Response.builder()
+                    .success(false)
+                    .data(null)
+                    .message("Error updating report: " + e.getMessage())
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                    .build();
+        }
+    }
+
+
 
     // --------------------------------------- Get Reports By PatientId + BookingId -----------------------------------
     @Override

@@ -227,7 +227,7 @@ const SecurityManagement = () => {
       </CButton> */}
       {loading ? (
         <div className="d-flex justify-content-center align-items-center">
-          <LoadingIndicator message="Loading technician..." />
+          <LoadingIndicator message="Loading security..." />
         </div>
       ) : error ? (
         <div

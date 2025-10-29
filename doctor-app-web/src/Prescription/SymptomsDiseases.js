@@ -433,82 +433,82 @@ const SymptomsDiseases = ({ seed = {}, onNext, sidebarWidth = 0, patientData, se
                 <div className="mt-2 d-flex align-items-start gap-2">
                   <div className="flex-grow-1">
                     <Select
-  value={
-    diagnosis
-      ? { label: diagnosis, value: diagnosis }
-      : patientData?.subServiceName && patientData.subServiceName !== 'NA'
-        ? { label: patientData.subServiceName, value: patientData.subServiceName }
-        : null
-  }
-  onChange={handleDiagnosisChange}   // ✅ FIXED
-  inputValue={inputValue}
-  onInputChange={(val, meta) => {
-    if (meta.action === 'input-change') setInputValue(val);
-  }}
-  options={options}
-  isClearable
-  components={{ ClearIndicator: ClearInput }}
-  placeholder="Select diagnosis..."
-  menuPlacement="auto"
-  menuPosition="fixed"
-  menuPortalTarget={document.body}
-  noOptionsMessage={() =>
-    inputValue
-      ? `No matches. Click Add to create "${inputValue}" as a diagnosis`
-      : 'Type to search...'
-  }
-  styles={{
-    input: (provided) => ({ ...provided, color: 'black' }),
-    singleValue: (provided) => ({ ...provided, color: 'black' }),
-    placeholder: (provided) => ({ ...provided, color: '#000' }),
-    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-  }}
-/>
+                      value={
+                        diagnosis
+                          ? { label: diagnosis, value: diagnosis }
+                          : patientData?.subServiceName && patientData.subServiceName !== 'NA'
+                            ? { label: patientData.subServiceName, value: patientData.subServiceName }
+                            : null
+                      }
+                      onChange={handleDiagnosisChange}   // ✅ FIXED
+                      inputValue={inputValue}
+                      onInputChange={(val, meta) => {
+                        if (meta.action === 'input-change') setInputValue(val);
+                      }}
+                      options={options}
+                      isClearable
+                      components={{ ClearIndicator: ClearInput }}
+                      placeholder="Select diagnosis..."
+                      menuPlacement="auto"
+                      menuPosition="fixed"
+                      menuPortalTarget={document.body}
+                      noOptionsMessage={() =>
+                        inputValue
+                          ? `No matches. Click Add to create "${inputValue}" as a diagnosis`
+                          : 'Type to search...'
+                      }
+                      styles={{
+                        input: (provided) => ({ ...provided, color: 'black' }),
+                        singleValue: (provided) => ({ ...provided, color: 'black' }),
+                        placeholder: (provided) => ({ ...provided, color: '#000' }),
+                        menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                      }}
+                    />
 
 
 
                   </div>
 
-                <div className="pt-1 d-flex gap-2">
-  {/* ADD button */}
-  <button
-    type="button"
-    disabled={!canShowAdd || adding}
-    onClick={openMadal}
-    style={{
-      backgroundColor: !canShowAdd || adding ? "#a5c4d4ff" : "#7e3a93",
-      color: !canShowAdd || adding ? "#7e3a93" : "#fff",
-      cursor: !canShowAdd || adding ? "not-allowed" : "pointer",
-      border: "none",
-      padding: "6px 14px",
-      borderRadius: "6px",
-      fontWeight: "600",
-      transition: "all 0.3s ease",
-    }}
-    title={canShowAdd ? "Add new disease" : "Type a new disease name"}
-  >
-    {adding ? "Adding…" : "Add"}
-  </button>
+                  <div className="pt-1 d-flex gap-2">
+                    {/* ADD button */}
+                    <button
+                      type="button"
+                      disabled={!canShowAdd || adding}
+                      onClick={openMadal}
+                      style={{
+                        backgroundColor: !canShowAdd || adding ? "#a5c4d4ff" : "#7e3a93",
+                        color: !canShowAdd || adding ? "#7e3a93" : "#fff",
+                        cursor: !canShowAdd || adding ? "not-allowed" : "pointer",
+                        border: "none",
+                        padding: "6px 14px",
+                        borderRadius: "6px",
+                        fontWeight: "600",
+                        transition: "all 0.3s ease",
+                      }}
+                      title={canShowAdd ? "Add new disease" : "Type a new disease name"}
+                    >
+                      {adding ? "Adding…" : "Add"}
+                    </button>
 
-  {/* AI button */}
-  <button
-    type="button"
-    // onClick={handleAISuggest}
-    style={{
-      backgroundColor: "#a5c4d4ff",
-      color: "#7e3a93",
-      border: "none",
-      padding: "6px 14px",
-      borderRadius: "6px",
-      fontWeight: "600",
-      cursor: "pointer",
-      transition: "all 0.3s ease",
-    }}
-    title="AI Suggestion"
-  >
-    AI
-  </button>
-</div>
+                    {/* AI button */}
+                    <button
+                      type="button"
+                      // onClick={handleAISuggest}
+                      style={{
+                        backgroundColor: "#a5c4d4ff",
+                        color: "#7e3a93",
+                        border: "none",
+                        padding: "6px 14px",
+                        borderRadius: "6px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        transition: "all 0.3s ease",
+                      }}
+                      title="AI Suggestion"
+                    >
+                      AI
+                    </button>
+                  </div>
 
 
                   <SymptomsModal

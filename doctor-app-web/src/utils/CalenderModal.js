@@ -1,11 +1,24 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { CModal, CModalHeader, CModalTitle, CModalBody } from "@coreui/react";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Popover from "react-bootstrap/Popover";
-import { COLORS } from "../Themes"; // optional
+import { COLORS } from "../Themes";
 
-// Generate time slots (returns display strings like "05:30 PM")
-const generateTimeSlots = (start = "08:00", end = "21:00", interval = 30) => {
+import { getDoctorDetails } from "../Auth/Auth";
+
+const convertTo24Hr = (time12h) => {
+  if (!time12h) return null;
+  const [time, modifier] = time12h.split(" ");
+  let [hours, minutes] = time.split(":");
+  hours = parseInt(hours, 10);
+  if (modifier === "PM" && hours !== 12) hours += 12;
+  if (modifier === "AM" && hours === 12) hours = 0;
+  return `${hours.toString().padStart(2, "0")}:${minutes}`;
+};
+
+// Generate time slots dynamically
+const generateTimeSlots = (start, end, interval = 30) => {
   const slots = [];
   const [sh, sm] = start.split(":").map(Number);
   const [eh, em] = end.split(":").map(Number);
@@ -23,7 +36,6 @@ const generateTimeSlots = (start = "08:00", end = "21:00", interval = 30) => {
   return slots;
 };
 
-// Generate rolling Date objects for header (n days)
 const generateDates = (days = 15) => {
   const today = new Date();
   return Array.from({ length: days }, (_, i) => {
@@ -33,14 +45,22 @@ const generateDates = (days = 15) => {
     return d;
   });
 };
+// Convert "07:00" → "07:00 AM", "22:00" → "10:00 PM"
+const convertTo12Hr = (time24) => {
+  if (!time24) return "";
+  const [hours, minutes] = time24.split(":").map(Number);
+  const period = hours >= 12 ? "PM" : "AM";
+  const hours12 = hours % 12 === 0 ? 12 : hours % 12;
+  return `${hours12.toString().padStart(2, "0")}:${minutes
+    .toString()
+    .padStart(2, "0")} ${period}`;
+};
 
-// format full (16 Sep 2025)
 const formatFullDate = (date) =>
   date instanceof Date
     ? date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
     : date;
 
-// robust: parse "05:45 PM" or "17:45" into minutes since midnight
 const toMinutes = (timeStr) => {
   if (!timeStr || typeof timeStr !== "string") return null;
   const s = timeStr.trim();
@@ -70,17 +90,55 @@ const CalendarModal = ({
   todayAppointments = [],
   defaultBookedSlots = [],
   days = 15,
-  start = "08:00",
-  end = "22:00",
   interval = 30,
   handleClick = () => { },
-  fetchAppointments, // <-- pass from parent
-  intervalMs = 60000, // refresh every 60s
+  fetchAppointments,
+  intervalMs = 60000,
 }) => {
-  const timeSlots = generateTimeSlots(start, end, interval);
+  const [timeSlots, setTimeSlots] = useState([]);
+  const [clinicTimes, setClinicTimes] = useState({ open: "", close: "" });
   const dates = generateDates(days);
 
-  // Local date (yyyy-mm-dd) for comparison
+  // ✅ Fetch opening & closing times dynamically (no static fallback)
+  useEffect(() => {
+    const fetchClinicTimings = async () => {
+      try {
+        const doctorData = await getDoctorDetails(); // ✅ Use your API helper
+
+        if (doctorData?.availableTimes) {
+
+          const [openTime, closeTime] = doctorData.availableTimes.split(" - ").map((t) => t.trim());
+
+          if (openTime && closeTime) {
+            const open = convertTo24Hr(openTime);
+            const close = convertTo24Hr(closeTime);
+            setClinicTimes({ open, close });
+            setTimeSlots(generateTimeSlots(open, close, interval));
+          } else {
+            console.warn("⚠️ Invalid availableTimes format:", doctorData.availableTimes);
+            setTimeSlots([]);
+          }
+        } else {
+          console.warn("⚠️ availableTimes not found in doctor details");
+          setTimeSlots([]);
+        }
+      } catch (error) {
+        console.error("❌ Failed to fetch doctor details:", error);
+        setTimeSlots([]);
+      }
+    };
+
+    fetchClinicTimings();
+  }, [interval]);
+
+  // Refresh appointments periodically
+  useEffect(() => {
+    if (!visible || !fetchAppointments) return;
+    fetchAppointments(); // immediate
+    const id = setInterval(fetchAppointments, intervalMs);
+    return () => clearInterval(id);
+  }, [visible, fetchAppointments, intervalMs]);
+
   const getLocalDateStr = (d) => new Date(d).toLocaleDateString("en-CA");
 
   const getAppointments = (dateObj, slotStart, slotEnd) => {
@@ -116,164 +174,150 @@ const CalendarModal = ({
       <Popover.Header as="h6">Patient Info</Popover.Header>
       <Popover.Body>
         <div><strong>Name:</strong> {appointment.name}</div>
-        <div>
-          <strong>Age & Gender:</strong> {appointment.age}, {appointment.gender}
-        </div>
-        <div>
-          <strong>Mobile:</strong> {appointment.patientMobileNumber || appointment.mobileNumber}
-        </div>
-        <div>
-          <strong>Branch & Clinic:</strong> {appointment.branchname}, {appointment.clinicName}
-        </div>
+        <div><strong>Age & Gender:</strong> {appointment.age}, {appointment.gender}</div>
+        <div><strong>Mobile:</strong> {appointment.patientMobileNumber || appointment.mobileNumber}</div>
+        <div><strong>Branch & Clinic:</strong> {appointment.branchname}, {appointment.clinicName}</div>
         <div><strong>Doctor:</strong> {appointment.doctorName}</div>
-        <div>
-          <strong>Service Date & Time:</strong> {formatFullDate(new Date(appointment.serviceDate))}, {appointment.servicetime}
-        </div>
+        <div><strong>Service Date & Time:</strong> {formatFullDate(new Date(appointment.serviceDate))}, {appointment.servicetime}</div>
         <div><strong>Status:</strong> {appointment.status}</div>
       </Popover.Body>
     </Popover>
   );
 
-
-  // Auto reload hook
-  useEffect(() => {
-    if (!visible || !fetchAppointments) return;
-    fetchAppointments(); // fetch immediately when modal opens
-
-    const id = setInterval(() => {
-      fetchAppointments();
-    }, intervalMs);
-
-    return () => clearInterval(id);
-  }, [visible, fetchAppointments, intervalMs]);
-
   return (
     <CModal visible={visible} onClose={onClose} size="xl">
       <CModalHeader closeButton>
         <CModalTitle className="w-100 text-center" style={{ color: COLORS.black }}>
-          My Calendar
+          My Calendar{" "}
+          {clinicTimes.open && clinicTimes.close ? (
+            <>
+              (
+              {convertTo12Hr(clinicTimes.open)} - {convertTo12Hr(clinicTimes.close)}
+              )
+            </>
+          ) : (
+            "(Loading timings...)"
+          )}
         </CModalTitle>
+
       </CModalHeader>
 
       <CModalBody style={{ padding: 0 }}>
         <div style={{ overflow: "auto", maxHeight: "80vh", border: "1px solid #ccc" }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: `120px repeat(${dates.length}, 1fr)`,
-              fontFamily: "Arial, sans-serif",
-              fontSize: "14px",
-            }}
-          >
-            {/* empty top-left */}
-            <div style={{ backgroundColor: COLORS?.bgcolor || "#e9eef6" }}></div>
+          {timeSlots.length === 0 ? (
+            <div className="text-center py-5">No clinic timings available</div>
+          ) : (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: `120px repeat(${dates.length}, 1fr)`,
+                fontFamily: "Arial, sans-serif",
+                fontSize: "14px",
+              }}
+            >
+              <div style={{ backgroundColor: COLORS?.bgcolor || "#e9eef6" }}></div>
 
-            {/* header: dates */}
-            {dates.map((d, idx) => (
-              <div
-                key={idx}
-                style={{
-                  padding: "10px 6px",
-                  backgroundColor: COLORS?.bgcolor || "#b5d0e0",
-                  color: COLORS?.black || "#4b0082",
-                  fontWeight: 600,
-                  fontSize: "14px",
-                  textAlign: "center",
-                  borderLeft: "1px solid #dbdada",
-                  borderBottom: "1px solid #dbdada",
-                  position: "sticky",
-                  top: 0,
-                  zIndex: 2,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {d.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit" })}
-              </div>
-            ))}
-
-            {/* time rows */}
-            {timeSlots.map((slot, i) => (
-              <React.Fragment key={slot + i}>
-                {/* time label column */}
+              {dates.map((d, idx) => (
                 <div
+                  key={idx}
                   style={{
-                    padding: "8px",
-                    fontWeight: "bold",
-                    backgroundColor: COLORS?.bgcolor || "#e9eef6",
-                    color: COLORS?.black,
+                    padding: "10px 6px",
+                    backgroundColor: COLORS?.bgcolor || "#b5d0e0",
+                    color: COLORS?.black || "#4b0082",
+                    fontWeight: 600,
                     textAlign: "center",
+                    borderLeft: "1px solid #dbdada",
                     borderBottom: "1px solid #dbdada",
                     position: "sticky",
-                    left: 0,
-                    zIndex: 1,
+                    top: 0,
+                    zIndex: 2,
                   }}
                 >
-                  {slot}
+                  {d.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit" })}
                 </div>
+              ))}
 
-                {/* cells for each date */}
-                {dates.map((d, j) => {
-                  const nextSlot = timeSlots[i + 1] || null;
-                  const appointments = getAppointments(d, slot, nextSlot);
-                  const defaultBooked = isDefaultBooked(d, slot, nextSlot);
+              {timeSlots.map((slot, i) => (
+                <React.Fragment key={slot + i}>
+                  <div
+                    style={{
+                      padding: "8px",
+                      fontWeight: "bold",
+                      backgroundColor: COLORS?.bgcolor || "#e9eef6",
+                      color: COLORS?.black,
+                      textAlign: "center",
+                      borderBottom: "1px solid #dbdada",
+                      position: "sticky",
+                      left: 0,
+                      zIndex: 1,
+                    }}
+                  >
+                    {slot}
+                  </div>
 
-                  return (
-                    <div
-                      key={`${i}-${j}`}
-                      style={{
-                        padding: "6px",
-                        borderLeft: "1px solid #dbdada",
-                        borderBottom: "1px solid #dbdada",
-                        minHeight: "44px",
-                        textAlign: "center",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        gap: "4px",
-                      }}
-                    >
-                      {appointments.length > 0 ? (
-                        appointments.map((appt) => (
-                          <OverlayTrigger
-                            key={appt.bookingId}
-                            trigger={["hover", "focus"]}
-                            placement="right"
-                            overlay={generatePopover(appt)}
-                          >
-                            <div
-                              onClick={() => handleClick(appt)}
-                              style={{
-                                fontSize: "12px",
-                                borderRadius: "6px",
-                                backgroundColor: "#7e3a93",
-                                color: "#fff",
-                                padding: "4px 6px",
-                                cursor: "pointer",
-                              }}
+                  {dates.map((d, j) => {
+                    const nextSlot = timeSlots[i + 1] || null;
+                    const appointments = getAppointments(d, slot, nextSlot);
+                    const defaultBooked = isDefaultBooked(d, slot, nextSlot);
+
+                    return (
+                      <div
+                        key={`${i}-${j}`}
+                        style={{
+                          padding: "6px",
+                          borderLeft: "1px solid #dbdada",
+                          borderBottom: "1px solid #dbdada",
+                          minHeight: "44px",
+                          textAlign: "center",
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        {appointments.length > 0 ? (
+                          appointments.map((appt) => (
+                            <OverlayTrigger
+                              key={appt.bookingId}
+                              trigger={["hover", "focus"]}
+                              placement="right"
+                              overlay={generatePopover(appt)}
                             >
-                              Booked
-                            </div>
-                          </OverlayTrigger>
-                        ))
-                      ) : defaultBooked ? (
-                        <div
-                          style={{
-                            fontSize: "12px",
-                            borderRadius: "6px",
-                            backgroundColor: "#999",
-                            color: "#fff",
-                            padding: "4px 6px",
-                          }}
-                        >
-                          Default Booked
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </React.Fragment>
-            ))}
-          </div>
+                              <div
+                                onClick={() => handleClick(appt)}
+                                style={{
+                                  fontSize: "12px",
+                                  borderRadius: "6px",
+                                  backgroundColor: "#7e3a93",
+                                  color: "#fff",
+                                  padding: "4px 6px",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                Booked
+                              </div>
+                            </OverlayTrigger>
+                          ))
+                        ) : defaultBooked ? (
+                          <div
+                            style={{
+                              fontSize: "12px",
+                              borderRadius: "6px",
+                              backgroundColor: "#999",
+                              color: "#fff",
+                              padding: "4px 6px",
+                            }}
+                          >
+                            Default Booked
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
+          )}
         </div>
       </CModalBody>
     </CModal>

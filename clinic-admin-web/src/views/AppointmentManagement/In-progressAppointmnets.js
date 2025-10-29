@@ -32,7 +32,15 @@ import capitalizeWords from '../../Utils/capitalizeWords'
 import { getFollowOptions } from '../../APIs/FollowOptions'
 import { showCustomToast } from '../../Utils/Toaster'
 import Pagination from '../../Utils/Pagination'
-
+import { getDoctorDetailsById } from '../Doctors/DoctorAPI'
+import RazorpayButton from '../Payments/RazorpayButton'
+import {
+  CategoryData,
+  getSubServiceById,
+  serviceData,
+  serviceDataH,
+  subServiceData,
+} from '../ProcedureManagement/ProcedureManagementAPI'
 // const followOptions = [
 //   { label: 'Follow-up Required', value: 'followup' },
 //   { label: 'No Follow-up Needed', value: 'no-followup' },
@@ -76,6 +84,11 @@ const InProgressAppointmentsPage = () => {
   const [followOptions, setFollowOptions] = useState([])
   const [expandedTreatment, setExpandedTreatment] = useState(null)
   const [expandedBooking, setExpandedBooking] = useState(null)
+  const [doctorDetails, setDoctorDetails] = useState(null)
+  const [loadingDoctor, setLoadingDoctor] = useState(false)
+  const [selectedSubService, setSelectedSubService] = useState(null)
+  const [finalCost, setFinalCost] = useState('')
+  const [selected, setSelected] = useState(null)
 
   useEffect(() => {
     fetchData()
@@ -93,11 +106,23 @@ const InProgressAppointmentsPage = () => {
     console.log(options)
   }
 
+  const fetchDoctorBtId = async (id) => {
+    try {
+      setLoadingDoctor(true)
+      const res = await getDoctorDetailsById(id)
+      setDoctorDetails(res.data)
+    } catch (err) {
+      console.error('Error fetching doctor details', err)
+    } finally {
+      setLoadingDoctor(false)
+    }
+  }
+
   const fetchAppointments = useCallback(async () => {
-    setLoading(true)
     setError(null)
 
     try {
+      setLoading(true)
       const response = await GetBookingInprogress()
       console.log('In-progress appointments:', response)
 
@@ -142,10 +167,10 @@ const InProgressAppointmentsPage = () => {
   const [disabledIds, setDisabledIds] = useState({}) // Track disabled appointments
 
   const handleSave = async (sittingKey, bookingId) => {
-    const selected = followStatuses[sittingKey]
-    if (!selected) return alert('Select or type a reason')
+    const current = followStatuses[sittingKey]
+    if (!current) return alert('Select or type a reason')
 
-    const status = selected.value === 'other' ? selected.custom?.trim() : selected.value
+    const status = current.value === 'other' ? current.custom?.trim() : current.value
     if (!status) return alert('Status cannot be empty')
 
     try {
@@ -161,7 +186,8 @@ const InProgressAppointmentsPage = () => {
 
       // exit edit mode
       setEditMode((prev) => ({ ...prev, [sittingKey]: false }))
-
+      setSelected(current)
+      showCustomToast('Status saved successfully.', 'success')
       fetchAppointments()
     } catch (err) {
       console.error('Failed to save status:', err)
@@ -191,7 +217,7 @@ const InProgressAppointmentsPage = () => {
   // }
 
   // Booking payload and API call
-  const bookSlot = async () => {
+  const bookSlot = async (paymentType = 'hospital', razorpayResponse = null) => {
     if (!modalData || selectedSlots.length === 0) {
       showCustomToast('Please select a slot before booking.', 'warning')
       return
@@ -205,32 +231,33 @@ const InProgressAppointmentsPage = () => {
       serviceDate: selectedDate,
       servicetime: selectedSlots,
       mobileNumber: modalData.mobileNumber,
-      bookingFor:modalData.bookingFor
+      bookingFor: modalData.bookingFor,
+      // paymentType, // 🧩 add payment type (hospital/online)
+      // razorpayPaymentId: razorpayResponse?.razorpay_payment_id || null,
     }
 
-    const selected = followStatuses[modalData.bookingId]
+    // const selected = followStatuses[modalData.bookingId]
     const status = selected?.value === 'other' ? selected.custom?.trim() : selected?.value
 
     try {
       const rescheduleStatuses = ['reschedule-doctor', 'reschedule-patient']
       const shouldReschedule =
         rescheduleStatuses.includes(status) || rescheduleStatuses.includes(modalData.followupStatus)
-      console.log(status)
-      console.log(modalData.followupStatus)
-      console.log(shouldReschedule)
-      if (shouldReschedule) {
-        // 🔹 Only reschedule, don't book again
+
+      if (reschedule) {
         const reschedulePayload = {
           bookingId: modalData.bookingId,
           followupStatus: status,
           serviceDate: selectedDate,
           servicetime: selectedSlots,
         }
-
+        console.log(reschedulePayload)
         await bookingUpdate(reschedulePayload)
         showCustomToast('Booking has been rescheduled successfully.', 'success')
       } else {
-        // 🔹 Normal booking flow
+        console.log('Booking Payload:', payload)
+
+        // 🔹 Example: Post booking to your backend
         const response = await axios.post(`${Booking_sevice}/customer/bookService`, payload)
 
         if (response?.data?.success) {
@@ -238,9 +265,14 @@ const InProgressAppointmentsPage = () => {
         } else {
           showCustomToast(response?.data?.message || 'Booking failed. Please try again.', 'error')
         }
+
+        if (paymentType === 'online') {
+          showCustomToast('Online Payment Successful! Booking Confirmed.', 'success')
+        } else {
+          showCustomToast('Booking Confirmed. Pay at Hospital.', 'success')
+        }
       }
 
-      // 🔹 Common clean-up for both flows
       await fetchAppointments()
       setModalVisible(false)
     } catch (error) {
@@ -313,6 +345,24 @@ const InProgressAppointmentsPage = () => {
     }
   }
 
+  const getSubServiceByIdFun = async (subServiceId) => {
+    try {
+      const hospitalId = localStorage.getItem('HospitalId')
+      const res = await getSubServiceById(hospitalId, subServiceId)
+      console.log('API Response:', res)
+
+      // Safely calculate
+      const total = (res.finalCost || 0) - (res.consultationFee || 0)
+
+      console.log('Calculated Final Cost:', total)
+
+      setFinalCost(total) // ✅ Correct way to update state
+      setSelectedSubService(res) // ✅ Store full object
+    } catch (error) {
+      console.error('Error fetching sub service:', error)
+    }
+  }
+
   // Filter slots for selected date and doctor
   useEffect(() => {
     if (!allSlots.length || !modalData || !selectedDate) return
@@ -340,7 +390,7 @@ const InProgressAppointmentsPage = () => {
 
   const openBookingModal = async (bookingId) => {
     setModalVisible(true)
-    setModalLoading(true)
+    // setModalLoading(true)
     setModalError(null)
     setModalData(bookingId)
   }
@@ -417,7 +467,9 @@ const InProgressAppointmentsPage = () => {
       </div>
     )
   }
-
+  const COLUMNS = 4 // Number of columns in your grid
+  const INITIAL_ROWS = 3 // Number of rows to show initially
+  const INITIAL_COUNT = COLUMNS * INITIAL_ROWS // Number of sl
   return (
     <div className="container my-2">
       <div className="row d-flex w-100">
@@ -486,9 +538,10 @@ const InProgressAppointmentsPage = () => {
               <CCardBody style={{ padding: '10px' }}>
                 {appointments.map((apt) => (
                   <CCard
+                  
                     key={apt.bookingId}
                     className="mb-3"
-                    style={{ color: 'var(--color-black)' }}
+                    style={{ color: 'var(--color-black)'  }}
                   >
                     {/* 🔹 Booking header */}
                     <div
@@ -499,8 +552,8 @@ const InProgressAppointmentsPage = () => {
                         cursor: 'pointer',
                         padding: '8px 12px',
                         fontWeight: 600,
-                        backgroundColor: '#f7f7f7',
-                        borderBottom: '1px solid #ddd',
+                        backgroundColor: '#e0e0e03f',
+                        // borderBottom: '1px solid #ddd',
                         color: 'grey',
                       }}
                     >
@@ -590,8 +643,9 @@ const InProgressAppointmentsPage = () => {
                                                   sitting.followupStatus ||
                                                   ''
                                                 }
-                                                onChange={(e) => {
+                                                onChange={async (e) => {
                                                   const selectedValue = e.target.value
+
                                                   setFollowStatuses((prev) => ({
                                                     ...prev,
                                                     [sittingKey]: {
@@ -604,8 +658,10 @@ const InProgressAppointmentsPage = () => {
                                                     'reschedule-doctor',
                                                     'reschedule-patient',
                                                   ]
+
+                                                  openBookingModal(apt)
                                                   if (rescheduleStatuses.includes(selectedValue)) {
-                                                    openBookingModal(apt)
+                                                    await fetchDoctorBtId(apt.doctorId)
                                                     setReschedule(true)
                                                   } else {
                                                     setReschedule(false)
@@ -685,7 +741,12 @@ const InProgressAppointmentsPage = () => {
                                                 backgroundColor: 'var(--color-bgcolor)',
                                                 color: 'var(--color-black)',
                                               }}
-                                              onClick={() => openBookingModal(apt)}
+                                              onClick={async () => {
+                                                await fetchDoctorBtId(apt.doctorId)
+                                                getSubServiceByIdFun(apt.subServiceId)
+                                                openBookingModal(apt)
+                                                fetchSlots()
+                                              }}
                                               disabled={isCompleted}
                                             >
                                               BOOK
@@ -709,33 +770,14 @@ const InProgressAppointmentsPage = () => {
         ))}
       </div>
 
-      {!loading && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={Math.ceil(filteredData.length / rowsPerPage)}
-          pageSize={rowsPerPage}
-          onPageChange={setCurrentPage}
-          onPageSizeChange={setRowsPerPage}
-        />
-        // <div className="d-flex justify-content-end mt-3" style={{ marginRight: '40px' }}>
-        //   {Array.from({ length: Math.ceil(filteredData.length / rowsPerPage) }, (_, index) => (
-        //     <CButton
-        //       key={index}
-        //       style={{
-        //         backgroundColor: currentPage === index + 1 ? 'var(--color-black)' : '#fff',
-        //         color: currentPage === index + 1 ? '#fff' : 'var(--color-black)',
-        //         border: '1px solid #ccc',
-        //         borderRadius: '5px',
-        //         cursor: 'pointer',
-        //       }}
-        //       className="ms-2"
-        //       onClick={() => setCurrentPage(index + 1)}
-        //     >
-        //       {index + 1}
-        //     </CButton>
-        //   ))}
-        // </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={Math.ceil(filteredData.length / rowsPerPage)}
+        pageSize={rowsPerPage}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={setRowsPerPage}
+      />
+
       {/* Modal showing details without table */}
       {/* Modal for booking slots */}
 
@@ -804,110 +846,115 @@ const InProgressAppointmentsPage = () => {
           <CCard style={{ borderRadius: '8px', border: '1px solid #ddd' }}>
             <CCardBody>
               {modalLoading ? (
-                // Show spinner while fetching slots
-                <div className="text-center py-4" style={{ color: 'var(--color-black)' }}>
-                  <CSpinner style={{ width: '40px', height: '40px' }} />
-                  <p style={{ marginTop: '8px', color: 'var(--color-black)' }}>
-                    Loading available slots...
-                  </p>
-                </div>
+                <LoadingIndicator message="Loading slots..." />
               ) : filteredSlots.length > 0 ? (
                 <>
                   <div className="slot-grid mt-3">
                     <CCard className="mb-4">
                       <CCardBody>
-                        {loading ? (
-                          <LoadingIndicator message="Loading slots..." />
-                        ) : (
-                          <div
-                            className="slot-container d-grid"
-                            style={{
-                              display: 'grid',
-                              color: 'var(--color-black)',
-                              gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
-                              gap: '12px',
-                            }}
-                          >
-                            {slotsForSelectedDate.map((slotObj, i) => {
-                              const isSelected = selectedSlots === slotObj.slot // ✅ Only one selected slot
-                              const isBooked = slotObj?.slotbooked
-                              const isPastTime = slotObj?.available
-                              return (
-                                isPastTime && (
-                                  <div
-                                    key={i}
-                                    className={`slot-item text-center border rounded   ${
-                                      isBooked
-                                        ? 'bg-danger text-white'
-                                        : isSelected
-                                          ? 'text-white'
-                                          : 'bg-light var(--color-black)'
-                                    }`}
-                                    onClick={() => {
-                                      if (isBooked) return // booked slots not clickable
-                                      if (isSelected) {
-                                        setSelectedSlots(null) // deselect if already selected
-                                      } else {
-                                        setSelectedSlots(slotObj.slot) // select only this slot
-                                      }
-                                    }}
-                                    style={{
-                                      padding: '10px 0',
-                                      borderRadius: '8px',
-                                      cursor: isBooked ? 'not-allowed' : 'pointer',
-                                      transition: 'all 0.2s ease',
-                                      opacity: isBooked ? 0.7 : 1,
-                                      color: 'var(--color-black)',
-                                      backgroundColor: isBooked
-                                        ? 'red'
-                                        : isSelected
-                                          ? 'var(--color-black)'
-                                          : undefined,
-                                    }}
-                                    title={isBooked ? 'Booked' : 'Not Booked'}
-                                  >
-                                    {slotObj?.slot}
-                                  </div>
-                                )
-                              )
-                            })}
+                        <div
+                          className="slot-container d-grid"
+                          style={{
+                            display: 'grid',
+                            color: 'var(--color-black)',
+                            gridTemplateColumns: `repeat(auto-fill, minmax(80px, 1fr))`,
+                            gap: '12px',
+                          }}
+                        >
+                          {loadingDoctor ? (
+                            <div className="text-center mt-3">Loading doctor details...</div>
+                          ) : doctorDetails?.doctorAvailabilityStatus ? ( // ✅ optional chaining used
+                            slotsForSelectedDate.length > 0 ? (
+                              (showAllSlots
+                                ? slotsForSelectedDate
+                                : slotsForSelectedDate.slice(0, INITIAL_COUNT)
+                              ).map((slotObj, i) => {
+                                const isSelected = selectedSlots === slotObj.slot
+                                const isBooked = slotObj?.slotbooked
+                                const now = new Date()
+                                const slotTime = new Date(`${selectedDate} ${slotObj.slot}`)
+                                const today = format(now, 'yyyy-MM-dd') === selectedDate
 
-                            {slotsForSelectedDate.length === 0 && (
-                              <p
+                                // ✅ Only allow future slots for current date, all slots for other days
+                                const isPastTime = !today || slotTime > now
+
+                                return (
+                                  isPastTime && (
+                                    <div
+                                      key={i}
+                                      className={`slot-item text-center border rounded ${
+                                        isBooked
+                                          ? 'bg-danger text-white'
+                                          : isSelected
+                                            ? 'text-white'
+                                            : 'bg-light var(--color-black)'
+                                      }`}
+                                      onClick={() => {
+                                        if (isBooked) return
+                                        setSelectedSlots(isSelected ? null : slotObj.slot)
+                                      }}
+                                      style={{
+                                        padding: '10px 0',
+                                        borderRadius: '8px',
+                                        cursor: isBooked ? 'not-allowed' : 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        opacity: isBooked ? 0.7 : 1,
+                                        color: isBooked
+                                          ? 'white'
+                                          : isSelected
+                                            ? 'white'
+                                            : 'var(--color-black)',
+                                        backgroundColor: isBooked
+                                          ? 'red'
+                                          : isSelected
+                                            ? 'var(--color-black)'
+                                            : 'transparent',
+                                      }}
+                                      title={isBooked ? 'Booked' : 'Available'}
+                                    >
+                                      {slotObj?.slot}
+                                    </div>
+                                  )
+                                )
+                              })
+                            ) : (
+                              <div className="text-center mt-3">
+                                No slots available for selected date
+                              </div>
+                            )
+                          ) : doctorDetails ? ( // ✅ shows message only if doctorDetails is fetched
+                            <div className="text-center mt-3 text-danger w-100">
+                              Doctor is not available now
+                            </div>
+                          ) : (
+                            <div className="text-center mt-3">
+                              Select a doctor to view availability
+                            </div>
+                          )}
+                        </div>
+                        {/* Show More / Show Less button */}
+                        {slotsForSelectedDate.length > INITIAL_COUNT &&
+                          doctorDetails?.doctorAvailabilityStatus && ( // ✅ also safely checked
+                            <div className="text-center mt-2">
+                              <CButton
+                                size="sm"
+                                onClick={() => setShowAllSlots((prev) => !prev)}
                                 style={{
-                                  gridColumn: '1 / -1',
-                                  textAlign: 'center',
+                                  borderRadius: '6px',
+                                  fontWeight: 500,
+                                  backgroundColor: 'var(--color-bgcolor)',
                                   color: 'var(--color-black)',
                                 }}
                               >
-                                No available slots for this date
-                              </p>
-                            )}
-                          </div>
-                        )}
+                                {showAllSlots ? 'Show Less' : 'Show More'}
+                              </CButton>
+                            </div>
+                          )}
                       </CCardBody>
                     </CCard>
                   </div>
-
-                  {filteredSlots.length > 15 && (
-                    <div className="text-center mt-2">
-                      <CButton
-                        size="sm"
-                        onClick={() => setShowAllSlots((prev) => !prev)}
-                        style={{
-                          borderRadius: '6px',
-                          fontWeight: 500,
-                          backgroundColor: 'var(--color-bgcolor)',
-                          color: 'var(--color-black)',
-                        }}
-                      >
-                        {showAllSlots ? 'Show Less' : 'Show More'}
-                      </CButton>
-                    </div>
-                  )}
                 </>
               ) : (
-                // No slots available for this date
                 <p style={{ textAlign: 'center', color: 'var(--color-black)', margin: 0 }}>
                   No slots available for this date
                 </p>
@@ -916,7 +963,44 @@ const InProgressAppointmentsPage = () => {
           </CCard>
 
           {/* Book Slots Button */}
-          <div className="mt-4 d-flex justify-content-end">
+          <div className="mt-4 d-flex justify-content-end gap-2">
+            {!reschedule && (
+              <>
+                {/* 💰 Pay at Hospital */}
+                {/* <CButton
+                  style={{
+                    backgroundColor: 'gray',
+                    color: 'white',
+                    borderRadius: '6px',
+                    padding: '8px 16px',
+                    fontWeight: 600,
+                  }}
+                  // disabled={selectedSlots.length === 0}
+                  onClick={() => {
+                    if (selectedSlots.length === 0) {
+                      showCustomToast('Please select one slot...', 'warning')
+                      return // 🚫 stop execution here
+                    }
+
+                    bookSlot('hospital')
+                  }}
+                >
+                  Pay at Hospital
+                </CButton> */}
+
+                {/* 💳 Pay Online */}
+
+                <RazorpayButton
+                  amount={finalCost}
+                  onPaymentSuccess={bookSlot}
+                  selectedSlots={selectedSlots}
+                  clinicName={modalData?.clinicName || ''}
+                  mobileNumber={modalData?.patientMobileNumber || modalData?.mobileNumber}
+                />
+              </>
+            )}
+
+            {/* Reschedule button (existing) */}
             <CButton
               style={{
                 backgroundColor: 'var(--color-black)',
@@ -928,9 +1012,9 @@ const InProgressAppointmentsPage = () => {
               disabled={selectedSlots.length === 0}
               onClick={bookSlot}
             >
-              {!reschedule
-                ? `Book Selected Slot ${selectedSlots ? `(${selectedSlots})` : ''}`
-                : 'Reschedule'}
+              {reschedule
+                ? 'Reschedule'
+                : `Pay at Hospital ${selectedSlots ? `(${selectedSlots})` : ''}`}
             </CButton>
           </div>
         </CModalBody>

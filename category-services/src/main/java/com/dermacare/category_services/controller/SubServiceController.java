@@ -30,16 +30,17 @@ import com.dermacare.category_services.util.ResponseStructure;
 public class SubServiceController {
 
 	@Autowired
-	private  SubServicesService subServiceService;
-	   
-	
-	@PostMapping("/addSubService/{subServiceId}")	
-	public ResponseEntity<ResponseStructure<SubServicesDto>> addService(@PathVariable String subServiceId, @RequestBody SubServicesDto dto) {
-		return subServiceService.addSubService(subServiceId,dto);
+	private SubServicesService subServiceService;
+
+	@PostMapping("/addSubService/{subServiceId}")
+	public ResponseEntity<ResponseStructure<SubServicesDto>> addService(@PathVariable String subServiceId,
+			@RequestBody SubServicesDto dto) {
+		return subServiceService.addSubService(subServiceId, dto);
 	}
-	
+
 	@GetMapping("/getSubServicesbycategoryId/{categoryId}")
-	public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getSubServiceByIdCategory(@PathVariable String categoryId) {
+	public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getSubServiceByIdCategory(
+			@PathVariable String categoryId) {
 		try {
 			new ObjectId(categoryId);
 		} catch (Exception e) {
@@ -53,16 +54,17 @@ public class SubServiceController {
 		if (servicesList == null || servicesList.isEmpty()) {
 			servicesList = new ArrayList<>();
 			return new ResponseEntity<>(ResponseStructure.buildResponse(servicesList,
-					"No Details Found With Category Id : " + categoryId + " .", HttpStatus.OK,
-					HttpStatus.OK.value()), HttpStatus.OK);
+					"No Details Found With Category Id : " + categoryId + " .", HttpStatus.OK, HttpStatus.OK.value()),
+					HttpStatus.OK);
 		}
 
 		return new ResponseEntity<>(ResponseStructure.buildResponse(servicesList, "Services found successfully",
 				HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
 	}
-	
+
 	@GetMapping("/getSubServicesbyserviceId/{serviceId}")
-	public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getSubServicesByServiceId(@PathVariable String serviceId) {
+	public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getSubServicesByServiceId(
+			@PathVariable String serviceId) {
 
 		try {
 			new ObjectId(serviceId);
@@ -77,8 +79,8 @@ public class SubServiceController {
 		if (servicesList == null || servicesList.isEmpty()) {
 			servicesList = new ArrayList<>();
 			return new ResponseEntity<>(ResponseStructure.buildResponse(servicesList,
-					"No Details Found With Service Id : " + serviceId + " .", HttpStatus.OK,
-					HttpStatus.OK.value()), HttpStatus.OK);
+					"No Details Found With Service Id : " + serviceId + " .", HttpStatus.OK, HttpStatus.OK.value()),
+					HttpStatus.OK);
 		}
 
 		return new ResponseEntity<>(ResponseStructure.buildResponse(servicesList, "SubServices found successfully",
@@ -86,7 +88,8 @@ public class SubServiceController {
 	}
 
 	@GetMapping("/getSubService/{hospitalId}/{subServiceId}")
-	public ResponseEntity<ResponseStructure<SubServicesDto>> getSubServiceByServiceId(@PathVariable String hospitalId, @PathVariable String subServiceId) {
+	public ResponseEntity<ResponseStructure<SubServicesDto>> getSubServiceByServiceId(@PathVariable String hospitalId,
+			@PathVariable String subServiceId) {
 		try {
 			new ObjectId(subServiceId);
 		} catch (Exception e) {
@@ -96,41 +99,38 @@ public class SubServiceController {
 					HttpStatus.BAD_REQUEST);
 		}
 
-		SubServicesDto servicedomain = subServiceService.getSubServiceById(hospitalId,subServiceId);
+		SubServicesDto servicedomain = subServiceService.getSubServiceById(hospitalId, subServiceId);
 		if (servicedomain != null) {
 			return new ResponseEntity<>(ResponseStructure.buildResponse(servicedomain, "Services found successfully",
 					HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
 		}
-		return new ResponseEntity<>(
-				ResponseStructure.buildResponse(null, "No Details Found With Service Id : " + subServiceId + " .",
-						HttpStatus.OK, HttpStatus.OK.value()),
+		return new ResponseEntity<>(ResponseStructure.buildResponse(null,
+				"No Details Found With Service Id : " + subServiceId + " .", HttpStatus.OK, HttpStatus.OK.value()),
 				HttpStatus.OK);
 	}
 
+	// -----------------------------------Get subservice by
+	// hospitalId--------------------------------------------------------------
 
-	//	-----------------------------------Get subservice by hospitalId--------------------------------------------------------------
-	
 	@GetMapping("/getSubService/{hospitalId}")
-	public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getSubServiceByHospitalId(@PathVariable String hospitalId) {
+	public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getSubServiceByHospitalId(
+			@PathVariable String hospitalId) {
 
-	    List<SubServicesDto> subServiceList = subServiceService.getSubServiceByHospitalId(hospitalId);
+		List<SubServicesDto> subServiceList = subServiceService.getSubServiceByHospitalId(hospitalId);
 
-	    if (subServiceList != null && !subServiceList.isEmpty()) {
-	        return new ResponseEntity<>(
-	            ResponseStructure.buildResponse(subServiceList, "Services found successfully", HttpStatus.OK, HttpStatus.OK.value()),
-	            HttpStatus.OK
-	        );
-	    }
+		if (subServiceList != null && !subServiceList.isEmpty()) {
+			return new ResponseEntity<>(ResponseStructure.buildResponse(subServiceList, "Services found successfully",
+					HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
+		}
 
-	    return new ResponseEntity<>(
-	        ResponseStructure.buildResponse(null, "No Details Found With Hospital Id: " + hospitalId + ".", HttpStatus.OK, HttpStatus.OK.value()),
-	        HttpStatus.OK
-	    );
+		return new ResponseEntity<>(ResponseStructure.buildResponse(null,
+				"No Details Found With Hospital Id: " + hospitalId + ".", HttpStatus.OK, HttpStatus.OK.value()),
+				HttpStatus.OK);
 	}
 
-
 	@DeleteMapping("/deleteBySubServiceId/{hospitalId}/{subServiceId}")
-	public ResponseEntity<ResponseStructure<SubServicesDto>> deleteSubService(@PathVariable String hospitalId,@PathVariable String subServiceId) {
+	public ResponseEntity<ResponseStructure<SubServicesDto>> deleteSubService(@PathVariable String hospitalId,
+			@PathVariable String subServiceId) {
 		try {
 			new ObjectId(subServiceId);
 		} catch (Exception e) {
@@ -140,21 +140,21 @@ public class SubServiceController {
 					HttpStatus.BAD_REQUEST);
 		}
 
-		SubServicesDto servicedomain = subServiceService.getSubServiceById(hospitalId,subServiceId);
+		SubServicesDto servicedomain = subServiceService.getSubServiceById(hospitalId, subServiceId);
 		if (servicedomain != null) {
-			subServiceService.deleteSubServiceById(hospitalId,subServiceId);
-			return new ResponseEntity<>(ResponseStructure.buildResponse(servicedomain, "SubService Deleted successfully",
-					HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
+			subServiceService.deleteSubServiceById(hospitalId, subServiceId);
+			return new ResponseEntity<>(ResponseStructure.buildResponse(servicedomain,
+					"SubService Deleted successfully", HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
 
 		}
-		return new ResponseEntity<>(ResponseStructure.buildResponse(null, "Invalid SubService ID : " + subServiceId + " .",
-				HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value()), HttpStatus.OK);
+		return new ResponseEntity<>(ResponseStructure.buildResponse(null,
+				"Invalid SubService ID : " + subServiceId + " .", HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value()),
+				HttpStatus.OK);
 	}
 
-	
 	@PutMapping("/updateSubService/{hospitalId}/{subServiceId}")
-	public ResponseEntity<ResponseStructure<SubServicesDto>> updateBySubServiceId(@PathVariable String hospitalId,@PathVariable String subServiceId,
-			@RequestBody SubServicesDto domainServices) {
+	public ResponseEntity<ResponseStructure<SubServicesDto>> updateBySubServiceId(@PathVariable String hospitalId,
+			@PathVariable String subServiceId, @RequestBody SubServicesDto domainServices) {
 
 		try {
 			new ObjectId(subServiceId);
@@ -162,50 +162,63 @@ public class SubServiceController {
 			return new ResponseEntity<>(
 					ResponseStructure.buildResponse(null, "In Valid SubService Id  ID must be HexaString",
 							HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.value()),
-					HttpStatus.BAD_REQUEST);}
-			
-			SubServicesDto domain = subServiceService.updateSubService(hospitalId,subServiceId, domainServices);
-			if(domain != null) {
+					HttpStatus.BAD_REQUEST);
+		}
+
+		SubServicesDto domain = subServiceService.updateSubService(hospitalId, subServiceId, domainServices);
+		if (domain != null) {
 			return new ResponseEntity<>(ResponseStructure.buildResponse(domain, "SubsService Updated Sucessfully",
 					HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
-		}else {
+		} else {
 			return new ResponseEntity<>(ResponseStructure.buildResponse(null, "Subservice Not Found",
 					HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
 		}
 	}
-	
+
 	@GetMapping("/getAllSubServices")
 	public ResponseEntity<ResponseStructure<List<SubServicesDto>>> getAllSubServices() {
-	    List<SubServicesDto> dtos = subServiceService.getAllSubService();
+		List<SubServicesDto> dtos = subServiceService.getAllSubService();
 
-	    if (dtos == null || dtos.isEmpty()) {
-	        return ResponseEntity.ok(
-	            ResponseStructure.buildResponse(new ArrayList<>(),"No services available", HttpStatus.OK,HttpStatus.OK.value()
-	            )
-	        );
-	    }
-	    return ResponseEntity.ok(
-	        ResponseStructure.buildResponse( dtos, "SubServices fetched Successfully", HttpStatus.OK, HttpStatus.OK.value()
-	        )
-	    );
+		if (dtos == null || dtos.isEmpty()) {
+			return ResponseEntity.ok(ResponseStructure.buildResponse(new ArrayList<>(), "No services available",
+					HttpStatus.OK, HttpStatus.OK.value()));
+		}
+		return ResponseEntity.ok(ResponseStructure.buildResponse(dtos, "SubServices fetched Successfully",
+				HttpStatus.OK, HttpStatus.OK.value()));
 	}
-	
+
 	@GetMapping("/groupedSubServices")
 	public ResponseEntity<ResponseStructure<List<CategoryServiceandSubserviceDto>>> getGroupedSubServices() {
-	    List<CategoryServiceandSubserviceDto> groupedList = subServiceService.getGroupedSubServices();
+		List<CategoryServiceandSubserviceDto> groupedList = subServiceService.getGroupedSubServices();
 
-	    if (groupedList == null || groupedList.isEmpty()) {
-	        return new ResponseEntity<>( ResponseStructure.buildResponse(new ArrayList<>(), "No SubServices Found",HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
-	    }
+		if (groupedList == null || groupedList.isEmpty()) {
+			return new ResponseEntity<>(ResponseStructure.buildResponse(new ArrayList<>(), "No SubServices Found",
+					HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
+		}
 
-	    return new ResponseEntity<>(
-	            ResponseStructure.buildResponse(groupedList, "SubServices Grouped Successfully",HttpStatus.OK, HttpStatus.OK.value()),HttpStatus.OK);
+		return new ResponseEntity<>(ResponseStructure.buildResponse(groupedList, "SubServices Grouped Successfully",
+				HttpStatus.OK, HttpStatus.OK.value()), HttpStatus.OK);
 	}
-	
+
 	@GetMapping("/retrieveSubServicesBySubServiceId/{subServiceId}")
-	 public ResponseEntity<ResponseStructure<List<SubServicesDto>>> retrieveSubServicesBySubServiceId(@PathVariable String subServiceId){
-		//System.out.println("invke");
-       return subServiceService.retrieveSubServicesBySubServiceId(subServiceId);
-}
-		
+	public ResponseEntity<ResponseStructure<List<SubServicesDto>>> retrieveSubServicesBySubServiceId(
+			@PathVariable String subServiceId) {
+		// System.out.println("invke");
+		return subServiceService.retrieveSubServicesBySubServiceId(subServiceId);
+	}
+ 
+	// ------------------------------------Amount calculation using cosultation type
+	// (1= FOC,2=paid)-----------------------
+	@GetMapping("/calculateAmountByConsultationType/{hospitalId}/{subServiceId}/{subServiceName}/{consultationType}")
+	public ResponseEntity<ResponseStructure<SubServicesDto>> getSubServiceCostByConsultationType(
+	        @PathVariable String hospitalId,
+	        @PathVariable String subServiceId,
+	        @PathVariable String subServiceName,
+	        @PathVariable int consultationType) {
+
+	    return subServiceService.getSubServiceCostByConsultationType(
+	            hospitalId, subServiceId, subServiceName, consultationType);
+	}
+
+
 }

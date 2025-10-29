@@ -27,10 +27,8 @@ import { GetClinicBranches } from '../Doctors/DoctorAPI'
 import { useNavigate } from 'react-router-dom'
 import { getAllReferDoctors } from '../EmployeeManagement/ReferDoctor/ReferDoctorAPI'
 import Select from 'react-select'
- 
- 
 
-  // 🔍 Filter doctors based on search input
+// 🔍 Filter doctors based on search input
 
 // import fetchHospital from '../Usecontext/HospitalContext'
 
@@ -67,8 +65,7 @@ const BookAppointmentModal = ({ visible, onClose }) => {
   const [loadingFee, setLoadingFee] = useState(false)
   const navigate = useNavigate()
   const [slots, setSlots] = useState([])
-const [referDoctor, setReferDoctor] = useState([])
-
+  const [referDoctor, setReferDoctor] = useState([])
 
   const [selectedBooking, setSelectedBooking] = useState(null)
   const [mvisible, setMVisible] = useState(false)
@@ -140,6 +137,7 @@ const [referDoctor, setReferDoctor] = useState([])
     gender: '',
     symptomsDuration: '',
     problem: '',
+    foc: 'Paid',
 
     attachments: [],
     freeFollowUps: selectedHospital.data.freeFollowUps,
@@ -162,6 +160,7 @@ const [referDoctor, setReferDoctor] = useState([])
     },
   }
   const [bookingDetails, setBookingDetails] = useState(initialBookingDetails)
+const [originalConsultationFee, setOriginalConsultationFee] = useState('');
 
   const [errors, setErrors] = useState({})
 
@@ -348,12 +347,13 @@ const [referDoctor, setReferDoctor] = useState([])
             ...prev,
             subServiceId: subServiceInfo.subServiceId,
             subServiceName: subServiceInfo.subServiceName,
-            consultationFee: subServiceInfo.consultationFee || 0,
+            consultationFee: prev.foc === 'FOC' ? 0 : subServiceInfo.consultationFee || 0,
             servicecost: subServiceInfo.price,
             discountAmount: subServiceInfo.discountedCost || 0,
             discountPercentage: subServiceInfo.discountPercentage || 0,
             totalFee: subServiceInfo.finalCost,
           }))
+          setOriginalConsultationFee(subServiceInfo.consultationFee || 0)
         }
         // setBookingDetails((prev) => ({
         //   ...prev,
@@ -844,7 +844,7 @@ const [referDoctor, setReferDoctor] = useState([])
       newErrors.symptomsDuration = 'Duration must be between 1 and 365'
 
     // Doctor Referral Code (optional)
-    
+
     if (appointmentType?.toLowerCase().trim() === 'inclinic') {
       // Symptoms/Problem
       if (!bookingDetails.problem?.trim()) {
@@ -896,13 +896,13 @@ const [referDoctor, setReferDoctor] = useState([])
     console.log('Validating bookingDetails...', bookingDetails)
 
     if (!validate()) {
-      showCustomToast('Please fix the errors before submitting.','error')
+      showCustomToast('Please fix the errors before submitting.', 'error')
       return
     }
 
     try {
       // Build payload explicitly, excluding 'slot'
-      const { unit, address, slot,  ...rest } = bookingDetails
+      const { unit, address, slot, ...rest } = bookingDetails
 
       const payloadToSend = {
         ...rest,
@@ -966,9 +966,10 @@ const [referDoctor, setReferDoctor] = useState([])
       }, 1000)
     } catch (err) {
       console.error('Error submitting booking:', err)
-      if (err.response?.data?.message) showCustomToast(err.response.data.message,'error')
-      else if (err.message?.includes('timeout')) showCustomToast('Request timed out. Please try again.','error')
-      else showCustomToast('Failed to submit booking. Please try again.','error')
+      if (err.response?.data?.message) showCustomToast(err.response.data.message, 'error')
+      else if (err.message?.includes('timeout'))
+        showCustomToast('Request timed out. Please try again.', 'error')
+      else showCustomToast('Failed to submit booking. Please try again.', 'error')
     }
   }
 
@@ -988,7 +989,7 @@ const [referDoctor, setReferDoctor] = useState([])
 
   const handleFollowUpSubmit = async (followupData) => {
     if (!followupData) {
-      showCustomToast('Please select a booking before submitting!','error')
+      showCustomToast('Please select a booking before submitting!', 'error')
       return
     }
 
@@ -1008,13 +1009,13 @@ const [referDoctor, setReferDoctor] = useState([])
     try {
       const res = await postBooking(payload)
       console.log('✅ Follow-up Response:', res)
-      showCustomToast('Follow-up booking submitted successfully!','success')
+      showCustomToast('Follow-up booking submitted successfully!', 'success')
       setTimeout(() => {
         navigate('/dashboard')
       }, 1000)
     } catch (err) {
       console.error('❌ Follow-up Error:', err)
-      showCustomToast('Failed to submit follow-up booking','error')
+      showCustomToast('Failed to submit follow-up booking', 'error')
     }
   }
 
@@ -1164,8 +1165,8 @@ const [referDoctor, setReferDoctor] = useState([])
               <CRow className="mb-4">
                 {/* Name */}
 
-                <CCol md={2}  >
-                   <CFormLabel style={{color:'var(--color-black)'}}>
+                <CCol md={2}>
+                  <CFormLabel style={{ color: 'var(--color-black)' }}>
                     Title <span className="text-danger">*</span>
                   </CFormLabel>
                   <CFormSelect
@@ -1200,10 +1201,10 @@ const [referDoctor, setReferDoctor] = useState([])
                   {errors.title && <div className="text-danger small">{errors.title}</div>}
                 </CCol>
                 <CCol md={6} className="mb-3">
-                  <CFormLabel style={{color:'var(--color-black)'}}>
+                  <CFormLabel style={{ color: 'var(--color-black)' }}>
                     Name <span className="text-danger">*</span>
                   </CFormLabel>
-              
+
                   <CFormInput
                     name="name"
                     value={bookingDetails.name || ''}
@@ -1216,7 +1217,7 @@ const [referDoctor, setReferDoctor] = useState([])
 
                 {/* DOB */}
                 <CCol md={4} className="mb-3">
-                  <CFormLabel style={{color:'var(--color-black)'}}>
+                  <CFormLabel style={{ color: 'var(--color-black)' }}>
                     Date of Birth <span className="text-danger">*</span>
                   </CFormLabel>
                   <CFormInput
@@ -1231,9 +1232,7 @@ const [referDoctor, setReferDoctor] = useState([])
 
                 {/* Age */}
                 <CCol md={2} className="mb-3">
-                <CFormLabel style={{color:'var(--color-black)'}}>
-                    Age 
-                  </CFormLabel>
+                  <CFormLabel style={{ color: 'var(--color-black)' }}>Age</CFormLabel>
                   <CFormInput
                     type="number"
                     name="age"
@@ -1249,7 +1248,7 @@ const [referDoctor, setReferDoctor] = useState([])
 
                 {/* Gender */}
                 <CCol md={4} className="mb-3">
-                   <CFormLabel style={{color:'var(--color-black)'}}>
+                  <CFormLabel style={{ color: 'var(--color-black)' }}>
                     Gender <span className="text-danger">*</span>
                   </CFormLabel>
                   <CFormSelect
@@ -1267,7 +1266,7 @@ const [referDoctor, setReferDoctor] = useState([])
 
                 {/* Mobile Number */}
                 <CCol md={6} className="mb-3">
-                   <CFormLabel style={{color:'var(--color-black)'}}>
+                  <CFormLabel style={{ color: 'var(--color-black)' }}>
                     Mobile Number <span className="text-danger">*</span>
                   </CFormLabel>
                   <CFormInput
@@ -1283,78 +1282,86 @@ const [referDoctor, setReferDoctor] = useState([])
                 </CCol>
 
                 {/* Address */}
-             <CCol md={12}>
-  <h6 className="mb-3 border-bottom pb-2">Address</h6>
-  {(() => {
-    const address = bookingDetails.address || {}
+                <CCol md={12}>
+                  <h6 className="mb-3 border-bottom pb-2">Address</h6>
+                  {(() => {
+                    const address = bookingDetails.address || {}
 
-    const firstFields = ['houseNo', 'street', 'landmark'].filter((f) => f in address)
-    const secondFields = ['postalCode', 'po', 'city', 'state'].filter((f) => f in address)
-    const allFields = [...firstFields, ...secondFields]
+                    const firstFields = ['houseNo', 'street', 'landmark'].filter(
+                      (f) => f in address,
+                    )
+                    const secondFields = ['postalCode', 'po', 'city', 'state'].filter(
+                      (f) => f in address,
+                    )
+                    const allFields = [...firstFields, ...secondFields]
 
-    const rows = []
-    allFields.forEach((field, index) => {
-      if (index % 3 === 0) rows.push([])
-      rows[rows.length - 1].push(field)
-    })
+                    const rows = []
+                    allFields.forEach((field, index) => {
+                      if (index % 3 === 0) rows.push([])
+                      rows[rows.length - 1].push(field)
+                    })
 
-    return rows.map((rowFields, rowIndex) => (
-      <CRow className="mb-3" key={rowIndex}>
-        {rowFields.map((field) => (
-          <CCol md={4} key={field}>
-            <CFormLabel style={{ color: 'var(--color-black)' }} className="text-capitalize">
-              {field === 'po' ? 'PO Address' : field}{' '}
-              {field !== 'landmark' && <span className="text-danger">*</span>}
-            </CFormLabel>
+                    return rows.map((rowFields, rowIndex) => (
+                      <CRow className="mb-3" key={rowIndex}>
+                        {rowFields.map((field) => (
+                          <CCol md={4} key={field}>
+                            <CFormLabel
+                              style={{ color: 'var(--color-black)' }}
+                              className="text-capitalize"
+                            >
+                              {field === 'po' ? 'PO Address' : field}{' '}
+                              {field !== 'landmark' && <span className="text-danger">*</span>}
+                            </CFormLabel>
 
-            {field === 'po' ? (
-              <CFormSelect
-                value={selectedPO?.Name || ''}
-                onChange={(e) => {
-                  const po = postOffices.find((po) => po.Name === e.target.value)
-                  setSelectedPO(po)
-                  if (po) {
-                    handleNestedChange('address', 'city', po.Block || '')
-                    handleNestedChange('address', 'state', po.State || '')
-                  }
-                }}
-                required
-              >
-                <option value="">-- Select Post Office --</option>
-                {postOffices.map((po) => (
-                  <option key={po.Name} value={po.Name}>
-                    {po.Name.toUpperCase()}
-                  </option>
-                ))}
-              </CFormSelect>
-            ) : field === 'postalCode' ? (
-              <CFormInput
-                type="text"
-                value={address[field] || ''}
-                maxLength={6}
-                onChange={(e) => handlePostalCodeChange(e.target.value)}
-                required
-              />
-            ) : (
-              <CFormInput
-                type="text"
-                value={address[field] || ''}
-                readOnly={field === 'city' || field === 'state'}
-                onChange={(e) => handleNestedChange('address', field, e.target.value)}
-                required={field !== 'landmark'}
-              />
-            )}
+                            {field === 'po' ? (
+                              <CFormSelect
+                                value={selectedPO?.Name || ''}
+                                onChange={(e) => {
+                                  const po = postOffices.find((po) => po.Name === e.target.value)
+                                  setSelectedPO(po)
+                                  if (po) {
+                                    handleNestedChange('address', 'city', po.Block || '')
+                                    handleNestedChange('address', 'state', po.State || '')
+                                  }
+                                }}
+                                required
+                              >
+                                <option value="">-- Select Post Office --</option>
+                                {postOffices.map((po) => (
+                                  <option key={po.Name} value={po.Name}>
+                                    {po.Name.toUpperCase()}
+                                  </option>
+                                ))}
+                              </CFormSelect>
+                            ) : field === 'postalCode' ? (
+                              <CFormInput
+                                type="text"
+                                value={address[field] || ''}
+                                maxLength={6}
+                                onChange={(e) => handlePostalCodeChange(e.target.value)}
+                                required
+                              />
+                            ) : (
+                              <CFormInput
+                                type="text"
+                                value={address[field] || ''}
+                                readOnly={field === 'city' || field === 'state'}
+                                onChange={(e) =>
+                                  handleNestedChange('address', field, e.target.value)
+                                }
+                                required={field !== 'landmark'}
+                              />
+                            )}
 
-            {errors.address?.[field] && (
-              <div className="text-danger mt-1">{errors.address[field]}</div>
-            )}
-          </CCol>
-        ))}
-      </CRow>
-    ))
-  })()}
-</CCol>
-
+                            {errors.address?.[field] && (
+                              <div className="text-danger mt-1">{errors.address[field]}</div>
+                            )}
+                          </CCol>
+                        ))}
+                      </CRow>
+                    ))
+                  })()}
+                </CCol>
               </CRow>
             </div>
           )}
@@ -1394,9 +1401,9 @@ const [referDoctor, setReferDoctor] = useState([])
             <h6 className="mb-3 border-bottom pb-2">Select Service</h6>
             <CRow className="mb-4">
               <CCol md={4}>
-                <CFormLabel style={{color:'var(--color-black)'}}>
-                    Category Name <span className="text-danger">*</span>
-                  </CFormLabel>
+                <CFormLabel style={{ color: 'var(--color-black)' }}>
+                  Category Name <span className="text-danger">*</span>
+                </CFormLabel>
                 <CFormSelect
                   value={selectedCategory}
                   onChange={(e) => {
@@ -1429,9 +1436,9 @@ const [referDoctor, setReferDoctor] = useState([])
               </CCol>
 
               <CCol md={4}>
-                <CFormLabel style={{color:'var(--color-black)'}}>
-                    Service <span className="text-danger">*</span>
-                  </CFormLabel>
+                <CFormLabel style={{ color: 'var(--color-black)' }}>
+                  Service <span className="text-danger">*</span>
+                </CFormLabel>
 
                 <CFormSelect
                   value={selectedService}
@@ -1475,9 +1482,9 @@ const [referDoctor, setReferDoctor] = useState([])
               </CCol>
 
               <CCol md={4}>
-                 <CFormLabel style={{color:'var(--color-black)'}}>
-                    Procedure Name <span className="text-danger">*</span>
-                  </CFormLabel>
+                <CFormLabel style={{ color: 'var(--color-black)' }}>
+                  Procedure Name <span className="text-danger">*</span>
+                </CFormLabel>
                 <CFormSelect
                   value={selectedSubService}
                   onChange={(e) => {
@@ -1530,9 +1537,9 @@ const [referDoctor, setReferDoctor] = useState([])
             <h6 className="mb-3 border-bottom pb-2">Patient & Booking Details</h6>
             <CRow className="mb-4">
               <CCol md={4}>
-                <CFormLabel style={{color:'var(--color-black)'}}>
-                    Branch <span className="text-danger">*</span>
-                  </CFormLabel>
+                <CFormLabel style={{ color: 'var(--color-black)' }}>
+                  Branch <span className="text-danger">*</span>
+                </CFormLabel>
                 <CFormSelect
                   name="branchId"
                   value={bookingDetails.branchId || ''}
@@ -1563,9 +1570,9 @@ const [referDoctor, setReferDoctor] = useState([])
               </CCol>
 
               <CCol md={4}>
-                 <CFormLabel style={{color:'var(--color-black)'}}>
-                    Doctor Name <span className="text-danger">*</span>
-                  </CFormLabel>
+                <CFormLabel style={{ color: 'var(--color-black)' }}>
+                  Doctor Name <span className="text-danger">*</span>
+                </CFormLabel>
 
                 {loadingDoctors ? (
                   <div className="text-center py-2" style={{ color: 'var(--color-black)' }}>
@@ -1668,37 +1675,57 @@ const [referDoctor, setReferDoctor] = useState([])
             <CRow className="mb-4 g-3">
               {/* Consultation Fee */}
               <CCol md={4}>
-                 <CFormLabel style={{color:'var(--color-black)'}}>
-                    Consultation Fee <span className="text-danger">*</span>
-                  </CFormLabel>
+                <CFormLabel style={{ color: 'var(--color-black)' }}>
+                  Consultation Fee <span className="text-danger">*</span>
+                </CFormLabel>
                 <CFormInput type="number" value={bookingDetails.consultationFee || 0} disabled />
               </CCol>
               <CCol md={4}>
-                <CFormLabel style={{color:'var(--color-black)'}}>
-                    Service & Treatment Cost <span className="text-danger">*</span>
-                  </CFormLabel>
+                <CFormLabel style={{ color: 'var(--color-black)' }}>
+                  Service & Treatment Cost <span className="text-danger">*</span>
+                </CFormLabel>
                 <CFormInput type="number" value={bookingDetails.servicecost || 0} disabled />
               </CCol>
 
               <CCol md={4}>
-                <CFormLabel style={{color:'var(--color-black)'}}>
-                    Discount Amount <span className="text-danger">*</span>
-                  </CFormLabel>
+                <CFormLabel style={{ color: 'var(--color-black)' }}>
+                  Discount Amount <span className="text-danger">*</span>
+                </CFormLabel>
                 <CFormInput type="number" value={bookingDetails.discountAmount || 0} disabled />
               </CCol>
 
               <CCol md={4}>
-                <CFormLabel style={{color:'var(--color-black)'}}>
-                    Discount(%) <span className="text-danger">*</span>
-                  </CFormLabel>
+                <CFormLabel style={{ color: 'var(--color-black)' }}>
+                  Discount(%) <span className="text-danger">*</span>
+                </CFormLabel>
                 <CFormInput type="number" value={bookingDetails.discountPercentage || 0} disabled />
               </CCol>
 
               <CCol md={4}>
-                <CFormLabel style={{color:'var(--color-black)'}}>
-                    Total Amount <span className="text-danger">*</span>
-                  </CFormLabel>
+                <CFormLabel style={{ color: 'var(--color-black)' }}>
+                  Total Amount <span className="text-danger">*</span>
+                </CFormLabel>
                 <CFormInput type="number" value={bookingDetails.totalFee || 0} disabled />
+              </CCol>
+              <CCol md={4}>
+                <CFormLabel style={{ color: 'var(--color-black)' }}>
+                  Consultation Fee Type <span className="text-danger">*</span>
+                </CFormLabel>
+                <CFormSelect
+                  value={bookingDetails.foc || 'Paid'}
+                  onChange={(e) =>
+                    setBookingDetails({
+                      ...bookingDetails,
+                      foc: e.target.value, //TODO: backend provide then enable
+                      consultationFee:
+                        e.target.value === 'FOC' ? 0 : originalConsultationFee, // auto-handle free
+                    })
+                  }
+                >
+                  <option value="">-- Select Fee Type --</option>
+                  <option value="FOC">FOC (Free of Consultation)</option>
+                  <option value="Paid">Paid</option>
+                </CFormSelect>
               </CCol>
             </CRow>
           </>
@@ -1790,11 +1817,11 @@ const [referDoctor, setReferDoctor] = useState([])
                           return (
                             <div
                               key={i}
-                              style={{ cursor: 'pointer' }}
+                              style={{ cursor: 'pointer' ,color:"var(--color-black)"}}
                               className={`slot-item text-center border rounded px-2 py-1 transition-all duration-200
-                        ${isBooked ? 'bg-secondary text-white cursor-not-allowed opacity-60' : ''}
+                        ${isBooked ? 'bg-danger text-white cursor-not-allowed opacity-60' : ''}
                         ${isSelectedSlot && !isBooked ? 'bg-primary text-white' : ''}
-                        ${!isSelectedSlot && !isBooked ? 'bg-light text-dark hover:bg-gray-200 cursor-pointer' : ''}`}
+                        ${!isSelectedSlot && !isBooked ? 'bg-light   hover:bg-gray-200 cursor-pointer' : ''}`}
                               onClick={() => {
                                 if (isBooked) return
 
@@ -1852,14 +1879,12 @@ const [referDoctor, setReferDoctor] = useState([])
 
             <CRow className="mb-4">
               <CCol md={5}>
-                 <CFormLabel style={{color:'var(--color-black)'}}>
-                   Symptoms/Problem
+                <CFormLabel style={{ color: 'var(--color-black)' }}>
+                  Symptoms/Problem
                   {appointmentType?.toLowerCase().trim() !== 'services' && (
                     <span className="text-danger">*</span>
                   )}
-                    
-                  </CFormLabel>
-                
+                </CFormLabel>
 
                 <CFormTextarea
                   name="problem"
@@ -1873,14 +1898,12 @@ const [referDoctor, setReferDoctor] = useState([])
               </CCol>
 
               <CCol md={4}>
-                
-               <CFormLabel style={{color:'var(--color-black)'}}>
-                   Symptoms Duration
+                <CFormLabel style={{ color: 'var(--color-black)' }}>
+                  Symptoms Duration
                   {appointmentType?.toLowerCase().trim() !== 'services' && (
                     <span className="text-danger">*</span>
                   )}
-                    
-                  </CFormLabel>
+                </CFormLabel>
 
                 <CFormInput
                   type="text" // change from number to text to fully control input
@@ -1902,13 +1925,12 @@ const [referDoctor, setReferDoctor] = useState([])
               </CCol>
 
               <CCol md={3}>
-               <CFormLabel style={{color:'var(--color-black)'}}>
+                <CFormLabel style={{ color: 'var(--color-black)' }}>
                   Unit
                   {appointmentType?.toLowerCase().trim() !== 'services' && (
                     <span className="text-danger">*</span>
                   )}
-                    
-                  </CFormLabel>
+                </CFormLabel>
 
                 <CFormSelect
                   name="unit"
@@ -1929,9 +1951,7 @@ const [referDoctor, setReferDoctor] = useState([])
             {/* SECTION: Attachment */}
 
             <CCol md={6}>
-             <CFormLabel style={{color:'var(--color-black)'}}>
-                    Attachments
-                  </CFormLabel>
+              <CFormLabel style={{ color: 'var(--color-black)' }}>Attachments</CFormLabel>
               <CFormInput
                 type="file"
                 name="attachments"
@@ -1942,7 +1962,7 @@ const [referDoctor, setReferDoctor] = useState([])
 
                   // Limit to 6 files total
                   if (newFiles.length + (bookingDetails.attachments?.length || 0) > 6) {
-                    showCustomToast('You can upload a maximum of 6 files.','error')
+                    showCustomToast('You can upload a maximum of 6 files.', 'error')
                     e.target.value = ''
                     return
                   }
@@ -1993,7 +2013,7 @@ const [referDoctor, setReferDoctor] = useState([])
                     }))
                   } catch (error) {
                     console.error('Failed to process attachments:', error)
-                    showCustomToast('Failed to process attachments.','error')
+                    showCustomToast('Failed to process attachments.', 'error')
                   }
                 }}
               />
@@ -2038,9 +2058,9 @@ const [referDoctor, setReferDoctor] = useState([])
               {/* g-3 adds horizontal & vertical gap */}
               {/* Payment Type */}
               <CCol md={5}>
-               <CFormLabel style={{color:'var(--color-black)'}}>
-                   Payment Type <span className="text-danger">*</span>
-                  </CFormLabel>
+                <CFormLabel style={{ color: 'var(--color-black)' }}>
+                  Payment Type <span className="text-danger">*</span>
+                </CFormLabel>
 
                 <CFormSelect
                   name="paymentType"
@@ -2072,7 +2092,7 @@ const [referDoctor, setReferDoctor] = useState([])
                 {errors.paymentType && <div className="text-danger mt-1">{errors.paymentType}</div>}
               </CCol>
               {/* Doctor Referral Code */}
-           <CCol md={6}>
+              <CCol md={6}>
                 <h6>Referred By</h6>
 
                 <Select
@@ -2081,7 +2101,7 @@ const [referDoctor, setReferDoctor] = useState([])
                     referDoctor.find((d) => d.referralId === bookingDetails.doctorRefCode) || null
                   }
                   getOptionLabel={(option) =>
-                   ` ${option.fullName}-(${option.address.street},${option.address.city})`
+                    ` ${option.fullName}-(${option.address.street},${option.address.city})`
                   }
                   getOptionValue={(option) => option.referralId}
                   onChange={(selected) =>
@@ -2096,8 +2116,6 @@ const [referDoctor, setReferDoctor] = useState([])
                   placeholder="Select or search doctor..."
                   isSearchable
                 />
-
-               
               </CCol>
             </CRow>
           </>
@@ -2126,25 +2144,24 @@ const [referDoctor, setReferDoctor] = useState([])
 
         {/* Buttons */}
         <div className="mt-4 text-end d-flex justify-content-end gap-2">
-            <CButton
-  color="secondary"
-  onClick={() => {
-    setBookingDetails(initialBookingDetails) // reset form data
-     // close the modal
-  }}
->
-  Reset
-</CButton>
-         <CButton
-  color="secondary"
-  onClick={() => {
-    setBookingDetails(initialBookingDetails) // reset form data
-    onClose() // close the modal
-  }}
->
-  Cancel
-</CButton>
-
+          <CButton
+            color="secondary"
+            onClick={() => {
+              setBookingDetails(initialBookingDetails) // reset form data
+              // close the modal
+            }}
+          >
+            Reset
+          </CButton>
+          <CButton
+            color="secondary"
+            onClick={() => {
+              setBookingDetails(initialBookingDetails) // reset form data
+              onClose() // close the modal
+            }}
+          >
+            Cancel
+          </CButton>
 
           {visitType === 'followup' ? (
             <CButton
@@ -2178,10 +2195,6 @@ const [referDoctor, setReferDoctor] = useState([])
   //     </CModalBody>
   //   </CModal>
   // )
-  
 }
-
-
-
 
 export default BookAppointmentModal
