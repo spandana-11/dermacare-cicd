@@ -21,4 +21,6 @@ public interface ReportsService {
 
 	Response updateReport(String reportId, ReportsDtoList dto);
 
+	Response deleteReportFile(String reportId, String bookingId, int fileIndex);
+
 }

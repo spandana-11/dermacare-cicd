@@ -13,7 +13,7 @@ const ConfirmationModal = ({
   cancelColor = 'secondary',
 }) => {
   return (
-    <CModal visible={isVisible} onClose={onCancel} alignment="center" backdrop="static">
+    <CModal visible={isVisible} onClose={onCancel} alignment="center" backdrop="static" className='custom-modal'>
       {/* Header */}
       <CModalHeader>
         <CModalTitle style={{ color: 'var(--color-black)' }}>⚠ {title}</CModalTitle>

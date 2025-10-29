@@ -68,4 +68,15 @@ public class ReportsController {
          Response response = reportsService.deleteReport(reportId);
          return ResponseEntity.status(response.getStatus()).body(response);
      }
+     @DeleteMapping("/deleteReportFile/{reportId}/{bookingId}/{fileIndex}")
+     public ResponseEntity<Response> deleteReportFile(
+             @PathVariable String reportId,
+             @PathVariable String bookingId,
+             @PathVariable int fileIndex) {
+         
+         Response response = reportsService.deleteReportFile(reportId, bookingId, fileIndex);
+         return ResponseEntity.status(response.getStatus()).body(response);
+     }
+
+
 }

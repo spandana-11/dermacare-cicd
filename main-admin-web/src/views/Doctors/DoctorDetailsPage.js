@@ -62,17 +62,15 @@ const DoctorDetailsPage = () => {
   const [categoryOptions, setCategoryOptions] = useState([])
   const [serviceOptions, setServiceOptions] = useState([])
   const [subServiceOptions, setSubServiceOptions] = useState([])
-
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [selectedServices, setSelectedServices] = useState([])
   const [selectedSubServices, setSelectedSubServices] = useState([])
-
   const { state } = useLocation()
   const [doctorData, setDoctorData] = useState(state?.doctor || {})
   // const { fetchHospitalDetails } = useHospital()
   const navigate = useNavigate()
-const branchId = state?.branchId
-
+  const branchId = state?.branchId
+  console.log(state)
   const [activeKey, setActiveKey] = useState(1)
   const minDate = format(startOfToday(), 'yyyy-MM-dd')
   const maxDate = format(addDays(startOfToday(), 14), 'yyyy-MM-dd')
@@ -115,7 +113,7 @@ const branchId = state?.branchId
     const isDeleted = await handleDeleteToggle(id)
     console.log(isDeleted)
     if (isDeleted) {
-         navigate(`/branch-details/${branchId}?tab=1`)
+      navigate(`/branch-details/${branchId}?tab=1`)
 
       toast.success('Doctor deleted successfully')
     } else {
@@ -180,12 +178,17 @@ const branchId = state?.branchId
   }
 
   const handleGenerate = () => {
-    const newSlots = generateTimeSlots(interval, isToday)
+    const newSlots = generateTimeSlots(interval, isToday).map((s) => ({
+      slot: s,
+      available: true, // or logic if unavailable
+    }))
     setTimeSlots(newSlots) // temporary for modal
-    setSlots(newSlots) // if you want in main grid
-    setSelectedSlots([]) // reset selected
+    setSlots(newSlots)
+    setSelectedSlots([])
+    console.log(newSlots)
     toast.success(`Generated ${newSlots.length} slots of ${interval} minutes`)
   }
+
 
   const [availableSlots, setAvailableSlots] = useState(generateTimeSlots())
 
@@ -209,9 +212,9 @@ const branchId = state?.branchId
 
         subCategory: formData.subCategory
           ? {
-              subCategoryId: formData.subCategory.subCategoryId,
-              subCategoryName: formData.subCategory.subCategoryName,
-            }
+            subCategoryId: formData.subCategory.subCategoryId,
+            subCategoryName: formData.subCategory.subCategoryName,
+          }
           : null,
         services:
           formData.services?.map((s) => ({
@@ -220,14 +223,14 @@ const branchId = state?.branchId
           })) || [],
       }
 
-        const res = await UpdateDoctorById(doctorData.doctorId, payload);
+      const res = await UpdateDoctorById(doctorData.doctorId, payload);
 
       if (res.success) {
         toast.success(res.data.message || 'Doctor updated successfully')
         setDoctorData(res.data.updatedDoctor)
         setFormData(res.data.updatedDoctor)
         setIsEditing(false)
-              navigate(`/branch-details/${branchId}?tab=1`)
+        navigate(`/branch-details/${branchId}?tab=1`)
 
       } else {
         toast.error('Failed to update doctor')
@@ -311,48 +314,53 @@ const branchId = state?.branchId
   }
 
   const handleAddSlot = async () => {
+    if (!doctorData?.doctorId || !branchId || !state?.doctor?.hospitalId) {
+      toast.error('❌ Missing required IDs to add slots.');
+      return;
+    }
+
     const newSlots = selectedSlots.filter(
       (slot) =>
         !slotsData.some(
           (existingSlot) => existingSlot.slot === slot && existingSlot.date === selectedDate,
         ),
-    )
+    );
 
     if (newSlots.length === 0) {
-      alert('No new slots to add!')
-      return
+      toast.info('No new slots to add!');
+      return;
     }
 
     const payload = {
-      doctorId: doctorData?.doctorId,
+      doctorId: doctorData.doctorId,
       date: selectedDate,
-      availableSlots: newSlots.map((slot) => ({
-        slot,
-        slotbooked: false,
-      })),
-    }
+      availableSlots: newSlots.map((slot) => ({ slot, slotbooked: false })),
+    };
+
+    const hospitalId = state.doctor.hospitalId;
 
     try {
-      const hospitalId = localStorage.getItem('HospitalId')
-      const branchId = localStorage.getItem('branchId')
-      const res = await http.post(
-        `/addDoctorSlots/${hospitalId}/${branchId}/${doctorData.doctorId}`,
-        payload,
-      )
+      // Using proxy (for dev only)
+      const res = await axios.post(
+        `${BASE_URL}/admin/addDoctorSlots/${hospitalId}/${branchId}/${doctorData.doctorId}`,
+        payload
+      );
 
       if (res.data.success) {
-        // alert(' Slots added successfully')
-        toast.success('Slots added successfully')
-        setVisibleSlot(false)
-        setVisible(false)
-        setSelectedSlots([])
-        fetchSlots()
+        toast.success('✅ Slots added successfully!');
+        setVisibleSlot(false);
+        setVisible(false);
+        setSelectedSlots([]);
+        fetchSlots();
+      } else {
+        toast.error(res.data.message || 'Failed to add slots.');
       }
     } catch (err) {
-      console.error(err)
-      alert('Error adding slots')
+      console.error('Error adding slots:', err);
+      toast.error('❌ Network error. Check backend or CORS.');
     }
-  }
+  };
+
 
   const slotsForSelectedDate =
     (Array.isArray(allSlots) ? allSlots.find((slotData) => slotData.date === selectedDate) : null)
@@ -366,9 +374,8 @@ const branchId = state?.branchId
 
   const fetchSlots = async () => {
     try {
-      const hospitalId = localStorage.getItem('HospitalId')
-      const branchId = localStorage.getItem('branchId')
-      const response = await http.get(`/getDoctorSlots/${hospitalId}/${branchId}/${doctorData.doctorId}`)
+      var hospitalId = state?.doctor.hospitalId
+      const response = await http.get(`/clinic-admin/getDoctorSlots/${hospitalId}/${branchId}/${doctorData.doctorId}`)
 
       if (response.data.success) {
         console.log('Fetched Slots Data:', response.data.data)
@@ -384,7 +391,7 @@ const branchId = state?.branchId
   useEffect(() => {
     const fetchDoctorRatings = async () => {
       try {
-        const hospitalId = localStorage.getItem('HospitalId')
+
         const response = await http.get(`/averageRatings/${hospitalId}/${doctorData.doctorId}`)
 
         if (!response.data.success) {
@@ -432,24 +439,7 @@ const branchId = state?.branchId
       setSelectedSlots((prev) => [...prev, slot])
     }
   }
-
-  // 🔹 Save slots via API
-  const handleSaveSlots = async (doctorId, branchId) => {
-    if (selectedSlots.length === 0) {
-      toast.error('Please select at least one slot')
-      return
-    }
-    try {
-      await addDoctorSlots(doctorId, branchId, selectedSlots)
-      toast.success('Slots saved successfully')
-      setSelectedSlots([])
-    } catch (err) {
-      toast.error('Failed to save slots')
-      console.error(err)
-    }
-  }
-
-  console.log(customerDetails)
+  // console.log(customerDetails)
 
   const toBase64 = (file) =>
     new Promise((resolve, reject) => {
@@ -476,7 +466,7 @@ const branchId = state?.branchId
 
   if (!doctorData) return <p>No doctor data found.</p>
 
-  console.log(customerDetails)
+  // console.log(customerDetails)
   const validateForm = () => {
     let newErrors = {}
 
@@ -570,33 +560,33 @@ const branchId = state?.branchId
     }
   }
 
-useEffect(() => {
-  const fetchBranches = async () => {
-    if (!doctorData?.clinicId) {
-      console.warn("❌ No clinicId yet, waiting for doctorData...");
-      return;
-    }
+  useEffect(() => {
+    const fetchBranches = async () => {
+      if (!doctorData?.clinicId) {
+        console.warn("❌ No clinicId yet, waiting for doctorData...");
+        return;
+      }
 
-    try {
-      console.log("✅ Fetching branches for clinicId:", doctorData.clinicId);
-      const response = await GetClinicBranches(doctorData.clinicId);
+      try {
+        console.log("✅ Fetching branches for clinicId:", doctorData.clinicId);
+        const response = await GetClinicBranches(doctorData.clinicId);
 
-      const branches = response?.data || [];
-      console.log('test branches', branches)
-      const formatted = branches.map((b) => ({
-        value: b.branchId || b.id,
-        label: b.branchName || b.name,
-      }));
+        const branches = response?.data || [];
+        console.log('test branches', branches)
+        const formatted = branches.map((b) => ({
+          value: b.branchId || b.id,
+          label: b.branchName || b.name,
+        }));
 
-      setBranchOptions(formatted);
-    } catch (err) {
-      console.error("❌ Error fetching branches:", err);
-      setBranchOptions([]);
-    }
-  };
+        setBranchOptions(formatted);
+      } catch (err) {
+        console.error("❌ Error fetching branches:", err);
+        setBranchOptions([]);
+      }
+    };
 
-  fetchBranches();
-}, [doctorData?.clinicId]); // ✅ runs only when clinicId becomes available
+    fetchBranches();
+  }, [doctorData?.clinicId]); // ✅ runs only when clinicId becomes available
 
   // Sync category into formData
   // Category → formData
@@ -650,48 +640,52 @@ useEffect(() => {
     const prefillData = async () => {
       if (!doctorData) return
 
-      // Category
+      // ✅ Prefill category
       if (doctorData.category?.length > 0) {
         const cat = doctorData.category[0]
         setSelectedCategory({ value: cat.categoryId, label: cat.categoryName })
 
-        // fetch services for category
-        const servicesRes = await serviceData()
-        const filteredServices = (servicesRes?.data || []).filter(
-          (s) => s.categoryId === cat.categoryId,
-        )
-        setServiceOptions(
-          filteredServices.map((s) => ({ value: s.serviceId, label: s.serviceName })),
-        )
+        // Fetch all services
+        const allServicesRes = await serviceDataH()
+        const allServices = allServicesRes?.data || []
 
-        // Prefill services
-        if (doctorData.services?.length > 0) {
-          const serviceObjs = doctorData.services.map((s) => ({
+        // Filter services belonging to category
+        const filteredServices = allServices.filter((s) => s.categoryId === cat.categoryId)
+
+        const formattedServices = filteredServices.map((s) => ({
+          value: s.serviceId,
+          label: s.serviceName,
+        }))
+        setServiceOptions(formattedServices)
+
+        // ✅ Prefill services
+        if (doctorData.service?.length > 0) {
+          const selectedServiceObjs = doctorData.service.map((s) => ({
             value: s.serviceId,
             label: s.serviceName,
           }))
-          setSelectedServices(serviceObjs)
+          setSelectedServices(selectedServiceObjs)
 
-          // Prefill subServices
-          const allSubServices = []
-          for (let s of doctorData.services) {
-            const subRes = await subServiceData(s.serviceId)
-            ;(subRes?.data || []).forEach((ss) => {
-              allSubServices.push({ value: ss.subServiceId, label: ss.subServiceName })
-            })
-          }
-          const uniqueSubServices = Array.from(
-            new Map(allSubServices.map((ss) => [ss.value, ss])).values(),
+          // Fetch all subservices for those services
+          const allSubserviceResponses = await Promise.all(
+            selectedServiceObjs.map((s) => subServiceData(s.value)),
           )
-          setSubServiceOptions(uniqueSubServices)
 
+          const allSubservices = allSubserviceResponses.flatMap((res) => res?.data || [])
+
+          const formattedSubServices = allSubservices.map((ss) => ({
+            value: ss.subServiceId,
+            label: ss.subServiceName,
+          }))
+          setSubServiceOptions(formattedSubServices)
+
+          // ✅ Prefill subServices
           if (doctorData.subServices?.length > 0) {
-            setSelectedSubServices(
-              doctorData.subServices.map((ss) => ({
-                value: ss.subServiceId,
-                label: ss.subServiceName,
-              })),
-            )
+            const selectedSubServiceObjs = doctorData.subServices.map((ss) => ({
+              value: ss.subServiceId,
+              label: ss.subServiceName,
+            }))
+            setSelectedSubServices(selectedSubServiceObjs)
           }
         }
       }
@@ -762,6 +756,8 @@ useEffect(() => {
     fetchCategories()
   }, [])
 
+
+
   const handleCategoryChange = async (selectedCategory) => {
     setSelectedCategory(selectedCategory)
     setFormData((prev) => ({
@@ -780,7 +776,7 @@ useEffect(() => {
     }
 
     try {
-      const res = await serviceData() // fetch all services
+      const res = await serviceDataH() // fetch all services
       const services = res?.data || []
 
       // ✅ filter by category
@@ -846,7 +842,12 @@ useEffect(() => {
       setSubServiceOptions([])
     }
   }
-
+  const handleIntervalChange = (newInterval) => {
+    setInterval(newInterval)
+    setSlots([]) // clear previously generated slots
+    setTimeSlots([]) // if using timeSlots for modal
+    setSelectedSlots([]) // clear selection
+  }
   return (
     <div className="doctor-details-page" style={{ padding: '1rem' }}>
       <ToastContainer />
@@ -865,7 +866,7 @@ useEffect(() => {
                   {capitalizeWords(doctorData.doctorName)}
                 </strong>
               </p>
-              <p className="mb-1 text-center" style={{ color: 'var(--color-black)' }}>
+              <p className="mb-1" style={{ color: 'var(--color-black)' }}>
                 ID:
                 <strong> {doctorData.doctorId} </strong>
               </p>
@@ -957,7 +958,7 @@ useEffect(() => {
 
                         <CRow className="mb-3">
                           <CCol md={12}>
-                            <strong>Sub Services:</strong>
+                            <strong>Procedures:</strong>
                             <Select
                               isMulti
                               options={subServiceOptions}
@@ -972,7 +973,7 @@ useEffect(() => {
                                   })),
                                 }))
                               }}
-                              placeholder="Select SubService(s)"
+                              placeholder="Select Procedures"
                             />
                           </CCol>
                         </CRow>
@@ -995,19 +996,35 @@ useEffect(() => {
                             marginRight: '10pxs',
                           }}
                         />
-
                         {/* Upload and convert image */}
+
                         <input
                           type="file"
                           accept="image/*"
                           onChange={async (e) => {
                             const file = e.target.files[0]
+                            const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2 MB
+
                             if (file) {
-                              const base64 = await toBase64(file)
-                              setFormData((prev) => ({
-                                ...prev,
-                                doctorPicture: base64,
-                              }))
+                              if (file.size > MAX_FILE_SIZE) {
+                                showCustomToast('File size exceeds 2 MB!', 'success')
+
+                                e.target.value = '' // clear input
+                                return
+                              }
+
+                              try {
+                                const base64 = await toBase64(file)
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  doctorPicture: base64,
+                                }))
+
+                                e.target.value = '' // clear input after successful processing
+                              } catch (err) {
+                                console.error(err)
+                                e.target.value = ''
+                              }
                             }
                           }}
                         />
@@ -1301,17 +1318,18 @@ useEffect(() => {
                               value={branchOptions.filter(
                                 (opt) =>
                                   Array.isArray(formData.branch) &&
-                                  formData.branch.some((b) => b.branchId === opt.value),
+                                  formData.branch.some(
+                                    (b) => b.branchId.toString() === opt.value.toString(),
+                                  ),
                               )}
-                              onChange={(selected) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  branch: selected.map((opt) => ({
-                                    branchId: opt.value,
-                                    branchName: opt.label,
-                                  })),
+                              onChange={(selected) => {
+                                const updatedBranches = selected.map((opt) => ({
+                                  branchId: opt.value,
+                                  branchName: opt.label,
                                 }))
-                              }
+                                setFormData((prev) => ({ ...prev, branch: updatedBranches }))
+                                console.log('Updated branches:', updatedBranches) // ✅ Verify length
+                              }}
                               placeholder="Select branches..."
                             />
 
@@ -1331,7 +1349,7 @@ useEffect(() => {
                           // View-only mode
                           <div>
                             {Array.isArray(doctorData.branches) &&
-                            doctorData.branches.length > 0 ? (
+                              doctorData.branches.length > 0 ? (
                               doctorData.branches.map((b, idx) => <p key={idx}>{b.branchName}</p>)
                             ) : (
                               <p>No branches assigned</p>
@@ -1361,118 +1379,113 @@ useEffect(() => {
                           <p>{doctorData.associationsOrMemberships}</p>
                         )}
                       </CCol>
+                    </CRow>
+                    <CCol style={{ color: 'var(--color-black)' }}>
+                      <p>
+                        <strong>📝 Profile Description:</strong>
+                      </p>
+                      {isEditing ? (
+                        <CFormInput
+                          name="profileDescription"
+                          value={formData.profileDescription}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              profileDescription: e.target.value,
+                            }))
+                          }
+                        />
+                      ) : (
+                        <p>{doctorData.profileDescription}</p>
+                      )}
+                    </CCol>
 
-                      <CCol style={{ color: 'var(--color-black)' }}>
-                        <p>
-                          <strong>📝 Profile Description:</strong>
-                        </p>
-                        {isEditing ? (
-                          <CFormInput
-                            name="profileDescription"
-                            value={formData.profileDescription}
+                    <CCol>
+                      {' '}
+                      <h6 className="mt-4 mb-2">
+                        <strong>🔍 Area of Expertise</strong>
+                      </h6>
+                      {isEditing ? (
+                        <>
+                          <CFormTextarea
+                            name="focusAreas"
+                            rows={5}
+                            style={{ resize: 'vertical' }}
+                            placeholder="• Enter area of focus..."
+                            value={formData.focusAreas?.join('\n') || ''}
+                            onChange={(e) => {
+                              const inputValue = e.target.value
+                              setFormData((prev) => ({
+                                ...prev,
+                                focusAreas: inputValue
+                                  .split('\n')
+                                  .map((line) =>
+                                    line.trimStart().startsWith('•')
+                                      ? line.trim()
+                                      : `• ${line.trim()}`,
+                                  )
+                                  .filter((line) => line !== '•'),
+                              }))
+                            }}
+                          />
+                          <small>
+                            Type each point on a new line. Bullets will be added automatically.
+                          </small>
+                        </>
+                      ) : (
+                        <ul style={{ color: 'var(--color-black)' }}>
+                          {Array.isArray(formData?.focusAreas) && formData.focusAreas.length > 0 ? (
+                            formData.focusAreas.map((area, idx) => (
+                              <li key={idx}>{area.replace(/^•\s*/, '')}</li>
+                            ))
+                          ) : (
+                            <p>No focus areas listed</p>
+                          )}
+                        </ul>
+                      )}
+                    </CCol>
+                    <CCol>
+                      <h6 className="mt-4 mb-2">
+                        <strong>🏅 Achievements</strong>
+                      </h6>
+                      {isEditing ? (
+                        <>
+                          <CFormTextarea
+                            name="highlights"
+                            rows={5}
+                            placeholder="• Enter your first achievement"
+                            value={formData.highlights?.join('\n') || ''}
+                            style={{ resize: 'vertical' }}
                             onChange={(e) =>
                               setFormData((prev) => ({
                                 ...prev,
-                                profileDescription: e.target.value,
+                                highlights: e.target.value
+                                  .split('\n') // line-by-line
+                                  .map((line) =>
+                                    line.trimStart().startsWith('•')
+                                      ? line.trim()
+                                      : `• ${line.trim()}`,
+                                  )
+                                  .filter(Boolean),
                               }))
                             }
                           />
-                        ) : (
-                          <p>{doctorData.profileDescription}</p>
-                        )}
-                      </CCol>
-                    </CRow>
-
-                    <CRow style={{ color: 'var(--color-black)' }}>
-                      <CCol>
-                        {' '}
-                        <h6 className="mt-4 mb-2">
-                          <strong>🔍 Area of Expertise</strong>
-                        </h6>
-                        {isEditing ? (
-                          <>
-                            <CFormTextarea
-                              name="focusAreas"
-                              rows={5}
-                              style={{ resize: 'vertical' }}
-                              placeholder="• Enter area of focus..."
-                              value={formData.focusAreas?.join('\n') || ''}
-                              onChange={(e) => {
-                                const inputValue = e.target.value
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  focusAreas: inputValue
-                                    .split('\n')
-                                    .map((line) =>
-                                      line.trimStart().startsWith('•')
-                                        ? line.trim()
-                                        : `• ${line.trim()}`,
-                                    )
-                                    .filter((line) => line !== '•'),
-                                }))
-                              }}
-                            />
-                            <small>
-                              Type each point on a new line. Bullets will be added automatically.
-                            </small>
-                          </>
-                        ) : (
-                          <ul>
-                            {Array.isArray(formData?.focusAreas) &&
-                            formData.focusAreas.length > 0 ? (
-                              formData.focusAreas.map((area, idx) => (
-                                <li key={idx}>{area.replace(/^•\s*/, '')}</li>
-                              ))
-                            ) : (
-                              <p>No focus areas listed</p>
-                            )}
-                          </ul>
-                        )}
-                      </CCol>
-                      <CCol>
-                        <h6 className="mt-4 mb-2">
-                          <strong>🏅 Achievements</strong>
-                        </h6>
-                        {isEditing ? (
-                          <>
-                            <CFormTextarea
-                              name="highlights"
-                              rows={5}
-                              placeholder="• Enter your first achievement"
-                              value={formData.highlights?.join('\n') || ''}
-                              style={{ resize: 'vertical' }}
-                              onChange={(e) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  highlights: e.target.value
-                                    .split('\n') // line-by-line
-                                    .map((line) =>
-                                      line.trimStart().startsWith('•')
-                                        ? line.trim()
-                                        : `• ${line.trim()}`,
-                                    )
-                                    .filter(Boolean),
-                                }))
-                              }
-                            />
-                            <small>
-                              Press <strong>Enter</strong> to add each point on a new line.
-                            </small>
-                          </>
-                        ) : (
-                          <ul>
-                            {Array.isArray(formData?.highlights) &&
-                            formData.highlights.length > 0 ? (
-                              formData.highlights.map((item, idx) => (
-                                <li key={idx}>{item.replace(/^•\s*/, '')}</li>
-                              ))
-                            ) : (
-                              <p>No achievements added</p>
-                            )}
-                          </ul>
-                        )}
-                      </CCol>
-                    </CRow>
+                          <small>
+                            Press <strong>Enter</strong> to add each point on a new line.
+                          </small>
+                        </>
+                      ) : (
+                        <ul style={{ color: 'var(--color-black)' }}>
+                          {Array.isArray(formData?.highlights) && formData.highlights.length > 0 ? (
+                            formData.highlights.map((item, idx) => (
+                              <li key={idx}>{item.replace(/^•\s*/, '')}</li>
+                            ))
+                          ) : (
+                            <p>No achievements added</p>
+                          )}
+                        </ul>
+                      )}
+                    </CCol>
 
                     <CRow style={{ color: 'var(--color-black)' }}>
                       <CCol md={6}>
@@ -1533,14 +1546,25 @@ useEffect(() => {
                       <CCol>
                         <p>
                           <strong>Doctor Signature:</strong>
+                          <span className="text-danger">*</span>
                         </p>
+
                         {isEditing ? (
-                          <CFormInput
-                            type="file"
-                            accept="image/jpeg, image/png"
-                            onChange={(e) => {
-                              const file = e.target.files[0]
-                              if (file) {
+                          <div>
+                            {/* File input */}
+                            <CFormInput
+                              type="file"
+                              accept="image/jpeg, image/png"
+                              onChange={(e) => {
+                                const file = e.target.files[0]
+                                if (!file) {
+                                  setErrors((prev) => ({
+                                    ...prev,
+                                    doctorSignature: 'Signature is required',
+                                  }))
+                                  return
+                                }
+
                                 const validTypes = ['image/jpeg', 'image/png']
                                 if (!validTypes.includes(file.type)) {
                                   setErrors((prev) => ({
@@ -1549,37 +1573,91 @@ useEffect(() => {
                                   }))
                                   return
                                 }
-                                const reader = new FileReader()
-                                reader.onloadend = () => {
-                                  setFormData((p) => ({ ...p, doctorSignature: reader.result }))
+
+                                const MAX_SIZE = 200 * 1024 // 200 KB
+                                if (file.size > MAX_SIZE) {
                                   setErrors((prev) => ({
                                     ...prev,
-                                    doctorSignature: '',
+                                    doctorSignature: 'File size must be less than 200 KB',
                                   }))
+                                  return
+                                }
+
+                                const reader = new FileReader()
+                                reader.onloadend = () => {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    doctorSignature: reader.result,
+                                  }))
+                                  setErrors((prev) => ({ ...prev, doctorSignature: '' }))
                                 }
                                 reader.readAsDataURL(file)
-                              } else {
-                                setErrors((prev) => ({
-                                  ...prev,
-                                  doctorSignature: 'Signature is required',
-                                }))
-                              }
-                            }}
-                            invalid={!!errors.doctorSignature}
-                          />
+                              }}
+                              invalid={!!errors.doctorSignature}
+                            />
+
+                            {/* Preview */}
+                            <div
+                              style={{
+                                width: '150px',
+                                height: '80px',
+                                marginTop: '10px',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                overflow: 'hidden',
+                                backgroundColor: '#f8f9fa',
+                              }}
+                            >
+                              {formData.doctorSignature ? (
+                                <img
+                                  src={formData.doctorSignature}
+                                  alt="Doctor Signature"
+                                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                />
+                              ) : doctorData.doctorSignature ? (
+                                <img
+                                  src={doctorData.doctorSignature}
+                                  alt="Doctor Signature"
+                                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                />
+                              ) : (
+                                <span style={{ fontSize: '12px', color: '#999' }}>
+                                  No signature uploaded
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         ) : (
-                          <div style={{ width: '150px', height: 'auto' }}>
+                          <div
+                            style={{
+                              width: '150px',
+                              height: '80px',
+                              border: '1px solid #ccc',
+                              borderRadius: '4px',
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              overflow: 'hidden',
+                              backgroundColor: '#f8f9fa',
+                            }}
+                          >
                             {doctorData.doctorSignature ? (
                               <img
                                 src={doctorData.doctorSignature}
                                 alt="Doctor Signature"
-                                style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
+                                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                               />
                             ) : (
-                              <p>No signature uploaded</p>
+                              <span style={{ fontSize: '12px', color: '#999' }}>
+                                No signature uploaded
+                              </span>
                             )}
                           </div>
                         )}
+
                         {errors.doctorSignature && (
                           <small className="text-danger">{errors.doctorSignature}</small>
                         )}
@@ -1627,15 +1705,6 @@ useEffect(() => {
                 </CCard>
               </CTabPane>
             </CTabContent>
-            {/* <ConfirmationModal
-              isVisible={showModal}
-              title="Delete Procedure Details"
-              message="Are you sure you want to delete this doctor? This action cannot be undone."
-              confirmText="Yes, Delete"
-              cancelText="Cancel"
-              onConfirm={handleDeleteToggleE(doctorData.doctorId)}
-              onCancel={handleClose}
-            /> */}
 
             <CTabPane
               visible={activeKey === 2}
@@ -1669,26 +1738,34 @@ useEffect(() => {
 
               <div className="slot-grid mt-3">
                 <CCard className="mb-4">
-                  {/* <CCardHeader className="fw-bold">{selectedDate}</CCardHeader> */}
                   <CCardBody>
                     {loading ? (
                       <LoadingIndicator message="Loading slots..." />
                     ) : (
-                      <div className="d-flex flex-wrap gap-3">
+                      <div
+                        className="slot-container d-grid "
+                        style={{
+                          display: 'grid',
+                          color: 'var(--color-black)',
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+                          gap: '12px',
+                        }}
+                      >
                         {slotsForSelectedDate.map((slotObj, i) => {
                           const isSelected = selectedSlots.includes(slotObj.slot)
+                          const isBooked = slotObj?.slotbooked
 
                           return (
                             <div
                               key={i}
-                              className={`slot-item px-3 py-2 border rounded ${
-                                slotObj?.slotbooked
-                                  ? 'bg-danger text-white' // booked = red
-                                  : isSelected
-                                    ? 'text-white' // selected = black background, white text
-                                    : 'bg-light'
-                              }`}
+                              className={`slot-item text-center border rounded   ${isBooked
+                                ? 'bg-danger text-white' // booked = red
+                                : isSelected
+                                  ? 'text-white'
+                                  : 'bg-light'
+                                }`}
                               onClick={() => {
+                                if (isBooked) return // ❌ Prevent click for booked slots
                                 if (isSelected) {
                                   setSelectedSlots((prev) => prev.filter((s) => s !== slotObj.slot))
                                 } else {
@@ -1696,27 +1773,33 @@ useEffect(() => {
                                 }
                               }}
                               style={{
-                                cursor: 'pointer',
+                                padding: '10px 0',
+                                borderRadius: '8px',
+                                cursor: isBooked ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s ease',
+                                opacity: isBooked ? 0.7 : 1,
                                 color: 'var(--color-black)',
-                                backgroundColor: slotObj?.slotbooked
-                                  ? undefined
+                                backgroundColor: isBooked
+                                  ? 'red'
                                   : isSelected
                                     ? 'var(--color-black)'
                                     : undefined,
                               }}
+                              title={isBooked ? 'Booked' : 'Not Booked'}
                             >
                               {slotObj?.slot}
                             </div>
                           )
                         })}
-
-                        {slotsForSelectedDate.length === 0 && (
-                          <p style={{ color: 'var(--color-black)' }}>
-                            No available slots for this date
-                          </p>
-                        )}
                       </div>
                     )}
+                    <div className="w-100">
+                      {slotsForSelectedDate.length === 0 && (
+                        <p style={{ color: 'var(--color-black)' }}>
+                          No available slots for this date
+                        </p>
+                      )}
+                    </div>
                   </CCardBody>
                 </CCard>
               </div>
@@ -1728,7 +1811,7 @@ useEffect(() => {
                     border: `1px solid ${'var(--color-black)'}`,
                   }}
                   variant="outline"
-                  onClick={() => setVisible(true)}
+                  onClick={openModal}
                 >
                   Add Slot
                 </CButton>
@@ -1742,7 +1825,7 @@ useEffect(() => {
                   disabled={selectedSlots.length === 0}
                   onClick={() => {
                     if (selectedSlots.length === 0) {
-                      toast.info('Please select slot(s) to delete.')
+                      showCustomToast('Please select slot(s) to delete.', 'success')
                       return
                     }
                     setDeleteMode('selected') // mark which action we are confirming
@@ -1784,9 +1867,27 @@ useEffect(() => {
                   </CRow>
 
                   {ratings.comments.map((comment, index) => {
-                    const initials =
-                      customerDetails[comment.customerMobileNumber]?.slice(0, 2).toUpperCase() ||
-                      'US'
+                    const getInitials = (name) => {
+                      if (!name) return 'US'
+
+                      // Remove common prefixes like Mr., Mrs., Ms., Dr.
+                      const cleaned = name.replace(/^(Mr\.|Mrs\.|Ms\.|Dr\.)\s*/i, '').trim()
+
+                      // Split the remaining name and take first 2 words
+                      const parts = cleaned.split(' ')
+
+                      // Take the first letters of up to 2 words
+                      const initials = parts
+                        .slice(0, 2)
+                        .map((word) => word[0]?.toUpperCase() || '')
+                        .join('')
+
+                      return initials || 'US'
+                    }
+
+                    // Usage:
+                    const initials = getInitials(comment.patientName)
+
                     const timeAgo = formatTimeAgo(comment.dateAndTimeAtRating)
 
                     return (
@@ -1807,8 +1908,7 @@ useEffect(() => {
                             <div className="d-flex justify-content-between align-items-center">
                               <div>
                                 <h6 className="mb-0">
-                                  {customerDetails[comment.customerMobileNumber] ||
-                                    comment.customerMobileNumber}
+                                  {comment.patientName || comment.patientName}
                                 </h6>
 
                                 <small style={{ color: 'var(--color-black)' }}>{timeAgo}</small>
@@ -1881,114 +1981,23 @@ useEffect(() => {
           </CTabContent>
         </CCardBody>
       </CCard>
-      <CModal visible={visible} onClose={() => setVisible(false)} backdrop="static">
-        <CModalHeader>
-          <CModalTitle>Add Slots</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          <label style={{ color: 'var(--color-black)' }}>Select Date</label>
-          <CFormInput
-            type="date"
-            value={selectedDate}
-            min={minDate}
-            max={maxDate}
-            // style={{ color: 'var(--color-black)' }}
-            onChange={(e) => setSelectedDate(e.target.value)}
-          />
 
-          <label className="mt-3" style={{ color: 'var(--color-black)' }}>
-            Add Slot
-          </label>
-
-          <div className="d-flex gap-2 flex-wrap mb-3">
-            <CInputGroup>{/* Trigger Button */}</CInputGroup>
-            <CInputGroup className="mb-3">
-              <CFormInput placeholder="Click the plus icon to add a slot." disabled />
-              <CButton
-                style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
-                onClick={openModal}
-              >
-                +
-              </CButton>
-            </CInputGroup>
-            {/* <span color="warning" style={{ fontSize: '12px' }}>
-              {' '}
-              ⚠️ Note: Please enter a valid time in <strong>hh:mm AM/PM</strong> format (e.g., 09:00
-              AM, 03:30 PM). Only <strong>half-hour intervals</strong> are accepted.
-            </span> */}
-          </div>
-
-          {/* <CListGroup>
-            {timeSlots.map((slot, index) => {
-              const isSelected = selectedToDelete.includes(slot)
-
-              return (
-                <CListGroupItem
-                  key={index}
-                  onClick={() => {
-                    setSelectedToDelete((prev) =>
-                      prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot],
-                    )
-                  }}
-                  style={{
-                    backgroundColor: isSelected ? '#e0f7fa' : 'white',
-                    cursor: 'pointer',
-                  }}
-                  className="d-flex justify-content-between align-items-center"
-                >
-                  {typeof slot === 'string' ? slot : slot?.slot}
-                  <FaTrash
-                    role="button"
-                    onClick={(e) => {
-                      e.stopPropagation() // prevent item toggle on trash click
-                      deleteSlot(slot)
-                    }}
-                    style={{ color: 'gray', cursor: 'pointer' }}
-                  />
-                </CListGroupItem>
-              )
-            })}
-          </CListGroup> */}
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" onClick={() => setVisible(false)}>
-            Cancel
-          </CButton>
-        </CModalFooter>
-      </CModal>
-
-      <CModal visible={visibleSlot} onClose={() => setVisibleSlot(false)} size="lg">
+      <CModal
+        visible={visibleSlot}
+        onClose={() => {
+          setVisibleSlot(false) // close modal
+          setSlots([]) // reset generated slots
+          setTimeSlots([]) // reset modal slots if used
+          setSelectedSlots([]) // clear selected slots
+        }}
+        size="lg"
+        className="custom-modal"
+        backdrop="static"
+      >
         <CModalHeader style={{ color: 'var(--color-black)' }}>
-          Select Available Time Slots
+          Select Available Time Slots - ({selectedDate})
         </CModalHeader>
         <CModalBody>
-          {/* <div className="d-flex flex-wrap gap-3">
-            {slots.map((slot, i) => {
-              const isSelected = selectedSlots.includes(slot)
-
-              return (
-                <div
-                  key={i}
-                  className={`slot-item px-3 py-2 border rounded ${
-                    isSelected ? 'bg-dark text-white' : 'bg-light'
-                  }`}
-                  onClick={() => {
-                    if (isSelected) {
-                      setSelectedSlots((prev) => prev.filter((s) => s !== slot))
-                    } else {
-                      setSelectedSlots((prev) => [...prev, slot])
-                    }
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {slot}
-                </div>
-              )
-            })}
-          </div>
-          Select All Slots */}
-          {/* Select All Checkbox */}
-
           {/* Slot Buttons */}
           <div>
             {/* Interval Selection */}
@@ -1998,7 +2007,7 @@ useEffect(() => {
                   type="radio"
                   value={10}
                   checked={interval === 10}
-                  onChange={() => setInterval(10)}
+                  onChange={() => handleIntervalChange(10)}
                 />
                 10 min
               </label>
@@ -2007,7 +2016,7 @@ useEffect(() => {
                   type="radio"
                   value={20}
                   checked={interval === 20}
-                  onChange={() => setInterval(20)}
+                  onChange={() => handleIntervalChange(20)}
                 />
                 20 min
               </label>
@@ -2016,7 +2025,7 @@ useEffect(() => {
                   type="radio"
                   value={30}
                   checked={interval === 30}
-                  onChange={() => setInterval(30)}
+                  onChange={() => handleIntervalChange(30)}
                 />
                 30 min
               </label>
@@ -2036,10 +2045,15 @@ useEffect(() => {
                   style={{ color: 'var(--color-black)' }}
                   type="checkbox"
                   id="selectAllSlots"
-                  checked={selectedSlots.length === timeSlots.length}
+                  checked={
+                    // checked if all available slots are selected
+                    selectedSlots.length === slots.filter((s) => s.available).length
+                  }
                   onChange={(e) => {
                     if (e.target.checked) {
-                      setSelectedSlots([...timeSlots])
+                      // select only available slots
+                      const availableSlots = slots.filter((s) => s.available).map((s) => s.slot)
+                      setSelectedSlots(availableSlots)
                     } else {
                       setSelectedSlots([])
                     }
@@ -2056,33 +2070,39 @@ useEffect(() => {
             )}
 
             {/* Slot Grid */}
-            <div className="d-flex flex-wrap gap-3 mb-3">
-              {slots.map((slot, i) => {
-                const isSelected = selectedSlots.includes(slot)
+            <div className="d-flex flex-wrap gap-2 mb-3">
+              {slots.map((slotObj, i) => {
+                const isSelected = selectedSlots.includes(slotObj.slot)
+
+                const handleClick = () => {
+                  if (!slotObj.available) {
+                    if (slotObj.reason) showCustomToast(`Cannot book: ${slotObj.reason}`, 'warning')
+                    else toast.info('This slot is unavailable', 'warning')
+                    return
+                  }
+                  toggleSlot(slotObj.slot)
+                }
+
                 return (
                   <CButton
-                    key={slot}
+                    key={i}
                     size="sm"
                     style={{
-                      backgroundColor: isSelected ? 'var(--color-black)' : 'gray', // unselected = gray
-                      color: 'white', // always white text
+                      width: '80px', // ✅ fixed width for all buttons
+                      height: '35px', // optional fixed height
+                      backgroundColor: !slotObj.available
+                        ? 'lightgray'
+                        : isSelected
+                          ? 'var(--color-black)'
+                          : 'gray',
+                      color: 'white',
                       border: 'none',
-                      cursor: 'pointer',
+                      cursor: slotObj.available ? 'pointer' : 'not-allowed',
                     }}
-                    onClick={() => toggleSlot(slot)}
+                    onClick={handleClick}
                   >
-                    {slot}
+                    {slotObj.slot}
                   </CButton>
-                  // <div
-                  //   key={i}
-                  //   className={`slot-item px-3 py-2 border rounded ${
-                  //     isSelected ? 'var(--color-black) ' : 'bg-light'
-                  //   }`}
-                  //   onClick={() => toggleSlot(slot)}
-                  //   style={{ cursor: 'pointer' }}
-                  // >
-                  //   {slot}
-                  // </div>
                 )
               })}
             </div>
@@ -2107,6 +2127,8 @@ useEffect(() => {
         visible={showDeleteConfirmModal}
         onClose={() => setShowDeleteConfirmModal(false)}
         alignment="center"
+        className="custom-modal"
+        backdrop="static"
       >
         <CModalHeader closeButton>
           <CModalTitle style={{ color: 'var(--color-black)' }}>Confirm Delete</CModalTitle>
@@ -2134,27 +2156,30 @@ useEffect(() => {
           <CButton
             style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
             onClick={async () => {
+              // const branchId = localStorage.getItem('branchId')
               try {
                 if (deleteMode === 'selected') {
                   // delete selected
                   for (const slot of selectedSlots) {
                     await http.delete(
-                      `/doctorId/${doctorData?.doctorId}/${selectedDate}/${slot}/slots`,
+                      `${BASE_URL}/doctorId/${doctorData?.doctorId}/branchId/${branchId}/date/${selectedDate}/slot/${slot}`,
                     )
                   }
-                  toast.success(' Selected slots deleted successfully.')
+                  showCustomToast(' Selected slots deleted successfully.', 'success')
                   setSelectedSlots([])
                   fetchSlots()
                 } else if (deleteMode === 'all') {
                   // delete all for date
-                  await http.delete(`/delete-by-date/${doctorData?.doctorId}/${selectedDate}`)
-                  toast.success(` All slots for ${selectedDate} deleted.`)
+                  await http.delete(
+                    `${BASE_URL}/delete-by-date/${doctorData?.doctorId}/${branchId}/${selectedDate}`,
+                  )
+                  showCustomToast(` All slots for ${selectedDate} deleted.`, 'success')
                   setSelectedSlots([])
                   fetchSlots()
                 }
               } catch (err) {
                 console.error('Error deleting slots:', err)
-                toast.error('❌ Failed to delete slots.')
+                showCustomToast('❌ Failed to delete slots.', 'error')
               } finally {
                 setShowDeleteConfirmModal(false)
               }
@@ -2166,32 +2191,32 @@ useEffect(() => {
       </CModal>
 
       <style>{`
-        .doctor-info {
-          display: flex;
-          gap: 40px;
-          flex-wrap: wrap;
-          margin-top: 20px;
-        }
-        .doctor-info > div {
-          flex: 1;
-          min-width: 250px;
-        }
-        .slot-btn {
-          padding: 10px 15px;
-          border-radius: 8px;
-          font-weight: 500;
-        }
-        @media (max-width: 768px) {
-          .doctor-info {
-            gap: 20px;
-          }
-        }
-          .navhover{
-          cursor:pointer;
-
-          }
-          
-      `}</style>
+           .doctor-info {
+             display: flex;
+             gap: 40px;
+             flex-wrap: wrap;
+             margin-top: 20px;
+           }
+           .doctor-info > div {
+             flex: 1;
+             min-width: 250px;
+           }
+           .slot-btn {
+             padding: 10px 15px;
+             border-radius: 8px;
+             font-weight: 500;
+           }
+           @media (max-width: 768px) {
+             .doctor-info {
+               gap: 20px;
+             }
+           }
+             .navhover{
+             cursor:pointer;
+   
+             }
+             
+         `}</style>
     </div>
   )
 }

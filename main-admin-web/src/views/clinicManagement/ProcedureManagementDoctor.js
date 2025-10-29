@@ -1048,7 +1048,8 @@ const handleChanges = async (e) => {
       </div>
 
       {viewService && (
-        <CModal visible={!!viewService} onClose={() => setViewService(null)} size="xl">
+        <CModal visible={!!viewService} onClose={() => setViewService(null)} size="xl"  className="custom-modal"
+        backdrop="static">
           <CModalHeader>
             <CModalTitle className="w-100 text-center text-info fs-4">
               Procedure Details
@@ -1285,7 +1286,7 @@ const handleChanges = async (e) => {
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         size="xl"
-        backdrop="static"
+       backdrop="static" className='custom-modal'
       >
         <CModalHeader>
           <CModalTitle style={{ textAlign: 'center', width: '100%' }}>

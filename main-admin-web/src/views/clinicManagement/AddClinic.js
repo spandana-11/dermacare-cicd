@@ -33,7 +33,7 @@ import FileInputWithRemove from './FileInputWithRemove'
 import { getClinicTimings } from './AddClinicAPI'
 
 const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
-    const refs = {
+  const refs = {
     contractorDocuments: useRef(),
     hospitalDocuments: useRef(),
     clinicalEstablishmentCertificate: useRef(),
@@ -433,145 +433,151 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
     }))
   }
   // ✅ File change handler
-const handleHospitalLogoChange = async (e) => {
-  const file = e.target.files?.[0];
+  const handleHospitalLogoChange = async (e) => {
+    const file = e.target.files?.[0];
 
-  if (!file) {
-    setErrors((prev) => ({ ...prev, hospitalLogo: "" }));
-    setFormData((prev) => ({ ...prev, hospitalLogo: null, hospitalLogoFileName: null }));
-    return;
-  }
+    if (!file) {
+      setErrors((prev) => ({ ...prev, hospitalLogo: "" }));
+      setFormData((prev) => ({ ...prev, hospitalLogo: null, hospitalLogoFileName: null }));
+      return;
+    }
 
-  // Always store the filename for X button
-  setFormData((prev) => ({ ...prev, hospitalLogoFileName: file.name }));
+    // Always store the filename for X button
+    setFormData((prev) => ({ ...prev, hospitalLogoFileName: file.name }));
 
-  const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
-  const allowedExtensions = ["jpeg", "jpg", "png"];
-  const fileExtension = file.name.split(".").pop().toLowerCase();
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+    const allowedExtensions = ["jpeg", "jpg", "png"];
+    const fileExtension = file.name.split(".").pop().toLowerCase();
 
-  // Invalid type
-  if (!allowedTypes.includes(file.type) || !allowedExtensions.includes(fileExtension)) {
-    setErrors((prev) => ({
-      ...prev,
-      hospitalLogo: "Invalid file type (only JPEG, JPG, PNG allowed)",
-    }));
-    setFormData((prev) => ({ ...prev, hospitalLogo: null })); // do not store base64
-    return;
-  }
+    // Invalid type
+    if (!allowedTypes.includes(file.type) || !allowedExtensions.includes(fileExtension)) {
+      setErrors((prev) => ({
+        ...prev,
+        hospitalLogo: "Invalid file type (only JPEG, JPG, PNG allowed)",
+      }));
+      setFormData((prev) => ({ ...prev, hospitalLogo: null })); // do not store base64
+      return;
+    }
 
-  const MAX_SIZE = 100 * 1024; // 100 KB
+    const MIN_SIZE = 500 * 1024; // 500 KB
+    const MAX_SIZE = 1 * 1024 * 1024; // 1 MB
 
-  // Invalid size
-  if (file.size >= MAX_SIZE) {
-    setErrors((prev) => ({
-      ...prev,
-      hospitalLogo: "File must be < 100 KB",
-    }));
-    setFormData((prev) => ({ ...prev, hospitalLogo: null })); // do not store base64
-    return;
-  }
-
-  // Valid file → read base64
-  try {
-    const base64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const result = reader.result;
-        const pureBase64 = result.split(",")[1];
-        resolve(pureBase64);
-      };
-      reader.onerror = (err) => reject(err);
-    });
-
-    setFormData((prev) => ({
-      ...prev,
-      hospitalLogo: base64,
-    }));
-    setErrors((prev) => ({ ...prev, hospitalLogo: "" }));
-  } catch (err) {
-    setErrors((prev) => ({ ...prev, hospitalLogo: "Failed to read file" }));
-    setFormData((prev) => ({ ...prev, hospitalLogo: null }));
-  }
-};
+    if (file.size < MIN_SIZE || file.size > MAX_SIZE) {
+      setErrors((prev) => ({
+        ...prev,
+        hospitalLogo: "File size must be between 500 KB and 1 MB",
+      }));
+      setFormData((prev) => ({ ...prev, hospitalLogo: null })); // do not store base64
+      return;
+    }
 
 
+    // Valid file → read base64
+    try {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+          const result = reader.result;
+          const pureBase64 = result.split(",")[1];
+          resolve(pureBase64);
+        };
+        reader.onerror = (err) => reject(err);
+      });
+
+      setFormData((prev) => ({
+        ...prev,
+        hospitalLogo: base64,
+      }));
+      setErrors((prev) => ({ ...prev, hospitalLogo: "" }));
+    } catch (err) {
+      setErrors((prev) => ({ ...prev, hospitalLogo: "Failed to read file" }));
+      setFormData((prev) => ({ ...prev, hospitalLogo: null }));
+    }
+  };
 
 
-const handleFileChange = async (e) => {
-  const { name, files } = e.target;
 
-  // User cancels file selection
-  if (!files || !files[0]) {
-    setFormData((prev) => ({ ...prev, [name]: null, [`${name}FileName`]: null }));
-    setErrors((prev) => ({ ...prev, [name]: '' }));
-    return;
-  }
 
-  const file = files[0];
+  const handleFileChange = async (e) => {
+    const { name, files } = e.target;
 
-  // Always store the filename for X button
-  setFormData((prev) => ({ ...prev, [`${name}FileName`]: file.name }));
+    // User cancels file selection
+    if (!files || !files[0]) {
+      setFormData((prev) => ({ ...prev, [name]: null, [`${name}FileName`]: null }));
+      setErrors((prev) => ({ ...prev, [name]: '' }));
+      return;
+    }
 
-  const allowedTypes = [
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'image/jpeg',
-    'image/jpg',
-    'image/png',
-    'application/zip',
-  ];
-  const allowedExtensions = ['pdf', 'doc', 'docx', 'jpeg', 'jpg', 'png', 'zip'];
-  const fileExtension = file.name.split('.').pop().toLowerCase();
+    const file = files[0];
 
-  // Invalid type
-  if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
-    setErrors((prev) => ({ ...prev, [name]: 'Invalid file type' }));
-    setFormData((prev) => ({ ...prev, [name]: null })); // do not store base64
-    return;
-  }
+    // Always store the filename for X button
+    setFormData((prev) => ({ ...prev, [`${name}FileName`]: file.name }));
 
-  const MAX_SIZE = 100 * 1024; // 100 KB
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'application/zip',
+    ];
+    const allowedExtensions = ['pdf', 'doc', 'docx', 'jpeg', 'jpg', 'png', 'zip'];
+    const fileExtension = file.name.split('.').pop().toLowerCase();
 
-  // Invalid size
-  if (file.size > MAX_SIZE) {
-    setErrors((prev) => ({ ...prev, [name]: 'File must be < 100 KB' }));
-    setFormData((prev) => ({ ...prev, [name]: null })); // do not store base64
-    return;
-  }
+    // Invalid type
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+      setErrors((prev) => ({ ...prev, [name]: 'Invalid file type' }));
+      setFormData((prev) => ({ ...prev, [name]: null })); // do not store base64
+      return;
+    }
 
-  // Valid file → read base64
-  try {
-    const base64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = (err) => reject(err);
-    });
+    const MIN_SIZE = 150 * 1024; // 150 KB
+    const MAX_SIZE = 250 * 1024; // 250 KB
 
-    setFormData((prev) => ({ ...prev, [name]: base64 }));
-    setErrors((prev) => ({ ...prev, [name]: '' }));
-  } catch (err) {
-    setErrors((prev) => ({ ...prev, [name]: 'Failed to read file' }));
-    setFormData((prev) => ({ ...prev, [name]: null }));
-  }
-};
-  
+    // Invalid size
+    if (file.size < MIN_SIZE || file.size > MAX_SIZE) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: 'File size must be between 150 KB and 250 KB',
+      }));
+      setFormData((prev) => ({ ...prev, [name]: null })); // do not store base64
+      return;
+    }
+
+
+    // Valid file → read base64
+    try {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = (err) => reject(err);
+      });
+
+      setFormData((prev) => ({ ...prev, [name]: base64 }));
+      setErrors((prev) => ({ ...prev, [name]: '' }));
+    } catch (err) {
+      setErrors((prev) => ({ ...prev, [name]: 'Failed to read file' }));
+      setFormData((prev) => ({ ...prev, [name]: null }));
+    }
+  };
+
 
 
   // ✅ Clear handler (X button click)
-const handleClearFile = (name, inputRef) => {
-  if (inputRef?.current) {
-    inputRef.current.value = ""; // clear actual input
-  }
-  setFormData((prev) => ({
-    ...prev,
-    [name]: null,
-    [`${name}FileName`]: null,
-  }));
-  setErrors((prev) => ({ ...prev, [name]: "" }));
-};
+  const handleClearFile = (name, inputRef) => {
+    if (inputRef?.current) {
+      inputRef.current.value = ""; // clear actual input
+    }
+    setFormData((prev) => ({
+      ...prev,
+      [name]: null,
+      [`${name}FileName`]: null,
+    }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
 
   const handleProfessionalIndemnityFiles = async (e) => {
     const files = Array.from(e.target.files || []);
@@ -643,19 +649,21 @@ const handleClearFile = (name, inputRef) => {
       'image/png',
       'application/zip',
     ]
-    const MAX_SIZE_BYTES = 102400 // 100 KB
+    const MIN_SIZE_BYTES = 150 * 1024; // 150 KB
+    const MAX_SIZE_BYTES = 250 * 1024; // 250 KB
 
     // Validate each selected file
     for (let file of selectedFiles) {
       if (!allowedTypes.includes(file.type)) {
-        setErrors(prev => ({ ...prev, [fieldName]: 'Invalid file type' }))
-        return
+        setErrors(prev => ({ ...prev, [fieldName]: 'Invalid file type' }));
+        return;
       }
-      if (file.size > MAX_SIZE_BYTES) {
-        setErrors(prev => ({ ...prev, [fieldName]: 'File must be < 100 KB' }))
-        return
+      if (file.size < MIN_SIZE_BYTES || file.size > MAX_SIZE_BYTES) {
+        setErrors(prev => ({ ...prev, [fieldName]: 'File size must be between 150 KB and 250 KB' }));
+        return;
       }
     }
+
 
     // Convert files to raw Base64
     const base64Files = await Promise.all(
@@ -1223,63 +1231,63 @@ const handleClearFile = (name, inputRef) => {
                 {errors.city && <CFormFeedback invalid>{errors.city}</CFormFeedback>}
               </CCol>
 
-       <FileInput
-  label="Clinic Contract"
-  name="hospitalContract"
-  formData={formData}
-  setFormData={setFormData}
-  errors={errors}
-  setErrors={setErrors}
-  inputRef={refs.clinicContract} // ✅ should match ref name
-/>
+              <FileInput
+                label="Clinic Contract"
+                name="hospitalContract"
+                formData={formData}
+                setFormData={setFormData}
+                errors={errors}
+                setErrors={setErrors}
+                inputRef={refs.clinicContract} // ✅ should match ref name
+              />
             </CRow>
-          <CRow className="mb-3">
-  <FileInput
-    label="Clinic Logo"
-    name="hospitalLogo"
-    accept=".jpeg,.jpg,.png"
-    formData={formData}
-    setFormData={setFormData}
-    errors={errors}
-    setErrors={setErrors}
-    inputRef={refs.hospitalLogo}
-  />
-
-  <FileInput
-    label="Clinic Documents"
-    name="hospitalDocuments"
-    accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
-    tooltip="Issued by Local Fire Department"
-    formData={formData}
-    setFormData={setFormData}
-    errors={errors}
-    setErrors={setErrors}
-    inputRef={refs.hospitalDocuments}
-  />
-</CRow>
-
             <CRow className="mb-3">
-             <FileInput
-        label="Clinical Establishment Registration Certificate"
-        name="clinicalEstablishmentCertificate"
-        accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
-        formData={formData}
-        setFormData={setFormData}
-        errors={errors}
-        setErrors={setErrors}
-        inputRef={refs.clinicalEstablishmentCertificate}
-      />
+              <FileInput
+                label="Clinic Logo"
+                name="hospitalLogo"
+                accept=".jpeg,.jpg,.png"
+                formData={formData}
+                setFormData={setFormData}
+                errors={errors}
+                setErrors={setErrors}
+                inputRef={refs.hospitalLogo}
+              />
 
               <FileInput
-        label="Business Registration Certificate"
-        name="businessRegistrationCertificate"
-        accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
-        formData={formData}
-        setFormData={setFormData}
-        errors={errors}
-        setErrors={setErrors}
-        inputRef={refs.businessRegistrationCertificate}
-      />
+                label="Clinic Documents"
+                name="hospitalDocuments"
+                accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
+                tooltip="Issued by Local Fire Department"
+                formData={formData}
+                setFormData={setFormData}
+                errors={errors}
+                setErrors={setErrors}
+                inputRef={refs.hospitalDocuments}
+              />
+            </CRow>
+
+            <CRow className="mb-3">
+              <FileInput
+                label="Clinical Establishment Registration Certificate"
+                name="clinicalEstablishmentCertificate"
+                accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
+                formData={formData}
+                setFormData={setFormData}
+                errors={errors}
+                setErrors={setErrors}
+                inputRef={refs.clinicalEstablishmentCertificate}
+              />
+
+              <FileInput
+                label="Business Registration Certificate"
+                name="businessRegistrationCertificate"
+                accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
+                formData={formData}
+                setFormData={setFormData}
+                errors={errors}
+                setErrors={setErrors}
+                inputRef={refs.businessRegistrationCertificate}
+              />
             </CRow>
 
             <CRow className="mb-3">
@@ -1306,16 +1314,16 @@ const handleClearFile = (name, inputRef) => {
                 {errors.clinicType && <CFormFeedback invalid>{errors.clinicType}</CFormFeedback>}
               </CCol>
 
-             <FileInput
-  label="Professional Indemnity Insurance"
-  name="professionalIndemnityInsurance"
-  formData={formData}
-  setFormData={setFormData}
-  errors={errors}
-  setErrors={setErrors}
-  inputRef={refs.professionalIndemnityInsurance}
-  required={false}  // <-- makes it optional
-/>
+              <FileInput
+                label="Professional Indemnity Insurance"
+                name="professionalIndemnityInsurance"
+                formData={formData}
+                setFormData={setFormData}
+                errors={errors}
+                setErrors={setErrors}
+                inputRef={refs.professionalIndemnityInsurance}
+                required={false}  // <-- makes it optional
+              />
             </CRow>
 
             <CRow className="mb-3">
@@ -1341,76 +1349,76 @@ const handleClearFile = (name, inputRef) => {
                   <CFormFeedback invalid>{errors.medicinesSoldOnSite}</CFormFeedback>
                 )}
               </CCol>
-             <FileInput
-  label="Biomedical Waste Management Authorization"
-  name="biomedicalWasteManagementAuth"
-  tooltip="Issued by State Pollution Control Board (SPCB)"
-  accept=".pdf,.doc,.docx,.jpeg,.png"
-  formData={formData}
-  setFormData={setFormData}
-  errors={errors}
-  setErrors={setErrors}
-  inputRef={refs.biomedicalWasteManagementAuth}
-/>
+              <FileInput
+                label="Biomedical Waste Management Authorization"
+                name="biomedicalWasteManagementAuth"
+                tooltip="Issued by State Pollution Control Board (SPCB)"
+                accept=".pdf,.doc,.docx,.jpeg,.png"
+                formData={formData}
+                setFormData={setFormData}
+                errors={errors}
+                setErrors={setErrors}
+                inputRef={refs.biomedicalWasteManagementAuth}
+              />
             </CRow>
 
             {selectedOption === 'Yes' && (
               <CRow className="mb-3">
-          <FileInput
-  label="Drug Licence Certificate"
-  name="drugLicenseCertificate"
-  formData={formData}
-  setFormData={setFormData}
-  errors={errors}
-  setErrors={setErrors}
-  inputRef={refs.drugLicenseCertificate}
-/>
+                <FileInput
+                  label="Drug Licence Certificate"
+                  name="drugLicenseCertificate"
+                  formData={formData}
+                  setFormData={setFormData}
+                  errors={errors}
+                  setErrors={setErrors}
+                  inputRef={refs.drugLicenseCertificate}
+                />
 
-             <FileInput
-  label="Drug Licence Form Type 20/21"
-  name="drugLicenseFormType"
-  formData={formData}
-  setFormData={setFormData}
-  errors={errors}
-  setErrors={setErrors}
-  inputRef={refs.drugLicenseFormType}
-/>
+                <FileInput
+                  label="Drug Licence Form Type 20/21"
+                  name="drugLicenseFormType"
+                  formData={formData}
+                  setFormData={setFormData}
+                  errors={errors}
+                  setErrors={setErrors}
+                  inputRef={refs.drugLicenseFormType}
+                />
               </CRow>
             )}
             <CRow className="mb-3">
-            <FileInput
-  label="Trade Licence / Shop & Establishment Certificate"
-  name="tradeLicense"
-  formData={formData}
-  setFormData={setFormData}
-  errors={errors}
-  setErrors={setErrors}
-  inputRef={refs.tradeLicence}
-/>
+              <FileInput
+                label="Trade Licence / Shop & Establishment Certificate"
+                name="tradeLicense"
+                formData={formData}
+                setFormData={setFormData}
+                errors={errors}
+                setErrors={setErrors}
+                inputRef={refs.tradeLicence}
+              />
 
-             <FileInput
-        label="Fire Safety Certificate"
-        name="fireSafetyCertificate"
-        accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
-        formData={formData}
-        setFormData={setFormData}
-        errors={errors}
-        setErrors={setErrors}
-        inputRef={refs.fireSafetyCertificate}
-      />
+              <FileInput
+                label="Fire Safety Certificate"
+                name="fireSafetyCertificate"
+                accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
+                formData={formData}
+                setFormData={setFormData}
+                errors={errors}
+                setErrors={setErrors}
+                inputRef={refs.fireSafetyCertificate}
+              />
             </CRow>
 
             <CRow className="mb-3">
               <FileInput
-        label="GST Registration Certificate"
-        name="gstRegistrationCertificate"
-        accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
-        formData={formData}
-        setFormData={setFormData}
-        errors={errors}
-        setErrors={setErrors}
-        inputRef={refs.gstRegistrationCertificate}
-      />
+                label="GST Registration Certificate"
+                name="gstRegistrationCertificate"
+                accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
+                formData={formData}
+                setFormData={setFormData}
+                errors={errors}
+                setErrors={setErrors}
+                inputRef={refs.gstRegistrationCertificate}
+              />
 
               <CCol md={6}>
                 <CTooltip content="NABH Accreditation / Aesthetic Procedure Training Certificate">
@@ -1621,16 +1629,16 @@ const handleClearFile = (name, inputRef) => {
                 )}
               </CCol>
               {selectedPharmacistOption === 'Yes' && (
-                  <FileInput
-        label="Pharmacist Certificate"
-        name="pharmacistCertificate"
-        accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
-        formData={formData}
-        setFormData={setFormData}
-        errors={errors}
-        setErrors={setErrors}
-        inputRef={refs.pharmacistCertificate}
-      />)}
+                <FileInput
+                  label="Pharmacist Certificate"
+                  name="pharmacistCertificate"
+                  accept=".pdf,.doc,.docx,.jpeg,.png,.zip"
+                  formData={formData}
+                  setFormData={setFormData}
+                  errors={errors}
+                  setErrors={setErrors}
+                  inputRef={refs.pharmacistCertificate}
+                />)}
             </CRow>
             {/* ✅ Clinic Coordinates */}
             <CRow className="mb-3">
@@ -1808,7 +1816,8 @@ const handleClearFile = (name, inputRef) => {
               )}
             </CRow>
 
-            <CModal visible={showNabhModal} onClose={() => setShowNabhModal(false)} size="lg">
+            <CModal visible={showNabhModal} onClose={() => setShowNabhModal(false)} size="lg"  className="custom-modal"
+        backdrop="static">
               <CModalHeader>
                 <CModalTitle>NABH Questionnaire</CModalTitle>
               </CModalHeader>

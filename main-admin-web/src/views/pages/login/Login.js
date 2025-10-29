@@ -16,7 +16,7 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser, cilLockUnlocked } from '@coreui/icons'
-import Logo from '../login/derma2.png'
+import Logo from '../login/DermaLogo.png'
 import { BASE_URL, endPoint } from '../../../baseUrl'
 
 const Login = () => {
@@ -100,10 +100,13 @@ const Login = () => {
   }
 
   return (
+
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
+
       <CContainer>
         <CRow className="justify-content-center">
           <CCol md={8}>
+            <h1 className="text-center mb-4 fw-bold">Chiselon Clinic Management Suite</h1>
             <CCardGroup>
               <CCard className="p-4">
                 <CCardBody>
@@ -153,19 +156,19 @@ const Login = () => {
                   </CForm>
                 </CCardBody>
               </CCard>
-              <CCard className="text-white bg-success py-5" style={{ width: '44%' }}>
+              <CCard className="text-white py-5" style={{ width: '44%', backgroundColor: "#a5c4d4ff" }}>
                 <CCardBody className="text-center">
                   <div>
-                    <h2>Welcome</h2>
-                    <p>
-                      Discover the secret to glowing skin—sign in to DermaCare and explore expert
-                      dermatological care.
+                    <h2 >Welcome</h2>
+                    <p >
+                      We manage and streamline operations for all clinics — ensuring efficient care,
+                      coordination, and smooth management.
                     </p>
                     <div className="d-flex justify-content-center">
                       <img
                         src={Logo}
                         alt="DermaCare Logo"
-                        style={{ width: '130px', height: 'auto', marginBottom: '10px' }}
+                        style={{ width: '200px', height: 'auto', marginBottom: '10px' }}
                       />
                     </div>
                   </div>

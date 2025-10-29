@@ -33,6 +33,8 @@ const VerticallyCentered = () => {
         scrollable
         visible={visible}
         onClose={() => setVisible(false)}
+         className="custom-modal"
+        backdrop="static"
       >
         <CModalHeader>
           <CModalTitle>Modal title</CModalTitle>
@@ -49,13 +51,11 @@ const VerticallyCentered = () => {
               <CFormInput type="password" id="inputPassword4" label="Email" />
             </CCol>
             <CCol xs={6}>
-              <CFormInput id="inputAddress" label="Gender"  />
+              <CFormInput id="inputAddress" label="Gender" />
             </CCol>
             <CCol xs={6}>
-              <CFormInput id="inputAddress" label="Age"  />
+              <CFormInput id="inputAddress" label="Age" />
             </CCol>
-            
-           
             <CCol md={6}>
               <CFormInput id="inputCity" label="Blood Group" />
             </CCol>
@@ -68,8 +68,6 @@ const VerticallyCentered = () => {
             <CCol md={6}>
               <CFormInput id="inputZip" label="Zip" />
             </CCol>
-            
-          
           </CForm>
         </CModalBody>
         <CModalFooter>

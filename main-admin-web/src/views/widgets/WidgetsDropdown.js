@@ -45,7 +45,7 @@ const WidgetsDropdown = (props) => {
           value={
             <>
               26K{' '}
-              <span className="fs-6 fw-normal">
+              <span className="fs-6 fw-normal" style={{ color: "white" }}>
                 (-12.4% <CIcon icon={cilArrowBottom} />)
               </span>
             </>
@@ -148,7 +148,7 @@ const WidgetsDropdown = (props) => {
           value={
             <>
               26K{' '}
-              <span className="fs-6 fw-normal">
+              <span className="fs-6 fw-normal" style={{ color: "white" }}>
                 (-12.4% <CIcon icon={cilArrowBottom} />)
               </span>
             </>
@@ -251,7 +251,7 @@ const WidgetsDropdown = (props) => {
           value={
             <>
               26K{' '}
-              <span className="fs-6 fw-normal">
+              <span className="fs-6 fw-normal" style={{ color: "white" }}>
                 (-12.4% <CIcon icon={cilArrowBottom} />)
               </span>
             </>

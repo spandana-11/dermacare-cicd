@@ -214,7 +214,8 @@ const ReassignAppointment = () => {
       <ToastContainer />
 
       {viewService && (
-        <CModal visible={!!viewService} onClose={() => setViewService(null)} size="lg">
+        <CModal visible={!!viewService} onClose={() => setViewService(null)} size="lg"  className="custom-modal"
+        backdrop="static">
           <CModalHeader>
             <CModalTitle style={{ textAlign: 'center', width: '100%' }}>
               Appointment Details

@@ -25,7 +25,8 @@ const LiveDemo = () => {
       <CButton color="primary" onClick={() => setVisible(!visible)}>
         Launch demo modal
       </CButton>
-      <CModal visible={visible} onClose={() => setVisible(false)}>
+      <CModal visible={visible} onClose={() => setVisible(false)}  className="custom-modal"
+        backdrop="static">
         <CModalHeader>
           <CModalTitle>Modal title</CModalTitle>
         </CModalHeader>
@@ -48,7 +49,7 @@ const StaticBackdrop = () => {
       <CButton color="primary" onClick={() => setVisible(!visible)}>
         Launch static backdrop modal
       </CButton>
-      <CModal backdrop="static" visible={visible} onClose={() => setVisible(false)}>
+      <CModal backdrop="static" className='custom-modal' visible={visible} onClose={() => setVisible(false)}>
         <CModalHeader>
           <CModalTitle>Modal title</CModalTitle>
         </CModalHeader>
@@ -511,6 +512,7 @@ const Modals = () => {
                 keyboard={false}
                 portal={false}
                 visible
+                
               >
                 <CModalHeader>
                   <CModalTitle>Modal title</CModalTitle>

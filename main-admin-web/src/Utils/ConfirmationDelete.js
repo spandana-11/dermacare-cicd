@@ -8,6 +8,7 @@ import { CButton, CModal, CModalBody, CModalFooter, CModalHeader } from "@coreui
         // Keeps modal centered without outside click close
         alignment="top" // 👈 Places modal at the top
         backdrop={false}
+        
       >
         <CModalHeader>
           <strong>Confirm Delete</strong>
