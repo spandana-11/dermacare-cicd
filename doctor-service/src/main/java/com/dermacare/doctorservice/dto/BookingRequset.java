@@ -54,4 +54,5 @@ public class BookingRequset {
 	private String foc;
 	private String bookedAt;
 	private String status;
+	private String linkedBookingId;
 }
