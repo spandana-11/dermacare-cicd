@@ -1678,7 +1678,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                 return msg != null ? msg.toString() : "Unknown booking service error";
             }
         } catch (Exception ex) {
-            // Ignore parsing errors
+            // Ignore parsing errorss
         }
         return "Booking Service unreachable or internal error";
     }
