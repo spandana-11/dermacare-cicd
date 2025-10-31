@@ -65,7 +65,7 @@ public class BookingResponse {
     private String branchId;
     private String branchname;
     private String customerId;
-    private String linkedBookingId;
+    // private String linkedBookingId;
 
     // + Generate getters and setters
 
