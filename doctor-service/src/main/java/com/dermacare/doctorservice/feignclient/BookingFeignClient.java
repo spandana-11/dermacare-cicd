@@ -21,6 +21,10 @@ public interface  BookingFeignClient {
 	@GetMapping("/api/v1/getBookedServiceById/{id}")
 	public ResponseEntity<ResponseStructure<BookingResponse>> getBookedService(@PathVariable String id);
 	
+	@PostMapping("/api/v1/bookService")
+	ResponseEntity<ResponseStructure<BookingResponse>> bookService(@RequestBody BookingRequset req);
+
+
 	
 	@PutMapping("/api/v1/updateAppointment")
 	public ResponseEntity<?> updateAppointment(@RequestBody BookingResponse bookingResponse );
@@ -51,8 +55,7 @@ public interface  BookingFeignClient {
 	
 	@GetMapping("/api/v1/getAllBookedServices/{doctorId}")
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingByDoctorId(@PathVariable String doctorId);
-	@PostMapping("/api/v1/bookService")
-	ResponseEntity<?> bookService(@RequestBody BookingRequset bookingRequest);
+	
 	
 	
 }
