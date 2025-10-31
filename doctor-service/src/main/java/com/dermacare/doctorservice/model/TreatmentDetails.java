@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class TreatmentDetails {
-    private String subServiceId;
     private List<Dates> dates;
     private String reason;
     private String frequency;

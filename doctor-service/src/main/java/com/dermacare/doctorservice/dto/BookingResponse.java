@@ -61,12 +61,15 @@ public class BookingResponse {
     private Integer takenSittings;
     private Integer pendingSittings;
     private Integer currentSitting;
-
-    // ✅ Treatments info
-    private TreatmentResponseDTO treatments;
-    
+// new
     private String branchId;
     private String branchname;
     private String customerId;
     private String linkedBookingId;
+
+    // + Generate getters and setters
+
+    
+    // ✅ Treatments info
+    private TreatmentResponseDTO treatments;
 }
