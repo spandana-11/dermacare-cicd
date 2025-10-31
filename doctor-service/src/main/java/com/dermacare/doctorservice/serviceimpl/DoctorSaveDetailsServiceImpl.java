@@ -950,6 +950,115 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             savedVisit.setTreatments(treatmentEntity);
             repository.save(savedVisit);
 
+//         // ----------------------- Step 7.6: Handle Doctor-Added Treatments -----------------------
+//            boolean hasAdditionalTreatment = false;
+//
+//            if (savedVisit.getTreatments() != null && savedVisit.getTreatments().getGeneratedData() != null) {
+//                Map<String, TreatmentDetails> generatedData = savedVisit.getTreatments().getGeneratedData();
+//
+//                for (Map.Entry<String, TreatmentDetails> entry : generatedData.entrySet()) {
+//                    String treatmentName = entry.getKey();
+//                    TreatmentDetails details = entry.getValue();
+//
+//                    // Skip the primary booked service
+//                    if (!treatmentName.equalsIgnoreCase(bookingData.getSubServiceName())) {
+//                        hasAdditionalTreatment = true;
+//
+//                        // 🧩 Build BookingRequset for this new treatment
+//                        BookingRequset newBookingReq = new BookingRequset();
+//                        newBookingReq.setBookingId(UUID.randomUUID().toString());
+//
+//                        // 🧠 Copy full context from existing booking
+//                        newBookingReq.setCustomerId(bookingData.getCustomerId());
+//                        newBookingReq.setPatientId(bookingData.getPatientId());
+//                        newBookingReq.setDoctorId(dto.getDoctorId());
+//                        newBookingReq.setDoctorName(dto.getDoctorName());
+//                        newBookingReq.setClinicId(bookingData.getClinicId());
+//                        newBookingReq.setClinicName(bookingData.getClinicName());
+//                        newBookingReq.setBranchId(bookingData.getBranchId());
+//                        newBookingReq.setBranchname(bookingData.getBranchname());
+//
+//                        // 🩺 Patient details
+//                        newBookingReq.setBookingFor(bookingData.getBookingFor());
+//                        newBookingReq.setName(bookingData.getName());
+//                        newBookingReq.setRelation(bookingData.getRelation());
+//                        newBookingReq.setPatientMobileNumber(bookingData.getPatientMobileNumber());
+//                        newBookingReq.setPatientAddress(bookingData.getPatientAddress());
+//                        newBookingReq.setAge(bookingData.getAge());
+//                        newBookingReq.setGender(bookingData.getGender());
+//                        newBookingReq.setMobileNumber(bookingData.getMobileNumber());
+//
+//                        // 🩻 Problem and medical info
+//                        newBookingReq.setProblem(bookingData.getProblem());
+//                        newBookingReq.setSymptomsDuration(bookingData.getSymptomsDuration());
+//                        newBookingReq.setAttachments(bookingData.getAttachments());
+//                        newBookingReq.setConsentFormPdf(bookingData.getConsentFormPdf());
+//
+//                        // 🔗 Link to original booking
+//                        newBookingReq.setLinkedBookingId(bookingData.getBookingId());
+//
+//                        // 💳 Payment / consultation info
+//                        newBookingReq.setConsultationType(bookingData.getConsultationType());
+//                        newBookingReq.setVisitType("Additional Treatment");
+//                        newBookingReq.setPaymentType("Per Sitting");
+//                        newBookingReq.setConsultationExpiration("N/A");
+//                        newBookingReq.setTotalFee(0.0);
+//
+//                        // 🕒 Appointment scheduling
+//                        newBookingReq.setServiceDate(LocalDate.now().toString());
+//                        newBookingReq.setServicetime(LocalTime.now().toString());
+//                        newBookingReq.setBookedAt(LocalDateTime.now()
+//                                .format(DateTimeFormatter.ofPattern("dd-MM-yyyy hh:mm a")));
+//
+//                        // 🧮 Sitting info
+//                        newBookingReq.setToatalSittings(String.valueOf(details.getTotalSittings()));
+//
+//                        // 🔔 Other details
+////                        newBookingReq.setChannelId(bookingData.getChannelId());
+//                        newBookingReq.setCustomerDeviceId(bookingData.getCustomerDeviceId());
+//                        newBookingReq.setClinicDeviceId(bookingData.getClinicDeviceId());
+//                        newBookingReq.setDoctorMobileDeviceId(bookingData.getDoctorMobileDeviceId());
+//                        newBookingReq.setDoctorWebDeviceId(bookingData.getDoctorWebDeviceId());
+//
+//                        try {
+//                            // 🎯 Call booking-service just like customer flow
+//                            ResponseEntity<ResponseStructure<BookingResponse>> res =
+//                                    bookingFeignClient.bookService(newBookingReq);
+//
+//                            if (res != null && res.getBody() != null) {
+//                                ResponseStructure<BookingResponse> body = res.getBody();
+//                                BookingResponse bookingResponse = body.getData();
+//
+//                                if (bookingResponse != null) {
+//                                    log.info("✅ Doctor-added treatment '{}' booked successfully with bookingId={}",
+//                                            treatmentName, bookingResponse.getBookingId());
+//                                } else {
+//                                    log.warn("⚠️ Booking service returned null data for '{}'. Status: {}",
+//                                            treatmentName, body.getStatusCode());
+//                                }
+//                            } else {
+//                                log.error("⚠️ Booking service returned null response for treatment '{}'", treatmentName);
+//                            }
+//                        } catch (FeignException e) {
+//                            log.error("🚨 FeignException while booking treatment '{}': {}", treatmentName, e.getMessage());
+//                        } catch (Exception e) {
+//                            log.error("⚠️ Unexpected error while booking '{}': {}", treatmentName, e.getMessage());
+//                        }
+//                    }
+//                }
+//
+//                // 🩹 If any extra treatment booked, mark main booking as In-Progress
+//                if (hasAdditionalTreatment) {
+//                    bookingData.setStatus("In-Progress");
+//                    try {
+//                        bookingFeignClient.updateAppointment(bookingData);
+//                    } catch (Exception e) {
+//                        log.error("⚠️ Failed to update appointment status for bookingId={}: {}",
+//                                bookingData.getBookingId(), e.getMessage());
+//                    }
+//                }
+//            }
+
          // ----------------------- Step 7.6: Handle Doctor-Added Treatments -----------------------
             boolean hasAdditionalTreatment = false;
 
@@ -964,85 +1073,86 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                     if (!treatmentName.equalsIgnoreCase(bookingData.getSubServiceName())) {
                         hasAdditionalTreatment = true;
 
-                        // 🧩 Build BookingRequset for this new treatment
-                        BookingRequset newBookingReq = new BookingRequset();
-                        newBookingReq.setBookingId(UUID.randomUUID().toString());
+                        // 🧩 Loop over each sitting (date)
+                        if (details.getDates() != null && !details.getDates().isEmpty()) {
+                            for (Dates sitting : details.getDates()) {
+                                try {
+                                    BookingRequset newBookingReq = new BookingRequset();
+                                    newBookingReq.setBookingId(UUID.randomUUID().toString());
 
-                        // 🧠 Copy full context from existing booking
-                        newBookingReq.setCustomerId(bookingData.getCustomerId());
-                        newBookingReq.setPatientId(bookingData.getPatientId());
-                        newBookingReq.setDoctorId(dto.getDoctorId());
-                        newBookingReq.setDoctorName(dto.getDoctorName());
-                        newBookingReq.setClinicId(bookingData.getClinicId());
-                        newBookingReq.setClinicName(bookingData.getClinicName());
-                        newBookingReq.setBranchId(bookingData.getBranchId());
-                        newBookingReq.setBranchname(bookingData.getBranchname());
+                                    // 🔗 Link to original booking
+                                    newBookingReq.setLinkedBookingId(bookingData.getBookingId());
 
-                        // 🩺 Patient details
-                        newBookingReq.setBookingFor(bookingData.getBookingFor());
-                        newBookingReq.setName(bookingData.getName());
-                        newBookingReq.setRelation(bookingData.getRelation());
-                        newBookingReq.setPatientMobileNumber(bookingData.getPatientMobileNumber());
-                        newBookingReq.setPatientAddress(bookingData.getPatientAddress());
-                        newBookingReq.setAge(bookingData.getAge());
-                        newBookingReq.setGender(bookingData.getGender());
-                        newBookingReq.setMobileNumber(bookingData.getMobileNumber());
+                                    // 🧠 Copy full context from existing booking
+                                    newBookingReq.setCustomerId(bookingData.getCustomerId());
+                                    newBookingReq.setPatientId(bookingData.getPatientId());
+                                    newBookingReq.setDoctorId(dto.getDoctorId());
+                                    newBookingReq.setDoctorName(dto.getDoctorName());
+                                    newBookingReq.setClinicId(bookingData.getClinicId());
+                                    newBookingReq.setClinicName(bookingData.getClinicName());
+                                    newBookingReq.setBranchId(bookingData.getBranchId());
+                                    newBookingReq.setBranchname(bookingData.getBranchname());
 
-                        // 🩻 Problem and medical info
-                        newBookingReq.setProblem(bookingData.getProblem());
-                        newBookingReq.setSymptomsDuration(bookingData.getSymptomsDuration());
-                        newBookingReq.setAttachments(bookingData.getAttachments());
-                        newBookingReq.setConsentFormPdf(bookingData.getConsentFormPdf());
+                                    // 🩺 Patient details
+                                    newBookingReq.setBookingFor(bookingData.getBookingFor());
+                                    newBookingReq.setName(bookingData.getName());
+                                    newBookingReq.setRelation(bookingData.getRelation());
+                                    newBookingReq.setPatientMobileNumber(bookingData.getPatientMobileNumber());
+                                    newBookingReq.setPatientAddress(bookingData.getPatientAddress());
+                                    newBookingReq.setAge(bookingData.getAge());
+                                    newBookingReq.setGender(bookingData.getGender());
+                                    newBookingReq.setMobileNumber(bookingData.getMobileNumber());
 
-                        // 🔗 Link to original booking
-                        newBookingReq.setLinkedBookingId(bookingData.getBookingId());
+                                    // 🩻 Problem and medical info
+                                    newBookingReq.setProblem(bookingData.getProblem());
+                                    newBookingReq.setSymptomsDuration(bookingData.getSymptomsDuration());
+                                    newBookingReq.setAttachments(bookingData.getAttachments());
+                                    newBookingReq.setConsentFormPdf(bookingData.getConsentFormPdf());
 
-                        // 💳 Payment / consultation info
-                        newBookingReq.setConsultationType(bookingData.getConsultationType());
-                        newBookingReq.setVisitType("Additional Treatment");
-                        newBookingReq.setPaymentType("Per Sitting");
-                        newBookingReq.setConsultationExpiration("N/A");
-                        newBookingReq.setTotalFee(0.0);
+                                    // 💳 Payment & consultation info
+                                    newBookingReq.setConsultationType("Per Sitting");
+                                    newBookingReq.setVisitType("Treatment Sitting");
+                                    newBookingReq.setPaymentType("Per Sitting");
+                                    newBookingReq.setConsultationExpiration("N/A");
+                                    newBookingReq.setTotalFee(0.0);
 
-                        // 🕒 Appointment scheduling
-                        newBookingReq.setServiceDate(LocalDate.now().toString());
-                        newBookingReq.setServicetime(LocalTime.now().toString());
-                        newBookingReq.setBookedAt(LocalDateTime.now()
-                                .format(DateTimeFormatter.ofPattern("dd-MM-yyyy hh:mm a")));
+                                    // 🗓️ Sitting-specific info
+                                    newBookingReq.setServiceDate(sitting.getDate());
+                                    newBookingReq.setServicetime(LocalTime.now().toString());
+                                    newBookingReq.setBookedAt(LocalDateTime.now()
+                                            .format(DateTimeFormatter.ofPattern("dd-MM-yyyy hh:mm a")));
 
-                        // 🧮 Sitting info
-                        newBookingReq.setToatalSittings(String.valueOf(details.getTotalSittings()));
+                                    // 🧮 Sitting metadata
+                                    newBookingReq.setSubServiceName(treatmentName);
+                                    newBookingReq.setToatalSittings(String.valueOf(details.getTotalSittings()));
+                                    newBookingReq.setRemarks("Sitting #" + sitting.getSitting() + " for " + treatmentName);
 
-                        // 🔔 Other details
-//                        newBookingReq.setChannelId(bookingData.getChannelId());
-                        newBookingReq.setCustomerDeviceId(bookingData.getCustomerDeviceId());
-                        newBookingReq.setClinicDeviceId(bookingData.getClinicDeviceId());
-                        newBookingReq.setDoctorMobileDeviceId(bookingData.getDoctorMobileDeviceId());
-                        newBookingReq.setDoctorWebDeviceId(bookingData.getDoctorWebDeviceId());
+                                    // 🔔 Device info
+                                    newBookingReq.setCustomerDeviceId(bookingData.getCustomerDeviceId());
+                                    newBookingReq.setClinicDeviceId(bookingData.getClinicDeviceId());
+                                    newBookingReq.setDoctorMobileDeviceId(bookingData.getDoctorMobileDeviceId());
+                                    newBookingReq.setDoctorWebDeviceId(bookingData.getDoctorWebDeviceId());
 
-                        try {
-                            // 🎯 Call booking-service just like customer flow
-                            ResponseEntity<ResponseStructure<BookingResponse>> res =
-                                    bookingFeignClient.bookService(newBookingReq);
+                                    // 🎯 Call booking-service to create a new sitting booking
+                                    ResponseEntity<ResponseStructure<BookingResponse>> res =
+                                            bookingFeignClient.bookService(newBookingReq);
 
-                            if (res != null && res.getBody() != null) {
-                                ResponseStructure<BookingResponse> body = res.getBody();
-                                BookingResponse bookingResponse = body.getData();
+                                    if (res != null && res.getBody() != null && res.getBody().getData() != null) {
+                                        log.info("✅ Sitting #{} for '{}' booked successfully with bookingId={}",
+                                                sitting.getSitting(), treatmentName, res.getBody().getData().getBookingId());
+                                    } else {
+                                        log.warn("⚠️ Booking service returned null for sitting #{} of '{}'",
+                                                sitting.getSitting(), treatmentName);
+                                    }
 
-                                if (bookingResponse != null) {
-                                    log.info("✅ Doctor-added treatment '{}' booked successfully with bookingId={}",
-                                            treatmentName, bookingResponse.getBookingId());
-                                } else {
-                                    log.warn("⚠️ Booking service returned null data for '{}'. Status: {}",
-                                            treatmentName, body.getStatusCode());
+                                } catch (FeignException e) {
+                                    log.error("🚨 FeignException while booking sitting #{} for '{}': {}",
+                                            sitting.getSitting(), treatmentName, e.getMessage());
+                                } catch (Exception e) {
+                                    log.error("⚠️ Unexpected error while booking sitting #{} for '{}': {}",
+                                            sitting.getSitting(), treatmentName, e.getMessage());
                                 }
-                            } else {
-                                log.error("⚠️ Booking service returned null response for treatment '{}'", treatmentName);
                             }
-                        } catch (FeignException e) {
-                            log.error("🚨 FeignException while booking treatment '{}': {}", treatmentName, e.getMessage());
-                        } catch (Exception e) {
-                            log.error("⚠️ Unexpected error while booking '{}': {}", treatmentName, e.getMessage());
                         }
                     }
                 }
