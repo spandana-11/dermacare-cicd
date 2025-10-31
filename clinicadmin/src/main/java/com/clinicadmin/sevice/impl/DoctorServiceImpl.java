@@ -2362,13 +2362,13 @@ public class DoctorServiceImpl implements DoctorService {
 		return finalResponse;
 	}
 
-	private double getDouble1(Object obj) {
-		try {
-			return obj != null ? Double.parseDouble(obj.toString()) : 0.0;
-		} catch (Exception e) {
-			return 0.0;
-		}
-	}
+//	private double getDouble1(Object obj) {
+//		try {
+//			return obj != null ? Double.parseDouble(obj.toString()) : 0.0;
+//		} catch (Exception e) {
+//			return 0.0;
+//		}
+//	}
 
 	@Override
 	public Response getBestDoctorBySubService(String subServiceId) {

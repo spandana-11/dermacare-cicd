@@ -382,6 +382,7 @@ public class ReportsServiceImpl implements ReportsService {
 
         return res;
     }
+    
     @Override
     public Response deleteReport(String reportId) {
         try {
@@ -427,11 +428,13 @@ public class ReportsServiceImpl implements ReportsService {
 
             ReportsList reportsList = optional.get();
 
-            // Find the specific report by bookingId
             List<Reports> reportEntries = reportsList.getReportsList();
             boolean updated = false;
 
-            for (Reports report : reportEntries) {
+            // iterate through the reports list
+            for (int i = 0; i < reportEntries.size(); i++) {
+                Reports report = reportEntries.get(i);
+
                 if (report.getBookingId().equals(bookingId)) {
                     List<byte[]> files = report.getReportFile();
 
@@ -444,10 +447,20 @@ public class ReportsServiceImpl implements ReportsService {
                                 .build();
                     }
 
-                    files.remove(fileIndex); 
-                    report.setReportFile(files);
-                    updated = true;
-                    break;
+              
+                    files.remove(fileIndex);
+
+               
+                    if (files.isEmpty()) {
+                        reportEntries.remove(i);
+                        updated = true;
+                        break;
+                    } else {
+                        report.setReportFile(files);
+                        reportEntries.set(i, report);
+                        updated = true;
+                        break;
+                    }
                 }
             }
 
@@ -460,13 +473,25 @@ public class ReportsServiceImpl implements ReportsService {
                         .build();
             }
 
-            reportsRepository.save(reportsList);
+      
+            if (reportEntries.isEmpty()) {
+                reportsRepository.deleteById(reportId);
+                return Response.builder()
+                        .success(true)
+                        .message("All files deleted — report entry removed from database.")
+                        .status(HttpStatus.OK.value())
+                        .data("Deleted report document ID: " + reportId)
+                        .build();
+            }
+
+            reportsList.setReportsList(reportEntries);
+            ReportsList updatedList = reportsRepository.save(reportsList);
 
             return Response.builder()
                     .success(true)
                     .message("Report file deleted successfully for bookingId: " + bookingId)
                     .status(HttpStatus.OK.value())
-                    .data(reportsList)
+                    .data(updatedList)
                     .build();
 
         } catch (Exception e) {

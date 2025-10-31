@@ -6,9 +6,11 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import com.dermacare.doctorservice.dto.BookingRequset;
 import com.dermacare.doctorservice.dto.BookingResponse;
 import com.dermacare.doctorservice.dto.ResponseStructure;
 
@@ -49,7 +51,8 @@ public interface  BookingFeignClient {
 	
 	@GetMapping("/api/v1/getAllBookedServices/{doctorId}")
 	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingByDoctorId(@PathVariable String doctorId);
-	
+	@PostMapping("/api/v1/bookService")
+	ResponseEntity<?> bookService(@RequestBody BookingRequset bookingRequest);
 	
 	
 }

@@ -22,35 +22,25 @@ public class ReferredDoctor {
     @Id
     private String id;
     private String clinicId;
-
     private String fullName;
-	
-
-
     private String gender;
     private Date dateOfBirth;
-    private String governmentId;
-
- 
+    private String governmentId; 
     private String medicalRegistrationNumber;
     private String specialization;
-
     private int yearsOfExperience;
     private String currentHospitalName;
     private String department;
-
     private String mobileNumber;
     private String email;
     private Address address;
-
-     private String referralId; 
+    private String referralId; 
      
 //    private Date firstReferralDate;
 //    private int totalReferrals;
 //    private List<String> referredPatients;
 //    private String preferredCommunicationMethod;
 
-   
     private BankAccountDetails bankAccountNumber;
 
     private String status;

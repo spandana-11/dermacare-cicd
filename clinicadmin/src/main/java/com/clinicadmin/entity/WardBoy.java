@@ -28,16 +28,13 @@ public class WardBoy {
 	private String branchName;
 	private String fullName;
 	private String dateOfBirth;
-
 	@Indexed(unique = true)
 	private String contactNumber;
-
 	private String gender;
 	private String workExprience;
 	private String shiftTimingOrAvailability;
 	private Address address;
 	private String emergencyContact;
-
 	private String profilePicture;
 
 	private String governmentId;
