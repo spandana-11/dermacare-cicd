@@ -55,4 +55,6 @@ public class BookingRequset {
 	private String bookedAt;
 	private String status;
 	private String linkedBookingId;
+	private String remarks;
+
 }
