@@ -56,5 +56,5 @@ public class BookingRequset {
 	private String status;
 	private String linkedBookingId;
 	private String remarks;
-
+	private String source; // e.g., "DoctorSuggested"
 }
