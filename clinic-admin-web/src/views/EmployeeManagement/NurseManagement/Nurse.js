@@ -102,29 +102,40 @@ const NurseManagement = () => {
   // }
 
   // ---------------- Save Nurse (Add / Edit) ----------------
-  const handleSave = async (formData) => {
+ const handleSave = async (formData) => {
     try {
+      let res
       if (selectedNurse) {
-        await updateNurse(hospitalId, selectedNurse.nurseId, formData)
+        res = await updateNurse(hospitalId, selectedNurse.nurseId, formData)
         showCustomToast('Nurse updated successfully!', 'success')
+        await fetchNurses()
+        setModalVisible(false)
       } else {
         // Add new nurse
         const res = await addNurse({ ...formData, hospitalId: hospitalId })
-        showCustomToast('Nurse added successfully!', 'success')
-        setModalData({
-          username: res.data.data.userName,
-          password: res.data.data.password,
-        })
-        setModalVisible(false)
-        setModalTVisible(true)
-      }
+        if (res.status === 201 || (res.status === 200 && res.data?.success)) {
+          await fetchNurses()
 
-      fetchNurses()
-      setSelectedNurse(null)
-      setViewMode(false)
+          if (!selectedNurse) {
+            setModalData({
+              username: res.data.data.userName,
+              password: res.data.data.password,
+            })
+            setModalTVisible(true)
+          }
+        }
+        showCustomToast('Nurse added successfully!', 'success')
+
+       
+        setSelectedNurse(null)
+        setViewMode(false)
+        setModalVisible(false)
+        return res
+      }
+      return res
     } catch (err) {
       console.error('API error:', err)
-      showCustomToast('❌ Failed to save nurse.', 'error')
+      // showCustomToast('❌ Failed to save nurse.', 'error')
     }
   }
 

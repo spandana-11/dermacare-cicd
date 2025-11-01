@@ -105,66 +105,93 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 				HttpStatus.OK.value());
 	}
 
+
+	@Override
 	public ResponseStructure<ReceptionistRequestDTO> updateReceptionist(String id, ReceptionistRequestDTO dto) {
-		Optional<ReceptionistEntity> optional = repository.findById(id);
-		if (optional.isEmpty()) {
-			return ResponseStructure.buildResponse(null, "Receptionist not found", HttpStatus.NOT_FOUND,
-					HttpStatus.NOT_FOUND.value());
-		}
+	    Optional<ReceptionistEntity> optional = repository.findById(id);
+	    if (optional.isEmpty()) {
+	        return ResponseStructure.buildResponse(
+	            null,
+	            "Receptionist not found",
+	            HttpStatus.NOT_FOUND,
+	            HttpStatus.NOT_FOUND.value()
+	        );
+	    }
 
-		ReceptionistEntity existing = optional.get();
+	    ReceptionistEntity existing = optional.get();
 
-		// 🔹 update normal fields
-		if (dto.getFullName() != null)
-			existing.setFullName(dto.getFullName());
-		if (dto.getHospitalName() != null)
-			existing.setHospitalName(dto.getHospitalName());
-		if (dto.getRole() != null)
-			existing.setRole(dto.getRole());
-		if (dto.getBranchId() != null)
-			existing.setBranchId(dto.getBranchId());
-		if (dto.getDateOfBirth() != null)
-			existing.setDateOfBirth(dto.getDateOfBirth());
-		if (dto.getContactNumber() != null)
-			existing.setContactNumber(dto.getContactNumber());
-		if (dto.getQualification() != null)
-			existing.setQualification(dto.getQualification());
-		if (dto.getGovernmentId() != null)
-			existing.setGovernmentId(dto.getGovernmentId());
-		if (dto.getDateOfJoining() != null)
-			existing.setDateOfJoining(dto.getDateOfJoining());
-		if (dto.getDepartment() != null)
-			existing.setDepartment(dto.getDepartment());
-		if (dto.getAddress() != null)
-			existing.setAddress(dto.getAddress());
-		if (dto.getEmergencyContact() != null)
-			existing.setEmergencyContact(dto.getEmergencyContact());
-		if (dto.getPermissions() != null)
-			existing.setPermissions(dto.getPermissions());
-		if (dto.getBankAccountDetails() != null)
-			existing.setBankAccountDetails(dto.getBankAccountDetails());
-		if (dto.getEmailId() != null)
-			existing.setEmailId(dto.getEmailId());
-		if (dto.getPreviousEmploymentHistory() != null)
-			existing.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
-		if (dto.getShiftTimingsOrAvailability() != null)
-			existing.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
+	    // 🔹 Update normal fields
+	    if (dto.getFullName() != null)
+	        existing.setFullName(dto.getFullName());
+	    if (dto.getHospitalName() != null)
+	        existing.setHospitalName(dto.getHospitalName());
+	    if (dto.getRole() != null)
+	        existing.setRole(dto.getRole());
+	    if (dto.getBranchId() != null)
+	        existing.setBranchId(dto.getBranchId());
+	    if (dto.getDateOfBirth() != null)
+	        existing.setDateOfBirth(dto.getDateOfBirth());
+	    if (dto.getContactNumber() != null)
+	        existing.setContactNumber(dto.getContactNumber());
+	    if (dto.getQualification() != null)
+	        existing.setQualification(dto.getQualification());
+	    if (dto.getGovernmentId() != null)
+	        existing.setGovernmentId(dto.getGovernmentId());
+	    if (dto.getDateOfJoining() != null)
+	        existing.setDateOfJoining(dto.getDateOfJoining());
+	    if (dto.getDepartment() != null)
+	        existing.setDepartment(dto.getDepartment());
+	    if (dto.getAddress() != null)
+	        existing.setAddress(dto.getAddress());
+	    if (dto.getEmergencyContact() != null)
+	        existing.setEmergencyContact(dto.getEmergencyContact());
+	    if (dto.getPermissions() != null)
+	        existing.setPermissions(dto.getPermissions());
+	    if (dto.getBankAccountDetails() != null)
+	        existing.setBankAccountDetails(dto.getBankAccountDetails());
+	    if (dto.getEmailId() != null)
+	        existing.setEmailId(dto.getEmailId());
+	    if (dto.getPreviousEmploymentHistory() != null)
+	        existing.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
+	    if (dto.getShiftTimingsOrAvailability() != null)
+	        existing.setShiftTimingsOrAvailability(dto.getShiftTimingsOrAvailability());
 
-		// 🔹 update Base64 fields (PDF/Image)
-		if (dto.getProfilePicture() != null)
-			existing.setProfilePicture(encodeIfNotBase64(dto.getProfilePicture()));
+	    // 🔹 Update Base64 fields (PDF/Image)
+	    if (dto.getProfilePicture() != null)
+	        existing.setProfilePicture(encodeIfNotBase64(dto.getProfilePicture()));
+	    if (dto.getGraduationCertificate() != null)
+	        existing.setGraduationCertificate(encodeIfNotBase64(dto.getGraduationCertificate()));
+	    if (dto.getComputerSkillsProof() != null)
+	        existing.setComputerSkillsProof(encodeIfNotBase64(dto.getComputerSkillsProof()));
 
-		if (dto.getGraduationCertificate() != null)
-			existing.setGraduationCertificate(encodeIfNotBase64(dto.getGraduationCertificate()));
+	    // 🔹 Save receptionist entity
+	    ReceptionistEntity updated = repository.save(existing);
 
-		if (dto.getComputerSkillsProof() != null)
-			existing.setComputerSkillsProof(encodeIfNotBase64(dto.getComputerSkillsProof()));
+	    // 🔹 Sync with DoctorLoginCredentials using receptionist.id
+	    Optional<DoctorLoginCredentials> credsOpt = credentialsRepository.findByStaffId(updated.getId());
+	    if (credsOpt.isPresent()) {
+	        DoctorLoginCredentials creds = credsOpt.get();
 
-		ReceptionistEntity updated = repository.save(existing);
+	        creds.setStaffName(updated.getFullName());
+	        creds.setBranchId(updated.getBranchId());
+	        creds.setBranchName(updated.getBranchName());
+	        creds.setHospitalId(updated.getClinicId());
+	        creds.setHospitalName(updated.getHospitalName());
+	        creds.setRole(updated.getRole());
+	        creds.setPermissions(updated.getPermissions()); // ✅ sync new permissions
+	        creds.setUsername(updated.getContactNumber()); // optional
+	        credentialsRepository.save(creds);
+	    }
 
-		return ResponseStructure.buildResponse(ReceptionistMapper.toDTO(updated), "Receptionist updated successfully",
-				HttpStatus.OK, HttpStatus.OK.value());
+	    return ResponseStructure.buildResponse(
+	        ReceptionistMapper.toDTO(updated),
+	        "Receptionist updated successfully",
+	        HttpStatus.OK,
+	        HttpStatus.OK.value()
+	    );
 	}
+
+
 
 	/**
 	 * Utility method to encode string to Base64 only if not already encoded.

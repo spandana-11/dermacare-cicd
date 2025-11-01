@@ -18,7 +18,12 @@ import {
   CModalFooter,
   CFormCheck,
 } from '@coreui/react'
-import { Get_ReportsByBookingIdData, SaveReportsData } from './reportAPI' // Assuming reportAPI.js is in the same directory
+import {
+  Delete_ReportById,
+  Delete_ReportByIdIndex,
+  Get_ReportsByBookingIdData,
+  SaveReportsData,
+} from './reportAPI' // Assuming reportAPI.js is in the same directory
 import { FaEye, FaDownload } from 'react-icons/fa'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -27,18 +32,31 @@ import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
 import { useHospital } from '../Usecontext/HospitalContext'
 import { showCustomToast } from '../../Utils/Toaster'
-import { Delete, Download, Edit, Eye, Trash } from 'lucide-react'
+import { Delete, Download, Edit, Eye, Trash, Trash2 } from 'lucide-react'
+import ConfirmationModal from '../../components/ConfirmationModal'
 
+import { Swiper, SwiperSlide } from 'swiper/react'
+import { Navigation } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/navigation'
+import Pagination from '../../Utils/Pagination'
+// import 'swiper/css/pagination'
+import JSZip from 'jszip'
+import { saveAs } from 'file-saver'
+import Select from 'react-select'
+import { TestDataById } from '../TestsManagement/TestsManagementAPI'
 const ReportDetails = () => {
   const { id } = useParams()
   const location = useLocation()
   const appointmentInfo = location.state?.appointmentInfo
 
   const navigate = useNavigate()
+  const [recommendedTests, setRecommendedTests] = useState([])
 
   // Helper function to format date as YYYY-MM-DD
   const getISODate = (date) => date.toISOString().split('T')[0]
-
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(5)
   // Calculate today's date for minimum date restriction in the form
   const today = new Date()
   const todayISO = getISODate(today)
@@ -54,8 +72,64 @@ const ReportDetails = () => {
   // State specific for PDF viewing
   const [numPages, setNumPages] = useState(null)
   const [pageNumber, setPageNumber] = useState(1)
-
+  const [deleteId, setDeleteId] = useState([])
   const [uploadModal, setUploadModal] = useState(false)
+  const [delloading, SetDelloading] = useState(false)
+  const [deleteModal, showDeleteModal] = useState(false)
+  const [selectedReportFiles, setSelectedReportFiles] = useState([])
+  const [selectedReport, setSelectedReport] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [testNames, setTestNames] = useState([]) // store API data
+
+  useEffect(() => {
+    const fetchTestNames = async () => {
+      try {
+        const hospitalId = localStorage.getItem('HospitalId') // assuming hospitalId stored locally
+        if (!hospitalId) {
+          console.error('Hospital ID missing!')
+          return
+        }
+
+        const response = await TestDataById(hospitalId)
+        console.log('Fetched test data:', response)
+
+        // Assuming response.data contains an array of test objects with "testName" property
+        setTestNames(response.data || [])
+      } catch (error) {
+        console.error('Error loading test names:', error)
+      }
+    }
+
+    fetchTestNames()
+  }, [])
+
+  useEffect(() => {
+    // Simulate an API call with dummy data
+    const fetchDummyRecommendedTests = () => {
+      // For now, display dummy data
+      const dummyData = [
+        { id: 1, testName: 'Complete Blood Count (CBC)' },
+        { id: 2, testName: 'Liver Function Test (LFT)' },
+        { id: 3, testName: 'Thyroid Profile (T3, T4, TSH)' },
+      ]
+      setRecommendedTests(dummyData)
+    }
+
+    fetchDummyRecommendedTests()
+  }, [])
+  //   useEffect(() => {
+  //   const fetchRecommendedTests = async () => {
+  //     try {
+  //       const response = await http.get(/getRecommendedTests?bookingId=${bookingId}&patientId=${patientId})
+  //       setRecommendedTests(response.data)
+  //     } catch (error) {
+  //       console.error('Error fetching recommended tests:', error)
+  //     }
+  //   }
+
+  //   fetchRecommendedTests()
+  // }, [bookingId, patientId])
+
   const patientId =
     appointmentInfo?.patientId ||
     appointmentInfo?.item?.patientId ||
@@ -76,9 +150,9 @@ const ReportDetails = () => {
     reportFile: null,
     bookingId: appointmentInfo?.bookingId || '', // Ensure bookingId is safe to access
     patientId: appointmentInfo?.patientId || '',
-    customerMobileNumber: appointmentInfo?.item.mobileNumber,
+    customerMobileNumber: appointmentInfo?.item.patientMobileNumber,
   })
-  console.info(appointmentInfo?.customerId)
+  console.info(appointmentInfo?.item.patientMobileNumber)
 
   // ✅ This correctly sets the PDF worker for Vite
   pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -133,7 +207,12 @@ const ReportDetails = () => {
       const rawData = res
 
       if (Array.isArray(rawData)) {
-        const allReports = rawData.flatMap((item) => item.reportsList || [])
+        const allReports = rawData.flatMap((item) =>
+          (item.reportsList || []).map((report) => ({
+            ...report,
+            parentId: item.id, // 👈 attach parent ID
+          })),
+        )
         setReport(allReports)
       } else {
         console.warn('Unexpected response format for reports:', rawData)
@@ -164,16 +243,32 @@ const ReportDetails = () => {
 
   // Handle file input change and convert to Base64
   const handleFileChange = (e) => {
-    const file = e.target.files[0]
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const base64String = reader.result.split(',')[1] // Get base64 part
-      setNewReport((prev) => ({
-        ...prev,
-        reportFile: base64String,
-      }))
-    }
-    if (file) reader.readAsDataURL(file)
+    const files = Array.from(e.target.files)
+    if (!files.length) return
+
+    const readers = files.map(
+      (file) =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onloadend = () => {
+            const base64String = reader.result.split(',')[1] // remove "data:*/*;base64,"
+            resolve(base64String)
+          }
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        }),
+    )
+
+    Promise.all(readers)
+      .then((base64Files) => {
+        setNewReport((prev) => ({
+          ...prev,
+          reportFile: base64Files, // 👈 array of base64 strings
+        }))
+      })
+      .catch((error) => {
+        console.error('Error reading files:', error)
+      })
   }
 
   // Handle report upload submission
@@ -199,7 +294,7 @@ const ReportDetails = () => {
             ...newReport,
             patientId: patientId,
 
-            reportFile: [newReport.reportFile], // API expects an array of base64 strings
+            reportFile: newReport.reportFile, // API expects an array of base64 strings
           },
         ],
       }
@@ -243,6 +338,77 @@ const ReportDetails = () => {
     }
   }
 
+  const handleDeleteReport = async (reportId) => {
+    console.log(reportId.parentId)
+    try {
+      SetDelloading(true)
+      const res = await Delete_ReportById(reportId.parentId)
+      if (res?.data?.success) {
+        setReport((prev) => prev.filter((r) => r.id !== reportId.parentId))
+        fetchReportDetails()
+        showDeleteModal(false)
+        toast.success('Report deleted successfully')
+      } else {
+        toast.error('Failed to delete report')
+      }
+    } catch (error) {
+      toast.error('Error deleting report')
+    } finally {
+      SetDelloading(false)
+    }
+  }
+
+  const handleDeleteReportFile = async (id, bookingId, fileIndex) => {
+    try {
+      SetDelloading(true)
+      console.log(`🗑️ Deleting file index: ${fileIndex}, reportId: ${id}, bookingId: ${bookingId}`)
+
+      await Delete_ReportByIdIndex(id, bookingId, fileIndex)
+      showCustomToast(`File #${fileIndex + 1} deleted successfully.`, 'success')
+
+      fetchReportDetails()
+      showDeleteModal(false)
+      setShowModal(false)
+      setDeleteTarget(null)
+    } catch (error) {
+      console.error('Error deleting report file:', error)
+      showCustomToast('Failed to delete file.', 'error')
+    } finally {
+      SetDelloading(false)
+    }
+  }
+
+  const handleDownloadAllFiles = async (reportItem) => {
+    try {
+      const zip = new JSZip()
+      const files = Array.isArray(reportItem.reportFile)
+        ? reportItem.reportFile
+        : [reportItem.reportFile]
+
+      if (!files || files.length === 0) {
+        showCustomToast('No files to download.', 'info')
+        return
+      }
+
+      files.forEach((fileBase64, index) => {
+        const mimeType = getMimeType(fileBase64)
+        const isPdf = mimeType === 'application/pdf'
+        const extension = isPdf ? 'pdf' : mimeType.split('/')[1] || 'dat'
+        const fileName = `${reportItem.reportName || 'report'}_${index + 1}.${extension}`
+
+        // Convert Base64 to binary and add to ZIP
+        zip.file(fileName, fileBase64, { base64: true })
+      })
+
+      const content = await zip.generateAsync({ type: 'blob' })
+      saveAs(content, `${reportItem.reportName || 'report'}_all_files.zip`)
+      showCustomToast('All files downloaded successfully.', 'success')
+    } catch (error) {
+      console.error('Error downloading all files:', error)
+      showCustomToast('Failed to download all files.', 'error')
+    }
+  }
+
   return (
     <div className="container  ">
       <ToastContainer
@@ -256,7 +422,6 @@ const ReportDetails = () => {
         draggable
         pauseOnHover
       />
-
       {/* Appointment Info Section */}
       <div className="container p-3 bg-light  rounded shadow-sm mb-4">
         <div className="row">
@@ -270,9 +435,7 @@ const ReportDetails = () => {
             <p>
               <strong>Gender:</strong> {appointmentInfo.gender}
             </p>
-            <p>
-              <strong>Problem:</strong> {appointmentInfo.problem}
-            </p>
+           <strong>Problem:</strong> {appointmentInfo.problem || 'N/A'}
           </div>
           <div className="col-md-6 ps-md-4">
             <p>
@@ -281,10 +444,27 @@ const ReportDetails = () => {
             <p>
               <strong>Hospital ID:</strong> {appointmentInfo.item?.clinicId || 'N/A'}
             </p>
+            
+              <p>
+                <strong>Recommended Test:</strong>
+              </p>
+              {recommendedTests.length > 0 ? (
+  <ul style={{ display: 'flex', flexWrap: 'wrap', listStyleType: 'disc', paddingLeft: '20px', gap: '20px' }}>
+    {recommendedTests.map((test) => (
+      <li key={test.id} style={{ marginRight: '20px' }}>
+        {test.testName}
+      </li>
+    ))}
+  </ul>
+) : (
+  <p>No recommended tests found.</p>
+)}
+            
           </div>
+          
         </div>
       </div>
-
+      
       {/* Header and Upload Button */}
       <div
         className=" text-white p-3 d-flex justify-content-between align-items-center rounded"
@@ -307,6 +487,31 @@ const ReportDetails = () => {
           )}
         </div>
       </div>
+      <ConfirmationModal
+        isVisible={deleteModal}
+        title={deleteTarget ? `Delete Report File` : `Delete Report`}
+        message={
+          deleteTarget
+            ? `Are you sure you want to delete ${deleteTarget.fileName || 'this file'}? This action cannot be undone.`
+            : `Are you sure you want to delete this ${deleteId.reportName}? This action cannot be undone.`
+        }
+        isLoading={delloading}
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        confirmColor="danger"
+        cancelColor="secondary"
+        onConfirm={() => {
+          if (deleteTarget) {
+            handleDeleteReportFile(deleteTarget.id, deleteTarget.bookingId, deleteTarget.index)
+          } else {
+            handleDeleteReport(deleteId)
+          }
+        }}
+        onCancel={() => {
+          showDeleteModal(false)
+          setDeleteTarget(null)
+        }}
+      />
 
       {/* Reports Table */}
       <div className="mt-4">
@@ -324,107 +529,115 @@ const ReportDetails = () => {
           </CTableHead>
           <CTableBody>
             {Array.isArray(report) && report.length > 0 ? (
-              report.map((reportItem, index) => {
-                // Ensure we get the Base64 string correctly (assuming it might be wrapped in an array)
-                const base64File = Array.isArray(reportItem.reportFile)
-                  ? reportItem.reportFile[0]
-                  : reportItem.reportFile
+              report
+                .slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+                .map((reportItem, index) => {
+                  const actualIndex = (currentPage - 1) * rowsPerPage + index
+                  // Ensure we get the Base64 string correctly (assuming it might be wrapped in an array)
+                  const base64File = Array.isArray(reportItem.reportFile)
+                    ? reportItem.reportFile[0]
+                    : reportItem.reportFile
 
-                const mimeType = getMimeType(base64File)
-                const isPdf = mimeType === 'application/pdf'
-                const fileExt = isPdf
-                  ? 'pdf'
-                  : mimeType.includes('image/')
-                    ? mimeType.split('/')[1]
-                    : 'dat'
-                const fileUrl = `data:${mimeType};base64,${base64File}`
+                  const mimeType = getMimeType(base64File)
+                  const isPdf = mimeType === 'application/pdf'
+                  const fileExt = isPdf
+                    ? 'pdf'
+                    : mimeType.includes('image/')
+                      ? mimeType.split('/')[1]
+                      : 'dat'
+                  const fileUrl = `data:${mimeType};base64,${base64File}`
 
-                return (
-                  <CTableRow key={index} className="pink-table">
-                    <CTableDataCell>{index + 1}</CTableDataCell>
-                    <CTableDataCell>{reportItem.bookingId}</CTableDataCell>
-                    <CTableDataCell>{reportItem.reportName}</CTableDataCell>
-                    <CTableDataCell>{reportItem.reportDate}</CTableDataCell>
-                    <CTableDataCell>{reportItem.reportStatus}</CTableDataCell>
-                    <CTableDataCell>{reportItem.reportType}</CTableDataCell>
+                  return (
+                    <CTableRow key={index} className="pink-table">
+                      <CTableDataCell>{actualIndex + 1}</CTableDataCell>
+                      <CTableDataCell>{reportItem.bookingId}</CTableDataCell>
+                      <CTableDataCell>{reportItem.reportName}</CTableDataCell>
+                      <CTableDataCell>{reportItem.reportDate}</CTableDataCell>
+                      <CTableDataCell>{reportItem.reportStatus}</CTableDataCell>
+                      <CTableDataCell>{reportItem.reportType}</CTableDataCell>
 
-                    {/* Actions: Preview + Download */}
-                    <CTableDataCell className="d-flex justify-content-end">
-                      {base64File ? (
-                        <div className="d-flex gap-2">
-                          {/* 👁️ Preview Button */}
-                          {/* {can('Reports', 'read') && ( */}
-                          <CButton
-                            className="  border-0 "
-                            style={{
-                              backgroundColor: 'var(--color-bgcolor)',
-                              color: 'var(--color-black)',
-                            }}
-                            size="sm"
-                            onClick={() => {
-                              // Set state for modal preview
-                              setIsPreviewPdf(isPdf)
-                              setPreviewFileUrl(fileUrl)
-                              setShowModal(true)
-                            }}
-                          >
-                            <Eye size={20} />
-                          </CButton>
-                          {/* )} */}
-                          {/* ⬇️ Download Button */}
-                          <a
-                            href={fileUrl}
-                            download={`${reportItem.reportName || 'report'}_${index + 1}.${fileExt}`}
-                            className="btn btn-sm  "
-                            style={{
-                              backgroundColor: 'var(--color-bgcolor)',
-                              color: 'var(--color-black)',
-                            }}
-                            title="Download"
-                          >
-                            <Download size={20} />
-                          </a>
-                          <CButton
-                            className="  border-0"
-                            size="sm"
-                            disabled={true}
-                            style={{
-                              backgroundColor: 'var(--color-bgcolor)',
-                              color: 'var(--color-black)',
-                            }}
-                            onClick={() => {
-                              // Set state for modal preview
-                              setIsPreviewPdf(isPdf)
-                              setPreviewFileUrl(fileUrl)
-                              setShowModal(true)
-                            }}
-                          >
-                            <Edit size={20} />
-                          </CButton>
-                          <CButton
-                            className="  border-0"
-                            disabled={true}
-                            style={{
-                              backgroundColor: 'var(--color-bgcolor)',
-                              color: 'var(--color-black)',
-                            }}
-                            onClick={() => {
-                              // Set state for modal preview
-                              setIsPreviewPdf(isPdf)
-                              setPreviewFileUrl(fileUrl)
-                              setShowModal(true)
-                            }}
-                          >
-                            <Trash size={20} />
-                          </CButton>
-                        </div>
-                      ) : (
-                        'No File'
-                      )}
-                    </CTableDataCell>
-                  </CTableRow>
-                )
-              })
+                      {/* Actions: Preview + Download */}
+                      <CTableDataCell className="d-flex justify-content-end">
+                        {base64File ? (
+                          <div className="d-flex gap-2">
+                            {/* 👁️ Preview Button */}
+                            {/* {can('Reports', 'read') && ( */}
+                            <CButton
+                              className="border-0"
+                              style={{
+                                backgroundColor: 'var(--color-bgcolor)',
+                                color: 'var(--color-black)',
+                              }}
+                              size="sm"
+                              onClick={() => {
+                                const filesArray = Array.isArray(reportItem.reportFile)
+                                  ? reportItem.reportFile
+                                  : [reportItem.reportFile]
+                                setSelectedReportFiles(filesArray)
+                                setSelectedReport(reportItem)
+                                setDeleteId(reportItem)
+                                setShowModal(true)
+                              }}
+                            >
+                              <Eye size={20} />
+                            </CButton>
+
+                            {/* )} */}
+                            {/* ⬇️ Download Button */}
+                            <CButton
+                              className="btn btn-sm"
+                              style={{
+                                backgroundColor: 'var(--color-bgcolor)',
+                                color: 'var(--color-black)',
+                              }}
+                              title="Download All"
+                              onClick={() => handleDownloadAllFiles(reportItem)}
+                            >
+                              <Download size={20} />
+                            </CButton>
+
+                            <CButton
+                              className="  border-0"
+                              size="sm"
+                              disabled={true}
+                              style={{
+                                backgroundColor: 'var(--color-bgcolor)',
+                                color: 'var(--color-black)',
+                              }}
+                              onClick={() => {
+                                // Set state for modal preview
+                                setIsPreviewPdf(isPdf)
+                                setPreviewFileUrl(fileUrl)
+                                setShowModal(true)
+                              }}
+                            >
+                              <Edit size={20} />
+                            </CButton>
+                            <CButton
+                              className="  border-0"
+                              // disabled={true}
+                              style={{
+                                backgroundColor: 'var(--color-bgcolor)',
+                                color: 'var(--color-black)',
+                              }}
+                              onClick={() => {
+                                // Set state for modal preview
+                                // setIsPreviewPdf(isPdf)
+                                // setPreviewFileUrl(fileUrl)
+                                showDeleteModal(true)
+                                setDeleteId(reportItem)
+                              }}
+                            >
+                              <Trash size={20} />
+                            </CButton>
+                          </div>
+                        ) : (
+                          'No File'
+                        )}
+                      </CTableDataCell>
+                    </CTableRow>
+                  )
+                })
             ) : (
               <CTableRow>
                 <CTableDataCell
@@ -439,33 +652,123 @@ const ReportDetails = () => {
           </CTableBody>
         </CTable>
       </div>
+      <div className="mb-3">
+        {report.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(report.length / rowsPerPage)}
+            pageSize={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setRowsPerPage}
+          />
+        )}
+      </div>
 
       {/* Image/PDF Preview Modal */}
-      <CModal visible={showModal} onClose={handleCloseModal} size="xl">
-        <CModalHeader onClose={handleCloseModal}>
-          <strong>{isPreviewPdf ? 'PDF Preview' : 'Image Preview'}</strong>
+      <CModal
+        visible={showModal}
+        onClose={() => setShowModal(false)}
+        alignment="center"
+        size="xl"
+        scrollable
+      >
+        <CModalHeader className=" text-white">
+          <CModalTitle>Preview Report</CModalTitle>
         </CModalHeader>
-        <CModalBody className="text-center">
-          {isPreviewPdf ? (
-            <iframe
-              src={previewFileUrl}
-              title="PDF Preview"
-              style={{
-                width: '100%',
-                height: '80vh',
-                border: 'none',
-              }}
-            ></iframe>
+
+        <CModalBody className=" text-white text-center custom-modal" backdrop="static">
+          {Array.isArray(selectedReportFiles) && selectedReportFiles.length > 0 ? (
+            <Swiper
+              modules={[Navigation]}
+              navigation
+              // pagination={{ clickable: true }}
+              spaceBetween={20}
+              slidesPerView={1}
+              style={{ height: '90vh' }} // 🔹 Total height
+            >
+              {selectedReportFiles.map((file, i) => {
+                const mimeType = getMimeType(file)
+                const isPdf = mimeType === 'application/pdf'
+                const fileUrl = `data:${mimeType};base64,${file}`
+
+                return (
+                  <SwiperSlide key={i}>
+                    <div className="d-flex justify-content-center gap-3 mt-3  ">
+                      <a
+                        href={fileUrl}
+                        download={`report_${i + 1}.${isPdf ? 'pdf' : 'jpg'}`}
+                        className="btn btn-light"
+                        style={{
+                          minWidth: '130px',
+                          fontWeight: 500,
+                          borderRadius: '8px',
+                        }}
+                      >
+                        <Download size={18} className="me-1" /> Download
+                      </a>
+
+                      <CButton
+                        color="danger"
+                        className="text-white"
+                        style={{
+                          minWidth: '130px',
+                          fontWeight: 500,
+                          borderRadius: '8px',
+                        }}
+                        onClick={() => {
+                          setDeleteTarget({
+                            id: deleteId.parentId,
+                            bookingId: selectedReport?.bookingId,
+                            index: i,
+                            fileName: `Report File #${i + 1}`, // optional — just for message
+                          })
+                          showDeleteModal(true)
+                        }}
+                      >
+                        <Trash2 size={18} className="me-1" /> Delete
+                      </CButton>
+                    </div>
+                    <div
+                      className="d-flex flex-column align-items-center justify-content-center"
+                      style={{
+                        height: '90vh',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {isPdf ? (
+                        <iframe
+                          src={fileUrl}
+                          width="100%"
+                          height="800vh" // 🔹 Show PDF tall
+                          title={`PDF ${i + 1}`}
+                          style={{
+                            border: 'none',
+                            borderRadius: '8px',
+                            backgroundColor: '#fff',
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src={fileUrl}
+                          alt={`Report ${i + 1}`}
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '85vh',
+                            objectFit: 'contain',
+                            borderRadius: '8px',
+                            backgroundColor: '#fff',
+                          }}
+                        />
+                      )}
+
+                      {/* 🔹 Action Buttons (below file) */}
+                    </div>
+                  </SwiperSlide>
+                )
+              })}
+            </Swiper>
           ) : (
-            <img
-              src={previewFileUrl}
-              alt="Preview"
-              style={{
-                maxWidth: '100%',
-                maxHeight: '80vh',
-                borderRadius: '8px',
-              }}
-            />
+            <p className="mt-4">No files available for preview.</p>
           )}
         </CModalBody>
       </CModal>
@@ -514,23 +817,41 @@ const ReportDetails = () => {
               </div>
             </div>
             <div className="mb-2">
-              <CFormLabel>File No.</CFormLabel>
+              <CFormLabel>File No
+                <span style={{ color: 'red' }}>*</span>
+              </CFormLabel>
               <CFormInput
                 value={patientId}
                 onChange={(e) => setNewReport({ ...newReport, patientId: e.target.value })}
                 disabled
               />
             </div>
-            <div className="mb-2">
-              <CFormLabel>Report Name (File Name)</CFormLabel>
-              <CFormInput
-                value={newReport.reportName}
-                onChange={(e) => setNewReport({ ...newReport, reportName: e.target.value })}
+           <div className="mb-2">
+              <CFormLabel>Report Name (File Name)<span style={{ color: 'red' }}>*</span>
+
+              </CFormLabel>
+              <Select
+                options={testNames.map((test) => ({
+                  value: test.testName,
+                  label: test.testName,
+                }))}
+                value={
+                  newReport.reportName
+                    ? { value: newReport.reportName, label: newReport.reportName }
+                    : null
+                }
+                onChange={(selectedOption) =>
+                  setNewReport({ ...newReport, reportName: selectedOption?.value || '' })
+                }
+                placeholder="Select or search report name..."
+                isSearchable
               />
             </div>
 
             <div className="mb-2">
-              <CFormLabel>Report Date</CFormLabel>
+              <CFormLabel>Report Date
+                <span style={{ color: 'red' }}>*</span>
+              </CFormLabel>
               <CFormInput
                 type="date"
                 value={newReport.reportDate}
@@ -541,16 +862,21 @@ const ReportDetails = () => {
             </div>
 
             <div className="mb-2">
-              <CFormLabel>Report Type</CFormLabel>
+              <CFormLabel>Report Type
+                <span style={{ color: 'red' }}>*</span>
+              </CFormLabel>
               <CFormInput
                 value={newReport.reportType}
                 onChange={(e) => setNewReport({ ...newReport, reportType: e.target.value })}
               />
             </div>
             <div className="mb-2">
-              <CFormLabel>Upload File (PDF or Image)</CFormLabel>
+              <CFormLabel>Upload File (PDF or Image)
+                <span style={{ color: 'red' }}>*</span>
+              </CFormLabel>
               <CFormInput
                 type="file"
+                multiple
                 accept="image/*,application/pdf"
                 onChange={handleFileChange}
               />

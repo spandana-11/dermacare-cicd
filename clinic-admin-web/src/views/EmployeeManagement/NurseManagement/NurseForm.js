@@ -325,10 +325,8 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
       setLoading(true)
       const res = await onSave(formData)
       console.log(res) // Now this will log actual API response
-      if (res) {
+      if (res != undefined) {
         setFormData(emptyForm)
-      } else {
-        onClose()
       }
     } catch (err) {
       console.error('Submit failed', err)
@@ -767,6 +765,27 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                   )}
                 </div>
                 <div className="col-md-4">
+  <CFormLabel>
+    Qualifications <span style={{ color: 'red' }}>*</span>
+  </CFormLabel>
+  <CFormInput
+    type="text"
+    value={formData.qualifications}
+    onChange={(e) => {
+      const value = e.target.value
+      handleChange('qualifications', value)
+
+      // Live validation
+      const err = validateField('qualifications', value, formData, nurses)
+      setErrors((prev) => ({ ...prev, qualifications: err }))
+    }}
+  />
+  {errors.qualifications && (
+    <div className="text-danger mt-1">{errors.qualifications}</div>
+  )}
+</div>
+
+                <div className="col-md-4">
                   <CFormLabel>
                     Email <span style={{ color: 'red' }}>*</span>
                   </CFormLabel>
@@ -785,6 +804,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                   {errors.emailId && <div className="text-danger mt-1">{errors.emailId}</div>}
                 </div>
               </div>
+              
 
               <div className="row mb-3">
                 <div className="col-md-4">

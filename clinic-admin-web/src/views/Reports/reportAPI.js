@@ -43,4 +43,18 @@ export const SaveReportsData = async (reportData) => {
     )
     throw error
   }
+  
+  
 }
+// services/ReportsService.js
+
+
+export const Delete_ReportById = async (id) => {
+  return http.delete(`/deleteReport/${id}`)
+}
+
+export const Delete_ReportByIdIndex = async (id,bookingId,index) => {
+  return http.delete(`/deleteReportFile/${id}/${bookingId}/${index}`)
+}
+
+

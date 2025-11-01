@@ -328,16 +328,14 @@ const PharmacistForm = ({
       }
     }
 
-    try {
+  try {
       setLoading(true)
       const res = await onSave(formData)
       console.log(res) // Now this will log actual API response
       if (res != undefined) {
         setFormData(emptyForm)
-        onClose()
-      } else {
-        onClose()
-      }
+        
+      }  
     } catch (err) {
       console.error('Submit failed', err)
     } finally {

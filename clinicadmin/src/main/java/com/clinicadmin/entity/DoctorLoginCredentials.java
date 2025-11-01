@@ -19,6 +19,7 @@ public class DoctorLoginCredentials {
 	private String id;
 	private String staffId;
 	private String staffName;
+	private String clinicId;
 	private String hospitalId;
 	private String hospitalName;
 	private String branchId;

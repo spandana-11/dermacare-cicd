@@ -104,26 +104,23 @@ const PharmacistManagement = () => {
           viewPatients: formData.permissions.viewPatients ? ['read'] : [],
         },
       }
-
+      let res
       if (selectedTech) {
-        await UpdatePharmacistById(selectedTech.pharmacistId, formData)
+        res = await UpdatePharmacistById(selectedTech.pharmacistId, formData)
         fetchTechs()
         showCustomToast('Pharmacist updated successfully!', 'success')
+        setModalVisible(false)
       } else {
-        const res = await addPharmacist(formData)
-
-        if (res?.data?.data?.userName && res?.data?.data?.password) {
+        res = await addPharmacist(formData)
+        if (res.status === 201 || (res.status === 200 && res.data?.success)) {
           setCredentials({
             username: res.data.data.userName,
             password: res.data.data.password,
-            pharmacistName: res.data.data.fullName,
           })
-          setCredentialsModalVisible(true) // open modal
+          setModalTVisible(true)
+          showCustomToast('Pharmacist added successfully!', 'success')
+          setModalVisible(false)
         }
-
-        showCustomToast('Pharmacist added successfully!', 'success')
-        await fetchTechs()
-        return res
       }
     } catch (err) {
       console.error('API error:', err)

@@ -153,6 +153,8 @@ public class LabTechnicianServiceImpl implements LabTechnicianService {
 				HttpStatus.OK.value());
 	}
 
+
+
 	@Override
 	public ResponseStructure<LabTechnicianRequestDTO> updateLabTechnician(String id, LabTechnicianRequestDTO dto) {
 	    Optional<LabTechnicianEntity> optional = repository.findById(id);
@@ -163,9 +165,11 @@ public class LabTechnicianServiceImpl implements LabTechnicianService {
 
 	    LabTechnicianEntity existing = optional.get();
 
-	    // Update normal fields if provided
+	    // ✅ Update standard fields if provided
+	    if (dto.getClinicId() != null) existing.setClinicId(dto.getClinicId());
 	    if (dto.getHospitalName() != null) existing.setHospitalName(dto.getHospitalName());
 	    if (dto.getBranchId() != null) existing.setBranchId(dto.getBranchId());
+	    if (dto.getBranchName() != null) existing.setBranchName(dto.getBranchName());
 	    if (dto.getRole() != null) existing.setRole(dto.getRole());
 	    if (dto.getFullName() != null) existing.setFullName(dto.getFullName());
 	    if (dto.getGender() != null) existing.setGender(dto.getGender());
@@ -182,7 +186,7 @@ public class LabTechnicianServiceImpl implements LabTechnicianService {
 	    if (dto.getEmergencyContact() != null) existing.setEmergencyContact(dto.getEmergencyContact());
 	    if (dto.getBankAccountDetails() != null) existing.setBankAccountDetails(dto.getBankAccountDetails());
 
-	    // ✅ Update files (Base64 strings)
+	    // ✅ Update Base64 document fields
 	    if (dto.getMedicalFitnessCertificate() != null)
 	        existing.setMedicalFitnessCertificate(dto.getMedicalFitnessCertificate());
 	    if (dto.getLabLicenseOrRegistration() != null)
@@ -190,19 +194,37 @@ public class LabTechnicianServiceImpl implements LabTechnicianService {
 	    if (dto.getProfilePicture() != null)
 	        existing.setProfilePicture(dto.getProfilePicture());
 
-	    // Update remaining fields
+	    // ✅ Other optional fields
 	    if (dto.getEmailId() != null) existing.setEmailId(dto.getEmailId());
 	    if (dto.getVaccinationStatus() != null) existing.setVaccinationStatus(dto.getVaccinationStatus());
 	    if (dto.getPreviousEmploymentHistory() != null) existing.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
 	    if (dto.getPermissions() != null) existing.setPermissions(dto.getPermissions());
 
-	    // Save updated entity
+	    // ✅ Save updated entity
 	    LabTechnicianEntity updated = repository.save(existing);
 
-	    // Return DTO with Base64 files intact
-	    return ResponseStructure.buildResponse(LabTechnicianMapper.toDTO(updated),
-	            "Lab Technician updated successfully", HttpStatus.OK, HttpStatus.OK.value());
+	    // ✅ Sync with DoctorLoginCredentials (using clinicId)
+	    credentialsRepository.findByStaffId(updated.getId()).ifPresent(creds -> {
+	        creds.setStaffName(updated.getFullName());
+	        creds.setBranchId(updated.getBranchId());
+	        creds.setBranchName(updated.getBranchName());
+	        creds.setClinicId(updated.getClinicId());
+	        creds.setHospitalName(updated.getHospitalName());
+	        creds.setRole(updated.getRole());
+	        creds.setPermissions(updated.getPermissions());
+	        creds.setUsername(updated.getContactNumber()); // typically phone number
+	        credentialsRepository.save(creds);
+	    });
+
+	    // ✅ Return mapped DTO
+	    return ResponseStructure.buildResponse(
+	            LabTechnicianMapper.toDTO(updated),
+	            "Lab Technician updated successfully",
+	            HttpStatus.OK,
+	            HttpStatus.OK.value()
+	    );
 	}
+
 
 
 	@Override

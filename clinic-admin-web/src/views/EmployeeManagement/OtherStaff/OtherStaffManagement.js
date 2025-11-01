@@ -89,6 +89,7 @@ const OtherStaffManagement = () => {
       }
     } catch (err) {
       if (err.response?.status === 409) {
+        showCustomToast(err.response?.message || 'Conflict: Staff already exists!', 'error')
         // showCustomToast('Conflict: Staff already exists!', 'error')
         setModalVisible(true) // keep modal open
       } else {
@@ -205,7 +206,7 @@ const OtherStaffManagement = () => {
       </CButton> */}
       {loading ? (
         <div className="d-flex justify-content-center align-items-center">
-          <LoadingIndicator message="Loading technician..." />
+          <LoadingIndicator message="Loading Other Staff..." />
         </div>
       ) : error ? (
         <div
