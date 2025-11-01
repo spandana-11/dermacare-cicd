@@ -55,7 +55,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 @Service
 public class BookingService_ServiceImpl implements BookingService_Service {
 
-
 	@Autowired
 	private BookingServiceRepository repository;
 	
@@ -257,7 +256,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	             b.setServicetime(request.getServicetime());
 	             b.setFollowupDate(request.getServiceDate());
 	             b.setVisitType(request.getVisitType());
-	             b.setBookingId(String.valueOf(new ObjectId()));
+	             //b.setBookingId(String.valueOf(new ObjectId()));
 	             // optionally decrement follow-ups left if needed
 	             // b.setFreeFollowUpsLeft(b.getFreeFollowUpsLeft() - 1);
 
@@ -382,8 +381,11 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	
 	private DoctorSaveDetailsDTO getPrescriptionpdf(String bid) {
 		try {
+		ObjectMapper mapper  = new ObjectMapper();
+		mapper.registerModule(new JavaTimeModule());
+	    mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 		Response res =  doctorFeign.getDoctorSaveDetailsByBookingId(bid).getBody();
-		return new ObjectMapper().convertValue(res.getData(),DoctorSaveDetailsDTO.class);
+		return mapper.convertValue(res.getData(),DoctorSaveDetailsDTO.class);
 	}catch(Exception e) {
 		System.out.println(e.getMessage());
 		return null;
