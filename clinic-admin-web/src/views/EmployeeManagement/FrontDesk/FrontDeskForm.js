@@ -321,7 +321,7 @@ const FrontDeskForm = ({
       showCustomToast('Please assign at least one user permission before saving.', 'error')
       return
     }
-
+if (loading) return 
     try {
       setLoading(true)
       const res = await onSave(formData)

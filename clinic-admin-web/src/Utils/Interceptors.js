@@ -229,7 +229,7 @@ export function attachInterceptors(getAuthToken) {
       }
       // ✅ API-specific error message
       else if (message) {
-        showToastOnce(message)
+        showCustomToast(message)
       }
       // ✅ Fallback message
       else {
