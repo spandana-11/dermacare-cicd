@@ -484,7 +484,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                     <p className="mb-1 text-muted">
                       <strong>Contact:</strong> {formData.nurseContactNumber}
                     </p>
-                    <span className="badge bg-secondary mt-2">ID: {formData.id}</span>
+                    <span className="badge bg-secondary mt-2">ID: {formData.nurseId}</span>
                   </div>
                 </div>
               </div>
@@ -644,275 +644,248 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
               <h5>Basic Information</h5>
 
               <div className="row mb-3">
-                <div className="col-md-4">
-                  <div className="row">
-                    <div className="col-md-5">
-                      <CFormLabel>
-                        ClinicID <span style={{ color: 'red' }}>*</span>
-                      </CFormLabel>
-                      <CFormInput
-                        value={clinicId}
-                        disabled
-                        onChange={(e) => handleChange('clinicId', e.target.value)}
-                      />
-                    </div>
-                    <div className="col-md-7">
-                      <CFormLabel>
-                        Role <span style={{ color: 'red' }}>*</span>
-                      </CFormLabel>
-                      <CFormInput
-                        value={formData.role}
-                        disabled
-                        onChange={(e) => handleChange('role', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="col-md-4">
-                  <CFormLabel>
-                    Full Name <span style={{ color: 'red' }}>*</span>
-                  </CFormLabel>
-                  <CFormInput
-                    value={formData.fullName}
-                    onChange={(e) => {
-                      const value = e.target.value
+  <div className="col-md-4">
+    <div className="row">
+      <div className="col-md-5">
+        <CFormLabel>
+          Clinic ID <span style={{ color: 'red' }}>*</span>
+        </CFormLabel>
+        <CFormInput
+          value={clinicId}
+          disabled
+          onChange={(e) => handleChange('clinicId', e.target.value)}
+        />
+      </div>
+      <div className="col-md-7">
+        <CFormLabel>
+          Role <span style={{ color: 'red' }}>*</span>
+        </CFormLabel>
+        <CFormInput
+          value={formData.role}
+          disabled
+          onChange={(e) => handleChange('role', e.target.value)}
+        />
+      </div>
+    </div>
+  </div>
 
-                      // Allow only letters and spaces
-                      if (/^[A-Za-z\s]*$/.test(value)) {
-                        handleChange('fullName', value)
+  <div className="col-md-4">
+    <CFormLabel>
+      Full Name <span style={{ color: 'red' }}>*</span>
+    </CFormLabel>
+    <CFormInput
+      value={formData.fullName}
+      onChange={(e) => {
+        const value = e.target.value
+        if (/^[A-Za-z\s]*$/.test(value)) {
+          handleChange('fullName', value)
+          const error = validateField('fullName', value)
+          setErrors((prev) => ({ ...prev, fullName: error }))
+        }
+      }}
+    />
+    {errors.fullName && <div className="text-danger mt-1">{errors.fullName}</div>}
+  </div>
 
-                        const error = validateField('fullName', value)
-                        setErrors((prev) => ({ ...prev, fullName: error }))
-                      }
-                    }}
-                  />
-                  {errors.fullName && <div className="text-danger mt-1">{errors.fullName}</div>}
-                </div>
-                <div className="col-md-4">
-                  <CFormLabel>
-                    Gender <span style={{ color: 'red' }}>*</span>
-                  </CFormLabel>
-                  <CFormSelect
-                    value={formData.gender}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      handleChange('gender', value)
-
-                      // Live validation
-                      const error = value ? '' : 'Gender is required.'
-                      setErrors((prev) => ({ ...prev, gender: error }))
-                    }}
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </CFormSelect>
-
-                  {errors.gender && <div className="text-danger mt-1">{errors.gender}</div>}
-                </div>
-              </div>
-
-              <div className="row mb-3">
-                <div className="col-md-4">
-                  <CFormLabel>
-                    Date of Birth <span style={{ color: 'red' }}>*</span>
-                  </CFormLabel>
-                  <CFormInput
-                    type="date"
-                    value={formData.dateOfBirth}
-                    max={
-                      new Date(new Date().setFullYear(new Date().getFullYear() - 18))
-                        .toISOString()
-                        .split('T')[0]
-                    } // only allow DOB ≤ today-18yrs
-                    onChange={(e) => {
-                      const value = e.target.value
-                      handleChange('dateOfBirth', value)
-
-                      // Live validation using your validators file
-                      const err = validateField('dateOfBirth', value)
-                      setErrors((prev) => ({ ...prev, dateOfBirth: err }))
-                    }}
-                  />
-                  {errors.dateOfBirth && (
-                    <div className="text-danger mt-1">{errors.dateOfBirth}</div>
-                  )}
-                </div>
-
-                <div className="col-md-4">
-                  <CFormLabel>
-                    Contact Number <span style={{ color: 'red' }}>*</span>
-                  </CFormLabel>
-                  <CFormInput
-                    type="text"
-                    maxLength={10}
-                    value={formData.nurseContactNumber}
-                    onChange={(e) => {
-                      const value = e.target.value
-
-                      if (/^\d*$/.test(value)) {
-                        handleChange('nurseContactNumber', value)
-
-                        // Live validation
-                        const err = validateField('nurseContactNumber', value, formData, nurses)
-                        setErrors((prev) => ({ ...prev, nurseContactNumber: err }))
-                      }
-                    }}
-                  />
-                  {errors.nurseContactNumber && (
-                    <div className="text-danger mt-1">{errors.nurseContactNumber}</div>
-                  )}
-                </div>
-                <div className="col-md-4">
-  <CFormLabel>
-    Qualifications <span style={{ color: 'red' }}>*</span>
-  </CFormLabel>
-  <CFormInput
-    type="text"
-    value={formData.qualifications}
-    onChange={(e) => {
-      const value = e.target.value
-      handleChange('qualifications', value)
-
-      // Live validation
-      const err = validateField('qualifications', value, formData, nurses)
-      setErrors((prev) => ({ ...prev, qualifications: err }))
-    }}
-  />
-  {errors.qualifications && (
-    <div className="text-danger mt-1">{errors.qualifications}</div>
-  )}
+  <div className="col-md-4">
+    <CFormLabel>
+      Gender <span style={{ color: 'red' }}>*</span>
+    </CFormLabel>
+    <CFormSelect
+      value={formData.gender}
+      onChange={(e) => {
+        const value = e.target.value
+        handleChange('gender', value)
+        const error = value ? '' : 'Gender is required.'
+        setErrors((prev) => ({ ...prev, gender: error }))
+      }}
+    >
+      <option value="">Select Gender</option>
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+      <option value="other">Other</option>
+    </CFormSelect>
+    {errors.gender && <div className="text-danger mt-1">{errors.gender}</div>}
+  </div>
 </div>
 
-                <div className="col-md-4">
-                  <CFormLabel>
-                    Email <span style={{ color: 'red' }}>*</span>
-                  </CFormLabel>
-                  <CFormInput
-                    type="email"
-                    value={formData.emailId}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      handleChange('emailId', value)
+{/* SECOND ROW */}
+<div className="row mb-3">
+  <div className="col-md-4">
+    <CFormLabel>
+      Date of Birth <span style={{ color: 'red' }}>*</span>
+    </CFormLabel>
+    <CFormInput
+      type="date"
+      value={formData.dateOfBirth}
+      max={new Date(new Date().setFullYear(new Date().getFullYear() - 18))
+        .toISOString()
+        .split('T')[0]}
+      onChange={(e) => {
+        const value = e.target.value
+        handleChange('dateOfBirth', value)
+        const err = validateField('dateOfBirth', value)
+        setErrors((prev) => ({ ...prev, dateOfBirth: err }))
+      }}
+    />
+    {errors.dateOfBirth && <div className="text-danger mt-1">{errors.dateOfBirth}</div>}
+  </div>
 
-                      // Run live validation
-                      const err = validateField('emailId', value)
-                      setErrors((prev) => ({ ...prev, emailId: err }))
-                    }}
-                  />
-                  {errors.emailId && <div className="text-danger mt-1">{errors.emailId}</div>}
-                </div>
-              </div>
-              
+  <div className="col-md-4">
+    <CFormLabel>
+      Contact Number <span style={{ color: 'red' }}>*</span>
+    </CFormLabel>
+    <CFormInput
+      type="text"
+      maxLength={10}
+      value={formData.nurseContactNumber}
+      onChange={(e) => {
+        const value = e.target.value
+        if (/^\d*$/.test(value)) {
+          handleChange('nurseContactNumber', value)
+          const err = validateField('nurseContactNumber', value, formData, nurses)
+          setErrors((prev) => ({ ...prev, nurseContactNumber: err }))
+        }
+      }}
+    />
+    {errors.nurseContactNumber && (
+      <div className="text-danger mt-1">{errors.nurseContactNumber}</div>
+    )}
+  </div>
 
-              <div className="row mb-3">
-                <div className="col-md-4">
-                  <CFormLabel>
-                    GovernmentID(AadharCard No) <span style={{ color: 'red' }}>*</span>
-                  </CFormLabel>
-                  <CFormInput
-                    maxLength={12}
-                    value={formData.governmentId}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      // Allow only digits while typing
-                      if (/^\d*$/.test(value)) {
-                        handleChange('governmentId', value)
+  <div className="col-md-4">
+    <CFormLabel>
+      Qualifications <span style={{ color: 'red' }}>*</span>
+    </CFormLabel>
+    <CFormInput
+      type="text"
+      value={formData.qualifications}
+      onChange={(e) => {
+        const value = e.target.value
+        handleChange('qualifications', value)
+        const err = validateField('qualifications', value, formData, nurses)
+        setErrors((prev) => ({ ...prev, qualifications: err }))
+      }}
+    />
+    {errors.qualifications && <div className="text-danger mt-1">{errors.qualifications}</div>}
+  </div>
+</div>
 
-                        // Validate on change
-                        const error = validateField('governmentId', value)
-                        setErrors((prev) => ({ ...prev, governmentId: error }))
-                      }
-                    }}
-                  />
-                  {errors.governmentId && (
-                    <div className="text-danger mt-1">{errors.governmentId}</div>
-                  )}
-                </div>
+{/* THIRD ROW */}
+<div className="row mb-3">
+  <div className="col-md-4">
+    <CFormLabel>
+      Email <span style={{ color: 'red' }}>*</span>
+    </CFormLabel>
+    <CFormInput
+      type="email"
+      value={formData.emailId}
+      onChange={(e) => {
+        const value = e.target.value
+        handleChange('emailId', value)
+        const err = validateField('emailId', value)
+        setErrors((prev) => ({ ...prev, emailId: err }))
+      }}
+    />
+    {errors.emailId && <div className="text-danger mt-1">{errors.emailId}</div>}
+  </div>
 
-                <div className="col-md-4">
-                  <CFormLabel>
-                    Nursing Council Registration No<span style={{ color: 'red' }}>*</span>
-                  </CFormLabel>
-                  <CFormInput
-                    type="text" // ✅ very important, don't use "number"
-                    maxLength={20}
-                    value={formData.nursingCouncilRegistration}
-                    onChange={(e) => {
-                      const value = e.target.value // accept everything
-                      handleChange('nursingCouncilRegistration', value)
+  <div className="col-md-4">
+    <CFormLabel>
+      Government ID (Aadhar Card No) <span style={{ color: 'red' }}>*</span>
+    </CFormLabel>
+    <CFormInput
+      maxLength={12}
+      value={formData.governmentId}
+      onChange={(e) => {
+        const value = e.target.value
+        if (/^\d*$/.test(value)) {
+          handleChange('governmentId', value)
+          const error = validateField('governmentId', value)
+          setErrors((prev) => ({ ...prev, governmentId: error }))
+        }
+      }}
+    />
+    {errors.governmentId && <div className="text-danger mt-1">{errors.governmentId}</div>}
+  </div>
 
-                      const error = validateField('nursingCouncilRegistration', value)
-                      setErrors((prev) => ({ ...prev, nursingCouncilRegistration: error }))
-                    }}
-                  />
+  <div className="col-md-4">
+    <CFormLabel>
+      Nursing Council Registration No <span style={{ color: 'red' }}>*</span>
+    </CFormLabel>
+    <CFormInput
+      type="text"
+      maxLength={20}
+      value={formData.nursingCouncilRegistration}
+      onChange={(e) => {
+        const value = e.target.value
+        handleChange('nursingCouncilRegistration', value)
+        const error = validateField('nursingCouncilRegistration', value)
+        setErrors((prev) => ({ ...prev, nursingCouncilRegistration: error }))
+      }}
+    />
+    {errors.nursingCouncilRegistration && (
+      <div className="text-danger mt-1">{errors.nursingCouncilRegistration}</div>
+    )}
+  </div>
+</div>
 
-                  {errors.nursingCouncilRegistration && (
-                    <div className="text-danger mt-1">{errors.nursingCouncilRegistration}</div>
-                  )}
-                </div>
+{/* FOURTH ROW */}
+<div className="row mb-3">
+  <div className="col-md-4">
+    <CFormLabel>
+      Date of Joining <span style={{ color: 'red' }}>*</span>
+    </CFormLabel>
+    <CFormInput
+      type="date"
+      value={formData.dateOfJoining}
+      max={new Date().toISOString().split('T')[0]}
+      onChange={(e) => {
+        const value = e.target.value
+        handleChange('dateOfJoining', value)
+        const error = validateField('dateOfJoining', value)
+        setErrors((prev) => ({ ...prev, dateOfJoining: error }))
+      }}
+    />
+    {errors.dateOfJoining && <div className="text-danger mt-1">{errors.dateOfJoining}</div>}
+  </div>
 
-                <div className="col-md-4">
-                  <CFormLabel>
-                    Date of Joining <span style={{ color: 'red' }}>*</span>
-                  </CFormLabel>
-                  <CFormInput
-                    type="date"
-                    value={formData.dateOfJoining}
-                    max={new Date().toISOString().split('T')[0]}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      handleChange('dateOfJoining', value)
+  <div className="col-md-4">
+    <CFormLabel>
+      Department <span style={{ color: 'red' }}>*</span>
+    </CFormLabel>
+    <CFormInput
+      value={formData.department}
+      onChange={(e) => {
+        const value = e.target.value
+        handleChange('department', value)
+        const error = validateField('department', value)
+        setErrors((prev) => ({ ...prev, department: error }))
+      }}
+    />
+    {errors.department && <div className="text-danger mt-1">{errors.department}</div>}
+  </div>
 
-                      // Validate using switch case
-                      const error = validateField('dateOfJoining', value)
-                      setErrors((prev) => ({ ...prev, dateOfJoining: error }))
-                    }}
-                  />
-                  {errors.dateOfJoining && (
-                    <div className="text-danger mt-1">{errors.dateOfJoining}</div>
-                  )}
-                </div>
-              </div>
-              <div className="col-md-4">
-                <CFormLabel>
-                  Department<span style={{ color: 'red' }}>*</span>
-                </CFormLabel>
-                <CFormInput
-                  value={formData.department}
-                  onChange={(e) => {
-                    const value = e.target.value
+  <div className="col-md-4">
+    <CFormLabel>
+      Years of Experience <span style={{ color: 'red' }}>*</span>
+    </CFormLabel>
+    <CFormInput
+      type="number"
+      value={formData.yearsOfExperience}
+      onChange={(e) => {
+        const value = e.target.value
+        handleChange('yearsOfExperience', value)
+        const error = validateField('yearsOfExperience', value)
+        setErrors((prev) => ({ ...prev, yearsOfExperience: error }))
+      }}
+    />
+    {errors.yearsOfExperience && (
+      <div className="text-danger mt-1">{errors.yearsOfExperience}</div>
+    )}
+  </div>
+</div>
 
-                    // ✅ Allow all characters (including special characters)
-                    handleChange('department', value)
-
-                    const error = validateField('department', value)
-                    setErrors((prev) => ({ ...prev, department: error }))
-                  }}
-                />
-                {errors.department && <div className="text-danger mt-1">{errors.department}</div>}
-              </div>
-              <div className="col-md-4">
-                <CFormLabel>
-                  Years of Experience <span style={{ color: 'red' }}>*</span>
-                </CFormLabel>
-                <CFormInput
-                  type="number"
-                  value={formData.yearsOfExperience}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    handleChange('yearsOfExperience', value)
-
-                    // ✅ Validate using switch case
-                    const error = validateField('yearsOfExperience', value)
-                    setErrors((prev) => ({ ...prev, yearsOfExperience: error }))
-                  }}
-                />
-                {errors.yearsOfExperience && (
-                  <div className="text-danger mt-1">{errors.yearsOfExperience}</div>
-                )}
-              </div>
 
               <div className="row mb-3">
                 <div className="col-md-4">

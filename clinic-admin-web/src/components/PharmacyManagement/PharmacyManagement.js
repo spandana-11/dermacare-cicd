@@ -304,20 +304,28 @@ const PharmacyManagement = () => {
   const isTimeslotDisabled = () => {
     return isFrequencyDisabled() // same logic
   }
-  const confirmDeleteMedicine = async () => {
+ const confirmDeleteMedicine = async () => {
     if (!medicineIdToDelete) return
-    setDelLoading(true)
-    const success = await deletePrescriptionById(medicineIdToDelete)
-    if (success) {
-      setMedicines((prev) => prev.filter((med) => med.id !== medicineIdToDelete))
-      showCustomToast(`Medicine deleted successfully!`, 'success')
-    } else {
-      setDelLoading(false)
-      showCustomToast('Failed to delete medicine!', 'error')
-    }
 
-    setIsDeleteModalVisible(false)
-    setMedicineIdToDelete(null)
+    setDelLoading(true)
+
+    try {
+      const success = await deletePrescriptionById(medicineIdToDelete)
+
+      if (success) {
+        setMedicines((prev) => prev.filter((med) => med.id !== medicineIdToDelete))
+        showCustomToast('Medicine deleted successfully!', 'success')
+      } else {
+        showCustomToast('Failed to delete medicine!', 'error')
+      }
+    } catch (error) {
+      console.error('Error deleting medicine:', error)
+      showCustomToast('An unexpected error occurred!', 'error')
+    } finally {
+      setIsDeleteModalVisible(false)
+      setMedicineIdToDelete(null)
+      setDelLoading(false)
+    }
   }
 
   return (
