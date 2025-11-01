@@ -59,8 +59,12 @@ const ReportsManagement = () => {
       }
     } catch (error) {
       console.error('Failed to fetch appointments:', error)
-      setBookings([]) // Ensure bookings is an empty array on error
+      setBookings([])
+       // Ensure bookings is an empty array on error
+    }
+    finally{
       setLoading(false)
+
     }
   }
 
