@@ -160,6 +160,7 @@ public class NurseServiceImpl implements NurseService {
         });
     }
 
+
     @Override
     public Response updateNurse(String nurseId, NurseDTO dto) {
         Response response = new Response();
@@ -196,7 +197,7 @@ public class NurseServiceImpl implements NurseService {
             Optional.ofNullable(dto.getPermissions()).ifPresent(existingNurse::setPermissions);
             Optional.ofNullable(dto.getVaccinationStatus()).ifPresent(existingNurse::setVaccinationStatus);
 
-            // ✅ Update Base64 documents and images (store as-is)
+            // ✅ Update Base64 documents and images
             if (dto.getNursingLicense() != null)
                 existingNurse.setNursingLicense(dto.getNursingLicense());
 
@@ -212,10 +213,26 @@ public class NurseServiceImpl implements NurseService {
             if (dto.getProfilePicture() != null)
                 existingNurse.setProfilePicture(dto.getProfilePicture());
 
-            // ✅ Save updated record
+            // ✅ Save updated nurse entity
             Nurse updated = nurseRepository.save(existingNurse);
 
-            // ✅ Map to DTO for response (no need to decode Base64)
+            // ✅ Sync Nurse details & permissions to DoctorLoginCredentials
+            Optional<DoctorLoginCredentials> credsOpt = credentialsRepository.findByStaffId(updated.getNurseId());
+            if (credsOpt.isPresent()) {
+                DoctorLoginCredentials creds = credsOpt.get();
+
+                creds.setStaffName(updated.getFullName());
+                creds.setBranchId(updated.getBranchId());
+                creds.setBranchName(updated.getBranchName());
+                creds.setHospitalId(updated.getHospitalId());
+                creds.setHospitalName(updated.getHospitalName());
+                creds.setRole(updated.getRole());
+                creds.setPermissions(updated.getPermissions()); // ✅ key sync
+                creds.setUsername(updated.getNurseContactNumber()); // optional if username = phone
+                credentialsRepository.save(creds);
+            }
+
+            // ✅ Map to DTO for response
             NurseDTO updatedDTO = mapNurseEntityToNurseDTO(updated);
 
             response.setSuccess(true);

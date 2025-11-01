@@ -546,8 +546,8 @@ const ServiceManagement = () => {
       newErrors.consultationFee = 'Consultation Fee is required.'
     } else if (!/^\d+(\.\d{1,2})?$/.test(newService.consultationFee)) {
       newErrors.consultationFee = 'Consultation Fee must be a valid number.'
-    } else if (Number(newService.consultationFee) <= 0) {
-      newErrors.consultationFee = 'Consultation Fee must be greater than 0.'
+    } else if (Number(newService.consultationFee) < 0) {
+      newErrors.consultationFee = 'Consultation Fee must be greater than or equal to  0.'
     }
 
     // GST
@@ -1037,8 +1037,8 @@ const ServiceManagement = () => {
           error = 'Must be a valid number.'
         } else if (isNaN(Number(newValue))) {
           error = 'Must be a valid number.'
-        } else if (Number(newValue) <= 0) {
-          error = 'Must be greater than 0.'
+        } else if (Number(newValue) < 0) {
+          error = 'Must be greater than or equal to 0.'
         }
 
         setErrors((prev) => ({ ...prev, [name]: error }))

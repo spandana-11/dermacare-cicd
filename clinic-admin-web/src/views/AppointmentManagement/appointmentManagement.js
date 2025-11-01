@@ -59,6 +59,8 @@ const appointmentManagement = () => {
   const itemsPerPage = 7
   const navigate = useNavigate()
   const [sortOrder, setSortOrder] = useState('asc')
+  const role = localStorage.getItem('role') // or from context/state
+
 
   const fetchAppointments = async () => {
     try {
@@ -363,16 +365,19 @@ const appointmentManagement = () => {
               checked={statusFilters.includes('Rejected')}
             /> */}
           </div>
-          <CButton
-            style={{
-              backgroundColor: 'var(--color-black)',
-              color: 'white',
-              marginLeft: '325px',
-            }}
-            onClick={() => setVisible(true)} // open modal
-          >
-            Book Appointment
-          </CButton>
+         {(role == 'admin' || role == 'receptionist') && (
+  <CButton
+    style={{
+      backgroundColor: 'var(--color-black)',
+      color: 'white',
+      marginLeft: '325px',
+    }}
+    onClick={() => setVisible(true)} // open modal
+  >
+    Book Appointment
+  </CButton>
+)}
+
 
           {/* Modal imported from separate file */}
           <BookAppointmentModal visible={visible} onClose={() => setVisible(false)} />

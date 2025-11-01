@@ -38,6 +38,8 @@ const AppointmentDetails = () => {
   const [doctor, setDoctor] = useState(null)
   const [vitals, setVitals] = useState(null)
   const [showModal, setShowModal] = useState(false)
+    const [loading, setLoading] = useState(false)
+  
   const [formData, setFormData] = useState({
     height: '',
     weight: '',
@@ -119,6 +121,7 @@ const AppointmentDetails = () => {
     } catch (error) {
       console.error('Error fetching vitals:', error)
     }
+    
   }
 
   // Handle vitals form input
@@ -170,6 +173,7 @@ const AppointmentDetails = () => {
     }
     console.log('Submitting vitals data:', formData)
     try {
+      setLoading(true)
       await postVitalsData({ ...formData, patientId: appointment.patientId }, appointment.bookingId)
 
       showCustomToast('Vitals added successfully! ', 'success')
@@ -179,6 +183,9 @@ const AppointmentDetails = () => {
       fetchVitals()
     } catch (error) {
       showCustomToast('Failed to add vitals','error')
+    }
+    finally{
+      setLoading(false)
     }
   }
   const handleUpdateVitals = async () => {
@@ -456,12 +463,24 @@ const AppointmentDetails = () => {
             <CButton color="secondary" onClick={() => setShowModal(false)}>
               Close
             </CButton>
-            <CButton
-              style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
-              onClick={handleSubmitVitals}
-            >
-              Save
-            </CButton>
+          <CButton
+  style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+  onClick={handleSubmitVitals}
+  disabled={loading} // disable while loading
+>
+  {loading ? (
+    <>
+      <span
+        className="spinner-border spinner-border-sm me-2 text-white"
+        role="status"
+      />
+      Saving...
+    </>
+  ) : (
+    'Save'
+  )}
+</CButton>
+
           </CModalFooter>
         </CModal>
 
@@ -649,29 +668,32 @@ const AppointmentDetails = () => {
                             <small style={{ color: 'GrayText' }}>{appointment?.serviceDate}</small>
                           </div>
 
-                          <div className="row">
-                            <div className="col-6">
-                              <CButton
-                                color="primary"
-                                onClick={() =>
-                                  handlePreview(attachment, `attachment_${index + 1}.pdf`)
-                                }
-                                className="d-flex align-items-center gap-1"
-                              >
-                                <Eye size={16} /> Preview
-                              </CButton>
-                            </div>
-                            <div className="col-6">
-                              <CButton
-                                color="success"
-                                onClick={() =>
-                                  handleDownload(attachment, `attachment_${index + 1}.pdf`)
-                                }
-                                className="d-flex align-items-center gap-1 text-white"
-                              >
-                                <Download size={16} /> Download
-                              </CButton>
-                            </div>
+                        <div className="d-flex gap-2 ">
+                            <CButton
+                              style={{
+                                color: 'var(--color-black)',
+                                backgroundColor: 'var(--color-bgcolor)',
+                              }}
+                              onClick={() =>
+                                handlePreview(attachment, `attachment_${index + 1}.pdf`)
+                              }
+                              className="d-flex align-items-center gap-1"
+                            >
+                              <Eye size={16} />
+                            </CButton>
+
+                            <CButton
+                              style={{
+                                color: 'var(--color-black)',
+                                backgroundColor: 'var(--color-bgcolor)',
+                              }}
+                              onClick={() =>
+                                handleDownload(attachment, `attachment_${index + 1}.pdf`)
+                              }
+                              className="d-flex align-items-center gap-1"
+                            >
+                              <Download size={16} />
+                            </CButton>
                           </div>
                         </div>
                         // </div>

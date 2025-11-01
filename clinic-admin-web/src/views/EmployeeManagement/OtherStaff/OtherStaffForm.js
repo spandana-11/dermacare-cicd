@@ -90,6 +90,7 @@ const OtherStaffForm = ({
   const [isPreviewPdf, setIsPreviewPdf] = useState(false)
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+  
   const [ifscLoading, setIfscLoading] = useState(false)
   // Mandatory fields
   const mandatoryFields = [

@@ -184,7 +184,26 @@ const WidgetsDropdown = (props) => {
     },
     [todayISO, convertToISODate],
   )
+useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await GetBookingByClinicIdData()
+        console.log('Bookings Data:', response)
 
+        // ✅ Step 2: Extract patientId list and count unique ones
+        const patientIds = response?.data?.map(item => item.patientId) || []
+
+        // If you only want unique patient count
+        const uniquePatients = [...new Set(patientIds)]
+        setTotalPatients(uniquePatients.length)
+
+      } catch (error) {
+        console.error('Error fetching patients:', error)
+      }
+    }
+
+    fetchData()
+  }, [])
   const fetchDoctors = useCallback(async (clinicId) => {
     setLoadingDoctors(true)
     setDoctorError(null)

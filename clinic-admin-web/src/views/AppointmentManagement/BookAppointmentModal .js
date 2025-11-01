@@ -38,7 +38,7 @@ import {
   subServiceData,
   getSubServiceById,
 } from '../ProcedureManagement/ProcedureManagementAPI'
-import { BASE_URL, wifiUrl } from '../../baseUrl'
+import { BASE_URL, subservice, wifiUrl } from '../../baseUrl'
 import axios from 'axios'
 import { useHospital } from '../Usecontext/HospitalContext'
 // import { getInProgressBookings, getInProgressfollowupBookings } from '../../APIs/GetFollowUpApi'
@@ -137,7 +137,7 @@ const BookAppointmentModal = ({ visible, onClose }) => {
     gender: '',
     symptomsDuration: '',
     problem: '',
-    foc: 'Paid',
+    foc: '',
 
     attachments: [],
     freeFollowUps: selectedHospital.data.freeFollowUps,
@@ -347,11 +347,12 @@ const [originalConsultationFee, setOriginalConsultationFee] = useState('');
             ...prev,
             subServiceId: subServiceInfo.subServiceId,
             subServiceName: subServiceInfo.subServiceName,
-            consultationFee: prev.foc === 'FOC' ? 0 : subServiceInfo.consultationFee || 0,
+         consultationFee: prev.foc === 'FOC' ? 0 : subServiceInfo.consultationFee || 0,
+
             servicecost: subServiceInfo.price,
             discountAmount: subServiceInfo.discountedCost || 0,
             discountPercentage: subServiceInfo.discountPercentage || 0,
-            totalFee: subServiceInfo.finalCost,
+           totalFee: subServiceInfo.finalCost,
           }))
           setOriginalConsultationFee(subServiceInfo.consultationFee || 0)
         }
@@ -521,6 +522,46 @@ const [originalConsultationFee, setOriginalConsultationFee] = useState('');
   useEffect(() => {
     fetchRefferrDoctor()
   }, [])
+ const handleFeeTypeChange = async (e) => {
+  const selectedType = e.target.value
+  const hospitalId = localStorage.getItem('HospitalId')
+  const { subServiceId, subServiceName, consultationType } = bookingDetails
+
+  try {
+    // 1 = FOC, 2 = Paid
+    const feeTypeCode = selectedType === 'FOC' ? 1 : 2
+
+    
+
+    const url = `${BASE_URL}/calculateAmountByConsultationType/${hospitalId}/${subServiceId}/${subServiceName}/${feeTypeCode}`
+
+    const response = await axios.get(url, {
+      params: { feeType: feeTypeCode },
+    })
+
+    console.log('Fee API response:', response.data)
+
+    setBookingDetails((prev) => ({
+      ...prev,
+      foc: selectedType,
+      consultationFee:
+        selectedType === 'FOC' ? 0 : response.data?.data?.consultationFee || 0,
+        totalFee:
+  
+    (response.data?.data?.finalCost ?? 0),
+    }))
+  } catch (error) {
+    console.error('Error calculating fee amount:', error)
+  }
+}
+useEffect(() => {
+  if (bookingDetails.subServiceId && bookingDetails.subServiceName && bookingDetails.consultationType) {
+    // Fetch the default Paid amount (feeType = 2)
+    handleFeeTypeChange('Paid', bookingDetails, setBookingDetails)
+  }
+}, [bookingDetails.subServiceId, bookingDetails.subServiceName, bookingDetails.consultationType])
+
+
 
   // Watch for appointmentType changes and reset related fields
 
@@ -1682,14 +1723,14 @@ const [originalConsultationFee, setOriginalConsultationFee] = useState('');
               </CCol>
               <CCol md={4}>
                 <CFormLabel style={{ color: 'var(--color-black)' }}>
-                  Service & Treatment Cost <span className="text-danger">*</span>
+                  Service & Treatment Cost<span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormInput type="number" value={bookingDetails.servicecost || 0} disabled />
               </CCol>
 
               <CCol md={4}>
                 <CFormLabel style={{ color: 'var(--color-black)' }}>
-                  Discount Amount <span className="text-danger">*</span>
+                  Discounted Amount <span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormInput type="number" value={bookingDetails.discountAmount || 0} disabled />
               </CCol>
@@ -1711,21 +1752,15 @@ const [originalConsultationFee, setOriginalConsultationFee] = useState('');
                 <CFormLabel style={{ color: 'var(--color-black)' }}>
                   Consultation Fee Type <span className="text-danger">*</span>
                 </CFormLabel>
-                <CFormSelect
-                  value={bookingDetails.foc || 'Paid'}
-                  onChange={(e) =>
-                    setBookingDetails({
-                      ...bookingDetails,
-                      foc: e.target.value, //TODO: backend provide then enable
-                      consultationFee:
-                        e.target.value === 'FOC' ? 0 : originalConsultationFee, // auto-handle free
-                    })
-                  }
-                >
-                  <option value="">-- Select Fee Type --</option>
-                  <option value="FOC">FOC (Free of Consultation)</option>
-                  <option value="Paid">Paid</option>
-                </CFormSelect>
+               <CFormSelect
+  value={bookingDetails.foc || 'Paid'}
+  onChange={handleFeeTypeChange}
+>
+  <option value="">-- Select Fee Type --</option>
+  <option value="FOC">FOC (Free of Consultation)</option>
+  <option value="Paid">Paid</option>
+</CFormSelect>
+
               </CCol>
             </CRow>
           </>
@@ -1880,7 +1915,7 @@ const [originalConsultationFee, setOriginalConsultationFee] = useState('');
             <CRow className="mb-4">
               <CCol md={5}>
                 <CFormLabel style={{ color: 'var(--color-black)' }}>
-                  Symptoms/Problem
+                  Patient Complaints
                   {appointmentType?.toLowerCase().trim() !== 'services' && (
                     <span className="text-danger">*</span>
                   )}
@@ -2091,6 +2126,34 @@ const [originalConsultationFee, setOriginalConsultationFee] = useState('');
                 {/* ✅ Error message below */}
                 {errors.paymentType && <div className="text-danger mt-1">{errors.paymentType}</div>}
               </CCol>
+              <CCol md={5}>
+  <CFormLabel style={{ color: 'var(--color-black)' }}>
+    Payment Mode <span className="text-danger">*</span>
+  </CFormLabel>
+
+  <CFormSelect
+    name="paymentMode"
+    value={bookingDetails.paymentMode}
+    className="custom-select-placeholder"
+    onChange={(e) => {
+      const value = e.target.value
+      setBookingDetails((prev) => ({
+        ...prev,
+        paymentMode: value,
+      }))
+      setErrors((prev) => ({
+        ...prev,
+        paymentMode: value ? '' : 'Please select a payment mode',
+      }))
+    }}
+  >
+    <option value="">Select Payment Mode</option>
+    <option value="Full">Full Payment</option>
+    <option value="Partial">Part Payment</option>
+  </CFormSelect>
+
+  {errors.paymentMode && <div className="text-danger mt-1">{errors.paymentMode}</div>}
+</CCol>
               {/* Doctor Referral Code */}
               <CCol md={6}>
                 <h6>Referred By</h6>

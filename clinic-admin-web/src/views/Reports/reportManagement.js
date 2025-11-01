@@ -20,7 +20,7 @@ import Pagination from '../../Utils/Pagination'
 const ReportsManagement = () => {
   // const [viewService, setViewService] = useState(null)
   const [filteredData, setFilteredData] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [bookings, setBookings] = useState([])
   const [viewService, setViewService] = useState([])
   const navigate = useNavigate()
@@ -47,6 +47,7 @@ const ReportsManagement = () => {
   const fetchAppointments = async (hospitalId) => {
     // Added hospitalId parameter
     try {
+         setLoading(true)
       const data = await AppointmentData()
       if (data && data.data) {
         // Filter initial bookings by clinicId here if it exists
@@ -54,7 +55,7 @@ const ReportsManagement = () => {
           ? data.data.filter((booking) => normalize(booking.clinicId) === normalize(hospitalId))
           : data.data
         setBookings(relevantBookings || [])
-        setLoading(false)
+     
       }
     } catch (error) {
       console.error('Failed to fetch appointments:', error)

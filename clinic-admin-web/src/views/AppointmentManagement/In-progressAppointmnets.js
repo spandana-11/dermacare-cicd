@@ -659,8 +659,8 @@ const InProgressAppointmentsPage = () => {
                                                     'reschedule-patient',
                                                   ]
 
-                                                  openBookingModal(apt)
                                                   if (rescheduleStatuses.includes(selectedValue)) {
+                                                    openBookingModal(apt)
                                                     await fetchDoctorBtId(apt.doctorId)
                                                     setReschedule(true)
                                                   } else {
