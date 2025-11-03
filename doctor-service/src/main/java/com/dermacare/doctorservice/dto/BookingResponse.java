@@ -55,7 +55,7 @@ public class BookingResponse {
 	private List<String> attachments;
 	private String consentFormPdf;
 	private String paymentType;
-
+	private String followupDate;
 	// ✅ Sitting summary fields
     private Integer totalSittings;
     private Integer takenSittings;
