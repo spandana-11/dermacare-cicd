@@ -22,6 +22,8 @@ public class AdministratorDTO {
     @Id
     private String id;
 
+    private String adminId;
+    
     @NotBlank(message = "Clinic ID is required")
     private String clinicId;
 

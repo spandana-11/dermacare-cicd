@@ -38,7 +38,7 @@ public class DoctorsDTO {
 	private String hospitalId;
 	private String branchId;
 	private String hospitalName;
-//    @Size(max = 255, message = "Doctor picture URL should not exceed 255 characters")
+
 	private String doctorPicture;
 
 	@NotBlank(message = "Doctor licence is required", groups = RequiredChecks.class)
