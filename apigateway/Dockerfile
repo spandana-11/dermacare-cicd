@@ -19,7 +19,7 @@ WORKDIR /app
 # Copy built JAR from the build stage
 COPY --from=build /app/target/apigateway-0.0.1-SNAPSHOT.jar /app/apigateway.jar
 
-# Expose the gateway port
+# Expose the gate-way port
 EXPOSE 9090
 
 # Run the application
