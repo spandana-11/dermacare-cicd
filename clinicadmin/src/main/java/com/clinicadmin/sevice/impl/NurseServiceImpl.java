@@ -433,18 +433,6 @@ public class NurseServiceImpl implements NurseService {
 
     // ------------------- Helper Methods ----------------------
 
-    private void updateBase64Field(String field, Consumer<String> setter) {
-        if (field != null && !field.isBlank()) {
-            try {
-                // validate if Base64
-                Base64.getDecoder().decode(field);
-                setter.accept(field);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid Base64 format for file field");
-            }
-        }
-    }
-
     private String generateNurseId() {
         return "NR_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }

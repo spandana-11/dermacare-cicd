@@ -70,9 +70,6 @@ public class Booking  {
     private Integer takenSittings;
     private Integer currentSitting;
     private String foc;
- // add this new field
-    private String treatmentName;
-
     // ------------------- NEW: Treatments and dates -------------------
     private TreatmentResponseDTO treatments; // treatmentName -> treatment details
 

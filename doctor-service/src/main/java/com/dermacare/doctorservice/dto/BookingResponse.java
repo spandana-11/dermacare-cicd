@@ -55,21 +55,18 @@ public class BookingResponse {
 	private List<String> attachments;
 	private String consentFormPdf;
 	private String paymentType;
-	private String followupDate;
+
 	// ✅ Sitting summary fields
     private Integer totalSittings;
     private Integer takenSittings;
     private Integer pendingSittings;
     private Integer currentSitting;
-// new
+
+    // ✅ Treatments info
+    private TreatmentResponseDTO treatments;
+    
     private String branchId;
     private String branchname;
     private String customerId;
     private String linkedBookingId;
-
-    // + Generate getters and setters
-
-    
-    // ✅ Treatments info
-    private TreatmentResponseDTO treatments;
 }
