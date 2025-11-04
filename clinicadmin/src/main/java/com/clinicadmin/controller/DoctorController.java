@@ -26,7 +26,6 @@ import com.clinicadmin.dto.DoctorAvailabilityStatusDTO;
 import com.clinicadmin.dto.DoctorLoginDTO;
 import com.clinicadmin.dto.DoctorSlotDTO;
 import com.clinicadmin.dto.DoctorsDTO;
-import com.clinicadmin.dto.LoginBasedOnRoleDTO;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.TempBlockingSlot;
 import com.clinicadmin.dto.UpdateSlotRequestDTO;

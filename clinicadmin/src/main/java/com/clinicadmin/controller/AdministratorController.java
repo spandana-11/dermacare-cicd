@@ -18,7 +18,7 @@ public class AdministratorController {
     @Autowired
     private AdministratorService administratorService;
 
-    // -------------------Add Administrator -------------------
+    // ------------------- Add Administrator -------------------
     @PostMapping("/addAdministrator")
     public ResponseEntity<Response> addAdministrator(
             @Validated(RequiredChecks.class) @RequestBody AdministratorDTO dto) {
@@ -61,3 +61,4 @@ public class AdministratorController {
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 }
+

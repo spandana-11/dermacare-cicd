@@ -23,7 +23,7 @@ public class Administrator {
 
     @Id
     private String id;
-
+    private String adminId;
     private String clinicId;
     private String branchId;
     private String branchName;

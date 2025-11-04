@@ -70,7 +70,7 @@ public class AdministratorServiceImpl implements AdministratorService {
         // Map DTO → Entity
         Administrator admin = mapDtoToEntity(dto);
         admin.setBranchName(branch.getBranchName());
-        admin.setId(generateAdminId());
+        admin.setAdminId(generateAdminId());
 
         // Generate login credentials
         String username = dto.getContactNumber();
@@ -94,13 +94,13 @@ public class AdministratorServiceImpl implements AdministratorService {
                 .permissions(savedAdmin.getPermissions())
                 .build();
         credentialsRepository.save(credentials);
-
+        AdministratorDTO savedDTO= mapEntityToDto(savedAdmin);
        
-        dto.setUserName(username);
-        dto.setPassword(rawPassword);
+        savedDTO.setUserName(username);
+        savedDTO.setPassword(rawPassword);
 
         response.setSuccess(true);
-        response.setData(dto);
+        response.setData(savedDTO);
         response.setMessage("Administrator onboarded successfully");
         response.setStatus(HttpStatus.CREATED.value());
         return response;
@@ -157,7 +157,7 @@ public class AdministratorServiceImpl implements AdministratorService {
         }
 
         //  Repository call using both clinicId and adminId
-        Optional<Administrator> adminOpt = administratorRepository.findByClinicIdAndId(clinicId, adminId);
+        Optional<Administrator> adminOpt = administratorRepository.findByClinicIdAndAdminId(clinicId, adminId);
 
         if (adminOpt.isPresent()) {
             response.setSuccess(true);
@@ -203,7 +203,7 @@ public class AdministratorServiceImpl implements AdministratorService {
         }
 
         //  Fetch admin by clinicId and adminId
-        Optional<Administrator> existingOpt = administratorRepository.findByClinicIdAndId(clinicId, adminId);
+        Optional<Administrator> existingOpt = administratorRepository.findByClinicIdAndAdminId(clinicId, adminId);
 
         if (existingOpt.isEmpty()) {
             response.setSuccess(false);
@@ -266,7 +266,7 @@ public class AdministratorServiceImpl implements AdministratorService {
         }
 
         // Find admin by clinicId and adminId
-        Optional<Administrator> existingOpt = administratorRepository.findByClinicIdAndId(clinicId, adminId);
+        Optional<Administrator> existingOpt = administratorRepository.findByClinicIdAndAdminId(clinicId, adminId);
         if (existingOpt.isEmpty()) {
             response.setSuccess(false);
             response.setMessage("Administrator not found for the given clinic and ID");
@@ -321,6 +321,7 @@ public class AdministratorServiceImpl implements AdministratorService {
     private AdministratorDTO mapEntityToDto(Administrator admin) {
         AdministratorDTO dto = new AdministratorDTO();
         dto.setId(admin.getId());
+        dto.setAdminId(admin.getAdminId());
         dto.setClinicId(admin.getClinicId());
         dto.setBranchId(admin.getBranchId());
         dto.setBranchName(admin.getBranchName());
