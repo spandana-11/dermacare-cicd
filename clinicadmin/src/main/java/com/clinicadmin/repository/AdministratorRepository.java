@@ -15,9 +15,9 @@ public interface AdministratorRepository extends MongoRepository<Administrator, 
    
     List<Administrator> findByClinicId(String clinicId);
 
-    Optional<AdministratorDTO> findByEmail(String email);
+    Optional<AdministratorDTO> findByEmailId(String email);
 
-    boolean existsByEmail(String email);
+    boolean existsByEmailId(String email);
 
 	boolean existsByContactNumber(String contactNumber);
 	
