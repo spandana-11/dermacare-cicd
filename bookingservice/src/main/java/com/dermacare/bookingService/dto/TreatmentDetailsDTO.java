@@ -20,4 +20,5 @@ public class TreatmentDetailsDTO {
 	    private Integer takenSittings;
 	    private Integer pendingSittings;
 	    private Integer currentSitting;
+	    private String status; // e.g., "In-Progress", "Completed"
 }
