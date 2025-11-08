@@ -71,4 +71,7 @@ public class BookingResponse {
 	private String treatmentDate;
 	// ✅ Add treatments info
     private TreatmentResponseDTO treatments;
+    
+    // ✅ Add this new field
+    private String updatedTreatment;
 }
