@@ -1357,21 +1357,19 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 		@Override
 		public ResponseEntity<?> getInProgressAppointmentsByPatientId(String patientId) {
-		    ResponseStructure<List<BookingResponse>> response = new ResponseStructure<>();
+		    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
 		    List<BookingResponse> finalList = new ArrayList<>();
+		    Response response;
+		    DoctorSaveDetailsDTO saveDetails;
 
 		    try {
 		        List<Booking> booked = repository.findByPatientId(patientId);
-
-		        // ❌ Case 1: No bookings found
 		        if (booked == null || booked.isEmpty()) {
-		            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-		                    .body(ResponseStructure.buildResponse(
-		                            null,
-		                            "No bookings found for this patient",
-		                            HttpStatus.NOT_FOUND,
-		                            HttpStatus.NOT_FOUND.value()
-		                    ));
+		            res.setStatusCode(200);
+		            res.setHttpStatus(HttpStatus.OK);
+		            res.setMessage("No bookings found for patient");
+		            res.setData(finalList);
+		            return ResponseEntity.ok(res);
 		        }
 
 		        LocalDate today = LocalDate.now();
@@ -1383,15 +1381,13 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 		        for (Booking booking : booked) {
 
-		            // Skip if not in-progress
 		            if (!"In-Progress".equalsIgnoreCase(booking.getStatus())) continue;
 
-		            DoctorSaveDetailsDTO saveDetails = new DoctorSaveDetailsDTO();
-
+		            saveDetails = new DoctorSaveDetailsDTO();
 		            try {
-		                Response feignResponse = doctorFeign.getDoctorSaveDetailsByBookingId(booking.getBookingId()).getBody();
-		                if (feignResponse != null && feignResponse.getData() != null) {
-		                    saveDetails = mapper.convertValue(feignResponse.getData(), DoctorSaveDetailsDTO.class);
+		                response = doctorFeign.getDoctorSaveDetailsByBookingId(booking.getBookingId()).getBody();
+		                if (response != null && response.getData() != null) {
+		                    saveDetails = mapper.convertValue(response.getData(), DoctorSaveDetailsDTO.class);
 		                }
 		            } catch (Exception e) {
 		                System.out.println("DoctorFeign error: " + e.getMessage());
@@ -1400,15 +1396,15 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		            boolean bookingAdded = false;
 
 		            // ------------------------
-		            // TREATMENT CASE — create separate response per treatment
+		            // TREATMENT CASE — Each treatment returned separately
 		            // ------------------------
 		            if (saveDetails.getTreatments() != null &&
 		                saveDetails.getTreatments().getGeneratedData() != null &&
 		                !saveDetails.getTreatments().getGeneratedData().isEmpty()) {
 
-		                Map<String, TreatmentDetailsDTO> allTreatments = saveDetails.getTreatments().getGeneratedData();
+		                for (Map.Entry<String, TreatmentDetailsDTO> entry :
+		                        saveDetails.getTreatments().getGeneratedData().entrySet()) {
 
-		                for (Map.Entry<String, TreatmentDetailsDTO> entry : allTreatments.entrySet()) {
 		                    String treatmentName = entry.getKey();
 		                    TreatmentDetailsDTO treatmentData = entry.getValue();
 
@@ -1417,8 +1413,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                            .filter(d -> {
 		                                LocalDate date = LocalDate.parse(d.getDate(), isoFormatter);
 		                                return date.isEqual(today) && !"Completed".equalsIgnoreCase(d.getStatus());
-		                            })
-		                            .findFirst();
+		                            }).findFirst();
 
 		                    // 2️⃣ Next future pending sitting
 		                    Optional<DatesDTO> nextPending = treatmentData.getDates().stream()
@@ -1429,38 +1424,50 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                            .sorted(Comparator.comparing(d -> LocalDate.parse(d.getDate(), isoFormatter)))
 		                            .findFirst();
 
-		                    // Pick whichever is next
+		                    // 3️⃣ Pick whichever exists
 		                    DatesDTO sittingToShow = todayPending.orElse(nextPending.orElse(null));
 
 		                    if (sittingToShow != null) {
-		                        // Build single-treatment object
-		                        TreatmentDetailsDTO singleTreatment = TreatmentDetailsDTO.builder()
-		                                .dates(List.of(sittingToShow))
-		                                .reason(treatmentData.getReason())
-		                                .frequency(treatmentData.getFrequency())
-		                                .sittings(treatmentData.getSittings())
-		                                .startDate(treatmentData.getStartDate())
-		                                .totalSittings(treatmentData.getTotalSittings())
-		                                .takenSittings(treatmentData.getTakenSittings())
-		                                .pendingSittings(treatmentData.getPendingSittings())
-		                                .currentSitting(sittingToShow.getSitting())
-		                                .build();
+		                        Map<String, TreatmentDetailsDTO> singleTreatmentMap = new HashMap<>();
+		                        singleTreatmentMap.put(
+		                                treatmentName,
+		                                TreatmentDetailsDTO.builder()
+		                                        .dates(List.of(sittingToShow))
+		                                        .reason(treatmentData.getReason())
+		                                        .frequency(treatmentData.getFrequency())
+		                                        .sittings(treatmentData.getSittings())
+		                                        .startDate(treatmentData.getStartDate())
+		                                        .totalSittings(treatmentData.getTotalSittings())
+		                                        .takenSittings(treatmentData.getTakenSittings())
+		                                        .pendingSittings(treatmentData.getPendingSittings())
+		                                        .currentSitting(sittingToShow.getSitting())
+		                                        .build()
+		                        );
 
 		                        TreatmentResponseDTO singleTreatmentResponse = TreatmentResponseDTO.builder()
 		                                .selectedTestTreatment(saveDetails.getTreatments().getSelectedTestTreatment())
-		                                .generatedData(Map.of(treatmentName, singleTreatment))
-		                                .totalSittings(singleTreatment.getTotalSittings())
-		                                .pendingSittings(singleTreatment.getPendingSittings())
-		                                .takenSittings(singleTreatment.getTakenSittings())
-		                                .currentSitting(singleTreatment.getCurrentSitting())
+		                                .generatedData(singleTreatmentMap)
+		                                .totalSittings(saveDetails.getTreatments().getTotalSittings())
+		                                .pendingSittings(saveDetails.getTreatments().getPendingSittings())
+		                                .takenSittings(saveDetails.getTreatments().getTakenSittings())
+		                                .currentSitting(saveDetails.getTreatments().getCurrentSitting())
 		                                .build();
 
-		                        // Build new booking with this treatment
-		                        Booking tempBooking = new Booking(booking);
-		                        tempBooking.setTreatments(singleTreatmentResponse);
+		                        try {
+		                            // 🔥 Deep copy booking so each treatment creates a new record
+		                            Booking clonedBooking = mapper.readValue(
+		                                    mapper.writeValueAsString(booking), Booking.class
+		                            );
 
-		                        finalList.add(toResponse(tempBooking));
-		                        bookingAdded = true;
+		                            clonedBooking.setTreatments(singleTreatmentResponse);
+
+		                            BookingResponse bookingResponse = toResponse(clonedBooking);
+		                            finalList.add(bookingResponse);
+		                            bookingAdded = true;
+
+		                        } catch (Exception ex) {
+		                            System.out.println("Error while cloning booking: " + ex.getMessage());
+		                        }
 		                    }
 		                }
 		            }
@@ -1481,9 +1488,11 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                            .plusDays(Integer.parseInt(booking.getConsultationExpiration().replaceAll("\\D+", "")));
 
 		                    if (!followDate.isBefore(today) && !followDate.isAfter(exp)) {
-		                        Booking bkng = new Booking(booking);
-		                        bkng.setFollowupDate(followDate.format(isoFormatter));
-		                        finalList.add(toResponse(bkng));
+		                        Booking clonedBooking = mapper.readValue(
+		                                mapper.writeValueAsString(booking), Booking.class
+		                        );
+		                        clonedBooking.setFollowupDate(followDate.format(isoFormatter));
+		                        finalList.add(toResponse(clonedBooking));
 		                        bookingAdded = true;
 		                    }
 		                } catch (Exception e) {
@@ -1507,37 +1516,18 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		            }
 		        }
 
-		        // ✅ Case 2: Appointments found or not
-		        if (!finalList.isEmpty()) {
-		            return ResponseEntity.ok(
-		                    ResponseStructure.buildResponse(
-		                            finalList,
-		                            "In-Progress appointments found",
-		                            HttpStatus.OK,
-		                            HttpStatus.OK.value()
-		                    )
-		            );
-		        } else {
-		            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-		                    .body(ResponseStructure.buildResponse(
-		                            null,
-		                            "No In-Progress appointments found for this patient",
-		                            HttpStatus.NOT_FOUND,
-		                            HttpStatus.NOT_FOUND.value()
-		                    ));
-		        }
+		        res.setStatusCode(200);
+		        res.setHttpStatus(HttpStatus.OK);
+		        res.setMessage(finalList.isEmpty() ? "No In-Progress appointments found" : "In-Progress appointments found");
+		        res.setData(finalList);
 
 		    } catch (Exception e) {
-		        e.printStackTrace();
-		        // 💥 Case 3: Exception
-		        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-		                .body(ResponseStructure.buildResponse(
-		                        null,
-		                        "Internal server error: " + e.getMessage(),
-		                        HttpStatus.INTERNAL_SERVER_ERROR,
-		                        500
-		                ));
+		        res.setStatusCode(500);
+		        res.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+		        res.setMessage("Error: " + e.getMessage());
 		    }
+
+		    return ResponseEntity.status(res.getStatusCode()).body(res);
 		}
 
 		
