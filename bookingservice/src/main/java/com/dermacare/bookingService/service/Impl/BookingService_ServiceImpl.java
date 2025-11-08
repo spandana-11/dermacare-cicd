@@ -1363,8 +1363,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		    try {
 		        List<Booking> booked = repository.findByPatientId(patientId);
 
+		        // ❌ Case 1: No bookings found
 		        if (booked == null || booked.isEmpty()) {
-		            // 🟥 Case 2: No bookings found
 		            return ResponseEntity.status(HttpStatus.NOT_FOUND)
 		                    .body(ResponseStructure.buildResponse(
 		                            null,
@@ -1382,9 +1382,12 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
 		        for (Booking booking : booked) {
+
+		            // Skip if not in-progress
 		            if (!"In-Progress".equalsIgnoreCase(booking.getStatus())) continue;
 
 		            DoctorSaveDetailsDTO saveDetails = new DoctorSaveDetailsDTO();
+
 		            try {
 		                Response feignResponse = doctorFeign.getDoctorSaveDetailsByBookingId(booking.getBookingId()).getBody();
 		                if (feignResponse != null && feignResponse.getData() != null) {
@@ -1397,16 +1400,19 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		            boolean bookingAdded = false;
 
 		            // ------------------------
-		            // TREATMENT CASE — today’s or next future pending sitting
+		            // TREATMENT CASE — create separate response per treatment
 		            // ------------------------
 		            if (saveDetails.getTreatments() != null &&
 		                saveDetails.getTreatments().getGeneratedData() != null &&
 		                !saveDetails.getTreatments().getGeneratedData().isEmpty()) {
 
-		                Map<String, TreatmentDetailsDTO> filteredTreatments = new HashMap<>();
+		                Map<String, TreatmentDetailsDTO> allTreatments = saveDetails.getTreatments().getGeneratedData();
 
-		                saveDetails.getTreatments().getGeneratedData().forEach((treatmentName, treatmentData) -> {
+		                for (Map.Entry<String, TreatmentDetailsDTO> entry : allTreatments.entrySet()) {
+		                    String treatmentName = entry.getKey();
+		                    TreatmentDetailsDTO treatmentData = entry.getValue();
 
+		                    // 1️⃣ Today’s pending sitting
 		                    Optional<DatesDTO> todayPending = treatmentData.getDates().stream()
 		                            .filter(d -> {
 		                                LocalDate date = LocalDate.parse(d.getDate(), isoFormatter);
@@ -1414,6 +1420,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                            })
 		                            .findFirst();
 
+		                    // 2️⃣ Next future pending sitting
 		                    Optional<DatesDTO> nextPending = treatmentData.getDates().stream()
 		                            .filter(d -> {
 		                                LocalDate date = LocalDate.parse(d.getDate(), isoFormatter);
@@ -1422,10 +1429,12 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                            .sorted(Comparator.comparing(d -> LocalDate.parse(d.getDate(), isoFormatter)))
 		                            .findFirst();
 
+		                    // Pick whichever is next
 		                    DatesDTO sittingToShow = todayPending.orElse(nextPending.orElse(null));
 
 		                    if (sittingToShow != null) {
-		                        TreatmentDetailsDTO td = TreatmentDetailsDTO.builder()
+		                        // Build single-treatment object
+		                        TreatmentDetailsDTO singleTreatment = TreatmentDetailsDTO.builder()
 		                                .dates(List.of(sittingToShow))
 		                                .reason(treatmentData.getReason())
 		                                .frequency(treatmentData.getFrequency())
@@ -1437,23 +1446,22 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                                .currentSitting(sittingToShow.getSitting())
 		                                .build();
 
-		                        filteredTreatments.put(treatmentName, td);
+		                        TreatmentResponseDTO singleTreatmentResponse = TreatmentResponseDTO.builder()
+		                                .selectedTestTreatment(saveDetails.getTreatments().getSelectedTestTreatment())
+		                                .generatedData(Map.of(treatmentName, singleTreatment))
+		                                .totalSittings(singleTreatment.getTotalSittings())
+		                                .pendingSittings(singleTreatment.getPendingSittings())
+		                                .takenSittings(singleTreatment.getTakenSittings())
+		                                .currentSitting(singleTreatment.getCurrentSitting())
+		                                .build();
+
+		                        // Build new booking with this treatment
+		                        Booking tempBooking = new Booking(booking);
+		                        tempBooking.setTreatments(singleTreatmentResponse);
+
+		                        finalList.add(toResponse(tempBooking));
+		                        bookingAdded = true;
 		                    }
-		                });
-
-		                if (!filteredTreatments.isEmpty()) {
-		                    TreatmentResponseDTO treatmentResponse = TreatmentResponseDTO.builder()
-		                            .selectedTestTreatment(saveDetails.getTreatments().getSelectedTestTreatment())
-		                            .generatedData(filteredTreatments)
-		                            .totalSittings(saveDetails.getTreatments().getTotalSittings())
-		                            .pendingSittings(saveDetails.getTreatments().getPendingSittings())
-		                            .takenSittings(saveDetails.getTreatments().getTakenSittings())
-		                            .currentSitting(saveDetails.getTreatments().getCurrentSitting())
-		                            .build();
-
-		                    booking.setTreatments(treatmentResponse);
-		                    finalList.add(toResponse(booking));
-		                    bookingAdded = true;
 		                }
 		            }
 
@@ -1499,7 +1507,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		            }
 		        }
 
-		        // ✅ Case 1: Appointments found
+		        // ✅ Case 2: Appointments found or not
 		        if (!finalList.isEmpty()) {
 		            return ResponseEntity.ok(
 		                    ResponseStructure.buildResponse(
@@ -1510,7 +1518,6 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		                    )
 		            );
 		        } else {
-		            // ❌ Case 2: No in-progress appointments
 		            return ResponseEntity.status(HttpStatus.NOT_FOUND)
 		                    .body(ResponseStructure.buildResponse(
 		                            null,
