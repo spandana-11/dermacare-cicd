@@ -12,5 +12,5 @@ public class DatesDTO {
 	    private Integer sitting;
 	    private String status;
 	    private String followupStatus;
-	    private String servicetime; // <-- add this
+	   
 }

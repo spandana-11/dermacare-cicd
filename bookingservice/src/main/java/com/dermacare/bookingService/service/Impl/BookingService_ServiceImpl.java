@@ -443,1107 +443,13 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 //	 }
 
 	 
-//	 @Override
-//	 public ResponseEntity<?> addService(BookingRequset request) {
-//	     ResponseStructure<BookingResponse> response = new ResponseStructure<>();
-//	     Booking entity = toEntity(request);
-//
-//	     try {
-//	         // 🩺 Validate visitType
-//	         if (request.getVisitType() == null || request.getVisitType().trim().isEmpty()) {
-//	             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//	                     .body(ResponseStructure.buildResponse(
-//	                             null,
-//	                             "Visit type is required.",
-//	                             HttpStatus.BAD_REQUEST,
-//	                             HttpStatus.BAD_REQUEST.value()
-//	                     ));
-//	         }
-//
-//	         // =========================
-//	         // FOLLOW-UP BOOKING
-//	         // =========================
-//	         if ("follow-up".equalsIgnoreCase(request.getVisitType())) {
-//
-//	             Booking b = repository.findByMobileNumberAndPatientIdAndBookingId(
-//	                     request.getMobileNumber(), request.getPatientId(), request.getBookingId());
-//
-//	             if (b == null) {
-//	                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-//	                         .body(ResponseStructure.buildResponse(
-//	                                 null,
-//	                                 "No appointment found.",
-//	                                 HttpStatus.NOT_FOUND,
-//	                                 HttpStatus.NOT_FOUND.value()));
-//	             }
-//
-//	             if (!"In-Progress".equalsIgnoreCase(b.getStatus())) {
-//	                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//	                         .body(ResponseStructure.buildResponse(
-//	                                 null,
-//	                                 "No In-Progress appointments found for the provided booking ID.",
-//	                                 HttpStatus.BAD_REQUEST,
-//	                                 HttpStatus.BAD_REQUEST.value()));
-//	             }
-//
-//	             boolean sittingBooked = false;
-//	             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-//
-//	             if (b.getTreatments() != null && b.getTreatments().getGeneratedData() != null) {
-//	                 for (Map.Entry<String, TreatmentDetailsDTO> entry : b.getTreatments().getGeneratedData().entrySet()) {
-//	                     String treatmentName = entry.getKey();
-//	                     TreatmentDetailsDTO treatment = entry.getValue();
-//
-//	                     // Filter by subServiceName (only the treatment being booked)
-//	                     if (request.getSubServiceName() != null &&
-//	                             !request.getSubServiceName().equalsIgnoreCase(treatmentName)) {
-//	                         continue;
-//	                     }
-//
-//	                     // 🔹 Find the first pending sitting (next to confirm)
-//	                     Optional<DatesDTO> nextPendingOpt = treatment.getDates().stream()
-//	                             .filter(d -> "Pending".equalsIgnoreCase(d.getStatus()))
-//	                             .sorted(Comparator.comparingInt(DatesDTO::getSitting))
-//	                             .findFirst();
-//
-//	                     if (nextPendingOpt.isEmpty()) continue;
-//
-//	                     DatesDTO nextSitting = nextPendingOpt.get();
-//
-//	                     // ✅ Mark this sitting as Confirmed
-//	                     nextSitting.setStatus("Confirmed");
-//	                     nextSitting.setFollowupStatus(null);
-//
-//	                     // ✅ Update booking follow-up date & time
-//	                     b.setFollowupDate(nextSitting.getDate());
-//	                     b.setServicetime(request.getServicetime());
-//	                     b.setVisitType(request.getVisitType());
-//	                     b.setSubServiceName(treatmentName);
-//
-//	                     // 🧮 Update treatment-level stats
-//	                     treatment.setTakenSittings(treatment.getTakenSittings() + 1);
-//	                     treatment.setPendingSittings(Math.max(0, treatment.getPendingSittings() - 1));
-//	                     treatment.setCurrentSitting(treatment.getTakenSittings() + 1);
-//	                     treatment.setStatus(treatment.getPendingSittings() == 0 ? "Confirmed" : "In-Progress");
-//
-//	                     // 💸 Decrement free follow-ups if available
-//	                     if (b.getFreeFollowUpsLeft() != null && b.getFreeFollowUpsLeft() > 0) {
-//	                         b.setFreeFollowUpsLeft(b.getFreeFollowUpsLeft() - 1);
-//	                     }
-//
-//	                     sittingBooked = true;
-//	                     break; // Only one sitting booked per request
-//	                 }
-//	             }
-//
-//	             if (!sittingBooked) {
-//	                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//	                         .body(ResponseStructure.buildResponse(
-//	                                 null,
-//	                                 "No pending sittings available for the selected treatment.",
-//	                                 HttpStatus.BAD_REQUEST,
-//	                                 HttpStatus.BAD_REQUEST.value()));
-//	             }
-//
-//	             // 🔹 Update booking-level status dynamically
-//	             boolean anyInProgress = b.getTreatments().getGeneratedData().values().stream()
-//	                     .anyMatch(t -> "In-Progress".equalsIgnoreCase(t.getStatus()));
-//	             boolean allConfirmed = b.getTreatments().getGeneratedData().values().stream()
-//	                     .allMatch(t -> "Confirmed".equalsIgnoreCase(t.getStatus()));
-//
-//	             if (allConfirmed) {
-//	                 b.setStatus("Confirmed");
-//	             } else if (anyInProgress) {
-//	                 b.setStatus("In-Progress");
-//	             } else {
-//	                 b.setStatus("Pending");
-//	             }
-//
-//	             Booking updatedBooking = repository.save(b);
-//	             nullifyLargeFields(updatedBooking);
-//
-//	             // 🔔 Publish to Kafka
-//	             try {
-//	                 kafkaProducer.publishBooking(updatedBooking);
-//	             } catch (Exception e) {
-//	                 System.err.println("⚠️ Kafka publish failed: " + e.getMessage());
-//	             }
-//
-//	             BookingResponse res = toResponse(updatedBooking);
-//
-//	             // 🩵 Keep only the booked treatment in the response
-//	             if (res.getTreatments() != null && res.getTreatments().getGeneratedData() != null) {
-//	                 Map<String, TreatmentDetailsDTO> onlySelected = new HashMap<>();
-//	                 TreatmentDetailsDTO selectedTreatment = res.getTreatments().getGeneratedData().get(request.getSubServiceName());
-//	                 if (selectedTreatment != null) {
-//	                     onlySelected.put(request.getSubServiceName(), selectedTreatment);
-//	                     res.getTreatments().setGeneratedData(onlySelected);
-//	                 }
-//	             }
-//
-//	             // Optional: explicitly include which treatment was updated
-//	             res.setUpdatedTreatment(request.getSubServiceName());
-//
-//	             response = ResponseStructure.buildResponse(
-//	                     res,
-//	                     "Next sitting booked successfully for " + request.getSubServiceName(),
-//	                     HttpStatus.OK,
-//	                     HttpStatus.OK.value());
-//
-//	             return ResponseEntity.ok(response);
-//	         }
-//
-//	         // =========================
-//	         // NEW BOOKING
-//	         // =========================
-//	         if (entity.getTreatments() != null && entity.getTreatments().getGeneratedData() != null) {
-//	             entity.getTreatments().getGeneratedData().forEach((name, t) -> {
-//	                 if (t.getPendingSittings() != null && t.getPendingSittings() > 0) {
-//	                     t.setStatus("In-Progress");
-//	                 } else {
-//	                     t.setStatus("Confirmed");
-//	                 }
-//	             });
-//
-//	             boolean allConfirmed = entity.getTreatments().getGeneratedData().values().stream()
-//	                     .allMatch(t -> "Confirmed".equalsIgnoreCase(t.getStatus()));
-//	             entity.setStatus(allConfirmed ? "Confirmed" : "In-Progress");
-//	         } else {
-//	             entity.setStatus("Confirmed");
-//	         }
-//
-//	         Booking savedBooking = repository.save(entity);
-//	         nullifyLargeFields(savedBooking);
-//
-//	         try {
-//	             kafkaProducer.publishBooking(savedBooking);
-//	         } catch (Exception e) {
-//	             System.err.println("⚠️ Kafka publish failed: " + e.getMessage());
-//	         }
-//
-//	         BookingResponse bRes = toResponse(savedBooking);
-//	         response = ResponseStructure.buildResponse(
-//	                 bRes,
-//	                 "Service booked successfully",
-//	                 HttpStatus.CREATED,
-//	                 HttpStatus.CREATED.value());
-//	         return ResponseEntity.status(HttpStatus.CREATED).body(response);
-//
-//	     } catch (Exception e) {
-//	         e.printStackTrace();
-//	         response = ResponseStructure.buildResponse(
-//	                 null,
-//	                 "Internal Server Error: " + e.getMessage(),
-//	                 HttpStatus.INTERNAL_SERVER_ERROR,
-//	                 HttpStatus.INTERNAL_SERVER_ERROR.value());
-//	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-//	     }
-//	 }
-
-	 
-//	 @Override
-//	 public ResponseEntity<?> addService(BookingRequset request) {
-//	     ResponseStructure<BookingResponse> response = new ResponseStructure<>();
-//	     Booking entity = toEntity(request);
-//
-//	     try {
-//	         // 🩺 Validate visitType
-//	         if (request.getVisitType() == null || request.getVisitType().trim().isEmpty()) {
-//	             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//	                     .body(ResponseStructure.buildResponse(
-//	                             null,
-//	                             "Visit type is required.",
-//	                             HttpStatus.BAD_REQUEST,
-//	                             HttpStatus.BAD_REQUEST.value()
-//	                     ));
-//	         }
-//
-//	         // =========================
-//	         // FOLLOW-UP BOOKING
-//	         // =========================
-//	         if ("follow-up".equalsIgnoreCase(request.getVisitType())) {
-//
-//	             Booking b = repository.findByMobileNumberAndPatientIdAndBookingId(
-//	                     request.getMobileNumber(), request.getPatientId(), request.getBookingId());
-//
-//	             if (b == null) {
-//	                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-//	                         .body(ResponseStructure.buildResponse(
-//	                                 null,
-//	                                 "No appointment found.",
-//	                                 HttpStatus.NOT_FOUND,
-//	                                 HttpStatus.NOT_FOUND.value()));
-//	             }
-//
-//	             if (!"In-Progress".equalsIgnoreCase(b.getStatus())) {
-//	                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//	                         .body(ResponseStructure.buildResponse(
-//	                                 null,
-//	                                 "No In-Progress appointments found for the provided booking ID.",
-//	                                 HttpStatus.BAD_REQUEST,
-//	                                 HttpStatus.BAD_REQUEST.value()));
-//	             }
-//
-//	             boolean sittingBooked = false;
-//
-//	             if (b.getTreatments() != null && b.getTreatments().getGeneratedData() != null) {
-//	                 for (Map.Entry<String, TreatmentDetailsDTO> entry : b.getTreatments().getGeneratedData().entrySet()) {
-//	                     String treatmentName = entry.getKey();
-//	                     TreatmentDetailsDTO treatment = entry.getValue();
-//
-//	                     // Only book the requested treatment
-//	                     if (request.getSubServiceName() != null &&
-//	                             !request.getSubServiceName().equalsIgnoreCase(treatmentName)) {
-//	                         continue;
-//	                     }
-//
-//	                     // Find the first pending sitting
-//	                     Optional<DatesDTO> nextPendingOpt = treatment.getDates().stream()
-//	                             .filter(d -> "Pending".equalsIgnoreCase(d.getStatus()))
-//	                             .sorted(Comparator.comparingInt(DatesDTO::getSitting))
-//	                             .findFirst();
-//
-//	                     if (nextPendingOpt.isEmpty()) continue;
-//
-//	                     DatesDTO nextSitting = nextPendingOpt.get();
-//
-//	                     // ✅ Mark this sitting as Confirmed
-//	                     nextSitting.setStatus("Confirmed");
-//	                     nextSitting.setServicetime(request.getServicetime());
-//	                     nextSitting.setFollowupStatus(null);
-//
-//	                     // ✅ Update booking follow-up date & time
-//	                     b.setFollowupDate(nextSitting.getDate());
-//	                     b.setVisitType(request.getVisitType());
-//	                     b.setSubServiceName(treatmentName);
-//
-//	                     // 🧮 Update treatment-level stats
-//	                     treatment.setTakenSittings(treatment.getTakenSittings() + 1);
-//	                     treatment.setPendingSittings(Math.max(0, treatment.getPendingSittings() - 1));
-//	                     treatment.setCurrentSitting(nextSitting.getSitting());
-//	                     treatment.setStatus(treatment.getPendingSittings() == 0 ? "Confirmed" : "In-Progress");
-//
-//	                     // 💸 Decrement free follow-ups if available
-//	                     if (b.getFreeFollowUpsLeft() != null && b.getFreeFollowUpsLeft() > 0) {
-//	                         b.setFreeFollowUpsLeft(b.getFreeFollowUpsLeft() - 1);
-//	                     }
-//
-//	                     sittingBooked = true;
-//	                     break; // Only one sitting per request
-//	                 }
-//	             }
-//
-//	             if (!sittingBooked) {
-//	                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//	                         .body(ResponseStructure.buildResponse(
-//	                                 null,
-//	                                 "No pending sittings available for the selected treatment.",
-//	                                 HttpStatus.BAD_REQUEST,
-//	                                 HttpStatus.BAD_REQUEST.value()));
-//	             }
-//
-//	             // 🔹 Update booking-level status dynamically
-//	             boolean anyInProgress = b.getTreatments().getGeneratedData().values().stream()
-//	                     .anyMatch(t -> "In-Progress".equalsIgnoreCase(t.getStatus()));
-//	             boolean allConfirmed = b.getTreatments().getGeneratedData().values().stream()
-//	                     .allMatch(t -> "Confirmed".equalsIgnoreCase(t.getStatus()));
-//
-//	             if (allConfirmed) {
-//	                 b.setStatus("Confirmed");
-//	             } else if (anyInProgress) {
-//	                 b.setStatus("In-Progress");
-//	             } else {
-//	                 b.setStatus("Pending");
-//	             }
-//
-//	             Booking updatedBooking = repository.save(b);
-//	             nullifyLargeFields(updatedBooking);
-//
-//	             // 🔔 Publish to Kafka
-//	             try {
-//	                 kafkaProducer.publishBooking(updatedBooking);
-//	             } catch (Exception e) {
-//	                 System.err.println("⚠️ Kafka publish failed: " + e.getMessage());
-//	             }
-//
-//	             BookingResponse res = toResponse(updatedBooking);
-//
-//	             // Keep only the booked treatment in the response
-//	             if (res.getTreatments() != null && res.getTreatments().getGeneratedData() != null) {
-//	                 Map<String, TreatmentDetailsDTO> onlySelected = new HashMap<>();
-//	                 TreatmentDetailsDTO selectedTreatment = res.getTreatments().getGeneratedData().get(request.getSubServiceName());
-//	                 if (selectedTreatment != null) {
-//	                     onlySelected.put(request.getSubServiceName(), selectedTreatment);
-//	                     res.getTreatments().setGeneratedData(onlySelected);
-//	                 }
-//	             }
-//
-//	             // Explicitly indicate which treatment was updated
-//	             res.setUpdatedTreatment(request.getSubServiceName());
-//
-//	             response = ResponseStructure.buildResponse(
-//	                     res,
-//	                     "Next sitting booked successfully for " + request.getSubServiceName(),
-//	                     HttpStatus.OK,
-//	                     HttpStatus.OK.value());
-//
-//	             return ResponseEntity.ok(response);
-//	         }
-//
-//	         // =========================
-//	         // NEW BOOKING
-//	         // =========================
-//	         if (entity.getTreatments() != null && entity.getTreatments().getGeneratedData() != null) {
-//	             entity.getTreatments().getGeneratedData().forEach((name, t) -> {
-//	                 if (t.getPendingSittings() != null && t.getPendingSittings() > 0) {
-//	                     t.setStatus("In-Progress");
-//	                 } else {
-//	                     t.setStatus("Confirmed");
-//	                 }
-//	             });
-//
-//	             boolean allConfirmed = entity.getTreatments().getGeneratedData().values().stream()
-//	                     .allMatch(t -> "Confirmed".equalsIgnoreCase(t.getStatus()));
-//	             entity.setStatus(allConfirmed ? "Confirmed" : "In-Progress");
-//	         } else {
-//	             entity.setStatus("Confirmed");
-//	         }
-//
-//	         Booking savedBooking = repository.save(entity);
-//	         nullifyLargeFields(savedBooking);
-//
-//	         try {
-//	             kafkaProducer.publishBooking(savedBooking);
-//	         } catch (Exception e) {
-//	             System.err.println("⚠️ Kafka publish failed: " + e.getMessage());
-//	         }
-//
-//	         BookingResponse bRes = toResponse(savedBooking);
-//	         response = ResponseStructure.buildResponse(
-//	                 bRes,
-//	                 "Service booked successfully",
-//	                 HttpStatus.CREATED,
-//	                 HttpStatus.CREATED.value());
-//	         return ResponseEntity.status(HttpStatus.CREATED).body(response);
-//
-//	     } catch (Exception e) {
-//	         e.printStackTrace();
-//	         response = ResponseStructure.buildResponse(
-//	                 null,
-//	                 "Internal Server Error: " + e.getMessage(),
-//	                 HttpStatus.INTERNAL_SERVER_ERROR,
-//	                 HttpStatus.INTERNAL_SERVER_ERROR.value());
-//	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-//	     }
-//	 }
-
-	 
-//	 @Override
-//	 public ResponseEntity<?> addService(BookingRequset request) {
-//	     ResponseStructure<BookingResponse> response = new ResponseStructure<>();
-//	     Booking entity = toEntity(request);
-//
-//	     try {
-//	         // =========================
-//	         // VALIDATE VISIT TYPE
-//	         // =========================
-//	         if (request.getVisitType() == null || request.getVisitType().trim().isEmpty()) {
-//	             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//	                     .body(ResponseStructure.buildResponse(
-//	                             null,
-//	                             "Visit type is required.",
-//	                             HttpStatus.BAD_REQUEST,
-//	                             HttpStatus.BAD_REQUEST.value()
-//	                     ));
-//	         }
-//
-//	         // =========================
-//	         // FOLLOW-UP BOOKING
-//	         // =========================
-//	         if ("follow-up".equalsIgnoreCase(request.getVisitType())) {
-//
-//	             Booking b = repository.findByMobileNumberAndPatientIdAndBookingId(
-//	                     request.getMobileNumber(), request.getPatientId(), request.getBookingId());
-//
-//	             if (b == null) {
-//	                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-//	                         .body(ResponseStructure.buildResponse(
-//	                                 null,
-//	                                 "No appointment found.",
-//	                                 HttpStatus.NOT_FOUND,
-//	                                 HttpStatus.NOT_FOUND.value()
-//	                         ));
-//	             }
-//
-//	             if (!"In-Progress".equalsIgnoreCase(b.getStatus())) {
-//	                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//	                         .body(ResponseStructure.buildResponse(
-//	                                 null,
-//	                                 "No In-Progress appointments found for the provided booking ID.",
-//	                                 HttpStatus.BAD_REQUEST,
-//	                                 HttpStatus.BAD_REQUEST.value()
-//	                         ));
-//	             }
-//
-//	             boolean sittingBooked = false;
-//
-//	             if (b.getTreatments() != null && b.getTreatments().getGeneratedData() != null) {
-//	                 for (Map.Entry<String, TreatmentDetailsDTO> entry : b.getTreatments().getGeneratedData().entrySet()) {
-//	                     String treatmentName = entry.getKey();
-//	                     TreatmentDetailsDTO treatment = entry.getValue();
-//
-//	                     // Skip non-requested treatment
-//	                     if (request.getSubServiceName() != null &&
-//	                             !request.getSubServiceName().equalsIgnoreCase(treatmentName)) continue;
-//
-//	                     Optional<DatesDTO> nextPendingOpt = treatment.getDates().stream()
-//	                             .filter(d -> "Pending".equalsIgnoreCase(d.getStatus()))
-//	                             .sorted(Comparator.comparingInt(DatesDTO::getSitting))
-//	                             .findFirst();
-//
-//	                     if (nextPendingOpt.isEmpty()) continue;
-//
-//	                     DatesDTO nextSitting = nextPendingOpt.get();
-//
-//	                     // Confirm the sitting
-//	                     nextSitting.setStatus("Confirmed");
-//	                     nextSitting.setServicetime(request.getServicetime());
-//	                     nextSitting.setFollowupStatus(null);
-//
-//	                     // Update booking follow-up date & visit info
-//	                     b.setFollowupDate(nextSitting.getDate());
-//	                     b.setVisitType(request.getVisitType());
-//	                     b.setSubServiceName(treatmentName);
-//
-//	                     // Update treatment stats
-//	                     treatment.setTakenSittings(treatment.getTakenSittings() + 1);
-//	                     treatment.setPendingSittings(Math.max(0, treatment.getPendingSittings() - 1));
-//	                     treatment.setCurrentSitting(nextSitting.getSitting());
-//	                     treatment.setStatus(treatment.getPendingSittings() == 0 ? "Confirmed" : "In-Progress");
-//
-//	                     // Reduce free follow-ups
-//	                     if (b.getFreeFollowUpsLeft() != null && b.getFreeFollowUpsLeft() > 0) {
-//	                         b.setFreeFollowUpsLeft(b.getFreeFollowUpsLeft() - 1);
-//	                     }
-//
-//	                     sittingBooked = true;
-//	                     break; // Only one sitting per request
-//	                 }
-//	             }
-//
-//	             if (!sittingBooked) {
-//	                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//	                         .body(ResponseStructure.buildResponse(
-//	                                 null,
-//	                                 "No pending sittings available for the selected treatment.",
-//	                                 HttpStatus.BAD_REQUEST,
-//	                                 HttpStatus.BAD_REQUEST.value()
-//	                         ));
-//	             }
-//
-//	             // Update overall booking status
-//	             boolean anyInProgress = b.getTreatments().getGeneratedData().values().stream()
-//	                     .anyMatch(t -> "In-Progress".equalsIgnoreCase(t.getStatus()));
-//	             boolean allConfirmed = b.getTreatments().getGeneratedData().values().stream()
-//	                     .allMatch(t -> "Confirmed".equalsIgnoreCase(t.getStatus()));
-//
-//	             b.setStatus(allConfirmed ? "Confirmed" : (anyInProgress ? "In-Progress" : "Pending"));
-//
-//	             Booking updatedBooking = repository.save(b);
-//	             nullifyLargeFields(updatedBooking);
-//
-//	             // Publish to Kafka (non-blocking)
-//	             try {
-//	                 kafkaProducer.publishBooking(updatedBooking);
-//	             } catch (Exception e) {
-//	                 System.err.println("⚠️ Kafka publish failed: " + e.getMessage());
-//	             }
-//
-//	             BookingResponse res = toResponse(updatedBooking);
-//
-//	             // Keep only the booked treatment in the response
-//	             if (res.getTreatments() != null && res.getTreatments().getGeneratedData() != null) {
-//	                 Map<String, TreatmentDetailsDTO> onlySelected = new HashMap<>();
-//	                 TreatmentDetailsDTO selectedTreatment = res.getTreatments().getGeneratedData().get(request.getSubServiceName());
-//	                 if (selectedTreatment != null) {
-//	                     onlySelected.put(request.getSubServiceName(), selectedTreatment);
-//	                     res.getTreatments().setGeneratedData(onlySelected);
-//	                 }
-//	             }
-//
-//	             res.setUpdatedTreatment(request.getSubServiceName());
-//
-//	             response = ResponseStructure.buildResponse(
-//	                     res,
-//	                     "Next sitting booked successfully for " + request.getSubServiceName(),
-//	                     HttpStatus.OK,
-//	                     HttpStatus.OK.value()
-//	             );
-//	             return ResponseEntity.ok(response);
-//	         }
-//
-//	         // =========================
-//	         // NEW BOOKING
-//	         // =========================
-//	         if (entity.getTreatments() != null && entity.getTreatments().getGeneratedData() != null) {
-//	             entity.getTreatments().getGeneratedData().forEach((name, t) -> {
-//	                 if (t.getPendingSittings() != null && t.getPendingSittings() > 0) {
-//	                     t.setStatus("In-Progress");
-//	                 } else {
-//	                     t.setStatus("Confirmed");
-//	                 }
-//	             });
-//
-//	             boolean allConfirmed = entity.getTreatments().getGeneratedData().values().stream()
-//	                     .allMatch(t -> "Confirmed".equalsIgnoreCase(t.getStatus()));
-//	             entity.setStatus(allConfirmed ? "Confirmed" : "In-Progress");
-//	         } else {
-//	             entity.setStatus("Confirmed");
-//	         }
-//
-//	         Booking savedBooking = repository.save(entity);
-//	         nullifyLargeFields(savedBooking);
-//
-//	         try {
-//	             kafkaProducer.publishBooking(savedBooking);
-//	         } catch (Exception e) {
-//	             System.err.println("⚠️ Kafka publish failed: " + e.getMessage());
-//	         }
-//
-//	         BookingResponse bRes = toResponse(savedBooking);
-//	         response = ResponseStructure.buildResponse(
-//	                 bRes,
-//	                 "Service booked successfully",
-//	                 HttpStatus.CREATED,
-//	                 HttpStatus.CREATED.value()
-//	         );
-//	         return ResponseEntity.status(HttpStatus.CREATED).body(response);
-//
-//	     } catch (Exception e) {
-//	         e.printStackTrace();
-//	         response = ResponseStructure.buildResponse(
-//	                 null,
-//	                 "Internal Server Error: " + e.getMessage(),
-//	                 HttpStatus.INTERNAL_SERVER_ERROR,
-//	                 HttpStatus.INTERNAL_SERVER_ERROR.value()
-//	         );
-//	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-//	     }
-//	 }
-
-	 
-//	 @Override
-//	 public ResponseEntity<?> addService(BookingRequset request) {
-//	     ResponseStructure<BookingResponse> response = new ResponseStructure<>();
-//	     Booking entity = toEntity(request);
-//
-//	     try {
-//	         // 🩺 Validate visitType
-//	         if (request.getVisitType() == null || request.getVisitType().trim().isEmpty()) {
-//	             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//	                     .body(ResponseStructure.buildResponse(
-//	                             null,
-//	                             "Visit type is required.",
-//	                             HttpStatus.BAD_REQUEST,
-//	                             HttpStatus.BAD_REQUEST.value()
-//	                     ));
-//	         }
-//
-//	         // =========================
-//	         // FOLLOW-UP BOOKING
-//	         // =========================
-//	         if ("follow-up".equalsIgnoreCase(request.getVisitType())) {
-//
-//	             Booking b = repository.findByMobileNumberAndPatientIdAndBookingId(
-//	                     request.getMobileNumber(), request.getPatientId(), request.getBookingId());
-//
-//	             if (b == null) {
-//	                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-//	                         .body(ResponseStructure.buildResponse(
-//	                                 null,
-//	                                 "No appointment found.",
-//	                                 HttpStatus.NOT_FOUND,
-//	                                 HttpStatus.NOT_FOUND.value()));
-//	             }
-//
-//	             if (!"In-Progress".equalsIgnoreCase(b.getStatus())) {
-//	                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//	                         .body(ResponseStructure.buildResponse(
-//	                                 null,
-//	                                 "No In-Progress appointments found for the provided booking ID.",
-//	                                 HttpStatus.BAD_REQUEST,
-//	                                 HttpStatus.BAD_REQUEST.value()));
-//	             }
-//
-//	             boolean sittingBooked = false;
-//
-//	             if (b.getTreatments() != null && b.getTreatments().getGeneratedData() != null) {
-//	                 for (Map.Entry<String, TreatmentDetailsDTO> entry : b.getTreatments().getGeneratedData().entrySet()) {
-//	                     String treatmentName = entry.getKey();
-//	                     TreatmentDetailsDTO treatment = entry.getValue();
-//
-//	                     // Only book the requested treatment
-//	                     if (request.getSubServiceName() != null &&
-//	                             !request.getSubServiceName().equalsIgnoreCase(treatmentName)) {
-//	                         continue;
-//	                     }
-//
-//	                     // Find the first pending sitting
-//	                     Optional<DatesDTO> nextPendingOpt = treatment.getDates().stream()
-//	                             .filter(d -> "Pending".equalsIgnoreCase(d.getStatus()))
-//	                             .sorted(Comparator.comparingInt(DatesDTO::getSitting))
-//	                             .findFirst();
-//
-//	                     if (nextPendingOpt.isEmpty()) continue;
-//
-//	                     DatesDTO nextSitting = nextPendingOpt.get();
-//
-//	                     // ✅ Set servicetime safely
-//	                     String serviceTime = request.getServicetime() != null ? request.getServicetime() : "Not Set";
-//	                     nextSitting.setServicetime(serviceTime);
-//	                     nextSitting.setStatus("Confirmed");
-//	                     nextSitting.setFollowupStatus(null);
-//
-//	                     // ✅ Update booking follow-up date & time
-//	                     b.setFollowupDate(nextSitting.getDate());
-//	                     b.setVisitType(request.getVisitType());
-//	                     b.setSubServiceName(treatmentName);
-//
-//	                     // 🧮 Update treatment-level stats
-//	                     treatment.setTakenSittings(treatment.getTakenSittings() + 1);
-//	                     treatment.setPendingSittings(Math.max(0, treatment.getPendingSittings() - 1));
-//	                     treatment.setCurrentSitting(nextSitting.getSitting());
-//	                     treatment.setStatus(treatment.getPendingSittings() == 0 ? "Confirmed" : "In-Progress");
-//
-//	                     // 💸 Decrement free follow-ups if available
-//	                     if (b.getFreeFollowUpsLeft() != null && b.getFreeFollowUpsLeft() > 0) {
-//	                         b.setFreeFollowUpsLeft(b.getFreeFollowUpsLeft() - 1);
-//	                     }
-//
-//	                     sittingBooked = true;
-//	                     break; // Only one sitting per request
-//	                 }
-//	             }
-//
-//	             if (!sittingBooked) {
-//	                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//	                         .body(ResponseStructure.buildResponse(
-//	                                 null,
-//	                                 "No pending sittings available for the selected treatment.",
-//	                                 HttpStatus.BAD_REQUEST,
-//	                                 HttpStatus.BAD_REQUEST.value()));
-//	             }
-//
-//	             // 🔹 Update booking-level status dynamically
-//	             boolean anyInProgress = b.getTreatments().getGeneratedData().values().stream()
-//	                     .anyMatch(t -> "In-Progress".equalsIgnoreCase(t.getStatus()));
-//	             boolean allConfirmed = b.getTreatments().getGeneratedData().values().stream()
-//	                     .allMatch(t -> "Confirmed".equalsIgnoreCase(t.getStatus()));
-//
-//	             if (allConfirmed) {
-//	                 b.setStatus("Confirmed");
-//	             } else if (anyInProgress) {
-//	                 b.setStatus("In-Progress");
-//	             } else {
-//	                 b.setStatus("Pending");
-//	             }
-//
-//	             Booking updatedBooking = repository.save(b);
-//	             nullifyLargeFields(updatedBooking);
-//
-//	             // 🔔 Publish to Kafka
-//	             try {
-//	                 kafkaProducer.publishBooking(updatedBooking);
-//	             } catch (Exception e) {
-//	                 System.err.println("⚠️ Kafka publish failed: " + e.getMessage());
-//	             }
-//
-//	             BookingResponse res = toResponse(updatedBooking);
-//
-//	             // Keep only the booked treatment in the response
-//	             if (res.getTreatments() != null && res.getTreatments().getGeneratedData() != null) {
-//	                 Map<String, TreatmentDetailsDTO> onlySelected = new HashMap<>();
-//	                 TreatmentDetailsDTO selectedTreatment = res.getTreatments().getGeneratedData().get(request.getSubServiceName());
-//	                 if (selectedTreatment != null) {
-//	                     onlySelected.put(request.getSubServiceName(), selectedTreatment);
-//	                     res.getTreatments().setGeneratedData(onlySelected);
-//	                 }
-//	             }
-//
-//	             // Explicitly indicate which treatment was updated
-//	             res.setUpdatedTreatment(request.getSubServiceName());
-//
-//	             response = ResponseStructure.buildResponse(
-//	                     res,
-//	                     "Next sitting booked successfully for " + request.getSubServiceName(),
-//	                     HttpStatus.OK,
-//	                     HttpStatus.OK.value());
-//
-//	             return ResponseEntity.ok(response);
-//	         }
-//
-//	         // =========================
-//	         // NEW BOOKING
-//	         // =========================
-//	         if (entity.getTreatments() != null && entity.getTreatments().getGeneratedData() != null) {
-//	             entity.getTreatments().getGeneratedData().forEach((name, t) -> {
-//	                 if (t.getPendingSittings() != null && t.getPendingSittings() > 0) {
-//	                     t.setStatus("In-Progress");
-//	                 } else {
-//	                     t.setStatus("Confirmed");
-//	                 }
-//	             });
-//
-//	             boolean allConfirmed = entity.getTreatments().getGeneratedData().values().stream()
-//	                     .allMatch(t -> "Confirmed".equalsIgnoreCase(t.getStatus()));
-//	             entity.setStatus(allConfirmed ? "Confirmed" : "In-Progress");
-//	         } else {
-//	             entity.setStatus("Confirmed");
-//	         }
-//
-//	         Booking savedBooking = repository.save(entity);
-//	         nullifyLargeFields(savedBooking);
-//
-//	         try {
-//	             kafkaProducer.publishBooking(savedBooking);
-//	         } catch (Exception e) {
-//	             System.err.println("⚠️ Kafka publish failed: " + e.getMessage());
-//	         }
-//
-//	         BookingResponse bRes = toResponse(savedBooking);
-//	         response = ResponseStructure.buildResponse(
-//	                 bRes,
-//	                 "Service booked successfully",
-//	                 HttpStatus.CREATED,
-//	                 HttpStatus.CREATED.value());
-//	         return ResponseEntity.status(HttpStatus.CREATED).body(response);
-//
-//	     } catch (Exception e) {
-//	         e.printStackTrace();
-//	         response = ResponseStructure.buildResponse(
-//	                 null,
-//	                 "Internal Server Error: " + e.getMessage(),
-//	                 HttpStatus.INTERNAL_SERVER_ERROR,
-//	                 HttpStatus.INTERNAL_SERVER_ERROR.value());
-//	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-//	     }
-//	 }
-
-
-//	 @Override
-//	 public ResponseEntity<?> addService(BookingRequset request) {
-//	     ResponseStructure<BookingResponse> response = new ResponseStructure<>();
-//	     Booking entity = toEntity(request);
-//
-//	     try {
-//	         // 🩺 Validate visitType
-//	         if (request.getVisitType() == null || request.getVisitType().trim().isEmpty()) {
-//	             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//	                     .body(ResponseStructure.buildResponse(
-//	                             null,
-//	                             "Visit type is required.",
-//	                             HttpStatus.BAD_REQUEST,
-//	                             HttpStatus.BAD_REQUEST.value()
-//	                     ));
-//	         }
-//
-//	         // =========================
-//	         // FOLLOW-UP BOOKING
-//	         // =========================
-//	         if ("follow-up".equalsIgnoreCase(request.getVisitType())) {
-//
-//	             Booking b = repository.findByMobileNumberAndPatientIdAndBookingId(
-//	                     request.getMobileNumber(), request.getPatientId(), request.getBookingId());
-//
-//	             if (b == null) {
-//	                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-//	                         .body(ResponseStructure.buildResponse(
-//	                                 null,
-//	                                 "No appointment found.",
-//	                                 HttpStatus.NOT_FOUND,
-//	                                 HttpStatus.NOT_FOUND.value()));
-//	             }
-//
-//	             if (!"In-Progress".equalsIgnoreCase(b.getStatus())) {
-//	                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//	                         .body(ResponseStructure.buildResponse(
-//	                                 null,
-//	                                 "No In-Progress appointments found for the provided booking ID.",
-//	                                 HttpStatus.BAD_REQUEST,
-//	                                 HttpStatus.BAD_REQUEST.value()));
-//	             }
-//
-//	             boolean sittingBooked = false;
-//
-//	             if (b.getTreatments() != null && b.getTreatments().getGeneratedData() != null) {
-//	                 for (Map.Entry<String, TreatmentDetailsDTO> entry : b.getTreatments().getGeneratedData().entrySet()) {
-//	                     String treatmentName = entry.getKey();
-//	                     TreatmentDetailsDTO treatment = entry.getValue();
-//
-//	                     // Only book the requested treatment
-//	                     if (request.getSubServiceName() != null &&
-//	                             !request.getSubServiceName().equalsIgnoreCase(treatmentName)) {
-//	                         continue;
-//	                     }
-//
-//	                     // Find the first pending sitting
-//	                     Optional<DatesDTO> nextPendingOpt = treatment.getDates().stream()
-//	                             .filter(d -> "Pending".equalsIgnoreCase(d.getStatus()))
-//	                             .sorted(Comparator.comparingInt(DatesDTO::getSitting))
-//	                             .findFirst();
-//
-//	                     if (nextPendingOpt.isEmpty()) continue;
-//
-//	                     DatesDTO nextSitting = nextPendingOpt.get();
-//
-//	                     // ✅ Mark this sitting as Confirmed
-//	                     nextSitting.setStatus("Confirmed");
-//	                     nextSitting.setServicetime(request.getServicetime()); // <-- update here
-//	                     nextSitting.setFollowupStatus(null);
-//
-//	                     // ✅ Update booking-level date & time
-//	                     b.setFollowupDate(nextSitting.getDate());
-//	                     b.setServiceDate(nextSitting.getDate());
-//	                     b.setServicetime(nextSitting.getServicetime()); // <-- update top-level
-//	                     b.setVisitType(request.getVisitType());
-//	                     b.setSubServiceName(treatmentName);
-//
-//	                     // 🧮 Update treatment-level stats
-//	                     treatment.setTakenSittings(treatment.getTakenSittings() + 1);
-//	                     treatment.setPendingSittings(Math.max(0, treatment.getPendingSittings() - 1));
-//	                     treatment.setCurrentSitting(nextSitting.getSitting());
-//	                     treatment.setStatus(treatment.getPendingSittings() == 0 ? "Confirmed" : "In-Progress");
-//
-//	                     // 💸 Decrement free follow-ups if available
-//	                     if (b.getFreeFollowUpsLeft() != null && b.getFreeFollowUpsLeft() > 0) {
-//	                         b.setFreeFollowUpsLeft(b.getFreeFollowUpsLeft() - 1);
-//	                     }
-//
-//	                     sittingBooked = true;
-//	                     break; // Only one sitting per request
-//	                 }
-//	             }
-//
-//	             if (!sittingBooked) {
-//	                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//	                         .body(ResponseStructure.buildResponse(
-//	                                 null,
-//	                                 "No pending sittings available for the selected treatment.",
-//	                                 HttpStatus.BAD_REQUEST,
-//	                                 HttpStatus.BAD_REQUEST.value()));
-//	             }
-//
-//	             // 🔹 Update booking-level status dynamically
-//	             boolean anyInProgress = b.getTreatments().getGeneratedData().values().stream()
-//	                     .anyMatch(t -> "In-Progress".equalsIgnoreCase(t.getStatus()));
-//	             boolean allConfirmed = b.getTreatments().getGeneratedData().values().stream()
-//	                     .allMatch(t -> "Confirmed".equalsIgnoreCase(t.getStatus()));
-//
-//	             if (allConfirmed) {
-//	                 b.setStatus("Confirmed");
-//	             } else if (anyInProgress) {
-//	                 b.setStatus("In-Progress");
-//	             } else {
-//	                 b.setStatus("Pending");
-//	             }
-//
-//	             Booking updatedBooking = repository.save(b);
-//	             nullifyLargeFields(updatedBooking);
-//
-//	             // 🔔 Publish to Kafka
-//	             try {
-//	                 kafkaProducer.publishBooking(updatedBooking);
-//	             } catch (Exception e) {
-//	                 System.err.println("⚠️ Kafka publish failed: " + e.getMessage());
-//	             }
-//
-//	             BookingResponse res = toResponse(updatedBooking);
-//
-//	             // Keep only the booked treatment in the response
-//	             if (res.getTreatments() != null && res.getTreatments().getGeneratedData() != null) {
-//	                 Map<String, TreatmentDetailsDTO> onlySelected = new HashMap<>();
-//	                 TreatmentDetailsDTO selectedTreatment = res.getTreatments().getGeneratedData().get(request.getSubServiceName());
-//	                 if (selectedTreatment != null) {
-//	                     onlySelected.put(request.getSubServiceName(), selectedTreatment);
-//	                     res.getTreatments().setGeneratedData(onlySelected);
-//	                 }
-//	             }
-//
-//	             // Explicitly indicate which treatment was updated
-//	             res.setUpdatedTreatment(request.getSubServiceName());
-//
-//	             response = ResponseStructure.buildResponse(
-//	                     res,
-//	                     "Next sitting booked successfully for " + request.getSubServiceName(),
-//	                     HttpStatus.OK,
-//	                     HttpStatus.OK.value());
-//
-//	             return ResponseEntity.ok(response);
-//	         }
-//
-//	         // =========================
-//	         // NEW BOOKING
-//	         // =========================
-//	         if (entity.getTreatments() != null && entity.getTreatments().getGeneratedData() != null) {
-//	             entity.getTreatments().getGeneratedData().forEach((name, t) -> {
-//	                 if (t.getPendingSittings() != null && t.getPendingSittings() > 0) {
-//	                     t.setStatus("In-Progress");
-//	                 } else {
-//	                     t.setStatus("Confirmed");
-//	                 }
-//	             });
-//
-//	             boolean allConfirmed = entity.getTreatments().getGeneratedData().values().stream()
-//	                     .allMatch(t -> "Confirmed".equalsIgnoreCase(t.getStatus()));
-//	             entity.setStatus(allConfirmed ? "Confirmed" : "In-Progress");
-//	         } else {
-//	             entity.setStatus("Confirmed");
-//	         }
-//
-//	         Booking savedBooking = repository.save(entity);
-//	         nullifyLargeFields(savedBooking);
-//
-//	         try {
-//	             kafkaProducer.publishBooking(savedBooking);
-//	         } catch (Exception e) {
-//	             System.err.println("⚠️ Kafka publish failed: " + e.getMessage());
-//	         }
-//
-//	         BookingResponse bRes = toResponse(savedBooking);
-//	         response = ResponseStructure.buildResponse(
-//	                 bRes,
-//	                 "Service booked successfully",
-//	                 HttpStatus.CREATED,
-//	                 HttpStatus.CREATED.value());
-//	         return ResponseEntity.status(HttpStatus.CREATED).body(response);
-//
-//	     } catch (Exception e) {
-//	         e.printStackTrace();
-//	         response = ResponseStructure.buildResponse(
-//	                 null,
-//	                 "Internal Server Error: " + e.getMessage(),
-//	                 HttpStatus.INTERNAL_SERVER_ERROR,
-//	                 HttpStatus.INTERNAL_SERVER_ERROR.value());
-//	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-//	     }
-//	 }
-//
-//	 
-//	 // =========================
-//	 // Support Methods
-//	 // =========================
-//	 private void nullifyLargeFields(Booking booking) {
-//	     if (booking == null) return;
-//	     booking.setReports(null);
-//	     booking.setNotes(null);
-//	     booking.setAttachments(null);
-//	     booking.setConsentFormPdf(null);
-//	     booking.setPrescriptionPdf(null);
-//	 }
-//
-//	 private Booking toEntity(BookingRequset request) {
-//	     Booking entity = new ObjectMapper().convertValue(request, Booking.class);
-//	     ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
-//	     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy hh:mm a");
-//	     entity.setBookedAt(istTime.format(formatter));
-//	     entity.setFreeFollowUpsLeft(request.getFreeFollowUps());
-//
-//	     // Channel ID for online/video consultations
-//	     if (request.getConsultationType() != null &&
-//	             (request.getConsultationType().equalsIgnoreCase("video consultation") ||
-//	                     request.getConsultationType().equalsIgnoreCase("online consultation"))) {
-//	         entity.setChannelId(randomNumber());
-//	     }
-//
-//	     // Patient ID logic
-//	     if (request.getBookingFor() != null) {
-//	         if ("Someone".equalsIgnoreCase(request.getBookingFor())) {
-//	             if (request.getRelation() != null &&
-//	                     (request.getPatientId() == null || request.getPatientId().trim().isEmpty())) {
-//
-//	                 List<Booking> existingBooking = repository.findByRelationIgnoreCaseAndCustomerIdAndNameIgnoreCase(
-//	                         request.getRelation(), request.getCustomerId(), request.getName());
-//
-//	                 if (existingBooking != null && !existingBooking.isEmpty()) {
-//	                     entity.setPatientId(existingBooking.get(0).getPatientId());
-//	                 } else {
-//	                     entity.setPatientId(generatePatientId(request));
-//	                 }
-//	             } else {
-//	                 entity.setPatientId(request.getPatientId());
-//	             }
-//	         } else {
-//	             if (request.getPatientId() == null || request.getPatientId().trim().isEmpty()) {
-//	                 entity.setPatientId(generatePatientId(request));
-//	             } else {
-//	                 entity.setPatientId(request.getPatientId());
-//	             }
-//	         }
-//	     }
-//
-//	     return entity;
-//	 }
-//
-//	 private BookingResponse toResponse(Booking entity) {
-//		    BookingResponse response = new ObjectMapper().convertValue(entity, BookingResponse.class);
-//
-//		    // Copy top-level service time
-//		    response.setServicetime(entity.getServicetime());
-//
-//		    // Attach prescription PDF if exists
-//		    DoctorSaveDetailsDTO dto = getPrescriptionpdf(response.getBookingId());
-//		    if (dto != null) {
-//		        response.setPrescriptionPdf(dto.getPrescriptionPdf());
-//		    }
-//
-//		    response.setBookingId(String.valueOf(entity.getBookingId()));
-//
-//		    // Update each treatment status and ensure servicetime is included
-//		    if (entity.getTreatments() != null && entity.getTreatments().getGeneratedData() != null) {
-//		        entity.getTreatments().getGeneratedData().forEach((name, t) -> {
-//		            if (t.getPendingSittings() != null && t.getPendingSittings() > 0) {
-//		                t.setStatus("In-Progress");
-//		            } else {
-//		                t.setStatus("Confirmed");
-//		            }
-//
-//		            if (t.getDates() != null) {
-//		                t.getDates().forEach(d -> {
-//		                    if (d.getServicetime() == null || d.getServicetime().trim().isEmpty()) {
-//		                        d.setServicetime("Not Set");
-//		                    }
-//		                });
-//		            }
-//		        });
-//		    }
-//
-//		    return response;
-//		}
-//
-//
-//
-//	 
-//	 private DoctorSaveDetailsDTO getPrescriptionpdf(String bid) {
-//	     try {
-//	         ObjectMapper mapper = new ObjectMapper();
-//	         mapper.registerModule(new JavaTimeModule());
-//	         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-//	         Response res = doctorFeign.getDoctorSaveDetailsByBookingId(bid).getBody();
-//	         return mapper.convertValue(res.getData(), DoctorSaveDetailsDTO.class);
-//	     } catch (Exception e) {
-//	         System.out.println(e.getMessage());
-//	         return null;
-//	     }
-//	 }
-
-	 
 	 @Override
 	 public ResponseEntity<?> addService(BookingRequset request) {
 	     ResponseStructure<BookingResponse> response = new ResponseStructure<>();
 	     Booking entity = toEntity(request);
 
 	     try {
-	         // ✅ Validate visitType
+	         // 🩺 Validate visitType
 	         if (request.getVisitType() == null || request.getVisitType().trim().isEmpty()) {
 	             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
 	                     .body(ResponseStructure.buildResponse(
@@ -1581,19 +487,20 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	             }
 
 	             boolean sittingBooked = false;
+	             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
 	             if (b.getTreatments() != null && b.getTreatments().getGeneratedData() != null) {
 	                 for (Map.Entry<String, TreatmentDetailsDTO> entry : b.getTreatments().getGeneratedData().entrySet()) {
 	                     String treatmentName = entry.getKey();
 	                     TreatmentDetailsDTO treatment = entry.getValue();
 
-	                     // Only handle the requested treatment
+	                     // Filter by subServiceName (only the treatment being booked)
 	                     if (request.getSubServiceName() != null &&
 	                             !request.getSubServiceName().equalsIgnoreCase(treatmentName)) {
 	                         continue;
 	                     }
 
-	                     // Find the first pending sitting
+	                     // 🔹 Find the first pending sitting (next to confirm)
 	                     Optional<DatesDTO> nextPendingOpt = treatment.getDates().stream()
 	                             .filter(d -> "Pending".equalsIgnoreCase(d.getStatus()))
 	                             .sorted(Comparator.comparingInt(DatesDTO::getSitting))
@@ -1603,20 +510,20 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 	                     DatesDTO nextSitting = nextPendingOpt.get();
 
-	                     // ✅ Mark this sitting as Confirmed (don’t touch Booking.serviceDate)
+	                     // ✅ Mark this sitting as Confirmed
 	                     nextSitting.setStatus("Confirmed");
-	                     nextSitting.setServicetime(request.getServicetime());
 	                     nextSitting.setFollowupStatus(null);
 
-	                     // ✅ Update booking follow-up date only
+	                     // ✅ Update booking follow-up date & time
 	                     b.setFollowupDate(nextSitting.getDate());
+	                     b.setServicetime(request.getServicetime());
 	                     b.setVisitType(request.getVisitType());
 	                     b.setSubServiceName(treatmentName);
 
-	                     // 🧮 Update treatment stats
+	                     // 🧮 Update treatment-level stats
 	                     treatment.setTakenSittings(treatment.getTakenSittings() + 1);
 	                     treatment.setPendingSittings(Math.max(0, treatment.getPendingSittings() - 1));
-	                     treatment.setCurrentSitting(nextSitting.getSitting());
+	                     treatment.setCurrentSitting(treatment.getTakenSittings() + 1);
 	                     treatment.setStatus(treatment.getPendingSittings() == 0 ? "Confirmed" : "In-Progress");
 
 	                     // 💸 Decrement free follow-ups if available
@@ -1625,7 +532,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                     }
 
 	                     sittingBooked = true;
-	                     break; // Only one sitting per request
+	                     break; // Only one sitting booked per request
 	                 }
 	             }
 
@@ -1638,7 +545,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                                 HttpStatus.BAD_REQUEST.value()));
 	             }
 
-	             // 🔹 Update booking status dynamically
+	             // 🔹 Update booking-level status dynamically
 	             boolean anyInProgress = b.getTreatments().getGeneratedData().values().stream()
 	                     .anyMatch(t -> "In-Progress".equalsIgnoreCase(t.getStatus()));
 	             boolean allConfirmed = b.getTreatments().getGeneratedData().values().stream()
@@ -1664,17 +571,17 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 	             BookingResponse res = toResponse(updatedBooking);
 
-	             // Keep only the booked treatment in the response
+	             // 🩵 Keep only the booked treatment in the response
 	             if (res.getTreatments() != null && res.getTreatments().getGeneratedData() != null) {
 	                 Map<String, TreatmentDetailsDTO> onlySelected = new HashMap<>();
-	                 TreatmentDetailsDTO selectedTreatment =
-	                         res.getTreatments().getGeneratedData().get(request.getSubServiceName());
+	                 TreatmentDetailsDTO selectedTreatment = res.getTreatments().getGeneratedData().get(request.getSubServiceName());
 	                 if (selectedTreatment != null) {
 	                     onlySelected.put(request.getSubServiceName(), selectedTreatment);
 	                     res.getTreatments().setGeneratedData(onlySelected);
 	                 }
 	             }
 
+	             // Optional: explicitly include which treatment was updated
 	             res.setUpdatedTreatment(request.getSubServiceName());
 
 	             response = ResponseStructure.buildResponse(
@@ -1733,12 +640,10 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	     }
 	 }
 
-
-
+	 
 	 // =========================
 	 // Support Methods
 	 // =========================
-
 	 private void nullifyLargeFields(Booking booking) {
 	     if (booking == null) return;
 	     booking.setReports(null);
@@ -1747,7 +652,6 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	     booking.setConsentFormPdf(null);
 	     booking.setPrescriptionPdf(null);
 	 }
-
 
 	 private Booking toEntity(BookingRequset request) {
 	     Booking entity = new ObjectMapper().convertValue(request, Booking.class);
@@ -1792,12 +696,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	     return entity;
 	 }
 
-
 	 private BookingResponse toResponse(Booking entity) {
 	     BookingResponse response = new ObjectMapper().convertValue(entity, BookingResponse.class);
-
-	     // Copy top-level service time
-	     response.setServicetime(entity.getServicetime());
 
 	     // Attach prescription PDF if exists
 	     DoctorSaveDetailsDTO dto = getPrescriptionpdf(response.getBookingId());
@@ -1807,7 +707,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 	     response.setBookingId(String.valueOf(entity.getBookingId()));
 
-	     // Update each treatment status and ensure servicetime is included
+	     // Update each treatment status
 	     if (entity.getTreatments() != null && entity.getTreatments().getGeneratedData() != null) {
 	         entity.getTreatments().getGeneratedData().forEach((name, t) -> {
 	             if (t.getPendingSittings() != null && t.getPendingSittings() > 0) {
@@ -1815,21 +715,13 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	             } else {
 	                 t.setStatus("Confirmed");
 	             }
-
-	             if (t.getDates() != null) {
-	                 t.getDates().forEach(d -> {
-	                     if (d.getServicetime() == null || d.getServicetime().trim().isEmpty()) {
-	                         d.setServicetime("Not Set");
-	                     }
-	                 });
-	             }
 	         });
 	     }
 
 	     return response;
 	 }
 
-
+	 
 	 private DoctorSaveDetailsDTO getPrescriptionpdf(String bid) {
 	     try {
 	         ObjectMapper mapper = new ObjectMapper();
@@ -2043,241 +935,98 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 //	    return ResponseEntity.status(res.getStatusCode()).body(res);
 //	}
 
-//	public ResponseEntity<?> filterDoctorAppointmentsByDoctorId(String hospitalId, String doctorId, String number) {
-//	    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
-//	    List<BookingResponse> responses = new ArrayList<>();
-//	    try {
-//	        List<Booking> existingBooking = repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
-//	        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-//	        String currentDate = LocalDate.now(ZoneId.of("Asia/Kolkata")).format(dateFormatter);
-//
-//	        if (existingBooking != null && !existingBooking.isEmpty()) {
-//	            for (Booking b : existingBooking) {
-//	                // loop through treatments instead of single booking
-//	                if (b.getTreatments() != null && b.getTreatments().getGeneratedData() != null) {
-//	                    for (Map.Entry<String, TreatmentDetailsDTO> entry : b.getTreatments().getGeneratedData().entrySet()) {
-//	                        String treatmentName = entry.getKey();
-//	                        TreatmentDetailsDTO t = entry.getValue();
-//
-//	                        // ✅ Create a clone of the booking per treatment
-//	                        BookingResponse temp = toResponse(b);
-//
-//	                        // keep only the current treatment
-//	                        Map<String, TreatmentDetailsDTO> oneTreatment = new HashMap<>();
-//	                        oneTreatment.put(treatmentName, t);
-//	                        temp.getTreatments().setGeneratedData(oneTreatment);
-//	                        temp.setSubServiceName(treatmentName);
-//
-//	                        // set treatment-level date/time (if not stored, use latest confirmed)
-//	                        if (t.getDates() != null) {
-//	                            t.getDates().stream()
-//	                                .filter(d -> "Confirmed".equalsIgnoreCase(d.getStatus()))
-//	                                .max(Comparator.comparing(DatesDTO::getDate))
-//	                                .ifPresent(d -> {
-//	                                    temp.setServiceDate(d.getDate());
-//	                                    temp.setServicetime(b.getServicetime());
-//	                                });
-//	                        }
-//
-//	                        // filtering logic same as before
-//	                        switch (number) {
-//	                            case "1":
-//	                                if (b.getConsultationType().equalsIgnoreCase("Services & Treatments")
-//	                                        || b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation")
-//	                                        || b.getConsultationType().equalsIgnoreCase("Online Consultation")) {
-//	                                    if (b.getStatus().equalsIgnoreCase("Confirmed") && !b.getServiceDate().equals(currentDate)) {
-//	                                        responses.add(temp);
-//	                                    }
-//	                                }
-//	                                break;
-//
-//	                            case "2":
-//	                                if (b.getConsultationType().equalsIgnoreCase("Online Consultation")) {
-//	                                    if (b.getStatus().equalsIgnoreCase("Confirmed") && !b.getServiceDate().equals(currentDate)) {
-//	                                        responses.add(temp);
-//	                                    }
-//	                                }
-//	                                break;
-//
-//	                            case "3":
-//	                                if (b.getStatus().equalsIgnoreCase("Completed")) {
-//	                                    responses.add(temp);
-//	                                }
-//	                                break;
-//
-//	                            case "4":
-//	                                if (b.getStatus().equalsIgnoreCase("In-Progress")) {
-//	                                    responses.add(temp);
-//	                                }
-//	                                break;
-//	                        }
-//	                    }
-//	                }
-//	            }
-//
-//	            if (!responses.isEmpty()) {
-//	                res.setStatusCode(200);
-//	                res.setData(responses);
-//	                res.setMessage("Appointments Are Found");
-//	            } else {
-//	                res.setStatusCode(200);
-//	                res.setData(responses);
-//	                res.setMessage("Appointments Are Not Found");
-//	            }
-//	        } else {
-//	            res.setStatusCode(200);
-//	            res.setData(responses);
-//	            res.setMessage("Appointments Are Not Found");
-//	        }
-//	    } catch (Exception e) {
-//	        responses = null;
-//	        res.setStatusCode(500);
-//	        res.setData(responses);
-//	        res.setMessage(e.getMessage());
-//	    }
-//	    return ResponseEntity.status(res.getStatusCode()).body(res);
-//	}
-
 	public ResponseEntity<?> filterDoctorAppointmentsByDoctorId(String hospitalId, String doctorId, String number) {
 	    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
 	    List<BookingResponse> responses = new ArrayList<>();
-
 	    try {
-	        List<Booking> existingBookings = repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
+	        List<Booking> existingBooking = repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
 	        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 	        String currentDate = LocalDate.now(ZoneId.of("Asia/Kolkata")).format(dateFormatter);
 
-	        if (existingBookings != null && !existingBookings.isEmpty()) {
-	            for (Booking b : existingBookings) {
-
-	                // ======== NEW: Handle each treatment sitting individually ========
+	        if (existingBooking != null && !existingBooking.isEmpty()) {
+	            for (Booking b : existingBooking) {
+	                // loop through treatments instead of single booking
 	                if (b.getTreatments() != null && b.getTreatments().getGeneratedData() != null) {
-
 	                    for (Map.Entry<String, TreatmentDetailsDTO> entry : b.getTreatments().getGeneratedData().entrySet()) {
 	                        String treatmentName = entry.getKey();
-	                        TreatmentDetailsDTO treatment = entry.getValue();
+	                        TreatmentDetailsDTO t = entry.getValue();
 
-	                        if (treatment.getDates() == null) continue;
+	                        // ✅ Create a clone of the booking per treatment
+	                        BookingResponse temp = toResponse(b);
 
-	                        for (DatesDTO d : treatment.getDates()) {
-	                            // Create a temporary copy of the booking response for each sitting
-	                            BookingResponse r = toResponse(b);
+	                        // keep only the current treatment
+	                        Map<String, TreatmentDetailsDTO> oneTreatment = new HashMap<>();
+	                        oneTreatment.put(treatmentName, t);
+	                        temp.getTreatments().setGeneratedData(oneTreatment);
+	                        temp.setSubServiceName(treatmentName);
 
-	                            r.setSubServiceName(treatmentName);
-	                            r.setServiceDate(d.getDate());
-	                            r.setServicetime(d.getServicetime() != null ? d.getServicetime() : "Not Set");
-	                            r.setStatus(d.getStatus());
-	                            r.setCurrentSitting(d.getSitting());
+	                        // set treatment-level date/time (if not stored, use latest confirmed)
+	                        if (t.getDates() != null) {
+	                            t.getDates().stream()
+	                                .filter(d -> "Confirmed".equalsIgnoreCase(d.getStatus()))
+	                                .max(Comparator.comparing(DatesDTO::getDate))
+	                                .ifPresent(d -> {
+	                                    temp.setServiceDate(d.getDate());
+	                                    temp.setServicetime(b.getServicetime());
+	                                });
+	                        }
 
-	                            // ============ Filter logic (based on number) ============
-	                            boolean add = false;
-
-	                            switch (number) {
-	                                case "1": // Upcoming / all confirmed types
-	                                    if ((b.getConsultationType().equalsIgnoreCase("Services & Treatments")
-	                                            || b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation")
-	                                            || b.getConsultationType().equalsIgnoreCase("Online Consultation"))
-	                                            && b.getStatus().equalsIgnoreCase("Confirmed")
-	                                            && !b.getServiceDate().equals(currentDate)) {
-	                                        add = true;
+	                        // filtering logic same as before
+	                        switch (number) {
+	                            case "1":
+	                                if (b.getConsultationType().equalsIgnoreCase("Services & Treatments")
+	                                        || b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation")
+	                                        || b.getConsultationType().equalsIgnoreCase("Online Consultation")) {
+	                                    if (b.getStatus().equalsIgnoreCase("Confirmed") && !b.getServiceDate().equals(currentDate)) {
+	                                        responses.add(temp);
 	                                    }
-	                                    break;
+	                                }
+	                                break;
 
-	                                case "2": // Only Online Consultations
-	                                    if (b.getConsultationType().equalsIgnoreCase("Online Consultation")
-	                                            && b.getStatus().equalsIgnoreCase("Confirmed")
-	                                            && !b.getServiceDate().equals(currentDate)) {
-	                                        add = true;
+	                            case "2":
+	                                if (b.getConsultationType().equalsIgnoreCase("Online Consultation")) {
+	                                    if (b.getStatus().equalsIgnoreCase("Confirmed") && !b.getServiceDate().equals(currentDate)) {
+	                                        responses.add(temp);
 	                                    }
-	                                    break;
+	                                }
+	                                break;
 
-	                                case "3": // Completed
-	                                    if ("Completed".equalsIgnoreCase(d.getStatus()) || "Completed".equalsIgnoreCase(b.getStatus())) {
-	                                        add = true;
-	                                    }
-	                                    break;
+	                            case "3":
+	                                if (b.getStatus().equalsIgnoreCase("Completed")) {
+	                                    responses.add(temp);
+	                                }
+	                                break;
 
-	                                case "4": // In-progress
-	                                    if ("In-Progress".equalsIgnoreCase(d.getStatus()) || "In-Progress".equalsIgnoreCase(b.getStatus())) {
-	                                        add = true;
-	                                    }
-	                                    break;
-
-	                                default:
-	                                    add = true;
-	                            }
-
-	                            if (add) responses.add(r);
+	                            case "4":
+	                                if (b.getStatus().equalsIgnoreCase("In-Progress")) {
+	                                    responses.add(temp);
+	                                }
+	                                break;
 	                        }
 	                    }
-
-	                } else {
-	                    // fallback: bookings with no treatment data
-	                    BookingResponse r = toResponse(b);
-	                    boolean add = false;
-
-	                    switch (number) {
-	                        case "1":
-	                            if ((b.getConsultationType().equalsIgnoreCase("Services & Treatments")
-	                                    || b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation")
-	                                    || b.getConsultationType().equalsIgnoreCase("Online Consultation"))
-	                                    && b.getStatus().equalsIgnoreCase("Confirmed")
-	                                    && !b.getServiceDate().equals(currentDate)) {
-	                                add = true;
-	                            }
-	                            break;
-
-	                        case "2":
-	                            if (b.getConsultationType().equalsIgnoreCase("Online Consultation")
-	                                    && b.getStatus().equalsIgnoreCase("Confirmed")
-	                                    && !b.getServiceDate().equals(currentDate)) {
-	                                add = true;
-	                            }
-	                            break;
-
-	                        case "3":
-	                            if (b.getStatus().equalsIgnoreCase("Completed")) {
-	                                add = true;
-	                            }
-	                            break;
-
-	                        case "4":
-	                            if (b.getStatus().equalsIgnoreCase("In-Progress")) {
-	                                add = true;
-	                            }
-	                            break;
-	                    }
-
-	                    if (add) responses.add(r);
 	                }
 	            }
-
-	            // ✅ Sort by service date + time (if available)
-	            responses.sort(Comparator.comparing(BookingResponse::getServiceDate)
-	                    .thenComparing(BookingResponse::getServicetime, Comparator.nullsLast(String::compareTo)));
 
 	            if (!responses.isEmpty()) {
 	                res.setStatusCode(200);
 	                res.setData(responses);
-	                res.setMessage("Appointments Found Successfully");
+	                res.setMessage("Appointments Are Found");
 	            } else {
 	                res.setStatusCode(200);
 	                res.setData(responses);
-	                res.setMessage("No Appointments Found");
+	                res.setMessage("Appointments Are Not Found");
 	            }
-
 	        } else {
 	            res.setStatusCode(200);
 	            res.setData(responses);
-	            res.setMessage("No Appointments Found");
+	            res.setMessage("Appointments Are Not Found");
 	        }
-
 	    } catch (Exception e) {
+	        responses = null;
 	        res.setStatusCode(500);
-	        res.setData(null);
-	        res.setMessage("Error: " + e.getMessage());
+	        res.setData(responses);
+	        res.setMessage(e.getMessage());
 	    }
-
 	    return ResponseEntity.status(res.getStatusCode()).body(res);
 	}
 
