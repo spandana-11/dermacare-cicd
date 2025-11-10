@@ -123,6 +123,7 @@ public class DoctorMapper {
 		dto.setAssociatedWithIADVC(doctor.isAssociatedWithIADVC());
 		dto.setAssociationsOrMemberships(doctor.getAssociationsOrMemberships());
 		dto.setBranches(doctor.getBranches());
+		dto.setPermissions(doctor.getPermissions());
 
 		if (doctor.getDoctorFees() != null) {
 			dto.setDoctorFees(mapDoctorFeeEntityToDTO(doctor.getDoctorFees()));

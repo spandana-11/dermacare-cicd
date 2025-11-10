@@ -135,6 +135,50 @@ public class AdministratorServiceImpl implements AdministratorService {
         response.setStatus(HttpStatus.OK.value());
         return response;
     }
+    @Override
+    public Response getAllAdministratorsByClinic(String clinicId, String branchId) {
+        Response response = new Response();
+
+        // 1️⃣ Validate input
+        if (clinicId == null || clinicId.isBlank()) {
+            response.setSuccess(false);
+            response.setMessage("Clinic ID must not be empty");
+            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            return response;
+        }
+
+        List<Administrator> admins;
+
+        // Fetch data based on provided parameters
+        if (branchId != null && !branchId.isBlank()) {
+            // Fetch by both clinicId and branchId
+            admins = administratorRepository.findByClinicIdAndBranchId(clinicId, branchId);
+        } else {
+            // Fetch by clinicId only
+            admins = administratorRepository.findByClinicId(clinicId);
+        }
+
+        //  Handle empty results
+        if (admins.isEmpty()) {
+            response.setSuccess(true);
+            response.setData(List.of());
+            response.setMessage("No administrators found");
+            response.setStatus(HttpStatus.OK.value());
+            return response;
+        }
+
+        //Convert entities to DTOs
+        List<AdministratorDTO> dtoList = admins.stream()
+                .map(this::mapEntityToDto)
+                .toList();
+
+        // 5️⃣ Build response
+        response.setSuccess(true);
+        response.setData(dtoList);
+        response.setMessage("Administrators fetched successfully");
+        response.setStatus(HttpStatus.OK.value());
+        return response;
+    }
 
     // ------------------- Fetch By ID ----------------------
     @Override
@@ -172,6 +216,44 @@ public class AdministratorServiceImpl implements AdministratorService {
 
         return response;
     }
+    @Override
+	public Response getAdministratorUsingClinicIdAndBranchIdAndAdminId(String clinicId, String branchId,
+			String adminId) {
+		
+    	  Response response = new Response();
+
+          
+          if (clinicId == null || clinicId.isBlank()) {
+              response.setSuccess(false);
+              response.setMessage("Clinic ID must not be empty");
+              response.setStatus(HttpStatus.BAD_REQUEST.value());
+              return response;
+          }
+
+          if (adminId == null || adminId.isBlank()) {
+              response.setSuccess(false);
+              response.setMessage("Administrator ID must not be empty");
+              response.setStatus(HttpStatus.BAD_REQUEST.value());
+              return response;
+          }
+
+          //  Repository call using both clinicId and adminId
+          Optional<Administrator> adminOpt = administratorRepository.findByClinicIdAndBranchIdAndAdminId(clinicId,branchId, adminId);
+
+          if (adminOpt.isPresent()) {
+              response.setSuccess(true);
+              response.setData(mapEntityToDto(adminOpt.get()));
+              response.setMessage("Administrator found successfully");
+              response.setStatus(HttpStatus.OK.value());
+          } else {
+              response.setSuccess(false);
+              response.setMessage("Administrator not found for the given clinic");
+              response.setStatus(HttpStatus.NOT_FOUND.value());
+          }
+
+          return response;
+
+	}
 
 
     // ------------------- Update ----------------------
@@ -238,13 +320,94 @@ public class AdministratorServiceImpl implements AdministratorService {
             credentialsRepository.save(creds);
         });
 
-        // ✅ Prepare response
+        // Prepare response
         response.setSuccess(true);
         response.setData(mapEntityToDto(updatedAdmin));
         response.setMessage("Administrator updated successfully");
         response.setStatus(HttpStatus.OK.value());
         return response;
     }
+    
+    @Override
+    public Response updateAdministratorByClinicIdAndBranchIdAndAdminId(
+            String clinicId, String branchId, String adminId, AdministratorDTO dto) {
+
+        Response response = new Response();
+
+        //  Validate inputs
+        if (clinicId == null || clinicId.isBlank()) {
+            response.setSuccess(false);
+            response.setMessage("Clinic ID must not be null or empty");
+            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            return response;
+        }
+
+        if (branchId == null || branchId.isBlank()) {
+            response.setSuccess(false);
+            response.setMessage("Branch ID must not be null or empty");
+            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            return response;
+        }
+
+        if (adminId == null || adminId.isBlank()) {
+            response.setSuccess(false);
+            response.setMessage("Administrator ID must not be null or empty");
+            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            return response;
+        }
+
+        if (dto == null) {
+            response.setSuccess(false);
+            response.setMessage("Administrator data must not be null");
+            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            return response;
+        }
+
+        // Fetch admin by clinicId, branchId, and adminId
+        Optional<Administrator> existingOpt = administratorRepository
+                .findByClinicIdAndBranchIdAndAdminId(clinicId, branchId, adminId);
+
+        if (existingOpt.isEmpty()) {
+            response.setSuccess(false);
+            response.setMessage("Administrator not found for the given Clinic ID, Branch ID, and Administrator ID");
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            return response;
+        }
+
+        Administrator admin = existingOpt.get();
+
+        // Update non-null fields only
+        if (dto.getFullName() != null) admin.setFullName(dto.getFullName());
+        if (dto.getEmailId() != null) admin.setEmailId(dto.getEmailId());
+        if (dto.getDepartment() != null) admin.setDepartment(dto.getDepartment());
+        if (dto.getContactNumber() != null) admin.setContactNumber(dto.getContactNumber());
+        if (dto.getGender() != null) admin.setGender(dto.getGender());
+        if (dto.getDateOfBirth() != null) admin.setDateOfBirth(dto.getDateOfBirth());
+        if (dto.getAddress() != null) admin.setAddress(dto.getAddress());
+        if (dto.getBankAccountDetails() != null) admin.setBankAccountDetails(dto.getBankAccountDetails());
+        if (dto.getProfilePicture() != null) admin.setProfilePicture(dto.getProfilePicture());
+        if (dto.getPermissions() != null) admin.setPermissions(dto.getPermissions());
+
+        // Save updated record
+        Administrator updatedAdmin = administratorRepository.save(admin);
+
+        // Sync credentials if available
+        credentialsRepository.findByStaffId(adminId).ifPresent(creds -> {
+            creds.setStaffName(admin.getFullName());
+            creds.setUsername(admin.getContactNumber());
+            creds.setPermissions(admin.getPermissions());
+            creds.setRole(admin.getRole());
+            credentialsRepository.save(creds);
+        });
+
+        // 6️⃣ Return success response
+        response.setSuccess(true);
+        response.setData(mapEntityToDto(updatedAdmin));
+        response.setMessage("Administrator updated successfully for given clinic and branch");
+        response.setStatus(HttpStatus.OK.value());
+        return response;
+    }
+
     // ------------------- Delete ----------------------
 
     @Override
@@ -286,6 +449,60 @@ public class AdministratorServiceImpl implements AdministratorService {
      
         response.setSuccess(true);
         response.setMessage("Administrator and credentials deleted successfully");
+        response.setStatus(HttpStatus.OK.value());
+        return response;
+    }
+    
+    
+    @Override
+    public Response deleteAdministratorByClinicIdAndBranchIdAndAdminId(String clinicId, String branchId, String adminId) {
+        Response response = new Response();
+
+        //  Validate inputs
+        if (clinicId == null || clinicId.isBlank()) {
+            response.setSuccess(false);
+            response.setMessage("Clinic ID must not be null or empty");
+            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            return response;
+        }
+
+        if (branchId == null || branchId.isBlank()) {
+            response.setSuccess(false);
+            response.setMessage("Branch ID must not be null or empty");
+            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            return response;
+        }
+
+        if (adminId == null || adminId.isBlank()) {
+            response.setSuccess(false);
+            response.setMessage("Administrator ID must not be null or empty");
+            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            return response;
+        }
+
+        // Find admin by clinicId, branchId, and adminId
+        Optional<Administrator> existingOpt = administratorRepository
+                .findByClinicIdAndBranchIdAndAdminId(clinicId, branchId, adminId);
+
+        if (existingOpt.isEmpty()) {
+            response.setSuccess(false);
+            response.setMessage("Administrator not found for the given Clinic ID, Branch ID, and Admin ID");
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            return response;
+        }
+
+        Administrator existingAdmin = existingOpt.get();
+
+        // Delete admin
+        administratorRepository.deleteById(existingAdmin.getId());
+
+        // Delete credentials (if any)
+        credentialsRepository.findByStaffId(adminId)
+                .ifPresent(creds -> credentialsRepository.deleteById(creds.getId()));
+
+        // Return success response
+        response.setSuccess(true);
+        response.setMessage("Administrator and credentials deleted successfully for the given clinic and branch");
         response.setStatus(HttpStatus.OK.value());
         return response;
     }
@@ -368,6 +585,10 @@ public class AdministratorServiceImpl implements AdministratorService {
 
         return capitalizedWord + specialChar + numberPart;
     }
+
+
+
+	
 
 }
 
