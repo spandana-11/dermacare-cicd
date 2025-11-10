@@ -11,5 +11,6 @@ public class DatesDTO {
 	 private String date;
 	    private Integer sitting;
 	    private String status;
-	    private String followupStatus; 
+	    private String followupStatus;
+	    private String servicetime; // <-- add this
 }
