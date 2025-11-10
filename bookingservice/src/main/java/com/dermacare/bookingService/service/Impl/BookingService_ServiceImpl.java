@@ -63,7 +63,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	@Autowired
 	private KafkaProducer kafkaProducer;
 	
-	//@Autowired
+	// @Autowired
 	//private NotificationFeign notificationFeign;
 	
 	@Autowired
