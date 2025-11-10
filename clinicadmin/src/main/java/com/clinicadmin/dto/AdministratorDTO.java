@@ -53,7 +53,8 @@ public class AdministratorDTO {
     @NotBlank(message = "Email ID is required")
     @Email(message = "Invalid email format")
     private String emailId;
-
+    
+    @NotBlank(message = "Government ID is required")
     private String governmentId;
 
     private String qualificationOrCertifications;

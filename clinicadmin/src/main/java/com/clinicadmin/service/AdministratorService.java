@@ -15,4 +15,13 @@ public interface AdministratorService {
 	
 	Response deleteAdministrator(String clinicId, String adminId);
 
+	Response getAllAdministratorsByClinic(String clinicId, String branchId);
+
+	Response getAdministratorUsingClinicIdAndBranchIdAndAdminId(String clinicId, String branchId, String adminId);
+
+	Response updateAdministratorByClinicIdAndBranchIdAndAdminId(String clinicId, String branchId, String adminId,
+			AdministratorDTO dto);
+
+	Response deleteAdministratorByClinicIdAndBranchIdAndAdminId(String clinicId, String branchId, String adminId);
+
 }

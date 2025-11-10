@@ -22,4 +22,8 @@ public interface AdministratorRepository extends MongoRepository<Administrator, 
 	boolean existsByContactNumber(String contactNumber);
 	
 	Optional<Administrator> findByClinicIdAndAdminId(String clinicId, String id);
+
+	List<Administrator> findByClinicIdAndBranchId(String clinicId, String branchId);
+
+	Optional<Administrator> findByClinicIdAndBranchIdAndAdminId(String clinicId, String branchId, String adminId);
 }
