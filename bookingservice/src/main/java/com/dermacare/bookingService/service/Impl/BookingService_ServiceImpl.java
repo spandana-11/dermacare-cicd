@@ -935,69 +935,165 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 //	    return ResponseEntity.status(res.getStatusCode()).body(res);
 //	}
 
+//	public ResponseEntity<?> filterDoctorAppointmentsByDoctorId(String hospitalId, String doctorId, String number) {
+//	    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+//	    List<BookingResponse> responses = new ArrayList<>();
+//	    try {
+//	        List<Booking> existingBooking = repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
+//	        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+//	        String currentDate = LocalDate.now(ZoneId.of("Asia/Kolkata")).format(dateFormatter);
+//
+//	        if (existingBooking != null && !existingBooking.isEmpty()) {
+//	            for (Booking b : existingBooking) {
+//	                // loop through treatments instead of single booking
+//	                if (b.getTreatments() != null && b.getTreatments().getGeneratedData() != null) {
+//	                    for (Map.Entry<String, TreatmentDetailsDTO> entry : b.getTreatments().getGeneratedData().entrySet()) {
+//	                        String treatmentName = entry.getKey();
+//	                        TreatmentDetailsDTO t = entry.getValue();
+//
+//	                        // ✅ Create a clone of the booking per treatment
+//	                        BookingResponse temp = toResponse(b);
+//
+//	                        // keep only the current treatment
+//	                        Map<String, TreatmentDetailsDTO> oneTreatment = new HashMap<>();
+//	                        oneTreatment.put(treatmentName, t);
+//	                        temp.getTreatments().setGeneratedData(oneTreatment);
+//	                        temp.setSubServiceName(treatmentName);
+//
+//	                        // set treatment-level date/time (if not stored, use latest confirmed)
+//	                        if (t.getDates() != null) {
+//	                            t.getDates().stream()
+//	                                .filter(d -> "Confirmed".equalsIgnoreCase(d.getStatus()))
+//	                                .max(Comparator.comparing(DatesDTO::getDate))
+//	                                .ifPresent(d -> {
+//	                                    temp.setServiceDate(d.getDate());
+//	                                    temp.setServicetime(b.getServicetime());
+//	                                });
+//	                        }
+//
+//	                        // filtering logic same as before
+//	                        switch (number) {
+//	                            case "1":
+//	                                if (b.getConsultationType().equalsIgnoreCase("Services & Treatments")
+//	                                        || b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation")
+//	                                        || b.getConsultationType().equalsIgnoreCase("Online Consultation")) {
+//	                                    if (b.getStatus().equalsIgnoreCase("Confirmed") && !b.getServiceDate().equals(currentDate)) {
+//	                                        responses.add(temp);
+//	                                    }
+//	                                }
+//	                                break;
+//
+//	                            case "2":
+//	                                if (b.getConsultationType().equalsIgnoreCase("Online Consultation")) {
+//	                                    if (b.getStatus().equalsIgnoreCase("Confirmed") && !b.getServiceDate().equals(currentDate)) {
+//	                                        responses.add(temp);
+//	                                    }
+//	                                }
+//	                                break;
+//
+//	                            case "3":
+//	                                if (b.getStatus().equalsIgnoreCase("Completed")) {
+//	                                    responses.add(temp);
+//	                                }
+//	                                break;
+//
+//	                            case "4":
+//	                                if (b.getStatus().equalsIgnoreCase("In-Progress")) {
+//	                                    responses.add(temp);
+//	                                }
+//	                                break;
+//	                        }
+//	                    }
+//	                }
+//	            }
+//
+//	            if (!responses.isEmpty()) {
+//	                res.setStatusCode(200);
+//	                res.setData(responses);
+//	                res.setMessage("Appointments Are Found");
+//	            } else {
+//	                res.setStatusCode(200);
+//	                res.setData(responses);
+//	                res.setMessage("Appointments Are Not Found");
+//	            }
+//	        } else {
+//	            res.setStatusCode(200);
+//	            res.setData(responses);
+//	            res.setMessage("Appointments Are Not Found");
+//	        }
+//	    } catch (Exception e) {
+//	        responses = null;
+//	        res.setStatusCode(500);
+//	        res.setData(responses);
+//	        res.setMessage(e.getMessage());
+//	    }
+//	    return ResponseEntity.status(res.getStatusCode()).body(res);
+//	}
+
+
 	public ResponseEntity<?> filterDoctorAppointmentsByDoctorId(String hospitalId, String doctorId, String number) {
 	    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
 	    List<BookingResponse> responses = new ArrayList<>();
 	    try {
 	        List<Booking> existingBooking = repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
 	        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-	        String currentDate = LocalDate.now(ZoneId.of("Asia/Kolkata")).format(dateFormatter);
+	        LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
 
 	        if (existingBooking != null && !existingBooking.isEmpty()) {
 	            for (Booking b : existingBooking) {
-	                // loop through treatments instead of single booking
 	                if (b.getTreatments() != null && b.getTreatments().getGeneratedData() != null) {
 	                    for (Map.Entry<String, TreatmentDetailsDTO> entry : b.getTreatments().getGeneratedData().entrySet()) {
 	                        String treatmentName = entry.getKey();
 	                        TreatmentDetailsDTO t = entry.getValue();
 
-	                        // ✅ Create a clone of the booking per treatment
 	                        BookingResponse temp = toResponse(b);
 
-	                        // keep only the current treatment
+	                        // Keep only the current treatment in response
 	                        Map<String, TreatmentDetailsDTO> oneTreatment = new HashMap<>();
 	                        oneTreatment.put(treatmentName, t);
 	                        temp.getTreatments().setGeneratedData(oneTreatment);
 	                        temp.setSubServiceName(treatmentName);
 
-	                        // set treatment-level date/time (if not stored, use latest confirmed)
-	                        if (t.getDates() != null) {
-	                            t.getDates().stream()
-	                                .filter(d -> "Confirmed".equalsIgnoreCase(d.getStatus()))
-	                                .max(Comparator.comparing(DatesDTO::getDate))
-	                                .ifPresent(d -> {
-	                                    temp.setServiceDate(d.getDate());
-	                                    temp.setServicetime(b.getServicetime());
-	                                });
-	                        }
+	                        // Collect all sittings (Completed + Confirmed)
+	                        List<DatesDTO> filteredDates = t.getDates().stream()
+	                                .filter(d -> {
+	                                    LocalDate dDate = LocalDate.parse(d.getDate(), dateFormatter);
+	                                    return "Confirmed".equalsIgnoreCase(d.getStatus()) || "Completed".equalsIgnoreCase(d.getStatus());
+	                                })
+	                                .sorted(Comparator.comparing(DatesDTO::getDate))
+	                                .toList();
 
-	                        // filtering logic same as before
+	                        temp.getTreatments().getGeneratedData().get(treatmentName).setDates(filteredDates);
+
+	                        // Optionally, set the next service date/time for doctor dashboard
+	                        filteredDates.stream().findFirst().ifPresent(d -> {
+	                            temp.setServiceDate(d.getDate());
+	                            temp.setServicetime(b.getServicetime());
+	                        });
+
+	                        // Filtering logic based on number param
 	                        switch (number) {
-	                            case "1":
+	                            case "1": // All services
 	                                if (b.getConsultationType().equalsIgnoreCase("Services & Treatments")
 	                                        || b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation")
 	                                        || b.getConsultationType().equalsIgnoreCase("Online Consultation")) {
-	                                    if (b.getStatus().equalsIgnoreCase("Confirmed") && !b.getServiceDate().equals(currentDate)) {
-	                                        responses.add(temp);
-	                                    }
+	                                    if (!filteredDates.isEmpty()) responses.add(temp);
 	                                }
 	                                break;
 
-	                            case "2":
+	                            case "2": // Only online consultations
 	                                if (b.getConsultationType().equalsIgnoreCase("Online Consultation")) {
-	                                    if (b.getStatus().equalsIgnoreCase("Confirmed") && !b.getServiceDate().equals(currentDate)) {
-	                                        responses.add(temp);
-	                                    }
+	                                    if (!filteredDates.isEmpty()) responses.add(temp);
 	                                }
 	                                break;
 
-	                            case "3":
+	                            case "3": // Completed appointments
 	                                if (b.getStatus().equalsIgnoreCase("Completed")) {
 	                                    responses.add(temp);
 	                                }
 	                                break;
 
-	                            case "4":
+	                            case "4": // In-progress appointments
 	                                if (b.getStatus().equalsIgnoreCase("In-Progress")) {
 	                                    responses.add(temp);
 	                                }
@@ -1010,16 +1106,16 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	            if (!responses.isEmpty()) {
 	                res.setStatusCode(200);
 	                res.setData(responses);
-	                res.setMessage("Appointments Are Found");
+	                res.setMessage("Appointments are found");
 	            } else {
 	                res.setStatusCode(200);
 	                res.setData(responses);
-	                res.setMessage("Appointments Are Not Found");
+	                res.setMessage("Appointments are not found");
 	            }
 	        } else {
 	            res.setStatusCode(200);
 	            res.setData(responses);
-	            res.setMessage("Appointments Are Not Found");
+	            res.setMessage("Appointments are not found");
 	        }
 	    } catch (Exception e) {
 	        responses = null;
@@ -1030,7 +1126,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	    return ResponseEntity.status(res.getStatusCode()).body(res);
 	}
 
-		
+	
 	public ResponseEntity<?> getCompletedApntsByDoctorId(String hospitalId,String doctorId) {
 		    Map<String,Object> m = new LinkedHashMap<>();
 		try {
