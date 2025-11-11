@@ -935,6 +935,101 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 //	    return ResponseEntity.status(res.getStatusCode()).body(res);
 //	}
 
+//	public ResponseEntity<?> filterDoctorAppointmentsByDoctorId(String hospitalId, String doctorId, String number) {
+//	    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+//	    List<BookingResponse> responses = new ArrayList<>();
+//	    try {
+//	        List<Booking> existingBooking = repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
+//	        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+//	        String currentDate = LocalDate.now(ZoneId.of("Asia/Kolkata")).format(dateFormatter);
+//
+//	        if (existingBooking != null && !existingBooking.isEmpty()) {
+//	            for (Booking b : existingBooking) {
+//	                // loop through treatments instead of single booking
+//	                if (b.getTreatments() != null && b.getTreatments().getGeneratedData() != null) {
+//	                    for (Map.Entry<String, TreatmentDetailsDTO> entry : b.getTreatments().getGeneratedData().entrySet()) {
+//	                        String treatmentName = entry.getKey();
+//	                        TreatmentDetailsDTO t = entry.getValue();
+//
+//	                        // ✅ Create a clone of the booking per treatment
+//	                        BookingResponse temp = toResponse(b);
+//
+//	                        // keep only the current treatment
+//	                        Map<String, TreatmentDetailsDTO> oneTreatment = new HashMap<>();
+//	                        oneTreatment.put(treatmentName, t);
+//	                        temp.getTreatments().setGeneratedData(oneTreatment);
+//	                        temp.setSubServiceName(treatmentName);
+//
+//	                        // set treatment-level date/time (if not stored, use latest confirmed)
+//	                        if (t.getDates() != null) {
+//	                            t.getDates().stream()
+//	                                .filter(d -> "Confirmed".equalsIgnoreCase(d.getStatus()))
+//	                                .max(Comparator.comparing(DatesDTO::getDate))
+//	                                .ifPresent(d -> {
+//	                                    temp.setServiceDate(d.getDate());
+//	                                    temp.setServicetime(b.getServicetime());
+//	                                });
+//	                        }
+//
+//	                        // filtering logic same as before
+//	                        switch (number) {
+//	                            case "1":
+//	                                if (b.getConsultationType().equalsIgnoreCase("Services & Treatments")
+//	                                        || b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation")
+//	                                        || b.getConsultationType().equalsIgnoreCase("Online Consultation")) {
+//	                                    if (b.getStatus().equalsIgnoreCase("Confirmed") && !b.getServiceDate().equals(currentDate)) {
+//	                                        responses.add(temp);
+//	                                    }
+//	                                }
+//	                                break;
+//
+//	                            case "2":
+//	                                if (b.getConsultationType().equalsIgnoreCase("Online Consultation")) {
+//	                                    if (b.getStatus().equalsIgnoreCase("Confirmed") && !b.getServiceDate().equals(currentDate)) {
+//	                                        responses.add(temp);
+//	                                    }
+//	                                }
+//	                                break;
+//
+//	                            case "3":
+//	                                if (b.getStatus().equalsIgnoreCase("Completed")) {
+//	                                    responses.add(temp);
+//	                                }
+//	                                break;
+//
+//	                            case "4":
+//	                                if (b.getStatus().equalsIgnoreCase("In-Progress")) {
+//	                                    responses.add(temp);
+//	                                }
+//	                                break;
+//	                        }
+//	                    }
+//	                }
+//	            }
+//
+//	            if (!responses.isEmpty()) {
+//	                res.setStatusCode(200);
+//	                res.setData(responses);
+//	                res.setMessage("Appointments Are Found");
+//	            } else {
+//	                res.setStatusCode(200);
+//	                res.setData(responses);
+//	                res.setMessage("Appointments Are Not Found");
+//	            }
+//	        } else {
+//	            res.setStatusCode(200);
+//	            res.setData(responses);
+//	            res.setMessage("Appointments Are Not Found");
+//	        }
+//	    } catch (Exception e) {
+//	        responses = null;
+//	        res.setStatusCode(500);
+//	        res.setData(responses);
+//	        res.setMessage(e.getMessage());
+//	    }
+//	    return ResponseEntity.status(res.getStatusCode()).body(res);
+//	}
+
 	public ResponseEntity<?> filterDoctorAppointmentsByDoctorId(String hospitalId, String doctorId, String number) {
 	    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
 	    List<BookingResponse> responses = new ArrayList<>();
@@ -945,63 +1040,65 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 	        if (existingBooking != null && !existingBooking.isEmpty()) {
 	            for (Booking b : existingBooking) {
-	                // loop through treatments instead of single booking
 	                if (b.getTreatments() != null && b.getTreatments().getGeneratedData() != null) {
 	                    for (Map.Entry<String, TreatmentDetailsDTO> entry : b.getTreatments().getGeneratedData().entrySet()) {
 	                        String treatmentName = entry.getKey();
 	                        TreatmentDetailsDTO t = entry.getValue();
 
-	                        // ✅ Create a clone of the booking per treatment
-	                        BookingResponse temp = toResponse(b);
-
-	                        // keep only the current treatment
-	                        Map<String, TreatmentDetailsDTO> oneTreatment = new HashMap<>();
-	                        oneTreatment.put(treatmentName, t);
-	                        temp.getTreatments().setGeneratedData(oneTreatment);
-	                        temp.setSubServiceName(treatmentName);
-
-	                        // set treatment-level date/time (if not stored, use latest confirmed)
 	                        if (t.getDates() != null) {
-	                            t.getDates().stream()
-	                                .filter(d -> "Confirmed".equalsIgnoreCase(d.getStatus()))
-	                                .max(Comparator.comparing(DatesDTO::getDate))
-	                                .ifPresent(d -> {
-	                                    temp.setServiceDate(d.getDate());
-	                                    temp.setServicetime(b.getServicetime());
-	                                });
-	                        }
+	                            for (DatesDTO dateEntry : t.getDates()) {
+	                                // Create a clone of the booking per sitting date
+	                                BookingResponse temp = toResponse(b);
 
-	                        // filtering logic same as before
-	                        switch (number) {
-	                            case "1":
-	                                if (b.getConsultationType().equalsIgnoreCase("Services & Treatments")
-	                                        || b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation")
-	                                        || b.getConsultationType().equalsIgnoreCase("Online Consultation")) {
-	                                    if (b.getStatus().equalsIgnoreCase("Confirmed") && !b.getServiceDate().equals(currentDate)) {
-	                                        responses.add(temp);
-	                                    }
+	                                // Keep only the current treatment in generatedData
+	                                Map<String, TreatmentDetailsDTO> oneTreatment = new HashMap<>();
+	                                oneTreatment.put(treatmentName, t);
+	                                temp.getTreatments().setGeneratedData(oneTreatment);
+	                                temp.setSubServiceName(treatmentName);
+
+	                                // Set service date and time per sitting date
+	                                temp.setServiceDate(dateEntry.getDate());
+	                                // If time is specific per sitting, set here; otherwise, fallback to booking time
+	                                temp.setServicetime(b.getServicetime());
+
+	                                // Filtering logic based on the 'number' parameter and sitting date status
+	                                boolean add = false;
+	                                switch (number) {
+	                                    case "1":
+	                                        if ((b.getConsultationType().equalsIgnoreCase("Services & Treatments")
+	                                                || b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation")
+	                                                || b.getConsultationType().equalsIgnoreCase("Online Consultation"))
+	                                                && "Confirmed".equalsIgnoreCase(dateEntry.getStatus())
+	                                                && !dateEntry.getDate().equals(currentDate)) {
+	                                            add = true;
+	                                        }
+	                                        break;
+
+	                                    case "2":
+	                                        if (b.getConsultationType().equalsIgnoreCase("Online Consultation")
+	                                                && "Confirmed".equalsIgnoreCase(dateEntry.getStatus())
+	                                                && !dateEntry.getDate().equals(currentDate)) {
+	                                            add = true;
+	                                        }
+	                                        break;
+
+	                                    case "3":
+	                                        if ("Completed".equalsIgnoreCase(dateEntry.getStatus())) {
+	                                            add = true;
+	                                        }
+	                                        break;
+
+	                                    case "4":
+	                                        if ("In-Progress".equalsIgnoreCase(dateEntry.getStatus())) {
+	                                            add = true;
+	                                        }
+	                                        break;
 	                                }
-	                                break;
 
-	                            case "2":
-	                                if (b.getConsultationType().equalsIgnoreCase("Online Consultation")) {
-	                                    if (b.getStatus().equalsIgnoreCase("Confirmed") && !b.getServiceDate().equals(currentDate)) {
-	                                        responses.add(temp);
-	                                    }
-	                                }
-	                                break;
-
-	                            case "3":
-	                                if (b.getStatus().equalsIgnoreCase("Completed")) {
+	                                if (add) {
 	                                    responses.add(temp);
 	                                }
-	                                break;
-
-	                            case "4":
-	                                if (b.getStatus().equalsIgnoreCase("In-Progress")) {
-	                                    responses.add(temp);
-	                                }
-	                                break;
+	                            }
 	                        }
 	                    }
 	                }
