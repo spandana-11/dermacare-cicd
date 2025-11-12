@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import com.dermacare.doctorservice.dermacaredoctorutils.VisitTypeUtil;
 import com.dermacare.doctorservice.dto.BookingResponse;
@@ -1804,76 +1802,77 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
 //        return 0;
 //    }
 
-//    @Override
-//    public Response saveDoctorDetails(DoctorSaveDetailsDTO dto) {
-//        try {
-//            // ----------------------- Step 0: Validate Booking ID -----------------------
-//            if (dto.getBookingId() == null || dto.getBookingId().isBlank()) {
-//                return buildResponse(false, null,
-//                        "Booking ID must not be null or empty",
-//                        HttpStatus.BAD_REQUEST.value());
-//            }
-//
-//            // ----------------------- Step 1: Fetch Booking -----------------------
-//            ResponseEntity<ResponseStructure<BookingResponse>> bookingEntity =
-//                    bookingFeignClient.getBookedService(dto.getBookingId());
-//
-//            if (bookingEntity == null || bookingEntity.getBody() == null) {
-//                return buildResponse(false, null,
-//                        "Unable to fetch booking details. Booking service returned null.",
-//                        HttpStatus.BAD_GATEWAY.value());
-//            }
-//
-//            BookingResponse bookingData = bookingEntity.getBody().getData();
-//            if (bookingData == null) {
-//                return buildResponse(false, null,
-//                        "Booking not found with ID: " + dto.getBookingId(),
-//                        HttpStatus.NOT_FOUND.value());
-//            }
-//
-//            // ----------------------- Step 2: Fetch Doctor -----------------------
-//            Response doctorResponse = clinicAdminServiceClient.getDoctorById(dto.getDoctorId()).getBody();
-//            if (doctorResponse == null || !doctorResponse.isSuccess() || doctorResponse.getData() == null) {
-//                return buildResponse(false, null,
-//                        "Doctor not found with ID: " + dto.getDoctorId(),
-//                        HttpStatus.NOT_FOUND.value());
-//            }
-//            Map<String, Object> doctorData = objectMapper.convertValue(doctorResponse.getData(), Map.class);
-//            dto.setDoctorName((String) doctorData.get("doctorName"));
-//
-//            // ----------------------- Step 3: Setup Clinic Info -----------------------
-//            dto.setClinicId(Optional.ofNullable(dto.getClinicId()).orElse(""));
-//            dto.setClinicName(Optional.ofNullable(dto.getClinicName()).orElse(""));
-//
-//            // ----------------------- Step 4: Calculate Visit Count & Type -----------------------
-//            List<DoctorSaveDetails> previousVisits =
-//                    repository.findByDoctorIdAndPatientIdAndSubServiceId(
-//                            dto.getDoctorId(),
-//                            dto.getPatientId(),
-//                            dto.getSubServiceId()
-//                    );
-//            int visitCount = (previousVisits != null && !previousVisits.isEmpty()) ? previousVisits.size() + 1 : 1;
-//            dto.setVisitCount(visitCount);
-//            dto.setVisitType(VisitTypeUtil.getVisitTypeFromCount(visitCount));
-//            dto.setVisitDateTime(LocalDateTime.now());
-//
-//            // ----------------------- Step 5: Save Visit -----------------------
-//            DoctorSaveDetails entity = convertToEntity(dto);
-//            entity.setVisitCount(visitCount);
-//            DoctorSaveDetails savedVisit = repository.save(entity);
-//
-//            // ----------------------- Step 6: Fetch Clinic for Consultation Expiry -----------------------
-//            Response clinicResponse = adminFeignClient.getClinicById(dto.getClinicId()).getBody();
-//            int expirationDays = 0;
-//            String consultationExpirationStr = "";
-//            if (clinicResponse != null && clinicResponse.isSuccess() && clinicResponse.getData() != null) {
-//                Map<String, Object> clinicData = objectMapper.convertValue(clinicResponse.getData(), Map.class);
-//                if (clinicData.containsKey("consultationExpiration") && clinicData.get("consultationExpiration") != null) {
-//                    consultationExpirationStr = clinicData.get("consultationExpiration").toString();
-//                    expirationDays = parseExpirationDays(consultationExpirationStr);
-//                }
-//            }
-//     // ----------------------- Step 7: Update Treatments & Calculate Sitting Summary -----------------------
+    @Override
+    public Response saveDoctorDetails(DoctorSaveDetailsDTO dto) {
+        try {
+            // ----------------------- Step 0: Validate Booking ID -----------------------
+            if (dto.getBookingId() == null || dto.getBookingId().isBlank()) {
+                return buildResponse(false, null,
+                        "Booking ID must not be null or empty",
+                        HttpStatus.BAD_REQUEST.value());
+            }
+
+            // ----------------------- Step 1: Fetch Booking -----------------------
+            ResponseEntity<ResponseStructure<BookingResponse>> bookingEntity =
+                    bookingFeignClient.getBookedService(dto.getBookingId());
+
+            if (bookingEntity == null || bookingEntity.getBody() == null) {
+                return buildResponse(false, null,
+                        "Unable to fetch booking details. Booking service returned null.",
+                        HttpStatus.BAD_GATEWAY.value());
+            }
+
+            BookingResponse bookingData = bookingEntity.getBody().getData();
+            if (bookingData == null) {
+                return buildResponse(false, null,
+                        "Booking not found with ID: " + dto.getBookingId(),
+                        HttpStatus.NOT_FOUND.value());
+            }
+
+            // ----------------------- Step 2: Fetch Doctor -----------------------
+            Response doctorResponse = clinicAdminServiceClient.getDoctorById(dto.getDoctorId()).getBody();
+            if (doctorResponse == null || !doctorResponse.isSuccess() || doctorResponse.getData() == null) {
+                return buildResponse(false, null,
+                        "Doctor not found with ID: " + dto.getDoctorId(),
+                        HttpStatus.NOT_FOUND.value());
+            }
+            Map<String, Object> doctorData = objectMapper.convertValue(doctorResponse.getData(), Map.class);
+            dto.setDoctorName((String) doctorData.get("doctorName"));
+
+            // ----------------------- Step 3: Setup Clinic Info -----------------------
+            dto.setClinicId(Optional.ofNullable(dto.getClinicId()).orElse(""));
+            dto.setClinicName(Optional.ofNullable(dto.getClinicName()).orElse(""));
+
+            // ----------------------- Step 4: Calculate Visit Count & Type -----------------------
+            List<DoctorSaveDetails> previousVisits =
+                    repository.findByDoctorIdAndPatientIdAndSubServiceId(
+                            dto.getDoctorId(),
+                            dto.getPatientId(),
+                            dto.getSubServiceId()
+                    );
+            int visitCount = (previousVisits != null && !previousVisits.isEmpty()) ? previousVisits.size() + 1 : 1;
+            dto.setVisitCount(visitCount);
+            dto.setVisitType(VisitTypeUtil.getVisitTypeFromCount(visitCount));
+            dto.setVisitDateTime(LocalDateTime.now());
+
+            // ----------------------- Step 5: Save Visit -----------------------
+            DoctorSaveDetails entity = convertToEntity(dto);
+            entity.setVisitCount(visitCount);
+            DoctorSaveDetails savedVisit = repository.save(entity);
+
+            // ----------------------- Step 6: Fetch Clinic for Consultation Expiry -----------------------
+            Response clinicResponse = adminFeignClient.getClinicById(dto.getClinicId()).getBody();
+            int expirationDays = 0;
+            String consultationExpirationStr = "";
+            if (clinicResponse != null && clinicResponse.isSuccess() && clinicResponse.getData() != null) {
+                Map<String, Object> clinicData = objectMapper.convertValue(clinicResponse.getData(), Map.class);
+                if (clinicData.containsKey("consultationExpiration") && clinicData.get("consultationExpiration") != null) {
+                    consultationExpirationStr = clinicData.get("consultationExpiration").toString();
+                    expirationDays = parseExpirationDays(consultationExpirationStr);
+                }
+            }
+
+//         // ----------------------- Step 7: Update Treatments & Calculate Sitting Summary -----------------------
 //            LocalDateTime lastSittingDateTime = null;
 //            boolean hasTreatments = false;
 //
@@ -1980,11 +1979,7 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
 //            treatmentResponseDTO.setPendingSittings(overallPendingSittings);
 //            treatmentResponseDTO.setCurrentSitting(overallCurrentSitting);
 //
-//            // ✅ Set followupStatus based on pending sittings
-//            String followupStatus = (overallPendingSittings == 0) ? "no-followup" : "followup-required";
-//            treatmentResponseDTO.setFollowupStatus(followupStatus);
-//
-//            // ✅ Save back to entity with status and followupStatus
+//            // ✅ Save back to entity with status
 //            TreatmentResponse treatmentEntity = TreatmentResponse.builder()
 //                    .generatedData(generatedDataDTO.entrySet().stream()
 //                            .collect(Collectors.toMap(
@@ -2010,266 +2005,123 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
 //                    .takenSittings(overallTakenSittings)
 //                    .pendingSittings(overallPendingSittings)
 //                    .currentSitting(overallCurrentSitting)
-//                    .followupStatus(followupStatus)
 //                    .build();
 //
 //            savedVisit.setTreatments(treatmentEntity);
 //            repository.save(savedVisit);
-//            
-//            // ----------------------- Step 8: Consultation Start & Expiry -----------------------
-//            LocalDateTime consultationStartDate = hasTreatments && lastSittingDateTime != null
-//                    ? lastSittingDateTime.plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0)
-//                    : LocalDate.now().plusDays(1).atStartOfDay();
-//
-//            LocalDateTime consultationExpiryDate = consultationStartDate.plusDays(expirationDays);
-//
-//            savedVisit.setConsultationStartDate(consultationStartDate);
-//            savedVisit.setConsultationExpiryDate(consultationExpiryDate);
-//            repository.save(savedVisit);
-//
-//            // ----------------------- Step 9: Follow-up Next Date -----------------------
-//            if (savedVisit.getFollowUp() != null && savedVisit.getFollowUp().getDurationValue() > 0) {
-//                int durationValue = savedVisit.getFollowUp().getDurationValue();
-//                String durationUnit = savedVisit.getFollowUp().getDurationUnit();
-//
-//                LocalDateTime baseDate = consultationStartDate.isAfter(LocalDateTime.now())
-//                        ? consultationStartDate
-//                        : LocalDateTime.now();
-//
-//                LocalDateTime nextFollowUpDate = switch (durationUnit.toLowerCase()) {
-//                    case "days" -> consultationStartDate.plusDays(durationValue);
-//                    case "weeks" -> consultationStartDate.plusWeeks(durationValue);
-//                    case "months" -> consultationStartDate.plusMonths(durationValue);
-//                    default -> consultationStartDate.plusDays(durationValue);
-//                };
-//
-//                if (nextFollowUpDate.isBefore(consultationStartDate)) {
-//                    nextFollowUpDate = consultationStartDate;
-//                }
-//
-//                savedVisit.getFollowUp().setNextFollowUpDate(nextFollowUpDate.toString());
-//            }
-//
-//            // ----------------------- Step 10: Free Follow-ups & Booking Status -----------------------
-//            int freeFollowUpsLeft = Optional.ofNullable(bookingData.getFreeFollowUpsLeft()).orElse(0);
-//            boolean consultationExpired = consultationExpiryDate != null && !LocalDateTime.now().isBefore(consultationExpiryDate);
-//
-//            boolean allSittingsCompleted = hasTreatments && savedVisit.getTreatments().getGeneratedData().values().stream()
-//                    .allMatch(t -> t.getSittings() != null && t.getSittings() == 0);
-//
-//            boolean consultationStarted = LocalDateTime.now().isAfter(consultationStartDate) ||
-//                                          LocalDateTime.now().isEqual(consultationStartDate);
-//
-//            String status;
-//            if (!consultationStarted) {
-//                status = "In-Progress";
-//            } else if (!consultationExpired) {
-//                if (allSittingsCompleted && freeFollowUpsLeft > 0) {
-//                    freeFollowUpsLeft--;
-//                }
-//                status = (freeFollowUpsLeft <= 0) ? "Completed" : "In-Progress";
-//            } else {
-//                status = "Completed";
-//            }
-//
-//         // ----------------------- Step 11: Update Booking Service -----------------------
-//            bookingData.setFreeFollowUpsLeft(Math.max(freeFollowUpsLeft, 0));
-//            bookingData.setStatus(status);
-//
-//            // ✅ Set sitting summary
-//            bookingData.setTotalSittings(overallTotalSittings);
-//            bookingData.setTakenSittings(overallTakenSittings);
-//            bookingData.setPendingSittings(overallPendingSittings);
-//            bookingData.setCurrentSitting(overallCurrentSitting);
-//
-//            // ✅ Include the full treatment details
-//            bookingData.setTreatments(treatmentResponseDTO);
-//
-//            // ✅ Update the booking service
-//            bookingFeignClient.updateAppointment(bookingData);
-//
-//            // ----------------------- Step 12: Build Response -----------------------
-//            DoctorSaveDetailsDTO savedDto = convertToDto(savedVisit);
-//            savedDto.setTreatments(treatmentResponseDTO);
-//
-//            return buildResponse(true, savedDto,
-//                    "Doctor details saved successfully",
-//                    HttpStatus.CREATED.value());
-//
-//        } catch (FeignException e) {
-//            return buildResponse(false, null,
-//                    "Error fetching doctor/booking/clinic details: " + e.getMessage(),
-//                    HttpStatus.BAD_GATEWAY.value());
-//        } catch (Exception e) {
-//            return buildResponse(false, null,
-//                    "Unexpected error: " + e.getMessage(),
-//                    HttpStatus.INTERNAL_SERVER_ERROR.value());
-//        }
-//    }
 
-    @Override
-    public Response saveDoctorDetails(DoctorSaveDetailsDTO dto) {
-        try {
-            // ----------------------- Step 0: Validate Booking ID -----------------------
-            if (dto.getBookingId() == null || dto.getBookingId().isBlank()) {
-                return buildResponse(false, null,
-                        "Booking ID must not be null or empty",
-                        HttpStatus.BAD_REQUEST.value());
-            }
-
-            // ----------------------- Step 1: Fetch Booking -----------------------
-            ResponseEntity<ResponseStructure<BookingResponse>> bookingEntity =
-                    bookingFeignClient.getBookedService(dto.getBookingId());
-
-            if (bookingEntity == null || bookingEntity.getBody() == null) {
-                return buildResponse(false, null,
-                        "Unable to fetch booking details. Booking service returned null.",
-                        HttpStatus.BAD_GATEWAY.value());
-            }
-
-            BookingResponse bookingData = bookingEntity.getBody().getData();
-            if (bookingData == null) {
-                return buildResponse(false, null,
-                        "Booking not found with ID: " + dto.getBookingId(),
-                        HttpStatus.NOT_FOUND.value());
-            }
-
-            // ----------------------- Step 2: Fetch Doctor -----------------------
-            Response doctorResponse = clinicAdminServiceClient.getDoctorById(dto.getDoctorId()).getBody();
-            if (doctorResponse == null || !doctorResponse.isSuccess() || doctorResponse.getData() == null) {
-                return buildResponse(false, null,
-                        "Doctor not found with ID: " + dto.getDoctorId(),
-                        HttpStatus.NOT_FOUND.value());
-            }
-            Map<String, Object> doctorData = objectMapper.convertValue(doctorResponse.getData(), Map.class);
-            dto.setDoctorName((String) doctorData.get("doctorName"));
-
-            // ----------------------- Step 3: Setup Clinic Info -----------------------
-            dto.setClinicId(Optional.ofNullable(dto.getClinicId()).orElse(""));
-            dto.setClinicName(Optional.ofNullable(dto.getClinicName()).orElse(""));
-
-            // ----------------------- Step 4: Calculate Visit Count & Type -----------------------
-            List<DoctorSaveDetails> previousVisits =
-                    repository.findByDoctorIdAndPatientIdAndSubServiceId(
-                            dto.getDoctorId(),
-                            dto.getPatientId(),
-                            dto.getSubServiceId()
-                    );
-            int visitCount = (previousVisits != null && !previousVisits.isEmpty()) ? previousVisits.size() + 1 : 1;
-            dto.setVisitCount(visitCount);
-            dto.setVisitType(VisitTypeUtil.getVisitTypeFromCount(visitCount));
-            dto.setVisitDateTime(LocalDateTime.now());
-
-            // ----------------------- Step 5: Save Visit -----------------------
-            DoctorSaveDetails entity = convertToEntity(dto);
-            entity.setVisitCount(visitCount);
-            DoctorSaveDetails savedVisit = repository.save(entity);
-
-            // ----------------------- Step 6: Fetch Clinic for Consultation Expiry -----------------------
-            Response clinicResponse = adminFeignClient.getClinicById(dto.getClinicId()).getBody();
-            int expirationDays = 0;
-            if (clinicResponse != null && clinicResponse.isSuccess() && clinicResponse.getData() != null) {
-                Map<String, Object> clinicData = objectMapper.convertValue(clinicResponse.getData(), Map.class);
-                if (clinicData.containsKey("consultationExpiration") && clinicData.get("consultationExpiration") != null) {
-                    expirationDays = parseExpirationDays(clinicData.get("consultationExpiration").toString());
-                }
-            }
-
-            // ----------------------- Step 7: Enrich Treatments (SubService Info) -----------------------
-            Map<String, TreatmentDetails> enrichedTreatments = new HashMap<>();
-            if (savedVisit.getTreatments() != null && savedVisit.getTreatments().getGeneratedData() != null) {
-                Map<String, TreatmentDetails> existingTreatments = savedVisit.getTreatments().getGeneratedData();
-
-                // 🔹 Fetch sub-service data from clinic-admin service
-                RestTemplate restTemplate = new RestTemplate();
-                String url = "http://3.6.119.57:9090/clinic-admin/getSubServiceByHospitalId/" + dto.getClinicId();
-                ResponseEntity<Map> subServiceResponse = restTemplate.getForEntity(url, Map.class);
-
-                List<Map<String, Object>> subServices = new ArrayList<>();
-                if (subServiceResponse.getBody() != null && subServiceResponse.getBody().get("data") != null) {
-                    subServices = (List<Map<String, Object>>) subServiceResponse.getBody().get("data");
-                }
-
-                for (Map.Entry<String, TreatmentDetails> entry : existingTreatments.entrySet()) {
-                    String treatmentName = entry.getKey();
-                    TreatmentDetails td = entry.getValue();
-
-                    Map<String, Object> matched = subServices.stream()
-                            .filter(m -> treatmentName.equalsIgnoreCase((String) m.get("subServiceName")))
-                            .findFirst()
-                            .orElse(null);
-
-                    if (matched != null) {
-                        td.setPrice((matched.get("price") != null) ? Double.parseDouble(matched.get("price").toString()) : 0.0);
-                        td.setGst((matched.get("gst") != null) ? Double.parseDouble(matched.get("gst").toString()) : 0.0);
-                        td.setDiscountedCost((matched.get("discountedCost") != null) ? Double.parseDouble(matched.get("discountedCost").toString()) : 0.0);
-                        td.setDescription((matched.get("viewDescription") != null) ? matched.get("viewDescription").toString() : "");
-                        td.setConsentFormType((matched.get("consentFormType") != null) ? matched.get("consentFormType").toString() : "0");
-                    }
-                    enrichedTreatments.put(treatmentName, td);
-                }
-            }
-
-            // ----------------------- Step 8: Calculate Sitting Summary -----------------------
+         // ----------------------- Step 7: Update Treatments & Calculate Sitting Summary -----------------------
             LocalDateTime lastSittingDateTime = null;
+            boolean hasTreatments = false;
+
+            // Prepare DTO to return in response
+            TreatmentResponseDTO treatmentResponseDTO = new TreatmentResponseDTO();
+            Map<String, TreatmentDetailsDTO> generatedDataDTO = new HashMap<>();
+
+            // Overall counters for all treatments
             int overallTotalSittings = 0;
             int overallTakenSittings = 0;
             int overallPendingSittings = 0;
             int overallCurrentSitting = 0;
-            Map<String, TreatmentDetailsDTO> generatedDataDTO = new HashMap<>();
 
-            for (Map.Entry<String, TreatmentDetails> entry : enrichedTreatments.entrySet()) {
-                TreatmentDetails entityTreatment = entry.getValue();
-                int total = Optional.ofNullable(entityTreatment.getTotalSittings()).orElse(0);
-                int completed = 0;
-                int currentSittingForThisTreatment = 0;
+            // Check if treatments exist in saved visit
+            if (savedVisit.getTreatments() != null && savedVisit.getTreatments().getGeneratedData() != null) {
+                hasTreatments = true;
+                Map<String, TreatmentDetails> generatedData = savedVisit.getTreatments().getGeneratedData();
 
-                List<DatesDTO> datesDTOList = new ArrayList<>();
-                if (entityTreatment.getDates() != null) {
-                    AtomicInteger counter = new AtomicInteger(1);
-                    for (Dates d : entityTreatment.getDates()) {
-                        LocalDate sittingDate = LocalDate.parse(d.getDate());
-                        String status = "Pending";
-                        if (!sittingDate.isAfter(LocalDate.now())) {
-                            completed++;
-                            currentSittingForThisTreatment = counter.get();
-                            overallCurrentSitting = Math.max(overallCurrentSitting, currentSittingForThisTreatment);
-                            status = "Completed";
-                        }
-                        d.setSitting(counter.getAndIncrement());
-                        d.setStatus(status);
-                        datesDTOList.add(new DatesDTO(d.getDate(), d.getSitting(), status));
-                        if (lastSittingDateTime == null || sittingDate.atStartOfDay().isAfter(lastSittingDateTime)) {
-                            lastSittingDateTime = sittingDate.atStartOfDay();
+                for (Map.Entry<String, TreatmentDetails> entry : generatedData.entrySet()) {
+                    TreatmentDetails entityTreatment = entry.getValue();
+
+                    int total = Optional.ofNullable(entityTreatment.getTotalSittings()).orElse(0);
+                    int completed = 0;
+                    int currentSittingForThisTreatment = 0;
+
+                    // Convert entity Dates -> DatesDTO for DTO
+                    List<DatesDTO> datesDTOList = new ArrayList<>();
+                    if (entityTreatment.getDates() != null && !entityTreatment.getDates().isEmpty()) {
+                        AtomicInteger counter = new AtomicInteger(1);
+
+                        for (Dates d : entityTreatment.getDates()) {
+                            try {
+                                LocalDate sittingDate = LocalDate.parse(d.getDate());
+                                LocalDateTime sittingDateTime = sittingDate.atStartOfDay();
+
+                                String sittingStatus = "Pending";
+
+                                // Count completed sittings (past or today)
+                                if (!sittingDate.isAfter(LocalDate.now())) {
+                                    completed++;
+                                    currentSittingForThisTreatment = counter.get();
+                                    overallCurrentSitting = Math.max(overallCurrentSitting, currentSittingForThisTreatment);
+                                    sittingStatus = "Completed"; // ✅ mark status
+                                }
+
+                                // Track last sitting date
+                                if (lastSittingDateTime == null || sittingDateTime.isAfter(lastSittingDateTime)) {
+                                    lastSittingDateTime = sittingDateTime;
+                                }
+
+                                // Assign sitting number if missing
+                                if (d.getSitting() == null || d.getSitting() == 0) {
+                                    d.setSitting(counter.getAndIncrement());
+                                }
+
+                                // ✅ Update entity status
+                                d.setStatus(sittingStatus);
+
+                                // Convert to DTO
+                                DatesDTO dtoDate = DatesDTO.builder()
+                                        .date(d.getDate())
+                                        .sitting(d.getSitting())
+                                        .status(sittingStatus)
+                                        .build();
+                                datesDTOList.add(dtoDate);
+
+                            } catch (Exception ignored) {}
                         }
                     }
+
+                    // Build TreatmentDetailsDTO for response
+                    TreatmentDetailsDTO dtoTreatment = TreatmentDetailsDTO.builder()
+                            .dates(datesDTOList)
+                            .reason(entityTreatment.getReason())
+                            .frequency(entityTreatment.getFrequency())
+                            .startDate(entityTreatment.getStartDate())
+                            .sittings(Math.max(total - completed, 0))
+                            .totalSittings(total)
+                            .takenSittings(completed)
+                            .pendingSittings(Math.max(total - completed, 0))
+                            .currentSitting(currentSittingForThisTreatment)
+                            .build();
+
+                    // Add to map for response DTO
+                    generatedDataDTO.put(entry.getKey(), dtoTreatment);
+
+                    // Update overall counters
+                    overallTotalSittings += total;
+                    overallTakenSittings += completed;
+                    overallPendingSittings += Math.max(total - completed, 0);
+
+                    // ✅ Update entity itself for DB
+                    entityTreatment.setSittings(Math.max(total - completed, 0));
+                    entityTreatment.setTakenSittings(completed);
+                    entityTreatment.setPendingSittings(Math.max(total - completed, 0));
+                    entityTreatment.setCurrentSitting(currentSittingForThisTreatment);
                 }
-
-                TreatmentDetailsDTO dtoTreatment = TreatmentDetailsDTO.builder()
-                        .dates(datesDTOList)
-                        .reason(entityTreatment.getReason())
-                        .frequency(entityTreatment.getFrequency())
-                        .startDate(entityTreatment.getStartDate())
-                        .sittings(Math.max(total - completed, 0))
-                        .totalSittings(total)
-                        .takenSittings(completed)
-                        .pendingSittings(Math.max(total - completed, 0))
-                        .currentSitting(currentSittingForThisTreatment)
-                        .price(entityTreatment.getPrice())
-                        .gst(entityTreatment.getGst())
-                        .discountedCost(entityTreatment.getDiscountedCost())
-                        .description(entityTreatment.getDescription())
-                        .consentFormType(entityTreatment.getConsentFormType())
-                        .build();
-
-                generatedDataDTO.put(entry.getKey(), dtoTreatment);
-                overallTotalSittings += total;
-                overallTakenSittings += completed;
-                overallPendingSittings += Math.max(total - completed, 0);
             }
 
-            // ----------------------- Step 9: Build Final TreatmentResponse -----------------------
+            // Set the response DTO fields with overall summary
+            treatmentResponseDTO.setGeneratedData(generatedDataDTO);
+            treatmentResponseDTO.setTotalSittings(overallTotalSittings);
+            treatmentResponseDTO.setTakenSittings(overallTakenSittings);
+            treatmentResponseDTO.setPendingSittings(overallPendingSittings);
+            treatmentResponseDTO.setCurrentSitting(overallCurrentSitting);
+
+            // ✅ Set followupStatus based on pending sittings
             String followupStatus = (overallPendingSittings == 0) ? "no-followup" : "followup-required";
+            treatmentResponseDTO.setFollowupStatus(followupStatus);
+
+            // ✅ Save back to entity with status and followupStatus
             TreatmentResponse treatmentEntity = TreatmentResponse.builder()
                     .generatedData(generatedDataDTO.entrySet().stream()
                             .collect(Collectors.toMap(
@@ -2281,19 +2133,16 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                                             .reason(e.getValue().getReason())
                                             .frequency(e.getValue().getFrequency())
                                             .startDate(e.getValue().getStartDate())
-                                            .price(e.getValue().getPrice())
-                                            .gst(e.getValue().getGst())
-                                            .discountedCost(e.getValue().getDiscountedCost())
-                                            .description(e.getValue().getDescription())
-                                            .consentFormType(e.getValue().getConsentFormType())
                                             .sittings(e.getValue().getSittings())
                                             .totalSittings(e.getValue().getTotalSittings())
                                             .takenSittings(e.getValue().getTakenSittings())
                                             .pendingSittings(e.getValue().getPendingSittings())
                                             .currentSitting(e.getValue().getCurrentSitting())
-                                            .build(),
-                                    (a, b) -> a,
-                                    LinkedHashMap::new)))
+                                            .build()
+                            ))
+                    )
+                    .selectedTestTreatment(savedVisit.getTreatments() != null
+                            ? savedVisit.getTreatments().getSelectedTestTreatment() : null)
                     .totalSittings(overallTotalSittings)
                     .takenSittings(overallTakenSittings)
                     .pendingSittings(overallPendingSittings)
@@ -2303,27 +2152,82 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
 
             savedVisit.setTreatments(treatmentEntity);
             repository.save(savedVisit);
-
-            // ----------------------- Step 10: Consultation Dates -----------------------
-            LocalDateTime consultationStartDate = (lastSittingDateTime != null)
-                    ? lastSittingDateTime.plusDays(1)
+            
+            // ----------------------- Step 8: Consultation Start & Expiry -----------------------
+            LocalDateTime consultationStartDate = hasTreatments && lastSittingDateTime != null
+                    ? lastSittingDateTime.plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0)
                     : LocalDate.now().plusDays(1).atStartOfDay();
+
             LocalDateTime consultationExpiryDate = consultationStartDate.plusDays(expirationDays);
 
             savedVisit.setConsultationStartDate(consultationStartDate);
             savedVisit.setConsultationExpiryDate(consultationExpiryDate);
             repository.save(savedVisit);
 
-            // ----------------------- Step 11: Build Response -----------------------
+            // ----------------------- Step 9: Follow-up Next Date -----------------------
+            if (savedVisit.getFollowUp() != null && savedVisit.getFollowUp().getDurationValue() > 0) {
+                int durationValue = savedVisit.getFollowUp().getDurationValue();
+                String durationUnit = savedVisit.getFollowUp().getDurationUnit();
+
+                LocalDateTime baseDate = consultationStartDate.isAfter(LocalDateTime.now())
+                        ? consultationStartDate
+                        : LocalDateTime.now();
+
+                LocalDateTime nextFollowUpDate = switch (durationUnit.toLowerCase()) {
+                    case "days" -> consultationStartDate.plusDays(durationValue);
+                    case "weeks" -> consultationStartDate.plusWeeks(durationValue);
+                    case "months" -> consultationStartDate.plusMonths(durationValue);
+                    default -> consultationStartDate.plusDays(durationValue);
+                };
+
+                if (nextFollowUpDate.isBefore(consultationStartDate)) {
+                    nextFollowUpDate = consultationStartDate;
+                }
+
+                savedVisit.getFollowUp().setNextFollowUpDate(nextFollowUpDate.toString());
+            }
+
+            // ----------------------- Step 10: Free Follow-ups & Booking Status -----------------------
+            int freeFollowUpsLeft = Optional.ofNullable(bookingData.getFreeFollowUpsLeft()).orElse(0);
+            boolean consultationExpired = consultationExpiryDate != null && !LocalDateTime.now().isBefore(consultationExpiryDate);
+
+            boolean allSittingsCompleted = hasTreatments && savedVisit.getTreatments().getGeneratedData().values().stream()
+                    .allMatch(t -> t.getSittings() != null && t.getSittings() == 0);
+
+            boolean consultationStarted = LocalDateTime.now().isAfter(consultationStartDate) ||
+                                          LocalDateTime.now().isEqual(consultationStartDate);
+
+            String status;
+            if (!consultationStarted) {
+                status = "In-Progress";
+            } else if (!consultationExpired) {
+                if (allSittingsCompleted && freeFollowUpsLeft > 0) {
+                    freeFollowUpsLeft--;
+                }
+                status = (freeFollowUpsLeft <= 0) ? "Completed" : "In-Progress";
+            } else {
+                status = "Completed";
+            }
+
+         // ----------------------- Step 11: Update Booking Service -----------------------
+            bookingData.setFreeFollowUpsLeft(Math.max(freeFollowUpsLeft, 0));
+            bookingData.setStatus(status);
+
+            // ✅ Set sitting summary
+            bookingData.setTotalSittings(overallTotalSittings);
+            bookingData.setTakenSittings(overallTakenSittings);
+            bookingData.setPendingSittings(overallPendingSittings);
+            bookingData.setCurrentSitting(overallCurrentSitting);
+
+            // ✅ Include the full treatment details
+            bookingData.setTreatments(treatmentResponseDTO);
+
+            // ✅ Update the booking service
+            bookingFeignClient.updateAppointment(bookingData);
+
+            // ----------------------- Step 12: Build Response -----------------------
             DoctorSaveDetailsDTO savedDto = convertToDto(savedVisit);
-            savedDto.setTreatments(TreatmentResponseDTO.builder()
-                    .generatedData(generatedDataDTO)
-                    .totalSittings(overallTotalSittings)
-                    .takenSittings(overallTakenSittings)
-                    .pendingSittings(overallPendingSittings)
-                    .currentSitting(overallCurrentSitting)
-                    .followupStatus(followupStatus)
-                    .build());
+            savedDto.setTreatments(treatmentResponseDTO);
 
             return buildResponse(true, savedDto,
                     "Doctor details saved successfully",
@@ -2334,14 +2238,12 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                     "Error fetching doctor/booking/clinic details: " + e.getMessage(),
                     HttpStatus.BAD_GATEWAY.value());
         } catch (Exception e) {
-            e.printStackTrace();
             return buildResponse(false, null,
                     "Unexpected error: " + e.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
-    
     /** Utility to parse "7 days" -> 7 */
     private int parseExpirationDays(String expirationStr) {
         if (expirationStr == null || expirationStr.isBlank()) return 0;
