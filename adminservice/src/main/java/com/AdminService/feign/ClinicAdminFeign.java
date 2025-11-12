@@ -12,11 +12,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.AdminService.dto.DoctorSlotDTO;
 import com.AdminService.dto.DoctorsDTO;
+import com.AdminService.dto.LabTechnicianRequestDTO;
 import com.AdminService.dto.LabTestDTO;
+import com.AdminService.dto.NurseDTO;
+import com.AdminService.dto.PharmacistDTO;
 import com.AdminService.dto.ProbableDiagnosisDTO;
+import com.AdminService.dto.ReceptionistRequestDTO;
+import com.AdminService.dto.SecurityStaffDTO;
 import com.AdminService.dto.SubServicesDto;
 import com.AdminService.dto.TreatmentDTO;
 import com.AdminService.dto.UpdateSlotRequestDTO;
+import com.AdminService.dto.WardBoyDTO;
 import com.AdminService.util.Response;
 import com.AdminService.util.ResponseStructure;
 
@@ -211,5 +217,211 @@ public interface ClinicAdminFeign {
 	        @PathVariable String doctorId);
     
     
+    ///////////////LAB TECHNICAN////////////
+    ///
+    ///
+    @PostMapping("/clinic-admin/addLabTechnician")
+    public ResponseEntity<ResponseStructure<LabTechnicianRequestDTO>> createLabTechnician(
+            @RequestBody LabTechnicianRequestDTO dto);
     
-}
+   
+    
+    @GetMapping("/clinic-admin/getAllLabTechnicians")
+    public ResponseEntity<ResponseStructure<List<LabTechnicianRequestDTO>>> getAllLabTechnicians();
+    
+    
+    @PutMapping("/clinic-admin/updateById/{id}")
+    public ResponseEntity<ResponseStructure<LabTechnicianRequestDTO>> updateLabTechnician(
+            @PathVariable String id,
+            @RequestBody LabTechnicianRequestDTO dto);
+    
+
+    @DeleteMapping("/clinic-admin/deleteById/{id}")
+    public ResponseEntity<ResponseStructure<String>> deleteLabTechnician(@PathVariable String id);
+    
+    
+    @GetMapping("/clinic-admin/getLabTechniciansByClinicById/{clinicId}")
+    public ResponseEntity<ResponseStructure<List<LabTechnicianRequestDTO>>> getLabTechniciansByClinic(
+            @PathVariable String clinicId);
+    @GetMapping("/clinic-admin/getLabTechnicianByIdAndClinicId/{clinicId}/{technicianId}")
+    public ResponseEntity<ResponseStructure<LabTechnicianRequestDTO>> getLabTechnicianByClinicAndId(
+            @PathVariable String clinicId,
+            @PathVariable String technicianId);
+    
+    @GetMapping("/clinic-admin/getLabTechniciansByClinicIdAndBranchId/{clinicId}/{branchId}")
+    public ResponseEntity<ResponseStructure<List<LabTechnicianRequestDTO>>> getLabTechniciansByClinicAndBranch(
+            @PathVariable String clinicId,
+            @PathVariable String branchId);
+    
+    //////////////////Receptionist//////////////
+
+    
+
+        // ✅ Create Receptionist
+        @PostMapping("/clinic-admin/createReceptionist")
+        ResponseEntity<ResponseStructure<ReceptionistRequestDTO>> createReceptionist(
+                @RequestBody ReceptionistRequestDTO dto);
+
+        // ✅ Get Receptionist by ID
+        @GetMapping("/clinic-admin/getReceptionistById/{id}")
+        ResponseEntity<ResponseStructure<ReceptionistRequestDTO>> getReceptionistById(
+                @PathVariable String id);
+
+        // ✅ Get All Receptionists
+        @GetMapping("/clinic-admin/getAllReceptionists")
+        ResponseEntity<ResponseStructure<List<ReceptionistRequestDTO>>> getAllReceptionists();
+
+        // ✅ Update Receptionist by ID
+        @PutMapping("/clinic-admin/updateReceptionist/{id}")
+        ResponseEntity<ResponseStructure<ReceptionistRequestDTO>> updateReceptionist(
+                @PathVariable String id,
+                @RequestBody ReceptionistRequestDTO dto);
+
+        // ✅ Delete Receptionist by ID
+        @DeleteMapping("/clinic-admin/deleteReceptionist/{id}")
+        ResponseEntity<ResponseStructure<String>> deleteReceptionist(@PathVariable String id);
+
+        // ✅ Get Receptionists by Clinic ID
+        @GetMapping("/clinic-admin/receptionists/{clinicId}")
+        ResponseEntity<ResponseStructure<List<ReceptionistRequestDTO>>> getReceptionistsByClinic(
+                @PathVariable String clinicId);
+
+        // ✅ Get Receptionist by Clinic ID and Receptionist ID
+        @GetMapping("/clinic-admin/{clinicId}/{receptionistId}")
+        ResponseEntity<ResponseStructure<ReceptionistRequestDTO>> getReceptionistByClinicAndId(
+                @PathVariable String clinicId,
+                @PathVariable String receptionistId);
+
+        // ✅ Get Receptionists by Clinic ID and Branch ID
+        @GetMapping("/clinic-admin/getReceptionistsByClinicIdAndBranchId/{clinicId}/{branchId}")
+        ResponseEntity<ResponseStructure<List<ReceptionistRequestDTO>>> getReceptionistsByClinicAndBranch(
+                @PathVariable String clinicId,
+                @PathVariable String branchId);
+        
+                        ////Nurse////////////
+        // ✅ Add Nurse
+        @PostMapping("/clinic-admin/addNurse")
+        ResponseEntity<ResponseStructure<NurseDTO>> nurseOnBoarding(@RequestBody NurseDTO dto);
+
+        // ✅ Get All Nurses by Hospital
+        @GetMapping("/clinic-admin/getAllNurses/{hospitalId}")
+        ResponseEntity<ResponseStructure<List<NurseDTO>>> getAllByHospital(@PathVariable String hospitalId);
+
+        // ✅ Get Nurse by Hospital and Nurse ID
+        @GetMapping("/clinic-admin/getNurse/{hospitalId}/{nurseId}")
+        ResponseEntity<ResponseStructure<NurseDTO>> getNurse(
+                @PathVariable String hospitalId,
+                @PathVariable String nurseId);
+
+        // ✅ Update Nurse
+        @PutMapping("/clinic-admin/updateNurse/{nurseId}")
+        ResponseEntity<ResponseStructure<NurseDTO>> updateNurse(
+                @PathVariable String nurseId,
+                @RequestBody NurseDTO dto);
+
+        // ✅ Delete Nurse
+        @DeleteMapping("/clinic-admin/deleteNurse/{hospitalId}/{nurseId}")
+        ResponseEntity<ResponseStructure<String>> deleteNurse(
+                @PathVariable String hospitalId,
+                @PathVariable String nurseId);
+
+        // ✅ Get All Nurses by Hospital and Branch
+        @GetMapping("/clinic-admin/getAllNursesByBranchIdAndHospiatlId/{hospitalId}/{branchId}")
+        ResponseEntity<ResponseStructure<List<NurseDTO>>> getAllNursesByBranch(
+                @PathVariable String hospitalId,
+                @PathVariable String branchId);
+        
+        
+        /////////////////Pharmacist//////
+        
+        
+   //// Pharmacist ////
+
+     // ✅ Add Pharmacist
+     @PostMapping("/clinic-admin/addPharmacist")
+     ResponseEntity<ResponseStructure<PharmacistDTO>> pharmacistOnBoarding(@RequestBody PharmacistDTO dto);
+
+     // ✅ Get All Pharmacists by Hospital
+     @GetMapping("/clinic-admin/getAllPharmacists/{hospitalId}")
+     ResponseEntity<ResponseStructure<List<PharmacistDTO>>> getAllByDepartment(@PathVariable String hospitalId);
+
+     // ✅ Get Single Pharmacist
+     @GetMapping("/clinic-admin/getPharmacist/{pharmacistId}")
+     ResponseEntity<ResponseStructure<PharmacistDTO>> getPharmacist(@PathVariable String pharmacistId);
+
+     // ✅ Update Pharmacist
+     @PutMapping("/clinic-admin/updatePharmacist/{pharmacistId}")
+     ResponseEntity<ResponseStructure<PharmacistDTO>> updatePharmacist(
+             @PathVariable String pharmacistId,
+             @RequestBody PharmacistDTO dto);
+
+     // ✅ Delete Pharmacist
+     @DeleteMapping("/clinic-admin/deletePharmacist/{pharmacistId}")
+     ResponseEntity<ResponseStructure<String>> deletePharmacist(@PathVariable String pharmacistId);
+
+     // ✅ Get Pharmacists by Hospital and Branch
+     @GetMapping("/clinic-admin/getPharmacistsByHospitalIdAndBranchId/{hospitalId}/{branchId}")
+     ResponseEntity<ResponseStructure<List<PharmacistDTO>>> getPharmacistsByHospitalIdAndBranchId(
+             @PathVariable String hospitalId,
+             @PathVariable String branchId);
+
+        
+        /////////////Security staff/////////////////////
+       
+     @PostMapping("/clinic-admin/addSecurityStaff")
+     ResponseStructure<SecurityStaffDTO> addSecurityStaff(@RequestBody SecurityStaffDTO dto);
+
+     @PutMapping("/clinic-admin/updateSecurityStaffById/{staffId}")
+     ResponseStructure<SecurityStaffDTO> updateSecurityStaff(
+             @PathVariable("staffId") String staffId,
+             @RequestBody SecurityStaffDTO staffRequest);
+
+     @GetMapping("/clinic-admin/getSecurityStaffById/{staffId}")
+     ResponseStructure<SecurityStaffDTO> getSecurityStaffById(@PathVariable("staffId") String staffId);
+
+     @GetMapping("/clinic-admin/getAllSecurityStaffByClinicId/{clinicId}")
+     ResponseStructure<List<SecurityStaffDTO>> getAllByClinicId(@PathVariable("clinicId") String clinicId);
+
+     @DeleteMapping("/clinic-admin/deleteSecurityStaffById/{staffId}")
+     ResponseStructure<String> deleteSecurityStaff(@PathVariable("staffId") String staffId);
+
+     @GetMapping("/clinic-admin/getSecurityStaffByClinicIdAndBranchId/{clinicId}/{branchId}")
+     ResponseStructure<List<SecurityStaffDTO>> getSecurityStaffByClinicIdAndBranchId(
+             @PathVariable("clinicId") String clinicId,
+             @PathVariable("branchId") String branchId);
+     
+                          ///////WardBoy////////////////
+     @PostMapping("/clinic-admin/addWardBoy")
+     ResponseStructure<WardBoyDTO> addWardBoy(@RequestBody WardBoyDTO dto);
+
+     @PutMapping("/clinic-admin/updateWardBoyById/{id}")
+     ResponseStructure<WardBoyDTO> updateWardBoy(@PathVariable("id") String id, @RequestBody WardBoyDTO dto);
+
+     @GetMapping("/clinic-admin/getWardBoyById/{id}")
+     ResponseStructure<WardBoyDTO> getWardBoyById(@PathVariable("id") String id);
+
+     @GetMapping("/clinic-admin/getAllWardBoys")
+     ResponseStructure<List<WardBoyDTO>> getAllWardBoys();
+
+     @GetMapping("/clinic-admin/getWardBoysByClinicId/{clinicId}")
+     ResponseStructure<List<WardBoyDTO>> getWardBoysByClinicId(@PathVariable("clinicId") String clinicId);
+
+     @GetMapping("/clinic-admin/getWardBoyByIdAndClinicId/{wardBoyId}/{clinicId}")
+     ResponseStructure<WardBoyDTO> getWardBoyByIdAndClinicId(
+             @PathVariable("wardBoyId") String wardBoyId,
+             @PathVariable("clinicId") String clinicId);
+
+     @DeleteMapping("/clinic-admin/deleteWardBoyById/{id}")
+     ResponseStructure<Void> deleteWardBoy(@PathVariable("id") String id);
+
+     @GetMapping("/clinic-admin/getWardBoysByClinicIdAndBranchId/{clinicId}/{branchId}")
+     ResponseStructure<List<WardBoyDTO>> getWardBoysByClinicIdAndBranchId(
+             @PathVariable("clinicId") String clinicId,
+             @PathVariable("branchId") String branchId);
+ }
+ 
+        
+    
+        
+    
+

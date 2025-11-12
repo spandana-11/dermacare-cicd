@@ -1,4 +1,4 @@
-package com.clinicadmin.sevice.impl;
+package com.clinicadmin.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

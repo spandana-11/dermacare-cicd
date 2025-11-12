@@ -496,7 +496,7 @@ public class AdministratorServiceImpl implements AdministratorService {
         // Delete admin
         administratorRepository.deleteById(existingAdmin.getId());
 
-        // Delete credentials (if any)
+        // Delete credentials
         credentialsRepository.findByStaffId(adminId)
                 .ifPresent(creds -> credentialsRepository.deleteById(creds.getId()));
 

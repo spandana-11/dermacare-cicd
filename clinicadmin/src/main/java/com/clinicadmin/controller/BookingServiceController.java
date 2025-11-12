@@ -5,13 +5,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.clinicadmin.dto.BookingRequset;
 import com.clinicadmin.dto.BookingResponse;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.service.BookingService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 @RestController
 @RequestMapping("/clinic-admin")
@@ -57,6 +61,29 @@ public class BookingServiceController {
 	   public ResponseEntity<?> getInprogressBookingsByInput(
 				 @PathVariable String input, @PathVariable String clinicId){
 		   return bookingService.retrieveAppointnmentsByInput(input,clinicId);
+	 }
+	
+	   @GetMapping("/bookings/byPatientId/{patientId}")
+	   public ResponseEntity<?> getInprogressBookingsByPatientId(
+				 @PathVariable String patientId){
+		   return bookingService.retrieveAppointnmentsByPatientId(patientId);
+		   
+	 }
+	   @PostMapping("/bookService")
+	   public ResponseEntity<Object> bookService(@RequestBody BookingRequset req)throws JsonProcessingException  {
+	   	Response response = bookingService.bookService(req);
+	   	if(response != null && response.getData() == null) {
+	   		 return ResponseEntity.status(response.getStatus()).body(response);
+	   	 }else if(response != null && response.getData() != null) {
+	   		 return ResponseEntity.status(response.getStatus()).body(response.getData());}
+	   		 else {
+	   			 return null;
+	   		 }
+	   	}
+	   @GetMapping("/bookings/Inprogress/patientId/{patientId}")
+	   public ResponseEntity<?> getInprogressAppointmentsByPatientId(
+				 @PathVariable String patientId){
+		   return bookingService.getInprogressBookingsByPatientId(patientId);
 	 }
 	   
 }

@@ -22,45 +22,48 @@ public interface DoctorServiceFeign {
 
 	@GetMapping("/api/doctor-notes/get-all-doctor-notes")
 	public ResponseEntity<Response> getAllNotes();
-	
+
 	@GetMapping("/api/appointments/patient/{patientId}")
-    public ResponseEntity<?> getAppointmentsByPatientId(@PathVariable String patientId);
-	
-	  //  Prescription  APIs  for medicine template
+	public ResponseEntity<?> getAppointmentsByPatientId(@PathVariable String patientId);
 
-    @PostMapping("/api/doctors/createPrescription")
-    ResponseEntity<Response> createPrescription(@RequestBody DoctorPrescriptionDTO dto);
+	// Prescription APIs for medicine template
 
-    @GetMapping("/api/doctors/getAllPrescriptions")
-    ResponseEntity<Response> getAllPrescriptions();
+	@PostMapping("/api/doctors/createPrescription")
+	ResponseEntity<Response> createPrescription(@RequestBody DoctorPrescriptionDTO dto);
 
-    @GetMapping("/api/doctors/getPrescriptionById/{id}")
-    ResponseEntity<Response> getPrescriptionById(@PathVariable String id);
+	@GetMapping("/api/doctors/getAllPrescriptions")
+	ResponseEntity<Response> getAllPrescriptions();
 
-    @GetMapping("/api/doctors/getMedicineById/{medicineId}")
-    ResponseEntity<Response> getMedicineById(@PathVariable String medicineId);
+	@GetMapping("/api/doctors/getPrescriptionById/{id}")
+	ResponseEntity<Response> getPrescriptionById(@PathVariable String id);
 
-    @GetMapping("/api/doctors/searchMedicines/{keyword}")
-    ResponseEntity<Response> searchMedicines(@PathVariable String keyword);
+	@GetMapping("/api/doctors/getMedicineById/{medicineId}")
+	ResponseEntity<Response> getMedicineById(@PathVariable String medicineId);
 
-    @DeleteMapping("/api/doctors/deletePrescription/{id}")
-    ResponseEntity<Response> deletePrescription(@PathVariable String id);
+	@GetMapping("/api/doctors/searchMedicines/{keyword}")
+	ResponseEntity<Response> searchMedicines(@PathVariable String keyword);
 
-    @DeleteMapping("/api/doctors/deleteMedicine/{medicineId}")
-    ResponseEntity<Response> deleteMedicine(@PathVariable String medicineId);
+	@DeleteMapping("/api/doctors/deletePrescription/{id}")
+	ResponseEntity<Response> deletePrescription(@PathVariable String id);
 
-    @GetMapping("/api/doctors/getPrescriptionsByClinicId/{clinicId}")
-    ResponseEntity<Response> getPrescriptionsByClinicId(@PathVariable String clinicId);
-    
-    @PutMapping("/api/doctors/updateMedicine/{medicineId}")
-    public ResponseEntity<Response> updateMedicine(@PathVariable String medicineId,
-                                                   @RequestBody MedicineDTO dto);
-    
+	@DeleteMapping("/api/doctors/deleteMedicine/{medicineId}")
+	ResponseEntity<Response> deleteMedicine(@PathVariable String medicineId);
+
+	@GetMapping("/api/doctors/getPrescriptionsByClinicId/{clinicId}")
+	ResponseEntity<Response> getPrescriptionsByClinicId(@PathVariable String clinicId);
+
+	@PutMapping("/api/doctors/updateMedicine/{medicineId}")
+	public ResponseEntity<Response> updateMedicine(@PathVariable String medicineId, @RequestBody MedicineDTO dto);
+
 //    -------------------------------------MedicineType ----------------------------------
-    @PostMapping("/api/doctors/search-or-add")
-    public ResponseEntity<Response> searchOrAddMedicineType(@RequestBody MedicineTypeDTO dto);
-    
-    @GetMapping("/api/doctors/getMedicineTypes/{clinicId}")
-    public ResponseEntity<Response> getMedicineTypes(@PathVariable String clinicId);
+	@PostMapping("/api/doctors/search-or-add")
+	public ResponseEntity<Response> searchOrAddMedicineType(@RequestBody MedicineTypeDTO dto);
+
+	@GetMapping("/api/doctors/getMedicineTypes/{clinicId}")
+	public ResponseEntity<Response> getMedicineTypes(@PathVariable String clinicId);
+
+// ------------- ------ getVisitHistoryByPatient ---------------------------
+	@GetMapping("/api/doctors/visitHistory/{patientId}")
+	public ResponseEntity<Response> getVisitHistoryByPatientId(@PathVariable String patientId);
 
 }

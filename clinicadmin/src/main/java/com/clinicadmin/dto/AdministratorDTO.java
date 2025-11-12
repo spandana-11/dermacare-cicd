@@ -81,7 +81,6 @@ public class AdministratorDTO {
 
     private String profilePicture;
 
-   
     private BankAccountDetails bankAccountDetails;
 
     private Map<String, List<String>> permissions;
