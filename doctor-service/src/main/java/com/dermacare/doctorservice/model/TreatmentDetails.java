@@ -22,10 +22,4 @@ public class TreatmentDetails {
     private Integer takenSittings;   // Completed sittings
     private Integer pendingSittings; // Remaining sittings (for convenience)
     private Integer currentSitting;  // Last completed sitting number
-    // ✅ Enrichment fields from SubService
-    private Double price;
-    private Double gst;
-    private Double discountedCost;
-    private String description;
-    private String consentFormType;
 }
