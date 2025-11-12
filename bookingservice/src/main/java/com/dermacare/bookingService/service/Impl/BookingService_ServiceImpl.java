@@ -864,6 +864,77 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 //	}
 
 
+//	public ResponseEntity<?> getTodayDoctorAppointmentsByDoctorId(String hospitalId, String doctorId) {
+//	    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+//	    List<BookingResponse> responseList = new ArrayList<>();
+//
+//	    try {
+//	        List<Booking> existingBookings = repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
+//	        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+//	        LocalDate currentDate = LocalDate.now(ZoneId.of("Asia/Kolkata"));
+//
+//	        if (existingBookings != null && !existingBookings.isEmpty()) {
+//	            for (Booking b : existingBookings) {
+//	                if (b.getTreatments() != null && b.getTreatments().getGeneratedData() != null) {
+//	                    for (Map.Entry<String, TreatmentDetailsDTO> entry : b.getTreatments().getGeneratedData().entrySet()) {
+//	                        String treatmentName = entry.getKey();
+//	                        TreatmentDetailsDTO t = entry.getValue();
+//
+//	                        if (t.getDates() != null) {
+//	                            for (DatesDTO d : t.getDates()) {
+//	                                LocalDate sittingDate = LocalDate.parse(d.getDate(), dateFormatter);
+//
+//	                                // ✅ Check today's sitting
+//	                                if (sittingDate.equals(currentDate) &&
+//	                                        (d.getStatus().equalsIgnoreCase("Confirmed") ||
+//	                                         d.getStatus().equalsIgnoreCase("In-Progress"))) {
+//
+//	                                    // Create a clone for this sitting
+//	                                    BookingResponse temp = toResponse(b);
+//	                                    temp.setSubServiceName(treatmentName);
+//	                                    temp.setServiceDate(d.getDate());
+//	                                    temp.setServicetime(b.getServicetime());
+//	                                    temp.setStatus(d.getStatus());
+//
+//	                                    // Keep only this treatment info
+//	                                    Map<String, TreatmentDetailsDTO> oneTreatment = new HashMap<>();
+//	                                    oneTreatment.put(treatmentName, t);
+//	                                    temp.getTreatments().setGeneratedData(oneTreatment);
+//
+//	                                    responseList.add(temp);
+//	                                }
+//	                            }
+//	                        }
+//	                    }
+//	                }
+//	            }
+//
+//	            if (!responseList.isEmpty()) {
+//	                res.setStatusCode(200);
+//	                res.setHttpStatus(HttpStatus.OK);
+//	                res.setData(responseList);
+//	                res.setMessage("Today's Appointments Found");
+//	            } else {
+//	                res.setStatusCode(200);
+//	                res.setHttpStatus(HttpStatus.OK);
+//	                res.setData(responseList);
+//	                res.setMessage("No Appointments for Today");
+//	            }
+//	        } else {
+//	            res.setStatusCode(200);
+//	            res.setHttpStatus(HttpStatus.OK);
+//	            res.setData(responseList);
+//	            res.setMessage("Appointments Not Found");
+//	        }
+//	    } catch (Exception e) {
+//	        res.setStatusCode(500);
+//	        res.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+//	        res.setMessage("Error occurred: " + e.getMessage());
+//	    }
+//
+//	    return ResponseEntity.status(res.getStatusCode()).body(res);
+//	}
+
 	public ResponseEntity<?> getTodayDoctorAppointmentsByDoctorId(String hospitalId, String doctorId) {
 	    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
 	    List<BookingResponse> responseList = new ArrayList<>();
@@ -874,8 +945,32 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	        LocalDate currentDate = LocalDate.now(ZoneId.of("Asia/Kolkata"));
 
 	        if (existingBookings != null && !existingBookings.isEmpty()) {
+
 	            for (Booking b : existingBookings) {
-	                if (b.getTreatments() != null && b.getTreatments().getGeneratedData() != null) {
+	                boolean added = false;
+
+	                // 🩺 Case A: First-time booking (no treatments)
+	                if (b.getTreatments() == null || b.getTreatments().getGeneratedData() == null) {
+	                    if (b.getServiceDate() != null) {
+	                        LocalDate bookingDate = LocalDate.parse(b.getServiceDate(), dateFormatter);
+
+	                        if (bookingDate.equals(currentDate) &&
+	                                (b.getStatus().equalsIgnoreCase("Confirmed") ||
+	                                 b.getStatus().equalsIgnoreCase("In-Progress"))) {
+
+	                            BookingResponse temp = toResponse(b);
+	                            temp.setServiceDate(b.getServiceDate());
+	                            temp.setServicetime(b.getServicetime());
+	                            temp.setStatus(b.getStatus());
+	                            temp.setSubServiceName(b.getSubServiceName());
+	                            responseList.add(temp);
+	                            added = true;
+	                        }
+	                    }
+	                }
+
+	                // 💊 Case B: Has treatment sittings
+	                if (!added && b.getTreatments() != null && b.getTreatments().getGeneratedData() != null) {
 	                    for (Map.Entry<String, TreatmentDetailsDTO> entry : b.getTreatments().getGeneratedData().entrySet()) {
 	                        String treatmentName = entry.getKey();
 	                        TreatmentDetailsDTO t = entry.getValue();
@@ -884,24 +979,23 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                            for (DatesDTO d : t.getDates()) {
 	                                LocalDate sittingDate = LocalDate.parse(d.getDate(), dateFormatter);
 
-	                                // ✅ Check today's sitting
 	                                if (sittingDate.equals(currentDate) &&
 	                                        (d.getStatus().equalsIgnoreCase("Confirmed") ||
 	                                         d.getStatus().equalsIgnoreCase("In-Progress"))) {
 
-	                                    // Create a clone for this sitting
 	                                    BookingResponse temp = toResponse(b);
 	                                    temp.setSubServiceName(treatmentName);
 	                                    temp.setServiceDate(d.getDate());
 	                                    temp.setServicetime(b.getServicetime());
 	                                    temp.setStatus(d.getStatus());
 
-	                                    // Keep only this treatment info
+	                                    // keep only this treatment info
 	                                    Map<String, TreatmentDetailsDTO> oneTreatment = new HashMap<>();
 	                                    oneTreatment.put(treatmentName, t);
 	                                    temp.getTreatments().setGeneratedData(oneTreatment);
 
 	                                    responseList.add(temp);
+	                                    break;
 	                                }
 	                            }
 	                        }
@@ -926,6 +1020,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	            res.setData(responseList);
 	            res.setMessage("Appointments Not Found");
 	        }
+
 	    } catch (Exception e) {
 	        res.setStatusCode(500);
 	        res.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -935,6 +1030,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	    return ResponseEntity.status(res.getStatusCode()).body(res);
 	}
 
+	
 	
 //	public ResponseEntity<?> filterDoctorAppointmentsByDoctorId(String hospitalId, String doctorId, String number) {
 //	    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
