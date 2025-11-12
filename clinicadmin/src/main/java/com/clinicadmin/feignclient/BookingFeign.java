@@ -1,6 +1,7 @@
 package com.clinicadmin.feignclient;
 
 import java.util.List;
+
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import com.clinicadmin.dto.BookingRequset;
 import com.clinicadmin.dto.BookingResponse;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.ResponseStructure;
@@ -83,6 +85,14 @@ public interface BookingFeign {
 	
 	@GetMapping("/api/v1/appointments/byInput/{input}/{clinicId}")	
 	public ResponseEntity<?> retrieveAppointnmentsByInput(@PathVariable String input,@PathVariable String clinicId);
+//-----------------------------New Api for clinic admin  coummunicating from booking service for front end--------------------	
+	@GetMapping("/api/v1/appointments/patientId/{patientId}")	
+	public ResponseEntity<ResponseStructure<List<BookingResponse>>> getBookingByPatientId(@PathVariable String patientId);
 	
+	@PostMapping("/api/v1/bookService")
+	public ResponseEntity<ResponseStructure<BookingResponse>> bookService(@RequestBody BookingRequset req);
+	
+	@GetMapping("/api/v1/appointments/Inprogress/patientId/{patientId}")
+	public ResponseEntity<?> getInprogressAppointmentsByPatientId(@PathVariable String patientId);
 	
 }

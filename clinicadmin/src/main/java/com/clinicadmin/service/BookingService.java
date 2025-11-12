@@ -3,9 +3,12 @@ package com.clinicadmin.service;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+
+import com.clinicadmin.dto.BookingRequset;
 import com.clinicadmin.dto.BookingResponse;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.ResponseStructure;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public interface BookingService {
 	public Response deleteBookedService(String id);
@@ -20,6 +23,12 @@ public interface BookingService {
 	public ResponseEntity<?> updateAppointmentBasedOnBookingId(BookingResponse bookingResponse);
  
 	public ResponseEntity<?> retrieveAppointnmentsByInput(String input, String clinicId);
+
+	ResponseEntity<?> retrieveAppointnmentsByPatientId(String patientId);
+
+	Response bookService(BookingRequset req) throws JsonProcessingException;
+
+	ResponseEntity<?> getInprogressBookingsByPatientId(String patientId);
 		
 
 }

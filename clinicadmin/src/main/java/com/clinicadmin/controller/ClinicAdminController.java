@@ -28,22 +28,18 @@ public class ClinicAdminController {
 	@Autowired
 	ClinicAdminService clinicAdminService;
 
-
-
 	@Autowired
 	AdminServiceClient adminServiceClient;
-
-
-	
 
 //------------------------------login Clinic--------------------------------------------------------------------
 	@PostMapping("/clinicLogin")
 	public ResponseEntity<Response> clinicLogin(@Valid @RequestBody ClinicLoginRequestDTO clinicLoginRequestDTO) {
 		Response res = clinicAdminService.login(clinicLoginRequestDTO);
-		 if(res!=null) {
-			 return ResponseEntity.status(res.getStatus()).body(res);
-		 }
-		return null;}
+		if (res != null) {
+			return ResponseEntity.status(res.getStatus()).body(res);
+		}
+		return null;
+	}
 
 //------------------------------Update Clinic --------------------------------------------------------------------
 	@PutMapping("/updatePassword/{userName}")
@@ -75,10 +71,10 @@ public class ClinicAdminController {
 //		Response response = clinicAdminService.deleteClinic(hospitalId);
 //		return ResponseEntity.status(response.getStatus()).body(response);
 //	}
-	
+
 	@GetMapping("/getBranchesByClinicId/{clinicId}")
-    public ResponseEntity<?> getBranchesByClinicId(@PathVariable String clinicId) {
-        return clinicAdminService.getBranchesByClinicId(clinicId);
-    }
+	public ResponseEntity<?> getBranchesByClinicId(@PathVariable String clinicId) {
+		return clinicAdminService.getBranchesByClinicId(clinicId);
+	}
 
 }
