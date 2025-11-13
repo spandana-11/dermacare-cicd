@@ -56,7 +56,6 @@ public interface AdminServiceClient {
 	                                                      @PathVariable String branchId);
 	@GetMapping("/admin/getBranchById/{branchId}")
 	public ResponseEntity<Response> getBranchById(@PathVariable String branchId);
-	
 
 	 @GetMapping("/admin/getDefaultAdminPermissions")
 	    ResponseEntity<Map<String, List<String>>> getDefaultAdminPermissions();

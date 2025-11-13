@@ -1,14 +1,17 @@
 package com.AdminService.service;
 
-import com.AdminService.dto.NurseDTO;
-import com.AdminService.util.ResponseStructure;
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 
-import java.util.List;
+import com.AdminService.dto.NurseDTO;
+import com.AdminService.util.Response;
+import com.AdminService.util.ResponseStructure;
 
 public interface NurseService {
 
-    ResponseEntity<ResponseStructure<NurseDTO>> nurseOnBoarding(NurseDTO dto);
+	
+	public ResponseEntity<Response> nurseOnBoarding(NurseDTO dto);
 
     ResponseEntity<ResponseStructure<List<NurseDTO>>> getAllByHospital(String hospitalId);
 

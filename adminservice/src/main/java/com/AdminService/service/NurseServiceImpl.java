@@ -1,18 +1,21 @@
 package com.AdminService.service;
 
-import com.AdminService.dto.NurseDTO;
-import com.AdminService.feign.ClinicAdminFeign;
-import com.AdminService.util.ResponseStructure;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import feign.FeignException;
-import lombok.RequiredArgsConstructor;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
-import java.util.List;
+import com.AdminService.dto.NurseDTO;
+import com.AdminService.feign.ClinicAdminFeign;
+import com.AdminService.util.Response;
+import com.AdminService.util.ResponseStructure;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import feign.FeignException;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -21,15 +24,21 @@ public class NurseServiceImpl implements NurseService {
     private final ClinicAdminFeign clinicAdminFeign;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // ✅ Add Nurse
     @Override
-    public ResponseEntity<ResponseStructure<NurseDTO>> nurseOnBoarding(NurseDTO dto) {
+    public ResponseEntity<Response> nurseOnBoarding(NurseDTO dto) {
         try {
             return clinicAdminFeign.nurseOnBoarding(dto);
         } catch (FeignException ex) {
-            return handleFeignException(ex, "Failed to add nurse", new TypeReference<ResponseStructure<NurseDTO>>() {});
+            return handleFeignExceptionResponse(ex, "Failed to add nurse", new TypeReference<Response>() {});
         }
     }
+
+
+
+
+
+    
+
 
     // ✅ Get All Nurses by Hospital
     @Override
@@ -116,4 +125,29 @@ public class NurseServiceImpl implements NurseService {
                     ));
         }
     }
+    private ResponseEntity<Response> handleFeignExceptionResponse(
+            FeignException ex, String defaultMessage, TypeReference<Response> typeRef) {
+
+        try {
+            String body = ex.responseBody().isPresent()
+                    ? new String(ex.responseBody().get().array(), StandardCharsets.UTF_8)
+                    : null;
+
+            if (body != null && !body.isEmpty()) {
+                Response clinicResponse = objectMapper.readValue(body, typeRef);
+                return ResponseEntity.status(clinicResponse.getStatus()).body(clinicResponse);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Response fallback = new Response();
+        fallback.setSuccess(false);
+        fallback.setMessage(defaultMessage);
+        fallback.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(fallback);
+    }
+
+
 }

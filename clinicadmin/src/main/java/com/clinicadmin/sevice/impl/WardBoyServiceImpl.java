@@ -263,8 +263,9 @@ public class WardBoyServiceImpl implements WardBoyService {
 	@Override
 	public ResponseStructure<List<WardBoyDTO>> getWardBoysByClinicIdAndBranchId(String clinicId, String branchId) {
 	    // Fetch all ward boys for the given clinicId and branchId
-	    List<WardBoyDTO> wardBoys = wardBoyRepository
-	            .findAllByClinicIdAndBranchId(clinicId, branchId) // Repository method
+		List<WardBoy>  wordboy=wardBoyRepository
+        .findByClinicIdAndBranchId(clinicId, branchId);
+	    List<WardBoyDTO> wardBoys =wordboy  // Repository method
 	            .stream()
 	            .map(WardBoyMapper::toDTO) // Convert Entity → DTO
 	            .collect(Collectors.toList());

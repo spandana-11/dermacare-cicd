@@ -15,7 +15,6 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = "Nurse")
 public class NurseDTO {
 	private ObjectId id;
 	private String nurseId;
