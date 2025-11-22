@@ -15,6 +15,7 @@ import {
   cilWallet,
   cilLightbulb,
   cilBell,
+  cilPeople
 } from '@coreui/icons'
 import { CNavItem } from '@coreui/react'
 import { NavLink } from 'react-router-dom'
@@ -49,6 +50,13 @@ export const getNavigation = (permissions = {}) => {
       as: NavLink,
       icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
     },
+      {
+      component: CNavItem,
+      name: 'Patient Management',
+      to: '/patient-management',
+      as: NavLink,
+      icon: <CIcon icon={cilPeople} customClassName="nav-icon" />,
+    },
     {
       component: CNavItem,
       to: '/pharmacy-management',
@@ -63,6 +71,7 @@ export const getNavigation = (permissions = {}) => {
       as: NavLink,
       icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
     },
+
     {
       component: CNavItem,
       to: '/Disease',
@@ -130,7 +139,17 @@ export const getNavigation = (permissions = {}) => {
   ]
 
   // Only include items if permission exists
-  if (!permissions || typeof permissions !== 'object') return []
+ if (!permissions || typeof permissions !== 'object') return []
 
-  return allNav.filter((item) => permissions[item.name])
+  // return allNav.filter((item) => permissions[item.name])
+  return allNav.filter(
+  (item) => permissions[item.name] || item.name === 'Patient Management'
+)
+
 }
+
+
+  // ✅ Optional: filter based on permissions if needed
+  
+
+

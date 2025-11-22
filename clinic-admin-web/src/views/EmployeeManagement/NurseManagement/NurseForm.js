@@ -966,7 +966,10 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                     {rowFields.map((field) => (
                       <div className="col-md-4" key={field}>
                         <CFormLabel className="text-capitalize">
-                          {field} <span style={{ color: 'red' }}>*</span>
+                          
+                          {field}
+            {/* Show * except for 'landmark' */}
+            {field !== 'landmark' && <span style={{ color: 'red' }}> *</span>}
                         </CFormLabel>
                         <CFormInput
                           type="text"

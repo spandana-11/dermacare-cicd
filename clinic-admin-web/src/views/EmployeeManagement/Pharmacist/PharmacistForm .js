@@ -970,7 +970,8 @@ const PharmacistForm = ({
                     {rowFields.map((field) => (
                       <div className="col-md-4" key={field}>
                         <CFormLabel className="text-capitalize">
-                          {field} <span style={{ color: 'red' }}>*</span>
+                          {field}
+                          {field !== 'landmark' && <span style={{ color: 'red' }}>*</span>}
                         </CFormLabel>
                         <CFormInput
                           type="text"

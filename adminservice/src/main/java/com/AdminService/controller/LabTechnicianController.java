@@ -1,10 +1,7 @@
 package com.AdminService.controller;
-
 import java.util.List;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import com.AdminService.dto.LabTechnicianRequestDTO;
 import com.AdminService.service.LabTechnicianService;
 import com.AdminService.util.ResponseStructure;

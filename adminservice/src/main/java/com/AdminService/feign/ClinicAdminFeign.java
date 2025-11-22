@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.AdminService.dto.AdministratorDTO;
+import com.AdminService.dto.DoctorAvailabilityStatusDTO;
 import com.AdminService.dto.DoctorSlotDTO;
 import com.AdminService.dto.DoctorsDTO;
 import com.AdminService.dto.LabTechnicianRequestDTO;
@@ -460,6 +461,10 @@ ResponseStructure<String> deleteAdministrator(@PathVariable String clinicId,
 ResponseStructure<String> deleteAdministratorUsingClinicBranchAndAdminId(@PathVariable String clinicId,
                                                                          @PathVariable String branchId,
                                                                          @PathVariable String adminId);
+//------------------Doctor Availability----------------------------------------------------------------------------------------
+@PostMapping("clinic-admin/doctorId/{doctorId}/availability")
+public ResponseEntity<Response> doctorAvailabilityStatus(@PathVariable String doctorId,
+	@RequestBody DoctorAvailabilityStatusDTO status);
 }
  
  

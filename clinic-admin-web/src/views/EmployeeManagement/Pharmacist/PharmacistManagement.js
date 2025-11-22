@@ -117,6 +117,7 @@ const PharmacistManagement = () => {
             username: res.data.data.userName,
             password: res.data.data.password,
           })
+          setCredentialsModalVisible(true)
           setModalTVisible(true)
           showCustomToast('Pharmacist added successfully!', 'success')
           setModalVisible(false)
@@ -191,9 +192,9 @@ const PharmacistManagement = () => {
         <CModalBody>
           {credentials ? (
             <div>
-              <p>
+              {/* <p>
                 <strong>Name:</strong> {credentials.pharmacistName || 'New Pharmacist'}
-              </p>
+              </p> */}
               <p>
                 <strong>Username:</strong> {credentials.username}
               </p>

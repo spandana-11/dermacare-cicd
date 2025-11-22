@@ -928,8 +928,9 @@ if (loading) return
                     {rowFields.map((field) => (
                       <div className="col-md-4" key={field}>
                         <CFormLabel className="text-capitalize">
-                          {field} <span style={{ color: 'red' }}>*</span>
-                        </CFormLabel>
+                         {field}
+                            {field !== 'landmark' && <span style={{ color: 'red' }}>*</span>}
+                       </CFormLabel>
                         <CFormInput
                           type="text"
                           maxLength={field === 'postalCode' ? 6 : undefined}

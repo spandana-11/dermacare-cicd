@@ -31,6 +31,7 @@ const Reports = React.lazy(() => import('./views/Reports/reportManagement'))
 const ReportsDetails = React.lazy(() => import('./views/Reports/ReportDetails'))
 const CustomerViewDetails = React.lazy(
   () => import('./views/customerManagement/CustomerViewDetails'),
+  
 )
 const CustomerManagement = React.lazy(() => import('./views/customerManagement/CustomerManagement'))
 const LabTechnicianManagement = React.lazy(
@@ -48,6 +49,9 @@ const ReferDoctorManagement = React.lazy(
 const SecurityManagement = React.lazy(
   () => import('./views/EmployeeManagement/Security/SecurityManagement'),
 )
+const AdminManagement = React.lazy(
+  () => import('./views/EmployeeManagement/Administrator/AdminManagement'),
+)
 const OtherStaffManagement = React.lazy(
   () => import('./views/EmployeeManagement/OtherStaff/OtherStaffManagement'),
 )
@@ -56,6 +60,9 @@ const PharmacyManagement = React.lazy(
 )
 const ActiveAppointmentsScreen = React.lazy(
   () => import('./views/AppointmentManagement/In-progressAppointmnets'),
+)
+const PatientManagement = React.lazy(
+  () => import('./views/Patients/Patientmanagement'),
 )
  
 
@@ -99,6 +106,11 @@ const routes = [
     name: 'Appointment Details',
     element: AppointmentDetailsPage,
   },
+  {
+    path: '/employee-management/admin',
+    name: 'Administrator',
+    element: AdminManagement,
+  },
 
   {
     path: '/in-progress',
@@ -114,6 +126,7 @@ const routes = [
     element: CustomerViewDetails,
   },
   { path: '/customer-management', name: 'Customer Management', element: CustomerManagement },
+  { path: '/patient-management', name: 'Patient Management', element: PatientManagement },
 ]
 
 export default routes

@@ -39,6 +39,7 @@ import LoadingIndicator from '../../Utils/loader'
 import { useGlobalSearch } from '../Usecontext/GlobalSearchContext'
 import { http } from '../../Utils/Interceptors'
 import Pagination from '../../Utils/Pagination'
+import { CustomerByClinicNdBranchId } from '../customerManagement/CustomerManagementAPI'
 
 const WidgetsDropdown = (props) => {
   const [slides, setSlides] = useState([])
@@ -57,9 +58,12 @@ const WidgetsDropdown = (props) => {
   const [totalPatientsCount, setTotalPatientsCount] = useState(0) // NEW: State to hold total appointments count
   const [loadingAppointments, setLoadingAppointments] = useState(true) // New state for loading indicator
   const [appointmentError, setAppointmentError] = useState(null) // New state for appointment fetch error
+  const [loadingPatients, setLoadingPatients] = useState(true) // New state for loading indicator
   const [loadingDoctors, setLoadingDoctors] = useState(true) // New state for loading indicator
-  const [doctorError, setDoctorError] = useState(null) // New state for appointment fetch error
+  const [patientError, setPatientError] = useState(null) 
+  const [doctorError, setDoctorError] = useState(null) 
   const [doctors, setDoctors] = useState([])
+  const [patients, setPatients] = useState([])
   const { searchQuery } = useGlobalSearch()
   const [filteredData, setFilteredData] = useState([])
   const [filterTypes, setFilterTypes] = useState([])
@@ -184,26 +188,37 @@ const WidgetsDropdown = (props) => {
     },
     [todayISO, convertToISODate],
   )
-useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await GetBookingByClinicIdData()
-        console.log('Bookings Data:', response)
+const fetchPatients = useCallback(async (clinicId) => {
+    setLoadingPatients(true)
+    setPatientError(null)
+    try {
+      const branchId = localStorage.getItem('branchId')
+      // The response here is ALREADY the array of patients, 
+      // as determined by the CustomerByClinicNdBranchId function.
+      const response = await CustomerByClinicNdBranchId(clinicId, branchId) 
+      console.log('Raw Patients Data:', response)
 
-        // ✅ Step 2: Extract patientId list and count unique ones
-        const patientIds = response?.data?.map(item => item.patientId) || []
+      //  Access the response directly, not response?.data
+      const patientArray = response || [] 
 
-        // If you only want unique patient count
-        const uniquePatients = [...new Set(patientIds)]
-        setTotalPatients(uniquePatients.length)
-
-      } catch (error) {
-        console.error('Error fetching patients:', error)
+      if (Array.isArray(patientArray)) {
+        // Use setTotalPatientsCount, not setTotalDoctorsCount
+        setTotalPatientsCount(patientArray.length) 
+        setPatients(patientArray)
+      } else {
+        console.error('Invalid patients response format:', response)
+        //Use setPatientError, not setDoctorError
+        setPatientError('No patients found.') 
       }
+    } catch (error) {
+      console.error('Failed to fetch patients:', error)
+      //  Use setPatientError, not setDoctorError
+      setPatientError('Failed to fetch patients.') 
+    } finally {
+      setLoadingPatients(false)
     }
+}, [])
 
-    fetchData()
-  }, [])
   const fetchDoctors = useCallback(async (clinicId) => {
     setLoadingDoctors(true)
     setDoctorError(null)
@@ -240,6 +255,7 @@ useEffect(() => {
     if (hospitalId) {
       fetchAppointments(hospitalId)
       fetchDoctors(hospitalId)
+      fetchPatients(hospitalId)
       // Set up daily refresh:
       // 1. Calculate time until next midnight
       const now = new Date()
@@ -446,7 +462,7 @@ useEffect(() => {
         <CCol sm={6} xl={4}>
           <CWidgetStatsA
             color="success"
-            value={totalAppointmentsCount}
+            value={totalPatientsCount}
             title="Total Patients"
             action={
               <CDropdown alignment="end">
@@ -454,7 +470,9 @@ useEffect(() => {
                   <CIcon icon={cilOptions} className="text-high-emphasis-inverse" />
                 </CDropdownToggle>
                 <CDropdownMenu>
-                  <CDropdownItem>View</CDropdownItem>
+                  <CDropdownItem onClick={() => navigate('/patient-management')}>
+                    View All Patients
+                  </CDropdownItem>{' '}
                   <CDropdownItem>Export</CDropdownItem>
                 </CDropdownMenu>
               </CDropdown>
@@ -472,7 +490,7 @@ useEffect(() => {
                       backgroundColor: 'transparent',
                       borderColor: 'rgba(255,255,255,.55)',
                       pointBackgroundColor: getStyle('--cui-success'),
-                      data: [100, 150, 130, 180, 170, 190, 200],
+                       data: [100, 150, 130, 180, 170, 190, 200],
                     },
                   ],
                 }}
