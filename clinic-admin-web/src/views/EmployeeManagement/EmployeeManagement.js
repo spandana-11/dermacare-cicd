@@ -40,7 +40,7 @@ const EmployeeManagement = () => {
     { title: 'FrontDesk', type: 'frontDesk', path: '/employee-management/frontdesk' },
     { title: 'Security', type: 'security', path: '/employee-management/security' },
     { title: 'OtherStaff', type: 'otherStaff', path: '/employee-management/otherstaff' },
-    { title: 'Administrator', type: 'admin', path: '/Admin' }, //TODO: Administrator
+    { title: 'Administrator', type: 'admin', path: '/employee-management/admin' }, //TODO: Administrator
   ]
 
   // ✅ Permission check function

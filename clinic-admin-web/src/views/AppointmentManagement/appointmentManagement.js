@@ -387,7 +387,7 @@ const appointmentManagement = () => {
           <CTableHead className="pink-table  w-auto">
             <CTableRow>
               <CTableHeaderCell>S.No</CTableHeaderCell>
-              <CTableHeaderCell>Patient File_ID</CTableHeaderCell>
+              <CTableHeaderCell>Patient_ID</CTableHeaderCell>
               <CTableHeaderCell>Name</CTableHeaderCell>
               <CTableHeaderCell>Doctor Name</CTableHeaderCell>
               <CTableHeaderCell>Consultation Type</CTableHeaderCell>

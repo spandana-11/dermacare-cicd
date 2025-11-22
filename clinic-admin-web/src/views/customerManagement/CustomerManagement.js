@@ -534,6 +534,28 @@ const CustomerManagement = () => {
   }, []) // run once on mount
 
   useEffect(() => {
+  const postalInput = document.querySelector('input[placeholder="6-digit PIN"]');
+  if (!postalInput) return;
+
+  // Run once on mount or when browser autofills value
+  const checkAutofill = () => {
+    const val = postalInput.value?.trim();
+    if (val && val.length === 6) {
+      // Ensure formData updates if autofilled value not detected by onChange
+      handlePincodeChange(val);
+    }
+  };
+
+  // Run immediately (for already autofilled fields)
+  checkAutofill();
+
+  // Listen for autofill after a short delay
+  const interval = setInterval(checkAutofill, 500);
+
+  return () => clearInterval(interval);
+}, []);
+
+  useEffect(() => {
     if (formData.dateOfBirth) {
       const dateObj = new Date(formData.dateOfBirth)
       if (!isNaN(dateObj)) {
@@ -642,15 +664,27 @@ const CustomerManagement = () => {
 
     if (!address.city?.trim()) errors.city = 'City is required'
     if (!address.state?.trim()) errors.state = 'State is required'
-    if (!address.postalCode?.trim()) {
-      errors.postalCode = 'Postal code is required'
-    } else if (!/^\d{6}$/.test(address.postalCode)) {
-      errors.postalCode = 'Postal code must be 6 digits'
-    }
-    // Post Office (optional, only if postal code is valid)
-    if (address.postalCode?.trim() && !selectedPO) {
-      errors.postOffice = 'Please select a Post Office'
-    }
+   // ✅ Smart Post Office validation
+if (!address.postalCode?.trim()) {
+  errors.postalCode = 'Postal code is required'
+} else if (!/^\d{6}$/.test(address.postalCode)) {
+  errors.postalCode = 'Postal code must be 6 digits'
+} else {
+  // ✅ Handle autofill case: if city/state already filled, skip "Select PO" error
+  const hasAutoPO =
+    address.city?.trim() &&
+    address.state?.trim() &&
+    postOffices.some(
+      (po) =>
+        po.Name?.toLowerCase() === address.city.toLowerCase() &&
+        po.State?.toLowerCase() === address.state.toLowerCase()
+    )
+
+  if (!(selectedPO || hasAutoPO)) {
+    errors.postOffice = 'Please select a Post Office'
+  }
+}
+
 
     setFormErrors(errors)
     return Object.keys(errors).length === 0

@@ -21,6 +21,7 @@ public class DoctorSaveDetailsFeignImplServicelController {
 	  
 	    @GetMapping("/visitHistory/{patientId}")
 	    public ResponseEntity<Response> getVisitHistoryByPatientId(@PathVariable String patientId) {
-	        return doctorSaveDetailsFeignImplService.getVisitHistoryByPatientId(patientId);
+	    	Response res = doctorSaveDetailsFeignImplService.getVisitHistoryByPatientId(patientId);
+	        return ResponseEntity.status(res.getStatus()).body(res);
 	    }
 }
