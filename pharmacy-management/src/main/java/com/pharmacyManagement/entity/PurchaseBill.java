@@ -40,4 +40,11 @@ public class PurchaseBill {
     private double previousAdjustment;
     private double postDiscount;
     private double netPayable;
+    
+    private String paymentMode;
+    private String billDueDate;
+    private String creditDays;
+    private String duePaidBillNo;
+    private String department;
+    private String financialYear;
 }

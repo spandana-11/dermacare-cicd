@@ -31,61 +31,43 @@ public class SupplierServiceImpl implements SupplierService {
 	public Response addSupplier(SupplierDTO dto) {
 
 		log.info("Request received to add supplier: {}", dto);
-
 		Response response = new Response();
 
 		try {
-			// ------------------------------ VALIDATIONS ------------------------------
+			// -------- VALIDATIONS --------
 			if (dto == null) {
-				response.setSuccess(false);
-				response.setMessage("Supplier details cannot be null");
-				response.setStatus(HttpStatus.BAD_REQUEST.value());
-				log.error("Supplier DTO is null");
-				return response;
+				return buildError(response, "Supplier details cannot be null", HttpStatus.BAD_REQUEST);
 			}
 
 			if (dto.getSupplierName() == null || dto.getSupplierName().trim().isEmpty()) {
-				response.setSuccess(false);
-				response.setMessage("Supplier name is required");
-				response.setStatus(HttpStatus.BAD_REQUEST.value());
-				log.warn("Supplier name missing");
-				return response;
+				return buildError(response, "Supplier name is required", HttpStatus.BAD_REQUEST);
 			}
 
-			if (dto.getContactNumber() == null || dto.getContactNumber().trim().isEmpty()) {
-				response.setSuccess(false);
-				response.setMessage("Contact number is required");
-				response.setStatus(HttpStatus.BAD_REQUEST.value());
-				log.warn("Supplier contact number missing");
-				return response;
+			if (dto.getContactDetails() == null ||
+				dto.getContactDetails().getMobileNumber1() == null ||
+				dto.getContactDetails().getMobileNumber1().trim().isEmpty()) 
+			{
+				return buildError(response, "Primary mobile number is required", HttpStatus.BAD_REQUEST);
 			}
 
-			// ------------------------------ DUPLICATE CHECKS
-			// ------------------------------
-
-			// Duplicate Supplier Name
-			boolean supplierNameExists = supplierRepository.existsBySupplierNameIgnoreCase(dto.getSupplierName());
-
-			if (supplierNameExists) {
-				response.setSuccess(false);
-				response.setMessage("Supplier name already exists: " + dto.getSupplierName());
-				response.setStatus(HttpStatus.CONFLICT.value());
-				log.warn("Duplicate supplier name attempt: {}", dto.getSupplierName());
-				return response;
+			// -------- DUPLICATE CHECKS --------
+			if (supplierRepository.existsBySupplierNameIgnoreCase(dto.getSupplierName())) {
+				return buildError(response, "Supplier name already exists: " + dto.getSupplierName(),
+						HttpStatus.CONFLICT);
 			}
 
-			// Duplicate Mobile Number
-			boolean mobileExists = supplierRepository.existsByContactNumber(dto.getContactNumber());
-
-			if (mobileExists) {
-				response.setSuccess(false);
-				response.setMessage("Mobile number already exists: " + dto.getContactNumber());
-				response.setStatus(HttpStatus.CONFLICT.value());
-				log.warn("Duplicate mobile number attempt: {}", dto.getContactNumber());
-				return response;
+			if (supplierRepository.existsByContactDetailsMobileNumber1(dto.getContactDetails().getMobileNumber1())) {
+				return buildError(response, "Mobile number already exists: " + dto.getContactDetails().getMobileNumber1(),
+						HttpStatus.CONFLICT);
 			}
 
-			// ------------------------------ SAVE SUPPLIER ------------------------------
+			if (dto.getContactDetails().getEmail() != null &&
+				supplierRepository.existsByContactDetailsEmail(dto.getContactDetails().getEmail())) {
+				return buildError(response, "Email already exists: " + dto.getContactDetails().getEmail(),
+						HttpStatus.CONFLICT);
+			}
+
+			// -------- SAVE SUPPLIER --------
 			Supplier supplier = mapToEntity(dto);
 			supplierRepository.save(supplier);
 
@@ -98,9 +80,8 @@ public class SupplierServiceImpl implements SupplierService {
 
 		} catch (Exception ex) {
 			log.error("Error while adding supplier", ex);
-			response.setSuccess(false);
-			response.setMessage("An error occurred while adding supplier");
-			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+			return buildError(response, "An error occurred while adding supplier",
+					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
 		return response;
@@ -113,43 +94,53 @@ public class SupplierServiceImpl implements SupplierService {
 	public Response updateSupplier(String supplierId, SupplierDTO dto) {
 
 		log.info("Request received to update supplier: {}", supplierId);
-
 		Response response = new Response();
 
 		try {
+
 			if (supplierId == null || supplierId.isEmpty()) {
-				response.setSuccess(false);
-				response.setMessage("Supplier ID cannot be null or empty");
-				response.setStatus(HttpStatus.BAD_REQUEST.value());
-				log.warn("Supplier ID missing");
-				return response;
+				return buildError(response, "Supplier ID cannot be null or empty", HttpStatus.BAD_REQUEST);
 			}
 
 			Supplier existing = supplierRepository.findById(supplierId).orElse(null);
 
 			if (existing == null) {
-				response.setSuccess(false);
-				response.setMessage("Supplier not found with ID: " + supplierId);
-				response.setStatus(HttpStatus.NOT_FOUND.value());
-				log.warn("Supplier not found: {}", supplierId);
-				return response;
+				return buildError(response, "Supplier not found with ID: " + supplierId, HttpStatus.NOT_FOUND);
 			}
 
-			// Update fields
+			// -------- Update fields --------
 			if (dto.getSupplierName() != null)
 				existing.setSupplierName(dto.getSupplierName());
-			if (dto.getSupplierLicenseNo() != null)
-				existing.setSupplierLicenseNo(dto.getSupplierLicenseNo());
+
 			if (dto.getGstNumber() != null)
 				existing.setGstNumber(dto.getGstNumber());
-			if (dto.getGstClassification() != null)
-				existing.setGstClassification(dto.getGstClassification());
-			if (dto.getContactNumber() != null)
-				existing.setContactNumber(dto.getContactNumber());
-			if (dto.getEmail() != null)
-				existing.setEmail(dto.getEmail());
+
+			if (dto.getRegistrationNumber() != null)
+				existing.setRegistrationNumber(dto.getRegistrationNumber());
+
+			if (dto.getCstNumber() != null)
+				existing.setCstNumber(dto.getCstNumber());
+
+			if (dto.getForm20B() != null)
+				existing.setForm20B(dto.getForm20B());
+
+			if (dto.getForm21B() != null)
+				existing.setForm21B(dto.getForm21B());
+
 			if (dto.getAddress() != null)
 				existing.setAddress(dto.getAddress());
+
+			if (dto.getCity() != null)
+				existing.setCity(dto.getCity());
+
+			if (dto.getArea() != null)
+				existing.setArea(dto.getArea());
+
+			existing.setNonLocalSupplier(dto.isNonLocalSupplier());
+
+			// -------- Contact Details Update --------
+			if (dto.getContactDetails() != null)
+				existing.setContactDetails(dto.getContactDetails());
 
 			existing.setActive(dto.isActive());
 
@@ -164,9 +155,8 @@ public class SupplierServiceImpl implements SupplierService {
 
 		} catch (Exception ex) {
 			log.error("Error while updating supplier {}", supplierId, ex);
-			response.setSuccess(false);
-			response.setMessage("An error occurred while updating supplier");
-			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+			return buildError(response, "An error occurred while updating supplier",
+					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
 		return response;
@@ -179,29 +169,19 @@ public class SupplierServiceImpl implements SupplierService {
 	public Response getSupplierById(String supplierId) {
 
 		log.info("Fetching supplier details for ID: {}", supplierId);
-
 		Response response = new Response();
 
 		try {
+
 			if (supplierId == null || supplierId.isEmpty()) {
-				response.setSuccess(false);
-				response.setMessage("Supplier ID cannot be empty");
-				response.setStatus(HttpStatus.BAD_REQUEST.value());
-				log.warn("Supplier ID empty");
-				return response;
+				return buildError(response, "Supplier ID cannot be empty", HttpStatus.BAD_REQUEST);
 			}
 
 			Supplier supplier = supplierRepository.findById(supplierId).orElse(null);
 
 			if (supplier == null) {
-				response.setSuccess(false);
-				response.setMessage("Supplier not found with ID: " + supplierId);
-				response.setStatus(HttpStatus.NOT_FOUND.value());
-				log.warn("Supplier not found: {}", supplierId);
-				return response;
+				return buildError(response, "Supplier not found with ID: " + supplierId, HttpStatus.NOT_FOUND);
 			}
-
-			log.info("Supplier found: {}", supplierId);
 
 			response.setSuccess(true);
 			response.setMessage("Supplier retrieved successfully");
@@ -210,9 +190,8 @@ public class SupplierServiceImpl implements SupplierService {
 
 		} catch (Exception ex) {
 			log.error("Error fetching supplier {}", supplierId, ex);
-			response.setSuccess(false);
-			response.setMessage("An error occurred while fetching supplier");
-			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+			return buildError(response, "An error occurred while fetching supplier",
+					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
 		return response;
@@ -225,11 +204,13 @@ public class SupplierServiceImpl implements SupplierService {
 	public Response getAllSuppliers() {
 
 		log.info("Fetching all suppliers");
-
 		Response response = new Response();
 
 		try {
-			List<SupplierDTO> list = supplierRepository.findAll().stream().map(this::mapToDTO)
+
+			List<SupplierDTO> list = supplierRepository.findAll()
+					.stream()
+					.map(this::mapToDTO)
 					.collect(Collectors.toList());
 
 			response.setSuccess(true);
@@ -239,9 +220,8 @@ public class SupplierServiceImpl implements SupplierService {
 
 		} catch (Exception ex) {
 			log.error("Error fetching suppliers", ex);
-			response.setSuccess(false);
-			response.setMessage("An error occurred while fetching suppliers");
-			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+			return buildError(response, "An error occurred while fetching suppliers",
+					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
 		return response;
@@ -254,30 +234,19 @@ public class SupplierServiceImpl implements SupplierService {
 	public Response deleteSupplier(String supplierId) {
 
 		log.info("Request received to delete supplier: {}", supplierId);
-
 		Response response = new Response();
 
 		try {
+
 			if (supplierId == null || supplierId.isEmpty()) {
-				response.setSuccess(false);
-				response.setMessage("Supplier ID cannot be null or empty");
-				response.setStatus(HttpStatus.BAD_REQUEST.value());
-				log.warn("Supplier ID missing");
-				return response;
+				return buildError(response, "Supplier ID cannot be null or empty", HttpStatus.BAD_REQUEST);
 			}
 
-			boolean exists = supplierRepository.existsById(supplierId);
-			if (!exists) {
-				response.setSuccess(false);
-				response.setMessage("Supplier not found: " + supplierId);
-				response.setStatus(HttpStatus.NOT_FOUND.value());
-				log.warn("Supplier not found for deletion: {}", supplierId);
-				return response;
+			if (!supplierRepository.existsById(supplierId)) {
+				return buildError(response, "Supplier not found: " + supplierId, HttpStatus.NOT_FOUND);
 			}
 
 			supplierRepository.deleteById(supplierId);
-
-			log.info("Supplier deleted: {}", supplierId);
 
 			response.setSuccess(true);
 			response.setMessage("Supplier deleted successfully");
@@ -285,9 +254,8 @@ public class SupplierServiceImpl implements SupplierService {
 
 		} catch (Exception ex) {
 			log.error("Error deleting supplier {}", supplierId, ex);
-			response.setSuccess(false);
-			response.setMessage("An error occurred while deleting supplier");
-			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+			return buildError(response, "An error occurred while deleting supplier",
+					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
 		return response;
@@ -297,30 +265,54 @@ public class SupplierServiceImpl implements SupplierService {
 	// MAPPING METHODS
 	// ---------------------------------------------------------
 	private Supplier mapToEntity(SupplierDTO dto) {
+
 		Supplier supplier = new Supplier();
-//        supplier.setSupplierId(dto.getSupplierId());
+
 		supplier.setSupplierName(dto.getSupplierName());
-		supplier.setSupplierLicenseNo(dto.getSupplierLicenseNo());
 		supplier.setGstNumber(dto.getGstNumber());
-		supplier.setGstClassification(dto.getGstClassification());
-		supplier.setContactNumber(dto.getContactNumber());
-		supplier.setEmail(dto.getEmail());
+		supplier.setRegistrationNumber(dto.getRegistrationNumber());
+		supplier.setCstNumber(dto.getCstNumber());
+		supplier.setForm20B(dto.getForm20B());
+		supplier.setForm21B(dto.getForm21B());
 		supplier.setAddress(dto.getAddress());
+		supplier.setCity(dto.getCity());
+		supplier.setArea(dto.getArea());
+		supplier.setNonLocalSupplier(dto.isNonLocalSupplier());
 		supplier.setActive(dto.isActive());
+		supplier.setContactDetails(dto.getContactDetails());
+
 		return supplier;
 	}
 
 	private SupplierDTO mapToDTO(Supplier supplier) {
+
 		SupplierDTO dto = new SupplierDTO();
+
 		dto.setSupplierId(supplier.getSupplierId());
 		dto.setSupplierName(supplier.getSupplierName());
-		dto.setSupplierLicenseNo(supplier.getSupplierLicenseNo());
 		dto.setGstNumber(supplier.getGstNumber());
-		dto.setGstClassification(supplier.getGstClassification());
-		dto.setContactNumber(supplier.getContactNumber());
-		dto.setEmail(supplier.getEmail());
+		dto.setRegistrationNumber(supplier.getRegistrationNumber());
+		dto.setCstNumber(supplier.getCstNumber());
+		dto.setForm20B(supplier.getForm20B());
+		dto.setForm21B(supplier.getForm21B());
 		dto.setAddress(supplier.getAddress());
+		dto.setCity(supplier.getCity());
+		dto.setArea(supplier.getArea());
+		dto.setNonLocalSupplier(supplier.isNonLocalSupplier());
 		dto.setActive(supplier.isActive());
+		dto.setContactDetails(supplier.getContactDetails());
+
 		return dto;
 	}
+
+	// ---------------------------------------------------------
+	// UTILITY METHOD
+	// ---------------------------------------------------------
+	private Response buildError(Response r, String message, HttpStatus status) {
+		r.setSuccess(false);
+		r.setMessage(message);
+		r.setStatus(status.value());
+		return r;
+	}
+
 }

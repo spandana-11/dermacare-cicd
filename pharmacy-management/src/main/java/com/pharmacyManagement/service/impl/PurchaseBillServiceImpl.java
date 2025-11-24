@@ -48,6 +48,13 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
             bill.setInvoiceDate(dto.getInvoiceDate());
             bill.setReceivingDate(dto.getReceivingDate());
             bill.setTaxType(dto.getTaxType());
+            bill.setPaymentMode(dto.getPaymentMode());
+            bill.setBillDueDate(dto.getBillDueDate());
+            bill.setCreditDays(dto.getCreditDays());
+            bill.setDuePaidBillNo(dto.getDuePaidBillNo());
+            bill.setDepartment(dto.getDepartment());
+            bill.setFinancialYear(dto.getFinancialYear());
+            
 
             // ============================
             // ITEM CALCULATIONS
