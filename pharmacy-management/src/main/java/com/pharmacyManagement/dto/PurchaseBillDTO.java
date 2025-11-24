@@ -31,4 +31,11 @@ public class PurchaseBillDTO {
     private Double paidAmount;           // change made
     private Double previousAdjustment;   // change made
     private Double postDiscount;         // change made
+    
+    private String paymentMode;
+    private String billDueDate;
+    private String creditDays;
+    private String duePaidBillNo;
+    private String department;
+    private String financialYear;
 }
