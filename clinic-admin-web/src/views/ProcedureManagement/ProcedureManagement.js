@@ -745,11 +745,12 @@ const ServiceManagement = () => {
         // serviceData()
       }
     } catch (error) {
-      console.error('Error in handleAddService:', error.response)
-      showCustomToast(error.response?.data?.message || 'Something went wrong', 'error', {
-        position: 'top-right',
-      })
-    } finally {
+  console.error('Error in handleAddService:', error?.response);
+
+
+  showCustomToast(response.data.message, 'success', { position: 'top-right' })
+
+} finally {
       setSaveLoading(false)
     }
 
