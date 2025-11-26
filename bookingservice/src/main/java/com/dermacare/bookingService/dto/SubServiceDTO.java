@@ -1,4 +1,4 @@
-package com.dermaCare.customerService.dto;
+package com.dermacare.bookingService.dto;
 
 import java.util.List;
 import java.util.Map;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SubServicesDto {
+public class SubServiceDTO {
 
 	private String hospitalId;
 

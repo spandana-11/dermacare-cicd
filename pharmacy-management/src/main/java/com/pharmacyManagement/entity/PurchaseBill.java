@@ -11,9 +11,10 @@ public class PurchaseBill {
 
     @Id
     private String id;
+    private String date;
+    private String time;
     private String purchaseBillNo;
     private String invoiceNo;
-
     private String supplierName;
     private String invoiceDate;
     private String receivingDate;

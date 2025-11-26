@@ -21,4 +21,8 @@ public class TreatmentDetailsDTO {
 	    private Integer pendingSittings;
 	    private Integer currentSitting;
 	    private String status; // e.g., "In-Progress", "Completed"
+		public String getSubServiceId() {
+			// TODO Auto-generated method stub
+			return null;
+		}
 }
