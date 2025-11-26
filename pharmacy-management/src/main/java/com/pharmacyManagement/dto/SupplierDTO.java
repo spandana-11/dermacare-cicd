@@ -10,17 +10,18 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SupplierDTO {
-	@Id
+	
 	private String supplierId;
 	private String supplierName;
 	private String gstNumber; // GSTIN
 	private String registrationNumber;
 	private String cstNumber;
-	String form20B;
-	String form21B;
-	String address;
-	String city;
-	String area;
+	private String tinNumber;
+	private String form20B;
+	private String form21B;
+	private String address;
+	private String city;
+	private String area;
 	private boolean nonLocalSupplier;
 	private boolean active;
 	private SupplierContactDetails contactDetails;

@@ -118,6 +118,9 @@ public class SupplierServiceImpl implements SupplierService {
 			if (dto.getRegistrationNumber() != null)
 				existing.setRegistrationNumber(dto.getRegistrationNumber());
 
+			if (dto.getTinNumber() != null)
+				existing.setTinNumber(dto.getTinNumber());
+			
 			if (dto.getCstNumber() != null)
 				existing.setCstNumber(dto.getCstNumber());
 
@@ -272,6 +275,7 @@ public class SupplierServiceImpl implements SupplierService {
 		supplier.setGstNumber(dto.getGstNumber());
 		supplier.setRegistrationNumber(dto.getRegistrationNumber());
 		supplier.setCstNumber(dto.getCstNumber());
+		supplier.setTinNumber(dto.getTinNumber());
 		supplier.setForm20B(dto.getForm20B());
 		supplier.setForm21B(dto.getForm21B());
 		supplier.setAddress(dto.getAddress());
@@ -293,6 +297,7 @@ public class SupplierServiceImpl implements SupplierService {
 		dto.setGstNumber(supplier.getGstNumber());
 		dto.setRegistrationNumber(supplier.getRegistrationNumber());
 		dto.setCstNumber(supplier.getCstNumber());
+		dto.setTinNumber(supplier.getTinNumber());
 		dto.setForm20B(supplier.getForm20B());
 		dto.setForm21B(supplier.getForm21B());
 		dto.setAddress(supplier.getAddress());
