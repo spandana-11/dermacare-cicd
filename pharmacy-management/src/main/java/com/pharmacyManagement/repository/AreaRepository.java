@@ -12,4 +12,9 @@ public interface AreaRepository extends MongoRepository<Area, String> {
 	boolean existsByCityId(String cityId);
 
 	List<Area> findByCityId(String cityId);
+
+	boolean existsByAreaNamesAndCityId(String areaName, String cityId);
+
+	
+
 }
