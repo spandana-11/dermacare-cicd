@@ -8,14 +8,15 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.pharmacyManagement.entity.PurchaseBill;
+
 @Repository
 public interface PurchaseBillRepository extends MongoRepository<PurchaseBill, String> {
 
-    boolean existsByPurchaseBillNo(String purchaseBillNo);
-    
-    Optional<PurchaseBill> findByPurchaseBillNo(String purchaseBillNo);
-    
-    @Query("{ 'date' : { $gte: ?0, $lte: ?1 } }")
-    List<PurchaseBill> findByDateRange(String fromDate, String toDate);
+	boolean existsByPurchaseBillNo(String purchaseBillNo);
+
+	Optional<PurchaseBill> findByPurchaseBillNo(String purchaseBillNo);
+
+	@Query("{ 'date' : { $gte: ?0, $lte: ?1 } }")
+	List<PurchaseBill> findByDateRange(String fromDate, String toDate);
 
 }

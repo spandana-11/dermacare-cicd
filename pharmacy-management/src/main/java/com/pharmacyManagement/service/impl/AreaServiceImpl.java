@@ -1,6 +1,8 @@
 package com.pharmacyManagement.service.impl;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -30,6 +32,16 @@ public class AreaServiceImpl implements AreaService {
 
 			if (city.isEmpty()) {
 				return new Response(false, null, "City not found for given cityId: " + dto.getCityId(), 404);
+			}
+
+			
+			for (String areaName : dto.getAreaNames()) {
+
+				boolean exists = areaRepository.existsByAreaNamesAndCityId(areaName, dto.getCityId());
+
+				if (exists) {
+					return new Response(false, null, "Area '" + areaName + "' already exists in this city", 400);
+				}
 			}
 
 			Area area = new Area();
@@ -128,35 +140,81 @@ public class AreaServiceImpl implements AreaService {
 			return new Response(false, null, "Failed to delete area: " + e.getMessage(), 500);
 		}
 	}
-
+	
 	@Override
 	public Response getAreasByCityId(String cityId) {
-		try {
-			if (cityId == null || cityId.trim().isEmpty()) {
-				return new Response(false, null, "cityId cannot be null or empty", 400);
-			}
+	    try {
+	        if (cityId == null || cityId.trim().isEmpty()) {
+	            return new Response(false, null, "cityId cannot be null or empty", 400);
+	        }
 
-			Optional<City> city = cityRepository.findById(cityId);
-			if (city.isEmpty()) {
-				return new Response(false, null, "City not found for cityId: " + cityId, 404);
-			}
+	        Optional<City> city = cityRepository.findById(cityId);
+	        if (city.isEmpty()) {
+	            return new Response(false, null, "City not found for cityId: " + cityId, 404);
+	        }
 
-			// Fetch areas
-			List<Area> areas = areaRepository.findByCityId(cityId);
+	        List<Area> areas = areaRepository.findByCityId(cityId);
 
-			if (areas.isEmpty()) {
-				return new Response(false, null, "No areas found for cityId: " + cityId, 404);
-			}
+	        if (areas.isEmpty()) {
+	            return new Response(false, null, "No areas found for cityId: " + cityId, 404);
+	        }
 
-			// Convert to DTO list
-			List<AreaDTO> list = areas.stream()
-					.map(a -> new AreaDTO(a.getId(), a.getAreaNames(), a.getCityId(), a.getCityName()))
-					.collect(Collectors.toList());
+//	        List<String> allAreaNames = new ArrayList<>();
+//
+//	        for (Area a : areas) {
+//	            List<String> names = a.getAreaNames();
+//	            if (names != null) {
+//	                for (String name : names) {
+//	                    if (!allAreaNames.contains(name)) { // distinct
+//	                        allAreaNames.add(name);
+//	                    }
+//	                }
+//	            }
+//	        }
+	        //  FLATTEN all areaNames into one list
+	        List<String> allAreaNames = areas.stream()
+	                .flatMap(a -> a.getAreaNames().stream())
+	                .distinct() // optional: remove duplicates
+	                .collect(Collectors.toList());
+           Map<String,List<String>> allAreas=new HashMap();
+           allAreas.put("areaNames",allAreaNames);
+	        return new Response(true, allAreas, "Areas fetched for cityId: " + cityId, 200);
 
-			return new Response(true, list, "Areas fetched for cityId: " + cityId, 200);
-
-		} catch (Exception e) {
-			return new Response(false, null, "Failed to fetch areas: " + e.getMessage(), 500);
-		}
+	    } catch (Exception e) {
+	        return new Response(false, null, "Failed to fetch areas: " + e.getMessage(), 500);
+	    }
 	}
+
+
+//	@Override
+//	public Response getAreasByCityId(String cityId) {
+//		try {
+//			if (cityId == null || cityId.trim().isEmpty()) {
+//				return new Response(false, null, "cityId cannot be null or empty", 400);
+//			}
+//
+//			Optional<City> city = cityRepository.findById(cityId);
+//			if (city.isEmpty()) {
+//				return new Response(false, null, "City not found for cityId: " + cityId, 404);
+//			}
+//
+//			// Fetch areas
+//			List<Area> areas = areaRepository.findByCityId(cityId);
+//
+//			if (areas.isEmpty()) {
+//				return new Response(false, null, "No areas found for cityId: " + cityId, 404);
+//			}
+//
+//			// Convert to DTO list
+//			List<AreaDTO> list = areas.stream()
+//					.map(a -> new AreaDTO(a.getId(), a.getAreaNames(), a.getCityId(), a.getCityName()))
+//					.collect(Collectors.toList());
+//
+//			return new Response(true, list, "Areas fetched for cityId: " + cityId, 200);
+//
+//		} catch (Exception e) {
+//			return new Response(false, null, "Failed to fetch areas: " + e.getMessage(), 500);
+//		}
+//	}
+	
 }
