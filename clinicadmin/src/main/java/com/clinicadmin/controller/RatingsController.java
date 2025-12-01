@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.clinicadmin.dto.Response;
-import com.clinicadmin.sevice.impl.RatingCalculationService;
+import com.clinicadmin.service.impl.RatingCalculationService;
 
 @RestController
 @RequestMapping("/clinic-admin")

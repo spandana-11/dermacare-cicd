@@ -168,12 +168,17 @@
 // }
 import axios from 'axios'
 import { toast } from 'react-toastify'
-import { BASE_URL } from '../baseUrl'
+import { BASE_URL, wifiUrl } from '../baseUrl'
 import { showCustomToast } from './Toaster'
 
 /* --------------------- Axios instances --------------------- */
 export const http = axios.create({
   baseURL: BASE_URL,
+  withCredentials: true,
+  timeout: 20000,
+})
+export const https = axios.create({
+  splrURL:wifiUrl,
   withCredentials: true,
   timeout: 20000,
 })

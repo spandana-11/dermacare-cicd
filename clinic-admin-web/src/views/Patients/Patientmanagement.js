@@ -501,7 +501,7 @@ useEffect(() => {
         Visit History for {selectedPatient?.fullName} ({selectedPatient?.patientId})
       </h5>
 
-      <CTable hover responsive bordered>
+      <CTable >
         <CTableHead className="pink-table w-auto">
           <CTableRow>
             <CTableHeaderCell>S.No</CTableHeaderCell>
