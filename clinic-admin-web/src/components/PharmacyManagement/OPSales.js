@@ -1,6 +1,3 @@
-// OPSales UI — integrated with functionality (no static/dummy data)
-// Screenshot path (for reference only): /mnt/data/WhatsApp Image 2025-11-19 at 09.50.22.jpeg
-
 import React, { useState, useEffect } from 'react'
 import {
   CRow,
@@ -20,10 +17,10 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilSave, cilPrint, cilMagnifyingGlass, cilPencil, cilTrash } from '@coreui/icons'
+import { getAllOpSales } from './OpSalesAPI'
+import { Edit2, Trash } from 'lucide-react'
 
-// NOTE: This component preserves your existing state names and behaviour.
-// It expects a function `getAllOpSales()` to be available in the scope where you import this component
-// (you already used it earlier). Do NOT add hard-coded rows; data must come from API (OpsaleData).
+
 
 const OPSales = ({ getAllOpSales }) => {
   const [OpsaleData, setOpSaleData] = useState([])
@@ -197,134 +194,162 @@ const OPSales = ({ getAllOpSales }) => {
   return (
     <div
       className="p-3"
-      style={{ background: '#E5F8FF', border: '3px solid #00AEEF', borderRadius: '10px' }}
+       style={{
+    color: 'var(--color-black)', // your text color
+      fontSize: '13px',
+  }}
     >
       {/* TOP HEADER */}
-      <CRow className="align-items-center mb-2">
-        <CCol sm={3}>
-          <h5 className="fw-bold text-primary">Sales</h5>
-        </CCol>
-        <CCol sm={2} className="d-flex align-items-center">
-          <CFormLabel className="me-2 fw-bold">Bill.No :</CFormLabel>
-          <span style={{ fontWeight: 700 }}>{billNo || ''}</span>
-        </CCol>
+<CRow className="align-items-center mb-2 flex-wrap">
+  <CCol xs={12} sm={2} className="d-flex align-items-center mb-2 mb-sm-0">
+    <CFormLabel className="me-2 fw-bold">BillNo :</CFormLabel>
+    <span className="fw-bold">{billNo || ''}</span>
+  </CCol>
 
-        <CCol sm={7} className="d-flex justify-content-end gap-2 align-items-center">
-          <div className="d-flex align-items-center">
-            <CFormLabel className="me-2">From</CFormLabel>
-            <CFormInput
-              type="date"
-              size="sm"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              style={{ width: 140 }}
-            />
-          </div>
+  <CCol xs={12} sm={10} className="d-flex flex-wrap justify-content-end gap-2 align-items-center">
+    <div className="d-flex align-items-center flex-grow-1 flex-sm-grow-0">
+      <CFormLabel className="me-2 fw-bold">From</CFormLabel>
+      <CFormInput
+        type="date"
+        size="sm"
+        value={dateFrom}
+        onChange={(e) => setDateFrom(e.target.value)}
+        style={{ minWidth: 90, maxWidth: 140, flex: 1 }}
+      />
+    </div>
 
-          <div className="d-flex align-items-center">
-            <CFormLabel className="me-2">To</CFormLabel>
-            <CFormInput
-              type="date"
-              size="sm"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              style={{ width: 140 }}
-            />
-          </div>
+    <div className="d-flex align-items-center flex-grow-1 flex-sm-grow-0">
+      <CFormLabel className="me-2 fw-bold">To</CFormLabel>
+      <CFormInput
+        type="date"
+        size="sm"
+        value={dateTo}
+        onChange={(e) => setDateTo(e.target.value)}
+        style={{ minWidth: 90, maxWidth: 140, flex: 1 }}
+      />
+    </div>
 
-          <div className="d-flex align-items-center">
-            <CFormLabel className="ms-2 fw-bold">Financial Year :</CFormLabel>
-            <span style={{ marginLeft: 8 }}>{financialYear}</span>
-          </div>
+    <div className="d-flex align-items-center flex-grow-1 flex-sm-grow-0">
+      <CFormLabel className="ms-2 fw-bold mb-0">Financial Year:</CFormLabel>
+      <span className="ms-2">2025-2026</span>
+    </div>
 
-          <CFormInput
-            type="date"
-            size="sm"
-            defaultValue={new Date().toISOString().slice(0, 10)}
-            style={{ width: 140 }}
-          />
-          <CFormInput
-            type="time"
-            size="sm"
-            defaultValue={new Date().toTimeString().slice(0, 8)}
-            style={{ width: 110 }}
-          />
-        </CCol>
-      </CRow>
+    <CFormInput
+      type="date"
+      size="sm"
+      defaultValue={new Date().toISOString().slice(0, 10)}
+      style={{ minWidth: 90, maxWidth: 140, flex: 1 }}
+    />
+    <CFormInput
+      type="time"
+      size="sm"
+      defaultValue={new Date().toTimeString().slice(0, 8)}
+      style={{ minWidth: 90, maxWidth: 140, flex: 1 }}
+    />
+  </CCol>
+</CRow>
+
+
+
+
+
+
 
       {/* OUT/IN PATIENT + OPNO + PAYCATEGORY + DATETIME */}
-      <CRow className="mb-3">
-        <CCol sm={3} className="d-flex align-items-center gap-3">
-          <div className="form-check">
-            <input
-              className="form-check-input"
-              type="radio"
-              name="statusRadio"
-              id="outPatient"
-              value="outPatient"
-              checked={statusFilters === 'outPatient'}
-              onChange={() => setStatusFilters('outPatient')}
-            />
-            <label className="form-check-label ms-2" htmlFor="outPatient">
-              Out Patient
-            </label>
-          </div>
-          <div className="form-check">
-            <input
-              className="form-check-input"
-              type="radio"
-              name="statusRadio"
-              id="inPatient"
-              value="inPatient"
-              checked={statusFilters === 'inPatient'}
-              onChange={() => setStatusFilters('inPatient')}
-            />
-            <label className="form-check-label ms-2" htmlFor="inPatient">
-              In Patient
-            </label>
-          </div>
-        </CCol>
+   <CRow className="mb-3 g-3">
 
-        <CCol sm={2} className="d-flex align-items-center">
-          <CFormLabel className="mb-0 me-2" style={{ whiteSpace: 'nowrap' }}>
-            OPNO:
-          </CFormLabel>
-          <CFormInput
-            type="text"
-            placeholder="Enter OPNO"
-            style={{ height: 30, width: 120 }}
-            value={opNo}
-            onChange={(e) => setOpNo(e.target.value)}
-          />
-        </CCol>
+  {/* Out / In Patient */}
+  <CCol xs={12} sm={4} md={3} className="d-flex flex-wrap align-items-center gap-3">
+    <div className="form-check d-flex align-items-center fw-bold">
+      <input
+        className="form-check-input "
+        type="radio"
+        name="statusRadio"
+        id="outPatient"
+        value="outPatient"
+        checked={statusFilters === 'outPatient'}
+        onChange={() => setStatusFilters('outPatient')}
+      />
+      <label className="form-check-label ms-2 Fw-bold" htmlFor="outPatient">
+        Out Patient
+      </label>
+    </div>
 
-        <CCol sm={3} className="d-flex align-items-center">
-          <CFormLabel className="mb-0 me-2 fw-bold" style={{ whiteSpace: 'nowrap' }}>
-            Pay Category:
-          </CFormLabel>
-          <CFormSelect
-            disabled
-            value="SELF PAY"
-            className="bg-light"
-            style={{ height: 30, width: 130 }}
-          >
-            <option>SELF PAY</option>
-          </CFormSelect>
-        </CCol>
+    {/* <div className="form-check d-flex align-items-center">
+      <input
+        className="form-check-input"
+        type="radio"
+        name="statusRadio"
+        id="inPatient"
+        value="inPatient"
+        checked={statusFilters === 'inPatient'}
+        onChange={() => setStatusFilters('inPatient')}
+      />
+      <label className="form-check-label ms-2" htmlFor="inPatient">
+        In Patient
+      </label>
+    </div> */}
+  </CCol>
 
-        <CCol sm={4}>
-          <div className="d-flex align-items-center justify-content-end">
-            <CFormLabel className="fw-bold mb-0 me-2" style={{ whiteSpace: 'nowrap' }}>
-              Bill Date & Time:
-            </CFormLabel>
-            <CFormInput
-              type="datetime-local"
-              defaultValue={new Date().toISOString().slice(0, 19)}
-              style={{ height: 30, width: 220 }}
-            />
-          </div>
-        </CCol>
-      </CRow>
+  {/* OPNO */}
+  <CCol xs={12} sm={4} md={2} className="d-flex align-items-center">
+    <CFormLabel className="mb-0 me-2 fw-bold" style={{ whiteSpace: "nowrap" }}>
+      OPNO:
+    </CFormLabel>
+    <CFormInput
+      type="text"
+      placeholder="Enter OPNO"
+      className="w-100"
+      style={{ height: 30 ,fontSize:"12px"}}
+      value={opNo}
+      onChange={(e) => setOpNo(e.target.value)}
+    />
+  </CCol>
+
+  {/* Pay Category */}
+   <CCol xs={12} sm={6} md={3} className="d-flex align-items-center">
+  <CFormLabel className="mb-0 me-2 fw-bold" style={{ whiteSpace: 'nowrap' }}>
+    Pay Category:
+  </CFormLabel>
+  <CFormSelect
+    // disabled
+    value="SELF PAY"
+    className="bg-light w-100"
+    style={{ height: '30px', fontSize: '12px' }}
+  >
+    <option value="">Select Pay Category</option>
+    <option value="SELF PAY">SELF PAY</option>
+    <option value="INSURANCE">INSURANCE</option>
+    <option value="CORPORATE">CORPORATE</option>
+    <option value="GOVERNMENT SCHEME">GOVERNMENT SCHEME</option>
+    <option value="OTHER">OTHER</option>
+  </CFormSelect>
+</CCol>
+
+
+  {/* Bill Date & Time */}
+ <CCol xs={12} md={4}>
+  <div className="d-flex flex-wrap align-items-center justify-content-md-end gap-2">
+    <CFormLabel className="fw-bold mb-0" style={{ whiteSpace: "nowrap" }}>
+      Bill Date & Time:
+    </CFormLabel>
+
+    <CFormInput
+      type="datetime-local"
+      defaultValue={new Date().toISOString().slice(0, 19)}
+      style={{
+        height: 28,
+        width: 170,     // reduced width
+       fontSize:"12px" ,// smaller text
+        padding: "2px 6px",
+      }}
+    />
+  </div>
+</CCol>
+
+
+</CRow>
+
 
       {/* Patient blocks */}
       <div style={{ display: 'flex', gap: 12 }}>
@@ -332,7 +357,7 @@ const OPSales = ({ getAllOpSales }) => {
           style={{
             position: 'relative',
             flex: 1,
-            border: '2px solid #7DC2FF',
+            border: '2px solid var(--color-black)',
             borderRadius: 6,
             padding: 12,
             background: 'white',
@@ -346,7 +371,7 @@ const OPSales = ({ getAllOpSales }) => {
               background: 'white',
               padding: '0 8px',
               fontWeight: 'bold',
-              color: '#007BFF',
+              color: 'var(--color-black)',
             }}
           >
             Patient Details
@@ -387,7 +412,7 @@ const OPSales = ({ getAllOpSales }) => {
           style={{
             position: 'relative',
             flex: 1,
-            border: '2px solid #7DC2FF',
+            border: '2px solid var(--color-black)',
             borderRadius: 6,
             padding: 12,
             background: 'white',
@@ -401,7 +426,7 @@ const OPSales = ({ getAllOpSales }) => {
               background: 'white',
               padding: '0 8px',
               fontWeight: 'bold',
-              color: '#007BFF',
+              color: 'var(--color-black)',
             }}
           >
             Patient Type & Room Details
@@ -428,235 +453,282 @@ const OPSales = ({ getAllOpSales }) => {
       </div>
 
       {/* Entry controls */}
-      <CRow className="mb-3 mt-3">
-        <CCol sm={3} className="d-flex align-items-center">
-          <CFormLabel className="mb-0 me-2">Selection Type:</CFormLabel>
-          <CFormSelect
-            value={selectionType}
-            onChange={(e) => setSelectionType(e.target.value)}
-            className="bg-light"
-            style={{ height: 30, width: 130 }}
-          >
-            <option value="">SINGLE</option>
-          </CFormSelect>
-        </CCol>
-        <CCol sm={3} className="d-flex align-items-center">
-          <CFormLabel className="mb-0 me-2">Selection by:</CFormLabel>
-          <CFormSelect
-            value={selectionBy}
-            onChange={(e) => setSelectionBy(e.target.value)}
-            className="bg-light"
-            style={{ height: 30, width: 130 }}
-          >
-            <option value="">NAME</option>
-          </CFormSelect>
-        </CCol>
+    <CRow className="mb-3 mt-3 g-3">
 
-        <CCol sm={4} className="d-flex align-items-center">
-          <CFormLabel className="mb-0 me-2">Med Name:</CFormLabel>
-          <CFormInput
-            value={medName}
-            onChange={(e) => setMedName(e.target.value)}
-            placeholder="Start typing med name"
-            style={{
-              border: 'none',
-              borderBottom: '2px solid #9b9fa4',
-              background: 'transparent',
-              width: 260,
-            }}
-          />
-        </CCol>
+  {/* Selection Type */}
+  <CCol xs={12} sm={6} md={3} className="d-flex align-items-center">
+    <CFormLabel className="mb-0 me-2">Selection Type:</CFormLabel>
+   <CFormSelect
+  value={selectionType}
+  onChange={(e) => setSelectionType(e.target.value)}
+  className="bg-light"
+  style={{ height: 30, fontSize: "12px" }}
+>
+  <option value="single">SINGLE</option>
+  <option value="multiple">MULTIPLE</option>
+  <option value="all">ALL</option>
+</CFormSelect>
 
-        <CCol sm={1} className="d-flex align-items-center">
-          <CFormCheck id="returnsCheck" label="Include Returns" />
-        </CCol>
+  </CCol>
 
-        <CCol sm={1} className="d-flex align-items-center justify-content-end">
-          <CButton color="primary" size="sm" onClick={handleAddOrUpdate}>
-            {editIndex !== null ? 'Update' : 'Update Stock'}
-          </CButton>
-        </CCol>
-      </CRow>
-      <div
-        className="p-2 mb-2"
-        style={{
-          border: '2px solid #7bbcff',
-          background: '#eaf5ff',
-          borderRadius: '4px',
-        }}
-      >
-        <div className="d-flex align-items-end gap-3">
-          {/* Left side labels */}
-          <div className="text-center">
-            <label className="fw-bold small">Rack No</label>
-          </div>
+  {/* Selection By */}
+  <CCol xs={12} sm={6} md={3} className="d-flex align-items-center">
+    <CFormLabel className="mb-0 me-2">Selection By:</CFormLabel>
 
-          <div className="text-center">
-            <label className="fw-bold small">VAT</label>
-          </div>
+  <CFormSelect
+  value={selectionBy}
+  onChange={(e) => setSelectionBy(e.target.value)}
+  className="bg-light"
+  style={{ height: 30, fontSize: "12px" }}
+>
+  <option value="name">NAME</option>
+  <option value="code">CODE</option>
+  <option value="generic">GENERIC</option>
+  <option value="barcode">BARCODE</option>
+  <option value="rackno">RACK NO</option>
+</CFormSelect>
 
-          <div className="text-center">
-            <label className="fw-bold small">VAT Amt</label>
-          </div>
+  </CCol>
 
-          <div className="text-center">
-            <label className="fw-bold small">Curr. Stock</label>
-          </div>
+  {/* Med Name */}
+  <CCol xs={12} md={4} className="d-flex align-items-center">
+    <CFormLabel className="mb-0 me-2">Med Name:</CFormLabel>
+    <CFormInput
+      value={medName}
+      onChange={(e) => setMedName(e.target.value)}
+      placeholder="Enter medicine name"
+      className="flex-grow-1"
+      style={{
+        // border: 'none',
+        // borderBottom: '2px solid var(--color-black)',
+        background: 'transparent',fontSize:"12px"
+      }}
+    />
+  </CCol>
 
-          {/* Batch No */}
-          <div className="d-flex flex-column">
-            <label className="fw-bold small">Batch No</label>
-            <CFormInput
-              value={batchNo}
-              onChange={(e) => setBatchNo(e.target.value)}
-              className="border border-secondary"
-              style={{ width: '120px', height: '28px' }}
-            />
-          </div>
+  {/* Include Returns */}
+  <CCol xs={6} sm={4} md={1} className="d-flex align-items-center">
+    <CFormCheck id="returnsCheck" label="Include Returns" />
+  </CCol>
 
-          {/* Req Qty */}
-          <div className="d-flex flex-column">
-            <label className="fw-bold small">Req Qty</label>
-            <CFormInput
-              value={qty}
-              onChange={(e) => setQty(e.target.value)}
-              className="border border-secondary"
-              style={{ width: '80px', height: '28px' }}
-            />
-          </div>
+  {/* Button */}
+  <CCol xs={6} sm={4} md={1} className="d-flex align-items-center justify-content-end">
+    <CButton   style={{ backgroundColor: 'var(--color-black)', color: 'white' }}  size="sm" onClick={handleAddOrUpdate}>
+      {editIndex !== null ? 'Update' : 'Update Stock'}
+    </CButton>
+  </CCol>
 
-          {/* Rate */}
-          <div className="d-flex flex-column">
-            <label className="fw-bold small">Rate</label>
-            <CFormInput
-              value={rate}
-              onChange={(e) => setRate(e.target.value)}
-              className="border border-secondary"
-              style={{ width: '80px', height: '28px' }}
-            />
-          </div>
+</CRow>
 
-          {/* Disc % */}
-          <div className="d-flex flex-column">
-            <label className="fw-bold small">Disc %</label>
-            <CFormInput
-              value={discPerc}
-              onChange={(e) => setDiscPerc(e.target.value)}
-              className="border border-secondary"
-              style={{ width: '80px', height: '28px' }}
-            />
-          </div>
+   <div
+  className="p-2 mb-2"
+  // style={{
+  //   border: "2px solid var(--color-black)",
+  //   borderRadius: "4px",
+  // }}
+>
+  <CRow className="g-2">
 
-          {/* Disc Amt */}
-          <div className="d-flex flex-column">
-            <label className="fw-bold small">Disc Amt</label>
-            <CFormInput
-              value={discAmt}
-              onChange={(e) => setDiscAmt(e.target.value)}
-              className="border border-secondary"
-              style={{ width: '90px', height: '28px' }}
-            />
-          </div>
+    {/* Rack No */}
+    <CCol xs={6} sm={4} md={2}>
+      <label className="fw-bold small d-block">Rack No</label>
+      <CFormInput className="border border-secondary" disabled />
+    </CCol>
 
-          {/* Total Amt */}
-          <div className="d-flex flex-column">
-            <label className="fw-bold small">Total Amt</label>
-            <CFormInput
-              value={totalAmt}
-              onChange={(e) => setTotalAmt(e.target.value)}
-              className="border border-secondary"
-              style={{ width: '100px', height: '28px' }}
-            />
-          </div>
+    {/* VAT */}
+    <CCol xs={6} sm={4} md={2}>
+      <label className="fw-bold small d-block">VAT</label>
+      <CFormInput className="border border-secondary" disabled />
+    </CCol>
 
-          {/* Exp Date */}
-          <div className="d-flex flex-column">
-            <label className="fw-bold small">Exp Date</label>
-            <CFormInput
-              type="date"
-              value={expDate}
-              onChange={(e) => setExpDate(e.target.value)}
-              className="border border-secondary"
-              style={{ width: '140px', height: '28px' }}
-            />
-          </div>
+    {/* VAT Amount */}
+    <CCol xs={6} sm={4} md={2}>
+      <label className="fw-bold small d-block">VAT Amt</label>
+      <CFormInput className="border border-secondary" disabled />
+    </CCol>
 
-          {/* MRP */}
-          <div className="text-center">
-            <label className="fw-bold small">MRP</label>
-          </div>
-        </div>
-      </div>
+    {/* Current Stock */}
+    <CCol xs={6} sm={4} md={2}>
+      <label className="fw-bold small d-block">Current Stock</label>
+      <CFormInput className="border border-secondary" disabled />
+    </CCol>
+
+    {/* Batch No */}
+    <CCol xs={6} sm={4} md={2}>
+      <label className="fw-bold small d-block">Batch No</label>
+      <CFormInput
+        value={batchNo}
+        onChange={(e) => setBatchNo(e.target.value)}
+        className="border border-secondary"
+      />
+    </CCol>
+
+    {/* Req Qty */}
+    <CCol xs={6} sm={4} md={2}>
+      <label className="fw-bold small d-block">Req Qty</label>
+      <CFormInput
+        value={qty}
+        onChange={(e) => setQty(e.target.value)}
+        className="border border-secondary"
+      />
+    </CCol>
+
+    {/* Rate */}
+    <CCol xs={6} sm={4} md={2}>
+      <label className="fw-bold small d-block">Rate</label>
+      <CFormInput
+        value={rate}
+        onChange={(e) => setRate(e.target.value)}
+        className="border border-secondary"
+      />
+    </CCol>
+
+    {/* Disc % */}
+    <CCol xs={6} sm={4} md={2}>
+      <label className="fw-bold small d-block">Disc %</label>
+      <CFormInput
+        value={discPerc}
+        onChange={(e) => setDiscPerc(e.target.value)}
+        className="border border-secondary"
+      />
+    </CCol>
+
+    {/* Disc Amt */}
+    <CCol xs={6} sm={4} md={2}>
+      <label className="fw-bold small d-block">Disc Amt</label>
+      <CFormInput
+        value={discAmt}
+        onChange={(e) => setDiscAmt(e.target.value)}
+        className="border border-secondary"
+      />
+    </CCol>
+
+    {/* Total Amt */}
+    <CCol xs={6} sm={4} md={2}>
+      <label className="fw-bold small d-block">Total Amt</label>
+      <CFormInput
+        value={totalAmt}
+        onChange={(e) => setTotalAmt(e.target.value)}
+        className="border border-secondary"
+      />
+    </CCol>
+
+    {/* Exp Date */}
+    <CCol xs={6} sm={4} md={2}>
+      <label className="fw-bold small d-block">Exp Date</label>
+      <CFormInput
+        type="date"
+        value={expDate}
+        onChange={(e) => setExpDate(e.target.value)}
+        className="border border-secondary"
+      />
+    </CCol>
+
+    {/* MRP */}
+    <CCol xs={6} sm={4} md={2}>
+      <label className="fw-bold small d-block">MRP</label>
+      <CFormInput className="border border-secondary" disabled />
+    </CCol>
+
+  </CRow>
+</div>
+
+
 
       {/* TABLE */}
       <div style={{ position: 'relative', marginTop: 8 }}>
-        <CTable bordered hover>
-          <CTableHead style={{ background: '#7DC2FF' }}>
-            <CTableRow>
-              <CTableHeaderCell style={{ width: '40px' }}>Sno</CTableHeaderCell>
-              <CTableHeaderCell>Medicine Name</CTableHeaderCell>
-              <CTableHeaderCell style={{ width: '100px' }}>BatchNo</CTableHeaderCell>
-              <CTableHeaderCell style={{ width: '70px' }}>Qty</CTableHeaderCell>
-              <CTableHeaderCell style={{ width: '90px' }}>Rate</CTableHeaderCell>
-              <CTableHeaderCell style={{ width: '70px' }}>Total</CTableHeaderCell>
-              <CTableHeaderCell style={{ width: '60px' }}>Disc</CTableHeaderCell>
-              <CTableHeaderCell style={{ width: '70px' }}>DiscAmt</CTableHeaderCell>
-              <CTableHeaderCell style={{ width: '100px' }}>NetAmt</CTableHeaderCell>
-              <CTableHeaderCell style={{ width: '80px' }}>VAT%</CTableHeaderCell>
-              <CTableHeaderCell style={{ width: '60px' }}>PaidAmt</CTableHeaderCell>
-              <CTableHeaderCell style={{ width: '80px' }}>Actions</CTableHeaderCell>
-            </CTableRow>
-          </CTableHead>
+    <div
+  style={{
+    maxHeight: "260px", // adjust height as needed
+    overflowY: "auto",
+    overflowX: "auto",
+    border: "1px solid #ddd",
+    borderRadius: "4px",
+  }}
+>
+  <CTable bordered hover responsive="sm">
 
-          <CTableBody>
-            {loading && (
-              <CTableRow>
-                <CTableDataCell colSpan={12} className="text-center">
-                  Loading Opsales...
-                </CTableDataCell>
-              </CTableRow>
-            )}
+    <CTableHead className="pink-table w-auto">
+      <CTableRow style={{ color: 'var(--color-black)' }}>
+        <CTableHeaderCell style={{ width: '40px' }}>S.No</CTableHeaderCell>
+        <CTableHeaderCell>Medicine Name</CTableHeaderCell>
+        <CTableHeaderCell style={{ width: '100px' }}>BatchNo</CTableHeaderCell>
+        <CTableHeaderCell style={{ width: '70px' }}>Qty</CTableHeaderCell>
+        <CTableHeaderCell style={{ width: '90px' }}>Rate</CTableHeaderCell>
+        <CTableHeaderCell style={{ width: '70px' }}>Total</CTableHeaderCell>
+        <CTableHeaderCell style={{ width: '60px' }}>Disc</CTableHeaderCell>
+        <CTableHeaderCell style={{ width: '70px' }}>DiscAmt</CTableHeaderCell>
+        <CTableHeaderCell style={{ width: '100px' }}>NetAmt</CTableHeaderCell>
+        <CTableHeaderCell style={{ width: '80px' }}>VAT%</CTableHeaderCell>
+        <CTableHeaderCell style={{ width: '60px' }}>PaidAmt</CTableHeaderCell>
+        <CTableHeaderCell style={{ width: '80px' }}>Actions</CTableHeaderCell>
+      </CTableRow>
+    </CTableHead>
 
-            {!loading && OpsaleData.length === 0 && (
-              <CTableRow>
-                <CTableDataCell colSpan={12} className="text-center">
-                  No records
-                </CTableDataCell>
-              </CTableRow>
-            )}
+    <CTableBody>
+      {loading && (
+        <CTableRow>
+          <CTableDataCell colSpan={12} className="text-center">
+            Loading Opsales...
+          </CTableDataCell>
+        </CTableRow>
+      )}
 
-            {!loading &&
-              OpsaleData.map((item, index) => (
-                <CTableRow key={index}>
-                  <CTableDataCell>{index + 1}</CTableDataCell>
-                  <CTableDataCell>{item.medicineName}</CTableDataCell>
-                  <CTableDataCell>{item.batchNo}</CTableDataCell>
-                  <CTableDataCell>{item.qty}</CTableDataCell>
-                  <CTableDataCell>{item.rate}</CTableDataCell>
-                  <CTableDataCell>{item.total}</CTableDataCell>
-                  <CTableDataCell>{item.disc}</CTableDataCell>
-                  <CTableDataCell>{item.discAmount}</CTableDataCell>
-                  <CTableDataCell>{item.netAmt}</CTableDataCell>
-                  <CTableDataCell>{item.vatPercent}</CTableDataCell>
-                  <CTableDataCell>{item.paidAmt}</CTableDataCell>
-                  <CTableDataCell>
-                    <CButton size="sm" color="light" onClick={() => handleEdit(index)} title="Edit">
-                      <CIcon icon={cilPencil} />
-                    </CButton>
-                    <CButton
-                      size="sm"
-                      color="danger"
-                      onClick={() => handleDelete(index)}
-                      className="ms-1"
-                      title="Delete"
-                    >
-                      <CIcon icon={cilTrash} />
-                    </CButton>
-                  </CTableDataCell>
-                </CTableRow>
-              ))}
-          </CTableBody>
-        </CTable>
+      {!loading && OpsaleData.length === 0 && (
+       <CTableRow>
+  <CTableDataCell colSpan={12} className="text-center"  style={{ color: 'var(--color-black)' }}>
+    No OP Sales records found.
+  </CTableDataCell>
+</CTableRow>
+
+      )}
+
+      {!loading &&
+        OpsaleData.map((item, index) => (
+          <CTableRow key={index}>
+            <CTableDataCell>{index + 1}</CTableDataCell>
+            <CTableDataCell>{item.medicineName}</CTableDataCell>
+            <CTableDataCell>{item.batchNo}</CTableDataCell>
+            <CTableDataCell>{item.qty}</CTableDataCell>
+            <CTableDataCell>{item.rate}</CTableDataCell>
+            <CTableDataCell>{item.total}</CTableDataCell>
+            <CTableDataCell>{item.disc}</CTableDataCell>
+            <CTableDataCell>{item.discAmount}</CTableDataCell>
+            <CTableDataCell>{item.netAmt}</CTableDataCell>
+            <CTableDataCell>{item.vatPercent}</CTableDataCell>
+            <CTableDataCell>{item.paidAmt}</CTableDataCell>
+            <CTableDataCell>
+             {/* Edit Button */}
+<CButton
+  color="info"
+  size="sm"
+  className="actionBtn"
+  style={{ color: 'var(--color-black)' }}
+  onClick={() => handleEdit(index)}
+  title="Edit"
+>
+  <Edit2 size={18} />
+</CButton>
+
+{/* Delete Button */}
+<CButton
+  color="danger"
+  size="sm"
+  className="actionBtn ms-1"
+  style={{ color: 'var(--color-black)' }}
+  onClick={() => handleDelete(index)}
+  title="Delete"
+>
+  <Trash size={18} />
+</CButton>
+
+            </CTableDataCell>
+          </CTableRow>
+        ))}
+    </CTableBody>
+  </CTable>
+</div>
+
 
         {/* TOTALS */}
         <CCardBody style={{ padding: '10px 0 0 0' }}>
@@ -667,7 +739,7 @@ const OPSales = ({ getAllOpSales }) => {
                   <CFormLabel className="text-end fw-bold mb-0">Total Amt</CFormLabel>
                 </CCol>
                 <CCol xs={6}>
-                  <CFormInput disabled value={totals.totalAmt} className="text-end bg-light" />
+                  <CFormInput disabled value={totals.totalAmt} className="text-end bg-light"  style={{fontSize:'12px'}}/>
                 </CCol>
               </CRow>
 
@@ -676,15 +748,15 @@ const OPSales = ({ getAllOpSales }) => {
                   <CFormLabel className="text-end fw-bold mb-0">Disc(%)</CFormLabel>
                 </CCol>
                 <CCol xs={6}>
-                  <CFormInput disabled value={0} className="text-end bg-light" />
+                  <CFormInput disabled value={0} className="text-end bg-light"   style={{fontSize:'12px'}}/>
                 </CCol>
               </CRow>
               <CRow className="mb-2">
                 <CCol xs={6}>
-                  <CFormLabel className="text-end mb-0">DiscAmt</CFormLabel>
+                  <CFormLabel className="text-end mb-0 fw-bold">DiscAmt</CFormLabel>
                 </CCol>
                 <CCol xs={6}>
-                  <CFormInput disabled value={0} className="text-end bg-light" />
+                  <CFormInput disabled value={0} className="text-end bg-light"  style={{fontSize:'12px'}}/>
                 </CCol>
               </CRow>
 
@@ -696,7 +768,7 @@ const OPSales = ({ getAllOpSales }) => {
                   <CFormLabel className="text-end fw-bold mb-0">Net Amt</CFormLabel>
                 </CCol>
                 <CCol xs={6}>
-                  <CFormInput disabled value={totals.netAmt} className="text-end bg-light" />
+                  <CFormInput disabled value={totals.netAmt} className="text-end bg-light"  style={{fontSize:'12px'}}/>
                 </CCol>
               </CRow>          
             </CCol>
@@ -707,7 +779,7 @@ const OPSales = ({ getAllOpSales }) => {
                     <CFormLabel className="text-end fw-bold mb-0">{item}</CFormLabel>
                   </CCol>
                   <CCol xs={6}>
-                    <CFormInput disabled value={0} className="text-end bg-light" />
+                    <CFormInput disabled value={0} className="text-end bg-light"  style={{fontSize:'12px'}}/>
                   </CCol>
                 </CRow>
               ))}
@@ -722,6 +794,7 @@ const OPSales = ({ getAllOpSales }) => {
                     disabled
                     value={new Date().toISOString().slice(0, 10)}
                     className="bg-light"
+                     style={{fontSize:'12px',}}
                   />
                 </CCol>
               </CRow>
@@ -734,7 +807,7 @@ const OPSales = ({ getAllOpSales }) => {
                     <CFormLabel className="text-end fw-bold mb-0">{tax}</CFormLabel>
                   </CCol>
                   <CCol xs={6}>
-                    <CFormInput disabled value={0} className="text-end bg-light" />
+                    <CFormInput disabled value={0} className="text-end bg-light"  style={{fontSize:'12px'}}/>
                   </CCol>
                 </CRow>
               ))}
@@ -744,13 +817,14 @@ const OPSales = ({ getAllOpSales }) => {
               {['Total Tax', 'Final Total', 'Previous Adj', 'Net Payable'].map((item) => (
                 <CRow className="mb-2" key={item}>
                   <CCol xs={6}>
-                    <CFormLabel className="text-end fw-bold mb-0">{item}</CFormLabel>
+                    <CFormLabel className="text-end fw-bold mb-0" >{item}</CFormLabel>
                   </CCol>
                   <CCol xs={6}>
                     <CFormInput
                       disabled
                       value={item === 'Total Tax' ? totals.totalTax : 0}
                       className="text-end bg-light"
+                       style={{fontSize:'12px'}}
                     />
                   </CCol>
                 </CRow>
@@ -765,61 +839,68 @@ const OPSales = ({ getAllOpSales }) => {
       </div>
 
       {/* SEARCH / NAV */}
-      <div
-        className="d-flex align-items-center mt-3"
-        style={{
-          background: '#E8F3FF',
-          padding: '6px 10px',
-          borderRadius: 6,
-          border: '1px solid #B5D9FF',
-        }}
-      >
-        <CFormLabel className="fw-bold me-2 mb-0">Search</CFormLabel>
-        <CFormInput
-          type="text"
-          placeholder="Search here..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ width: 160, height: 30 }}
-          className="me-3"
-        />
+    <div
+  className="d-flex flex-wrap align-items-center mt-3 gap-3 p-2"
+  style={{
+    // border: '1px solid var(--color-black)',
+    borderRadius: 6,
+  }}
+>
+  <div className="d-flex align-items-center gap-2">
+    <CFormLabel className="fw-bold mb-0">Search</CFormLabel>
+    <CFormInput
+      type="text"
+      placeholder="Search here..."
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      style={{ width: 160, height: 30 ,fontSize:"12px" }}
+    />
+  </div>
 
-        <CFormLabel className="fw-bold me-2 mb-0">From</CFormLabel>
-        <CFormInput
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          style={{ width: 120, height: 30 }}
-          className="me-3"
-        />
+  <div className="d-flex align-items-center gap-2">
+    <CFormLabel className="fw-bold mb-0">From</CFormLabel>
+    <CFormInput
+      type="date"
+      value={dateFrom}
+      onChange={(e) => setDateFrom(e.target.value)}
+      style={{ width: 130, height: 30 ,fontSize:"12px",color:'var(--color-black)'}}
+    />
+  </div>
 
-        <CFormLabel className="fw-bold me-2 mb-0">To</CFormLabel>
-        <CFormInput
-          type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          style={{ width: 120, height: 30 }}
-          className="me-3"
-        />
+  <div className="d-flex align-items-center gap-2">
+    <CFormLabel className="fw-bold mb-0">To</CFormLabel>
+    <CFormInput
+      type="date"
+      value={dateTo}
+      onChange={(e) => setDateTo(e.target.value)}
+      style={{ width: 130, height: 30 ,fontSize:"12px"}}
+    />
+  </div>
 
-        
+  {/* Icons */}
+  <div className="d-flex align-items-center gap-3">
+    <CIcon icon={cilSave} size="lg" style={{ cursor: 'pointer' }} />
+    <CIcon icon={cilPrint} size="lg" style={{ cursor: 'pointer' }} />
+    <CIcon icon={cilMagnifyingGlass} size="lg" style={{ cursor: 'pointer' }} />
+  </div>
 
-        <CIcon icon={cilSave} size="lg" className="mx-1" style={{ cursor: 'pointer' }} />
-        <CIcon icon={cilPrint} size="lg" className="mx-1" style={{ cursor: 'pointer' }} />
-        <CIcon icon={cilMagnifyingGlass} size="lg" className="mx-1" style={{ cursor: 'pointer' }} />
+  {/* Button */}
+  <CButton color="light" size="sm" style={{fontSize:"12px"}}>
+    {editIndex !== null ? 'Update' : 'PrintTextBill'}
+    
+  </CButton>
 
- <CButton color="light" size="sm">
-            {editIndex !== null ? 'Update' : 'PrintTextBill'}
-          </CButton>
-        <div className="ms-auto d-flex gap-2">
-         <CFormCheck
-              type="checkbox"
-              id="displayOpSaleDetails"
-              label="Include Returns"
-              className="me-4 text-dark"
-            />
-        </div>
-      </div>
+  {/* Checkbox (push to right on large screens) */}
+  <div className="ms-lg-auto d-flex align-items-center">
+    <CFormCheck
+      type="checkbox"
+      id="displayOpSaleDetails"
+      label="Include Returns"
+      className="text-dark"
+    />
+  </div>
+</div>
+
     </div>
   )
 }

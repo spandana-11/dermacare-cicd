@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import axios from 'axios'
 import {
   CCard,
@@ -22,82 +22,91 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilMagnifyingGlass, cilPrint, cilSave } from '@coreui/icons'
 
-// import { getAllPurchases, getPurchaseById } from '../api/PurchasesAPI'
-import { getAllPurchases, getPurchaseById } from '../PharmacyManagement/PurchasesAPI'
+import { postPurchaseData, PurchaseData } from '../PharmacyManagement/PurchasesAPI'
+import { SupplierData } from './SupplierInfoAPI'
+import { showCustomToast } from '../../Utils/Toaster'
 
-const Purchases = () => {
+const Purchases = ({ goToSupplier }) => {
   const [purchaseData, setPurchaseData] = useState([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
-  const [rows, setRows] = useState([])
+  const [suppliers, setSuppliers] = useState([])
+  const [error, setError] = useState([])
 
-  // ---------------- GET ALL PURCHASES ----------------
-  const loadPurchases = async () => {
+  const fetchPurchase = useCallback(async () => {
     setLoading(true)
-    const data = await getAllPurchases()
-    setPurchaseData(data)
-    setLoading(false)
-  }
+    setError(null)
+
+    try {
+      const data = await PurchaseData()
+      const safeData = Array.isArray(data)
+        ? data.filter((item) => item && typeof item === 'object')
+        : []
+      setPurchaseData(safeData)
+    } catch (error) {
+      console.error('Error fetching purchase:', error)
+      setError('Failed to fetch purchase data.')
+      setPurchaseData([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+  useEffect(() => {
+    fetchPurchase()
+  }, [])
 
   useEffect(() => {
-    loadPurchases()
+    const fetchSuppliers = async () => {
+      try {
+        const list = await SupplierData()
+        // Expecting SupplierData to return items with supplierId and supplierName
+        const uniqueSuppliers = [
+          ...new Map(list.map((p) => [p.supplierId, p.supplierName])).entries(),
+        ].map(([id, name]) => ({ id, name }))
+        setSuppliers(uniqueSuppliers)
+      } catch (err) {
+        console.error('Fetch suppliers error:', err)
+      }
+    }
+    fetchSuppliers()
   }, [])
 
   const [payload, setPayload] = useState({
-    purchaseDetails: {
-      supplierType: '',
-      date: '',
-      time: '',
-      purchaseBillNo: '',
-      invoiceNo: '',
-      supplier: '',
-      invoiceDate: '',
-      receivingDate: '',
-      department: '',
-      financialYear: '',
-      taxType: 'Exclusive Tax',
-      isDuePaidBill: false,
-    },
+    purchaseBillNo: '',
+    invoiceNo: '',
+    supplierName: '',
+    invoiceDate: '',
+    receivingDate: '',
+    taxType: '',
+    paymentMode: '',
+    billDueDate: '',
+    creditDays: '',
+    duePaidBillNo: '',
+    department: '',
+    financialYear: '',
+    paidAmount: '',
+    previousAdjustment: '',
+    postDiscount: '',
     medicineDetails: [
       {
+        // UI fields retained as you requested:
         sno: 1,
         productName: '',
         batchNo: '',
-        expDate: '',
-        quantity: 0,
-        packSize: 0,
-        free: 0,
-        gstPercent: 0,
-        costPrice: 0,
-        mrp: 0,
-        discPercent: 0,
+        expDate: '', // maps to expiryDate on POST
+        hsnCode: '',
+        quantity: '',
+        packSize: '', // kept in UI but ignored on POST (commented where used)
+        free: '', // maps to freeQuantity on POST
+        mrp: '',
+        costPrice: '',
+        discPercent: '', // maps to discountPercent on POST
+        gstPercent: '',
+        isSaved: false,
       },
     ],
-    financialSummary: {
-      totalAmt: 0,
-      discAmt: 0,
-      netAmt: 0,
-      sgstAmt: 0,
-      cgstAmt: 0,
-      igstAmt: 0,
-      cstAmt: 0,
-      totalTax: 0,
-      finalTotal: 0,
-      previousAdj: 0,
-      netPayable: 0,
-      paidAmt: 0,
-      balAmt: 0,
-      duePaid: 0,
-      postDisc: 0,
-      payMode: '',
-      billDueDate: '',
-      creditDays: 0,
-    },
-    searchDetails: {
-      searchFromDate: '',
-      searchToDate: '',
-    },
   })
+
   const handleAddProduct = () => {
     setPayload((prev) => ({
       ...prev,
@@ -108,120 +117,170 @@ const Purchases = () => {
           productName: '',
           batchNo: '',
           expDate: '',
-          quantity: 0,
-          packSize: 0,
-          free: 0,
-          gstPercent: 0,
-          costPrice: 0,
-          mrp: 0,
-          discPercent: 0,
+          hsnCode: '',
+          quantity: '',
+          packSize: '', // packSize kept in UI but will be ignored during POST
+          free: '',
+          mrp: '',
+          costPrice: '',
+          discPercent: '',
+          gstPercent: '',
           isSaved: false,
         },
       ],
     }))
   }
+  const handleRemoveProduct = (index) => {
+    setPayload((prev) => {
+      const updated = prev.medicineDetails.filter((_, i) => i !== index)
+      // reassign sno
+      const renumbered = updated.map((r, idx) => ({ ...r, sno: idx + 1 }))
+      return { ...prev, medicineDetails: renumbered }
+    })
+  }
   const updateProductField = (index, field, value) => {
     setPayload((prev) => {
       const updated = [...prev.medicineDetails]
-      updated[index][field] = value
+      const numericFields = ['quantity', 'free', 'mrp', 'costPrice', 'discPercent', 'gstPercent']
+
+      updated[index][field] = numericFields.includes(field)
+        ? value === ''
+          ? ''
+          : Number(value)
+        : value
 
       return { ...prev, medicineDetails: updated }
     })
   }
+
   const handleSavePurchase = async () => {
     try {
-      const res = await axios.post('/purchase/save', payload)
-      console.log('Saved:', res.data)
+      const res = await postPurchaseData(payload)
+      console.log('Saved:', res)
+      showCustomToast('Purchase added successfully!', 'success')
+      loadPurchases()
     } catch (err) {
-      console.error('Error saving:', err)
+      showCustomToast('Failed to add purchase! ', 'error')
     }
   }
-  const handleFinalSave = () => {
+
+  // Update top form fields
+  const updateTopField = (field, value) => {
+    setPayload((prev) => ({ ...prev, [field]: value }))
+  }
+
+  // When supplier is selected, set supplierName (backend expects supplierName)
+  const handleSupplierSelect = (e) => {
+    // set supplierName to selected text (not id)
+    const selectedText = e.target.selectedOptions?.[0]?.text || ''
+    const val = e.target.value
+    // if placeholder selected (value === ''), clear supplierName
+    if (!val) {
+      updateTopField('supplierName', '')
+    } else {
+      updateTopField('supplierName', selectedText)
+    }
+  }
+
+  // Final save: map UI fields to backend JSON exactly as you specified and POST
+  const handleFinalSave = async () => {
     // Remove empty rows
     const filteredRows = payload.medicineDetails.filter(
       (row) =>
-        row.productName.trim() !== '' || row.batchNo.trim() !== '' || row.expDate.trim() !== '',
+        (row.productName && row.productName.trim() !== '') ||
+        (row.batchNo && row.batchNo.trim() !== '') ||
+        (row.expDate && row.expDate.trim() !== ''),
     )
 
+    // Map UI fields → backend fields
+    const mappedMedicineDetails = filteredRows.map((item) => ({
+      productName: item.productName || '',
+      batchNo: item.batchNo || '',
+      expiryDate: item.expDate || '', // UI expDate → backend expiryDate (correct)
+      hsnCode: item.hsnCode || '',
+      quantity: item.quantity === '' ? 0 : Number(item.quantity),
+      freeQuantity: item.free === '' ? 0 : Number(item.free),
+      mrp: item.mrp === '' ? 0 : Number(item.mrp),
+      costPrice: item.costPrice === '' ? 0 : Number(item.costPrice),
+      discountPercent: item.discPercent === '' ? 0 : Number(item.discPercent),
+      gstPercent: item.gstPercent === '' ? 0 : Number(item.gstPercent),
+    }))
+
+    // Build final payload EXACTLY LIKE BACKEND JSON
     const finalPayload = {
-      ...payload,
-      medicineDetails: filteredRows,
+      purchaseBillNo: payload.purchaseBillNo || '',
+      invoiceNo: payload.invoiceNo || '',
+      supplierName: payload.supplierName || '',
+      invoiceDate: payload.invoiceDate || '',
+      receivingDate: payload.receivingDate || '',
+      taxType: payload.taxType || '',
+      paymentMode: payload.paymentMode || '',
+      billDueDate: payload.billDueDate || '',
+      creditDays: payload.creditDays || '',
+      duePaidBillNo: payload.duePaidBillNo || '',
+      department: payload.department || '',
+      financialYear: payload.financialYear || '',
+      paidAmount: payload.paidAmount === '' ? 0 : Number(payload.paidAmount),
+      previousAdjustment:
+        payload.previousAdjustment === '' ? 0 : Number(payload.previousAdjustment),
+      postDiscount: payload.postDiscount === '' ? 0 : Number(payload.postDiscount),
+      medicineDetails: mappedMedicineDetails,
     }
 
-    console.log('FINAL PAYLOAD READY TO POST:', finalPayload)
+    console.log('FINAL PAYLOAD READY TO POST >>>>', finalPayload)
 
-    axios
-      .post('/api/purchase/save', finalPayload)
-      .then(() => alert('Purchase Saved Successfully'))
-      .catch(() => alert('Save Failed'))
+    try {
+      const response = await postPurchaseData(finalPayload)
+      console.log('Saved:', response)
+
+      showCustomToast('Purchase saved successfully!', 'success')
+
+      fetchPurchase()
+    } catch (err) {
+      console.error('Save Failed:', err)
+      showCustomToast('Failed to save purchase!', 'error')
+    }
   }
 
-  // const isRowComplete = (row) => {
-  //   return (
-  //     row.productName.trim() !== "" &&
-  //     row.batchNo.trim() !== "" &&
-  //     row.expDate !== "" &&
-  //     Number(row.quantity) > 0 &&
-  //     Number(row.costPrice) > 0
-  //   );
-  // };
-  // const handleBlur = (index) => {
-  //   setPayload(prev => {
-  //     const updated = [...prev.medicineDetails];
-
-  //     const row = updated[index];
-
-  //     // If row is already saved → do nothing
-  //     if (row.isSaved) return prev;
-
-  //     // Check if row is complete → save it and add new blank row
-  //     if (isRowComplete(row)) {
-  //       row.isSaved = true;
-
-  //       updated.push({
-  //         sno: updated.length + 1,
-  //         productName: "",
-  //         batchNo: "",
-  //         expDate: "",
-  //         quantity: 0,
-  //         packSize: 0,
-  //         free: 0,
-  //         gstPercent: 0,
-  //         costPrice: 0,
-  //         mrp: 0,
-  //         discPercent: 0,
-  //         isSaved: false,
-  //       });
-
-  //       return { ...prev, medicineDetails: updated };
-  //     }
-
-  //     return prev;
-  //   });
-  // };
-
+  // // optional: same as handleFinalSave but kept for backward compatibility
+  // const handleSavePurchase = handleFinalSave
   return (
-    <div style={{ border: '1px solid #9b9fa4ff', borderRadius: 6, padding: '10px' }}>
-      <div className="d-flex flex-wrap justify-content-between align-items-center ">
+    <div style={{ border: '1px solid #9b9fa4ff', borderRadius: 6, padding: '8px' }}>
+      <div
+        className="d-flex flex-wrap justify-content-between align-items-center"
+        style={{
+          color: 'var(--color-black)',
+        }}
+      >
         <CFormCheck id="nonLocal" label="Non-Local Supplier (IGST)" />
 
-        <div className="d-flex align-items-center gap-2">
-          <div>
-            <label className="small mb-1">Date</label>
-            <CFormInput
-              type="date"
-              size="sm"
-              defaultValue={new Date().toISOString().slice(0, 10)}
-            />
-          </div>
-          <div>
-            <label className="small mb-1">Time</label>
-            <CFormInput
-              type="time"
-              size="sm"
-              defaultValue={new Date().toTimeString().slice(0, 5)}
-            />
-          </div>
+        <div className="d-flex align-items-center gap-3">
+          <CRow className="mb-2">
+            <CCol md={2}>
+              <label className="small mb-1">Date</label>
+            </CCol>
+            <CCol md={8}>
+              <CFormInput
+                type="date"
+                size="sm"
+                value={payload.invoiceDate || new Date().toISOString().slice(0, 10)}
+                onChange={(e) => updateTopField('invoiceDate', e.target.value)}
+              />
+            </CCol>
+          </CRow>
+
+          <CRow className="mb-2 gap-2">
+            <CCol md={2}>
+              <label className="small mb-1">Time</label>
+            </CCol>
+            <CCol md={8}>
+              <CFormInput
+                type="time"
+                size="sm"
+                defaultValue={new Date().toTimeString().slice(0, 5)}
+              />
+            </CCol>
+          </CRow>
         </div>
       </div>
 
@@ -229,303 +288,390 @@ const Purchases = () => {
       <div
         style={{
           marginBottom: '15px',
-          padding: '10px',
+          padding: '5px',
           border: '1px solid #7DC2FF',
-          background: '#F0F8FF',
+          borderRadius: '4px',
+          color: 'var(--color-black)',
         }}
       >
-        <CRow>
-          <CCol sm={3} className="d-flex align-items-start">
-            <CFormLabel
-              htmlFor="purchaseBillNo"
-              className="me-2 mt-2"
-              style={{ whiteSpace: 'nowrap' }}
-            >
+        {/* First Row */}
+        <CRow className="gy-1">
+          <CCol xs={12} sm={6} md={2}>
+            <CFormLabel htmlFor="purchaseBillNo" className="me-2">
               Purchase BillNo
             </CFormLabel>
             <CFormInput
               id="purchaseBillNo"
-              style={{ backgroundColor: '#fff', borderColor: '#ccc' }}
+              className="w-100"
+              value={payload.purchaseBillNo}
+              onChange={(e) => updateTopField('purchaseBillNo', e.target.value)}
+              style={{ color: 'var(--color-black)' }}
             />
           </CCol>
 
-          <CCol sm={3} className="d-flex align-items-start">
-            <CFormLabel htmlFor="invoiceDateInput" style={{ whiteSpace: 'nowrap' }}>
-              Invoice Date
-            </CFormLabel>
+          <CCol xs={12} sm={6} md={2}>
+            <CFormLabel htmlFor="invoiceDateInput">Invoice Date</CFormLabel>
             <CFormInput
               id="invoiceDateInput"
               type="date"
-              value="2025-11-13"
-              style={{ backgroundColor: '#fff', borderColor: '#ccc', width: '130px' }}
+              value={payload.invoiceDate}
+              onChange={(e) => updateTopField('invoiceDate', e.target.value)}
+              style={{ color: 'var(--color-black)' }}
+            />
+          </CCol>
+          <CCol xs={12} sm={6} md={2}>
+            <CFormLabel htmlFor="receivingDateInput">Receiving Date</CFormLabel>
+            <CFormInput
+              id="receivingDateInput"
+              type="date"
+              value={payload.receivingDate}
+              onChange={(e) => updateTopField('receivingDate', e.target.value)}
+              style={{ color: 'var(--color-black)' }}
             />
           </CCol>
 
-          <CCol sm={2} className="d-flex align-items-start">
-            <CFormLabel className="me-2 mt-2" style={{ whiteSpace: 'nowrap' }}>
-              Department:
-            </CFormLabel>
+          <CCol xs={12} sm={6} md={2}>
+            <CFormLabel>Department:</CFormLabel>
+            <CFormInput
+              value={payload.department}
+              onChange={(e) => updateTopField('department', e.target.value)}
+              placeholder="Department"
+            />
           </CCol>
-
-          <CCol sm={2}>
-            <CFormCheck type="radio" name="taxOptions" id="inclusiveTax" label="Inclusive Tax" />
+          <CCol xs={12} sm={6} md={2}>
+            <CFormLabel htmlFor="invoiceNo">Invoice No</CFormLabel>
+            <CFormInput
+              id="invoiceNo"
+              className="w-100"
+              value={payload.invoiceNo}
+              onChange={(e) => updateTopField('invoiceNo', e.target.value)}
+              style={{ color: 'var(--color-black)' }}
+            />
+          </CCol>
+          <CCol xs={12} sm={6} md={2}>
+            <CFormCheck
+              type="radio"
+              name="taxOptions"
+              id="inclusiveTax"
+              label="Inclusive Tax"
+              onChange={() => updateTopField('taxType', 'Inclusive')}
+              checked={payload.taxType === 'Inclusive'}
+            />
             <CFormCheck
               type="radio"
               name="taxOptions"
               id="exclusiveTax"
               label="Exclusive Tax"
-              defaultChecked
+              onChange={() => updateTopField('taxType', 'Exclusive')}
+              checked={payload.taxType === 'Exclusive' || payload.taxType === ''}
             />
-            <CFormCheck type="radio" name="taxOptions" id="automatic" label="Automatic" />
+            <CFormCheck
+              type="radio"
+              name="taxOptions"
+              id="automatic"
+              label="Automatic"
+              onChange={() => updateTopField('taxType', 'Automatic')}
+              checked={payload.taxType === 'Automatic'}
+            />
           </CCol>
 
-          <CCol sm={2}>
+          {/* <CCol xs={12} md={2}>
             <CFormLabel htmlFor="duePaidBillNosTextarea">Due Paid BillNos</CFormLabel>
             <CFormTextarea
               id="duePaidBillNosTextarea"
               rows={2}
+              value={payload.duePaidBillNo}
+              onChange={(e) => updateTopField('duePaidBillNo', e.target.value)}
               placeholder="Enter multiple bill numbers..."
-              style={{ backgroundColor: '#fff', borderColor: '#ccc' }}
+              style={{ color: 'var(--color-black)' }}
             />
-          </CCol>
+          </CCol> */}
         </CRow>
 
-        <CRow>
-          <CCol sm={3} className="d-flex align-items-start">
-            <CFormLabel htmlFor="invoiceNo" className="me-2 mt-2" style={{ whiteSpace: 'nowrap' }}>
-              Invoice No
-            </CFormLabel>
-            <CFormInput id="invoiceNo" style={{ backgroundColor: '#fff', borderColor: '#ccc' }} />
-          </CCol>
-
-          <CCol sm={3} className="d-flex align-items-start">
-            <CFormLabel htmlFor="receivingDateInput" style={{ whiteSpace: 'nowrap' }}>
-              Receiving Date
-            </CFormLabel>
-            <CFormInput
-              id="receivingDateInput"
-              type="date"
-              value="2025-11-13"
-              style={{ backgroundColor: '#fff', borderColor: '#ccc', width: '130px' }}
-            />
-          </CCol>
-
-          <CCol sm={2}>
-            <CFormLabel>Financial Year:</CFormLabel>
-          </CCol>
-        </CRow>
-
-        <CRow className="g-2 mt-1">
-          <CCol md={6} className="d-flex align-items-center">
-            <CFormLabel
-              htmlFor="supplierSelect"
-              className="me-2 mb-0"
-              style={{ whiteSpace: 'nowrap', width: '80px' }}
+        {/* Second Row */}
+        <CRow className="gy-2 align-items-center">
+          {/* New Product */}
+          <CCol xs={12} sm={6} md={2}>
+            <CButton
+              size="sm"
+              onClick={handleAddProduct}
+              className="w-100"
+              style={{
+                color: 'var(--color-black)',
+                backgroundColor: 'var(--color-bgcolor)',
+              }}
             >
+              New Product
+            </CButton>
+          </CCol>
+
+          {/* Update Product List */}
+          <CCol xs={12} sm={6} md={2}>
+            <CButton
+              size="sm"
+              className="w-100"
+              style={{
+                color: 'var(--color-black)',
+                backgroundColor: 'var(--color-bgcolor)',
+              }}
+            >
+              Update Product List
+            </CButton>
+          </CCol>
+
+          {/* New Supplier */}
+          <CCol xs={12} sm={6} md={2}>
+            <CButton
+              size="sm"
+              onClick={goToSupplier}
+              className="w-100"
+              style={{
+                color: 'var(--color-black)',
+                backgroundColor: 'var(--color-bgcolor)',
+              }}
+            >
+              New Supplier
+            </CButton>
+          </CCol>
+
+          {/* Financial Year Input */}
+          <CCol xs={12} sm={6} md={3}>
+            <CFormLabel htmlFor="financialYear">Financial Year:</CFormLabel>
+            <CFormInput
+              id="financialYear"
+              value={payload.financialYear}
+              onChange={(e) => updateTopField('financialYear', e.target.value)}
+              placeholder="2025-2026"
+              className="w-100"
+            />
+          </CCol>
+
+          {/* Supplier Select */}
+          <CCol xs={12} sm={6} md={3}>
+            <CFormLabel htmlFor="supplierSelect" className="me-2 mb-0">
               Supplier
             </CFormLabel>
             <CFormSelect
               id="supplierSelect"
-              style={{ backgroundColor: '#fff', borderColor: '#ccc' }}
+              className="w-100"
+              value={suppliers.find((s) => s.name === payload.supplierName)?.id || ''}
+              onChange={handleSupplierSelect}
+              style={{ color: 'var(--color-black)' }}
             >
-              <option>-- Select Supplier --</option>
-              <option value="supplierA">Non-Local Supplier (IGST)</option>
-              <option value="supplierB">Local Supplier (CGST/SGST)</option>
-              <option value="supplierC">Pharma Distributors Ltd.</option>
+              <option value="">-- Select Supplier --</option>
+              {suppliers.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
             </CFormSelect>
-          </CCol>
-
-          <CCol sm={5}>
-            <div className="d-flex gap-2 mt-4">
-              <CButton size="sm" color="secondary">
-                New Supplier
-              </CButton>
-              <CButton size="sm" color="secondary" onClick={handleAddProduct}>
-                New Products
-              </CButton>
-              <CButton size="sm" color="secondary">
-                Update Product List
-              </CButton>
-            </div>
           </CCol>
         </CRow>
       </div>
 
       {/* ----------------------- PURCHASE TABLE ----------------------- */}
-      <div style={{ position: 'relative', marginTop: '20px' }}>
+      <div style={{ position: 'relative', marginTop: '20px', marginBottom: '10px' }}>
         <div
           style={{
             position: 'absolute',
             top: '-12px',
-            left: '20px', // ⭐ MOVE TITLE TO RIGHT
-            background: 'white',
+            left: '20px', 
             padding: '0 10px',
             fontWeight: 'bold',
-            color: '#007BFF',
             fontSize: '1.1rem',
+            color: 'var(--color-black)',
+            backgroundColor: 'var(--color-bgcolor)',
           }}
         >
           Purchase Details
         </div>
         <fieldset
           style={{
-            border: '2px solid #7DC2FF',
+            border: '2px solid #939ba3d4',
             borderRadius: '6px',
             padding: '15px',
+            color: 'var(--color-black)',
           }}
         >
           {/* ----- Your TABLE ----- */}
-          <CTable bordered hover>
-            <CTableHead style={{ background: '#7DC2FF' }}>
-              <CTableRow>
-                <CTableHeaderCell style={{ width: '40px' }}>Sno</CTableHeaderCell>
-                <CTableHeaderCell>Product Name</CTableHeaderCell>
-                <CTableHeaderCell style={{ width: '100px' }}>BatchNo</CTableHeaderCell>
-                <CTableHeaderCell style={{ width: '50px' }}>Exp.Date</CTableHeaderCell>
-                <CTableHeaderCell style={{ width: '70px' }}>Quantity</CTableHeaderCell>
-                <CTableHeaderCell style={{ width: '70px' }}>PackSize</CTableHeaderCell>
-                <CTableHeaderCell style={{ width: '60px' }}>Free</CTableHeaderCell>
-                <CTableHeaderCell style={{ width: '70px' }}>GST%</CTableHeaderCell>
-                <CTableHeaderCell style={{ width: '100px' }}>Cost Price</CTableHeaderCell>
-                <CTableHeaderCell style={{ width: '80px' }}>MRP</CTableHeaderCell>
-                <CTableHeaderCell style={{ width: '60px' }}>Disc%</CTableHeaderCell>
-              </CTableRow>
-            </CTableHead>
-
-            <CTableBody>
-              {loading && (
+          <div
+            style={{
+              maxHeight: '150px', // height for approx 3 rows
+              overflowY: 'auto', // vertical scroll
+              overflowX: 'auto', // horizontal scroll
+              color: 'var(--color-black)',
+              border: '1px solid #ccc',
+            }}
+          >
+            <CTable bordered hover responsive>
+              <CTableHead style={{ backgroundColor: 'var(--color-bgcolor)' }}>
                 <CTableRow>
-                  <CTableDataCell colSpan={11} className="text-center">
-                    Loading purchases...
-                  </CTableDataCell>
+                  <CTableHeaderCell style={{ minWidth: '40px', color: 'var(--color-black)' }}>
+                    Sno
+                  </CTableHeaderCell>
+                  <CTableHeaderCell style={{ minWidth: '160px', color: 'var(--color-black)' }}>
+                    Product Name
+                  </CTableHeaderCell>
+                  <CTableHeaderCell style={{ minWidth: '100px', color: 'var(--color-black)' }}>
+                    Batch No
+                  </CTableHeaderCell>
+                  <CTableHeaderCell style={{ minWidth: '110px', color: 'var(--color-black)' }}>
+                    Exp. Date
+                  </CTableHeaderCell>
+                  <CTableHeaderCell style={{ minWidth: '90px', color: 'var(--color-black)' }}>
+                    Quantity
+                  </CTableHeaderCell>
+                  <CTableHeaderCell style={{ minWidth: '90px', color: 'var(--color-black)' }}>
+                    Pack Size
+                  </CTableHeaderCell>
+                  <CTableHeaderCell style={{ minWidth: '80px', color: 'var(--color-black)' }}>
+                    Free
+                  </CTableHeaderCell>
+                  <CTableHeaderCell style={{ minWidth: '90px', color: 'var(--color-black)' }}>
+                    GST%
+                  </CTableHeaderCell>
+                  <CTableHeaderCell style={{ minWidth: '120px', color: 'var(--color-black)' }}>
+                    Cost Price
+                  </CTableHeaderCell>
+                  <CTableHeaderCell style={{ minWidth: '100px', color: 'var(--color-black)' }}>
+                    MRP
+                  </CTableHeaderCell>
+                  <CTableHeaderCell style={{ minWidth: '90px', color: 'var(--color-black)' }}>
+                    Disc%
+                  </CTableHeaderCell>
+                  <CTableHeaderCell style={{ minWidth: '80px', color: 'var(--color-black)' }}>
+                    Actions
+                  </CTableHeaderCell>
                 </CTableRow>
-              )}
+              </CTableHead>
 
-              {!loading &&
-                payload.medicineDetails.map((item, index) => (
-                  <CTableRow key={index}>
+              <CTableBody>
+                {payload.medicineDetails.map((item, index) => (
+                  <CTableRow
+                    key={index}
+                    style={{
+                      color: 'var(--color-black)',
+                    }}
+                  >
                     <CTableDataCell>{item.sno}</CTableDataCell>
-
                     <CTableDataCell>
                       <input
-                        className="form-control"
+                        className="form-control w-100"
                         value={item.productName}
                         onChange={(e) => updateProductField(index, 'productName', e.target.value)}
                       />
                     </CTableDataCell>
-
-                    {/* Batch No */}
                     <CTableDataCell>
                       <input
-                        className="form-control"
+                        className="form-control w-100"
                         value={item.batchNo}
                         onChange={(e) => updateProductField(index, 'batchNo', e.target.value)}
                       />
                     </CTableDataCell>
-
                     <CTableDataCell>
                       <input
                         type="date"
-                        className="form-control"
+                        className="form-control w-100"
                         value={item.expDate}
                         onChange={(e) => updateProductField(index, 'expDate', e.target.value)}
+                        style={{
+                          color: 'var(--color-black)',
+                        }}
                       />
                     </CTableDataCell>
-
                     <CTableDataCell>
                       <input
                         type="number"
-                        className="form-control"
+                        className="form-control w-100 text-end"
                         value={item.quantity}
                         onChange={(e) => updateProductField(index, 'quantity', e.target.value)}
                       />
                     </CTableDataCell>
-
                     <CTableDataCell>
-                      
-                        <input
-                          type="number"
-                          className="form-control"
-                          value={item.packSize}
-                          onChange={(e) => updateProductField(index, 'packSize', e.target.value)}
-                        />
-                    
+                      <input
+                        type="text"
+                        className="form-control w-100 text-end"
+                        value={item.packSize}
+                        onChange={(e) => updateProductField(index, 'packSize', e.target.value)}
+                        // packSize kept in UI but will be ignored when sending payload to backend
+                      />
                     </CTableDataCell>
-
                     <CTableDataCell>
-                   
-                        <input
-                          type="number"
-                          className="form-control"
-                          value={item.free}
-                          onChange={(e) => updateProductField(index, 'free', e.target.value)}
-                        />
-                    
+                      <input
+                        type="number"
+                        className="form-control w-100 text-end"
+                        value={item.free}
+                        onChange={(e) => updateProductField(index, 'free', e.target.value)}
+                      />
                     </CTableDataCell>
-
                     <CTableDataCell>
                       {item.isSaved ? (
                         item.gstPercent
                       ) : (
                         <input
                           type="number"
-                          className="form-control"
+                          className="form-control w-100 text-end"
                           value={item.gstPercent}
                           onChange={(e) => updateProductField(index, 'gstPercent', e.target.value)}
                         />
                       )}
                     </CTableDataCell>
-
                     <CTableDataCell>
                       {item.isSaved ? (
                         item.costPrice
                       ) : (
                         <input
                           type="number"
-                          className="form-control"
+                          className="form-control w-100 text-end"
                           value={item.costPrice}
                           onChange={(e) => updateProductField(index, 'costPrice', e.target.value)}
                         />
                       )}
                     </CTableDataCell>
-
                     <CTableDataCell>
                       {item.isSaved ? (
                         item.mrp
                       ) : (
                         <input
                           type="number"
-                          className="form-control"
+                          className="form-control w-100 text-end"
                           value={item.mrp}
                           onChange={(e) => updateProductField(index, 'mrp', e.target.value)}
                         />
                       )}
                     </CTableDataCell>
-
                     <CTableDataCell>
                       {item.isSaved ? (
                         item.discPercent
                       ) : (
                         <input
                           type="number"
-                          className="form-control"
+                          className="form-control w-100 text-end"
                           value={item.discPercent}
                           onChange={(e) => updateProductField(index, 'discPercent', e.target.value)}
                         />
                       )}
                     </CTableDataCell>
+                    <CTableDataCell>
+                      <div className="d-flex gap-1">
+                        <CButton size="sm" onClick={() => handleRemoveProduct(index)}>
+                          Remove
+                        </CButton>
+                      </div>
+                    </CTableDataCell>
                   </CTableRow>
                 ))}
-            </CTableBody>
-          </CTable>
+              </CTableBody>
+            </CTable>
+          </div>
 
           {/* ----- TOTALS SECTION ----- */}
-          <CCardBody style={{ padding: '10px 0 0 0' }}>
+          <CCardBody style={{ padding: '5px 0' }}>
             <CRow className="g-2 border-bottom pb-2">
               {/* Column Group 1 */}
-              <CCol md={3}>
-                {['Total Amt', 'Disc %', 'Net Amt', 'Credit Days'].map((label) => (
-                  <CRow className="mb-2" key={label}>
+              <CCol md={2}>
+                {['Total Amt', 'Disc %', 'Net Amt'].map((label) => (
+                  <CRow key={label} style={{ marginBottom: '4px' }}>
                     <CCol xs={6}>
                       <CFormLabel className="text-end fw-bold mb-0">{label}</CFormLabel>
                     </CCol>
@@ -534,22 +680,12 @@ const Purchases = () => {
                     </CCol>
                   </CRow>
                 ))}
-                <CRow>
-                  <CCol xs={6}>
-                    <CFormLabel className="fw-bold mb-0">PayMode</CFormLabel>
-                  </CCol>
-                  <CCol xs={6}>
-                    <CFormSelect disabled value="CASH" className="bg-light">
-                      <option>CASH</option>
-                    </CFormSelect>
-                  </CCol>
-                </CRow>
               </CCol>
 
               {/* Column Group 2 */}
-              <CCol md={3}>
-                {['SGST', 'CGST', 'IGST', 'CST'].map((tax) => (
-                  <CRow className="mb-2" key={tax}>
+              <CCol md={2}>
+                {['SGST', 'CGST', 'IGST'].map((tax) => (
+                  <CRow key={tax} style={{ marginBottom: '4px' }}>
                     <CCol xs={6}>
                       <CFormLabel className="text-end fw-bold mb-0">{tax}</CFormLabel>
                     </CCol>
@@ -561,9 +697,9 @@ const Purchases = () => {
               </CCol>
 
               {/* Column Group 3 */}
-              <CCol md={3}>
-                {['Total Tax', 'Final Total', 'Previous Adj', 'Net Payable'].map((item) => (
-                  <CRow className="mb-2" key={item}>
+              <CCol md={2}>
+                {['Total Tax', 'Final Total', 'Previous Adj'].map((item) => (
+                  <CRow key={item} style={{ marginBottom: '4px' }}>
                     <CCol xs={6}>
                       <CFormLabel className="text-end fw-bold mb-0">{item}</CFormLabel>
                     </CCol>
@@ -575,9 +711,9 @@ const Purchases = () => {
               </CCol>
 
               {/* Column Group 4 */}
-              <CCol md={3}>
+              <CCol md={2}>
                 {['Bal. Amt', 'Due Paid', 'PostDisc'].map((item) => (
-                  <CRow className="mb-2" key={item}>
+                  <CRow key={item} style={{ marginBottom: '4px' }}>
                     <CCol xs={6}>
                       <CFormLabel className="text-end fw-bold mb-0">{item}</CFormLabel>
                     </CCol>
@@ -586,21 +722,75 @@ const Purchases = () => {
                     </CCol>
                   </CRow>
                 ))}
-                <CRow>
+
+                {/* <CRow style={{ marginBottom: '4px' }}>
                   <CCol xs={6}>
                     <CFormLabel className="fw-bold mb-0">Bill Due Date</CFormLabel>
                   </CCol>
                   <CCol xs={6}>
-                    <CFormInput type="date" disabled value="2025-11-13" className="bg-light" />
+                    <CFormInput
+                      type="date"
+                      disabled
+                      value={payload.billDueDate}
+                      onChange={(e) => updateTopField('billDueDate', e.target.value)}
+                      className="bg-light"
+                      style={{ color: 'var(--color-black)' }}
+                    />
+                  </CCol>
+                </CRow> */}
+              </CCol>
+              {/* Column Group 5 */}
+              <CCol md={2}>
+                <CRow style={{ marginBottom: '4px' }}>
+                  <CCol xs={6}>
+                    <CFormLabel className="fw-bold mb-0">PayMode</CFormLabel>
+                  </CCol>
+                  <CCol xs={6}>
+                    <CFormSelect
+                      disabled
+                      value={payload.paymentMode}
+                      onChange={(e) => updateTopField('paymentMode', e.target.value)}
+                      className="bg-light"
+                      style={{ color: 'var(--color-black)' }}
+                    >
+                      <option value="">Select</option>
+                      <option value="cash">CASH</option>
+                      <option value="card">CARD</option>
+                      <option value="bank">BANK</option>
+                    </CFormSelect>
                   </CCol>
                 </CRow>
+                {['CreditDays','NetPayable'].map((label) => (
+                  <CRow key={label} style={{ marginBottom: '4px' }}>
+                    <CCol xs={6}>
+                      <CFormLabel className="text-end fw-bold mb-0">{label}</CFormLabel>
+                    </CCol>
+                    <CCol xs={6}>
+                      <CFormInput disabled value="0" className="text-end bg-light" />
+                    </CCol>
+                  </CRow>
+                ))}
               </CCol>
-
+              {/* Column Group 6 */}
+              <CCol md={2}>
+                {['CST'].map((label) => (
+                  <CRow key={label} style={{ marginBottom: '4px' }}>
+                    <CCol xs={6}>
+                      <CFormLabel className="text-end fw-bold mb-0">{label}</CFormLabel>
+                    </CCol>
+                    <CCol xs={6}>
+                      <CFormInput disabled value="0" className="text-end bg-light" />
+                    </CCol>
+                  </CRow>
+                ))}
+              </CCol>
+              {/* Checkbox */}
               <CFormCheck
                 type="checkbox"
                 id="displayPurchaseDetails"
                 label="Display Previous Purchase Details"
-                className="me-4 text-dark"
+                className="me-4 mt-2"
+                style={{ color: 'var(--color-black)' }}
               />
             </CRow>
           </CCardBody>
@@ -608,20 +798,26 @@ const Purchases = () => {
       </div>
 
       {/* ----------------------- SEARCH / NAVIGATION BAR ----------------------- */}
-
       <div
         className="d-flex align-items-center"
         style={{
+          color: 'var(--color-black)',
           background: '#E8F3FF',
           padding: '6px 10px',
           borderRadius: '6px',
           border: '1px solid #B5D9FF',
+          overflowX: 'auto', // Keeps the entire bar horizontally scrollable if content overflows
         }}
       >
-        {/* 🔍 Search Label */}
-        <CFormLabel className="fw-bold me-2 mb-0">Search</CFormLabel>
-
-        {/* 🔍 Search Input */}
+        {/* 🔍 Search Label and Input */}
+        <CFormLabel
+          className="fw-bold me-2 mb-0"
+          style={{
+            color: 'var(--color-black)',
+          }}
+        >
+          Search
+        </CFormLabel>
         <CFormInput
           type="text"
           placeholder="Search here..."
@@ -631,73 +827,117 @@ const Purchases = () => {
           className="me-3"
         />
 
-        <CFormLabel className="fw-bold  me-2 mb-0">From</CFormLabel>
+        {/* Date Range Inputs */}
+        <CFormLabel className="fw-bold me-2 mb-0">From</CFormLabel>
         <CFormInput
           type="date"
-          value="2025-11-12"
-          style={{ width: '120px', height: '25px', padding: '0 5px' }}
+          value={payload.invoiceDate || '2025-11-12'}
+          style={{ width: '120px', height: '25px', padding: '0 5px', color: 'var(--color-black)' }}
           className="me-3"
         />
 
-        <CFormLabel className="fw-bold  me-2 mb-0">To</CFormLabel>
+        <CFormLabel className="fw-bold me-2 mb-0">To</CFormLabel>
         <CFormInput
           type="date"
-          value="2025-11-13"
-          style={{ width: '120px', height: '25px', padding: '0 5px' }}
+          value={payload.receivingDate || '2025-11-13'}
+          style={{ width: '120px', height: '25px', padding: '0 5px', color: 'var(--color-black)' }}
           className="me-3"
         />
 
+        {/* Navigation Buttons */}
         <CButton
           size="sm"
-          color="light"
           className="me-2"
-          style={{ height: '25px', padding: '0 5px' }}
+          style={{
+            height: '25px',
+            padding: '0 5px',
+            whiteSpace: 'nowrap',
+            color: 'var(--color-black)',
+            backgroundColor: 'var(--color-bgcolor)',
+          }}
         >
           Move first
         </CButton>
-
         <CButton
           size="sm"
-          color="light"
           className="me-2"
-          style={{ height: '25px', padding: '0 5px' }}
+          style={{
+            height: '25px',
+            padding: '0 5px',
+            whiteSpace: 'nowrap',
+            color: 'var(--color-black)',
+            backgroundColor: 'var(--color-bgcolor)',
+          }}
         >
           Move previous
         </CButton>
-
         <CButton
           size="sm"
-          color="light"
           className="me-2"
-          style={{ height: '25px', padding: '0 5px' }}
+          style={{
+            height: '25px',
+            padding: '0 5px',
+            whiteSpace: 'nowrap',
+            color: 'var(--color-black)',
+            backgroundColor: 'var(--color-bgcolor)',
+          }}
         >
           Move next
         </CButton>
-
         <CButton
           size="sm"
-          color="light"
-          className="me-2"
-          style={{ height: '25px', padding: '0 5px' }}
+          className="me-3" // Increased margin here to separate from icons
+          style={{
+            height: '25px',
+            padding: '0 5px',
+            whiteSpace: 'nowrap',
+            color: 'var(--color-black)',
+            backgroundColor: 'var(--color-bgcolor)',
+          }}
         >
           Move last
         </CButton>
 
+        {/* Tool Icons (Save, Print, Search/Find) */}
         <CIcon
           icon={cilSave}
           size="lg"
           className="mx-1"
-          style={{ cursor: 'pointer' }}
+          style={{ cursor: 'pointer', flexShrink: 0 }} // Prevent icons from shrinking
           onClick={handleFinalSave}
         />
-        <CIcon icon={cilPrint} size="lg" className="mx-1" style={{ cursor: 'pointer' }} />
-        <CIcon icon={cilMagnifyingGlass} size="lg" className="mx-1" style={{ cursor: 'pointer' }} />
+        <CIcon
+          icon={cilPrint}
+          size="lg"
+          className="mx-1"
+          style={{ cursor: 'pointer', flexShrink: 0 }}
+        />
+        <CIcon
+          icon={cilMagnifyingGlass}
+          size="lg"
+          className="mx-3" // Increased margin here to separate from action buttons
+          style={{ cursor: 'pointer', flexShrink: 0 }}
+        />
 
-        <div className="ms-auto d-flex gap-2">
-          <CButton color="secondary" size="sm">
+        {/* Action Buttons (Close, Print) - Pushed to the far right */}
+        <div className="ms-auto d-flex gap-2" style={{ flexShrink: 0 }}>
+          <CButton
+            color="light
+          "
+            size="sm"
+            style={{ height: '25px', padding: '0 5px', color: 'var(--color-black)' }}
+          >
             Close
           </CButton>
-          <CButton color="success" size="sm">
+          <CButton
+            size="sm"
+            style={{
+              height: '25px',
+              padding: '0 5px',
+              color: 'var(--color-black)',
+              backgroundColor: 'var(--color-bgcolor)',
+            }}
+          >
             Print
           </CButton>
         </div>

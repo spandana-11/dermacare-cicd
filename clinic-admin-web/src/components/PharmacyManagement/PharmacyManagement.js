@@ -8,49 +8,85 @@ import SalesReturns from '../PharmacyManagement/SalesReturns'
 import Purchases from '../PharmacyManagement/Purchases'
 import StockReturns from '../PharmacyManagement/StockReturns'
 import MoneyReceipts from '../PharmacyManagement/MoneyReceipts'
+import SupplierInfo from '../PharmacyManagement/SupplierInfo'
 
 const PharmacyManagement = () => {
   const [activeKey, setActiveKey] = useState(0)
 
   return (
-    <div className="pharmacy-management p-4 w-100">
-      <h5 className="pm-title mb-4">Pharmacy Management</h5>
-
+    <div className="pharmacy-management w-100">
       <CTabs activeKey={activeKey}>
         <CNav variant="tabs" className="pm-tabs">
           <CNavItem>
-            <CNavLink active={activeKey === 0} onClick={() => setActiveKey(0)}>
+            <CNavLink
+              active={activeKey === 0}
+              onClick={() => setActiveKey(0)}
+              style={{ color: 'var(--color-black)',cursor:'pointer' }}
+            >
               Medicine Template
             </CNavLink>
           </CNavItem>
           <CNavItem>
-            <CNavLink active={activeKey === 1} onClick={() => setActiveKey(1)}>
+            <CNavLink
+              active={activeKey === 1}
+              onClick={() => setActiveKey(1)}
+              style={{ color: 'var(--color-black)' ,cursor:'pointer'}}
+            >
               Inventory
             </CNavLink>
           </CNavItem>
           <CNavItem>
-            <CNavLink active={activeKey === 2} onClick={() => setActiveKey(2)}>
+            <CNavLink
+              active={activeKey === 2}
+              onClick={() => setActiveKey(2)}
+              style={{ color: 'var(--color-black)' ,cursor:'pointer'}}
+            >
               OP Sales
             </CNavLink>
           </CNavItem>
           <CNavItem>
-            <CNavLink active={activeKey === 3} onClick={() => setActiveKey(3)}>
+            <CNavLink
+              active={activeKey === 3}
+              onClick={() => setActiveKey(3)}
+              style={{ color: 'var(--color-black)' ,cursor:'pointer'}}
+            >
               Sales Returns
             </CNavLink>
           </CNavItem>
           <CNavItem>
-            <CNavLink active={activeKey === 4} onClick={() => setActiveKey(4)}>
+            <CNavLink
+              active={activeKey === 4}
+              onClick={() => setActiveKey(4)}
+              style={{ color: 'var(--color-black)' ,cursor:'pointer'}}
+            >
               Purchases
             </CNavLink>
           </CNavItem>
           <CNavItem>
-            <CNavLink active={activeKey === 5} onClick={() => setActiveKey(5)}>
+            <CNavLink
+              active={activeKey === 5}
+              onClick={() => setActiveKey(5)}
+              style={{ color: 'var(--color-black)' ,cursor:'pointer'}}
+            >
               Stock Returns
             </CNavLink>
           </CNavItem>
           <CNavItem>
-            <CNavLink active={activeKey === 6} onClick={() => setActiveKey(6)}>
+            <CNavLink
+              active={activeKey === 6}
+              onClick={() => setActiveKey(6)}
+              style={{ color: 'var(--color-black)' ,cursor:'pointer'}}
+            >
               Money Receipts
+            </CNavLink>
+          </CNavItem>
+          <CNavItem>
+            <CNavLink
+              active={activeKey === 7}
+              onClick={() => setActiveKey(7)}
+              style={{ color: 'var(--color-black)',cursor:'pointer' }}
+            >
+              Suppliers
             </CNavLink>
           </CNavItem>
         </CNav>
@@ -69,13 +105,16 @@ const PharmacyManagement = () => {
             <SalesReturns />
           </CTabPane>
           <CTabPane visible={activeKey === 4}>
-            <Purchases />
+            <Purchases goToSupplier={() => setActiveKey(7)} />
           </CTabPane>
           <CTabPane visible={activeKey === 5}>
             <StockReturns />
           </CTabPane>
           <CTabPane visible={activeKey === 6}>
             <MoneyReceipts />
+          </CTabPane>
+          <CTabPane visible={activeKey === 7}>
+            <SupplierInfo />
           </CTabPane>
         </CTabContent>
       </CTabs>

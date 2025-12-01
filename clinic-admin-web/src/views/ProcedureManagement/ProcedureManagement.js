@@ -88,6 +88,10 @@ const ServiceManagement = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [saveloading, setSaveLoading] = useState(false)
+  const [viewMinTimeValue, viewMinTimeUnit] = viewService?.minTime
+  ? viewService.minTime.split(' ')
+  : ['', '']
+
 
   const { user } = useHospital()
   const can = (feature, action) => user?.permissions?.[feature]?.includes(action)
@@ -1247,9 +1251,21 @@ const ServiceManagement = () => {
                 <CCol sm={4}>
                   <strong>Final Cost:</strong> ₹ {Math.round(viewService.finalCost)}
                 </CCol>
+                
                 <CCol sm={4}>
-                  <strong>Service Time:</strong> {formatMinutes(viewService.minTime)}
-                </CCol>
+  <strong>Service Time:</strong>{' '}
+  {viewMinTimeValue && viewMinTimeUnit
+    ? `${viewMinTimeValue} ${
+        viewMinTimeUnit === 'hours'
+          ? viewMinTimeValue > 1
+            ? 'hours'
+            : 'hour'
+          : 'minutes'
+      }`
+    : 'N/A'}
+</CCol>
+
+
               </CRow>
             </div>
 

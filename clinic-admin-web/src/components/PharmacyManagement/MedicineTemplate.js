@@ -355,8 +355,8 @@ const MedicineTemplate = () => {
       {/* TABLE */}
       <div className="table-responsive">
         <CTable striped bordered>
-          <CTableHead>
-            <CTableRow className="text-center">
+          <CTableHead className="pink-table w-auto">
+            <CTableRow>
               <CTableHeaderCell>S.No</CTableHeaderCell>
               <CTableHeaderCell>Medicine Name</CTableHeaderCell>
               <CTableHeaderCell>Dosage</CTableHeaderCell>
@@ -370,7 +370,7 @@ const MedicineTemplate = () => {
             </CTableRow>
           </CTableHead>
 
-          <CTableBody className="text-center">
+          <CTableBody className="pink-table">
             {filteredMedicines.length > 0 ? (
               filteredMedicines.map((med, index) => (
                 <CTableRow key={med.id}>
@@ -418,8 +418,11 @@ const MedicineTemplate = () => {
               ))
             ) : (
               <CTableRow>
-                <CTableDataCell colSpan={8}>No data available</CTableDataCell>
-              </CTableRow>
+  <CTableDataCell colSpan={8} className="text-center text-muted">
+    No Medicine data found
+  </CTableDataCell>
+</CTableRow>
+
             )}
           </CTableBody>
         </CTable>
