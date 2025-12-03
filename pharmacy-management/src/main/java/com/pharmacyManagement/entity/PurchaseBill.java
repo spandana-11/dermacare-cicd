@@ -25,6 +25,7 @@ public class PurchaseBill {
     private List<PurchaseItem> medicineDetails;
 
     private double totalAmount;
+    private double discountPercentage;
     private double discountAmountTotal;
     private double netAmount;
 

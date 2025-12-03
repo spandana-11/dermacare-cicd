@@ -2,10 +2,10 @@ package com.clinicadmin.service.impl;
 
 import org.springframework.stereotype.Service;
 
-import com.clinicadmin.dto.SupplierDTO;
+import com.clinicadmin.dto.MedicineDetailDTO;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.feignclient.PharmacyManagementFeignClient;
-import com.clinicadmin.service.SupplierService;
+import com.clinicadmin.service.MedicineDetailService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import feign.FeignException;
@@ -13,57 +13,56 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class SupplierServiceImpl implements SupplierService {
+public class MedicineDetailServiceImpl implements MedicineDetailService {
 
     private final PharmacyManagementFeignClient pharmacyFeignClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public Response addSupplier(SupplierDTO dto) {
+    public Response addMedicine(MedicineDetailDTO dto) {
         try {
-            return pharmacyFeignClient.addSupplier(dto);
+            return pharmacyFeignClient.addMedicine(dto);
         } catch (FeignException ex) {
             return extractFeignError(ex);
         }
     }
 
     @Override
-    public Response updateSupplier(String supplierId, SupplierDTO dto) {
+    public Response getMedicineById(String id) {
         try {
-            return pharmacyFeignClient.updateSupplier(supplierId, dto);
+            return pharmacyFeignClient.getMedicineById(id);
         } catch (FeignException ex) {
             return extractFeignError(ex);
         }
     }
 
     @Override
-    public Response getSupplierById(String supplierId) {
+    public Response getAllMedicines() {
         try {
-            return pharmacyFeignClient.getSupplierById(supplierId);
+            return pharmacyFeignClient.getAllMedicines();
         } catch (FeignException ex) {
             return extractFeignError(ex);
         }
     }
 
     @Override
-    public Response getAllSuppliers() {
+    public Response updateMedicine(String id, MedicineDetailDTO dto) {
         try {
-            return pharmacyFeignClient.getAllSuppliers();
+            return pharmacyFeignClient.updateMedicine(id, dto);
         } catch (FeignException ex) {
             return extractFeignError(ex);
         }
     }
 
     @Override
-    public Response deleteSupplier(String supplierId) {
+    public Response deleteMedicine(String id) {
         try {
-            return pharmacyFeignClient.deleteSupplier(supplierId);
+            return pharmacyFeignClient.deleteMedicine(id);
         } catch (FeignException ex) {
             return extractFeignError(ex);
         }
     }
 
-    // Same Feign Error Handler used in PurchaseBillServiceImpl
     private Response extractFeignError(FeignException ex) {
         try {
             return objectMapper.readValue(ex.contentUTF8(), Response.class);
