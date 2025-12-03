@@ -377,21 +377,27 @@ const SupplierInfo = () => {
         {/* LEFT BOX */}
         <div className="flex-fill border p-3 rounded">
           <h6 className="fw-bold">Supplier Details</h6>
-          <CFormLabel>Supplier Name <span className='text-danger'>*</span></CFormLabel>
+          <CFormLabel>
+            Supplier Name <span className="text-danger">*</span>
+          </CFormLabel>
           <CFormInput
             value={form.supplierName}
             onChange={(e) => updateForm('supplierName', e.target.value)}
             invalid={!!error.supplierName}
           />
           {error.supplierName && <div className="invalid-feedback">{error.supplierName}</div>}
-          <CFormLabel className="mt-2">GST No <span className='text-danger'>*</span></CFormLabel>
+          <CFormLabel className="mt-2">
+            GST No <span className="text-danger">*</span>
+          </CFormLabel>
           <CFormInput
             value={form.gstNumber}
             onChange={(e) => updateForm('gstNumber', e.target.value)}
             invalid={!!error.gstNumber}
           />
           {error.gstNumber && <div className="invalid-feedback">{error.gstNumber}</div>}
-          <CFormLabel className="mt-2">APGST / Reg No <span className='text-danger'>*</span></CFormLabel>
+          <CFormLabel className="mt-2">
+            APGST / Reg No <span className="text-danger">*</span>
+          </CFormLabel>
           <CFormInput
             value={form.registrationNumber}
             onChange={(e) => updateForm('registrationNumber', e.target.value)}
@@ -400,37 +406,44 @@ const SupplierInfo = () => {
           {error.registrationNumber && (
             <div className="invalid-feedback">{error.registrationNumber}</div>
           )}
-          <CFormLabel className="mt-2">CST No <span className='text-danger'>*</span></CFormLabel>
+          <CFormLabel className="mt-2">
+            CST No <span className="text-danger">*</span>
+          </CFormLabel>
           <CFormInput
             value={form.cstNumber}
             onChange={(e) => updateForm('cstNumber', e.target.value)}
             invalid={!!error.cstNumber}
           />
           {error.cstNumber && <div className="invalid-feedback">{error.cstNumber}</div>}
-          
           <CFormLabel className="mt-2">TIN No</CFormLabel>
           <CFormInput
             value={form.tinNumber}
             onChange={(e) => updateForm('tinNumber', e.target.value)}
             // Since it's optional, only apply invalid style if we add a format validation
-            invalid={!!error.tinNumber} 
+            invalid={!!error.tinNumber}
           />
           {error.tinNumber && <div className="invalid-feedback">{error.tinNumber}</div>}
-          <CFormLabel className="mt-2">Form 20B <span className='text-danger'>*</span></CFormLabel>
+          <CFormLabel className="mt-2">
+            Form 20B <span className="text-danger">*</span>
+          </CFormLabel>
           <CFormInput
             value={form.form20B}
             onChange={(e) => updateForm('form20B', e.target.value)}
             invalid={!!error.form20B}
           />
           {error.form20B && <div className="invalid-feedback">{error.form20B}</div>}
-          <CFormLabel className="mt-2">Form 21B <span className='text-danger'>*</span></CFormLabel>
+          <CFormLabel className="mt-2">
+            Form 21B <span className="text-danger">*</span>
+          </CFormLabel>
           <CFormInput
             value={form.form21B}
             onChange={(e) => updateForm('form21B', e.target.value)}
             invalid={!!error.form21B}
           />
           {error.form21B && <div className="invalid-feedback">{error.form21B}</div>}
-          <CFormLabel className="mt-2">Address <span className='text-danger'>*</span></CFormLabel>
+          <CFormLabel className="mt-2">
+            Address <span className="text-danger">*</span>
+          </CFormLabel>
           <CFormTextarea
             rows={3}
             value={form.address}
@@ -440,53 +453,77 @@ const SupplierInfo = () => {
           {error.address && <div className="invalid-feedback">{error.address}</div>}{' '}
           {/* <-- ADDED */}
           <CFormLabel className="fw-bold mb-0" style={{ width: 130 }}>
-            City <span className='text-danger'>*</span>
+            City <span className="text-danger">*</span>
           </CFormLabel>
-          <CFormSelect
-            onChange={(e) => handleCityChange(e.target.value)}
-            value={cities.find((c) => c.cityName === form.city)?.id || ''}
-            invalid={!!error.city} // <-- ADDED
-          >
-            <option value="">Select City</option>
-            {cities.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.cityName}
-              </option>
-            ))}
-          </CFormSelect>
-          {error.city && <div className="invalid-feedback">{error.city}</div>}
-          <CButton className="mt-1" size="sm" onClick={() => setShowCityModal(true)}>
-            New
-          </CButton>
-          <CFormLabel className="mt-3">Area <span className='text-danger'>*</span></CFormLabel>
-          <CFormSelect
-            value={form.area}
-            onChange={(e) => setForm((prev) => ({ ...prev, area: e.target.value }))}
-            invalid={!!error.area} // <-- ADDED
-          >
-            <option value="">Select Area</option>
-            {areas.map((a, i) => (
-              <option key={i} value={a}>
-                {a}
-              </option>
-            ))}
-          </CFormSelect>
+          <div className="d-flex align-items-start gap-2">
+            <CFormSelect
+              onChange={(e) => handleCityChange(e.target.value)}
+              value={cities.find((c) => c.cityName === form.city)?.id || ''}
+              invalid={!!error.city}
+            >
+              <option value="">Select City</option>
+              {cities.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.cityName}
+                </option>
+              ))}
+            </CFormSelect>
+
+            <CButton
+              size="sm"
+              onClick={() => setShowCityModal(true)}
+              style={{
+                color: 'var(--color-black)',
+                backgroundColor: 'var(--color-bgcolor)',
+              }}
+            >
+              New
+            </CButton>
+          </div>
+          {error.city && <div className="invalid-feedback d-block">{error.city}</div>}
+          <CFormLabel className="fw-bold mb-0" style={{ width: 130 }}>
+            Area <span className="text-danger">*</span>
+          </CFormLabel>
+          <div className="d-flex align-items-start gap-2">
+            <CFormSelect
+              value={form.area}
+              onChange={(e) => setForm((prev) => ({ ...prev, area: e.target.value }))}
+              invalid={!!error.area} // <-- ADDED
+            >
+              <option value="">Select Area</option>
+              {areas.map((a, i) => (
+                <option key={i} value={a}>
+                  {a}
+                </option>
+              ))}
+            </CFormSelect>
+            <CButton
+              className="mt-1"
+              size="sm"
+              onClick={() => setShowAreaModal(true)}
+              style={{
+                color: 'var(--color-black)',
+                backgroundColor: 'var(--color-bgcolor)',
+              }}
+            >
+              New
+            </CButton>
+          </div>
           {error.area && <div className="invalid-feedback">{error.area}</div>} {/* <-- ADDED */}
-          <CButton className="mt-1" size="sm" onClick={() => setShowAreaModal(true)}>
-            New
-          </CButton>
         </div>
 
         {/* RIGHT BOX */}
         <div className="flex-fill border p-3 rounded">
-          <h6 className="fw-bold">Contact Details <span className='text-danger'>*</span></h6>
+          <h6 className="fw-bold">
+            Contact Details <span className="text-danger">*</span>
+          </h6>
           <CFormLabel>State</CFormLabel>
           <CFormInput
             value={form.contactDetails.state}
             onChange={(e) => updateContact('state', e.target.value)}
             // invalid={!!error.state} // <-- ADDED
           />
-           <CFormLabel className="mt-2">Zip Code</CFormLabel>
+          <CFormLabel className="mt-2">Zip Code</CFormLabel>
           <CFormInput
             value={form.contactDetails.zipCode}
             onChange={(e) => updateContact('zipCode', e.target.value)}
@@ -503,7 +540,9 @@ const SupplierInfo = () => {
             value={form.contactDetails.faxNumber}
             onChange={(e) => updateContact('faxNumber', e.target.value)}
           />
-          <CFormLabel className="mt-2">Contact Person <span className='text-danger'>*</span></CFormLabel>
+          <CFormLabel className="mt-2">
+            Contact Person <span className="text-danger">*</span>
+          </CFormLabel>
           <CFormInput
             value={form.contactDetails.contactPerson}
             onChange={(e) => updateContact('contactPerson', e.target.value)}
@@ -511,7 +550,9 @@ const SupplierInfo = () => {
           />
           {error.contactPerson && <div className="invalid-feedback">{error.contactPerson}</div>}{' '}
           {/* <-- ADDED */}
-          <CFormLabel className="mt-2">Mobile Number 1 <span className='text-danger'>*</span></CFormLabel>
+          <CFormLabel className="mt-2">
+            Mobile Number 1 <span className="text-danger">*</span>
+          </CFormLabel>
           <CFormInput
             value={form.contactDetails.mobileNumber1}
             onChange={(e) => updateContact('mobileNumber1', e.target.value)}
@@ -551,7 +592,9 @@ const SupplierInfo = () => {
           />
           {error.website && <div className="invalid-feedback">{error.website}</div>}{' '}
           {/* <-- ADDED */}
-          <CFormLabel className="mt-2">Email <span className='text-danger'>*</span></CFormLabel>
+          <CFormLabel className="mt-2">
+            Email <span className="text-danger">*</span>
+          </CFormLabel>
           <CFormInput
             value={form.contactDetails.email}
             onChange={(e) => updateContact('email', e.target.value)}

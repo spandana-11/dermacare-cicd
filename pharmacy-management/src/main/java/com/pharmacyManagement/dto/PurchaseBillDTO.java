@@ -41,4 +41,5 @@ public class PurchaseBillDTO {
 	private String duePaidBillNo;
 	private String department;
 	private String financialYear;
+	
 }

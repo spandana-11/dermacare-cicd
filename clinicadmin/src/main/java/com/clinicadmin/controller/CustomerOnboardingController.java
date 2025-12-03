@@ -67,9 +67,9 @@ public class CustomerOnboardingController {
         return ResponseEntity.status(response.getStatus()).body(response);
     }
     
-    @GetMapping("/customer/patientId/{patientId}")
-    public ResponseEntity<Response> getCustomerByPatientId(@PathVariable String patientId) {
-        Response response = customerOnboardingService.getCustomersByPatientId(patientId);
+    @GetMapping("/customer/patientId/{patientId}/{clinicId}")
+    public ResponseEntity<Response> getCustomerByPatientId(@PathVariable String patientId,@PathVariable String clinicId) {
+        Response response = customerOnboardingService.getCustomersByPatientId(patientId,clinicId);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 

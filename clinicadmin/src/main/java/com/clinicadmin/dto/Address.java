@@ -1,14 +1,11 @@
 package com.clinicadmin.dto;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class Address {
-
 	private String houseNo; // e.g. Flat No, House No.
 	private String street; // e.g. Street Name / Road
 	private String landmark; // e.g. Near temple, Opposite mall

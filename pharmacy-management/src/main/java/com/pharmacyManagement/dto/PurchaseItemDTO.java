@@ -1,7 +1,7 @@
 package com.pharmacyManagement.dto;
 
-import jakarta.validation.constraints.*;
-
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
@@ -15,6 +15,9 @@ public class PurchaseItemDTO {
 
     @NotBlank(message = "Expiry date required")
     private String expiryDate;
+
+    @NotBlank(message = "Pack size required")
+    private String packSize;
 
     @Min(value = 1, message = "Quantity must be >= 1")
     private int quantity;

@@ -9,10 +9,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.clinicadmin.dto.AreaDTO;
 import com.clinicadmin.dto.CityDTO;
+import com.clinicadmin.dto.MedicineDetailDTO;
 import com.clinicadmin.dto.PurchaseBillDTO;
 import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.SupplierDTO;
-
 @FeignClient(name = "pharmacy-management")
 public interface PharmacyManagementFeignClient {
 
@@ -89,8 +89,7 @@ public interface PharmacyManagementFeignClient {
  Response getByDateRange(@PathVariable String fromDate, @PathVariable String toDate);
 
 
-    
-    
+
 //==================== SUPPLIER APIs ====================
 
 @PostMapping("/api/pharmacy/supplier/add")
@@ -108,6 +107,24 @@ Response getAllSuppliers();
 @DeleteMapping("/api/pharmacy/supplier/delete/{supplierId}")
 Response deleteSupplier(@PathVariable String supplierId);
 
+
+////////////////MedicanDetails/////////////////
+@PostMapping("/api/pharmacy/medicine/addMedicine")
+Response addMedicine(@RequestBody MedicineDetailDTO dto);
+
+@GetMapping("/api/pharmacy/medicine/getMedicineById/{id}")
+Response getMedicineById(@PathVariable String id);
+
+@GetMapping("/api/pharmacy/medicine/getAllMedicines")
+Response getAllMedicines();
+
+@PutMapping("/api/pharmacy/medicine/updateMedicineById/{id}")
+Response updateMedicine(@PathVariable String id, @RequestBody MedicineDetailDTO dto);
+
+@DeleteMapping("/api/pharmacy/medicine/deleteMedicineById/{id}")
+Response deleteMedicine(@PathVariable String id);
 }
+
+
     
 

@@ -1,17 +1,13 @@
 package com.AdminService.service;
-
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
 import com.AdminService.dto.LabTechnicianRequestDTO;
 import com.AdminService.feign.ClinicAdminFeign;
 import com.AdminService.util.ResponseStructure;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 

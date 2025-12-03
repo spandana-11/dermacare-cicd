@@ -802,7 +802,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		            //System.out.println(bookings);
 		    	} 
 	        	 if(bookings == null || bookings.isEmpty()) {
-		            bookings = repository.findByNameIgnoreCaseAndClinicId(input,clinicId);
+		            bookings = repository.findByNameContainingIgnoreCaseAndClinicId(input,clinicId);
 		          // System.out.println(bookings);
 		        }
 	        	if(bookings != null && !bookings.isEmpty()) {
@@ -837,7 +837,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 		        bkng.setRelation(b.getRelation());
 		        outpt.add(bkng); 
 		        }else{
-		      Response res = clinicAdminFeign.getCustomerByPatientId(input).getBody();
+		      Response res = clinicAdminFeign.getCustomerByPatientId(input,clinicId).getBody();
 		     // System.out.println(res);
 		      CustomerOnbordingDTO bg = new ObjectMapper().convertValue(res.getData(), CustomerOnbordingDTO.class);
 		      //System.out.println(bg);

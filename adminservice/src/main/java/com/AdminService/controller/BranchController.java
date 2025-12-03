@@ -1,5 +1,4 @@
 package com.AdminService.controller;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -11,7 +10,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.AdminService.dto.BranchDTO;
 import com.AdminService.service.BranchServiceImpl;
 import com.AdminService.util.Response;
@@ -66,7 +64,6 @@ public class BranchController {
 		return serviceImpl.getBranchByClinicId(clinicId);
 
 	}
-	
 	
 	@GetMapping("/getBranchByClinicAndBranchId/{clinicId}/{branchId}")
 	public ResponseEntity<?> getBranchByClinicAndBranchId(@PathVariable String clinicId,

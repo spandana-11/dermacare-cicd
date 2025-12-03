@@ -1,3 +1,4 @@
+// ---------- PurchaseBillServiceImpl.java ----------
 package com.pharmacyManagement.service.impl;
 
 import java.util.Collections;
@@ -8,11 +9,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.pharmacyManagement.dto.PurchaseBillDTO;
+import com.pharmacyManagement.dto.PurchaseItemDTO;
 import com.pharmacyManagement.dto.Response;
+import com.pharmacyManagement.dto.StockDTO;
 import com.pharmacyManagement.entity.PurchaseBill;
 import com.pharmacyManagement.entity.PurchaseItem;
+import com.pharmacyManagement.entity.Stock;
 import com.pharmacyManagement.repository.PurchaseBillRepository;
+import com.pharmacyManagement.repository.StockRepository;
 import com.pharmacyManagement.service.PurchaseBillService;
+import com.pharmacyManagement.service.StockLedgerService;
 import com.pharmacyManagement.util.PurchaseCalcUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -23,134 +29,165 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class PurchaseBillServiceImpl implements PurchaseBillService {
 
-	private final PurchaseBillRepository repository;
+    private final PurchaseBillRepository repository;
+    private final StockLedgerService stockLedgerService;
+    private final StockRepository stockRepo; // only for read operations if needed
 
-	@Override
-	public Response savePurchase(PurchaseBillDTO dto) {
+    @Override
+    public Response savePurchase(PurchaseBillDTO dto) {
 
-		Response response = new Response();
+        Response response = new Response();
 
-		try {
-			if (dto == null) {
-				response.setSuccess(false);
-				response.setMessage("Purchase Bill cannot be null");
-				response.setStatus(HttpStatus.BAD_REQUEST.value());
-				return response;
-			}
+        try {
+            if (dto == null) {
+                response.setSuccess(false);
+                response.setMessage("Purchase Bill cannot be null");
+                response.setStatus(HttpStatus.BAD_REQUEST.value());
+                return response;
+            }
 
-			log.info("Saving purchase bill: {}", dto);
+            log.info("Saving purchase bill: {}", dto);
 
-			PurchaseBill bill = new PurchaseBill();
-			bill.setDate(dto.getDate());
-			bill.setTime(dto.getTime());
-			bill.setPurchaseBillNo(dto.getPurchaseBillNo());
-			bill.setInvoiceNo(dto.getInvoiceNo());
-			bill.setSupplierName(dto.getSupplierName());
-			bill.setInvoiceDate(dto.getInvoiceDate());
-			bill.setReceivingDate(dto.getReceivingDate());
-			bill.setTaxType(dto.getTaxType());
-			bill.setPaymentMode(dto.getPaymentMode());
-			bill.setBillDueDate(dto.getBillDueDate());
-			bill.setCreditDays(dto.getCreditDays());
-			bill.setDuePaidBillNo(dto.getDuePaidBillNo());
-			bill.setDepartment(dto.getDepartment());
-			bill.setFinancialYear(dto.getFinancialYear());
+            PurchaseBill bill = new PurchaseBill();
 
-			// ============================
-			// ITEM CALCULATIONS
-			// ============================
-			List<PurchaseItem> items = (dto.getMedicineDetails() == null || dto.getMedicineDetails().isEmpty())
-					? Collections.emptyList()
-					: dto.getMedicineDetails().stream().map(i -> PurchaseCalcUtil.calculate(i, dto.getTaxType()))
-							.collect(Collectors.toList());
+            // preserve id if present (used by update flow)
+            if (dto.getId() != null && !dto.getId().trim().isEmpty()) {
+                bill.setId(dto.getId());
+            }
 
-			bill.setMedicineDetails(items);
+            bill.setDate(dto.getDate());
+            bill.setTime(dto.getTime());
+            bill.setPurchaseBillNo(dto.getPurchaseBillNo());
+            bill.setInvoiceNo(dto.getInvoiceNo());
+            bill.setSupplierName(dto.getSupplierName());
 
-			// ============================
-			// BASE TOTALS
-			// ============================
-			double totalAmount = round(items.stream().mapToDouble(PurchaseItem::getBaseAmount).sum());
+            bill.setInvoiceDate(dto.getInvoiceDate());
+            bill.setReceivingDate(dto.getReceivingDate());
+            bill.setTaxType(dto.getTaxType());
+            bill.setPaymentMode(dto.getPaymentMode());
+            bill.setBillDueDate(dto.getBillDueDate());
+            bill.setCreditDays(dto.getCreditDays());
+            bill.setDuePaidBillNo(dto.getDuePaidBillNo());
+            bill.setDepartment(dto.getDepartment());
+            bill.setFinancialYear(dto.getFinancialYear());
 
-			double totalDiscount = round(items.stream().mapToDouble(PurchaseItem::getDiscountAmount).sum());
+            // ============================
+            // ITEM CALCULATIONS
+            // ============================
+            List<PurchaseItem> items = (dto.getMedicineDetails() == null || dto.getMedicineDetails().isEmpty())
+                    ? Collections.emptyList()
+                    : dto.getMedicineDetails().stream().map(i -> PurchaseCalcUtil.calculate(i, dto.getTaxType()))
+                            .collect(Collectors.toList());
 
-			double netAmount = round(totalAmount - totalDiscount);
+            bill.setMedicineDetails(items);
 
-			// ============================
-			// GST SUMMARY (IGST / CGST+SGST)
-			// ============================
-			double totalIGST = 0.0;
-			double totalCGST = 0.0;
-			double totalSGST = 0.0;
+            // ============================
+            // BASE TOTALS
+            // ============================
+            double totalAmount = round(items.stream().mapToDouble(PurchaseItem::getBaseAmount).sum());
+            double totalDiscount = round(items.stream().mapToDouble(PurchaseItem::getDiscountAmount).sum());
+            double netAmount = round(totalAmount - totalDiscount);
+            double discountPercentage = 0.0;
+            if (totalAmount > 0) {
+                discountPercentage = round((totalDiscount / totalAmount) * 100);
+            }
+            bill.setDiscountPercentage(discountPercentage);
+            // ============================
+            // GST SUMMARY (IGST / CGST+SGST)
+            // ============================
+            double totalIGST = 0.0;
+            double totalCGST = 0.0;
+            double totalSGST = 0.0;
 
-			if (dto.getTaxType().equalsIgnoreCase("IGST")) {
+            if (dto.getTaxType() != null && dto.getTaxType().equalsIgnoreCase("IGST")) {
+                totalIGST = round(items.stream().mapToDouble(PurchaseItem::getGstAmount).sum());
+            } else {
+                totalCGST = round(items.stream().mapToDouble(PurchaseItem::getCgstAmount).sum());
+                totalSGST = round(items.stream().mapToDouble(PurchaseItem::getSgstAmount).sum());
+            }
 
-				totalIGST = round(items.stream().mapToDouble(PurchaseItem::getGstAmount).sum());
+            double totalTax = round(totalIGST + totalCGST + totalSGST);
+            double finalTotal = round(netAmount + totalTax);
 
-			} else {
+            // SET GST VALUES
+            bill.setTotalIGST(totalIGST);
+            bill.setTotalCGST(totalCGST);
+            bill.setTotalSGST(totalSGST);
 
-				totalCGST = round(items.stream().mapToDouble(PurchaseItem::getCgstAmount).sum());
+            bill.setTotalAmount(totalAmount);
+            bill.setDiscountAmountTotal(totalDiscount);
+            bill.setNetAmount(netAmount);
+            bill.setTotalTax(totalTax);
+            bill.setFinalTotal(finalTotal);
 
-				totalSGST = round(items.stream().mapToDouble(PurchaseItem::getSgstAmount).sum());
-			}
+            // ============================
+            // PAYMENT DETAILS
+            // ============================
+            double paid = dto.getPaidAmount() != null ? dto.getPaidAmount() : 0.0;
+            bill.setPaidAmount(paid);
 
-			double totalTax = round(totalIGST + totalCGST + totalSGST);
-			double finalTotal = round(netAmount + totalTax);
+            double previousAdj = dto.getPreviousAdjustment() != null ? dto.getPreviousAdjustment() : 0.0;
+            bill.setPreviousAdjustment(previousAdj);
 
-			// SET GST VALUES
-			bill.setTotalIGST(totalIGST);
-			bill.setTotalCGST(totalCGST);
-			bill.setTotalSGST(totalSGST);
+            double postDiscount = dto.getPostDiscount() != null ? dto.getPostDiscount() : 0.0;
+            bill.setPostDiscount(postDiscount);
 
-			bill.setTotalAmount(totalAmount);
-			bill.setDiscountAmountTotal(totalDiscount);
-			bill.setNetAmount(netAmount);
-			bill.setTotalTax(totalTax);
-			bill.setFinalTotal(finalTotal);
+            double balance = round(finalTotal - paid);
+            bill.setBalanceAmount(balance);
 
-			// ============================
-			// PAYMENT DETAILS
-			// ============================
-			double paid = dto.getPaidAmount() != null ? dto.getPaidAmount() : 0.0;
-			bill.setPaidAmount(paid);
+            double netPayable = round(balance - previousAdj - postDiscount);
+            bill.setNetPayable(netPayable);
 
-			double previousAdj = dto.getPreviousAdjustment() != null ? dto.getPreviousAdjustment() : 0.0;
-			bill.setPreviousAdjustment(previousAdj);
+            // ---------------- SAVE BILL ----------------
+            PurchaseBill saved = repository.save(bill);
 
-			double postDiscount = dto.getPostDiscount() != null ? dto.getPostDiscount() : 0.0;
-			bill.setPostDiscount(postDiscount);
+            // ============================
+            // APPLY STOCK UPDATES (centralized in StockLedgerService)
+            // ============================
+            // For each item create StockDTO and call stockLedgerService.addPurchaseStock
+            if (!items.isEmpty()) {
+                for (PurchaseItem item : items) {
+                    StockDTO stockDTO = new StockDTO();
+                    stockDTO.setProductId(item.getProductId());
+                    stockDTO.setProductName(item.getProductName());
+                    stockDTO.setBatchNo(item.getBatchNo());
+                    stockDTO.setExpiryDate(item.getExpiryDate());
+                    stockDTO.setQty(item.getQuantity());
+                    stockDTO.setFreeQty(item.getFreeQty());
+                    stockDTO.setCostPrice(item.getCostPrice());
+                    stockDTO.setMrp(item.getMrp());
+                    stockDTO.setGstPercent(item.getGstPercent());
+                    stockDTO.setSupplierName(dto.getSupplierName());
+                    stockDTO.setPurchaseDate(dto.getInvoiceDate());
+                    // transaction id will be purchaseBillNo inside stock service
 
-			double balance = round(finalTotal - paid);
-			bill.setBalanceAmount(balance);
+                    stockLedgerService.addPurchaseStock(stockDTO, saved.getPurchaseBillNo());
+                }
+            }
 
-			double netPayable = round(balance - previousAdj - postDiscount);
-			bill.setNetPayable(netPayable);
+            response.setSuccess(true);
+            response.setData(saved);
+            response.setMessage("Purchase Bill saved successfully and stock updated");
+            response.setStatus(HttpStatus.OK.value());
 
-			// SAVE BILL
-			PurchaseBill saved = repository.save(bill);
+            return response;
 
-			response.setSuccess(true);
-			response.setData(saved);
-			response.setMessage("Purchase Bill saved successfully");
-			response.setStatus(HttpStatus.OK.value());
+        } catch (Exception e) {
 
-			return response;
+            log.error("Error saving purchase bill: {}", e.getMessage(), e);
 
-		} catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Failed to save purchase bill: " + e.getMessage());
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return response;
+        }
+    }
 
-			log.error("Error saving purchase bill: {}", e.getMessage(), e);
+    private double round(double val) {
+        return Math.round(val * 100.0) / 100.0;
+    }
 
-			response.setSuccess(false);
-			response.setMessage("Failed to save purchase bill: " + e.getMessage());
-			response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-			return response;
-		}
-	}
-
-	private double round(double val) {
-		return Math.round(val * 100.0) / 100.0;
-	}
-
-	 // -------- UPDATE PURCHASE --------
+    // -------- UPDATE PURCHASE --------
     @Override
     public Response updatePurchase(String id, PurchaseBillDTO dto) {
 
@@ -166,8 +203,13 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
                 return response;
             }
 
-            // Delete old record and save new record
-            dto.setId(id); // put same ID
+            // 1) Reverse stock effects of old purchase
+            if (existing.getMedicineDetails() != null && !existing.getMedicineDetails().isEmpty()) {
+                stockLedgerService.reversePurchaseByBill(existing.getPurchaseBillNo(), existing.getMedicineDetails());
+            }
+
+            // 2) Save new purchase (use same id)
+            dto.setId(id);
             Response saveRes = savePurchase(dto);
 
             return saveRes;
@@ -210,7 +252,7 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
             return response;
         }
     }
-    
+
     @Override
     public Response getPurchaseByPurchaseBillNo(String purchaseBillNo) {
 
@@ -272,12 +314,18 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
         Response response = new Response();
 
         try {
-            boolean exists = repository.existsById(id);
-            if (!exists) {
+            PurchaseBill existing = repository.findById(id).orElse(null);
+
+            if (existing == null) {
                 response.setSuccess(false);
                 response.setMessage("Purchase Bill not found: " + id);
                 response.setStatus(HttpStatus.NOT_FOUND.value());
                 return response;
+            }
+
+            // reverse stock
+            if (existing.getMedicineDetails() != null && !existing.getMedicineDetails().isEmpty()) {
+                stockLedgerService.reversePurchaseByBill(existing.getPurchaseBillNo(), existing.getMedicineDetails());
             }
 
             repository.deleteById(id);
@@ -295,6 +343,7 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
             return response;
         }
     }
+
     @Override
     public Response getPurchaseByDateRange(String fromDate, String toDate) {
 
@@ -336,3 +385,4 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
     }
 
 }
+

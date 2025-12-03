@@ -260,10 +260,10 @@ public class CustomerOnboardingServiceImpl implements CustomerOnboardingService 
 
 	
 	@Override
-	public Response getCustomersByPatientId(String patientId) {
+	public Response getCustomersByPatientId(String patientId,String clinicId) {
 	    Response response = new Response();
 	    try {
-	        CustomerOnbording customers = onboardingRepository.findByPatientId(patientId);
+	        CustomerOnbording customers = onboardingRepository.findByPatientIdAndBranchId(patientId,clinicId);
 	        if(customers != null) {      
 	        response.setSuccess(true);
 	        response.setMessage("Customers retrieved successfully");

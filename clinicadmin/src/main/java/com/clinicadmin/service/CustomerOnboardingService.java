@@ -23,7 +23,7 @@ public interface CustomerOnboardingService {
 
 	Response login(CustomerLoginDTO dto);
 	
-	public Response getCustomersByPatientId(String patientId);
+	public Response getCustomersByPatientId(String patientId,String clinicId);
 	
 	public CustomerOnbordingDTO getCustomerByToken(String token);
 //

@@ -9,9 +9,8 @@ import com.dermacare.bookingService.util.Response;
 
 @FeignClient(value = "clinicadmin")
 public interface ClinicAdminFeign {
-
-                                         
-    @GetMapping("/clinic-admin/customer/patientId/{patientId}")
-   public ResponseEntity<Response> getCustomerByPatientId(@PathVariable String patientId);
-                                               
+	
+	 @GetMapping("/clinic-admin/customer/patientId/{patientId}/{clinicId}")
+	    public ResponseEntity<Response> getCustomerByPatientId(@PathVariable String patientId,@PathVariable String clinicId);
+	                                                                                        
 }
