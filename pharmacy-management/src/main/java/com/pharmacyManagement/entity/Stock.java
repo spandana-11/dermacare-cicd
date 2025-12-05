@@ -21,7 +21,7 @@
 	
 	    private String batchNo;
 	    private String expiryDate;
-	
+	    private String category;
 	    private int openingStock;
 	    private int stockIn;
 	    private int stockOut;
@@ -33,7 +33,7 @@
 	    private double gstPercent;
 	
 	    private String lastPurchaseDate;
-	    private String supplierId;
+//	    private String supplierId;
 	    private String supplierName;
 	
 	    private String status = "Active";

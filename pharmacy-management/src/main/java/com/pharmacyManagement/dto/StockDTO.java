@@ -14,7 +14,7 @@ public class StockDTO {
 
     private String batchNo;
     private String expiryDate; // dd/MM/yyyy or as per your format
-
+    private String category;
     private int qty;      // purchased qty
     private int freeQty;  // free qty
 
@@ -23,6 +23,6 @@ public class StockDTO {
     private double gstPercent;
 
     private String purchaseDate; // invoice date
-    private String supplierId;
+//    private String supplierId;
     private String supplierName;
 }

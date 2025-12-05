@@ -21,13 +21,13 @@ public class StockLedger {
 
     private String batchNo;
     private String expiryDate;
+    private String category;
 
     private String transactionType; // PURCHASE, SALE, DAMAGE, ADJUSTMENT
     private String transactionId;   // invoiceId, saleId, damageId, etc.
 
     private int qtyIn;
     private int qtyOut;
-
     private int closingStock;
 
     private double costPrice;

@@ -1511,10 +1511,10 @@ public ResponseEntity<?> getInprogressBookingsByCustomerId(String customerId) {
 }
 
 @Override
-public ResponseEntity<?> getInprogressBookingsByPatientId(String patientId) {
+public ResponseEntity<?> getInprogressBookingsByPatientId(String patientId,String clinicId) {
     ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
     try {
-        return bookingFeign.getInprogressAppointmentsByPatientId(patientId);
+        return bookingFeign.getInprogressAppointmentsByPatientId(patientId,clinicId);
     } catch (FeignException e) {
         res = new ResponseStructure<>(null, ExtractFeignMessage.clearMessage(e), HttpStatus.INTERNAL_SERVER_ERROR, e.status());
         return ResponseEntity.status(res.getStatusCode()).body(res);

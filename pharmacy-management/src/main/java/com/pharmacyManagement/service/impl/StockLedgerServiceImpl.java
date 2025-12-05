@@ -24,231 +24,239 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class StockLedgerServiceImpl implements StockLedgerService {
 
-    private final StockRepository stockRepo;
-    private final StockLedgerRepository ledgerRepo;
+	private final StockRepository stockRepo;
+	private final StockLedgerRepository ledgerRepo;
 
-    // -------------------------------------------------------------------------
-    // ADD PURCHASE STOCK
-    // -------------------------------------------------------------------------
-    @Override
-    public synchronized Response addPurchaseStock(StockDTO dto, String purchaseBillNo) {
-        try {
-            int totalQty = dto.getQty() + dto.getFreeQty();
+	// -------------------------------------------------------------------------
+	// ADD PURCHASE STOCK
+	// -------------------------------------------------------------------------
+	@Override
+	public synchronized Response addPurchaseStock(StockDTO dto, String purchaseBillNo) {
+		try {
+			int totalQty = dto.getQty() + dto.getFreeQty();
 
-            Optional<Stock> existingStockOpt =
-                    stockRepo.findByProductIdAndBatchNo(dto.getProductId(), dto.getBatchNo());
+			Optional<Stock> existingStockOpt = stockRepo.findByProductIdAndBatchNo(dto.getProductId(),
+					dto.getBatchNo());
 
-            Stock stock;
+			Stock stock;
 
-            if (existingStockOpt.isPresent()) {
-                stock = existingStockOpt.get();
-                stock.setOpeningStock(stock.getClosingStock());
-                stock.setStockIn(stock.getStockIn() + totalQty);
-            } else {
-                stock = new Stock();
-                stock.setProductId(dto.getProductId());
-                stock.setProductName(dto.getProductName());
-                stock.setBatchNo(dto.getBatchNo());
-                stock.setExpiryDate(dto.getExpiryDate());
+			if (existingStockOpt.isPresent()) {
 
-                stock.setOpeningStock(0);
-                stock.setStockIn(totalQty);
-                stock.setStockOut(0);
-                stock.setDamageStock(0);
-            }
+				stock = existingStockOpt.get();
 
-            // Update common fields
-            stock.setLastPurchaseDate(dto.getPurchaseDate());
-            stock.setCostPrice(dto.getCostPrice());
-            stock.setMrp(dto.getMrp());
-            stock.setGstPercent(dto.getGstPercent());
-            stock.setSupplierId(dto.getSupplierId());
-            stock.setSupplierName(dto.getSupplierName());
+				stock.setOpeningStock(stock.getClosingStock());
 
-            // Recalculate closing
-            stock.setClosingStock(
-                    stock.getOpeningStock() + stock.getStockIn() - stock.getStockOut() - stock.getDamageStock()
-            );
+				// ❌ WRONG:
+				// stock.setStockIn(stock.getStockIn() + totalQty);
 
-            stockRepo.save(stock);
+				// 🔥 FIXED: StockIn should be ONLY this transaction qty
+				stock.setStockIn(totalQty);
 
-            StockLedger ledger = saveLedger(stock, "PURCHASE", purchaseBillNo, totalQty, 0,
-                    "Purchase - Bill: " + purchaseBillNo);
+			} else {
 
-            Map<String, Object> map = new HashMap<>();
-            map.put("stock", stock);
-            map.put("ledger", ledger);
+				stock = new Stock();
+				stock.setProductId(dto.getProductId());
+				stock.setProductName(dto.getProductName());
+				stock.setBatchNo(dto.getBatchNo());
+				stock.setExpiryDate(dto.getExpiryDate());
+				stock.setCategory(dto.getCategory());
+				stock.setOpeningStock(0);
+				stock.setStockIn(totalQty);
+				stock.setStockOut(0);
+				stock.setDamageStock(0);
+			}
 
-            return new Response(true, map, "Purchase stock added successfully", 200);
+			// common updates
+			stock.setLastPurchaseDate(dto.getPurchaseDate());
+			stock.setCostPrice(dto.getCostPrice());
+			stock.setMrp(dto.getMrp());
+			stock.setGstPercent(dto.getGstPercent());
+//			stock.setSupplierId(dto.getSupplierId());
+			stock.setSupplierName(dto.getSupplierName());
 
-        } catch (Exception e) {
-            return new Response(false, null, "Error: " + e.getMessage(), 500);
-        }
-    }
+			// 🔥 FIXED closing stock remains correct
+			stock.setClosingStock(
+					stock.getOpeningStock() + stock.getStockIn() - stock.getStockOut() - stock.getDamageStock());
 
-    // -------------------------------------------------------------------------
-    // REVERSE PURCHASE FOR SINGLE ITEM
-    // -------------------------------------------------------------------------
-    @Override
-    public synchronized Response reversePurchaseItem(String productId, String batchNo, int qtyToReverse,
-                                                     String purchaseBillNo) {
-        try {
-            Optional<Stock> stockOpt = stockRepo.findByProductIdAndBatchNo(productId, batchNo);
+			stockRepo.save(stock);
 
-            if (stockOpt.isEmpty()) {
-                return new Response(false, null, "Stock not found to reverse", 404);
-            }
+			StockLedger ledger = saveLedger(stock, "PURCHASE", purchaseBillNo, totalQty, 0,
+					"Purchase - Bill: " + purchaseBillNo);
 
-            Stock stock = stockOpt.get();
-            stock.setOpeningStock(stock.getClosingStock());
+			Map<String, Object> map = new HashMap<>();
+			map.put("stock", stock);
+			map.put("ledger", ledger);
 
-            int adjustedStockIn = Math.max(0, stock.getStockIn() - qtyToReverse);
-            stock.setStockIn(adjustedStockIn);
+			return new Response(true, map, "Purchase stock added successfully", 200);
 
-            stock.setClosingStock(
-                    stock.getOpeningStock() + stock.getStockIn() - stock.getStockOut() - stock.getDamageStock()
-            );
+		} catch (Exception e) {
+			return new Response(false, null, "Error: " + e.getMessage(), 500);
+		}
+	}
 
-            stockRepo.save(stock);
+	// -------------------------------------------------------------------------
+	// REVERSE PURCHASE FOR SINGLE ITEM
+	// -------------------------------------------------------------------------
 
-            StockLedger ledger = saveLedger(stock, "PURCHASE_REVERSAL", purchaseBillNo,
-                    0, qtyToReverse,
-                    "Purchase Reversal - Bill: " + purchaseBillNo);
+	@Override
+	public synchronized Response reversePurchaseItem(String productId, String batchNo, int qtyToReverse,
+			String purchaseBillNo) {
+		try {
+			Optional<Stock> stockOpt = stockRepo.findByProductIdAndBatchNo(productId, batchNo);
 
-            Map<String, Object> map = new HashMap<>();
-            map.put("stock", stock);
-            map.put("ledger", ledger);
+			if (stockOpt.isEmpty()) {
+				return new Response(false, null, "Stock not found to reverse", 404);
+			}
 
-            return new Response(true, map, "Purchase reversed for item", 200);
+			Stock stock = stockOpt.get();
+			stock.setOpeningStock(stock.getClosingStock());
 
-        } catch (Exception e) {
-            return new Response(false, null, "Error: " + e.getMessage(), 500);
-        }
-    }
+			// 🔥 FIXED: StockIn should not be cumulative or subtracted
+			stock.setStockIn(0);
 
-    // -------------------------------------------------------------------------
-    // REVERSE PURCHASE FOR FULL BILL
-    // -------------------------------------------------------------------------
-    @Override
-    public Response reversePurchaseByBill(String purchaseBillNo, List<PurchaseItem> items) {
-        if (items == null || items.isEmpty()) {
-            return new Response(false, null, "No items available to reverse", 400);
-        }
+			// reduce closing stock directly
+			stock.setClosingStock(stock.getOpeningStock() - qtyToReverse);
 
-        for (PurchaseItem item : items) {
-            int totalQty = item.getQuantity() + item.getFreeQty();
-            reversePurchaseItem(item.getProductId(), item.getBatchNo(), totalQty, purchaseBillNo);
-        }
+			stockRepo.save(stock);
 
-        return new Response(true, null, "Purchase reversed for entire bill", 200);
-    }
+			StockLedger ledger = saveLedger(stock, "PURCHASE_REVERSAL", purchaseBillNo, 0, qtyToReverse,
+					"Purchase Reversal - Bill: " + purchaseBillNo);
 
-    // -------------------------------------------------------------------------
-    // RECORD SALE
-    // -------------------------------------------------------------------------
-    @Override
-    public synchronized Response recordSale(String productId, String batchNo, int qty, String saleId) {
-        try {
-            Optional<Stock> stockOpt = stockRepo.findByProductIdAndBatchNo(productId, batchNo);
+			Map<String, Object> map = new HashMap<>();
+			map.put("stock", stock);
+			map.put("ledger", ledger);
 
-            if (stockOpt.isEmpty()) {
-                return new Response(false, null, "Stock not found", 404);
-            }
+			return new Response(true, map, "Purchase reversed for item", 200);
 
-            Stock stock = stockOpt.get();
+		} catch (Exception e) {
+			return new Response(false, null, "Error: " + e.getMessage(), 500);
+		}
+	}
 
-            if (stock.getClosingStock() < qty) {
-                return new Response(false, null, "Insufficient stock for sale", 400);
-            }
+	// -------------------------------------------------------------------------
+	// REVERSE PURCHASE FOR FULL BILL
+	// -------------------------------------------------------------------------
+	@Override
+	public Response reversePurchaseByBill(String purchaseBillNo, List<PurchaseItem> items) {
+		if (items == null || items.isEmpty()) {
+			return new Response(false, null, "No items available to reverse", 400);
+		}
 
-            stock.setOpeningStock(stock.getClosingStock());
-            stock.setStockOut(stock.getStockOut() + qty);
+		for (PurchaseItem item : items) {
+			int totalQty = item.getQuantity() + item.getFreeQty();
+			reversePurchaseItem(item.getProductId(), item.getBatchNo(), totalQty, purchaseBillNo);
+		}
 
-            stock.setClosingStock(
-                    stock.getOpeningStock() + stock.getStockIn() - stock.getStockOut() - stock.getDamageStock()
-            );
+		return new Response(true, null, "Purchase reversed for entire bill", 200);
+	}
 
-            stockRepo.save(stock);
+	// -------------------------------------------------------------------------
+	// RECORD SALE
+	// -------------------------------------------------------------------------
+	@Override
+	public synchronized Response recordSale(String productId, String batchNo, int qty, String saleId) {
+		try {
+			Optional<Stock> stockOpt = stockRepo.findByProductIdAndBatchNo(productId, batchNo);
 
-            StockLedger ledger = saveLedger(stock, "SALE", saleId, 0, qty, "Sale Entry");
+			if (stockOpt.isEmpty()) {
+				return new Response(false, null, "Stock not found", 404);
+			}
 
-            Map<String, Object> map = new HashMap<>();
-            map.put("stock", stock);
-            map.put("ledger", ledger);
+			Stock stock = stockOpt.get();
 
-            return new Response(true, map, "Sale recorded successfully", 200);
+			if (stock.getClosingStock() < qty) {
+				return new Response(false, null, "Insufficient stock for sale", 400);
+			}
 
-        } catch (Exception e) {
-            return new Response(false, null, "Error: " + e.getMessage(), 500);
-        }
-    }
+			stock.setOpeningStock(stock.getClosingStock());
 
-    // -------------------------------------------------------------------------
-    // RECORD DAMAGE
-    // -------------------------------------------------------------------------
-    @Override
-    public synchronized Response recordDamage(String productId, String batchNo, int qty, String reason) {
-        try {
-            Optional<Stock> stockOpt = stockRepo.findByProductIdAndBatchNo(productId, batchNo);
+			// 🔥 FIXED
+			stock.setStockOut(qty);
 
-            if (stockOpt.isEmpty()) {
-                return new Response(false, null, "Stock not found", 404);
-            }
+			stock.setClosingStock(
+					stock.getOpeningStock() + stock.getStockIn() - stock.getStockOut() - stock.getDamageStock());
 
-            Stock stock = stockOpt.get();
+			stockRepo.save(stock);
 
-            if (stock.getClosingStock() < qty) {
-                return new Response(false, null, "Insufficient stock for damage", 400);
-            }
+			StockLedger ledger = saveLedger(stock, "SALE", saleId, 0, qty, "Sale Entry");
 
-            stock.setOpeningStock(stock.getClosingStock());
-            stock.setDamageStock(stock.getDamageStock() + qty);
+			Map<String, Object> map = new HashMap<>();
+			map.put("stock", stock);
+			map.put("ledger", ledger);
 
-            stock.setClosingStock(
-                    stock.getOpeningStock() + stock.getStockIn() - stock.getStockOut() - stock.getDamageStock()
-            );
+			return new Response(true, map, "Sale recorded successfully", 200);
 
-            stockRepo.save(stock);
+		} catch (Exception e) {
+			return new Response(false, null, "Error: " + e.getMessage(), 500);
+		}
+	}
 
-            StockLedger ledger = saveLedger(stock, "DAMAGE", null, 0, qty, "Damage: " + reason);
+	// -------------------------------------------------------------------------
+	// RECORD DAMAGE
+	// -------------------------------------------------------------------------
+	@Override
+	public synchronized Response recordDamage(String productId, String batchNo, int qty, String reason) {
+		try {
+			Optional<Stock> stockOpt = stockRepo.findByProductIdAndBatchNo(productId, batchNo);
 
-            Map<String, Object> map = new HashMap<>();
-            map.put("stock", stock);
-            map.put("ledger", ledger);
+			if (stockOpt.isEmpty()) {
+				return new Response(false, null, "Stock not found", 404);
+			}
 
-            return new Response(true, map, "Damage recorded successfully", 200);
+			Stock stock = stockOpt.get();
 
-        } catch (Exception e) {
-            return new Response(false, null, "Error: " + e.getMessage(), 500);
-        }
-    }
+			if (stock.getClosingStock() < qty) {
+				return new Response(false, null, "Insufficient stock for damage", 400);
+			}
 
-    // -------------------------------------------------------------------------
-    // LEDGER ENTRY CREATION (returns ledger)
-    // -------------------------------------------------------------------------
-    private StockLedger saveLedger(Stock stock, String type, String txnId,
-                                   int qtyIn, int qtyOut, String remarks) {
+			stock.setOpeningStock(stock.getClosingStock());
 
-        StockLedger ledger = new StockLedger();
+			// 🔥 FIXED
+			stock.setDamageStock(qty);
 
-        ledger.setProductId(stock.getProductId());
-        ledger.setProductName(stock.getProductName());
-        ledger.setBatchNo(stock.getBatchNo());
-        ledger.setExpiryDate(stock.getExpiryDate());
+			stock.setClosingStock(
+					stock.getOpeningStock() + stock.getStockIn() - stock.getStockOut() - stock.getDamageStock());
 
-        ledger.setTransactionType(type);
-        ledger.setTransactionId(txnId);
-        ledger.setQtyIn(qtyIn);
-        ledger.setQtyOut(qtyOut);
+			stockRepo.save(stock);
 
-        ledger.setClosingStock(stock.getClosingStock());
-        ledger.setCostPrice(stock.getCostPrice());
-        ledger.setMrp(stock.getMrp());
+			StockLedger ledger = saveLedger(stock, "DAMAGE", null, 0, qty, "Damage: " + reason);
 
-        ledger.setDate(LocalDate.now().toString());
-        ledger.setTime(LocalTime.now().toString());
-        ledger.setRemarks(remarks);
+			Map<String, Object> map = new HashMap<>();
+			map.put("stock", stock);
+			map.put("ledger", ledger);
 
-        return ledgerRepo.save(ledger);
-    }
+			return new Response(true, map, "Damage recorded successfully", 200);
+
+		} catch (Exception e) {
+			return new Response(false, null, "Error: " + e.getMessage(), 500);
+		}
+	}
+
+	// -------------------------------------------------------------------------
+	// LEDGER ENTRY CREATION (returns ledger)
+	// -------------------------------------------------------------------------
+	private StockLedger saveLedger(Stock stock, String type, String txnId, int qtyIn, int qtyOut, String remarks) {
+
+		StockLedger ledger = new StockLedger();
+
+		ledger.setProductId(stock.getProductId());
+		ledger.setProductName(stock.getProductName());
+		ledger.setBatchNo(stock.getBatchNo());
+		ledger.setExpiryDate(stock.getExpiryDate());
+		ledger.setCategory(stock.getCategory());
+		ledger.setTransactionType(type);
+		ledger.setTransactionId(txnId);
+		ledger.setQtyIn(qtyIn);
+		ledger.setQtyOut(qtyOut);
+
+		ledger.setClosingStock(stock.getClosingStock());
+		ledger.setCostPrice(stock.getCostPrice());
+		ledger.setMrp(stock.getMrp());
+
+		ledger.setDate(LocalDate.now().toString());
+		ledger.setTime(LocalTime.now().toString());
+		ledger.setRemarks(remarks);
+
+		return ledgerRepo.save(ledger);
+	}
 }

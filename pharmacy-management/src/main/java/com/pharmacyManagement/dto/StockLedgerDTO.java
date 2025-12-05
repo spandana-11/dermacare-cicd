@@ -15,7 +15,7 @@ private String productName;
 private String batchNo;
 private String expiryDate;
 
-
+private String category;
 private String transactionType; // PURCHASE, SALE, DAMAGE, ADJUSTMENT
 private String transactionId; // reference to bill id
 

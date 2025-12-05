@@ -129,7 +129,7 @@ public interface CustomerService {
 	public ResponseEntity<?> retrieveAppointnmentsByRelation(String customerId);
 	public ResponseEntity<?> getInprogressBookingsByCustomerId(String customerId);
 	public ResponseEntity<?> retrieveAppointnmentsByPatientId(String patientId);
-	public ResponseEntity<?> getInprogressBookingsByPatientId(String patientId) ;
+	public ResponseEntity<?> getInprogressBookingsByPatientId(String patientId,String clinicId) ;
 	public boolean blockSlot(TempBlockingSlot tempBlockingSlot);
 	
 	public CustomerDTO getCustomerByToken(String token);
