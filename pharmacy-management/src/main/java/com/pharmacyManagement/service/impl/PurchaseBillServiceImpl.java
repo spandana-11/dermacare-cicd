@@ -152,6 +152,7 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
                     stockDTO.setProductName(item.getProductName());
                     stockDTO.setBatchNo(item.getBatchNo());
                     stockDTO.setExpiryDate(item.getExpiryDate());
+                    stockDTO.setCategory(item.getCategory());
                     stockDTO.setQty(item.getQuantity());
                     stockDTO.setFreeQty(item.getFreeQty());
                     stockDTO.setCostPrice(item.getCostPrice());

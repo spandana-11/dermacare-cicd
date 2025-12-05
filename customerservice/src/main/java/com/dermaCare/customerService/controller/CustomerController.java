@@ -552,10 +552,10 @@ public ResponseEntity<Response> getAverageRatingByDoctorId( @PathVariable String
 	   return customerService.getInprogressBookingsByCustomerId(customerId);
  }
    
-   @GetMapping("/bookings/Inprogress/patientId/{patientId}")
+   @GetMapping("/bookings/Inprogress/patientId/{patientId}/{clinicId}")
    public ResponseEntity<?> getInprogressAppointmentsByPatientId(
-			 @PathVariable String patientId){
-	   return customerService.getInprogressBookingsByPatientId(patientId);
+			 @PathVariable String patientId, @PathVariable String clinicId){
+	   return customerService.getInprogressBookingsByPatientId(patientId,clinicId);
  }
    
    

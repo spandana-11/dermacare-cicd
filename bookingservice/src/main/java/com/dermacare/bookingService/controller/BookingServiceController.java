@@ -275,10 +275,10 @@ public class BookingServiceController {
 			return service.getInProgressAppointmentsByCustomerId(customerId);
 		}
 		
-		@GetMapping("/appointments/Inprogress/patientId/{patientId}")
-		public ResponseEntity<?> getInprogressAppointmentsByPatientId(@PathVariable String patientId)
+		@GetMapping("/appointments/Inprogress/patientId/{patientId}/{clinicId}")
+		public ResponseEntity<?> getInprogressAppointmentsByPatientId(@PathVariable String patientId,@PathVariable String clinicId )
 		{
-			return service.getInProgressAppointmentsByPatientId(patientId);
+			return service.getInProgressAppointmentsByPatientId(patientId,clinicId);
 		}
 		
 		@GetMapping("/appointments/byIdsAndDate/{clinicId}/{branchId}/{date}")

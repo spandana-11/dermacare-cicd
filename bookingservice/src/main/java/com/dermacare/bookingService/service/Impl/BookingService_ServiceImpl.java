@@ -1319,12 +1319,12 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 
 		@Override
-		public ResponseEntity<?> getInProgressAppointmentsByPatientId(String patientId) {
+		public ResponseEntity<?> getInProgressAppointmentsByPatientId(String patientId,String clinicId) {
 		    ResponseStructure<List<BookingResponse>> response = new ResponseStructure<>();
 
 		    try {
 		        // Fetch all bookings for this patient
-		        List<Booking> bookings = repository.findByPatientId(patientId);
+		        List<Booking> bookings = repository.findByPatientIdAndClinicId(patientId,clinicId);
 
 		        if (bookings == null || bookings.isEmpty()) {
 		            return ResponseEntity.status(HttpStatus.NOT_FOUND)
