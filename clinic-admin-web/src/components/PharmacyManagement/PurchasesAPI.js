@@ -50,37 +50,43 @@ export const getPurchaseByBillNo = async (billNo) => {
 ====================================================== */
 export const postPurchaseData = async (data) => {
   try {
-    const mappedMedicineDetails = (data.medicineDetails || []).map((item) => ({
-      productName: item.productName || "",
-      batchNo: item.batchNo || "",
-      expiryDate: item.expiryDate || "",
-      hsnCode: item.hsnCode || "",
-      quantity: Number(item.quantity || 0),
-      freeQuantity: Number(item.freeQuantity || 0),
-      mrp: Number(item.mrp || 0),
-      costPrice: Number(item.costPrice || 0),
-      discountPercent: Number(item.discountPercent || 0),
-      gstPercent: Number(item.gstPercent || 0),
-    }))
+   const mappedMedicineDetails = (data.medicineDetails || []).map((item) => ({
+  productId: item.productId?.trim() || "NA",
+  productName: item.productName || "",
+  batchNo: item.batchNo || "",
+  expiryDate: item.expiryDate || "",
+  packSize: item.packSize || "",
+  category: item.category || "",
+  hsnCode: item.hsnCode || "",
+  quantity: Number(item.quantity || 0),
+  freeQty: Number(item.freeQty || 0),  // fixed
+  costPrice: Number(item.costPrice || 0),
+  mrp: Number(item.mrp || 0),
+  discountPercent: Number(item.discountPercent || 0),
+  gstPercent: Number(item.gstPercent || 0),
+}))
 
-    const requestData = {
-      purchaseBillNo: data.purchaseBillNo || "",
-      invoiceNo: data.invoiceNo || "",
-      supplierName: data.supplierName || "",
-      invoiceDate: data.invoiceDate || "",
-      receivingDate: data.receivingDate || "",
-      taxType: data.taxType || "",
-      paymentMode: data.paymentMode || "",
-      billDueDate: data.billDueDate || "",
-      creditDays: data.creditDays || "",
-      duePaidBillNo: data.duePaidBillNo || "",
-      department: data.department || "",
-      financialYear: data.financialYear || "",
-      paidAmount: Number(data.paidAmount || 0),
-      previousAdjustment: Number(data.previousAdjustment || 0),
-      postDiscount: Number(data.postDiscount || 0),
-      medicineDetails: mappedMedicineDetails,
-    }
+
+   const requestData = {
+  date: data.date || "",
+  time: data.time || "",
+  purchaseBillNo: data.purchaseBillNo || "",
+  invoiceNo: data.invoiceNo || "",
+  supplierName: data.supplierName || "",
+  invoiceDate: data.invoiceDate || "",
+  receivingDate: data.receivingDate || "",
+  taxType: data.taxType || "",
+  paymentMode: data.paymentMode || "",
+  billDueDate: data.billDueDate || "",
+  creditDays: data.creditDays || "",
+  duePaidBillNo: data.duePaidBillNo || "",
+  department: data.department || "",
+  financialYear: data.financialYear || "",
+  paidAmount: Number(data.paidAmount || 0),
+  previousAdjustment: Number(data.previousAdjustment || 0),
+  postDiscount: Number(data.postDiscount || 0),
+  medicineDetails: mappedMedicineDetails,
+}
 
     const response = await axios.post(
       `${wifiUrl}/api/pharmacy/purchase/save`,

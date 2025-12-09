@@ -1,19 +1,14 @@
 package com.pharmacyManagement.controller;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import com.pharmacyManagement.dto.CityDTO;
 import com.pharmacyManagement.dto.Response;
 import com.pharmacyManagement.service.CityService;
-
 import lombok.RequiredArgsConstructor;
-
 @RestController
 @RequestMapping("/city")
 @RequiredArgsConstructor
 public class CityController {
-
     private final CityService cityService;
 
     // =============================

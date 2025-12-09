@@ -17,7 +17,7 @@ public class SupplierController {
     private final SupplierService supplierService;
 
     // ADD SUPPLIER
-    @PostMapping("/api/pharmacy/supplier/add")
+    @PostMapping("/api/pharmacy/addSupplier")
     public ResponseEntity<Response> addSupplier(@RequestBody SupplierDTO dto) {
         Response res = supplierService.addSupplier(dto);
         return ResponseEntity.status(res.getStatus()).body(res);

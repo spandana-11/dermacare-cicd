@@ -23,7 +23,7 @@ import { postPurchaseData, PurchaseData } from '../PharmacyManagement/PurchasesA
 import { SupplierData } from './SupplierInfoAPI'
 import { showCustomToast } from '../../Utils/Toaster'
 import { BASE_URL, wifiUrl } from '../../baseUrl'
-import axios from "axios";
+import axios from 'axios'
 import { Trash2 } from 'lucide-react'
 
 const Purchases = ({ goToSupplier }) => {
@@ -57,8 +57,9 @@ const Purchases = ({ goToSupplier }) => {
     setError(null)
     try {
       const data = await PurchaseData()
-      // ensure we have an array
-      const safeData = Array.isArray(data) ? data.filter((item) => item && typeof item === 'object') : []
+      const safeData = Array.isArray(data)
+        ? data.filter((item) => item && typeof item === 'object')
+        : []
       setPurchaseData(safeData)
     } catch (err) {
       console.error('Error fetching purchase:', err)
@@ -111,14 +112,16 @@ const Purchases = ({ goToSupplier }) => {
     department: '',
     financialYear: '',
     paidAmount: '',
+
     previousAdjustment: '',
     postDiscount: '',
     medicineDetails: [
       {
         sno: 1,
+        productId: '',
         productName: '',
         batchNo: '',
-        expDate: '',
+        expiryDate: '',
         hsnCode: '',
         quantity: '',
         packSize: '',
@@ -127,7 +130,7 @@ const Purchases = ({ goToSupplier }) => {
         costPrice: '',
         discPercent: '',
         gstPercent: '',
-        isSaved: false,
+        category: '',
       },
     ],
   })
@@ -146,7 +149,6 @@ const Purchases = ({ goToSupplier }) => {
   }
 
   const validateField = (field, value) => {
-    // returns error message string or '' if OK
     switch (field) {
       case 'purchaseBillNo':
         if (!value || value.toString().trim() === '') return 'Purchase Bill No is required'
@@ -159,7 +161,6 @@ const Purchases = ({ goToSupplier }) => {
         return ''
       case 'invoiceDate':
         if (!value) return 'Invoice Date is required'
-        // optionally check format / not future (if needed)
         return ''
       case 'receivingDate':
         if (!value) return 'Receiving Date is required'
@@ -173,16 +174,22 @@ const Purchases = ({ goToSupplier }) => {
   }
 
   const validateProductRow = (item, rowIndex, existingKeys = null) => {
-    // returns an object with field-specific messages
     const rowErrors = {}
-    const rowNum = rowIndex + 1
-
     const isRowEmpty =
       (!item.productName || item.productName.toString().trim() === '') &&
-      (!item.batchNo || item.batchNo.toString().trim() === '') &&
-      (!item.expDate || item.expDate.toString().trim() === '')
+      (!item.batchNo || item.batchNo.toString().trim() === '')&&  (!item.expDate || item.expDate.trim() === '')
+   
 
-    if (isRowEmpty) return {} // nothing to validate for totally empty row
+    if (isRowEmpty) return {}
+
+    // productId (optional: you can make this required if needed)
+    if (item.productId && item.productId.toString().trim().length === 0) {
+      rowErrors.productId = 'Product ID is required'
+    }
+    if (!item.expDate) {
+  rowErrors.expDate = 'Required'
+}
+
 
     // productName
     if (!item.productName || item.productName.toString().trim() === '') {
@@ -196,15 +203,18 @@ const Purchases = ({ goToSupplier }) => {
       rowErrors.batchNo = 'Required'
     }
 
-    // duplicate product+batch check (if provided existingKeys Set)
+    // duplicate product+batch
     if (existingKeys) {
-      const key = `${(item.productName || '').toString().trim().toLowerCase()}__${(item.batchNo || '').toString().trim().toLowerCase()}`
+      const key = `${(item.productName || '')
+        .toString()
+        .trim()
+        .toLowerCase()}__${(item.batchNo || '').toString().trim().toLowerCase()}`
       if (existingKeys.has(key)) {
         rowErrors.batchNo = 'Duplicate product & batch'
       }
     }
 
-    // expDate required & not in past
+    // expDate
     if (!item.expDate) {
       rowErrors.expDate = 'Required'
     } else {
@@ -215,39 +225,51 @@ const Purchases = ({ goToSupplier }) => {
       }
     }
 
-    // hsnCode: 4-8 digits allowed (adjust as needed)
+    // hsnCode
     const hsnString = (item.hsnCode || '').toString().trim()
     if (!/^[0-9]{4,8}$/.test(hsnString)) {
       rowErrors.hsnCode = 'HSN should be 4–8 digits'
     }
 
     // quantity > 0
-    if (item.quantity === '' || item.quantity === null || isNaN(Number(item.quantity)) || Number(item.quantity) <= 0) {
+    if (
+      item.quantity === '' ||
+      item.quantity === null ||
+      isNaN(Number(item.quantity)) ||
+      Number(item.quantity) <= 0
+    ) {
       rowErrors.quantity = 'Enter quantity > 0'
     }
 
     // costPrice > 0
-    if (item.costPrice === '' || item.costPrice === null || isNaN(Number(item.costPrice)) || Number(item.costPrice) <= 0) {
+    if (
+      item.costPrice === '' ||
+      item.costPrice === null ||
+      isNaN(Number(item.costPrice)) ||
+      Number(item.costPrice) <= 0
+    ) {
       rowErrors.costPrice = 'Enter valid cost'
     }
 
     // mrp > 0
-    if (item.mrp === '' || item.mrp === null || isNaN(Number(item.mrp)) || Number(item.mrp) <= 0) {
+    if (
+      item.mrp === '' ||
+      item.mrp === null ||
+      isNaN(Number(item.mrp)) ||
+      Number(item.mrp) <= 0
+    ) {
       rowErrors.mrp = 'Enter valid MRP'
     }
 
-    // gstPercent 0 - 28
+    // gstPercent 0–28
     if (item.gstPercent !== '' && item.gstPercent !== null && !isNaN(Number(item.gstPercent))) {
       const g = Number(item.gstPercent)
       if (g < 0 || g > 28) rowErrors.gstPercent = 'GST% must be 0–28'
     } else {
-      // allow empty? if required, enforce
-      if (item.gstPercent === '' || item.gstPercent === null || isNaN(Number(item.gstPercent))) {
-        rowErrors.gstPercent = 'Enter GST%'
-      }
+      rowErrors.gstPercent = 'Enter GST%'
     }
 
-    // discPercent 0 - 100 (if provided)
+    // discPercent 0–100
     if (item.discPercent !== '' && item.discPercent !== null && !isNaN(Number(item.discPercent))) {
       const d = Number(item.discPercent)
       if (d < 0 || d > 100) rowErrors.discPercent = 'Disc% must be 0–100'
@@ -259,36 +281,44 @@ const Purchases = ({ goToSupplier }) => {
   // ---------- update helpers (real-time validation) ----------
   const updateTopField = (field, value) => {
     setPayload((prev) => ({ ...prev, [field]: value }))
-
-    // validate this single top field
     const message = validateField(field, value)
     setErrors((prev) => ({ ...prev, top: { ...(prev.top || {}), [field]: message } }))
   }
 
+  const numericProductFields = ['quantity', 'freeQty', 'mrp', 'costPrice', 'discountPercent', 'gstPercent']
+
+
   const updateProductField = (index, field, value) => {
-    // update payload and validate that row immediately
+    // update payload
     setPayload((prev) => {
       const updated = [...prev.medicineDetails]
-      const numericFields = ['quantity', 'free', 'mrp', 'costPrice', 'discPercent', 'gstPercent']
-      updated[index][field] = numericFields.includes(field)
-        ? value === '' ? '' : Number(value)
+      updated[index][field] = numericProductFields.includes(field)
+        ? value === ''
+          ? ''
+          : Number(value)
         : value
       return { ...prev, medicineDetails: updated }
     })
 
-    // compute validation for this row using the updated row snapshot
+    // validate row
     setErrors((prev) => {
       const prodErrors = Array.isArray(prev.products) ? [...prev.products] : []
-      // get latest row values by applying same transformation to a shallow copy
       const currentRow = { ...(payload.medicineDetails[index] || {}) }
-      const numericFields = ['quantity', 'free', 'mrp', 'costPrice', 'discPercent', 'gstPercent']
-      currentRow[field] = numericFields.includes(field) ? (value === '' ? '' : Number(value)) : value
+      currentRow[field] = numericProductFields.includes(field)
+        ? value === ''
+          ? ''
+          : Number(value)
+        : value
 
-      // build set of existing keys to check duplicates (excluding current row)
       const existingKeys = new Set()
       payload.medicineDetails.forEach((r, i) => {
         if (i === index) return
-        const key = `${(r.productName || '').toString().trim().toLowerCase()}__${(r.batchNo || '').toString().trim().toLowerCase()}`
+        const key = `${(r.productName || '').toString().trim().toLowerCase()}__${(
+          r.batchNo || ''
+        )
+          .toString()
+          .trim()
+          .toLowerCase()}`
         if (r.productName || r.batchNo) existingKeys.add(key)
       })
 
@@ -305,17 +335,19 @@ const Purchases = ({ goToSupplier }) => {
         ...prev.medicineDetails,
         {
           sno: prev.medicineDetails.length + 1,
+          productId: '',
           productName: '',
           batchNo: '',
           expDate: '',
           hsnCode: '',
           quantity: '',
           packSize: '',
-          free: '',
+          freeQty: '',
           mrp: '',
           costPrice: '',
-          discPercent: '',
+          discountPercent: '',
           gstPercent: '',
+          category: '',
           isSaved: false,
         },
       ],
@@ -342,13 +374,12 @@ const Purchases = ({ goToSupplier }) => {
     })
   }
 
-  // when supplier selected set text name (backend expects supplierName text)
   const handleSupplierSelect = (e) => {
     const selectedText = e.target.selectedOptions?.[0]?.text || ''
     updateTopField('supplierName', selectedText)
   }
 
-  // ---------- run full validation (top + products) ----------
+  // ---------- run full validation ----------
   const runFullValidation = () => {
     const topFields = [
       'purchaseBillNo',
@@ -365,7 +396,7 @@ const Purchases = ({ goToSupplier }) => {
       if (msg) topErrors[f] = msg
     })
 
-    // invoiceDate & receivingDate relationship
+    // invoice vs receiving date
     if (payload.invoiceDate && payload.receivingDate) {
       const inv = new Date(payload.invoiceDate)
       inv.setHours(0, 0, 0, 0)
@@ -376,43 +407,49 @@ const Purchases = ({ goToSupplier }) => {
       }
     }
 
-    // at least one product non-empty
+    // at least one non-empty product row
     const nonEmptyRows = payload.medicineDetails.filter(
       (row) =>
         (row.productName && row.productName.toString().trim() !== '') ||
         (row.batchNo && row.batchNo.toString().trim() !== '') ||
-        (row.expDate && row.expDate.toString().trim() !== '')
+        (row.expDate && row.expDate.toString().trim() !== ''),
     )
     if (nonEmptyRows.length === 0) {
       topErrors.products = 'Add at least one product'
     }
 
-    // build a set for duplicate checks
-    const productErrorsArr = payload.medicineDetails.map((item, idx) => {
-      // if duplicate detect, pass the set so validation picks it up
-      const key = `${(item.productName || '').toString().trim().toLowerCase()}__${(item.batchNo || '').toString().trim().toLowerCase()}`
-      // we will collect duplicates, but when validating each row, we pass a set of OTHER keys
-      return {} // placeholder; we'll compute rowErrors below
-    })
-
-    // iterate rows and compute row validations while checking duplicates
+    const productErrorsArr = payload.medicineDetails.map(() => ({}))
     const seen = new Set()
+
     payload.medicineDetails.forEach((item, idx) => {
-      const key = `${(item.productName || '').toString().trim().toLowerCase()}__${(item.batchNo || '').toString().trim().toLowerCase()}`
-      // prepare set excluding current to pass to validator for duplicate detection
+      const key = `${(item.productName || '').toString().trim().toLowerCase()}__${(
+        item.batchNo || ''
+      )
+        .toString()
+        .trim()
+        .toLowerCase()}`
+
       const otherKeys = new Set()
       payload.medicineDetails.forEach((r, j) => {
         if (j === idx) return
-        const k = `${(r.productName || '').toString().trim().toLowerCase()}__${(r.batchNo || '').toString().trim().toLowerCase()}`
+        const k = `${(r.productName || '').toString().trim().toLowerCase()}__${(
+          r.batchNo || ''
+        )
+          .toString()
+          .trim()
+          .toLowerCase()}`
         if (r.productName || r.batchNo) otherKeys.add(k)
       })
+
       const rowErrors = validateProductRow(item, idx, otherKeys)
       productErrorsArr[idx] = rowErrors
-      // track seen duplicates for top-level flag if needed
+
       if (key && (item.productName || item.batchNo)) {
         if (seen.has(key)) {
-          // mark duplicate
-          productErrorsArr[idx] = { ...(productErrorsArr[idx] || {}), batchNo: 'Duplicate product & batch' }
+          productErrorsArr[idx] = {
+            ...(productErrorsArr[idx] || {}),
+            batchNo: 'Duplicate product & batch',
+          }
         } else {
           seen.add(key)
         }
@@ -427,12 +464,11 @@ const Purchases = ({ goToSupplier }) => {
     return !(hasTopErrors || hasProductErr)
   }
 
-  // ---------- final save (map UI -> backend) ----------
+  // ---------- final save ----------
   const handleFinalSave = async () => {
     const ok = runFullValidation()
     if (!ok) {
       showCustomToast('Fix errors before saving', 'error')
-      // optionally scroll to top or to first error — left simple
       return
     }
 
@@ -441,43 +477,52 @@ const Purchases = ({ goToSupplier }) => {
       (row) =>
         (row.productName && row.productName.toString().trim() !== '') ||
         (row.batchNo && row.batchNo.toString().trim() !== '') ||
-        (row.expDate && row.expDate.toString().trim() !== '')
+        (row.expDate && row.expDate.toString().trim() !== ''),
     )
 
-    const mappedMedicineDetails = filteredRows.map((item) => ({
-      productName: item.productName || '',
-      batchNo: item.batchNo || '',
-      expiryDate: item.expDate || '',
-      hsnCode: item.hsnCode || '',
-      quantity: item.quantity === '' ? 0 : Number(item.quantity),
-      freeQuantity: item.free === '' ? 0 : Number(item.free),
-      mrp: item.mrp === '' ? 0 : Number(item.mrp),
-      costPrice: item.costPrice === '' ? 0 : Number(item.costPrice),
-      discountPercent: item.discPercent === '' ? 0 : Number(item.discPercent),
-      gstPercent: item.gstPercent === '' ? 0 : Number(item.gstPercent),
-    }))
+ const mappedMedicineDetails = filteredRows.map((item) => ({
+  productId: item.productId?.trim() || "NA",
+  productName: item.productName || "",
+  batchNo: item.batchNo || "",
+ expiryDate: item.expDate || "",  
 
-    const finalPayload = {
-      date: payload.date,
-      time: payload.time,
-      purchaseBillNo: payload.purchaseBillNo || '',
-      invoiceNo: payload.invoiceNo || '',
-      supplierName: payload.supplierName || '',
-      invoiceDate: payload.invoiceDate || '',
-      receivingDate: payload.receivingDate || '',
-      taxType: payload.taxType || '',
-      paymentMode: payload.paymentMode || '',
-      billDueDate: payload.billDueDate || '',
-      creditDays: payload.creditDays || '',
-      duePaidBillNo: payload.duePaidBillNo || '',
-      department: payload.department || '',
-      financialYear: payload.financialYear || '',
-      paidAmount: payload.paidAmount === '' ? 0 : Number(payload.paidAmount),
-      previousAdjustment:
-        payload.previousAdjustment === '' ? 0 : Number(payload.previousAdjustment),
-      postDiscount: payload.postDiscount === '' ? 0 : Number(payload.postDiscount),
-      medicineDetails: mappedMedicineDetails,
-    }
+  packSize: item.packSize || "",
+  category: item.category || "",
+  hsnCode: item.hsnCode || "",
+  quantity: Number(item.quantity) || 0,
+ freeQty: Number(item.free) || 0,
+
+  costPrice: Number(item.costPrice) || 0,
+  mrp: Number(item.mrp) || 0,
+  discountPercent: Number(item.discPercent) || 0, // FIXED NAME
+  gstPercent: Number(item.gstPercent) || 0,
+}));
+
+
+
+
+
+  const finalPayload = {
+  date: payload.date,
+  time: payload.time,
+  purchaseBillNo: payload.purchaseBillNo,
+  invoiceNo: payload.invoiceNo,
+  supplierName: payload.supplierName,
+  invoiceDate: payload.invoiceDate,
+  receivingDate: payload.receivingDate,
+  taxType: payload.taxType,
+  paymentMode: payload.paymentMode,
+  billDueDate: payload.billDueDate,
+  creditDays: payload.creditDays || "0",
+  duePaidBillNo: payload.duePaidBillNo,
+  department: payload.department,
+  financialYear: payload.financialYear,
+  paidAmount: Number(payload.paidAmount) || 0,
+  previousAdjustment: Number(payload.previousAdjustment) || 0,
+  postDiscount: Number(payload.postDiscount) || 0,
+  medicineDetails: mappedMedicineDetails,
+};
+
 
     console.log('FINAL PAYLOAD READY TO POST >>>>', finalPayload)
 
@@ -486,7 +531,6 @@ const Purchases = ({ goToSupplier }) => {
       const respData = response?.data?.data || response?.data || {}
       showCustomToast('Purchase saved successfully!', 'success')
 
-      // update totals from backend if present
       setTotals({
         totalAmount: respData.totalAmount || 0,
         discountAmountTotal: respData.discountAmountTotal || 0,
@@ -503,10 +547,7 @@ const Purchases = ({ goToSupplier }) => {
         netPayable: respData.netPayable || 0,
       })
 
-      // refresh purchases list
       fetchPurchase()
-      // reset form optionally
-      // setPayload(initialPayload) // if you want to clear after save
     } catch (err) {
       console.error('Save Failed:', err)
       const msg = err?.response?.data?.message || 'Failed to save purchase!'
@@ -703,7 +744,6 @@ const Purchases = ({ goToSupplier }) => {
               onChange={handleSupplierSelect}
             >
               <option value="">-- Select Supplier --</option>
-
               {suppliers.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -808,7 +848,7 @@ const Purchases = ({ goToSupplier }) => {
           Purchase Details
         </div>
 
-        {/* ================= PURCHASE TABLE CARD ================= */}
+        {/* PURCHASE TABLE CARD */}
         <div
           style={{
             borderRadius: 8,
@@ -817,7 +857,6 @@ const Purchases = ({ goToSupplier }) => {
             color: 'var(--color-black)',
           }}
         >
-          {/* ---------- SCROLLABLE TABLE BOX ---------- */}
           <div
             style={{
               maxHeight: 250,
@@ -839,10 +878,12 @@ const Purchases = ({ goToSupplier }) => {
                 <CTableRow className="pink-table w-auto">
                   {[
                     'S.No',
+                    'Product ID',
                     'Product Name',
                     'Batch No',
                     'Exp. Date',
                     'HSN Code',
+                    'Category',
                     'Qty',
                     'Pack Size',
                     'Free',
@@ -868,6 +909,21 @@ const Purchases = ({ goToSupplier }) => {
                   <CTableRow key={index}>
                     <CTableDataCell className="text-center">{item.sno}</CTableDataCell>
 
+                    {/* Product ID */}
+                    <CTableDataCell>
+                      <CFormInput
+                        size="sm"
+                        className="py-0"
+                        value={item.productId}
+                        onChange={(e) => updateProductField(index, 'productId', e.target.value)}
+                      />
+                      {errors.products[index]?.productId && (
+                        <div className="text-danger small mt-1">
+                          {errors.products[index].productId}
+                        </div>
+                      )}
+                    </CTableDataCell>
+
                     {/* Product Name */}
                     <CTableDataCell>
                       <CFormInput
@@ -877,7 +933,9 @@ const Purchases = ({ goToSupplier }) => {
                         onChange={(e) => updateProductField(index, 'productName', e.target.value)}
                       />
                       {errors.products[index]?.productName && (
-                        <div className="text-danger small mt-1">{errors.products[index].productName}</div>
+                        <div className="text-danger small mt-1">
+                          {errors.products[index].productName}
+                        </div>
                       )}
                     </CTableDataCell>
 
@@ -890,7 +948,9 @@ const Purchases = ({ goToSupplier }) => {
                         onChange={(e) => updateProductField(index, 'batchNo', e.target.value)}
                       />
                       {errors.products[index]?.batchNo && (
-                        <div className="text-danger small mt-1">{errors.products[index].batchNo}</div>
+                        <div className="text-danger small mt-1">
+                          {errors.products[index].batchNo}
+                        </div>
                       )}
                     </CTableDataCell>
 
@@ -904,7 +964,9 @@ const Purchases = ({ goToSupplier }) => {
                         onChange={(e) => updateProductField(index, 'expDate', e.target.value)}
                       />
                       {errors.products[index]?.expDate && (
-                        <div className="text-danger small mt-1">{errors.products[index].expDate}</div>
+                        <div className="text-danger small mt-1">
+                          {errors.products[index].expDate}
+                        </div>
                       )}
                     </CTableDataCell>
 
@@ -918,7 +980,24 @@ const Purchases = ({ goToSupplier }) => {
                         onChange={(e) => updateProductField(index, 'hsnCode', e.target.value)}
                       />
                       {errors.products[index]?.hsnCode && (
-                        <div className="text-danger small mt-1">{errors.products[index].hsnCode}</div>
+                        <div className="text-danger small mt-1">
+                          {errors.products[index].hsnCode}
+                        </div>
+                      )}
+                    </CTableDataCell>
+
+                    {/* Category */}
+                    <CTableDataCell>
+                      <CFormInput
+                        size="sm"
+                        className="py-0"
+                        value={item.category}
+                        onChange={(e) => updateProductField(index, 'category', e.target.value)}
+                      />
+                      {errors.products[index]?.category && (
+                        <div className="text-danger small mt-1">
+                          {errors.products[index].category}
+                        </div>
                       )}
                     </CTableDataCell>
 
@@ -932,7 +1011,9 @@ const Purchases = ({ goToSupplier }) => {
                         onChange={(e) => updateProductField(index, 'quantity', e.target.value)}
                       />
                       {errors.products[index]?.quantity && (
-                        <div className="text-danger small mt-1">{errors.products[index].quantity}</div>
+                        <div className="text-danger small mt-1">
+                          {errors.products[index].quantity}
+                        </div>
                       )}
                     </CTableDataCell>
 
@@ -953,7 +1034,7 @@ const Purchases = ({ goToSupplier }) => {
                         size="sm"
                         className="text-end py-0"
                         value={item.free}
-                        onChange={(e) => updateProductField(index, 'free', e.target.value)}
+                        onChange={(e) => updateProductField(index, 'freeQty', e.target.value)}
                       />
                     </CTableDataCell>
 
@@ -967,7 +1048,9 @@ const Purchases = ({ goToSupplier }) => {
                         onChange={(e) => updateProductField(index, 'gstPercent', e.target.value)}
                       />
                       {errors.products[index]?.gstPercent && (
-                        <div className="text-danger small mt-1">{errors.products[index].gstPercent}</div>
+                        <div className="text-danger small mt-1">
+                          {errors.products[index].gstPercent}
+                        </div>
                       )}
                     </CTableDataCell>
 
@@ -981,7 +1064,9 @@ const Purchases = ({ goToSupplier }) => {
                         onChange={(e) => updateProductField(index, 'costPrice', e.target.value)}
                       />
                       {errors.products[index]?.costPrice && (
-                        <div className="text-danger small mt-1">{errors.products[index].costPrice}</div>
+                        <div className="text-danger small mt-1">
+                          {errors.products[index].costPrice}
+                        </div>
                       )}
                     </CTableDataCell>
 
@@ -1006,10 +1091,12 @@ const Purchases = ({ goToSupplier }) => {
                         size="sm"
                         className="text-end py-0"
                         value={item.discPercent}
-                        onChange={(e) => updateProductField(index, 'discPercent', e.target.value)}
+                       onChange={(e) => updateProductField(index, 'discountPercent', e.target.value)}
                       />
                       {errors.products[index]?.discPercent && (
-                        <div className="text-danger small mt-1">{errors.products[index].discPercent}</div>
+                        <div className="text-danger small mt-1">
+                          {errors.products[index].discPercent}
+                        </div>
                       )}
                     </CTableDataCell>
 
@@ -1035,7 +1122,7 @@ const Purchases = ({ goToSupplier }) => {
             <div className="text-danger small mt-2">{errors.top.products}</div>
           )}
 
-          {/* ================= TOTALS GRID ================= */}
+          {/* TOTALS GRID */}
           <div
             className="mt-3 p-3"
             style={{
@@ -1123,12 +1210,21 @@ const Purchases = ({ goToSupplier }) => {
         <CIcon icon={cilMagnifyingGlass} size="lg" className="mx-3" style={{ cursor: 'pointer' }} />
 
         <div className="ms-auto d-flex gap-2">
-          <CButton color="light" size="sm" style={{ height: '25px', padding: '0 5px', color: 'var(--color-black)' }}>
+          <CButton
+            color="light"
+            size="sm"
+            style={{ height: '25px', padding: '0 5px', color: 'var(--color-black)' }}
+          >
             Close
           </CButton>
           <CButton
             size="sm"
-            style={{ height: '25px', padding: '0 5px', color: 'var(--color-black)', backgroundColor: 'var(--color-bgcolor)' }}
+            style={{
+              height: '25px',
+              padding: '0 5px',
+              color: 'var(--color-black)',
+              backgroundColor: 'var(--color-bgcolor)',
+            }}
           >
             Print
           </CButton>

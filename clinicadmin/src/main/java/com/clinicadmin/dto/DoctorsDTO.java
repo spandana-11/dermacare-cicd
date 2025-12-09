@@ -28,8 +28,6 @@ public class DoctorsDTO {
 	private String role;
 
 	private String deviceId;
-	
-	
 
 	@NotBlank(message = "DoctorEmail is required", groups = RequiredChecks.class)
 	private String doctorEmail;
@@ -121,7 +119,7 @@ public class DoctorsDTO {
 	private List<DoctorBranches> branches;
 
 	private ConsultationTypeDTO Consultation;
-	  private Map<String, List<String>> permissions;
+	private Map<String, List<String>> permissions;
 
 	public void trimAllDoctorFields() {
 		id = trim(id);

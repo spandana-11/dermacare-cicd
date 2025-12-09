@@ -1,10 +1,8 @@
 package com.clinicadmin.service.impl;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
 import com.clinicadmin.dto.ClinicDTO;
 import com.clinicadmin.dto.ClinicLoginRequestDTO;
 import com.clinicadmin.dto.Response;
@@ -14,10 +12,8 @@ import com.clinicadmin.service.ClinicAdminService;
 import com.clinicadmin.utils.ExtractFeignMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.FeignException;
-
 @Service
 public class ClinicAdminServiceImpl implements ClinicAdminService {
-
     @Autowired
     private AdminServiceClient adminServiceClient;
 
@@ -62,7 +58,8 @@ public class ClinicAdminServiceImpl implements ClinicAdminService {
         	res.setStatus(e.status());
         	res.setMessage(ExtractFeignMessage.clearMessage(e));
         	res.setSuccess(false);
-           return res;}
+           return res;
+           }
         }
 
     @Override
