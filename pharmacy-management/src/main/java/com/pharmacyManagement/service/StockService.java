@@ -18,4 +18,6 @@ public interface StockService {
     Response deleteStock(String id);
 
     Response changeStatus(String id, String status);
+
+	Response deleteStockById(String id);
 }

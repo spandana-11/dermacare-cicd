@@ -23,5 +23,7 @@ import { wifiUrl } from '../baseUrl'
 import { http } from '../Utils/Interceptors'
 
 export const getInProgressfollowupBookings = (patientId) => {
-  return http.get(`${wifiUrl}/api/customer/bookings/Inprogress/patientId/${patientId}`)
+  const clinicid = localStorage.getItem('HospitalId')
+
+  return http.get(`${wifiUrl}/api/customer/bookings/Inprogress/patientId/${patientId}/${clinicid}`)
 }

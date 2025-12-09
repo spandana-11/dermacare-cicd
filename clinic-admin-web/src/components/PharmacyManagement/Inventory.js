@@ -1,19 +1,35 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 import {
-  CRow, CCol, CFormLabel, CFormInput, CFormCheck, CFormSelect, CButton,
-  CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CCardBody
+  CRow,
+  CCol,
+  CFormLabel,
+  CFormInput,
+  CFormCheck,
+  CFormSelect,
+  CButton,
+  CTable,
+  CTableHead,
+  CTableRow,
+  CTableHeaderCell,
+  CTableBody,
+  CTableDataCell,
+  CCardBody,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilPrint, cilMagnifyingGlass, cilSave } from '@coreui/icons'
 import { Edit2, Trash } from 'lucide-react'
-import { fetchStockAPI } from './InventoryAPI'
-
+import { deleteInventoryData, fetchStockAPI } from './InventoryAPI'
+import { showCustomToast } from '../../Utils/Toaster'
 
 const Inventory = () => {
-
   const primaryColor = '#3c4b64'
-   const onPrint = () => {
+  const onPrint = () => {
     window.print()
   }
 
@@ -31,6 +47,10 @@ const Inventory = () => {
 
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false)
+  const [itemIdToDelete, setItemIdToDelete] = useState(null)
+  const [delLoading, setDelLoading] = useState(false)
+  const [deleteIndex, setDeleteIndex] = useState(null)
 
   const [totals, setTotals] = useState({
     totalValueRate: 0,
@@ -40,7 +60,6 @@ const Inventory = () => {
 
   const [search, setSearch] = useState('')
 
-  
   const loadStock = async () => {
     setLoading(true)
 
@@ -56,16 +75,25 @@ const Inventory = () => {
         productCategory,
         excludeZeroStock,
         displayBatchwise,
-        showCompanyWise,
       }
 
       const data = await fetchStockAPI(filters)
-      setRows(data)
 
+      // Normalize data so search works for UI fields
+      const normalized = data.map((item) => ({
+        ...item,
+        prodCode: item.prodCode || item.productId, // map productId → prodCode
+        productName: item.productName || item.name,
+        category: item.category || item.productCategory,
+        stock: item.stock || item.stockIn,
+        valueRate: item.valueRate || item.costPrice,
+        valueMrp: item.valueMrp || item.mrp,
+        batchNo: item.batchNo || item.batchNumber,
+      }))
+      setRows(normalized)
     } catch (error) {
-      console.error("API ERROR:", error)
+      console.error('API ERROR:', error)
       setRows([])
-
     } finally {
       setLoading(false)
     }
@@ -119,10 +147,78 @@ const Inventory = () => {
   }
 
   const displayRows = rows.filter((r) => {
-    if (!search) return true
-    return String(r.productName || r.prodCode || r.id).toLowerCase().includes(search.toLowerCase())
-  })
+    // 1. **Client-side text search (using the separate 'search' input, if any)**
+    const quickSearchMatch =
+      !search ||
+      String(r.productName || '')
+        .toLowerCase()
+        .includes(search.toLowerCase()) ||
+      String(r.prodCode || '')
+        .toLowerCase()
+        .includes(search.toLowerCase()) ||
+      String(r.category || '')
+        .toLowerCase()
+        .includes(search.toLowerCase()) ||
+      String(r.batchNo || '')
+        .toLowerCase()
+        .includes(search.toLowerCase())
 
+    if (!quickSearchMatch) return false
+
+    // 2. **Specific SearchBy/FieldValue filtering**
+    const specificSearchMatch = (() => {
+      // If no searchBy field is selected, or no value is entered, this filter passes
+      if (!searchBy || !fieldValue) return true
+
+      // Get the value of the selected field from the current row
+      const fieldToSearch = r[searchBy] || ''
+
+      // Check if the field value includes the user's input
+      return String(fieldToSearch).toLowerCase().includes(fieldValue.toLowerCase())
+    })()
+
+    if (!specificSearchMatch) return false
+
+    // 3. **Product Category filtering**
+    const categoryMatch = (() => {
+      // If ALL is selected, this filter passes
+      if (productCategory === 'ALL') return true
+
+      // Check if the row's category matches the selected category
+      const rowCategory = String(r.category || '').toUpperCase()
+      const selectedCategory = productCategory.toUpperCase()
+
+      return rowCategory === selectedCategory
+    })()
+
+    return categoryMatch
+  })
+  const confirmDeleteInventory = async () => {
+    if (itemIdToDelete == null) return
+
+    setDelLoading(true)
+
+    try {
+      const success = await deleteInventoryData(itemIdToDelete)
+
+      if (success) {
+        // Remove from UI
+        setRows((prev) => prev.filter((_, index) => index !== deleteIndex))
+
+        showCustomToast('Item deleted successfully!', 'success')
+      } else {
+        showCustomToast('Failed to delete item!', 'error')
+      }
+    } catch (error) {
+      console.error('Delete Error:', error)
+      showCustomToast('An unexpected error occurred.', 'error')
+    } finally {
+      setIsDeleteModalVisible(false)
+      setItemIdToDelete(null)
+      setDeleteIndex(null)
+      setDelLoading(false)
+    }
+  }
 
   return (
     <div
@@ -132,82 +228,79 @@ const Inventory = () => {
         fontSize: '13px',
       }}
     >
-    {/* Header / Date-Time */}
-<CRow className="g-3 align-items-center mb-2">
+      {/* Header / Date-Time */}
+      <CRow className="g-3 align-items-center mb-2">
+        {/* From / To Section */}
+        <CCol xs={12} md={7} lg={8}>
+          <div className="d-flex flex-wrap align-items-center gap-2">
+            {/* From */}
+            <CFormLabel className="fw-bold mb-0">From</CFormLabel>
 
-  {/* From / To Section */}
-  <CCol xs={12} md={7} lg={8}>
-    <div className="d-flex flex-wrap align-items-center gap-2">
+            <CFormInput
+              type="date"
+              size="sm"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="w-auto"
+              style={{ height: 30, fontSize: '12px' }}
+            />
 
-      {/* From */}
-      <CFormLabel className="fw-bold mb-0">From</CFormLabel>
+            <CFormInput
+              type="time"
+              size="sm"
+              value={fromTime}
+              onChange={(e) => setFromTime(e.target.value)}
+              className="w-auto"
+              style={{ height: 30, fontSize: '12px' }}
+            />
 
-      <CFormInput
-        type="date"
-        size="sm"
-        value={fromDate}
-        onChange={(e) => setFromDate(e.target.value)}
-        className="w-auto"
-        style={{ height: 30, fontSize: '12px' }}
-      />
+            {/* To */}
+            <CFormLabel className="fw-bold mb-0 ms-2">To</CFormLabel>
 
-      <CFormInput
-        type="time"
-        size="sm"
-        value={fromTime}
-        onChange={(e) => setFromTime(e.target.value)}
-        className="w-auto"
-        style={{ height: 30, fontSize: '12px' }}
-      />
+            <CFormInput
+              type="date"
+              size="sm"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="w-auto"
+              style={{ height: 30, fontSize: '12px' }}
+            />
 
-      {/* To */}
-      <CFormLabel className="fw-bold mb-0 ms-2">To</CFormLabel>
+            <CFormInput
+              type="time"
+              size="sm"
+              value={toTime}
+              onChange={(e) => setToTime(e.target.value)}
+              className="w-auto"
+              style={{ height: 30, fontSize: '12px' }}
+            />
+          </div>
+        </CCol>
 
-      <CFormInput
-        type="date"
-        size="sm"
-        value={toDate}
-        onChange={(e) => setToDate(e.target.value)}
-        className="w-auto"
-        style={{ height: 30, fontSize: '12px' }}
-      />
+        {/* Report Type */}
+        <CCol xs={12} md={5} lg={4}>
+          <div className="d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
+            <CFormLabel className="fw-bold mb-0">Report Type:</CFormLabel>
 
-      <CFormInput
-        type="time"
-        size="sm"
-        value={toTime}
-        onChange={(e) => setToTime(e.target.value)}
-        className="w-auto"
-        style={{ height: 30, fontSize: '12px' }}
-      />
-
-    </div>
-  </CCol>
-
-  {/* Report Type */}
-  <CCol xs={12} md={5} lg={4}>
-    <div className="d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
-      <CFormLabel className="fw-bold mb-0">Report Type:</CFormLabel>
-
-      <CFormSelect
-        size="sm"
-        value={reportType}
-        onChange={(e) => setReportType(e.target.value)}
-        className="w-auto"
-        style={{ height: 30, fontSize: '12px', minWidth: 150 }}
-      >
-        <option value="STOCK REPORT">STOCK REPORT</option>
-        <option value="BATCH REPORT">BATCH REPORT</option>
-        <option value="COMPANY REPORT">COMPANY REPORT</option>
-      </CFormSelect>
-    </div>
-  </CCol>
-
-</CRow>
-
+            <CFormSelect
+              size="sm"
+              value={reportType}
+              onChange={(e) => setReportType(e.target.value)}
+              className="w-auto"
+              style={{ height: 30, fontSize: '12px', minWidth: 150 }}
+            >
+              <option value="STOCK REPORT">STOCK REPORT</option>
+              <option value="BATCH REPORT">BATCH REPORT</option>
+            </CFormSelect>
+          </div>
+        </CCol>
+      </CRow>
 
       {/* Filter row */}
-      <div className="border rounded p-3 mb-3" style={{ borderColor: '#d8dbe0', background: '#f8f9fa' }}>
+      <div
+        className="border rounded p-3 mb-3"
+        style={{ borderColor: '#d8dbe0', background: '#f8f9fa' }}
+      >
         <CRow className="g-3">
           <CCol xs={12} md={3} lg={3}>
             <CFormLabel className="fw-semibold">Search By</CFormLabel>
@@ -222,7 +315,6 @@ const Inventory = () => {
               <option value="prodCode">Prod Code</option>
               <option value="category">Category</option>
               <option value="batchNo">Batch No</option>
-              <option value="company">Company</option>
             </CFormSelect>
           </CCol>
 
@@ -270,43 +362,42 @@ const Inventory = () => {
                 checked={displayBatchwise}
                 onChange={(e) => setDisplayBatchwise(e.target.checked)}
               />
-              <CFormCheck
-                type="checkbox"
-                id="showCompanyWise"
-                label="Show Company Wise"
-                checked={showCompanyWise}
-                onChange={(e) => setShowCompanyWise(e.target.checked)}
-              />
             </div>
 
             <div className="d-flex gap-2 mt-2 justify-content-end">
               <CButton
                 size="sm"
-                style={{  
-                    color: 'var(--color-black)',
-                    backgroundColor: 'var(--color-bgcolor)',
-                 minWidth: 88, fontSize: '12px' }}
-                onClick={onSearch}
+                style={{
+                  color: 'var(--color-black)',
+                  backgroundColor: 'var(--color-bgcolor)',
+                  minWidth: 88,
+                  fontSize: '12px',
+                }}
+                onClick={loadStock}
               >
                 <CIcon icon={cilMagnifyingGlass} /> &nbsp; Search
               </CButton>
               <CButton
                 color="secondary"
                 size="sm"
-                 style={{  
-                    color: 'var(--color-black)',
-                    backgroundColor: 'var(--color-bgcolor)',
-                 minWidth: 78, fontSize: '12px' }}
+                style={{
+                  color: 'var(--color-black)',
+                  backgroundColor: 'var(--color-bgcolor)',
+                  minWidth: 78,
+                  fontSize: '12px',
+                }}
                 onClick={onReset}
               >
                 Reset
               </CButton>
               <CButton
                 size="sm"
-                 style={{  
-                    color: 'var(--color-black)',
-                    backgroundColor: 'var(--color-bgcolor)',
-                 minWidth: 150, fontSize: '12px' }}
+                style={{
+                  color: 'var(--color-black)',
+                  backgroundColor: 'var(--color-bgcolor)',
+                  minWidth: 150,
+                  fontSize: '12px',
+                }}
                 onClick={onPrint}
               >
                 <CIcon icon={cilPrint} /> &nbsp; Print Category Wise
@@ -318,17 +409,6 @@ const Inventory = () => {
 
       {/* Top quick search / actions */}
       <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
-        <div className="d-flex align-items-center gap-2">
-          <CFormLabel className="fw-bold mb-0">Search</CFormLabel>
-          <CFormInput
-            size="sm"
-            placeholder="Search product..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ width: 200, height: 30, fontSize: '12px' }}
-          />
-        </div>
-
         <div className="ms-auto d-flex gap-2 align-items-center">
           <CIcon icon={cilSave} style={{ cursor: 'pointer' }} />
           <CIcon icon={cilPrint} style={{ cursor: 'pointer' }} />
@@ -358,7 +438,6 @@ const Inventory = () => {
                 <CTableHeaderCell style={{ width: 110 }}>Value @ Rate</CTableHeaderCell>
                 <CTableHeaderCell style={{ width: 110 }}>Value @ MRP</CTableHeaderCell>
                 <CTableHeaderCell style={{ width: 120 }}>Batch No</CTableHeaderCell>
-                <CTableHeaderCell style={{ width: 120 }}>Company</CTableHeaderCell>
                 <CTableHeaderCell style={{ width: 120 }}>Actions</CTableHeaderCell>
               </CTableRow>
             </CTableHead>
@@ -374,7 +453,11 @@ const Inventory = () => {
 
               {!loading && displayRows.length === 0 && (
                 <CTableRow>
-                  <CTableDataCell colSpan={10} className="text-center" style={{ color: 'var(--color-black)' }}>
+                  <CTableDataCell
+                    colSpan={10}
+                    className="text-center"
+                    style={{ color: 'var(--color-black)' }}
+                  >
                     No records found.
                   </CTableDataCell>
                 </CTableRow>
@@ -384,23 +467,24 @@ const Inventory = () => {
                 displayRows.map((item, idx) => (
                   <CTableRow key={item.id || idx}>
                     <CTableDataCell>{idx + 1}</CTableDataCell>
-                    <CTableDataCell style={{ textAlign: 'left', paddingLeft: 12 }}>{item.productName}</CTableDataCell>
-                    <CTableDataCell>{item.prodCode}</CTableDataCell>
+                    <CTableDataCell style={{ textAlign: 'left', paddingLeft: 12 }}>
+                      {item.productName}
+                    </CTableDataCell>
+                    <CTableDataCell>{item.productId}</CTableDataCell>
                     <CTableDataCell>{item.category}</CTableDataCell>
-                    <CTableDataCell>{item.stock}</CTableDataCell>
-                    <CTableDataCell>{Number(item.valueRate).toFixed(2)}</CTableDataCell>
-                    <CTableDataCell>{Number(item.valueMrp).toFixed(2)}</CTableDataCell>
+                    <CTableDataCell>{item.stockIn}</CTableDataCell>
+                    <CTableDataCell>{Number(item.costPrice).toFixed(2)}</CTableDataCell>
+                    <CTableDataCell>{Number(item.mrp).toFixed(2)}</CTableDataCell>
                     <CTableDataCell>{item.batchNo || '--'}</CTableDataCell>
-                    <CTableDataCell>{item.company || '--'}</CTableDataCell>
                     <CTableDataCell>
                       <CButton
                         color="info"
                         size="sm"
                         className="me-1"
-                         style={{  
-                    color: 'var(--color-black)',
-                    backgroundColor: 'var(--color-bgcolor)'
-                }}
+                        style={{
+                          color: 'var(--color-black)',
+                          backgroundColor: 'var(--color-bgcolor)',
+                        }}
                         onClick={() => handleEdit(idx)}
                         title="Edit"
                       >
@@ -410,10 +494,15 @@ const Inventory = () => {
                       <CButton
                         color="danger"
                         size="sm"
-                        onClick={() => handleDelete(idx)}
-                        style={{  
-                    color: 'var(--color-black)',
-                    backgroundColor: 'var(--color-bgcolor)' }}
+                        onClick={() => {
+                          setItemIdToDelete(item.id) // Store item ID
+                          setDeleteIndex(idx) // Store row index
+                          setIsDeleteModalVisible(true)
+                        }}
+                        style={{
+                          color: 'var(--color-black)',
+                          backgroundColor: 'var(--color-bgcolor)',
+                        }}
                         title="Delete"
                       >
                         <Trash size={16} />
@@ -424,6 +513,20 @@ const Inventory = () => {
             </CTableBody>
           </CTable>
         </div>
+        <CModal visible={isDeleteModalVisible} onClose={() => setIsDeleteModalVisible(false)}>
+          <CModalHeader>
+            <CModalTitle>Confirm Delete</CModalTitle>
+          </CModalHeader>
+          <CModalBody>Are you sure you want to delete this item?</CModalBody>
+          <CModalFooter>
+            <CButton color="secondary" onClick={() => setIsDeleteModalVisible(false)}>
+              Cancel
+            </CButton>
+            <CButton color="danger" onClick={confirmDeleteInventory} disabled={delLoading}>
+              {delLoading ? 'Deleting...' : 'Delete'}
+            </CButton>
+          </CModalFooter>
+        </CModal>
 
         {/* Totals block below table (CCardBody style) */}
         <CCardBody style={{ padding: '10px 0 0 0' }}>
@@ -434,7 +537,12 @@ const Inventory = () => {
                   <CFormLabel className="text-end fw-bold mb-0">Total Stock</CFormLabel>
                 </CCol>
                 <CCol xs={6}>
-                  <CFormInput disabled value={totals.totalStock} className="text-end bg-light" style={{ fontSize: '12px' }} />
+                  <CFormInput
+                    disabled
+                    value={totals.totalStock}
+                    className="text-end bg-light"
+                    style={{ fontSize: '12px' }}
+                  />
                 </CCol>
               </CRow>
 
@@ -443,7 +551,12 @@ const Inventory = () => {
                   <CFormLabel className="text-end fw-bold mb-0">Value @ Rate</CFormLabel>
                 </CCol>
                 <CCol xs={6}>
-                  <CFormInput disabled value={totals.totalValueRate} className="text-end bg-light" style={{ fontSize: '12px' }} />
+                  <CFormInput
+                    disabled
+                    value={totals.totalValueRate}
+                    className="text-end bg-light"
+                    style={{ fontSize: '12px' }}
+                  />
                 </CCol>
               </CRow>
 
@@ -452,14 +565,17 @@ const Inventory = () => {
                   <CFormLabel className="text-end fw-bold mb-0">Value @ MRP</CFormLabel>
                 </CCol>
                 <CCol xs={6}>
-                  <CFormInput disabled value={totals.totalValueMrp} className="text-end bg-light" style={{ fontSize: '12px' }} />
+                  <CFormInput
+                    disabled
+                    value={totals.totalValueMrp}
+                    className="text-end bg-light"
+                    style={{ fontSize: '12px' }}
+                  />
                 </CCol>
               </CRow>
             </CCol>
 
-            <CCol md={8}>
-              {/* placeholder for other summary fields if required */}
-            </CCol>
+            <CCol md={8}>{/* placeholder for other summary fields if required */}</CCol>
           </CRow>
         </CCardBody>
       </div>

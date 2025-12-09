@@ -119,6 +119,25 @@ public class StockServiceImpl implements StockService {
 
 		return new Response(true, null, "Stock deleted (status=Inactive)", 200);
 	}
+	@Override
+	public Response deleteStockById(String id) {
+		Optional<Stock> stock = stockRepo.findById(id);
+		Response res = new Response();
+		if(stock.isPresent()) {
+			stockRepo.deleteById(id);
+			res.setSuccess(true);
+			res.setMessage("Stock deleted successfully");
+			res.setStatus(200);
+			return res;
+		}
+		else {
+			res.setSuccess(false);
+			res.setMessage("Stock not found not found with is id"+id);
+			res.setStatus(404);
+			return res;
+		}
+		
+	}
 
 	// ----------------------------------------------------------------------------
 	// CHANGE STATUS (Active/Inactive)
