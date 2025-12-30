@@ -23,7 +23,7 @@ import {
   CForm,
   CCardHeader,
   CInputGroup,
-  CInputGroupText,
+  CInputGroupText, CCardBody
 } from '@coreui/react'
 import Select from 'react-select'
 import CIcon from '@coreui/icons-react'
@@ -38,6 +38,8 @@ import { postSubService, getAllSubServices, deleteSubServiceData, getSubServiceI
 import { getServiceByCategoryId } from '../servicesManagement/ServiceAPI'
 import { ConfirmationModal } from '../../Utils/ConfirmationDelete'
 import { Edit2, Eye, Trash2 } from 'lucide-react'
+import { COLORS } from '../../Constant/Themes'
+import LoadingIndicator from '../../Utils/loader'
 
 const ProcedureManagement = () => {
   const [category, setCategory] = useState([])
@@ -66,7 +68,7 @@ const ProcedureManagement = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [itemsPerPage, setItemsPerPage] = useState(5)
 
   const [newService, setNewService] = useState({
     categoryName: '',
@@ -433,16 +435,18 @@ const ProcedureManagement = () => {
           <div className="d-flex" style={{ gap: '1rem' }}>
             <CInputGroup style={{ width: '300px' }}>
               <CFormInput
+                style={{ border: "1px solid #7e3a93" }}
                 placeholder="Search Service..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <CInputGroupText>
+              <CInputGroupText style={{ border: "1px solid #7e3a93" }}>
                 <CIcon icon={cilSearch} />
               </CInputGroupText>
             </CInputGroup>
             <CButton
-              color="primary"
+              color="secondary"
+              style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
               onClick={() => {
                 setEditMode(false)
                 setEditSubServiceId(null)
@@ -463,7 +467,7 @@ const ProcedureManagement = () => {
         </CCardHeader>
 
         {loading ? (
-          <div>Loading...</div>
+          <LoadingIndicator message="Fetching Procedure Details, Please wait..." />
         ) : error ? (
           <div>{error}</div>
         ) : (
@@ -471,11 +475,11 @@ const ProcedureManagement = () => {
             <CTable striped hover responsive>
               <CTableHead className="pink-table">
                 <CTableRow>
-                  <CTableHeaderCell style={{ width: '120px' }}>S.No</CTableHeaderCell>
+                  <CTableHeaderCell >S.No</CTableHeaderCell>
                   <CTableHeaderCell>Procedure</CTableHeaderCell>
                   <CTableHeaderCell>Category</CTableHeaderCell>
                   <CTableHeaderCell>Service</CTableHeaderCell>
-                  <CTableHeaderCell className="text-end">Actions</CTableHeaderCell>
+                  <CTableHeaderCell className="text-center">Actions</CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
               <CTableBody className="pink-table">
@@ -486,8 +490,8 @@ const ProcedureManagement = () => {
                       <CTableDataCell>{row.name}</CTableDataCell>
                       <CTableDataCell>{row.category}</CTableDataCell>
                       <CTableDataCell>{row.service}</CTableDataCell>
-                      <CTableDataCell className="text-end">
-                        <div className="d-flex justify-content-end gap-2">
+                      <CTableDataCell className="text-center">
+                        <div className="d-flex justify-content-center align-items-center gap-2">
                           <button
                             className="actionBtn"
                             onClick={() => handleViewService(row.id)} // ✅ pass row.id directly
@@ -671,65 +675,67 @@ const ProcedureManagement = () => {
                         color="success"
                         className="text-white"
                         onClick={() => {
-                          const trimmedInput = subServiceInput.trim()
+                          const trimmedInput = subServiceInput.trim();
                           let errorMsg = '';
+
                           if (!trimmedInput) {
                             errorMsg = 'Procedure name is required.';
-                          } else if (!/^[A-Za-z0-9\s]+$/.test(trimmedInput)) {
-                            errorMsg = 'Procedure name can only contain letters, numbers, and spaces.';
                           } else if (/^\d+$/.test(trimmedInput)) {
                             errorMsg = 'Procedure name cannot contain only numbers.';
                           } else if (trimmedInput.length < 3) {
                             errorMsg = 'Procedure name must be at least 3 characters long.';
                           }
+
                           if (errorMsg) {
                             setErrors((prev) => ({ ...prev, subService: errorMsg }));
                             return;
                           }
 
                           const selectedService = serviceOptions.find(
-                            (s) => s.serviceId === newService.serviceId,
-                          )
+                            (s) => s.serviceId === newService.serviceId
+                          );
 
                           if (!selectedService) {
                             toast.warn('Please select a service first!', {
                               position: 'top-right',
                               autoClose: 2000,
-                            })
-                            return
+                            });
+                            return;
                           }
 
                           const newEntry = {
                             serviceName: selectedService.serviceName,
                             subServiceName: trimmedInput,
-                          }
+                          };
 
                           if (
                             selectedSubServices.some(
                               (sub) =>
                                 sub.serviceName === newEntry.serviceName &&
-                                sub.subServiceName === newEntry.subServiceName,
+                                sub.subServiceName === newEntry.subServiceName
                             )
                           ) {
                             toast.warn('Procedure already added for this service!', {
                               position: 'top-right',
                               autoClose: 2000,
-                            })
-                            return
+                            });
+                            return;
                           }
 
                           setSelectedSubServices((prev) => {
-                            const updated = [...prev, newEntry]
+                            const updated = [...prev, newEntry];
                             if (updated.length > 0) {
-                              setErrors((prevErrors) => ({ ...prevErrors, subService: '' }))
+                              setErrors((prevErrors) => ({ ...prevErrors, subService: '' }));
                             }
-                            return updated
-                          })
-                          setSubServiceInput('')
+                            return updated;
+                          });
+
+                          setSubServiceInput('');
                         }}
                       >
                         Add
                       </CButton>
+
                     </div>
                   )}
 
@@ -739,37 +745,35 @@ const ProcedureManagement = () => {
                         placeholder="Edit Procedure"
                         value={selectedSubServices[0]?.subServiceName || ''}
                         onChange={(e) => {
-                          const value = e.target.value
+                          const value = e.target.value;
                           const trimmedValue = value.trim();
                           let errorMsg = '';
 
                           if (!trimmedValue) {
                             errorMsg = 'Procedure name is required.';
-                          } else if (!/^[A-Za-z0-9\s]+$/.test(trimmedValue)) {
-                            errorMsg = 'Procedure name can only contain letters, numbers, and spaces.';
-                          } else if (/^\d+$/.test(trimmedValue)) {
+                          }
+                          // ❌ Removed symbol restriction so ANY characters are allowed
+                          else if (/^\d+$/.test(trimmedValue)) {
                             errorMsg = 'Procedure name cannot contain only numbers.';
                           } else if (trimmedValue.length < 3) {
                             errorMsg = 'Procedure name must be at least 3 characters long.';
                           }
+
                           setErrors((prev) => ({ ...prev, subService: errorMsg }));
 
                           setSelectedSubServices([
                             { ...selectedSubServices[0], subServiceName: value },
-                          ])
-                          // Clear error while typing
-                          // if (value.trim() !== '') {
-                          //   setErrors((prev) => ({ ...prev, subService: '' }))
-                          // }
+                          ]);
                         }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
-                            e.preventDefault()
-                            handleSubmit()
+                            e.preventDefault();
+                            handleSubmit();
                           }
                         }}
                         invalid={!!errors.subService}
                       />
+
                       {errors.subService && <div className="text-danger mt-1">{errors.subService}</div>}
                     </>
                   )}
@@ -828,31 +832,72 @@ const ProcedureManagement = () => {
           </CForm>
         </CModal>
         {/* View Sub Service Modal */}
-        <CModal visible={viewModalVisible} onClose={() => setViewModalVisible(false)}>
-          <CModalHeader>
-            <CModalTitle>Sub Service Details</CModalTitle>
+        <CModal
+          visible={viewModalVisible}
+          onClose={() => setViewModalVisible(false)}
+          size="lg"
+          backdrop="static"
+          className="custom-modal"
+        >
+          <CModalHeader className="bg-info text-white justify-content-center">
+            <CModalTitle className="fs-4 fw-bold text-center" style={{ color: "white" }}>
+              Sub Service Details
+            </CModalTitle>
           </CModalHeader>
-          <CModalBody>
+
+          <CModalBody className="p-4">
             {selectSubService?.subServices?.length > 0 ? (
-              selectSubService.subServices.map((item) => (
-                <div key={item.subServiceId} style={{ marginBottom: '1rem' }}>
-                  <p>
-                    <strong>Category Name:</strong> {selectSubService.categoryName || '-'}
-                  </p>
-                  <p>
-                    <strong>Sub Service Name:</strong> {item.subServiceName || '-'}
-                  </p>
-                  <p>
-                    <strong>Service Name:</strong> {item.serviceName || '-'}
-                  </p>
-                </div>
+              selectSubService.subServices.map((item, index) => (
+                <CCard
+                  key={item.subServiceId}
+                  className="mb-4 border-0 shadow-sm rounded-3"
+                  style={{ backgroundColor: '#f9fafb' }}
+                >
+                  <CCardBody>
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <h6
+                        className="fw-semibold mb-0"
+                        style={{ color: '#7e3a93' }}
+                      >
+                        {index + 1}. {item.subServiceName || 'Unnamed Sub Service'}
+                      </h6>
+                      <span className="badge bg-light text-dark border">
+                        ID: {item.subServiceId}
+                      </span>
+                    </div>
+
+                    <hr />
+
+                    <CRow>
+                      <CCol sm={6} className="mb-3">
+                        <strong className="text-secondary">Category Name:</strong>
+                        <div className="mt-1 text-dark">
+                          {selectSubService.categoryName || '-'}
+                        </div>
+                      </CCol>
+                      <CCol sm={6} className="mb-3">
+                        <strong className="text-secondary">Service Name:</strong>
+                        <div className="mt-1 text-dark">{item.serviceName || '-'}</div>
+                      </CCol>
+                    </CRow>
+                  </CCardBody>
+                </CCard>
               ))
             ) : (
-              <p>No sub-services found</p>
+              <div className="text-center text-muted py-4">
+                <i className="bi bi-info-circle me-2"></i>
+                No sub-services found.
+              </div>
             )}
           </CModalBody>
-          <CModalFooter>
-            <CButton color="secondary" onClick={() => setViewModalVisible(false)}>
+
+          <CModalFooter className="justify-content-center">
+            <CButton
+              color="light"
+              className="px-4 py-2 border-0 shadow-sm"
+              onClick={() => setViewModalVisible(false)}
+              style={{ backgroundColor: '#6c757d', color: 'white', borderRadius: '8px' }}
+            >
               Close
             </CButton>
           </CModalFooter>
@@ -861,7 +906,7 @@ const ProcedureManagement = () => {
         {showDeleteModal && (
           <ConfirmationModal
             isVisible={showDeleteModal}
-            message="Are you sure you want to delete this service?"
+            message="Are you sure you want to delete this procedure?"
             onConfirm={handleConfirmDelete}
             onCancel={() => setShowDeleteModal(false)}
           />

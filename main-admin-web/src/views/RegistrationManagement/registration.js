@@ -175,7 +175,7 @@
 
 //           <ConfirmationModal
 //             isVisible={isModalVisible}
-//             message="Are you sure you want to delete this service?"
+//             message="Are you sure you want to delete this registration?"
 //             onConfirm={handleConfirmDelete}
 //             onCancel={handleCancelDelete}
 //           />

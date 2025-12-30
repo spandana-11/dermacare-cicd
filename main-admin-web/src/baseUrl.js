@@ -5,6 +5,7 @@ export const BASE_URL = `http://${ipUrl}`
 export const CLINIC_ADMIN_URL = `http://${ipUrl}`
 export const MainAdmin_URL = `${BASE_URL}/admin`
 export const Procedure_URL=`http://${ipUrl}`
+export const ClinicBase_url=`${BASE_URL}/admin`
 // export let wifiUrl = '192.168.1.7'
 
 // export const CUSTOMER_SERVICE_URL = `http://${ipUrl}:8083/api`

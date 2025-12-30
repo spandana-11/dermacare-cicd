@@ -20,7 +20,6 @@ import { useNavigate } from 'react-router-dom'
 
 const CustomerViewDetails = () => {
   const navigate = useNavigate()
-
   const { mobileNumber } = useParams()
   const [activeTab, setActiveTab] = useState(0)
   const [customerData, setCustomerData] = useState(null)
@@ -74,31 +73,82 @@ const CustomerViewDetails = () => {
     )
   }
 
+  // 🌀 Centered Loading State
   if (loading) {
     return (
-      <div className="text-center my-5">
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '70vh',
+          textAlign: 'center',
+        }}
+      >
         <CSpinner color="primary" />
-        <p>Loading customer details...</p>
+        <p style={{ marginTop: '10px', fontWeight: 500 }}>
+          Loading customer details...
+        </p>
       </div>
     )
   }
 
+  // ❌ Centered Error State
   if (error || !customerData) {
-    return <p className="text-danger">{error || 'Customer not found.'}</p>
+    return (
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '70vh',
+          flexDirection: 'column',
+          textAlign: 'center',
+        }}
+      >
+        <p
+          className="text-danger"
+          style={{
+            fontSize: '1.2rem',
+            fontWeight: '600',
+            color: '#d32f2f',
+            padding: '12px 24px',
+            borderRadius: '10px',
+          }}
+        >
+          {error || 'Customer not found.'}
+        </p>
+      </div>
+    )
   }
 
   return (
     <CCard>
-      <CCardHeader>
-        <div className="d-flex justify-content-between align-items-center mb-3">
-            <CButton color="secondary" onClick={() => navigate(-1)}>
-    Back
-  </CButton>
-<h5>Customer Details: {customerData.fullName}</h5>
+      <div className="bg-info text-white p-3 d-flex justify-content-between align-items-center rounded">
+        {/* Left section: Booking ID and Status */}
+        <div>
+          <h5 className="mb-1 text" style={{ color: "white" }}>Customer Details: {customerData.fullName}</h5>
+        </div>
 
-</div>
-        
-      </CCardHeader>
+        <div className="d-flex gap-2">
+          <CButton
+            size="sm"
+            style={{
+              background: '#fff',
+              color: '#00838F',
+              border: 'none',
+              fontWeight: '600',
+              borderRadius: '8px',
+              padding: '6px 14px',
+            }}
+            onClick={() => navigate(-1)}
+          >
+            Back
+          </CButton>
+        </div>
+      </div>
+
       <CCardBody>
         <CTabs activeTab={activeTab} onActiveTabChange={setActiveTab}>
           <CNav variant="tabs">

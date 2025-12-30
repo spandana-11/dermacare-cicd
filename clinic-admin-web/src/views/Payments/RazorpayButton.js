@@ -36,6 +36,7 @@ const RazorpayButton = ({ amount = 500, onPaymentSuccess, selectedSlots, clinicN
 
     rzp.open()
   }
+  const roundedAmount = Math.round(amount)
 
   return (
     <button
@@ -52,7 +53,7 @@ const RazorpayButton = ({ amount = 500, onPaymentSuccess, selectedSlots, clinicN
         fontSize: '16px',
       }}
     >
-      Pay ₹{amount}
+      Pay ₹ {roundedAmount}
     </button>
   )
 }

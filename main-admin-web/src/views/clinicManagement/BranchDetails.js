@@ -43,6 +43,7 @@ import { ToastContainer } from 'react-toastify'
 import AppointmentManagement from '../AppointmentManagement/AppointmentManagement'
 import 'react-toastify/dist/ReactToastify.css'
 import DoctorDetailsPage from '../Doctors/DoctorDetailsPage'
+import EmployeeManagement from '../EmployeeManagement/EmployeeManagement'
 
 
 const BranchDetails = () => {
@@ -61,7 +62,7 @@ const BranchDetails = () => {
   const [loading, setLoading] = useState(true)
   const [allDoctors, setAllDoctors] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [itemsPerPage, setItemsPerPage] = useState(5)
   const [selectedDoctor, setSelectedDoctor] = useState(null)
   const [showDoctorModal, setShowDoctorModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -170,12 +171,31 @@ const BranchDetails = () => {
     <CCard className="mt-4">
       <ToastContainer />
       {/* Header */}
-      <CCardHeader className="d-flex justify-content-between align-items-center">
-        <h3 className="mb-0">Branch Details</h3>
-        <CButton color="secondary" onClick={() => navigate(-1)}>
-          Back
-        </CButton>
-      </CCardHeader>
+      <div className="bg-info text-white p-3 d-flex justify-content-between align-items-center rounded">
+        {/* Left section: Booking ID and Status */}
+        <div>
+          <h5 className="mb-1 text" style={{ color: "white" }}>Branch Details</h5>
+        </div>
+
+        <div className="d-flex gap-2">
+          <CButton
+            size="sm"
+            style={{
+              background: '#fff',
+              color: '#00838F',
+              border: 'none',
+              fontWeight: '600',
+              borderRadius: '8px',
+              padding: '6px 14px',
+            }}
+            onClick={() => navigate(-1)}
+          >
+            Back
+          </CButton>
+
+        </div>
+      </div>
+
       <CCardBody>
         {/* Navigation Tabs */}
         <CNav variant="tabs">
@@ -194,7 +214,11 @@ const BranchDetails = () => {
               Appointments
             </CNavLink>
           </CNavItem>
-
+          <CNavItem>
+            <CNavLink active={activeTab === 3} onClick={() => handleTabChange(3)}>
+              Employee Management
+            </CNavLink>
+          </CNavItem>
         </CNav>
 
         <CModal
@@ -285,7 +309,6 @@ const BranchDetails = () => {
                   </CCol>
                 </CRow>
 
-                {/* Services */}
                 {/* Services */}
                 <h6 className="text-primary border-bottom pb-2 mt-4 mb-3">Services Offered</h6>
                 <CRow className="gy-3">
@@ -460,40 +483,6 @@ const BranchDetails = () => {
               />
             )}
 
-            {/* Edit Doctor Modal */}
-            {/* {editDoctorModal && selectedDoctor && (
-    <CModal visible={editDoctorModal} onClose={() => setEditDoctorModal(false)} size="lg" backdrop="static">
-      <CModalHeader>
-        <CModalTitle>Edit Doctor</CModalTitle>
-      </CModalHeader>
-      <CModalBody>
-        <DoctorDetailsPage
-          doctorId={selectedDoctor.doctorId} 
-          doctor={selectedDoctor}
-          clinicId={branchData?.clinicId}
-          branchId={branchData?.branchId}  
-          onSave={async (updatedData) => {
-            try {
-              await axios.put(`${BASE_URL}/admin/updateDoctor/${selectedDoctor.doctorId}`, updatedData)
-              setAllDoctors(prev => prev.map(doc => doc.doctorId === selectedDoctor.doctorId ? updatedData : doc))
-              setEditDoctorModal(false)
-              toast.success('Doctor updated successfully!')
-            } catch (error) {
-              console.error('Error updating doctor:', error)
-              toast.error('Failed to update doctor')
-            }
-          }}
-        />
-      </CModalBody>
-      <CModalFooter>
-        <CButton color="secondary" onClick={() => setEditDoctorModal(false)}>
-          Cancel
-        </CButton>
-      </CModalFooter>
-    </CModal>
-  )} */}
-
-            {/* Doctor Cards */}
             {/* Doctor Cards */}
             {currentItems.length > 0 ? (
               <div className="doctor-card-container">
@@ -531,13 +520,12 @@ const BranchDetails = () => {
 `}</style>
 
           </CTabPane>
-
-
-
           <CTabPane visible={activeTab === 2}>
             <AppointmentManagement branchId={branchId} clinicId={branchData?.clinicId} />
           </CTabPane>
-
+          <CTabPane visible={activeTab === 3}>
+            <EmployeeManagement branchId={branchId} clinicId={branchData?.clinicId} />
+          </CTabPane>
         </CTabContent>
       </CCardBody>
     </CCard>

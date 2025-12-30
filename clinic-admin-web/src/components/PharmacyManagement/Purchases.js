@@ -17,6 +17,9 @@ import {
 } from '@coreui/react'
 
 import CIcon from '@coreui/icons-react'
+
+import { useNavigate } from 'react-router-dom'
+
 import { cilMagnifyingGlass, cilPrint, cilSave } from '@coreui/icons'
 
 import { postPurchaseData, PurchaseData } from '../PharmacyManagement/PurchasesAPI'
@@ -24,15 +27,22 @@ import { SupplierData } from './SupplierInfoAPI'
 import { showCustomToast } from '../../Utils/Toaster'
 import { BASE_URL, wifiUrl } from '../../baseUrl'
 import axios from 'axios'
-import { Trash2 } from 'lucide-react'
+import { Edit2, Trash2 } from 'lucide-react'
+import ViewPurchaseBills from './ViewPurchaseBills'   
 
 const Purchases = ({ goToSupplier }) => {
+  const navigate = useNavigate()  
   // top-level states
   const [purchaseData, setPurchaseData] = useState([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [suppliers, setSuppliers] = useState([])
   const [error, setError] = useState(null)
+  const [medicines, setMedicines] = useState([])
+  const [showTotals, setShowTotals] = useState(false)
+
+
+  
 
   // totals returned by backend
   const [totals, setTotals] = useState({
@@ -50,25 +60,92 @@ const Purchases = ({ goToSupplier }) => {
     postDiscount: 0,
     netPayable: 0,
   })
+ useEffect(() => {
+  const fetchMedicines = async () => {
+    try {
+      const clinicId = localStorage.getItem('HospitalId')
+
+   
+
+      const res = await axios.get(
+        `${BASE_URL}/getPrescriptionsByClinicId/${clinicId}`
+      )
+
+      const list = res.data?.data?.[0]?.medicines || []
+
+      const medicineList = list.map(m => ({
+        id: m.id,
+        name: m.name
+      }))
+
+      setMedicines(medicineList)
+
+    } catch (err) {
+      console.error("Error fetching medicines", err)
+      setMedicines([])
+    }
+  }
+
+  fetchMedicines()
+}, [])
+const handleMedicineSelect = (id) => {
+  const selected = medicines.find(m => m.id === id)
+
+  setPayload(prev => {
+    const updated = [...prev.medicineDetails]
+
+    if (!updated[0]) {
+      updated.push({
+        sno: 1,
+        productId: "",
+        productName: "",
+        // add defaults if needed
+      })
+    }
+
+    updated[0].productId = selected?.id || ""
+    updated[0].productName = selected?.name || ""
+
+    return {
+      ...prev,
+      selectedMedicineId: id,   // <<< THIS KEEPS DROPDOWN SELECTED
+      medicineDetails: updated
+    }
+  })
+}
+const handleShowTotals = async () => {
+  // if backend calculation API exists, call it here
+  // await calculatePurchaseTotals()
+await   fetchPurchase()
+  setShowTotals(true)
+}
+
+
+
+
+
 
   // fetch purchases (list)
-  const fetchPurchase = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await PurchaseData()
-      const safeData = Array.isArray(data)
-        ? data.filter((item) => item && typeof item === 'object')
-        : []
-      setPurchaseData(safeData)
-    } catch (err) {
-      console.error('Error fetching purchase:', err)
-      setError('Failed to fetch purchase data.')
-      setPurchaseData([])
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+ const fetchPurchase = useCallback(async () => {
+  setLoading(true)
+  setError(null)
+  try {
+    const response = await PurchaseData()
+    console.log("RAW PURCHASE RESPONSE:", response)
+
+    // The correct purchase list exists inside response.data
+    const list = Array.isArray(response?.data) ? response.data : []
+
+    setPurchaseData(list)
+    
+  } catch (err) {
+    console.error('Error fetching purchase:', err)
+    setError('Failed to fetch purchase data.')
+    setPurchaseData([])
+  } finally {
+    setLoading(false)
+  }
+}, [])
 
   useEffect(() => {
     fetchPurchase()
@@ -109,7 +186,7 @@ const Purchases = ({ goToSupplier }) => {
     billDueDate: '',
     creditDays: '',
     duePaidBillNo: '',
-    department: '',
+    department: 'Inclusive Tax',
     financialYear: '',
     paidAmount: '',
 
@@ -121,7 +198,7 @@ const Purchases = ({ goToSupplier }) => {
         productId: '',
         productName: '',
         batchNo: '',
-        expiryDate: '',
+        expDate: '',
         hsnCode: '',
         quantity: '',
         packSize: '',
@@ -134,7 +211,7 @@ const Purchases = ({ goToSupplier }) => {
       },
     ],
   })
-
+ 
   // errors state: top-level + per-product rows
   const [errors, setErrors] = useState({
     top: {},
@@ -148,39 +225,137 @@ const Purchases = ({ goToSupplier }) => {
     return d
   }
 
-  const validateField = (field, value) => {
-    switch (field) {
-      case 'purchaseBillNo':
-        if (!value || value.toString().trim() === '') return 'Purchase Bill No is required'
-        return ''
-      case 'invoiceNo':
-        if (!value || value.toString().trim() === '') return 'Invoice No is required'
-        return ''
-      case 'supplierName':
-        if (!value || value.toString().trim() === '') return 'Supplier is required'
-        return ''
-      case 'invoiceDate':
-        if (!value) return 'Invoice Date is required'
-        return ''
-      case 'receivingDate':
-        if (!value) return 'Receiving Date is required'
-        return ''
-      case 'financialYear':
-        if (!value || value.toString().trim() === '') return 'Financial Year is required'
-        return ''
-      default:
-        return ''
-    }
+ const validateField = (field, value) => {
+  switch (field) {
+
+    case 'purchaseBillNo':
+      if (!value || value.toString().trim() === '')
+        return 'Purchase Bill No is required'
+      return ''
+
+    case 'invoiceNo':
+      if (!value || value.toString().trim() === '')
+        return 'Invoice No is required'
+      return ''
+
+    case 'supplierName':
+      if (!value || value.toString().trim() === '')
+        return 'Supplier is required'
+      return ''
+
+    case 'invoiceDate':
+      if (!value) return 'Invoice Date is required'
+      return ''
+
+    case 'receivingDate':
+      if (!value) return 'Receiving Date is required'
+      return ''
+
+    case 'billDueDate':
+      if (!value) return 'Bill Due Date is required'
+      return ''
+
+    case 'taxType':
+      if (!value) return 'Tax Type is required'
+      return ''
+
+    case 'department':
+      if (!value) return 'Tax mode is required'
+      return ''
+
+    case 'paymentMode':
+      if (!value) return 'Payment Mode is required'
+      return ''
+    case 'duePaidBillNo':
+      if (!value) return 'DuePaidBillNo is required'
+      return ''
+       case 'paidAmount':
+      if (!value) return 'Paid Amount is required'
+      return ''
+        case 'previousAdjustment':
+      if (!value) return 'Previous Adjustment is required'
+      return ''
+
+    case 'financialYear':
+      if (!value || value.toString().trim() === '')
+        return 'Financial Year is required'
+      return ''
+
+    case 'creditDays':
+      if (value === '') return 'Credit days is required'
+      if (isNaN(Number(value))) return 'Credit Days must be a number'
+      if (Number(value) < 0) return 'Credit Days must be ≥ 0'
+      return ''
+
+    case 'paidAmount':
+      if (value === '') return ''
+      if (isNaN(Number(value))) return 'Paid Amount must be a number'
+      if (Number(value) < 0) return 'Paid Amount must be ≥ 0'
+      return ''
+
+    case 'previousAdjustment':
+      if (value === '') return ''
+      if (isNaN(Number(value))) return 'Adjustment must be a number'
+      if (Number(value) < 0) return 'Adjustment must be ≥ 0'
+      return ''
+
+    case 'postDiscount':
+      if (value === '') return ''
+      if (isNaN(Number(value))) return 'Discount must be a number'
+      if (Number(value) < 0) return 'Discount must be ≥ 0'
+      return ''
+
+    default:
+      return ''
   }
+}
+
 
   const validateProductRow = (item, rowIndex, existingKeys = null) => {
     const rowErrors = {}
+    // category
+if (!item.category || item.category.trim() === '') {
+  rowErrors.category = 'Required'
+}
+
+// packSize
+if (!item.packSize || item.packSize.trim() === '') {
+  rowErrors.packSize = 'Required'
+}
+
+// free qty >= 0
+if (item.free !== '' && Number(item.free) < 0) {
+  rowErrors.free = 'Free qty cannot be negative'
+}
+
+// MRP >= Cost Price
+if (
+  item.mrp !== '' &&
+  item.costPrice !== '' &&
+  Number(item.mrp) < Number(item.costPrice)
+) {
+  rowErrors.mrp = 'MRP must be ≥ Cost Price'
+}
+
     const isRowEmpty =
       (!item.productName || item.productName.toString().trim() === '') &&
       (!item.batchNo || item.batchNo.toString().trim() === '')&&  (!item.expDate || item.expDate.trim() === '')
    
 
     if (isRowEmpty) return {}
+// mandatory fields first
+if (!item.productName) rowErrors.productName = 'Required'
+if (!item.batchNo) rowErrors.batchNo = 'Required'
+if (!item.expDate) rowErrors.expDate = 'Required'
+
+// NOW check empty
+if (
+  !item.productName &&
+  !item.batchNo &&
+  !item.expDate
+) {
+  return {}
+}
 
     // productId (optional: you can make this required if needed)
     if (item.productId && item.productId.toString().trim().length === 0) {
@@ -274,6 +449,21 @@ const Purchases = ({ goToSupplier }) => {
       const d = Number(item.discPercent)
       if (d < 0 || d > 100) rowErrors.discPercent = 'Disc% must be 0–100'
     }
+    const numericFields = [
+  'quantity',
+  'free',
+  'mrp',
+  'costPrice',
+  'discPercent',
+  'gstPercent',
+]
+
+numericFields.forEach((f) => {
+  if (item[f] !== '' && isNaN(Number(item[f]))) {
+    rowErrors[f] = 'Invalid number'
+  }
+})
+
 
     return rowErrors
   }
@@ -285,7 +475,7 @@ const Purchases = ({ goToSupplier }) => {
     setErrors((prev) => ({ ...prev, top: { ...(prev.top || {}), [field]: message } }))
   }
 
-  const numericProductFields = ['quantity', 'freeQty', 'mrp', 'costPrice', 'discountPercent', 'gstPercent']
+  const numericProductFields = ['quantity', 'free', 'mrp', 'costPrice', 'discPercent', 'gstPercent']
 
 
   const updateProductField = (index, field, value) => {
@@ -382,13 +572,24 @@ const Purchases = ({ goToSupplier }) => {
   // ---------- run full validation ----------
   const runFullValidation = () => {
     const topFields = [
-      'purchaseBillNo',
-      'invoiceNo',
-      'supplierName',
-      'invoiceDate',
-      'receivingDate',
-      'financialYear',
-    ]
+  'purchaseBillNo',
+  'invoiceNo',
+  'supplierName',
+  'invoiceDate',
+  'receivingDate',
+  'billDueDate',
+  'taxType',
+  'department',
+  'paymentMode',
+  'financialYear',
+  'creditDays',
+  'paidAmount',
+  'previousAdjustment',
+  'postDiscount',
+  'duePaidBillNo',
+  
+]
+
 
     const topErrors = {}
     topFields.forEach((f) => {
@@ -406,6 +607,18 @@ const Purchases = ({ goToSupplier }) => {
         topErrors.receivingDate = 'Receiving Date cannot be earlier than Invoice Date'
       }
     }
+    // Bill Due Date >= Invoice Date
+if (payload.billDueDate && payload.invoiceDate) {
+  const billDue = new Date(payload.billDueDate)
+  const inv = new Date(payload.invoiceDate)
+  billDue.setHours(0,0,0,0)
+  inv.setHours(0,0,0,0)
+
+  if (billDue < inv) {
+    topErrors.billDueDate = 'Bill Due Date cannot be before Invoice Date'
+  }
+}
+
 
     // at least one non-empty product row
     const nonEmptyRows = payload.medicineDetails.filter(
@@ -530,6 +743,9 @@ const Purchases = ({ goToSupplier }) => {
       const response = await postPurchaseData(finalPayload)
       const respData = response?.data?.data || response?.data || {}
       showCustomToast('Purchase saved successfully!', 'success')
+       await fetchPurchase()
+
+
 
       setTotals({
         totalAmount: respData.totalAmount || 0,
@@ -547,7 +763,7 @@ const Purchases = ({ goToSupplier }) => {
         netPayable: respData.netPayable || 0,
       })
 
-      fetchPurchase()
+     await fetchPurchase()
     } catch (err) {
       console.error('Save Failed:', err)
       const msg = err?.response?.data?.message || 'Failed to save purchase!'
@@ -562,276 +778,302 @@ const Purchases = ({ goToSupplier }) => {
         className="d-flex flex-wrap justify-content-between align-items-center"
         style={{ color: 'var(--color-black)' }}
       >
-        <div className="d-flex align-items-center gap-3">
-          <CRow className="mb-2">
-            <CCol md={2}>
-              <label className="small mb-1">Date</label>
-            </CCol>
-            <CCol md={8}>
-              <CFormInput type="date" size="sm" value={payload.date} readOnly />
-            </CCol>
-          </CRow>
+      <div className="d-flex align-items-center gap-3 w-100">
+  <CRow className="mb-2 mt-1">
+    <CCol md={2}>
+      <label className="small mb-1">Date</label>
+    </CCol>
+    <CCol md={8}>
+      <CFormInput type="date" size="sm" value={payload.date} disabled />
+    </CCol>
+  </CRow>
 
-          <CRow className="mb-2">
-            <CCol md={2}>
-              <label className="small mb-1">Time</label>
-            </CCol>
-            <CCol md={8}>
-              <CFormInput type="time" size="sm" value={payload.time} readOnly />
-            </CCol>
-          </CRow>
-        </div>
+  <CRow className="mb-2 mt-1 w-25">
+    <CCol md={2}>
+      <label className="small mb-1">Time</label>
+    </CCol>
+    <CCol md={8}>
+      <CFormInput type="time" size="sm" value={payload.time} disabled />
+    </CCol>
+  </CRow>
+
+  {/* Push button to right corner */}
+ <CButton
+  type="button"
+  size="sm"
+  className="
+    ms-md-auto 
+    d-flex align-items-center justify-content-center gap-1
+    mt-2 mt-md-0"
+  style={{
+    height: '30px',
+    padding: '0 12px',
+    color: 'var(--color-black)',
+    backgroundColor: 'var(--color-bgcolor)',
+    borderRadius: '4px',
+  }}
+  onClick={() => navigate('/pharmacy/purchases/bills')}
+>
+  View Purchase Bills
+</CButton>
+
+</div>
+
       </div>
 
       {/* TOP BILLING DETAILS */}
-      <div
-        style={{
-          marginBottom: '15px',
-          padding: '8px',
-          border: '1px solid #7DC2FF',
-          borderRadius: '4px',
-          color: 'var(--color-black)',
-        }}
+     <div
+  style={{
+    marginBottom: '15px',
+    padding: '10px',
+    border: '1px solid #7DC2FF',
+    borderRadius: '4px',
+    color: 'var(--color-black)',
+  }}
+>
+  {/* ================= FIRST ROW ================= */}
+  <CRow className="gy-2">
+    <CCol xs={12} sm={6} md={2}>
+      <CFormLabel>Purchase Bill No</CFormLabel>
+      <CFormInput
+        value={payload.purchaseBillNo}
+        onChange={(e) => updateTopField('purchaseBillNo', e.target.value)}
+      />
+      {errors.top.purchaseBillNo && (
+        <div className="text-danger small">{errors.top.purchaseBillNo}</div>
+      )}
+    </CCol>
+
+    <CCol xs={12} sm={6} md={2}>
+      <CFormLabel>Invoice Date</CFormLabel>
+      <CFormInput
+        type="date"
+        value={payload.invoiceDate}
+        onChange={(e) => updateTopField('invoiceDate', e.target.value)}
+      />
+      {errors.top.invoiceDate && (
+  <div className="text-danger small">{errors.top.invoiceDate}</div>
+)}
+    </CCol>
+
+    <CCol xs={12} sm={6} md={2}>
+      <CFormLabel>Receiving Date</CFormLabel>
+      <CFormInput
+        type="date"
+        value={payload.receivingDate}
+        onChange={(e) => updateTopField('receivingDate', e.target.value)}
+      />
+      {errors.top.receivingDate && (
+  <div className="text-danger small">{errors.top.receivingDate}</div>
+)}
+
+    </CCol>
+
+    <CCol xs={12} sm={6} md={2}>
+      <CFormLabel>Tax Type</CFormLabel>
+      <CFormSelect
+        size="sm"
+        value={payload.taxType || ''}
+        onChange={(e) => updateTopField('taxType', e.target.value)}
       >
-        <CRow className="gy-1">
-          <CCol xs={12} sm={6} md={2}>
-            <CFormLabel htmlFor="purchaseBillNo" className="me-2">
-              Purchase BillNo
-            </CFormLabel>
-            <CFormInput
-              id="purchaseBillNo"
-              className="w-100"
-              value={payload.purchaseBillNo}
-              onChange={(e) => updateTopField('purchaseBillNo', e.target.value)}
-            />
-            {errors.top.purchaseBillNo && (
-              <div className="text-danger small mt-1">{errors.top.purchaseBillNo}</div>
-            )}
-          </CCol>
+        <option value="">Select</option>
+        <option value="GST">GST</option>
+        <option value="IGST">IGST</option>
+      </CFormSelect>
+        {errors.top.taxType && <div className="text-danger small">{errors.top.taxType}</div>}
 
-          <CCol xs={12} sm={6} md={2}>
-            <CFormLabel htmlFor="invoiceDateInput">Invoice Date</CFormLabel>
-            <CFormInput
-              id="invoiceDateInput"
-              type="date"
-              value={payload.invoiceDate}
-              onChange={(e) => updateTopField('invoiceDate', e.target.value)}
-            />
-            {errors.top.invoiceDate && (
-              <div className="text-danger small mt-1">{errors.top.invoiceDate}</div>
-            )}
-          </CCol>
+    </CCol>
 
-          <CCol xs={12} sm={6} md={2}>
-            <CFormLabel htmlFor="receivingDateInput">Receiving Date</CFormLabel>
-            <CFormInput
-              id="receivingDateInput"
-              type="date"
-              value={payload.receivingDate}
-              onChange={(e) => updateTopField('receivingDate', e.target.value)}
-            />
-            {errors.top.receivingDate && (
-              <div className="text-danger small mt-1">{errors.top.receivingDate}</div>
-            )}
-          </CCol>
+    <CCol xs={12} sm={6} md={2}>
+      <CFormLabel>Tax (Inc / Exc)</CFormLabel>
+      <CFormSelect
+        size="sm"
+        value={payload.department || ''}
+        onChange={(e) => updateTopField('department', e.target.value)}
+      >
+        <option value="">Select</option>
+        <option value="Inclusive Tax">Inclusive Tax</option>
+        <option value="Exclusive Tax">Exclusive Tax</option>
+        {/* <option value="Automatic">Automatic</option> */}
+      </CFormSelect>
+        {errors.top.department && <div className="text-danger small">{errors.top.department}</div>}
 
-          <CCol xs={12} sm={6} md={2}>
-            <CFormLabel htmlFor="taxType" className="mb-0">
-              Tax Type
-            </CFormLabel>
-            <CFormSelect
-              id="taxType"
-              size="sm"
-              value={payload.taxType || ''}
-              onChange={(e) => updateTopField('taxType', e.target.value)}
-              className="w-100"
-            >
-              <option value="">Select Tax Type</option>
-              <option value="GST">GST</option>
-              <option value="IGST">IGST</option>
-            </CFormSelect>
-          </CCol>
+    </CCol>
 
-          <CCol xs={12} sm={6} md={2}>
-            <CFormLabel htmlFor="departmentSelect" className="mb-0">
-              Tax(Inc or Exc)
-            </CFormLabel>
-            <CFormSelect
-              id="departmentSelect"
-              size="sm"
-              value={payload.department || ''}
-              onChange={(e) => updateTopField('department', e.target.value)}
-              className="w-100"
-            >
-              <option value="">Select</option>
-              <option value="Inclusive Tax">Inclusive Tax</option>
-              <option value="Exclusive Tax">Exclusive Tax</option>
-              <option value="Automatic">Automatic</option>
-            </CFormSelect>
-          </CCol>
+    <CCol xs={12} sm={6} md={2}>
+      <CFormLabel>Invoice No</CFormLabel>
+      <CFormInput
+        value={payload.invoiceNo}
+        onChange={(e) => updateTopField('invoiceNo', e.target.value)}
+      />
+        {errors.top.invoiceNo && <div className="text-danger small">{errors.top.invoiceNo}</div>}
 
-          <CCol xs={12} sm={6} md={2}>
-            <CFormLabel htmlFor="invoiceNo">Invoice No</CFormLabel>
-            <CFormInput
-              id="invoiceNo"
-              className="w-100"
-              value={payload.invoiceNo}
-              onChange={(e) => updateTopField('invoiceNo', e.target.value)}
-            />
-            {errors.top.invoiceNo && (
-              <div className="text-danger small mt-1">{errors.top.invoiceNo}</div>
-            )}
-          </CCol>
-        </CRow>
+    </CCol>
+  </CRow>
 
-        {/* second row */}
-        <CRow className="gy-2 align-items-center mt-2">
-          <CCol xs={12} sm={6} md={2}>
-            <CButton
-              size="sm"
-              onClick={handleAddProduct}
-              className="w-100"
-              style={{ color: 'var(--color-black)', backgroundColor: 'var(--color-bgcolor)' }}
-            >
-              New Product
-            </CButton>
-          </CCol>
+  {/* ================= SECOND ROW ================= */}
+  <CRow className="gy-2 mt-2">
+    <CCol xs={12} sm={6} md={3}>
+      <CFormLabel>Financial Year</CFormLabel>
+      <CFormInput
+        placeholder="2025-2026"
+        value={payload.financialYear}
+        onChange={(e) => updateTopField('financialYear', e.target.value)}
+      />
+      {errors.top.financialYear && (
+  <div className="text-danger small">{errors.top.financialYear}</div>
+)}
 
-          <CCol xs={12} sm={6} md={2}>
-            <CButton
-              size="sm"
-              className="w-100"
-              style={{ color: 'var(--color-black)', backgroundColor: 'var(--color-bgcolor)' }}
-            >
-              Update Product
-            </CButton>
-          </CCol>
+    </CCol>
 
-          <CCol xs={12} sm={6} md={2}>
-            <CButton
-              size="sm"
-              onClick={goToSupplier}
-              className="w-100"
-              style={{ color: 'var(--color-black)', backgroundColor: 'var(--color-bgcolor)' }}
-            >
-              New Supplier
-            </CButton>
-          </CCol>
+    <CCol xs={12} sm={6} md={3}>
+      <CFormLabel>Supplier</CFormLabel>
+      <CFormSelect
+        value={suppliers.find((s) => s.name === payload.supplierName)?.id || ''}
+        onChange={handleSupplierSelect}
+      >
+        <option value="">-- Select Supplier --</option>
+        {suppliers.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+      </CFormSelect>
+      {errors.top.supplierName && (
+  <div className="text-danger small">{errors.top.supplierName}</div>
+)}
 
-          <CCol xs={12} sm={6} md={3}>
-            <CFormLabel htmlFor="financialYear">Financial Year:</CFormLabel>
-            <CFormInput
-              id="financialYear"
-              value={payload.financialYear}
-              onChange={(e) => updateTopField('financialYear', e.target.value)}
-              placeholder="2025-2026"
-              className="w-100"
-            />
-            {errors.top.financialYear && (
-              <div className="text-danger small mt-1">{errors.top.financialYear}</div>
-            )}
-          </CCol>
+    </CCol>
+    <CCol xs={12} sm={6} md={2}>
+      <CFormLabel>Bill Due Date</CFormLabel>
+      <CFormInput
+        type="date"
+        value={payload.billDueDate}
+        onChange={(e) => updateTopField('billDueDate', e.target.value)}
+        
+      />
+      {errors.top.billDueDate && <div className="text-danger small">{errors.top.billDueDate}</div>}
+    </CCol>
 
-          <CCol xs={12} sm={6} md={3}>
-            <CFormLabel htmlFor="supplierSelect" className="me-2 mb-0">
-              Supplier
-            </CFormLabel>
+    <CCol xs={12} sm={6} md={2}>
+      <CFormLabel>Credit Days</CFormLabel>
+      <CFormInput
+        value={payload.creditDays}
+        onChange={(e)=> updateTopField('creditDays', e.target.value.replace(/\D/g,''))}
 
-            <CFormSelect
-              id="supplierSelect"
-              className="w-100"
-              value={suppliers.find((s) => s.name === payload.supplierName)?.id || ''}
-              onChange={handleSupplierSelect}
-            >
-              <option value="">-- Select Supplier --</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </CFormSelect>
-            {errors.top.supplierName && (
-              <div className="text-danger small mt-1">{errors.top.supplierName}</div>
-            )}
-          </CCol>
-        </CRow>
+      />
+      {errors.top.creditDays && <div className="text-danger small">{errors.top.creditDays}</div>}
 
-        {/* extra backend fields row */}
-        <CRow className="gy-2 mt-2">
-          <CCol xs={12} sm={6} md={2}>
-            <CFormLabel htmlFor="billDueDate">Bill Due Date</CFormLabel>
-            <CFormInput
-              id="billDueDate"
-              type="date"
-              value={payload.billDueDate}
-              onChange={(e) => updateTopField('billDueDate', e.target.value)}
-            />
-          </CCol>
+    </CCol>
+    <CCol xs={12} sm={6} md={2}>
+      <CFormLabel>Due Paid Bill No</CFormLabel>
+      <CFormInput
+        value={payload.duePaidBillNo}
+        onChange={(e) => updateTopField('duePaidBillNo', e.target.value)}
+      />
+      {errors.top.duePaidBillNo && <div className="text-danger small">{errors.top.duePaidBillNo}</div>}
 
-          <CCol xs={12} sm={6} md={2}>
-            <CFormLabel htmlFor="creditDays">Credit Days</CFormLabel>
-            <CFormInput
-              id="creditDays"
-              placeholder="10 Days"
-              value={payload.creditDays}
-              onChange={(e) => updateTopField('creditDays', e.target.value)}
-            />
-          </CCol>
+    </CCol>
+  </CRow>
 
-          <CCol xs={12} sm={6} md={2}>
-            <CFormLabel htmlFor="duePaidBillNo">Due Paid Bill No</CFormLabel>
-            <CFormInput
-              id="duePaidBillNo"
-              placeholder="Enter bill number"
-              value={payload.duePaidBillNo}
-              onChange={(e) => updateTopField('duePaidBillNo', e.target.value)}
-            />
-          </CCol>
+  {/* ================= EXTRA BACKEND FIELDS ================= */}
+  <CRow className="gy-2 mt-3">
+    
 
-          <CCol xs={12} sm={6} md={2}>
-            <CFormLabel htmlFor="paymentMode">Payment Mode</CFormLabel>
-            <CFormSelect
-              id="paymentMode"
-              value={payload.paymentMode}
-              onChange={(e) => updateTopField('paymentMode', e.target.value)}
-            >
-              <option value="cash">Cash</option>
-              <option value="card">Card</option>
-              <option value="bank">Bank</option>
-            </CFormSelect>
-          </CCol>
+    
 
-          <CCol xs={12} sm={6} md={2}>
-            <CFormLabel htmlFor="paidAmount">Paid Amount</CFormLabel>
-            <CFormInput
-              id="paidAmount"
-              type="number"
-              value={payload.paidAmount}
-              onChange={(e) => updateTopField('paidAmount', e.target.value)}
-            />
-          </CCol>
+    <CCol xs={12} sm={6} md={2}>
+      <CFormLabel>Payment Mode</CFormLabel>
+      <CFormSelect
+        value={payload.paymentMode}
+        onChange={(e) => updateTopField('paymentMode', e.target.value)}
+      >
+        <option value="cash">Cash</option>
+        <option value="card">Card</option>
+        <option value="bank">Bank</option>
+      </CFormSelect>
+        {errors.top.paymentMode && <div className="text-danger small">{errors.top.paymentMode}</div>}
 
-          <CCol xs={12} sm={6} md={2}>
-            <CFormLabel htmlFor="previousAdjustment">Previous Adjustment</CFormLabel>
-            <CFormInput
-              id="previousAdjustment"
-              type="number"
-              value={payload.previousAdjustment}
-              onChange={(e) => updateTopField('previousAdjustment', e.target.value)}
-            />
-          </CCol>
+    </CCol>
 
-          <CCol xs={12} sm={6} md={2}>
-            <CFormLabel htmlFor="postDiscount">Post Discount</CFormLabel>
-            <CFormInput
-              id="postDiscount"
-              type="number"
-              value={payload.postDiscount}
-              onChange={(e) => updateTopField('postDiscount', e.target.value)}
-            />
-          </CCol>
-        </CRow>
-      </div>
+    <CCol xs={12} sm={6} md={2}>
+      <CFormLabel>Paid Amount</CFormLabel>
+      <CFormInput
+        type="number"
+        value={payload.paidAmount}
+        onChange={(e) => updateTopField('paidAmount', e.target.value)}
+      />
+        {errors.top.paidAmount && <div className="text-danger small">{errors.top.paidAmount}</div>}
+
+
+    </CCol>
+
+    <CCol xs={12} sm={6} md={2}>
+      <CFormLabel>Previous Adjustment</CFormLabel>
+      <CFormInput
+        type="number"
+        value={payload.previousAdjustment}
+        onChange={(e) => updateTopField('previousAdjustment', e.target.value)}
+      />
+        {errors.top.previousAdjustment && <div className="text-danger small">{errors.top.previousAdjustment}</div>}
+
+    </CCol>
+  <CCol xs={12} sm={6} md={2}>
+  <CFormLabel>Medicine Name</CFormLabel>
+
+ <CFormSelect
+  value={payload.selectedMedicineId || ""}
+  onChange={(e) => handleMedicineSelect(e.target.value)}
+>
+  <option value="">-- Select Medicine --</option>
+
+  {medicines.map(m => (
+    <option key={m.id} value={m.id}>
+      {m.name}
+    </option>
+  ))}
+</CFormSelect>
+
+
+  {errors.top.previousAdjustment && (
+    <div className="text-danger small">
+      {errors.top.previousAdjustment}
+    </div>
+  )}
+</CCol>
+
+
+
+<CCol xs={12} sm={6} md={2} className="mt-2 mb-2">
+  <CButton
+    size="sm"
+    className="w-100"
+    onClick={handleAddProduct}
+    style={{ backgroundColor: 'var(--color-bgcolor)', color: 'var(--color-black)' }}
+  >
+    New Product
+  </CButton>
+</CCol>
+
+<CCol xs={12} sm={6} md={2} className="mt-2 mb-2">
+  <CButton
+    size="sm"
+    className="w-100"
+    onClick={goToSupplier}
+    style={{ backgroundColor: 'var(--color-bgcolor)', color: 'var(--color-black)' }}
+  >
+    New Supplier
+  </CButton>
+</CCol>
+
+
+
+  </CRow>
+
+  {/* ================= ACTION BUTTONS ================= */}
+ 
+</div>
+
 
       {/* PURCHASE TABLE */}
       <div style={{ position: 'relative', marginTop: '18px', marginBottom: '10px' }}>
@@ -911,38 +1153,35 @@ const Purchases = ({ goToSupplier }) => {
 
                     {/* Product ID */}
                     <CTableDataCell>
-                      <CFormInput
-                        size="sm"
-                        className="py-0"
-                        value={item.productId}
-                        onChange={(e) => updateProductField(index, 'productId', e.target.value)}
-                      />
-                      {errors.products[index]?.productId && (
-                        <div className="text-danger small mt-1">
-                          {errors.products[index].productId}
-                        </div>
-                      )}
-                    </CTableDataCell>
+  <CFormInput
+    size="md"
+    className="py-0"
+    value={item.productId}
+    disabled
+  />
+</CTableDataCell>
+
 
                     {/* Product Name */}
-                    <CTableDataCell>
-                      <CFormInput
-                        size="sm"
-                        className="py-0"
-                        value={item.productName}
-                        onChange={(e) => updateProductField(index, 'productName', e.target.value)}
-                      />
-                      {errors.products[index]?.productName && (
-                        <div className="text-danger small mt-1">
-                          {errors.products[index].productName}
-                        </div>
-                      )}
-                    </CTableDataCell>
+                 <CTableDataCell style={{ minWidth: 200 }}>
+  <CFormInput
+    size="md"
+    className="py-0"
+    value={item.productName}
+    disabled
+  />
+  {errors.products[index]?.productName && (
+    <div className="text-danger small mt-1">
+      {errors.products[index].productName}
+    </div>
+  )}
+</CTableDataCell>
+
 
                     {/* Batch No */}
-                    <CTableDataCell>
+                    <CTableDataCell style={{ minWidth: 200 }}>
                       <CFormInput
-                        size="sm"
+                        size="md"
                         className="py-0"
                         value={item.batchNo}
                         onChange={(e) => updateProductField(index, 'batchNo', e.target.value)}
@@ -958,7 +1197,7 @@ const Purchases = ({ goToSupplier }) => {
                     <CTableDataCell>
                       <CFormInput
                         type="date"
-                        size="sm"
+                        size="md"
                         className="py-0"
                         value={item.expDate}
                         onChange={(e) => updateProductField(index, 'expDate', e.target.value)}
@@ -971,9 +1210,9 @@ const Purchases = ({ goToSupplier }) => {
                     </CTableDataCell>
 
                     {/* HSN */}
-                    <CTableDataCell>
+                    <CTableDataCell style={{ minWidth: 160 }}>
                       <CFormInput
-                        size="sm"
+                        size="md"
                         className="py-0"
                         placeholder="e.g. 30045010"
                         value={item.hsnCode}
@@ -987,9 +1226,9 @@ const Purchases = ({ goToSupplier }) => {
                     </CTableDataCell>
 
                     {/* Category */}
-                    <CTableDataCell>
+                    <CTableDataCell style={{ minWidth: 160 }}>
                       <CFormInput
-                        size="sm"
+                        size="md"
                         className="py-0"
                         value={item.category}
                         onChange={(e) => updateProductField(index, 'category', e.target.value)}
@@ -1002,10 +1241,10 @@ const Purchases = ({ goToSupplier }) => {
                     </CTableDataCell>
 
                     {/* Qty */}
-                    <CTableDataCell>
+                    <CTableDataCell style={{ minWidth: 100 }}>
                       <CFormInput
                         type="number"
-                        size="sm"
+                        size="md"
                         className="text-end py-0"
                         value={item.quantity}
                         onChange={(e) => updateProductField(index, 'quantity', e.target.value)}
@@ -1018,9 +1257,9 @@ const Purchases = ({ goToSupplier }) => {
                     </CTableDataCell>
 
                     {/* Pack Size */}
-                    <CTableDataCell>
+                    <CTableDataCell style={{ minWidth: 160 }}>
                       <CFormInput
-                        size="sm"
+                        size="md"
                         className="text-end py-0"
                         value={item.packSize}
                         onChange={(e) => updateProductField(index, 'packSize', e.target.value)}
@@ -1028,21 +1267,21 @@ const Purchases = ({ goToSupplier }) => {
                     </CTableDataCell>
 
                     {/* Free */}
-                    <CTableDataCell>
+                    <CTableDataCell style={{ minWidth: 160 }}>
                       <CFormInput
                         type="number"
-                        size="sm"
+                        size="md"
                         className="text-end py-0"
                         value={item.free}
-                        onChange={(e) => updateProductField(index, 'freeQty', e.target.value)}
+                        onChange={(e) => updateProductField(index, 'free', e.target.value)}
                       />
                     </CTableDataCell>
 
                     {/* GST */}
-                    <CTableDataCell>
+                    <CTableDataCell style={{ minWidth: 160 }}>
                       <CFormInput
                         type="number"
-                        size="sm"
+                        size="md"
                         className="text-end py-0"
                         value={item.gstPercent}
                         onChange={(e) => updateProductField(index, 'gstPercent', e.target.value)}
@@ -1055,10 +1294,10 @@ const Purchases = ({ goToSupplier }) => {
                     </CTableDataCell>
 
                     {/* Cost Price */}
-                    <CTableDataCell>
+                    <CTableDataCell style={{ minWidth: 160 }}>
                       <CFormInput
                         type="number"
-                        size="sm"
+                        size="md"
                         className="text-end py-0"
                         value={item.costPrice}
                         onChange={(e) => updateProductField(index, 'costPrice', e.target.value)}
@@ -1071,10 +1310,10 @@ const Purchases = ({ goToSupplier }) => {
                     </CTableDataCell>
 
                     {/* MRP */}
-                    <CTableDataCell>
+                    <CTableDataCell style={{ minWidth: 160 }}>
                       <CFormInput
                         type="number"
-                        size="sm"
+                        size="md"
                         className="text-end py-0"
                         value={item.mrp}
                         onChange={(e) => updateProductField(index, 'mrp', e.target.value)}
@@ -1085,13 +1324,13 @@ const Purchases = ({ goToSupplier }) => {
                     </CTableDataCell>
 
                     {/* Disc% */}
-                    <CTableDataCell>
+                    <CTableDataCell style={{ minWidth: 160 }}>
                       <CFormInput
                         type="number"
-                        size="sm"
+                        size="md"
                         className="text-end py-0"
                         value={item.discPercent}
-                       onChange={(e) => updateProductField(index, 'discountPercent', e.target.value)}
+                       onChange={(e) => updateProductField(index, 'discPercent', e.target.value)}
                       />
                       {errors.products[index]?.discPercent && (
                         <div className="text-danger small mt-1">
@@ -1099,56 +1338,67 @@ const Purchases = ({ goToSupplier }) => {
                         </div>
                       )}
                     </CTableDataCell>
+                <CTableDataCell className="text-center">
+  <div className="d-flex justify-content-center gap-2">
+    {/* <button
+      className="actionBtn"
+      onClick={() => handleRemoveProduct(index)}
+      title="Edit"
+      type="button"
+    >
+      <Edit2 size={18} />
+    </button> */}
 
-                    {/* Remove Button */}
-                    <CTableDataCell className="text-center">
-                      <button
-                        className="actionBtn"
-                        onClick={() => handleRemoveProduct(index)}
-                        title="Delete"
-                        type="button"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </CTableDataCell>
+    <button
+      className="actionBtn"
+      onClick={() => handleRemoveProduct(index)}
+      title="Delete"
+      type="button"
+    >
+      <Trash2 size={18} />
+    </button>
+  </div>
+</CTableDataCell>
+
                   </CTableRow>
                 ))}
               </CTableBody>
             </CTable>
           </div>
 
-          {/* product-level top error */}
-          {errors.top.products && (
-            <div className="text-danger small mt-2">{errors.top.products}</div>
-          )}
+         
+
 
           {/* TOTALS GRID */}
-          <div
-            className="mt-3 p-3"
-            style={{
-              background: '#F6F8FA',
-              borderRadius: 6,
-              border: '1px solid #DFE3E8',
-            }}
-          >
-            <CRow className="g-3">
-              {[
-                ['Total Amt', totals.totalAmount],
-                ['Disc %', totals.discountAmountTotal],
-                ['Net Amt', totals.netAmount],
-                ['Total Tax', totals.totalTax],
-                ['Final Total', totals.finalTotal],
-                ['Net Payable', totals.netPayable],
-                ['Credit Days', payload.creditDays],
-                ['Paid Amount', totals.paidAmount],
-              ].map(([label, value], i) => (
-                <CCol md={3} key={i}>
-                  <CFormLabel className="fw-bold small mb-1">{label}</CFormLabel>
-                  <CFormInput size="sm" disabled value={value} className="bg-light text-end" />
-                </CCol>
-              ))}
-            </CRow>
-          </div>
+        {showTotals && (
+  <div
+    className="mt-3 p-3"
+    style={{
+      background: '#F6F8FA',
+      borderRadius: 6,
+      border: '1px solid #DFE3E8',
+    }}
+  >
+    <CRow className="g-3">
+      {[
+        ['Total Amt', totals.totalAmount],
+        ['Disc %', totals.discountAmountTotal],
+        ['Net Amt', totals.netAmount],
+        ['Total Tax', totals.totalTax],
+        ['Final Total', totals.finalTotal],
+        ['Net Payable', totals.netPayable],
+        ['Credit Days', payload.creditDays],
+        ['Paid Amount', totals.paidAmount],
+      ].map(([label, value], i) => (
+        <CCol md={3} key={i}>
+          <CFormLabel className="fw-bold small mb-1">{label}</CFormLabel>
+          <CFormInput size="sm" disabled value={value} className="bg-light text-end" />
+        </CCol>
+      ))}
+    </CRow>
+  </div>
+)}
+
         </div>
       </div>
 
@@ -1164,7 +1414,7 @@ const Purchases = ({ goToSupplier }) => {
           overflowX: 'auto',
         }}
       >
-        <CFormLabel className="fw-bold me-2 mb-0">Search</CFormLabel>
+        {/* <CFormLabel className="fw-bold me-2 mb-0">Search</CFormLabel>
         <CFormInput
           type="text"
           placeholder="Search here..."
@@ -1188,9 +1438,39 @@ const Purchases = ({ goToSupplier }) => {
           value={payload.receivingDate || ''}
           style={{ width: '120px', height: '25px', padding: '0 5px' }}
           className="me-3"
-        />
+        /> */}
 
-        <CButton
+      
+
+        {/* <CIcon icon={cilPrint} size="lg" className="mx-1" style={{ cursor: 'pointer' }} /> */}
+        {/* <CIcon icon={cilMagnifyingGlass} size="lg" className="mx-3" style={{ cursor: 'pointer' }} /> */}
+
+        <div className="ms-auto d-flex gap-2">
+          {/* <CButton
+            color="light"
+            size="sm"
+            style={{ height: '25px', padding: '0 5px', color: 'var(--color-black)' }}
+          >
+            Close
+          </CButton> */}
+           {/* product-level top error */}
+          {errors.top.products && (
+            <div className="text-danger small mt-2">{errors.top.products}</div>
+          )}
+          <CButton
+  size="sm"
+  style={{
+    backgroundColor: 'var(--color-bgcolor)',
+    color: 'var(--color-black)',
+     height: '25px',
+            padding: '0 10px',
+             borderRadius: '4px',
+  }}
+  onClick={handleShowTotals}
+>
+ Purchase Summary
+</CButton>
+            <CButton
           size="sm"
           className="d-flex align-items-center gap-1"
           style={{
@@ -1205,19 +1485,7 @@ const Purchases = ({ goToSupplier }) => {
           <CIcon icon={cilSave} size="sm" />
           Save
         </CButton>
-
-        <CIcon icon={cilPrint} size="lg" className="mx-1" style={{ cursor: 'pointer' }} />
-        <CIcon icon={cilMagnifyingGlass} size="lg" className="mx-3" style={{ cursor: 'pointer' }} />
-
-        <div className="ms-auto d-flex gap-2">
-          <CButton
-            color="light"
-            size="sm"
-            style={{ height: '25px', padding: '0 5px', color: 'var(--color-black)' }}
-          >
-            Close
-          </CButton>
-          <CButton
+          {/* <CButton
             size="sm"
             style={{
               height: '25px',
@@ -1227,10 +1495,62 @@ const Purchases = ({ goToSupplier }) => {
             }}
           >
             Print
-          </CButton>
+          </CButton> */}
         </div>
       </div>
+      {/* SAVED PURCHASES LIST */}
+{/* <div className="mt-4">
+  <h6 className="fw-bold">Saved Purchase Bills</h6>
+
+  {loading ? (
+    <p>Loading purchases...</p>
+  ) : purchaseData.length === 0 ? (
+    <p>No purchases found.</p>
+  ) : (
+    <div style={{ maxHeight: 250, overflowY: 'auto', border: '1px solid #d8d8d8', borderRadius: 6 }}>
+      <CTable bordered hover responsive className="m-0" style={{ fontSize: '0.78rem' }}>
+      <CTableHead>
+  <CTableRow>
+    <CTableHeaderCell>S.No</CTableHeaderCell>
+    <CTableHeaderCell>Bill No</CTableHeaderCell>
+    <CTableHeaderCell>Supplier</CTableHeaderCell>
+    <CTableHeaderCell>Invoice No</CTableHeaderCell>
+    <CTableHeaderCell>Invoice Date</CTableHeaderCell>
+    <CTableHeaderCell>Final Total</CTableHeaderCell>
+    <CTableHeaderCell>Payment Mode</CTableHeaderCell>
+    <CTableHeaderCell>Tax Type</CTableHeaderCell>
+    <CTableHeaderCell>Action</CTableHeaderCell>
+  </CTableRow>
+</CTableHead>
+
+  <CTableBody>
+  {purchaseData.map((p, idx) => (
+    <CTableRow key={p.id || idx}>
+      <CTableDataCell>{idx + 1}</CTableDataCell>
+      <CTableDataCell>{p.purchaseBillNo}</CTableDataCell>
+      <CTableDataCell>{p.supplierName}</CTableDataCell>
+      <CTableDataCell>{p.invoiceNo}</CTableDataCell>
+      <CTableDataCell>{p.invoiceDate?.slice(0, 10)}</CTableDataCell>
+      <CTableDataCell>{p.finalTotal}</CTableDataCell>
+      <CTableDataCell>{p.paymentMode}</CTableDataCell>
+      <CTableDataCell>{p.taxType}</CTableDataCell>
+
+      <CTableDataCell>
+        <CButton size="sm">View</CButton>
+      </CTableDataCell>
+    </CTableRow>
+  ))}
+</CTableBody>
+
+
+
+      </CTable>
     </div>
+  )}
+</div> */}
+
+    </div>
+    
   )
 }
 

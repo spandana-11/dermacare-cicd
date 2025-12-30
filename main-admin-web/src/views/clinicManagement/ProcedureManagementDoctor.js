@@ -13,11 +13,11 @@ import {
   CModalBody,
   CModalFooter,
   CRow,
-  CListGroup,
+  CBadge,
   CCol,
   CFormSelect,
-  CHeader,
-  CListGroupItem,
+  CCardBody,
+  CCard,
   CFormLabel,
 } from '@coreui/react'
 import DataTable from 'react-data-table-component'
@@ -45,7 +45,8 @@ import {
 } from '../../baseUrl'
 import ProcedureQA from './QASection'
 import { Edit2, Eye, Trash2, View } from 'lucide-react'
-import ConfirmationModal from '../../components/ConfirmationModal'
+import { ConfirmationModal } from '../../Utils/ConfirmationDelete'
+
 
 const ProcedureManagementDoctor = ({ clinicId }) => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -113,10 +114,10 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     categoryId: '',
     serviceName: '',
     subServiceName: '',
-    subServiceImage:'',
-    serviceId:'',
-    subServiceId:'',
-    viewDescription:'',
+    subServiceImage: '',
+    serviceId: '',
+    subServiceId: '',
+    viewDescription: '',
     description: '',
     price: '',
     gst: 0,
@@ -191,7 +192,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
 
     const payload = {
       clinicId: clinicId,
-      
+
       serviceId: newService.serviceId,
       serviceName: newService.serviceName,
       categoryId: newService.categoryId,
@@ -261,7 +262,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
   // Open for editing
 
   const openEditModal = async (service) => {
-    
+
     setSubServiceId(service.subServiceId)
     setModalMode('edit')
     setModalVisible(true)
@@ -399,7 +400,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
           categoryId: category.categoryId,
           categoryName: category.categoryName,
         }))
-      setCategory(categoryDetails) // ✅ use mapped array
+        setCategory(categoryDetails) // ✅ use mapped array
       } else {
         throw new Error('Invalid category data format')
       }
@@ -481,67 +482,88 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     setEditServiceMode(true)
   }
 
-    const columns = [
-      {
-        name: 'S.No',
-        selector: (row, index) => index + 1,
-        width: '70px',
-        sortable: false,
-      },
-      {
-        name: 'Procedure Name',
-        selector: (row) => row.subServiceName,
-        sortable: true,
-        width: '230px',
-      },
-      {
-        name: 'Service Name',
-        selector: (row) => row.serviceName,
-        width: '230px',
-      },
-      {
-        name: 'Category Name',
-        selector: (row) => row.categoryName,
-        width: '180px',
-      },
-      {
-        name: 'Price',
-        selector: (row) => row.price,
-        width: '100px',
-      },
-
-      {
-        name: 'Actions',
-        cell: (row) => (
-          <div className="d-flex justify-content-end gap-2  ">
-            <button className="actionBtn" onClick={() => setViewService(row)} title="View">
-              <Eye size={18} />
-            </button>
-
-            <button className="actionBtn" onClick={() => openEditModal(row)} title="Edit">
-              <Edit2 size={18} />
-            </button>
-
-            <button className="actionBtn" onClick={() => handleServiceDelete(row)} title="Delete">
-              <Trash2 size={18} />
-            </button>
-              <ConfirmationModal
-                          isVisible={isModalVisible}
-                          title="Delete Procedure"
-                          message="Are you sure you want to delete this procedure? This action cannot be undone."
-                          confirmText="Yes, Delete"
-                          cancelText="Cancel"
-                          confirmColor="danger"
-                          cancelColor="secondary"
-                          onConfirm={handleConfirmDelete}
-                          onCancel={handleCancelDelete}
-                        />
-          </div>
-      ),
-      width: '150px',
-      headerStyle: { textAlign: 'center' },
+  const columns = [
+    {
+      name: 'S.No',
+      selector: (row, index) => index + 1,
+      sortable: false,
+      center: true,
+      width: '180px',
     },
-  ]
+    {
+      name: 'Procedure Name',
+      selector: (row) => row.subServiceName || 'N/A',
+      sortable: true,
+      width: '180px',
+      cell: (row) => <span style={{ color: "#7e3a93" }}>{row.subServiceName}</span>,
+    },
+    {
+      name: 'Service Name',
+      selector: (row) => row.serviceName || 'N/A',
+      width: '180px',
+      cell: (row) => <span style={{ color: "#7e3a93" }}>{row.serviceName}</span>,
+    },
+    {
+      name: 'Category Name',
+      selector: (row) => row.categoryName || 'N/A',
+      width: '180px',
+      cell: (row) => <span style={{ color: "#7e3a93" }}>{row.categoryName}</span>,
+    },
+    {
+      name: 'Price',
+      selector: (row) => `₹${row.price || '0'}`,
+      width: '180px',
+      cell: (row) => (
+        <span style={{ color: "#7e3a93" }}>{`₹${row.price || '0'}`}</span>
+      ),
+    },
+    {
+      name: 'Actions',
+      width: '180px',
+      center: true,
+      cell: (row) => (
+        <div className="d-flex justify-content-center gap-2">
+          <button
+            className="actionBtn"
+            title="View"
+            onClick={() => setViewService(row)}
+          >
+            <Eye size={18} />
+          </button>
+
+          <button
+            className="actionBtn"
+            title="Edit"
+            onClick={() => openEditModal(row)}
+          >
+            <Edit2 size={18} />
+          </button>
+
+          <button
+            className="actionBtn"
+            title="Delete"
+            onClick={() => handleServiceDelete(row)}
+          >
+            <Trash2 size={18} />
+          </button>
+
+          <ConfirmationModal
+            isVisible={isModalVisible}
+            title="Delete Procedure"
+            message="Are you sure you want to delete this procedure? This action cannot be undone."
+            confirmText="Yes, Delete"
+            cancelText="Cancel"
+            confirmColor="danger"
+            cancelColor="secondary"
+            onConfirm={handleConfirmDelete}
+            onCancel={handleCancelDelete}
+          />
+        </div>
+      ),
+    },
+  ];
+
+
   const minTimeValue = parseFloat(newService.minTime)
   const validateForm = () => {
     const newErrors = {}
@@ -554,10 +576,10 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     if (!newService.categoryName) {
       newErrors.categoryName = 'Category is required.'
     }
-    if (!newService.subServiceName){
-      newErrors.subServiceName='Procedure Name is required'
+    if (!newService.subServiceName) {
+      newErrors.subServiceName = 'Procedure Name is required'
     }
-   
+
     if (!newService.price) {
       newErrors.price = 'price is required.'
     } else if (isNaN(newService.price)) {
@@ -661,7 +683,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     }
   }
   const handleAddService = async () => {
-      const isValid = validateForm(); // ✅ Call it here
+    const isValid = validateForm(); // ✅ Call it here
 
     console.log('--- handleAddService START ---')
 
@@ -734,7 +756,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     }
 
     setNewService({
-      hospitalId:'',
+      hospitalId: '',
       categoryName: '',
       categoryId: '',
       serviceName: '',
@@ -750,7 +772,7 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
       minTimeUnit: '',
       status: '',
       subServiceImage: '',
-      subServiceImageFile:'',
+      subServiceImageFile: '',
       viewDescription: '',
       consentFormType: '',
       procedureQA: [],
@@ -955,67 +977,67 @@ const ProcedureManagementDoctor = ({ clinicId }) => {
     setErrors({})
   }
 
-const handleChanges = async (e) => {
-  const { name, value } = e.target
+  const handleChanges = async (e) => {
+    const { name, value } = e.target
 
-  if (name === 'categoryId') {
-    const selectedCategory = category.find((cat) => cat.categoryId === value)
+    if (name === 'categoryId') {
+      const selectedCategory = category.find((cat) => cat.categoryId === value)
 
-    setNewService((prev) => ({
-      ...prev,
-      categoryName: selectedCategory?.categoryName || '',
-      categoryId: value,
-      serviceName: '',
-      serviceId: '',
-    }))
+      setNewService((prev) => ({
+        ...prev,
+        categoryName: selectedCategory?.categoryName || '',
+        categoryId: value,
+        serviceName: '',
+        serviceId: '',
+      }))
 
-    try {
-      const res = await axios.get(`${BASE_URL}/${getservice}/${value}`)
-      const serviceList = res.data?.data || []
-      setServiceOptions(serviceList)
-        console.log('my new service', newService)
-    } catch (err) {
-      console.error('Failed to fetch services:', err)
-      setServiceOptions([])
-    }
-  } else if (name === 'serviceName') {
-    const selectedService = serviceOptions.find((s) => s.serviceName === value)
-    const serviceId = selectedService?.serviceId || ''
-
-    setNewService((prev) => ({
-      ...prev,
-      serviceName: value,
-      serviceId,
-    }))
-
-    if (serviceId) {
       try {
-        const subRes = await subServiceData(serviceId)
-        const subList = subRes.data
-        let allSubServices = []
-
-        if (Array.isArray(subList)) {
-          allSubServices = subList.flatMap((item) => item.subServices || [])
-          
-        } else if (subList?.subServices) {
-          allSubServices = subList.subServices
-        }
-
-        setSubServiceOptions({ subServices: allSubServices })
+        const res = await axios.get(`${BASE_URL}/${getservice}/${value}`)
+        const serviceList = res.data?.data || []
+        setServiceOptions(serviceList)
+        console.log('my new service', newService)
       } catch (err) {
-        console.error('Failed to fetch subservices:', err)
-        setSubServiceOptions({ subServices: [] })
+        console.error('Failed to fetch services:', err)
+        setServiceOptions([])
       }
-    }
-  } else {
-    setNewService((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-  }
-}
+    } else if (name === 'serviceName') {
+      const selectedService = serviceOptions.find((s) => s.serviceName === value)
+      const serviceId = selectedService?.serviceId || ''
 
-  
+      setNewService((prev) => ({
+        ...prev,
+        serviceName: value,
+        serviceId,
+      }))
+
+      if (serviceId) {
+        try {
+          const subRes = await subServiceData(serviceId)
+          const subList = subRes.data
+          let allSubServices = []
+
+          if (Array.isArray(subList)) {
+            allSubServices = subList.flatMap((item) => item.subServices || [])
+
+          } else if (subList?.subServices) {
+            allSubServices = subList.subServices
+          }
+
+          setSubServiceOptions({ subServices: allSubServices })
+        } catch (err) {
+          console.error('Failed to fetch subservices:', err)
+          setSubServiceOptions({ subServices: [] })
+        }
+      }
+    } else {
+      setNewService((prev) => ({
+        ...prev,
+        [name]: value,
+      }))
+    }
+  }
+
+
 
   return (
     <div style={{ overflow: 'hidden' }}>
@@ -1029,9 +1051,9 @@ const handleChanges = async (e) => {
               placeholder="Search by Procedure Name, Category"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ height: '40px' }}
+              style={{ height: '40px', border: "1px solid #7e3a93" }}
             />
-            <CInputGroupText style={{ height: '40px' }}>
+            <CInputGroupText style={{ height: '40px', border: "1px solid #7e3a93" }}>
               <CIcon icon={cilSearch} />
             </CInputGroupText>
           </CInputGroup>
@@ -1048,245 +1070,165 @@ const handleChanges = async (e) => {
       </div>
 
       {viewService && (
-        <CModal visible={!!viewService} onClose={() => setViewService(null)} size="xl"  className="custom-modal"
-        backdrop="static">
-          <CModalHeader>
-            <CModalTitle className="w-100 text-center text-info fs-4">
+        <CModal
+          visible={!!viewService}
+          onClose={() => setViewService(null)}
+          size="xl"
+          backdrop="static"
+          className="procedure-modal"
+        >
+          <CModalHeader className="justify-content-center bg-light border-bottom">
+            <CModalTitle className="text-primary fw-bold fs-4">
               Procedure Details
             </CModalTitle>
           </CModalHeader>
-          <CModalBody>
-            <CRow className="mb-3">
-              <CCol sm={6}>
-                <strong>Procedure Name:</strong>
-                <div>{viewService.subServiceName}</div>
-              </CCol>
-              <CCol sm={6}>
-                <strong>Procedure ID:</strong>
-                <div>{viewService.subServiceId}</div>
-              </CCol>
-            </CRow>
-            <CRow className="mb-3">
-              <CCol sm={6}>
-                <strong>Service Name:</strong>
-                <div>{viewService.serviceName}</div>
-              </CCol>
-              <CCol sm={6}>
-                <strong>Service Id:</strong>
-              
-                <div>{viewService.serviceId}</div>
-              </CCol>
-            </CRow>
 
-            <CRow className="mb-3">
-              <CCol sm={6}>
-                <strong>Category Name:</strong>
-                <div>{viewService.categoryName}</div>
-              </CCol>
-              <CCol sm={6}>
-                <strong>Category Id:</strong>
-                <div>{viewService.categoryId}</div>
-              </CCol>
-              <CCol sm={6}>
-                <strong>Consent Form Type:</strong>
-                <div>{consentFormTypeLabels[viewService.consentFormType] || 'N/A'}</div>
-              </CCol>
-            </CRow>
+          <CModalBody className="p-4">
+            {/* Basic Info */}
+            <CCard className="shadow-sm mb-4 border-0">
+              <CCardBody>
+                <h6 className="text-info fw-semibold mb-3">Basic Information</h6>
+                <CRow className="gy-3">
+                  <CCol sm={6}>
+                    <strong>Procedure Name:</strong> {viewService.subServiceName}
 
-            <CRow className="mb-3">
-              <CCol sm={6}>
-                <strong>Status:</strong>
-                <div>{viewService.status}</div>
-              </CCol>
-            </CRow>
+                  </CCol>
+                  <CCol sm={6}>
+                    <strong>Procedure ID:</strong> {viewService.subServiceId}
 
-            <hr />
+                  </CCol>
+                  <CCol sm={6}>
+                    <strong>Service Name:</strong> {viewService.serviceName}
 
-            <CRow className="mb-3">
-              <CCol sm={4}>
-                <strong>Price:</strong>
-                <div>₹ {Math.round(viewService.price)}</div>
-              </CCol>
-              <CCol sm={4}>
-                <strong>Discount %:</strong>
-                <div>{Math.round(viewService.discountPercentage)}%</div>
-              </CCol>
-              <CCol sm={4}>
-                <strong>Discount Amount:</strong>
-                <div>₹ {Math.round(viewService.discountAmount)}</div>
-              </CCol>
-            </CRow>
+                  </CCol>
+                  <CCol sm={6}>
+                    <strong>Service ID:</strong> {viewService.serviceId}
 
-            <CRow className="mb-3">
-              <CCol sm={4}>
-                <strong>Discounted Cost:</strong>
-                <div>₹ {Math.round(viewService.discountedCost)}</div>
-              </CCol>
-              <CCol sm={4}>
-                <strong>Tax %:</strong>
-                <div>{Math.round(viewService.taxPercentage)}%</div>
-              </CCol>
-              <CCol sm={4}>
-                <strong>Tax Amount:</strong>
-                <div>₹ {Math.round(viewService.taxAmount)}</div>
-              </CCol>
-            </CRow>
+                  </CCol>
+                  <CCol sm={6}>
+                    <strong>Category Name:</strong> {viewService.categoryName}
 
-            <CRow className="mb-3">
-              <CCol sm={4}>
-                <strong>Platform Fee %:</strong>
-                <div>{Math.round(viewService.platformFeePercentage)}%</div>
-              </CCol>
-              <CCol sm={4}>
-                <strong>Platform Fee:</strong>
-                <div>₹ {Math.round(viewService.platformFee)}</div>
-              </CCol>
-              <CCol sm={4}>
-                <strong>Clinic Pay:</strong>
-                <div>₹ {Math.round(viewService.clinicPay)}</div>
-              </CCol>
-            </CRow>
+                  </CCol>
+                  <CCol sm={6}>
+                    <strong>Category ID:</strong> {viewService.categoryId}
 
-            <CRow className="mb-3">
-              <CCol sm={4}>
-                <strong>GST:</strong>
-                <div>₹ {Math.round(viewService.gst)}</div>
-              </CCol>
-              <CCol sm={4}>
-                <strong>Consultation Fee:</strong>
-                <div>₹ {viewService.consultationFee}</div>
-              </CCol>
-              <CCol sm={4}>
-                <strong>Final Cost:</strong>
-                <div>₹ {Math.round(viewService.finalCost)}</div>
-              </CCol>
-            </CRow>
+                  </CCol>
+                  <CCol sm={6}>
+                    <strong>Consent Form Type:</strong> {consentFormTypeLabels[viewService.consentFormType] || "N/A"}
 
-            <CRow className="mb-3">
-              <CCol sm={4}>
-                <strong>Service Time:</strong>
-                <div>{formatMinutes(viewService.minTime)}</div>
-              </CCol>
-            </CRow>
+                  </CCol>
+                  <CCol sm={6}>
+                    <strong>Status:</strong>  <CBadge color={viewService.status === "Active" ? "success" : "secondary"}>
+                      {viewService.status}
+                    </CBadge>
 
-            <hr />
+                  </CCol>
+                </CRow>
+              </CCardBody>
+            </CCard>
 
-            <CRow className="mb-3">
-              <CCol sm={12}>
-                <strong className="mb-3">Pre-Procedure QA:</strong>
-                {Array.isArray(viewService.preProcedureQA) &&
-                viewService.preProcedureQA.length > 0 ? (
-                  viewService.preProcedureQA.map((qa, index) => {
-                    const question = Object.keys(qa)[0]
-                    const answers = qa[question]
-                    console.log('my view service', viewService)
-                    return (
-                      <div key={index} style={{ marginBottom: '10px' }}>
-                        <strong>{question}</strong>
-                        <ul>
-                          {answers.map((ans, i) => (
-                            <li key={i}>{ans}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )
-                  })
-                ) : (
-                  <div>No Pre-Procedure Q&A available</div>
-                )}
-              </CCol>
-            </CRow>
+            {/* Pricing Info */}
+            <CCard className="shadow-sm mb-4 border-0">
+              <CCardBody>
+                <h6 className="text-info fw-semibold mb-3">Pricing & Fees</h6>
+                <CRow className="gy-3">
+                  <CCol sm={4}><strong>Price:</strong> ₹ {viewService.price ? Math.round(viewService.price) : '—'}</CCol>
+                  <CCol sm={4}><strong>Discount %:</strong> {viewService.discountPercentage ? Math.round(viewService.discountPercentage) + '%' : '—'}</CCol>
+                  <CCol sm={4}><strong>Discount Amount:</strong> ₹ {viewService.discountAmount ? Math.round(viewService.discountAmount) : '—'}</CCol>
+                  <CCol sm={4}><strong>Discounted Cost:</strong> ₹ {viewService.discountedCost ? Math.round(viewService.discountedCost) : '—'}</CCol>
+                  <CCol sm={4}><strong>Tax %:</strong> {viewService.taxPercentage ? Math.round(viewService.taxPercentage) + '%' : '—'}</CCol>
+                  <CCol sm={4}><strong>Tax Amount:</strong> ₹ {viewService.taxAmount ? Math.round(viewService.taxAmount) : '—'}</CCol>
+                  <CCol sm={4}><strong>Platform Fee %:</strong> {viewService.platformFeePercentage ? Math.round(viewService.platformFeePercentage) + '%' : '—'}</CCol>
+                  <CCol sm={4}><strong>Platform Fee:</strong> ₹ {viewService.platformFee ? Math.round(viewService.platformFee) : '—'}</CCol>
+                  <CCol sm={4}><strong>Clinic Pay:</strong> ₹ {viewService.clinicPay ? Math.round(viewService.clinicPay) : '—'}</CCol>
+                  <CCol sm={4}><strong>GST:</strong> ₹ {viewService.gst ? Math.round(viewService.gst) : '—'}</CCol>
+                  <CCol sm={4}><strong>Consultation Fee:</strong> ₹ {viewService.consultationFee ?? '—'}</CCol>
+                  <CCol sm={4}><strong>Final Cost:</strong> ₹ {viewService.finalCost ? Math.round(viewService.finalCost) : '—'}</CCol>
+                  <CCol sm={4}><strong>Service Time:</strong> {viewService.minTime ? formatMinutes(viewService.minTime) : '—'}</CCol>
+                </CRow>
+              </CCardBody>
+            </CCard>
 
-            <CRow className="mb-3">
-              <CCol sm={12}>
-                <strong className="mb-3">Procedure QA:</strong>
-                {Array.isArray(viewService.procedureQA) && viewService.procedureQA.length > 0 ? (
-                  viewService.procedureQA.map((qa, index) => {
-                    const question = Object.keys(qa)[0]
-                    const answers = qa[question]
-                    return (
-                      <div key={index} style={{ marginBottom: '10px' }}>
-                        <strong>{question}</strong>
-                        <ul>
-                          {answers.map((ans, i) => (
-                            <li key={i}>{ans}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )
-                  })
-                ) : (
-                  <div>No Procedure Q&A available</div>
-                )}
-              </CCol>
-            </CRow>
 
-            <CRow className="mb-3">
-              <CCol sm={12}>
-                <strong className="mb-3">Post-Procedure QA:</strong>
-                {Array.isArray(viewService.postProcedureQA) &&
-                viewService.postProcedureQA.length > 0 ? (
-                  viewService.postProcedureQA.map((qa, index) => {
-                    const question = Object.keys(qa)[0]
-                    const answers = qa[question]
-                    return (
-                      <div key={index} style={{ marginBottom: '10px' }}>
-                        <strong>{question}</strong>
-                        <ul>
-                          {answers.map((ans, i) => (
-                            <li key={i}>{ans}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )
-                  })
-                ) : (
-                  <div>No Post-Procedure Q&A available</div>
-                )}
-              </CCol>
-            </CRow>
+            {/* Q&A Sections */}
+            {["preProcedureQA", "procedureQA", "postProcedureQA"].map((qaType, i) => {
+              const titles = {
+                preProcedureQA: "Pre-Procedure Q&A",
+                procedureQA: "Procedure Q&A",
+                postProcedureQA: "Post-Procedure Q&A",
+              };
+              const qaData = viewService[qaType];
 
-            <hr />
-
-            <CRow>
-              <CCol sm={6}>
-                <strong>Sub Service Image:</strong>
-                {viewService.subServiceImage ? (
-                  <div className="mt-2">
-                    <img
-                      src={`data:image/png;base64,${viewService.subServiceImage}`}
-                      alt="Service"
-                      style={{ width: '100%', maxWidth: '250px', borderRadius: '8px' }}
-                    />
-
-                    {previewImage && (
-                      <img src={previewImage} alt="Preview" height="80" className="mt-2" />
+              return (
+                <CCard key={i} className="shadow-sm mb-4 border-0">
+                  <CCardBody>
+                    <h6 className="text-info fw-semibold mb-3">{titles[qaType]}</h6>
+                    {Array.isArray(qaData) && qaData.length > 0 ? (
+                      qaData.map((qa, index) => {
+                        const question = Object.keys(qa)[0];
+                        const answers = qa[question];
+                        return (
+                          <div key={index} className="mb-2">
+                            <strong>{question}</strong>
+                            <ul className="ms-3">
+                              {answers.map((ans, i) => (
+                                <li key={i}>{ans}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-muted fst-italic">No Q&A available</div>
                     )}
-                  </div>
-                ) : (
-                  <div>No image available</div>
-                )}
-              </CCol>
-              <CCol sm={6}>
-                <strong>View Description:</strong>
-                <div>{viewService.viewDescription}</div>
-              </CCol>
-            </CRow>
+                  </CCardBody>
+                </CCard>
+              );
+            })}
+
+            {/* Image & Description */}
+            <CCard className="shadow-sm border-0">
+              <CCardBody>
+                <h6 className="text-info fw-semibold mb-3">Additional Details</h6>
+                <CRow>
+                  <CCol sm={6}>
+                    <strong>Sub Service Image:</strong>
+                    <div className="mt-2">
+                      {viewService.subServiceImage ? (
+                        <img
+                          src={`data:image/png;base64,${viewService.subServiceImage}`}
+                          alt="Service"
+                          className="img-fluid rounded border"
+                          style={{ maxWidth: "250px" }}
+                        />
+                      ) : (
+                        <div className="text-muted">No image available</div>
+                      )}
+                    </div>
+                  </CCol>
+                  <CCol sm={6}>
+                    <strong>View Description:</strong>
+                    <div className="mt-2">{viewService.viewDescription || "N/A"}</div>
+                  </CCol>
+                </CRow>
+              </CCardBody>
+            </CCard>
           </CModalBody>
 
-          <CModalFooter>
-            <CButton color="secondary" onClick={() => setViewService(null)}>
+          <CModalFooter className="justify-content-center border-top bg-light">
+            <CButton color="secondary" variant="outline" onClick={() => setViewService(null)}>
               Close
             </CButton>
           </CModalFooter>
         </CModal>
       )}
 
+
       <CModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         size="xl"
-       backdrop="static" className='custom-modal'
+        backdrop="static" className='custom-modal'
       >
         <CModalHeader>
           <CModalTitle style={{ textAlign: 'center', width: '100%' }}>
@@ -1296,30 +1238,30 @@ const handleChanges = async (e) => {
         <CModalBody>
           <CForm>
             <CRow className="mb-4">
-         <CCol md={4}>
-  <h6>
-    Category Name <span className="text-danger">*</span>
-  </h6>
-  <CFormSelect
-  value={newService.categoryId || ''}
-  onChange={handleChanges}
-  aria-label="Select Category"
-  name="categoryId" // must match state property
-  disabled={modalMode === 'edit'}
->
-  <option value="">Select a Category</option>
-  {category?.map((cat) => (
-    <option key={cat.categoryId} value={cat.categoryId}>
-      {cat.categoryName}
-    </option>
-  ))}
-</CFormSelect>
+              <CCol md={4}>
+                <h6>
+                  Category Name <span className="text-danger">*</span>
+                </h6>
+                <CFormSelect
+                  value={newService.categoryId || ''}
+                  onChange={handleChanges}
+                  aria-label="Select Category"
+                  name="categoryId" // must match state property
+                  disabled={modalMode === 'edit'}
+                >
+                  <option value="">Select a Category</option>
+                  {category?.map((cat) => (
+                    <option key={cat.categoryId} value={cat.categoryId}>
+                      {cat.categoryName}
+                    </option>
+                  ))}
+                </CFormSelect>
 
 
-  {errors.categoryName && (
-    <CFormText className="text-danger">{errors.categoryName}</CFormText>
-  )}
-</CCol>
+                {errors.categoryName && (
+                  <CFormText className="text-danger">{errors.categoryName}</CFormText>
+                )}
+              </CCol>
               <CCol md={4}>
                 <h6>
                   Service Name <span className="text-danger">*</span>
@@ -1370,7 +1312,7 @@ const handleChanges = async (e) => {
                 >
                   <option value="">Select Procedure</option>
                   {Array.isArray(subServiceOptions?.subServices) &&
-    subServiceOptions.subServices.map((sub) => (
+                    subServiceOptions.subServices.map((sub) => (
                       <option key={sub.subServiceId} value={sub.subServiceId}>
                         {sub.subServiceName}
                       </option>
@@ -1529,10 +1471,10 @@ const handleChanges = async (e) => {
               </CCol>
             </CRow>
             <CRow className="mb-4">
-             
 
 
-  <CCol md={3}>
+
+              <CCol md={3}>
                 <h6>
                   Procedure Price <span className="text-danger">*</span>
                 </h6>
@@ -1545,11 +1487,7 @@ const handleChanges = async (e) => {
                 {errors.price && <CFormText className="text-danger">{errors.price}</CFormText>}
               </CCol>
 
-
-              
-
-             
-               <CCol md={3}>
+              <CCol md={3}>
                 <h6>
                   Discount (%) <span className="text-danger">*</span>
                 </h6>
@@ -1568,7 +1506,7 @@ const handleChanges = async (e) => {
                   <CFormText className="text-danger">{errors.discount}</CFormText>
                 )}
               </CCol>
-               <CCol md={3}>
+              <CCol md={3}>
                 <h6>
                   GST (%)<span className="text-danger">*</span>
                 </h6>
@@ -1580,7 +1518,7 @@ const handleChanges = async (e) => {
                   }
                 />
               </CCol>
-            <CCol md={3}>
+              <CCol md={3}>
                 <h6>Other Taxes(%)</h6>
                 <CFormInput
                   type="number"
@@ -1598,7 +1536,7 @@ const handleChanges = async (e) => {
                 )}
               </CCol>
 
-              
+
             </CRow>
 
             <h6 className="m-3">Procedure (Optional)</h6>
@@ -1633,24 +1571,89 @@ const handleChanges = async (e) => {
 
       {loading ? (
         <div
-          style={{ display: 'flex', justifyContent: 'center', height: '300px', fontSize: '1.5rem' }}
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '300px',
+            fontSize: '1.5rem',
+            color: '#555',
+          }}
         >
           Loading...
         </div>
       ) : error ? (
         <div
-          style={{ display: 'flex', justifyContent: 'center', height: '300px', fontSize: '1.5rem' }}
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '300px',
+            fontSize: '1.2rem',
+            color: 'red',
+          }}
         >
           {error}
         </div>
       ) : (
-        <DataTable
-          columns={columns}
-          data={filteredData.length > 0 ? filteredData : service}
-          pagination
-          highlightOnHover
-          pointerOnHover
-        />
+        <div
+          className="border rounded p-3 shadow-sm"
+          style={{
+            backgroundColor: '#fff',
+            borderColor: '#e0e0e0',
+          }}
+        >
+          <DataTable
+            columns={columns}
+            data={filteredData.length > 0 ? filteredData : service}
+            pagination
+            paginationPerPage={5} // 👈 Default number of rows per page
+            paginationRowsPerPageOptions={[5, 10, 15, 20, 30, 40, 50]} // 👈 Dropdown options
+            highlightOnHover
+            pointerOnHover
+            customStyles={{
+              table: {
+                style: {
+                  backgroundColor: '#fff',
+
+                },
+              },
+              headRow: {
+                style: {
+                  backgroundColor: '#a5c4d4ff',
+                  minHeight: '52px',
+                },
+              },
+              headCells: {
+                style: {
+                  color: '#7e3a93',
+                  fontWeight: '600',
+                  fontSize: '0.95rem',
+
+
+                },
+              },
+
+              cells: {
+                style: {
+
+                  fontSize: '0.9rem',
+                  color: '#7e3a93',
+                  padding: '12px 14px',
+                },
+              },
+              pagination: {
+                style: {
+                  borderTop: '1px solid #e0e0e0',
+                  color: '#7e3a93',
+                  fontWeight: 500,
+                  padding: '10px',
+                },
+              },
+            }}
+          />
+
+        </div>
       )}
     </div>
   )

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
+import axios from 'axios'
 import {
   CButton,
   CTable,
@@ -45,6 +46,7 @@ import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import Select from 'react-select'
 import { TestDataById } from '../TestsManagement/TestsManagementAPI'
+import { BASE_URL } from '../../baseUrl'
 const ReportDetails = () => {
   const { id } = useParams()
   const location = useLocation()
@@ -103,32 +105,33 @@ const ReportDetails = () => {
     fetchTestNames()
   }, [])
 
-  useEffect(() => {
-    // Simulate an API call with dummy data
-    const fetchDummyRecommendedTests = () => {
-      // For now, display dummy data
-      const dummyData = [
-        { id: 1, testName: 'Complete Blood Count (CBC)' },
-        { id: 2, testName: 'Liver Function Test (LFT)' },
-        { id: 3, testName: 'Thyroid Profile (T3, T4, TSH)' },
-      ]
-      setRecommendedTests(dummyData)
+ 
+   useEffect(() => {
+  const fetchRecommendedTests = async () => {
+    try {
+      if (!appointmentInfo?.bookingId) return
+
+      const response = await axios.get(
+        `${BASE_URL}/getReportByBookingId/${appointmentInfo.bookingId}`
+      )
+
+      console.log("Recommended Tests API =>", response.data)
+
+      const reportsArray = response.data?.data || []
+
+      // flatten all reportsList items
+      const extracted =
+        reportsArray.flatMap(item => item.reportsList || [])
+
+      setRecommendedTests(extracted)
+    } catch (error) {
+      console.error("Error fetching recommended tests:", error)
     }
+  }
 
-    fetchDummyRecommendedTests()
-  }, [])
-  //   useEffect(() => {
-  //   const fetchRecommendedTests = async () => {
-  //     try {
-  //       const response = await http.get(/getRecommendedTests?bookingId=${bookingId}&patientId=${patientId})
-  //       setRecommendedTests(response.data)
-  //     } catch (error) {
-  //       console.error('Error fetching recommended tests:', error)
-  //     }
-  //   }
+  fetchRecommendedTests()
+}, [appointmentInfo?.bookingId])
 
-  //   fetchRecommendedTests()
-  // }, [bookingId, patientId])
 
   const patientId =
     appointmentInfo?.patientId ||
@@ -242,34 +245,43 @@ const ReportDetails = () => {
   }, [appointmentInfo?.bookingId])
 
   // Handle file input change and convert to Base64
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files)
-    if (!files.length) return
+ const handleFileChange = (e) => {
+  const files = Array.from(e.target.files)
+  if (!files.length) return
 
-    const readers = files.map(
-      (file) =>
-        new Promise((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onloadend = () => {
-            const base64String = reader.result.split(',')[1] // remove "data:*/*;base64,"
-            resolve(base64String)
-          }
-          reader.onerror = reject
-          reader.readAsDataURL(file)
-        }),
-    )
+  // validate only pdf
+  const pdfFiles = files.filter(file => file.type === "application/pdf")
 
-    Promise.all(readers)
-      .then((base64Files) => {
-        setNewReport((prev) => ({
-          ...prev,
-          reportFile: base64Files, // 👈 array of base64 strings
-        }))
-      })
-      .catch((error) => {
-        console.error('Error reading files:', error)
-      })
+  if (pdfFiles.length !== files.length) {
+    alert("Only PDF files are allowed!")
+    e.target.value = "" // reset input
+    return
   }
+
+  const readers = pdfFiles.map(
+    (file) =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          const base64String = reader.result.split(",")[1]
+          resolve(base64String)
+        }
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+  )
+
+  Promise.all(readers)
+    .then((base64Files) => {
+      setNewReport((prev) => ({
+        ...prev,
+        reportFile: base64Files,
+      }))
+    })
+    .catch((error) => {
+      console.error("Error reading files:", error)
+    })
+}
 
   // Handle report upload submission
   const handleUploadSubmit = async () => {
@@ -448,17 +460,19 @@ const ReportDetails = () => {
               <p>
                 <strong>Recommended Test:</strong>
               </p>
-              {recommendedTests.length > 0 ? (
-  <ul style={{ display: 'flex', flexWrap: 'wrap', listStyleType: 'disc', paddingLeft: '20px', gap: '20px' }}>
-    {recommendedTests.map((test) => (
-      <li key={test.id} style={{ marginRight: '20px' }}>
-        {test.testName}
+        {recommendedTests.length > 0 ? (
+  <ul style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+    {recommendedTests.map((test, index) => (
+      <li key={test.id || index}>
+        {test.reportName}
       </li>
     ))}
   </ul>
 ) : (
   <p>No recommended tests found.</p>
 )}
+
+
             
           </div>
           
@@ -871,13 +885,13 @@ const ReportDetails = () => {
               />
             </div>
             <div className="mb-2">
-              <CFormLabel>Upload File (PDF or Image)
+              <CFormLabel>Upload File (PDF)
                 <span style={{ color: 'red' }}>*</span>
               </CFormLabel>
               <CFormInput
                 type="file"
                 multiple
-                accept="image/*,application/pdf"
+                accept="application/pdf"
                 onChange={handleFileChange}
               />
             </div>
