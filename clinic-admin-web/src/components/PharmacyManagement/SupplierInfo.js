@@ -396,7 +396,7 @@ const SupplierInfo = () => {
           />
           {error.gstNumber && <div className="invalid-feedback">{error.gstNumber}</div>}
           <CFormLabel className="mt-2">
-            APGST / Reg No <span className="text-danger">*</span>
+             Reg No <span className="text-danger">*</span>
           </CFormLabel>
           <CFormInput
             value={form.registrationNumber}
@@ -617,7 +617,7 @@ const SupplierInfo = () => {
           border: '1px solid #B5D9FF',
         }}
       >
-        <CFormLabel className="fw-bold me-2 mb-0">Search</CFormLabel>
+        {/* <CFormLabel className="fw-bold me-2 mb-0">Search</CFormLabel>
 
         <CFormInput
           type="text"
@@ -626,17 +626,23 @@ const SupplierInfo = () => {
           onChange={(e) => setSearch(e.target.value)}
           style={{ width: '160px', height: '25px', padding: '0 5px' }}
           className="me-3"
-        />
+        /> */}
+<div className="d-flex justify-content-end">
+  <CButton
+    onClick={handleFinalSave}
+    style={{
+      color: 'var(--color-black)',
+      backgroundColor: 'var(--color-bgcolor)',
+    }}
+  >
+    Save
+  </CButton>
+</div>
 
-        <CIcon
-          icon={cilSave}
-          size="lg"
-          className="mx-1"
-          style={{ cursor: 'pointer' }}
-          onClick={handleFinalSave}
-        />
-        <CIcon icon={cilPrint} size="lg" className="mx-1" style={{ cursor: 'pointer' }} />
-        <CIcon icon={cilMagnifyingGlass} size="lg" className="mx-1" style={{ cursor: 'pointer' }} />
+
+
+        {/* <CIcon icon={cilPrint} size="lg" className="mx-1" style={{ cursor: 'pointer' }} /> */}
+        {/* <CIcon icon={cilMagnifyingGlass} size="lg" className="mx-1" style={{ cursor: 'pointer' }} /> */}
       </div>
 
       {/* CITY MODAL */}

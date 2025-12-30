@@ -408,7 +408,7 @@ const OPSales = ({ getAllOpSales }) => {
           </div>
         </div>
 
-        <div
+        {/* <div
           style={{
             position: 'relative',
             flex: 1,
@@ -417,8 +417,8 @@ const OPSales = ({ getAllOpSales }) => {
             padding: 12,
             background: 'white',
           }}
-        >
-          <div
+        > */}
+          {/* <div
             style={{
               position: 'absolute',
               top: -12,
@@ -448,8 +448,8 @@ const OPSales = ({ getAllOpSales }) => {
               Reg.Date:
             </CFormLabel>
             <span className="fw-semibold">{roomDetails?.regDate || '--'}</span>
-          </div>
-        </div>
+          </div> */}
+        {/* </div> */}
       </div>
 
       {/* Entry controls */}

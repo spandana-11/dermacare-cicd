@@ -400,19 +400,69 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
     @Override
     public Response updateDoctorDetails(String id, DoctorSaveDetailsDTO dto) {
         Optional<DoctorSaveDetails> optional = repository.findById(id);
-        if (optional.isPresent()) {
-        	ObjectMapper mapper = new ObjectMapper();
-        	mapper.registerModule(new JavaTimeModule());
-        	mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-            DoctorSaveDetails updated = mapper.convertValue(dto, DoctorSaveDetails.class);
-            updated.setId(id);
-            DoctorSaveDetails saved = repository.save(updated);
-            DoctorSaveDetailsDTO savedDto = convertToDto(saved);
-            return buildResponse(true, savedDto, "Doctor details updated successfully", HttpStatus.OK.value());
-        } else {
+
+        if (optional.isEmpty()) {
             return buildResponse(false, null, "Doctor details not found", HttpStatus.NOT_FOUND.value());
         }
+
+        DoctorSaveDetails existing = optional.get();
+
+        // 🔹 Map DTO -> Entity using Spring's ObjectMapper
+        DoctorSaveDetails updated = objectMapper.convertValue(dto, DoctorSaveDetails.class);
+
+        // 🔹 Preserve DB identity
+        updated.setId(existing.getId());
+
+        // 🔹 If prescription is null in DTO, keep existing prescription
+        if (updated.getPrescription() == null) {
+            updated.setPrescription(existing.getPrescription());
+        }
+
+        // 🔹 Ensure all nested Medicines have non-null IDs
+        fixMedicineIds(updated, existing);
+
+        DoctorSaveDetails saved = repository.save(updated);
+        DoctorSaveDetailsDTO savedDto = convertToDto(saved);
+
+        return buildResponse(true, savedDto, "Doctor details updated successfully", HttpStatus.OK.value());
     }
+
+    /**
+     * Copies old medicine IDs where possible and generates new IDs for any medicines with null id.
+     */
+    private void fixMedicineIds(DoctorSaveDetails updated, DoctorSaveDetails existing) {
+        if (updated.getPrescription() == null || updated.getPrescription().getMedicines() == null) {
+            return;
+        }
+
+        List<Medicines> updatedMeds = updated.getPrescription().getMedicines();
+
+        List<Medicines> existingMeds = null;
+        if (existing.getPrescription() != null) {
+            existingMeds = existing.getPrescription().getMedicines();
+        }
+
+        // 1) Try to reuse IDs from existing list (by index)
+        if (existingMeds != null && !existingMeds.isEmpty()) {
+            int size = Math.min(existingMeds.size(), updatedMeds.size());
+            for (int i = 0; i < size; i++) {
+                Medicines u = updatedMeds.get(i);
+                Medicines e = existingMeds.get(i);
+
+                if (u.getId() == null && e.getId() != null) {
+                    u.setId(e.getId());
+                }
+            }
+        }
+
+        // 2) For any remaining null IDs, generate new UUIDs
+        for (Medicines med : updatedMeds) {
+            if (med.getId() == null) {
+                med.setId(UUID.randomUUID());
+            }
+        }
+    }
+
 
     @Override
     public Response updateDoctorDetailsByBookingId(String id, DoctorSaveDetailsDTO dto) {
@@ -785,7 +835,9 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
             List<DoctorSaveDetails> visits = repository.findByPatientId(patientId);
 
             if (visits.isEmpty()) {
-                return buildResponse(true, null, "No visit history found for the patient ID", HttpStatus.OK.value());
+                return buildResponse(true, null,
+                        "No visit history found for the patient ID",
+                        HttpStatus.OK.value());
             }
 
             if (doctorId != null && !doctorId.isBlank()) {
@@ -794,7 +846,9 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                         .collect(Collectors.toList());
 
                 if (visits.isEmpty()) {
-                    return buildResponse(true, null, "No visit history found for the patient with the specified doctor ID", HttpStatus.OK.value());
+                    return buildResponse(true, null,
+                            "No visit history found for the patient with the specified doctor ID",
+                            HttpStatus.OK.value());
                 }
             }
 
@@ -809,17 +863,25 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
                 return dt2.compareTo(dt1); // descending
             });
 
+            // 🔹 Convert to DTOs (which ignore nulls)
+            List<DoctorSaveDetailsDTO> visitDtos = visits.stream()
+                    .map(this::convertToDto)   // assuming you already have this method
+                    .collect(Collectors.toList());
+
             return buildResponse(true, Map.of(
-                "patientId", patientId,
-                "doctorId", doctorId,
-                "totalVisits", visits.size(),
-                "visitHistory", visits
+                    "patientId", patientId,
+                    "doctorId", doctorId,
+                    "totalVisits", visitDtos.size(),
+                    "visitHistory", visitDtos
             ), "Visit history fetched successfully", HttpStatus.OK.value());
 
         } catch (Exception e) {
-            return buildResponse(false, null, "Error fetching visit history: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return buildResponse(false, null,
+                    "Error fetching visit history: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+
     @Override
     public Response getInProgressDetails(String patientId, String bookingId) {
         try {

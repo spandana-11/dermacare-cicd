@@ -11,7 +11,7 @@ const FileInput = ({
   errors,
   setErrors,
   inputRef,
-  maxSize = 100 * 1024, // default 100 KB
+  maxSize = 250 * 1024, // default 250 KB
   required = true,       // <-- new prop
 }) => {
   const handleClearFile = () => {
@@ -43,15 +43,15 @@ const FileInput = ({
     ];
     const allowedExtensions = ["pdf", "doc", "docx", "jpeg", "jpg", "png", "zip"];
     const ext = file.name.split(".").pop().toLowerCase();
-    if(!file.type && ["jpg", "jpeg", "png"].includes(ext)){
-      file.type=`image/${ext==="jpg"?"jpeg":ext}`;
+    if (!file.type && ["jpg", "jpeg", "png"].includes(ext)) {
+      file.type = `image/${ext === "jpg" ? "jpeg" : ext}`;
     }
-    const isTypeAllowed=
-    (file.type && allowedTypes.includes(file.type)) || 
-    allowedExtensions.includes(ext);
-    if(!isTypeAllowed){
-      setErrors((prev)=>({...prev, [name]:"Invalid file type"}));
-      setFormData((prev)=>({...prev, [name]:null}));
+    const isTypeAllowed =
+      (file.type && allowedTypes.includes(file.type)) ||
+      allowedExtensions.includes(ext);
+    if (!isTypeAllowed) {
+      setErrors((prev) => ({ ...prev, [name]: "Invalid file type" }));
+      setFormData((prev) => ({ ...prev, [name]: null }));
       return;
     }
     if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(ext)) {

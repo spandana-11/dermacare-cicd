@@ -65,11 +65,11 @@ const ClinicDetails = () => {
   const [isEditingAdditional, setIsEditingAdditional] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [showBranchForm, setShowBranchForm] = useState(false)
-  const tabList = ['Basic Details', 'Additional Details', 'Branches', 'Procedures']
+  const tabList = ['Basic Details', 'ADrug License Certificatedditional Details', 'Branches', 'Procedures']
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [itemsPerPage, setItemsPerPage] = useState(5)
   const documentFields = [
-    ['Drug License Certificate', 'drugLicenseCertificate'],
+    ['', 'drugLicenseCertificate'],
     ['Drug License Form Type', 'drugLicenseFormType'],
     ['Pharmacist Certificate', 'pharmacistCertificate'],
     ['Clinical Establishment Certificate', 'clinicalEstablishmentCertificate'],
@@ -90,7 +90,7 @@ const ClinicDetails = () => {
         errors.name = 'Clinic Name is required'
       } else if (name.length < 3) {
         errors.name = 'Clinic Name must be at least 3 characters'
-      } 
+      }
 
       const number = editableClinicData.contactNumber?.trim() || ''
       if (!number) {
@@ -139,6 +139,9 @@ const ClinicDetails = () => {
       }
       if (!editableClinicData.branch?.trim()) {
         errors.branch = "Branch name is required"
+      }
+      if (!editableClinicData.address?.trim()) {
+        errors.address = "Address is required"
       }
       if (!editableClinicData.freeFollowUps) {
         errors.freeFollowUps = "Free Follow Ups is required"
@@ -1192,6 +1195,38 @@ const ClinicDetails = () => {
                         <CFormFeedback invalid>{formErrors.branch}</CFormFeedback>
                       )}
                     </CCol>
+                    <CCol md={6}>
+                      <CFormLabel>Address<span className="text-danger">*</span></CFormLabel>
+                      <CFormInput
+                        type="text"
+                        value={editableClinicData.address ?? ''}
+                        disabled={!isEditingAdditional}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setEditableClinicData((prev) => ({
+                            ...prev,
+                            address: value,
+                          }))
+                          let error = '';
+                          if (!value.trim()) {
+                            error = "Address is required"
+                          }
+                          setFormErrors((prev) => {
+                            const newErrors = { ...prev };
+                            if (error) {
+                              newErrors.address = error;
+                            } else {
+                              delete newErrors.address;
+                            }
+                            return newErrors;   // ✅ must return
+                          });
+                        }}
+                        invalid={!!formErrors.address}
+                      />
+                      {formErrors.address && (
+                        <CFormFeedback invalid>{formErrors.address}</CFormFeedback>
+                      )}
+                    </CCol>
                   </CRow>
 
                   {isEditingAdditional ? (
@@ -1254,8 +1289,8 @@ const ClinicDetails = () => {
               </CTabPane>
             </CTabContent>
 
-            <CModal visible={showDeleteModal} onClose={() => setShowDeleteModal(false)}  className="custom-modal"
-        backdrop="static">
+            <CModal visible={showDeleteModal} onClose={() => setShowDeleteModal(false)} className="custom-modal"
+              backdrop="static">
               <CModalHeader>Delete Clinic</CModalHeader>
               <CModalBody>Are you sure you want to delete this clinic?</CModalBody>
               <CModalFooter>

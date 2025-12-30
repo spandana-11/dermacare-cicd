@@ -5,10 +5,32 @@ import { cilContrast } from '@coreui/icons'
 
 // Theme options
 const themeOptions = {
-  classic: { name: 'Classic', bgcolor: '#a5c4d4ff', black: '#7e3a93' }, // default
-  light: { name: 'Light', bgcolor: '#ffffff', black: '#bd2d2dff' },
-  neutral: { name: 'Neutral', bgcolor: '#f3f4f7', black: '#333333' },
-  ocean: { name: 'Ocean', bgcolor: '#6898c9ff', black: '#1b4ca0ff' },
+  classic: {
+    name: 'Classic',
+    bgcolor: '#a5c4d4', // Calm blue
+    black: '#7e3a93',   // Brand purple
+  },
+  elegant: {
+    name: 'Elegant',
+    bgcolor: '#f5f3fa', // Lavender-tinted white
+    black: '#5a2d82',   // Deep violet
+  },
+  ocean: {
+    name: 'Ocean',
+    bgcolor: '#dae8ff', // Soft sky blue
+    black: '#1b4ca0',   // Navy blue text
+  },
+  sunset: {
+    name: 'Sunset',
+    bgcolor: '#fff1e6', // Light peach background
+    black: '#b34700',   // Deep warm orange
+  },
+  forest: {
+    name: 'Forest',
+    bgcolor: '#e3f2ed', // Misty green
+    black: '#2f6658',   // Deep emerald
+  },
+
 }
 
 const ThemeSelector = () => {

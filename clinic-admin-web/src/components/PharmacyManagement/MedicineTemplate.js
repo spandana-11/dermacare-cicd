@@ -126,6 +126,8 @@ const MedicineTemplate = () => {
   const validateForm = () => {
     const errors = {}
  const medicineRegex = /^[A-Za-z0-9\s.,\-()\/+%]*$/
+ const licenseRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d-\/ ]+$/;
+
     // ✅ Must contain at least one alphabet
     const hasAlphabet = /[A-Za-z]/
 
@@ -690,71 +692,99 @@ const MedicineTemplate = () => {
                 <small className="text-danger">{formErrors.nameAndAddressOfTheManufacturer}</small>
               )}
             </CCol>
-            <CCol md={6}>
-              <CFormInput
-                type="month"
-                label={
-                  <>
-                    Manufacturing Date <span className="text-danger">*</span>
-                  </>
-                }
-                value={formData.dateOfManufacturing || ''}
-                onChange={(e) => {
-                  const selectedMfg = e.target.value
-                  handleChange('dateOfManufacturing', selectedMfg)
+          <CCol md={6}>
+  <CFormInput
+    type="date"
+    label={
+      <>
+        Manufacturing Date <span className="text-danger">*</span>
+      </>
+    }
+    value={formData.dateOfManufacturing || ''}
+    onKeyDown={(e) => e.preventDefault()}
+    onPaste={(e) => e.preventDefault()}
+    onDrop={(e) => e.preventDefault()}
+    style={{ cursor: 'pointer' }}
+    onChange={(e) => {
+      const selectedMfg = e.target.value
+      handleChange('dateOfManufacturing', selectedMfg)
 
-                  // If expiry date exists and is before manufacturing, reset it
-                  if (formData.dateOfExpriy && formData.dateOfExpriy <= selectedMfg) {
-                    handleChange('dateOfExpriy', '')
-                  }
-                }}
-              />
-              {formErrors.dateOfManufacturing && (
-                <small className="text-danger">{formErrors.dateOfManufacturing}</small>
-              )}
-            </CCol>
+      if (formData.dateOfExpriy && formData.dateOfExpriy <= selectedMfg) {
+        handleChange('dateOfExpriy', '')
+      }
+    }}
+  />
+  {formErrors.dateOfManufacturing && (
+    <small className="text-danger">{formErrors.dateOfManufacturing}</small>
+  )}
+</CCol>
 
-            <CCol md={6}>
-              <CFormInput
-                type="month"
-                label={
-                  <>
-                    Expiry Date <span className="text-danger">*</span>
-                  </>
-                }
-                value={formData.dateOfExpriy || ''}
-                min={formData.dateOfManufacturing || undefined} // prevents selecting before MFG
-                onChange={(e) => {
-                  const selectedExp = e.target.value
-                  if (formData.dateOfManufacturing && selectedExp <= formData.dateOfManufacturing) {
-                    showCustomToast('Expiry date must be after Manufacturing date', 'error')
-                    return
-                  }
-                  handleChange('dateOfExpriy', selectedExp)
-                }}
-              />
-              {formErrors.dateOfExpriy && (
-                <small className="text-danger">{formErrors.dateOfExpriy}</small>
-              )}
-            </CCol>
+<CCol md={6}>
+  <CFormInput
+    type="date"
+    label={
+      <>
+        Expiry Date <span className="text-danger">*</span>
+      </>
+    }
+    value={formData.dateOfExpriy || ''}
+    min={formData.dateOfManufacturing || undefined}
+    onKeyDown={(e) => e.preventDefault()}
+    onPaste={(e) => e.preventDefault()}
+    onDrop={(e) => e.preventDefault()}
+    style={{ cursor: 'pointer' }}
+    onChange={(e) => {
+      const selectedExp = e.target.value
+      if (formData.dateOfManufacturing && selectedExp <= formData.dateOfManufacturing) {
+        showCustomToast('Expiry date must be after Manufacturing date', 'error')
+        return
+      }
+      handleChange('dateOfExpriy', selectedExp)
+    }}
+  />
+  {formErrors.dateOfExpriy && (
+    <small className="text-danger">{formErrors.dateOfExpriy}</small>
+  )}
+</CCol>
 
-            <CCol md={6}>
-              <CFormInput
-                label={
-                  <>
-                    License Number <span className="text-danger">*</span>
-                  </>
-                }
-                value={formData.manufacturingLicenseNumber || ''}
-                onChange={(e) => {
-                  const onlyNums = e.target.value // allow digits only
-                  handleChange('manufacturingLicenseNumber', onlyNums)
-                }}
-              />
-              {formErrors.manufacturingLicenseNumber && (
-                <small className="text-danger">{formErrors.manufacturingLicenseNumber}</small>
-              )}
-            </CCol>
+
+         <CCol md={6}>
+  <CFormInput
+    label={
+      <>
+        License Number <span className="text-danger">*</span>
+      </>
+    }
+    value={formData.manufacturingLicenseNumber || ''}
+    onChange={(e) => {
+      const value = e.target.value
+
+      handleChange('manufacturingLicenseNumber', value)
+
+      const licenseRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d-\/ ]+$/
+
+      if (!value) {
+        setFormErrors((prev) => ({
+          ...prev,
+          manufacturingLicenseNumber: 'License Number is required',
+        }))
+      } else if (!licenseRegex.test(value)) {
+        setFormErrors((prev) => ({
+          ...prev,
+          manufacturingLicenseNumber:
+            'License number must contain both letters and numbers',
+        }))
+      } else {
+        setFormErrors((prev) => ({ ...prev, manufacturingLicenseNumber: '' }))
+      }
+    }}
+  />
+
+  {formErrors.manufacturingLicenseNumber && (
+    <small className="text-danger">{formErrors.manufacturingLicenseNumber}</small>
+  )}
+</CCol>
+
 
             <CCol md={6}>
               <CFormInput

@@ -40,6 +40,8 @@ import {
   deleteCategoryData,
 } from './CategoryAPI'
 import { ConfirmationModal } from '../../Utils/ConfirmationDelete'
+import { COLORS } from '../../Constant/Themes'
+import LoadingIndicator from '../../Utils/loader'
 
 const CategoryManagement = () => {
   const fileInputRef = useRef(null)
@@ -74,7 +76,7 @@ const CategoryManagement = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [itemsPerPage, setItemsPerPage] = useState(5)
 
   const fetchData = async () => {
     setLoading(true)
@@ -419,7 +421,8 @@ const CategoryManagement = () => {
       <CCardHeader>
         <div className="d-flex justify-content-between align-items-center">
           <h5 className="mb-0">Categories</h5>
-          <CButton color="primary" onClick={() => setModalVisible(true)}>
+          <CButton color="secondary"
+            style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }} onClick={() => setModalVisible(true)}>
             Add Category
           </CButton>
         </div>
@@ -432,108 +435,86 @@ const CategoryManagement = () => {
             <CInputGroup style={{ width: '300px' }}>
               <CFormInput
                 type="text"
+                style={{ border: "1px solid #7e3a93" }}
                 placeholder="Search by Category Name"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
 
-              <CInputGroupText>
+              <CInputGroupText style={{ border: "1px solid #7e3a93" }}>
                 <CIcon icon={cilSearch} />
               </CInputGroupText>
             </CInputGroup>
           </div>
         </CForm>
-
-        <CTable striped hover responsive>
-          <CTableHead className='pink-table'>
-            <CTableRow>
-              <CTableHeaderCell>S.No</CTableHeaderCell>
-              <CTableHeaderCell>Category Name</CTableHeaderCell>
-              <CTableHeaderCell className="text-end">
-                Actions
-              </CTableHeaderCell>
-            </CTableRow>
-          </CTableHead>
-          <CTableBody className='pink-table'>
-            {currentItems.length > 0 ? (
-              currentItems.map((category, index) => (
-                <CTableRow key={category.categoryId}>
-                  <CTableDataCell>
-                    {(currentPage - 1) * itemsPerPage + index + 1}
-                  </CTableDataCell>
-                  <CTableDataCell>{category.categoryName}</CTableDataCell>
-                  <CTableDataCell className="text-end">
-                    <div className="d-flex justify-content-end gap-2">
-                      {/* {can('category', 'read')&&( */}
-                      <button
-                        className="actionBtn"
-                        onClick={() => setViewCategory(category)}
-                        title="View"
-                      >
-                        <Eye size={18} />
-                      </button>
-                      {/* )} */}
-                      {/* {can('Treatments', 'update') &&( */}
-                      <button
-                        className="actionBtn"
-                        onClick={() => handleCategoryEdit(category)}
-                        title="Edit"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      {/* )} */}
-                      {/* {can('Treatments', 'delete')&&( */}
-                      <button
-                        className="actionBtn"
-                        onClick={() => handleCategoryDelete(category.categoryId)}
-                        title="Delete"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                      {/* )} */}
-                    </div>
-                  </CTableDataCell>
-                  {/* <CTableDataCell className="text-center">
-                    <CButton
-    color="primary"
-    size="sm"
-    onClick={() => setViewCategory(row)}
-  >
-    View
-  </CButton>
-  <CButton
-    color="warning"
-    className="ms-2"
-    size="sm"
-    onClick={() => handleCategoryEdit(row)}
-  >
-    Edit
-  </CButton>
-  <CButton
-    color="danger"
-    className="ms-2"
-    size="sm"
-    onClick={() => handleCategoryDelete(row.categoryId)}
-  >
-    Delete
-  </CButton>
-                  </CTableDataCell> */}
-                </CTableRow>
-              ))
-            ) : (
+        {loading ? (
+          <LoadingIndicator message="Fetching Categories, please wait..." />
+        ) : error ? (
+          <div>{error}</div>
+        ) : (
+          <CTable striped hover responsive>
+            <CTableHead className="pink-table">
               <CTableRow>
-                <CTableDataCell colSpan={3} className="text-center text-muted">
-                  {searchQuery
-                    ? 'No matching categories found.'
-                    : 'No categories available.'}
-                </CTableDataCell>
+                <CTableHeaderCell className="text-center">S.No</CTableHeaderCell>
+                <CTableHeaderCell>Category Name</CTableHeaderCell>
+                <CTableHeaderCell className="text-center">Actions</CTableHeaderCell>
               </CTableRow>
-            )}
-          </CTableBody>
-        </CTable>
+            </CTableHead>
+
+            <CTableBody className="pink-table">
+              {currentItems.length > 0 ? (
+                currentItems.map((category, index) => (
+                  <CTableRow key={category.categoryId}>
+                    <CTableDataCell className="text-center">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </CTableDataCell>
+
+                    <CTableDataCell>{category.categoryName}</CTableDataCell>
+
+                    <CTableDataCell className="text-center">
+                      <div className="d-flex justify-content-center align-items-center gap-2">
+                        <button
+                          className="actionBtn view"
+                          onClick={() => setViewCategory(category)}
+                          title="View"
+                        >
+                          <Eye size={18} />
+                        </button>
+
+                        <button
+                          className="actionBtn edit"
+                          onClick={() => handleCategoryEdit(category)}
+                          title="Edit"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+
+                        <button
+                          className="actionBtn delete"
+                          onClick={() => handleCategoryDelete(category.categoryId)}
+                          title="Delete"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </CTableDataCell>
+                  </CTableRow>
+                ))
+              ) : (
+                <CTableRow>
+                  <CTableDataCell colSpan={3} className="text-center text-muted">
+                    {searchQuery
+                      ? 'No matching categories found.'
+                      : 'No categories available.'}
+                  </CTableDataCell>
+                </CTableRow>
+              )}
+            </CTableBody>
+          </CTable>
+        )}
 
         {/* Pagination */}
-        {filteredData.length > itemsPerPage && (
+        {filteredData.length && (
           <div className="d-flex justify-content-between align-items-center mt-3">
             <div>
               <span className="me-2">Rows per page:</span>
@@ -586,52 +567,81 @@ const CategoryManagement = () => {
           </div>
         )}
       </CCardBody>
-
       {/* View Category Modal */}
       {viewCategory && (
         <CModal
           visible={!!viewCategory}
           onClose={() => setViewCategory(null)}
-          size="md"
-           className="custom-modal"
-        backdrop="static"
+          size="lg"
+          backdrop="static"
+          className="category-details-modal"
         >
-          <CModalHeader>
-            <CModalTitle>Category Details</CModalTitle>
+          {/* Header */}
+          <CModalHeader className="bg-info text-white text-center justify-content-center">
+            <CModalTitle className="fw-bold fs-4" style={{ color: "white" }}>
+              <i className="bi bi-tags-fill me-2"></i> Category Details
+            </CModalTitle>
           </CModalHeader>
-          <CModalBody>
-            <CRow className="mb-3">
-              <CCol sm={4}>
-                <strong>Category ID :</strong>
-              </CCol>
-              <CCol sm={8}>{viewCategory.categoryId}</CCol>
-            </CRow>
-            <CRow className="mb-3">
-              <CCol sm={4}>
-                <strong>Category Name :</strong>
-              </CCol>
-              <CCol sm={8}>{viewCategory.categoryName}</CCol>
-            </CRow>
-            <CRow>
-              <CCol sm={4}>
-                <strong>Category Image :</strong>
-              </CCol>
-              <CCol sm={8}>
-                {viewCategory.categoryImage ? (
-                  <img
-                    src={`data:image/png;base64,${viewCategory.categoryImage}`}
-                    alt="Category"
-                    style={{ width: '200px', height: 'auto' }}
-                  />
-                ) : (
-                  <span>No image available</span>
-                )}
-              </CCol>
-            </CRow>
+
+          {/* Body */}
+          <CModalBody className="bg-light">
+            {viewCategory ? (
+              <div className="p-3">
+                <CCard className="shadow-sm border-0 rounded-4 overflow-hidden">
+                  {viewCategory.categoryImage && (
+                    <div className="text-center bg-white py-3 border-bottom">
+                      <img
+                        src={`data:image/png;base64,${viewCategory.categoryImage}`}
+                        alt="Category"
+                        style={{
+                          maxWidth: "180px",
+                          borderRadius: "12px",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <CCardBody>
+                    <CRow className="gy-3">
+                      <CCol sm={6}>
+                        <p className="mb-1 text-secondary fw-semibold">Category ID</p>
+                        <p className="fs-6 fw-bold text-dark">
+                          {viewCategory.categoryId || "N/A"}
+                        </p>
+                      </CCol>
+
+                      <CCol sm={6}>
+                        <p className="mb-1 text-secondary fw-semibold">Category Name</p>
+                        <p className="fs-6 fw-bold text-dark">
+                          {viewCategory.categoryName || "N/A"}
+                        </p>
+                      </CCol>
+                    </CRow>
+                  </CCardBody>
+                </CCard>
+              </div>
+            ) : (
+              <div className="text-center py-4 text-muted">
+                <i className="bi bi-exclamation-triangle fs-3 text-warning"></i>
+                <p className="mt-2">No details available</p>
+              </div>
+            )}
           </CModalBody>
+
+          {/* Footer */}
+          <CModalFooter className="justify-content-center">
+            <CButton
+              color="light"
+              className="px-4 py-2 border-0 shadow-sm"
+              style={{ backgroundColor: '#6c757d', color: 'white', borderRadius: '8px' }}
+              onClick={() => setViewCategory(null)}
+            >
+              Close
+            </CButton>
+          </CModalFooter>
         </CModal>
       )}
-
 
       <CModal visible={modalVisible} onClose={handleCancelAdd} backdrop="static" className='custom-modal'>
         <CModalHeader>
@@ -773,7 +783,7 @@ const CategoryManagement = () => {
           setErrors({ categoryName: '', categoryImage: '' })
           setEditCategoryMode(false)
         }}
-       backdrop="static" className='custom-modal'
+        backdrop="static" className='custom-modal'
       >
         <CModalHeader>
           <CModalTitle>Edit Category</CModalTitle>

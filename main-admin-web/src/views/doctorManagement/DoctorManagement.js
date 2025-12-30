@@ -30,6 +30,7 @@ import {
   deleteServiceData,
 } from './DoctorManagementAPI'
 import { left } from '@popperjs/core'
+import { COLORS } from '../../Constant/Themes'
 
 const ServiceManagement = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -194,7 +195,7 @@ const ServiceManagement = () => {
 
           <ConfirmationModal
             isVisible={isModalVisible}
-            message="Are you sure you want to delete this service?"
+            message="Are you sure you want to delete this doctor?"
             onConfirm={handleConfirmDelete}
             onCancel={handleCancelDelete}
           />
@@ -592,8 +593,9 @@ const ServiceManagement = () => {
           </div>
 
           <CButton
-            color="primary"
-            style={{ height: '40px', marginRight: '100px' }}
+             color="secondary"
+                          style={{ backgroundColor: 'var(--color-black)', color: COLORS.white , height: '40px', marginRight: '100px' }}
+
             onClick={() => setModalVisible(true)}
           >
             Add Service

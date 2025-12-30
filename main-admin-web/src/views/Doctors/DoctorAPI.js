@@ -1,13 +1,13 @@
 // doctorUtils.js
 
 import axios from 'axios'
-import { BASE_URL, getAllDoctors,deleteDoctor, getDoctorByClinicId, doctorAvailableUrl, addDoctorUrl, GetBranches_ByClinicId, getDoctorsByHospitalIdAndBranchId, UpdateDoctor,GetBy_DoctorId } from '../../baseUrl'
+import { ClinicBase_url, getAllDoctors,deleteDoctor, getDoctorByClinicId, doctorAvailableUrl, addDoctorUrl, GetBranches_ByClinicId, getDoctorsByHospitalIdAndBranchId, UpdateDoctor,GetBy_DoctorId, BASE_URL } from '../../baseUrl'
 import { toast } from 'react-toastify'
 
 // 🆕 Update Doctor Availability (true/false)
 export const updateDoctorAvailability = async (doctorId, isAvailable) => {
   try {
-    const url = `${BASE_URL}/${doctorAvailableUrl}/${doctorId}/availability`
+    const url = `${ClinicBase_url}/${doctorAvailableUrl}/${doctorId}/availability`
     console.log('Updating availability:', doctorId, isAvailable)
 
     const response = await axios.post(
@@ -31,7 +31,7 @@ export const updateDoctorAvailability = async (doctorId, isAvailable) => {
 export const handleDeleteToggle = async (doctorID) => {
   console.log(doctorID)
   try {
-    const response = await axios.delete(`${BASE_URL}/${deleteDoctor}/${doctorID}`)
+    const response = await axios.delete(`${ClinicBase_url}/${deleteDoctor}/${doctorID}`)
     console.log('Doctor deleted successfully:', response.data)
     // Optional: return true or response if needed
     return response
@@ -46,7 +46,7 @@ export const handleDeleteToggle = async (doctorID) => {
 export const DoctorData = async () => {
   console.log('appointdata calling')
   try {
-    const response = await axios.get(`${BASE_URL}/${getAllDoctors}`)
+    const response = await axios.get(`${ClinicBase_url}/${getAllDoctors}`)
     console.log(`appointdata calling ${response.data}`)
 
     console.log(response.data)
@@ -64,7 +64,7 @@ export const DoctorData = async () => {
 export const getDoctorByClinicIdData = async (clinicId) => {
   console.log('appointdata calling')
   try {
-    const response = await axios.get(`${BASE_URL}/${getDoctorByClinicId}/${clinicId}`)
+    const response = await axios.get(`${ClinicBase_url}/${getDoctorByClinicId}/${clinicId}`)
     console.log(`appointdata calling ${response.data}`)
 
     console.log(response.data)
@@ -82,7 +82,7 @@ export const getDoctorByClinicIdData = async (clinicId) => {
 export const getDoctorDetailsById = async (doctorId) => {
   console.log('doctorData calling')
   try {
-    const response = await axios.get(`${BASE_URL}/${GetBy_DoctorId}/${doctorId}`)
+    const response = await axios.get(`${ClinicBase_url}/${GetBy_DoctorId}/${doctorId}`)
     console.log(`doctorData calling ${response.data}`)
 
     console.log(response.data)
@@ -101,10 +101,10 @@ export const getDoctorDetailsById = async (doctorId) => {
 export const AddDoctorByAdmin = async (doctorData) => {
   try {
     console.log('🚀 AddDoctorByAdmin API Call:');
-    console.log('URL:', `${BASE_URL}/${addDoctorUrl}`);
+    console.log('URL:', `${ClinicBase_url}/${addDoctorUrl}`);
     console.log('Payload:', doctorData);
     
-    const response = await axios.post(`${BASE_URL}/${addDoctorUrl}`, doctorData, {
+    const response = await axios.post(`${ClinicBase_url}/${addDoctorUrl}`, doctorData, {
       headers: {
         "Content-Type": "application/json",
       },
@@ -152,7 +152,7 @@ export const getDoctorsByHospitalAndBranchId = async (clinicId, branchId) => {
   console.log('🔄 Fetching branch by clinicId and branchId...',clinicId, branchId)
   try {
     const response = await axios.get(
-      `${BASE_URL}/${getDoctorsByHospitalIdAndBranchId}/${clinicId}/${branchId}`
+      `${ClinicBase_url}/${getDoctorsByHospitalIdAndBranchId}/${clinicId}/${branchId}`
     )
     console.log(`✅ API Response:`, response.data)
     return response.data
@@ -169,10 +169,10 @@ export const getDoctorsByHospitalAndBranchId = async (clinicId, branchId) => {
 export const UpdateDoctorById = async (doctorId, doctorData) => {
   if (!doctorId) throw new Error("❌ Doctor ID is required");
 
-  const url = `${BASE_URL}/${UpdateDoctor}/${doctorId}`;
+  const url = `${ClinicBase_url}/${UpdateDoctor}/${doctorId}`;
   console.log("🔎 Update Doctor API URL:", url);
   console.log("📤 Payload being sent:", doctorData);
-console.log("🔗 URL called:", `${BASE_URL}/${UpdateDoctor}/${doctorId}`);
+console.log("🔗 URL called:", `${ClinicBase_url}/${UpdateDoctor}/${doctorId}`);
 
   try {
     const response = await axios.put(url, doctorData, {

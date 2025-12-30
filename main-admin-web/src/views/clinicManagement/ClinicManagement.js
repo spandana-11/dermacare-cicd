@@ -6,7 +6,7 @@ import { ClinicAllData } from '../../baseUrl'
 import { BASE_URL } from '../../baseUrl'
 import { ClipLoader } from 'react-spinners'
 import { useNavigate, useLocation } from 'react-router-dom'
-
+import { Eye } from 'lucide-react'
 import {
   CCard,
   CCardBody,
@@ -24,6 +24,8 @@ import {
   CFormSelect,
 } from '@coreui/react'
 import { CategoryData } from '../categoryManagement/CategoryAPI'
+import { COLORS } from '../../Constant/Themes'
+import LoadingIndicator from '../../Utils/loader'
 
 const ClinicManagement = ({ service, onBack }) => {
   const navigate = useNavigate()
@@ -37,7 +39,7 @@ const ClinicManagement = ({ service, onBack }) => {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [itemsPerPage, setItemsPerPage] = useState(5)
 
   const handleAddClinic = () => {
     navigate('/add-clinic', {
@@ -73,10 +75,10 @@ const ClinicManagement = ({ service, onBack }) => {
 
       const filteredClinics = filterCategory
         ? clinicList.filter(
-            (clinic) =>
-              Array.isArray(clinic.hospitalCategory) &&
-              clinic.hospitalCategory.some((cat) => cat.categoryId === filterCategory),
-          )
+          (clinic) =>
+            Array.isArray(clinic.hospitalCategory) &&
+            clinic.hospitalCategory.some((cat) => cat.categoryId === filterCategory),
+        )
         : clinicList
 
       setClinics(filteredClinics)
@@ -112,7 +114,8 @@ const ClinicManagement = ({ service, onBack }) => {
       <CCardHeader>
         <div className="d-flex justify-content-between align-items-center">
           <h2 className="mb-0">{service?.categoryName} Clinics</h2>
-          <CButton color="primary" onClick={handleAddClinic}>
+          <CButton color="secondary"
+            style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }} onClick={handleAddClinic}>
             Add Clinic
           </CButton>
         </div>
@@ -123,7 +126,8 @@ const ClinicManagement = ({ service, onBack }) => {
           <div className="col-4 mx-2">
             <CFormInput
               type="text"
-              placeholder="Search by full name, mobile, or email"
+              style={{ border: "1px solid #7e3a93" }}
+              placeholder="Search by Clinic Name, Mobile, or Email"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -131,6 +135,7 @@ const ClinicManagement = ({ service, onBack }) => {
           <div className="col-md-4 ">
             <select
               className="form-select"
+              style={{ border: "1px solid #7e3a93" }}
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
             >
@@ -147,49 +152,56 @@ const ClinicManagement = ({ service, onBack }) => {
         </div>
 
         {error && <p className="text-center text-danger">{error}</p>}
-
-        <CTable hover responsive>
-          <CTableHead className="pink-table">
+ {loading ? (
+         <LoadingIndicator message="Fetching Clinic Details, please wait..." />
+        ) : error ? (
+          <div>{error}</div>
+        ) : (
+        <CTable striped hover responsive>
+          <CTableHead className='pink-table'>
             <CTableRow>
               <CTableHeaderCell>S.No</CTableHeaderCell>
               <CTableHeaderCell>Clinic Name</CTableHeaderCell>
               <CTableHeaderCell>Contact Number</CTableHeaderCell>
               <CTableHeaderCell>Email Address</CTableHeaderCell>
               <CTableHeaderCell>City</CTableHeaderCell>
-              <CTableHeaderCell>Actions</CTableHeaderCell>
+              <CTableHeaderCell className="text-center">Actions</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
 
-          <CTableBody className="pink-table">
+          <CTableBody className='pink-table' >
             {currentItems?.length > 0
               ? currentItems.map((clinic, index) => (
-                  <CTableRow key={clinic?.id || index}>
-                    <CTableDataCell>{indexOfFirstItem + index + 1}</CTableDataCell>
-                    <CTableDataCell>{clinic?.name}</CTableDataCell>
-                    <CTableDataCell>{clinic?.contactNumber}</CTableDataCell>
-                    <CTableDataCell>{clinic?.emailAddress}</CTableDataCell>
-                    <CTableDataCell>{clinic?.city}</CTableDataCell>
-                    <CTableDataCell>
-                      <CButton
-                        color="primary"
-                        size="sm"
+                <CTableRow key={clinic?.id || index}>
+                  <CTableDataCell>{indexOfFirstItem + index + 1}</CTableDataCell>
+                  <CTableDataCell>{clinic?.name}</CTableDataCell>
+                  <CTableDataCell>{clinic?.contactNumber}</CTableDataCell>
+                  <CTableDataCell>{clinic?.emailAddress}</CTableDataCell>
+                  <CTableDataCell>{clinic?.city}</CTableDataCell>
+                  <CTableDataCell className="text-center">
+                    <div className="d-flex justify-content-center gap-2">
+                      <button
+                        className="actionBtn"
                         onClick={() => navigate(`/clinic-Management/${clinic.hospitalId}`)}
+                        title="View"
                       >
-                        View
-                      </CButton>
-                    </CTableDataCell>
-                  </CTableRow>
-                ))
+                        <Eye size={18} />
+                      </button>
+                    </div>
+                  </CTableDataCell>
+
+                </CTableRow>
+              ))
               : !loading && (
-                  <CTableRow>
-                    <CTableDataCell colSpan="6" className="text-center">
-                      No clinics found
-                    </CTableDataCell>
-                  </CTableRow>
-                )}
+                <CTableRow>
+                  <CTableDataCell colSpan="6" className="text-center">
+                    No clinics found
+                  </CTableDataCell>
+                </CTableRow>
+              )}
           </CTableBody>
         </CTable>
-
+  )}
         {/* Pagination Controls */}
         {filteredClinics.length > 0 && (
           <div className="d-flex justify-content-between align-items-center mt-3">
@@ -244,12 +256,12 @@ const ClinicManagement = ({ service, onBack }) => {
         )}
       </CCardBody>
 
-      {loading && (
+      {/* {loading && (
         <div className="text-center">
           <ClipLoader color="#3498db" loading={loading} size={50} />
           <p>Loading...</p>
         </div>
-      )}
+      )} */}
     </CCard>
   )
 }

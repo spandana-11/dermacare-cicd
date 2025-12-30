@@ -1574,11 +1574,11 @@ const DoctorDetailsPage = () => {
                                   return
                                 }
 
-                                const MAX_SIZE = 200 * 1024 // 200 KB
+                                const MAX_SIZE = 250 * 1024 // 250 KB
                                 if (file.size > MAX_SIZE) {
                                   setErrors((prev) => ({
                                     ...prev,
-                                    doctorSignature: 'File size must be less than 200 KB',
+                                    doctorSignature: 'File size must be less than 250 KB',
                                   }))
                                   return
                                 }

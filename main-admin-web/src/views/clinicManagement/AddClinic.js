@@ -197,23 +197,18 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
     }
   }
 
-
-
-
-  const websiteRegex = /^(https?:\/\/)[\w\-]+(\.[\w\-]+)+[/#?]?.*$/
   const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
-
-
-
 
   const validateForm = () => {
     const newErrors = {}
 
     // Hospital Name
     if (!formData.name?.trim()) {
-      newErrors.name = 'Clinic name is required'
-    } else if (!/^[a-zA-Z\s]{2,50}$/.test(formData.name)) {
-      newErrors.name = 'Clinic name must contain only letters'
+      newErrors.name = "Clinic name is required";
+    } else if (!/^[A-Za-z\s.&-]{2,50}$/.test(formData.name)) {
+      newErrors.name = "Clinic name can contain only letters, spaces, dots, hyphens, and '&'";
+    } else if (/\d/.test(formData.name)) {
+      newErrors.name = "Numbers are not allowed in Clinic Name";
     }
 
     // Address validation
@@ -356,13 +351,17 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
     }
 
     if (!formData.website.trim()) {
-      newErrors.website = 'Website is required.'
+      newErrors.website = "Website is required.";
     } else {
-      const cleanedWebsite = formData.website.replace(/\s+/g, '') // remove all spaces
-      if (!websiteRegex.test(normalizeWebsite(cleanedWebsite))) {
-        newErrors.website = 'Website must start with http:// or https:// and be a valid URL'
+      const cleanedWebsite = formData.website.trim().replace(/\s+/g, ""); // remove spaces
+      const normalizedURL = normalizeWebsite(cleanedWebsite);
+
+      if (!websiteRegex.test(normalizedURL)) {
+        newErrors.website =
+          "Website must start with http:// or https:// and be a valid URL (e.g., https://example.com)";
       }
     }
+
 
     if (!formData.subscription || formData.subscription.trim() === '') {
       newErrors.subscription = 'Please select a subscription type'
@@ -455,22 +454,31 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
         ...prev,
         hospitalLogo: "Invalid file type (only JPEG, JPG, PNG allowed)",
       }));
-      setFormData((prev) => ({ ...prev, hospitalLogo: null })); // do not store base64
+      setFormData((prev) => ({ ...prev, hospitalLogo: null }));
       return;
     }
 
-    const MIN_SIZE = 500 * 1024; // 500 KB
     const MAX_SIZE = 1 * 1024 * 1024; // 1 MB
 
-    if (file.size < MIN_SIZE || file.size > MAX_SIZE) {
+    // Invalid size (greater than 1 MB)
+    if (file.size > MAX_SIZE) {
       setErrors((prev) => ({
         ...prev,
-        hospitalLogo: "File size must be between 500 KB and 1 MB",
+        hospitalLogo: "File size must be less than or equal to 1 MB",
       }));
-      setFormData((prev) => ({ ...prev, hospitalLogo: null })); // do not store base64
+      setFormData((prev) => ({ ...prev, hospitalLogo: null }));
       return;
     }
 
+    // (Optional) Prevent empty 0 KB files — uncomment if you want to block empty uploads
+    // if (file.size === 0) {
+    //   setErrors((prev) => ({
+    //     ...prev,
+    //     hospitalLogo: "File cannot be empty",
+    //   }));
+    //   setFormData((prev) => ({ ...prev, hospitalLogo: null }));
+    //   return;
+    // }
 
     // Valid file → read base64
     try {
@@ -495,8 +503,6 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
       setFormData((prev) => ({ ...prev, hospitalLogo: null }));
     }
   };
-
-
 
 
   const handleFileChange = async (e) => {
@@ -533,19 +539,27 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
       return;
     }
 
-    const MIN_SIZE = 150 * 1024; // 150 KB
     const MAX_SIZE = 250 * 1024; // 250 KB
 
-    // Invalid size
-    if (file.size < MIN_SIZE || file.size > MAX_SIZE) {
+    // Invalid size (greater than 250 KB)
+    if (file.size > MAX_SIZE) {
       setErrors((prev) => ({
         ...prev,
-        [name]: 'File size must be between 150 KB and 250 KB',
+        [name]: 'File size must be less than or equal to 250 KB',
       }));
       setFormData((prev) => ({ ...prev, [name]: null })); // do not store base64
       return;
     }
 
+    // (Optional) Prevent truly empty files — you can uncomment this if needed
+    // if (file.size === 0) {
+    //   setErrors((prev) => ({
+    //     ...prev,
+    //     [name]: 'File cannot be empty',
+    //   }));
+    //   setFormData((prev) => ({ ...prev, [name]: null }));
+    //   return;
+    // }
 
     // Valid file → read base64
     try {
@@ -563,8 +577,6 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
       setFormData((prev) => ({ ...prev, [name]: null }));
     }
   };
-
-
 
   // ✅ Clear handler (X button click)
   const handleClearFile = (name, inputRef) => {
@@ -649,21 +661,20 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
       'image/png',
       'application/zip',
     ]
-    const MIN_SIZE_BYTES = 150 * 1024; // 150 KB
-    const MAX_SIZE_BYTES = 250 * 1024; // 250 KB
+
+    const MAX_SIZE_BYTES = 250 * 1024 // 250 KB
 
     // Validate each selected file
     for (let file of selectedFiles) {
       if (!allowedTypes.includes(file.type)) {
-        setErrors(prev => ({ ...prev, [fieldName]: 'Invalid file type' }));
-        return;
+        setErrors(prev => ({ ...prev, [fieldName]: 'Invalid file type' }))
+        return
       }
-      if (file.size < MIN_SIZE_BYTES || file.size > MAX_SIZE_BYTES) {
-        setErrors(prev => ({ ...prev, [fieldName]: 'File size must be between 150 KB and 250 KB' }));
-        return;
+      if (file.size > MAX_SIZE_BYTES) {
+        setErrors(prev => ({ ...prev, [fieldName]: 'File size must be less than or equal to 250 KB' }))
+        return
       }
     }
-
 
     // Convert files to raw Base64
     const base64Files = await Promise.all(
@@ -672,8 +683,7 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
           const reader = new FileReader()
           reader.readAsDataURL(file)
           reader.onload = () => {
-            // Strip the prefix: "data:application/pdf;base64,"
-            const rawBase64 = reader.result.split(',')[1]
+            const rawBase64 = reader.result.split(',')[1] // Remove "data:application/pdf;base64,"
             resolve({ name: file.name, base64: rawBase64 })
           }
           reader.onerror = err => reject(err)
@@ -691,14 +701,15 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
     setErrors(prev => ({ ...prev, [fieldName]: '' }))
   }
 
+  const websiteRegex = /^(https?:\/\/)(www\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
 
   const normalizeWebsite = (url) => {
-    // If starts with www. or does not have protocol, prepend https://
+    // If user forgets http:// or https://, add it automatically
     if (!/^https?:\/\//i.test(url)) {
-      return 'https://' + url
+      return "https://" + url;
     }
-    return url
-  }
+    return url;
+  };
   console.log('submit button clicked')
 
   const convertFileToBase64 = (file) => {
@@ -730,6 +741,7 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
 
     fetchDoctors()
   }, [])
+
   useEffect(() => {
     const storedConsultation = localStorage.getItem('consultationExpiration')
     if (storedConsultation) {
@@ -1004,21 +1016,45 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
                   value={formData.name || ""}
                   onChange={(e) => {
                     const { name, value } = e.target;
-                    setFormData((prev) => ({ ...prev, [name]: value }));  // <-- save the value
 
-                    // validate dynamically
-                    const error =
-                      !value.trim()
-                        ? "Clinic name is required"
-                        : !/^[a-zA-Z\s]{2,50}$/.test(value)
-                          ? "Clinic name must contain only letters (2–50 chars)"
-                          : "";
+                    // Update state
+                    setFormData((prev) => ({ ...prev, [name]: value }));
+
+                    let error = "";
+
+                    // Validation Rules
+                    if (!value.trim()) {
+                      error = "Clinic name is required";
+                    } else if (/\d/.test(value)) {
+                      error = "Numbers are not allowed in Clinic Name";
+                    } else if (!/^[A-Za-z\s.&-]+$/.test(value)) {
+                      error = "Only letters, spaces, '.', '-', and '&' are allowed";
+                    } else if (value.trim().length < 2) {
+                      error = "Clinic name must be at least 2 characters";
+                    } else if (value.trim().length > 100) {
+                      error = "Clinic name cannot exceed 100 characters";
+                    }
 
                     setErrors((prev) => ({ ...prev, [name]: error || undefined }));
                   }}
-                  onKeyDown={preventNumberInput}
+                  onKeyDown={(e) => {
+                    // Prevent typing numbers
+                    if (/\d/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onPaste={(e) => {
+                    // Prevent pasting numbers
+                    if (/\d/.test(e.clipboardData.getData("text"))) {
+                      e.preventDefault();
+                      toast.error("Numbers are not allowed in Clinic Name");
+                    }
+                  }}
+                  style={{ textTransform: "capitalize" }}
                   invalid={!!errors.name}
                 />
+
+
                 {errors.name && <CFormFeedback invalid>{errors.name}</CFormFeedback>}
               </CCol>
               <CCol md={6}>
@@ -1093,7 +1129,7 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
                   invalid={!!errors.website}
                 />
                 {errors.website && (
-                  <div style={{ color: 'red', fontSize: '0.9rem' }}>{errors.website}</div>
+                  <CFormFeedback invalid>{errors.website}</CFormFeedback>
                 )}
 
               </CCol>
@@ -1816,8 +1852,8 @@ const AddClinic = ({ mode = 'add', initialData = {}, onSubmit }) => {
               )}
             </CRow>
 
-            <CModal visible={showNabhModal} onClose={() => setShowNabhModal(false)} size="lg"  className="custom-modal"
-        backdrop="static">
+            <CModal visible={showNabhModal} onClose={() => setShowNabhModal(false)} size="lg" className="custom-modal"
+              backdrop="static">
               <CModalHeader>
                 <CModalTitle>NABH Questionnaire</CModalTitle>
               </CModalHeader>

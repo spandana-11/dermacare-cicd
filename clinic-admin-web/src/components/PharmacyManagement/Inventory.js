@@ -229,12 +229,12 @@ const Inventory = () => {
       }}
     >
       {/* Header / Date-Time */}
-      <CRow className="g-3 align-items-center mb-2">
+      {/* <CRow className="g-3 align-items-center mb-2">
         {/* From / To Section */}
-        <CCol xs={12} md={7} lg={8}>
+        {/* <CCol xs={12} md={7} lg={8}>
           <div className="d-flex flex-wrap align-items-center gap-2">
             {/* From */}
-            <CFormLabel className="fw-bold mb-0">From</CFormLabel>
+            {/* <CFormLabel className="fw-bold mb-0">From</CFormLabel>
 
             <CFormInput
               type="date"
@@ -243,19 +243,19 @@ const Inventory = () => {
               onChange={(e) => setFromDate(e.target.value)}
               className="w-auto"
               style={{ height: 30, fontSize: '12px' }}
-            />
+            /> */}
 
-            <CFormInput
+            {/* <CFormInput
               type="time"
               size="sm"
               value={fromTime}
               onChange={(e) => setFromTime(e.target.value)}
               className="w-auto"
               style={{ height: 30, fontSize: '12px' }}
-            />
+            /> */}
 
             {/* To */}
-            <CFormLabel className="fw-bold mb-0 ms-2">To</CFormLabel>
+            {/* <CFormLabel className="fw-bold mb-0 ms-2">To</CFormLabel>
 
             <CFormInput
               type="date"
@@ -264,9 +264,9 @@ const Inventory = () => {
               onChange={(e) => setToDate(e.target.value)}
               className="w-auto"
               style={{ height: 30, fontSize: '12px' }}
-            />
+            /> */}
 
-            <CFormInput
+            {/* <CFormInput
               type="time"
               size="sm"
               value={toTime}
@@ -274,11 +274,11 @@ const Inventory = () => {
               className="w-auto"
               style={{ height: 30, fontSize: '12px' }}
             />
-          </div>
-        </CCol>
+          </div> */}
+        {/* </CCol> */}
 
         {/* Report Type */}
-        <CCol xs={12} md={5} lg={4}>
+        {/* <CCol xs={12} md={5} lg={4}>
           <div className="d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
             <CFormLabel className="fw-bold mb-0">Report Type:</CFormLabel>
 
@@ -293,11 +293,11 @@ const Inventory = () => {
               <option value="BATCH REPORT">BATCH REPORT</option>
             </CFormSelect>
           </div>
-        </CCol>
-      </CRow>
+        </CCol> */}
+      {/* </CRow> */}
 
       {/* Filter row */}
-      <div
+      {/* <div
         className="border rounded p-3 mb-3"
         style={{ borderColor: '#d8dbe0', background: '#f8f9fa' }}
       >
@@ -405,16 +405,16 @@ const Inventory = () => {
             </div>
           </CCol>
         </CRow>
-      </div>
+      </div> */}
 
       {/* Top quick search / actions */}
-      <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+      {/* <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
         <div className="ms-auto d-flex gap-2 align-items-center">
           <CIcon icon={cilSave} style={{ cursor: 'pointer' }} />
           <CIcon icon={cilPrint} style={{ cursor: 'pointer' }} />
           <CIcon icon={cilMagnifyingGlass} style={{ cursor: 'pointer' }} />
         </div>
-      </div>
+      </div> */}
 
       {/* Table with fixed height + scroll */}
       <div style={{ position: 'relative', marginTop: 4 }}>
@@ -442,7 +442,7 @@ const Inventory = () => {
               </CTableRow>
             </CTableHead>
 
-            <CTableBody>
+            <CTableBody className='pink-table'>
               {loading && (
                 <CTableRow>
                   <CTableDataCell colSpan={10} className="text-center">
@@ -466,7 +466,7 @@ const Inventory = () => {
               {!loading &&
                 displayRows.map((item, idx) => (
                   <CTableRow key={item.id || idx}>
-                    <CTableDataCell>{idx + 1}</CTableDataCell>
+                    <CTableDataCell >{idx + 1}</CTableDataCell>
                     <CTableDataCell style={{ textAlign: 'left', paddingLeft: 12 }}>
                       {item.productName}
                     </CTableDataCell>
@@ -477,7 +477,7 @@ const Inventory = () => {
                     <CTableDataCell>{Number(item.mrp).toFixed(2)}</CTableDataCell>
                     <CTableDataCell>{item.batchNo || '--'}</CTableDataCell>
                     <CTableDataCell>
-                      <CButton
+                      {/* <CButton
                         color="info"
                         size="sm"
                         className="me-1"
@@ -489,7 +489,7 @@ const Inventory = () => {
                         title="Edit"
                       >
                         <Edit2 size={16} />
-                      </CButton>
+                      </CButton> */}
 
                       <CButton
                         color="danger"
@@ -529,19 +529,20 @@ const Inventory = () => {
         </CModal>
 
         {/* Totals block below table (CCardBody style) */}
-        <CCardBody style={{ padding: '10px 0 0 0' }}>
+        <CCardBody style={{ padding: '10px 0 0 0' }} >
           <CRow className="g-2 border-top pt-2">
             <CCol md={4}>
               <CRow className="mb-2">
                 <CCol xs={6}>
-                  <CFormLabel className="text-end fw-bold mb-0">Total Stock</CFormLabel>
+                  <CFormLabel className="text-end fw-bold mb-0 ">Total Stock</CFormLabel>
                 </CCol>
                 <CCol xs={6}>
                   <CFormInput
                     disabled
                     value={totals.totalStock}
                     className="text-end bg-light"
-                    style={{ fontSize: '12px' }}
+                    style={{ fontSize: '14px' ,  color: 'var(--color-black)'}}
+                    
                   />
                 </CCol>
               </CRow>
@@ -555,7 +556,7 @@ const Inventory = () => {
                     disabled
                     value={totals.totalValueRate}
                     className="text-end bg-light"
-                    style={{ fontSize: '12px' }}
+                    style={{ fontSize: '14px' ,  color: 'var(--color-black)'}}
                   />
                 </CCol>
               </CRow>
@@ -569,7 +570,7 @@ const Inventory = () => {
                     disabled
                     value={totals.totalValueMrp}
                     className="text-end bg-light"
-                    style={{ fontSize: '12px' }}
+                    style={{ fontSize: '14px' ,  color: 'var(--color-black)'}}
                   />
                 </CCol>
               </CRow>
