@@ -41,7 +41,7 @@ public class DoctorController {
     public Response updatePassword(@PathVariable String username,
             @RequestBody ChangeDoctorPasswordDTO updatePasswordDTO) {       
     	Response response = doctorService.changePassword(username, updatePasswordDTO);
-    	System.out.println(response);
+//    	System.out.println(response);
         return response;
    }
     @PostMapping(value=LOGIN_DOCTOR)
