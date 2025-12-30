@@ -33,7 +33,12 @@ public class SubServicesDto {
 
 	private String minTime;
 
-	private List<Map<String, List<String>>> descriptionQA;
+	private byte gst;
+	private double gstAmount;
+	private double consultationFee;
+	private List<Map<String, List<String>>> preProcedureQA;
+	private List<Map<String, List<String>>> procedureQA;
+	private List<Map<String, List<String>>> postProcedureQA;
 
 	private double price;
 
@@ -54,4 +59,5 @@ public class SubServicesDto {
 	private double clinicPay; // Price - platformFee
 
 	private double finalCost; // taxAmount + discounedCost
+	private String consentFormType; // Generic or procedureConsent (1,2)
 }

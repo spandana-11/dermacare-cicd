@@ -393,9 +393,22 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
     @Override
     public Response getDoctorDetailsById(String id) {
         Optional<DoctorSaveDetails> optional = repository.findById(id);
-        return optional.map(data -> buildResponse(true,new ObjectMapper().convertValue(data, DoctorSaveDetailsDTO.class), "Doctor details found", HttpStatus.OK.value()))
-                .orElseGet(() -> buildResponse(false, null, "Doctor details not found", HttpStatus.NOT_FOUND.value()));
+
+        return optional
+            .map(data -> buildResponse(
+                    true,
+                    objectMapper.convertValue(data, DoctorSaveDetailsDTO.class),
+                    "Doctor details found",
+                    HttpStatus.OK.value()
+            ))
+            .orElseGet(() -> buildResponse(
+                    false,
+                    null,
+                    "Doctor details not found",
+                    HttpStatus.NOT_FOUND.value()
+            ));
     }
+
 
     @Override
     public Response updateDoctorDetails(String id, DoctorSaveDetailsDTO dto) {
