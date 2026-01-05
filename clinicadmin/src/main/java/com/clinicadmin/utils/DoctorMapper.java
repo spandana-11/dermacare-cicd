@@ -1,5 +1,8 @@
 package com.clinicadmin.utils;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+
 import org.bson.types.ObjectId;
 
 import com.clinicadmin.dto.ConsultationTypeDTO;
@@ -49,6 +52,8 @@ public class DoctorMapper {
 		doctor.setHighlights(dto.getHighlights());
 		doctor.setDoctorAvailabilityStatus(dto.isDoctorAvailabilityStatus());
 		doctor.setRecommendation(dto.isRecommendation());
+		doctor.setCreatedBy(dto.getCreatedBy());
+		doctor.setCreatedBy(LocalDateTime.now(ZoneId.of("Asia/Kolkata")).toString());
 
 		// 🔹 Check null before compress
 		if (dto.getDoctorSignature() != null && !dto.getDoctorSignature().isBlank()) {
@@ -82,11 +87,11 @@ public class DoctorMapper {
 		}
 
 		dto.setDoctorId(doctor.getDoctorId());
+		dto.setHospitalId(doctor.getHospitalId());
 		dto.setBranchId(doctor.getBranchId());
-		dto.setHospitalId(doctor.getHospitalName());
+		dto.setHospitalName(doctor.getHospitalName());
 		dto.setPermissions(dto.getPermissions());
 		dto.setRole(doctor.getRole());
-		dto.setHospitalId(doctor.getHospitalId());
 
 		// 🔹 Null checks before decompress
 		if (doctor.getDoctorPicture() != null && !doctor.getDoctorPicture().isBlank()) {
@@ -124,6 +129,9 @@ public class DoctorMapper {
 		dto.setAssociationsOrMemberships(doctor.getAssociationsOrMemberships());
 		dto.setBranches(doctor.getBranches());
 		dto.setPermissions(doctor.getPermissions());
+		dto.setCreatedAt(doctor.getCreatedAt());
+		dto.setCreatedBy(doctor.getCreatedBy());
+		dto.setUpdatedDate(doctor.getUpdatedDate());
 
 		if (doctor.getDoctorFees() != null) {
 			dto.setDoctorFees(mapDoctorFeeEntityToDTO(doctor.getDoctorFees()));

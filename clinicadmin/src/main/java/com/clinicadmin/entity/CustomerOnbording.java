@@ -31,5 +31,10 @@ public class CustomerOnbording {
 	private String deviceId;
 	private String referralCode;
 	private String referredBy;
+    private String createdBy;
+    
+    private String createdAt;
+    
+    private String updatedDate;
 
 }

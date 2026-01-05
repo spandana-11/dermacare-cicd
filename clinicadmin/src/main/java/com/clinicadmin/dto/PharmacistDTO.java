@@ -47,6 +47,11 @@ public class PharmacistDTO {
     private String experienceCertificates;
     private Map<String, List<String>> permissions;
     private String shiftTimingsOrAvailability;
+    private String createdBy;
+    
+    private String createdAt;
+    
+    private String updatedDate;
 	
 	private String userName;
 	private String password;

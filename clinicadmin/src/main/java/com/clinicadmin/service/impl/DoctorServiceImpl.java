@@ -467,6 +467,16 @@ public class DoctorServiceImpl implements DoctorService {
 			if (dto.getDoctorFees() != null)
 				doctor.setDoctorFees(DoctorMapper.mapDoctorFeeDTOtoEntity(dto.getDoctorFees()));
 
+			doctor.setUpdatedDate(LocalDate.now().toString());
+
+	if (dto.getConsultation() != null) {
+				ConsultationType consultation = new ConsultationType();
+				consultation.setServiceAndTreatments(dto.getConsultation().getServiceAndTreatments());
+				consultation.setInClinic(dto.getConsultation().getInClinic());
+				consultation.setVideoOrOnline(dto.getConsultation().getVideoOrOnline());
+				doctor.setConsultation(consultation);
+			}
+
 			// Booleans (we assume default false if not set, so be cautious)
 			doctor.setDoctorAvailabilityStatus(dto.isDoctorAvailabilityStatus());
 			doctor.setRecommendation(dto.isRecommendation());

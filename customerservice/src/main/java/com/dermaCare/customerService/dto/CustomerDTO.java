@@ -34,7 +34,7 @@ public class CustomerDTO {
     private String emailId;
 
     private String referCode;
-    
+    																																																																																																																													
     @NotBlank(message = " DateOfBirth is required and cannot start or end with spaces.")
     private String dateOfBirth;
  

@@ -231,7 +231,7 @@ public class CustomerServiceImpl implements CustomerService {
    
 
    public Response saveCustomerBasicDetails(CustomerDTO customerDTO) {
-	   Response  response =  new Response();
+	   Response response =  new Response();
 	   try {
 	   if(customerDTO != null) {
 		Optional<Customer> cstmr = customerRepository.findByMobileNumber(customerDTO.getMobileNumber());
@@ -267,7 +267,7 @@ public class CustomerServiceImpl implements CustomerService {
 		   }
 		   else {
 			   response.setMessage("Unable to save details");
-			   response.setStatus(404);
+			   response.setStatus(400);
 			   response.setSuccess(false);
 			   return response;
 		   }}catch(Exception e) {

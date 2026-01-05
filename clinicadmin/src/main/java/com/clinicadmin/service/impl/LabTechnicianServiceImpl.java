@@ -1,6 +1,7 @@
 package com.clinicadmin.service.impl;
 
 import java.security.SecureRandom;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -199,7 +200,7 @@ public class LabTechnicianServiceImpl implements LabTechnicianService {
 	    if (dto.getVaccinationStatus() != null) existing.setVaccinationStatus(dto.getVaccinationStatus());
 	    if (dto.getPreviousEmploymentHistory() != null) existing.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
 	    if (dto.getPermissions() != null) existing.setPermissions(dto.getPermissions());
-
+	    existing.setUpdatedDate(LocalDate.now().toString());
 	    // ✅ Save updated entity
 	    LabTechnicianEntity updated = repository.save(existing);
 

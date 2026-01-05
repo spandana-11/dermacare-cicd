@@ -3,6 +3,9 @@ package com.clinicadmin.service.impl;
 
 
 import java.security.SecureRandom;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -307,6 +310,7 @@ public class AdministratorServiceImpl implements AdministratorService {
         if (dto.getBankAccountDetails() != null) admin.setBankAccountDetails(dto.getBankAccountDetails());
         if (dto.getProfilePicture() != null) admin.setProfilePicture(dto.getProfilePicture());
         if (dto.getPermissions() != null) admin.setPermissions(dto.getPermissions());
+        admin.setUpdatedDate(LocalDate.now().toString());
 
         // Save updated admin
         Administrator updatedAdmin = administratorRepository.save(admin);
@@ -532,6 +536,8 @@ public class AdministratorServiceImpl implements AdministratorService {
         admin.setProfilePicture(dto.getProfilePicture());
         admin.setBankAccountDetails(dto.getBankAccountDetails());
         admin.setPermissions(dto.getPermissions());
+        admin.setCreatedBy(dto.getCreatedBy());
+        admin.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Kolkata")).toString());       
         return admin;
     }
 
@@ -559,6 +565,9 @@ public class AdministratorServiceImpl implements AdministratorService {
         dto.setProfilePicture(admin.getProfilePicture());
         dto.setBankAccountDetails(admin.getBankAccountDetails());
         dto.setPermissions(admin.getPermissions());
+        dto.setCreatedAt(admin.getCreatedAt());
+        dto.setCreatedBy(admin.getCreatedBy());
+        dto.setUpdatedDate(admin.getUpdatedDate());
         return dto;
     }
 

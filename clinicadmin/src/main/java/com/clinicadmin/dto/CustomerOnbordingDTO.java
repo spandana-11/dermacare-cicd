@@ -51,4 +51,10 @@ public class CustomerOnbordingDTO {
     private String referredBy;
     private String userName;
     private String password;
+    
+    private String createdBy;
+    
+    private String createdAt;
+    
+    private String updatedDate;
 }

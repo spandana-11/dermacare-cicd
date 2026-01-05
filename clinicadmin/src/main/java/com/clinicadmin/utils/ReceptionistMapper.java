@@ -1,6 +1,8 @@
 package com.clinicadmin.utils;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Base64;
 import com.clinicadmin.dto.ReceptionistRequestDTO;
 import com.clinicadmin.entity.ReceptionistEntity;
@@ -65,7 +67,9 @@ public class ReceptionistMapper {
         dto.setGraduationCertificate(decodeFromBase64(entity.getGraduationCertificate()));
         dto.setComputerSkillsProof(decodeFromBase64(entity.getComputerSkillsProof()));
         dto.setProfilePicture(decodeFromBase64(entity.getProfilePicture()));
-
+        dto.setCreatedBy(entity.getCreatedBy());
+        dto.setCreatedAt(entity.getCreatedAt());
+        dto.setUpdatedDate(entity.getUpdatedDate());
         return dto;
     }
 
@@ -134,5 +138,7 @@ public class ReceptionistMapper {
         entity.setGraduationCertificate(encodeToBase64(dto.getGraduationCertificate()));
         entity.setComputerSkillsProof(encodeToBase64(dto.getComputerSkillsProof()));
         entity.setProfilePicture(encodeToBase64(dto.getProfilePicture()));
+        entity.setCreatedBy(dto.getCreatedBy());
+        entity.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Kolkata")).toString());
     }
 }

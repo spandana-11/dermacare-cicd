@@ -1,6 +1,9 @@
 package com.clinicadmin.service.impl;
 
 import java.security.SecureRandom;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -186,7 +189,7 @@ public class PharmacistServiceImpl implements PharmacistService {
 	            existing.setProfilePicture(Base64CompressionUtil.compressBase64(dto.getProfilePicture()));
 	        if (dto.getPermissions() != null)
 	            existing.setPermissions(dto.getPermissions());
-
+	        existing.setUpdatedDate(LocalDate.now().toString());
 	        // 🔹 Save pharmacist entity
 	        Pharmacist updated = pharmacistRepository.save(existing);
 
@@ -375,6 +378,8 @@ public class PharmacistServiceImpl implements PharmacistService {
 		pharmacist.setExperienceCertificates(Base64CompressionUtil.compressBase64(dto.getExperienceCertificates()));
 		pharmacist.setDpharmaOrBPharmaCertificate(
 				Base64CompressionUtil.compressBase64(dto.getDpharmaOrBPharmaCertificate()));
+		pharmacist.setCreatedBy(dto.getCreatedBy());
+		pharmacist.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Kolkata")).toString());
 		
 		return pharmacist;
 	}
@@ -410,6 +415,9 @@ public class PharmacistServiceImpl implements PharmacistService {
 		dto.setStatePharmacyCouncilRegistration(
 				Base64CompressionUtil.decompressBase64(pharmacist.getStatePharmacyCouncilRegistration()));
 		dto.setPermissions(pharmacist.getPermissions());
+		dto.setCreatedBy(pharmacist.getCreatedBy());
+		dto.setCreatedAt(pharmacist.getCreatedAt());
+		dto.setUpdatedDate(pharmacist.getUpdatedDate());
 		
 		return dto;
 	}

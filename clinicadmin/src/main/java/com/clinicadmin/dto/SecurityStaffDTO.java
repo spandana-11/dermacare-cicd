@@ -69,6 +69,11 @@ public class SecurityStaffDTO {
 	private String previousEmployeeHistory;
 	private Map<String, List<String>> permissions;
     private String shiftTimingsOrAvailability;
+    private String createdBy;
+    
+    private String createdAt;
+    
+    private String updatedDate;
 
 
 	private String userName;

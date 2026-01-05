@@ -1,5 +1,8 @@
 package com.clinicadmin.service.impl;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -187,6 +190,7 @@ public class CustomerOnboardingServiceImpl implements CustomerOnboardingService 
 			if (dto.getPatientId() != null && !dto.getPatientId().isBlank()) {
 				entity.setPatientId(dto.getPatientId());
 			}
+			entity.setUpdatedDate(LocalDate.now().toString());
 
 			onboardingRepository.save(entity);
 
@@ -454,6 +458,8 @@ public class CustomerOnboardingServiceImpl implements CustomerOnboardingService 
 		entity.setDeviceId(dto.getDeviceId());
 //		entity.setReferralCode(dto.getReferralCode());
 		entity.setReferredBy(dto.getReferredBy());
+		entity.setCreatedBy(dto.getCreatedBy());
+		entity.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Kolkata")).toString());
 		return entity;
 	}
 
@@ -475,7 +481,9 @@ public class CustomerOnboardingServiceImpl implements CustomerOnboardingService 
 		dto.setDeviceId(entity.getDeviceId());
 		dto.setReferralCode(entity.getReferralCode());
 		dto.setReferredBy(entity.getReferredBy());
-
+		dto.setCreatedAt(entity.getCreatedAt());
+        dto.setCreatedBy(entity.getCreatedBy());
+        dto.setUpdatedDate(entity.getUpdatedDate());
 		return dto;
 	}
 	

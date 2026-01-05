@@ -73,4 +73,5 @@ public class ClinicDTO {
 	private String instagramHandle;
 	private String twitterHandle;
 	private String facebookHandle;
+	
 }

@@ -60,5 +60,10 @@ public class Doctors {
 	private List<DoctorBranches> branches;
 	private ConsultationType Consultation;
 	private Map<String, List<String>> permissions;
+    private String createdBy;
+    
+    private String createdAt;
+    
+    private String updatedDate;
 
 }

@@ -64,4 +64,10 @@ public class LabTechnicianEntity {
     private String qualificationOrCertifications;
     private String medicalFitnessCertificate;
     private String profilePicture;
+    
+    private String createdBy;
+    
+    private String createdAt;
+    
+    private String updatedDate;
 }

@@ -38,6 +38,7 @@ import jakarta.validation.Valid;
 //@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 
 public class AdminController {
+	
 	@Autowired
 	private AdminService serviceImpl;
 

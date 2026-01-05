@@ -1,6 +1,8 @@
 package com.clinicadmin.utils;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Base64;
 
 import com.clinicadmin.dto.WardBoyDTO;
@@ -60,6 +62,8 @@ public class WardBoyMapper {
         wardBoy.setEmailId(dto.getEmailId());
         wardBoy.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
         wardBoy.setPermissions(dto.getPermissions());
+        wardBoy.setCreatedBy(dto.getCreatedBy());
+        wardBoy.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Kolkata")).toString());
 
         return wardBoy;
     }
@@ -99,6 +103,9 @@ public class WardBoyMapper {
         dto.setEmailId(entity.getEmailId());
         dto.setPreviousEmploymentHistory(entity.getPreviousEmploymentHistory());
         dto.setPermissions(entity.getPermissions());
+        dto.setCreatedAt(entity.getCreatedAt());
+        dto.setCreatedBy(entity.getCreatedBy());
+        dto.setUpdatedDate(entity.getUpdatedDate());
 
         return dto;
     }

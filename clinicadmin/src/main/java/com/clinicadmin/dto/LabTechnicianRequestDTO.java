@@ -78,5 +78,11 @@ public class LabTechnicianRequestDTO {
 
     private String previousEmploymentHistory;
     
+    private String createdBy;
+    
+    private String createdAt;
+    
+    private String updatedDate;
+    
    
 }
