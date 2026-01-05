@@ -119,7 +119,15 @@ public class DoctorsDTO {
 	private List<DoctorBranches> branches;
 
 	private ConsultationTypeDTO Consultation;
-	private Map<String, List<String>> permissions;
+
+	  private Map<String, List<String>> permissions;
+	  
+	  private String createdBy;
+	    
+	    private String createdAt;
+	    
+	    private String updatedDate;
+
 
 	public void trimAllDoctorFields() {
 		id = trim(id);

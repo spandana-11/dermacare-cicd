@@ -46,11 +46,11 @@ public class SecurityStaff {
     private String profilePicture;
     private Map<String, List<String>> permissions;
     private String shiftTimingsOrAvailability;
-
-
-	
-	
-	
+    private String createdBy;
+    
+    private String createdAt;
+    
+    private String updatedDate;
 	
 
 }

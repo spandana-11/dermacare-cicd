@@ -49,6 +49,11 @@ public class Administrator {
 
     private BankAccountDetails bankAccountDetails;
 	private Map<String, List<String>> permissions;
+    private String createdBy;
+    
+    private String createdAt;
+    
+    private String updatedDate;
 
   
 }

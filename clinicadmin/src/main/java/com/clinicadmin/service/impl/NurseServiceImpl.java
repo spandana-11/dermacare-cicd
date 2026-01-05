@@ -1,6 +1,9 @@
 package com.clinicadmin.service.impl;
 
 import java.security.SecureRandom;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -196,6 +199,7 @@ public class NurseServiceImpl implements NurseService {
             Optional.ofNullable(dto.getShiftTimingOrAvailability()).ifPresent(existingNurse::setShiftTimingOrAvailability);
             Optional.ofNullable(dto.getPermissions()).ifPresent(existingNurse::setPermissions);
             Optional.ofNullable(dto.getVaccinationStatus()).ifPresent(existingNurse::setVaccinationStatus);
+            existingNurse.setUpdatedDate(LocalDate.now().toString());
 
             // ✅ Update Base64 documents and images
             if (dto.getNursingLicense() != null)
@@ -345,6 +349,8 @@ public class NurseServiceImpl implements NurseService {
         nurse.setYearsOfExperience(dto.getYearsOfExperience());
         nurse.setEmergencyContactNumber(dto.getEmergencyContactNumber());
         nurse.setPermissions(dto.getPermissions());
+        nurse.setCreatedBy(dto.getCreatedBy());
+        nurse.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Kolkata")).toString());
 
         return nurse;
     }
@@ -384,6 +390,9 @@ public class NurseServiceImpl implements NurseService {
         dto.setEmergencyContactNumber(nurse.getEmergencyContactNumber());
         dto.setYearsOfExperience(nurse.getYearsOfExperience());
         dto.setPermissions(nurse.getPermissions());
+        dto.setCreatedAt(nurse.getCreatedAt());
+        dto.setCreatedBy(nurse.getCreatedBy());
+        dto.setUpdatedDate(nurse.getUpdatedDate());
 
         return dto;
     }

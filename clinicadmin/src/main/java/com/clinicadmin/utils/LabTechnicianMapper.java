@@ -1,5 +1,7 @@
 package com.clinicadmin.utils;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Base64;
 
 import com.clinicadmin.dto.LabTechnicianRequestDTO;
@@ -62,6 +64,8 @@ public class LabTechnicianMapper {
         entity.setVaccinationStatus(dto.getVaccinationStatus());
         entity.setPreviousEmploymentHistory(dto.getPreviousEmploymentHistory());
         entity.setPermissions(dto.getPermissions());
+        entity.setCreatedBy(dto.getCreatedBy());
+        entity.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Kolkata")).toString());
 
         return entity;
     }
@@ -103,6 +107,9 @@ public class LabTechnicianMapper {
         dto.setVaccinationStatus(entity.getVaccinationStatus());
         dto.setPreviousEmploymentHistory(entity.getPreviousEmploymentHistory());
         dto.setPermissions(entity.getPermissions());
+        dto.setCreatedAt(entity.getCreatedAt());
+        dto.setCreatedBy(entity.getCreatedBy());
+        dto.setUpdatedDate(entity.getUpdatedDate());
 
         return dto;
     }

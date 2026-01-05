@@ -77,5 +77,10 @@ public class ReceptionistRequestDTO {
 	private String graduationCertificate;
 	private String computerSkillsProof;
 	private String previousEmploymentHistory;
+    private String createdBy;
+    
+    private String createdAt;
+    
+    private String updatedDate;
 
 }

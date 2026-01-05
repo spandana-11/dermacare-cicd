@@ -51,7 +51,11 @@ public class WardBoy {
 	private String role;
 	
     private String shiftTimingsOrAvailability;
-
+    private String createdBy;
+    
+    private String createdAt;
+    
+    private String updatedDate;
 
 	private Map<String, List<String>> permissions;
 

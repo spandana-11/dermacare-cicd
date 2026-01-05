@@ -48,6 +48,11 @@ public class Pharmacist {
 	private String dpharmaOrBPharmaCertificate;
 	private String experienceCertificates;
 	private Map<String, List<String>> permissions;
+    private String createdBy;
+    
+    private String createdAt;
+    
+    private String updatedDate;
 	
 
 

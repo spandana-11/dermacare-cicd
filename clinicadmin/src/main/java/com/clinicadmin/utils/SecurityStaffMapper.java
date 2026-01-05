@@ -1,6 +1,8 @@
 package com.clinicadmin.utils;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Base64;
 
 import com.clinicadmin.dto.SecurityStaffDTO;
@@ -53,6 +55,8 @@ public class SecurityStaffMapper {
         staff.setEmailId(dto.getEmailId());
         staff.setTraningOrGuardLicense(dto.getTraningOrGuardLicense());
         staff.setPreviousEmployeeHistory(dto.getPreviousEmployeeHistory());
+        staff.setCreatedBy(dto.getCreatedBy());
+        staff.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Kolkata")).toString());
 
         return staff;
     }
@@ -90,6 +94,9 @@ public class SecurityStaffMapper {
         dto.setTraningOrGuardLicense(staff.getTraningOrGuardLicense());
         dto.setPreviousEmployeeHistory(staff.getPreviousEmployeeHistory());
         dto.setPermissions(staff.getPermissions());
+        dto.setCreatedBy(staff.getCreatedBy());
+        dto.setCreatedAt(staff.getCreatedAt());
+        dto.setUpdatedDate(staff.getUpdatedDate());
 
         return dto;
     }

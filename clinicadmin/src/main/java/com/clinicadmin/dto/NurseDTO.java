@@ -84,6 +84,11 @@ public class NurseDTO {
 	private String yearsOfExperience;
 	private String emergencyContactNumber;
 	private Map<String, List<String>> permissions;
+    private String createdBy;
+    
+    private String createdAt;
+    
+    private String updatedDate;
 
 	private String userName;
 	private String password;
