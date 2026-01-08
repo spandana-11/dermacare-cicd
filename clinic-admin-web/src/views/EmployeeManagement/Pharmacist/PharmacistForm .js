@@ -38,6 +38,7 @@ const PharmacistForm = ({
     branchId: localStorage.getItem('branchId'),
     branchName: localStorage.getItem('branchName'),
     hospitalName: localStorage.getItem('HospitalName'),
+    createdBy: localStorage.getItem('staffId') || 'admin',
     fullName: '',
     gender: '',
     dateOfBirth: '',

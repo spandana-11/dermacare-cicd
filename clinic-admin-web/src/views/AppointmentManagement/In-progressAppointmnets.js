@@ -617,8 +617,10 @@ const InProgressAppointmentsPage = () => {
                                   <CTableBody>
                                     {treatment.dates.map((sitting, i) => {
                                       const sittingKey = `${apt.bookingId}-${treatmentName}-${i}`
-                                      const isCompleted =
-                                        sitting.status?.toLowerCase() === 'completed'
+                                     const isCompleted =
+  sitting.status?.toLowerCase() === 'completed' ||
+  sitting.status?.toLowerCase() === 'confirmed'
+
                                       const isEditMode = editMode[sittingKey]
 
                                       return (

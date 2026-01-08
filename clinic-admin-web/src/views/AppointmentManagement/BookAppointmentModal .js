@@ -23,7 +23,7 @@ import {
   CListGroupItem,
 } from '@coreui/react'
 
-import { GetClinicBranches } from '../Doctors/DoctorAPI'
+import { GetClinicBranches,getDoctorByClinicIdData } from '../Doctors/DoctorAPI'
 import { useNavigate } from 'react-router-dom'
 import { getAllReferDoctors } from '../EmployeeManagement/ReferDoctor/ReferDoctorAPI'
 import Select from 'react-select'
@@ -51,6 +51,7 @@ import { DoctorData } from '../Doctors/DoctorAPI'
 import { addCustomer } from '../customerManagement/CustomerManagementAPI'
 import { showCustomToast } from '../../Utils/Toaster'
 import imageCompression from 'browser-image-compression'
+import { GetdoctorsByClinicIdData } from './appointmentAPI'
 const BookAppointmentModal = ({ visible, onClose }) => {
   const [visitType, setVisitType] = useState('first')
   const [appointmentType, setAppointmentType] = useState('services') // services / inclinic / online
@@ -450,31 +451,55 @@ const [originalConsultationFee, setOriginalConsultationFee] = useState('');
   }, [appointmentType, bookingDetails.branchId, selectedSubService])
 
   const fetchDoctors = async () => {
-    setLoadingDoctors(true)
-    try {
-      let doctorsList = []
+  setLoadingDoctors(true)
 
-      if (appointmentType !== 'services') {
-        // Use the DoctorData function
-        const response = await DoctorData()
-        doctorsList = Array.isArray(response.data) ? response.data : []
-      } else if (appointmentType === 'services' && bookingDetails.branchId && selectedSubService) {
-        const clinicId = localStorage.getItem('HospitalId')
-        const branchId = bookingDetails.branchId
-        const subServiceId = selectedSubService
-        const url = `${BASE_URL}/doctors/${clinicId}/${branchId}/${subServiceId}`
-        const response = await axios.get(url)
-        doctorsList = Array.isArray(response.data.data) ? response.data.data : []
+  try {
+    let doctorsList = []
+
+    if (appointmentType !== 'services') {
+
+      const clinicId = localStorage.getItem('HospitalId')
+      const branchId = localStorage.getItem('branchId')
+
+      if (!clinicId || !branchId) {
+        console.warn('Missing clinicId or branchId')
+        setDoctors([])
+        return
       }
 
-      setDoctors(doctorsList)
-    } catch (err) {
-      console.error('Error fetching doctors:', err)
-      setDoctors([])
-    } finally {
-      setLoadingDoctors(false)
+      const response = await getDoctorByClinicIdData(clinicId, branchId)
+
+      doctorsList = Array.isArray(response?.data)
+        ? response.data
+        : []
     }
+    else if (
+      appointmentType === 'services' && bookingDetails.branchId && selectedSubService
+    ) {
+      const clinicId = localStorage.getItem('HospitalId')
+      const branchId = bookingDetails.branchId
+      const subServiceId = selectedSubService
+
+      const url = `${BASE_URL}/doctors/${clinicId}/${branchId}/${subServiceId}`
+      const response = await axios.get(url)
+
+      doctorsList = Array.isArray(response?.data?.data)
+        ? response.data.data
+        : []
+    } else {
+      doctorsList = []
+    }
+
+    setDoctors(doctorsList)
+    
+  } catch (err) {
+    console.error("Error fetching doctors:", err)
+    setDoctors([])
+  } finally {
+    setLoadingDoctors(false)
   }
+}
+
 
   const fetchSlots = async (doctorId) => {
     try {

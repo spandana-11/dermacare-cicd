@@ -108,6 +108,7 @@ const DoctorManagement = () => {
     service: [],
     subServices: [], // Note: 'subSerives' in Java, but 'subServices' is more consistent in JS
     specialization: '',
+    
     gender: '',
     experience: '',
     qualification: '',
@@ -118,6 +119,7 @@ const DoctorManagement = () => {
     profileDescription: '',
     doctorSignature: null,
     doctorFees: {
+      
       inClinicFee: '',
       vedioConsultationFee: '',
     },
@@ -127,7 +129,7 @@ const DoctorManagement = () => {
     availableConsultations: [],
     consultation: {
       inClinic: 0,
-      videoOrOnline: 0,
+      videoOrOnline: 0, 
       serviceAndTreatments: 0,
     },
   }
@@ -567,6 +569,7 @@ const DoctorManagement = () => {
       setSaveLoading(true)
       const payload = {
         branchId: localStorage.getItem('branchId'),
+        createdBy: localStorage.getItem('staffId') || 'admin',
         hospitalId,
         doctorPicture: form.doctorPicture,
         doctorSignature: form.doctorSignature,
@@ -603,9 +606,9 @@ const DoctorManagement = () => {
           vedioConsultationFee: form.doctorFees.vedioConsultationFee,
         },
         consultation: {
-          serviceAndTreatments: enabledTypes.serviceTreatment ? 3 : 0,
-          inClinic: enabledTypes.inClinic ? 1 : 0,
-          videoOrOnline: enabledTypes.online ? 2 : 0,
+          serviceAndTreatments: form.availableConsultations.includes('Services & Treatments') ? 3 : 0,
+  inClinic: form.availableConsultations.includes('In-Clinic') ? 1 : 0,
+  videoOrOnline: form.availableConsultations.includes('Video/Online') ? 2 : 0,
         },
       }
       console.log(payload)
@@ -1441,65 +1444,77 @@ const DoctorManagement = () => {
             <CCol xs={12}>
               <div className="d-flex gap-4 flex-wrap">
                 {/* In-Clinic Fee Input */}
-                <div style={{ flex: 1 }}>
-                  <CFormLabel>
-                    In-Clinic Consultation Fee
-                    <span className="text-danger">*</span>
-                  </CFormLabel>
-                  <CFormInput
-                    type="number"
-                    placeholder="In-Clinic Consultation Fee"
-                    disabled={!enabledTypes.inClinic}
-                    value={form.doctorFees.inClinicFee}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      setForm((prev) => ({
-                        ...prev,
-                        doctorFees: { ...prev.doctorFees, inClinicFee: value },
-                      }))
-                      if (value && !isNaN(value) && Number(value) > 0) {
-                        setFormErrors((prev) => ({ ...prev, inClinicFee: '' }))
-                      }
-                    }}
-                  />
+                {enabledTypes.inClinic && (
+  <div style={{ flex: 1 }}>
+    <CFormLabel>
+      In-Clinic Consultation Fee
+      <span className="text-danger">*</span>
+    </CFormLabel>
 
-                  {formErrors.inClinicFee && (
-                    <div className="text-danger">{formErrors.inClinicFee}</div>
-                  )}
-                </div>
+    <CFormInput
+      type="number"
+      placeholder="In-Clinic Consultation Fee"
+      value={form.doctorFees.inClinicFee}
+      onChange={(e) => {
+        const value = e.target.value
+        setForm((prev) => ({
+          ...prev,
+          doctorFees: {
+            ...prev.doctorFees,
+            inClinicFee: value,
+          },
+        }))
+
+        if (value && Number(value) > 0) {
+          setFormErrors((prev) => ({ ...prev, inClinicFee: '' }))
+        }
+      }}
+    />
+
+    {formErrors.inClinicFee && (
+      <div className="text-danger">{formErrors.inClinicFee}</div>
+    )}
+  </div>
+)}
+
 
                 {/* Video/Online Fee Input */}
-                <div style={{ flex: 1 }}>
-                  <CFormLabel>
-                    Online Consultation Fee
-                    <span className="text-danger">*</span>
-                  </CFormLabel>
-                  <CFormInput
-                    type="number"
-                    placeholder="Online Consultation Fee"
-                    disabled={!enabledTypes.online}
-                    value={form.doctorFees.vedioConsultationFee}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      setForm((prev) => ({
-                        ...prev,
-                        doctorFees: {
-                          ...prev.doctorFees,
-                          vedioConsultationFee: value,
-                        },
-                      }))
-                      if (value && !isNaN(value) && Number(value) > 0) {
-                        setFormErrors((prev) => ({
-                          ...prev,
-                          vedioConsultationFee: '',
-                        }))
-                      }
-                    }}
-                  />
-                  {formErrors.vedioConsultationFee && (
-                    <div className="text-danger">{formErrors.vedioConsultationFee}</div>
-                  )}
-                </div>
+             {enabledTypes.online && (
+  <div style={{ flex: 1 }}>
+    <CFormLabel>
+      Online Consultation Fee
+      <span className="text-danger">*</span>
+    </CFormLabel>
+
+    <CFormInput
+      type="number"
+      placeholder="Online Consultation Fee"
+      value={form.doctorFees.vedioConsultationFee}
+      onChange={(e) => {
+        const value = e.target.value
+        setForm((prev) => ({
+          ...prev,
+          doctorFees: {
+            ...prev.doctorFees,
+            vedioConsultationFee: value,
+          },
+        }))
+
+        if (value && Number(value) > 0) {
+          setFormErrors((prev) => ({
+            ...prev,
+            vedioConsultationFee: '',
+          }))
+        }
+      }}
+    />
+
+    {formErrors.vedioConsultationFee && (
+      <div className="text-danger">{formErrors.vedioConsultationFee}</div>
+    )}
+  </div>
+)}
+
               </div>
             </CCol>
 

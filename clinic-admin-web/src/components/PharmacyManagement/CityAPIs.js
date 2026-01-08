@@ -8,7 +8,7 @@ import { wifiUrl } from '../../baseUrl'
 // ======================================================
 export const Citydata = async () => {
   try {
-    const response = await axios.get(`http://3.6.119.57:9090/api/pharmacy/city/all`)
+    const response = await axios.get(`${wifiUrl}/api/pharmacy/city/all`)
     console.log('city data:', response.data.data)
     return response.data.data || [] // <-- return the array of cities
   } catch (error) {

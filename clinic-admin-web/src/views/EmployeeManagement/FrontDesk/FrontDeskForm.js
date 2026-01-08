@@ -38,6 +38,7 @@ const FrontDeskForm = ({
     branchId: localStorage.getItem('branchId'),
     branchName: localStorage.getItem('branchName'),
     hospitalName: localStorage.getItem('HospitalName'),
+    createdBy: localStorage.getItem('staffId') || 'admin',
     fullName: '',
     dateOfBirth: '',
     contactNumber: '',
@@ -199,12 +200,17 @@ const FrontDeskForm = ({
     })
 
   useEffect(() => {
-    if (initialData) {
-      setFormData(initialData)
-    } else {
-      setFormData(emptyForm)
-    }
-  }, [initialData])
+  if (initialData) {
+    setFormData((prev) => ({
+      ...prev,          // keep createdBy
+      ...initialData,   // overwrite rest
+      createdBy: initialData.createdBy || prev.createdBy,
+    }))
+  } else {
+    setFormData(emptyForm)
+  }
+}, [initialData])
+
 
   // 🔹 Handle text inputs (top-level fields)
   const handleChange = (field, value) => {
