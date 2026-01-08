@@ -19,6 +19,7 @@ import {
   CModalBody,
   CModalFooter,
   CFormInput,
+  CFormCheck,
   CInputGroup,
   CListGroup,
   CListGroupItem,
@@ -70,6 +71,12 @@ const DoctorDetailsPage = () => {
   const [selectedServices, setSelectedServices] = useState([])
   const [selectedSubServices, setSelectedSubServices] = useState([])
   const [saveloading, setSaveLoading] = useState(false)
+  const [enabledTypes, setEnabledTypes] = useState({
+      inClinic: false,
+      online: false,
+      serviceTreatment: false,
+    })
+
 
   const { state } = useLocation()
   const [doctorData, setDoctorData] = useState(state?.doctor || {})
@@ -128,6 +135,12 @@ const DoctorDetailsPage = () => {
       // toast.error(`${isDeleted.message}` || 'Failed to delete doctor')
     }
   }
+  const buildConsultationPayload = (availableConsultations = []) => ({
+  serviceAndTreatments: availableConsultations.includes('Services & Treatments') ? 3 : 0,
+  inClinic: availableConsultations.includes('In-Clinic') ? 1 : 0,
+  videoOrOnline: availableConsultations.includes('Video/Online') ? 2 : 0,
+})
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -202,6 +215,7 @@ const DoctorDetailsPage = () => {
       setSaveLoading(true)
       const payload = {
         ...formData,
+         consultation: buildConsultationPayload(formData.availableConsultations),
         branches:
           formData.branch?.map((b) => ({
             branchId: b.branchId,
@@ -242,6 +256,26 @@ const DoctorDetailsPage = () => {
     } finally {
       setSaveLoading(false)
     }
+  }
+  const toggleType = (type) => {
+    setEnabledTypes((prev) => {
+      const updated = { ...prev, [type]: !prev[type] }
+
+      // Build availableConsultations array based on updated enabledTypes
+      const consultations = []
+      if (updated.serviceTreatment) consultations.push('Services & Treatments')
+      if (updated.inClinic) consultations.push('In-Clinic')
+      if (updated.online) consultations.push('Video/Online')
+
+      setFormData((prevForm) => ({
+        ...prevForm,
+        availableConsultations: consultations,
+      }))
+
+      console.log('Available Consultations:', consultations)
+
+      return updated
+    })
   }
 
   useEffect(() => {
@@ -536,6 +570,9 @@ const DoctorDetailsPage = () => {
       }
     }
   }
+ 
+
+
 
   useEffect(() => {
     const fetchBranches = async () => {
@@ -923,11 +960,21 @@ const DoctorDetailsPage = () => {
     const slots = await fetchDoctorSlots(doctorId, branchId, date, intervaltime, start, end)
     console.log(slots)
 
-    setSlots(slots) // grid
-    setTimeSlots(slots) // modal
-    setSelectedSlots([]) // reset selection
+   if (!slots || slots.length === 0) {
+  setSlots([])        // grid
+  setTimeSlots([])    // modal
+  setSelectedSlots([])
 
-    showCustomToast(`Generated ${slots.length} slots`, 'success')
+ showCustomToast("Timing not available for this doctor", "error")
+  return
+}
+
+// If slots exist
+setSlots(slots)
+setTimeSlots(slots)
+setSelectedSlots([])
+
+showCustomToast(`Generated ${slots.length} slots`, "success")
   }
 
   const checkSubServiceDetails = async (ids) => {
@@ -944,6 +991,21 @@ const DoctorDetailsPage = () => {
 
     setIsSubServiceComplete(!incomplete)
   }
+ useEffect(() => {
+  if (!doctorData) return;
+
+  setEnabledTypes({
+    inClinic: Number(doctorData?.doctorFees?.inClinicFee) > 0,
+    online: Number(doctorData?.doctorFees?.vedioConsultationFee) > 0,
+    serviceTreatment:
+      Array.isArray(doctorData?.subServices) && doctorData.subServices.length > 0 ||
+      Array.isArray(doctorData?.service) && doctorData.service.length > 0
+  });
+}, [doctorData, isEditing]);
+
+
+
+
   return (
     <div className="doctor-details-page" style={{ padding: '1rem' }}>
       <ToastContainer />
@@ -1566,6 +1628,7 @@ const DoctorDetailsPage = () => {
                         </ul>
                       )}
                     </CCol>
+                 
                     <CCol>
                       <h6 className="mt-4 mb-2">
                         <strong>🏅 Achievements</strong>
@@ -1608,6 +1671,30 @@ const DoctorDetailsPage = () => {
                         </ul>
                       )}
                     </CCol>
+                       <CCol xs={12}>
+              <div className="d-flex align-items-center flex-wrap gap-4">
+                <strong>Consultation Type:</strong>
+
+                <CFormCheck
+                  type="checkbox"
+                  label="Services & Treatments"
+                  checked={enabledTypes.serviceTreatment}
+                  onChange={() => toggleType('serviceTreatment')}
+                />
+                <CFormCheck
+                  type="checkbox"
+                  label="In-Clinic Consultation"
+                  checked={enabledTypes.inClinic}
+                  onChange={() => toggleType('inClinic')}
+                />
+                <CFormCheck
+                  type="checkbox"
+                  label="Online Consultation"
+                  checked={enabledTypes.online}
+                  onChange={() => toggleType('online')}
+                />
+              </div>
+            </CCol>
 
                     <CRow style={{ color: 'var(--color-black)' }}>
                       <CCol md={6}>

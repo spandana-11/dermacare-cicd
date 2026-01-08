@@ -21,6 +21,7 @@ import { emailPattern } from '../../../Constant/Constants'
 import FilePreview from '../../../Utils/FilePreview'
 import { showCustomToast } from '../../../Utils/Toaster'
 
+
 const SecurityForm = ({
   visible,
   onClose,
@@ -42,6 +43,7 @@ const SecurityForm = ({
     gender: '',
     dateOfBirth: '',
     contactNumber: '',
+    createdBy: localStorage.getItem('staffId') || 'admin',
     emailId: '',
     govermentId: '',
     // qualificationOrCertifications: '',
@@ -199,12 +201,17 @@ const SecurityForm = ({
     })
 
   useEffect(() => {
-    if (initialData) {
-      setFormData(initialData)
-    } else {
-      setFormData(emptyForm)
-    }
-  }, [initialData])
+  if (initialData) {
+    setFormData((prev) => ({
+      ...prev,          // keep createdBy
+      ...initialData,   // overwrite rest
+      createdBy: initialData.createdBy || prev.createdBy,
+    }))
+  } else {
+    setFormData(emptyForm)
+  }
+}, [initialData])
+
 
   // 🔹 Handle text inputs (top-level fields)
   const handleChange = (field, value) => {
@@ -276,10 +283,14 @@ const SecurityForm = ({
 
     // ✅ Email validation
 
-    if (!emailPattern.test(formData.emailId)) {
-      showCustomToast('Please enter a valid email address.', 'error')
-      return
-    }
+    // ✅ Email is OPTIONAL
+if (formData.emailId && formData.emailId.trim() !== '') {
+  if (!emailPattern.test(formData.emailId)) {
+    showCustomToast('Please enter a valid email address.', 'error')
+    return
+  }
+}
+
 
     // ✅ Check duplicate contact number
     const duplicateContact = security?.some(
@@ -291,13 +302,17 @@ const SecurityForm = ({
     }
 
     // ✅ Check duplicate email
-    const duplicateEmail = security?.some(
-      (t) => t.emailId === formData.emailId && t.id !== formData.id,
-    )
-    if (duplicateEmail) {
-      showCustomToast('Email already exists!', 'error')
-      return
-    }
+    if (formData.emailId && formData.emailId.trim() !== '') {
+  const duplicateEmail = security?.some(
+    (t) => t.emailId === formData.emailId && t.id !== formData.id,
+  )
+
+  if (duplicateEmail) {
+    showCustomToast('Email already exists!', 'error')
+    return
+  }
+}
+
     return true
   }
 
@@ -757,7 +772,10 @@ const SecurityForm = ({
                       const value = e.target.value
                       handleChange('emailId', value)
                       // ✅ Live validation
-                      const err = validateField('emailId', value)
+                     let err = ''
+if (value && !emailPattern.test(value)) {
+  err = 'Invalid email format'
+}
                       setErrors((prev) => ({ ...prev, emailId: err }))
                     }}
                   />

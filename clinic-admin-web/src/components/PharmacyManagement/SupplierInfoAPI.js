@@ -69,7 +69,7 @@ export const SupplierData = async () => {
 export const postSupplierData = async (requestData) => {
   try {
     console.log('Sending data to API')
-    const response = await axios.post(`http://3.6.119.57:9090/api/pharmacy/supplier/add`, requestData, {
+    const response = await axios.post(`${wifiUrl}/api/pharmacy/supplier/add`, requestData, {
       //TODO:chnage when apigetway call axios to http
       headers: {
         'Content-Type': 'application/json',

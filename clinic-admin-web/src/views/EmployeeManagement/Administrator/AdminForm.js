@@ -28,6 +28,7 @@ const AdminForm = ({ visible, onClose, onSave, initialData, viewMode, admins, fe
     branchId: localStorage.getItem('branchId'),
     branchName: localStorage.getItem('branchName'),
     hospitalName: localStorage.getItem('HospitalName'),
+    createdBy: localStorage.getItem('staffId') || 'admin',
     fullName: '',
     gender: '',
     dateOfBirth: '',
@@ -376,7 +377,7 @@ const AdminForm = ({ visible, onClose, onSave, initialData, viewMode, admins, fe
         backdrop="static"
       >
         <CModalHeader>
-          <CModalTitle>{viewMode ? 'Personal Information' : 'Add / Edit Lab Admin'}</CModalTitle>
+          <CModalTitle>{viewMode ? 'Personal Information' : 'Add / Edit Admin'}</CModalTitle>
         </CModalHeader>
         <CModalBody>
           {viewMode ? (

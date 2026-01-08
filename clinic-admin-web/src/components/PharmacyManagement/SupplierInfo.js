@@ -646,7 +646,7 @@ const SupplierInfo = () => {
       </div>
 
       {/* CITY MODAL */}
-      <CModal visible={showCityModal} onClose={() => setShowCityModal(false)}>
+      <CModal visible={showCityModal} onClose={() => setShowCityModal(false)} backdrop="static" >
         <CModalHeader>
           <CModalTitle>Add City</CModalTitle>
         </CModalHeader>
@@ -658,12 +658,12 @@ const SupplierInfo = () => {
           />
         </CModalBody>
         <CModalFooter>
-          <CButton onClick={handleAddCity}>Save</CButton>
+          <CButton onClick={handleAddCity} style={{backgroundColor:"var(--color-black)" ,color:"white"}}>Save</CButton>
         </CModalFooter>
       </CModal>
 
       {/* AREA MODAL */}
-      <CModal visible={showAreaModal} onClose={() => setShowAreaModal(false)}>
+      <CModal visible={showAreaModal} onClose={() => setShowAreaModal(false)} backdrop="static" >
         <CModalHeader>
           <CModalTitle>Add Area</CModalTitle>
         </CModalHeader>
@@ -675,7 +675,7 @@ const SupplierInfo = () => {
           />
         </CModalBody>
         <CModalFooter>
-          <CButton onClick={handleAddArea}>Save</CButton>
+          <CButton onClick={handleAddArea} style={{backgroundColor:"var(--color-black)" ,color:"white"}}>Save</CButton>
         </CModalFooter>
       </CModal>
     </div>

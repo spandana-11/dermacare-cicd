@@ -36,8 +36,10 @@ const OtherStaffForm = ({
     wardBoyId: '',
     clinicId: localStorage.getItem('HospitalId'),
     branchId: localStorage.getItem('branchId'),
+    
     branchName: localStorage.getItem('branchName'),
     hospitalName: localStorage.getItem('HospitalName'),
+    createdBy: localStorage.getItem('staffId') || 'admin',
     fullName: '',
     gender: '',
     dateOfBirth: '',
@@ -203,6 +205,7 @@ const OtherStaffForm = ({
     setFormData((prev) => ({
       ...prev,
       ...initialData,
+       createdBy: initialData.createdBy || prev.createdBy,
       address: { ...emptyForm.address, ...(initialData.address || {}) },
       bankAccountDetails: {
         ...emptyForm.bankAccountDetails,

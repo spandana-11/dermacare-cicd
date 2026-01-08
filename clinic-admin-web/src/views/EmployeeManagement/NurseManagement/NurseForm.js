@@ -22,8 +22,11 @@ import { emailPattern } from '../../../Constant/Constants'
 import FilePreview from '../../../Utils/FilePreview'
 import { showCustomToast } from '../../../Utils/Toaster'
 
+
 const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fetchNurses }) => {
   const emptyPermissions = {} // ✅ no feature is selected by default
+  // const { user } = useHospital()
+
 
   const emptyForm = {
     hospitalId: localStorage.getItem('HospitalId'),
@@ -31,6 +34,9 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
     branchName: localStorage.getItem('branchName'),
     hospitalName: localStorage.getItem('HospitalName'),
     fullName: '',
+  createdBy: localStorage.getItem('staffId') || 'admin',
+
+  
     gender: '',
     dateOfBirth: '',
     nurseContactNumber: '',
