@@ -1227,18 +1227,31 @@ if (payload.billDueDate && payload.invoiceDate) {
 
                     {/* Category */}
                     <CTableDataCell style={{ minWidth: 160 }}>
-                      <CFormInput
-                        size="md"
-                        className="py-0"
-                        value={item.category}
-                        onChange={(e) => updateProductField(index, 'category', e.target.value)}
-                      />
-                      {errors.products[index]?.category && (
-                        <div className="text-danger small mt-1">
-                          {errors.products[index].category}
-                        </div>
-                      )}
-                    </CTableDataCell>
+  <CFormSelect
+    size="md"
+    className="py-0"
+    value={item.category}
+    onChange={(e) => updateProductField(index, 'category', e.target.value)}
+  >
+    <option value="">-- Select Category --</option>
+    <option value="Tablet">Tablet</option>
+    <option value="Capsule">Capsule</option>
+    <option value="Syrup">Syrup</option>
+    <option value="Injection">Injection</option>
+    <option value="Cream">Cream</option>
+    <option value="Ointment">Ointment</option>
+    <option value="Drops">Drops</option>
+    <option value="Inhaler">Inhaler</option>
+    <option value="Other">Other</option>
+  </CFormSelect>
+
+  {errors.products?.[index]?.category && (
+    <div className="text-danger small mt-1">
+      {errors.products[index].category}
+    </div>
+  )}
+</CTableDataCell>
+
 
                     {/* Qty */}
                     <CTableDataCell style={{ minWidth: 100 }}>

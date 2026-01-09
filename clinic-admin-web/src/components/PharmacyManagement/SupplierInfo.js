@@ -284,28 +284,51 @@ const SupplierInfo = () => {
     setNewAreaName('')
     setShowAreaModal(false)
   }
-  const validateForm = () => {
-    const errors = {}
+ const validateForm = () => {
+  const errors = {};
+  const mobileRegex = /^[6-9]\d{9}$/;
 
-    if (!form.supplierName.trim()) errors.supplierName = 'Supplier Name is required'
-    if (!form.gstNumber.trim()) errors.gstNumber = 'GST Number is required'
-    if (!form.registrationNumber.trim())
-      errors.registrationNumber = 'Registration Number is required'
-    if (!form.form20B.trim()) errors.form20B = 'Form 20B is required for medicine suppliers'
-    if (!form.form21B.trim()) errors.form21B = 'Form 21B is required for medicine suppliers'
-    if (!form.address.trim()) errors.address = 'Address is required'
-    if (!form.city.trim()) errors.city = 'City is required'
-    if (!form.area.trim()) errors.area = 'Area is required'
+  if (!form.supplierName?.trim()) errors.supplierName = 'Supplier Name is required';
+  if (!form.gstNumber?.trim()) errors.gstNumber = 'GST Number is required';
+  if (!form.registrationNumber?.trim())
+    errors.registrationNumber = 'Registration Number is required';
+  
+  if (!form.form20B?.trim()) errors.form20B = 'Form 20B is required';
+  if (!form.cstNumber?.trim()) errors.cstNumber = 'CST number is required';
+  if (!form.form21B?.trim()) errors.form21B = 'Form 21B is required';
+  if (!form.address?.trim()) errors.address = 'Address is required';
+  if (!form.city?.trim()) errors.city = 'City is required';
+  if (!form.area?.trim()) errors.area = 'Area is required';
 
-    if (!form.contactDetails.contactPerson.trim())
-      errors.contactPerson = 'Contact Person is required'
-    if (!form.contactDetails.mobileNumber1.trim())
-      errors.mobileNumber1 = 'At least one Mobile Number is required'
-    if (!form.contactDetails.email.trim()) errors.email = 'Email is required'
-    else if (!/\S+@\S+\.\S+/.test(form.contactDetails.email)) errors.email = 'Invalid email format'
-
-    return errors
+  // Contact Person
+  if (!form.contactDetails?.contactPerson?.trim()) {
+    errors.contactPerson = 'Contact Person is required';
   }
+
+  // ✅ Mobile Number 1 (REQUIRED)
+  if (!form.contactDetails?.mobileNumber1?.trim()) {
+    errors.mobileNumber1 = 'Mobile number is required';
+  } else if (!mobileRegex.test(form.contactDetails.mobileNumber1)) {
+    errors.mobileNumber1 = 'Enter a valid 10-digit mobile number';
+  }
+
+  // Mobile Number 2 (OPTIONAL)
+  if (form.contactDetails?.mobileNumber2?.trim()) {
+    if (!mobileRegex.test(form.contactDetails.mobileNumber2)) {
+      errors.mobileNumber2 = 'Enter a valid 10-digit mobile number';
+    }
+  }
+
+  // Email
+  if (!form.contactDetails?.email?.trim()) {
+    errors.email = 'Email is required';
+  } else if (!/\S+@\S+\.\S+/.test(form.contactDetails.email)) {
+    errors.email = 'Invalid email format';
+  }
+
+  return errors;
+};
+
 
   return (
     <div
@@ -515,7 +538,7 @@ const SupplierInfo = () => {
         {/* RIGHT BOX */}
         <div className="flex-fill border p-3 rounded">
           <h6 className="fw-bold">
-            Contact Details <span className="text-danger">*</span>
+            Contact Details 
           </h6>
           <CFormLabel>State</CFormLabel>
           <CFormInput
@@ -553,20 +576,48 @@ const SupplierInfo = () => {
           <CFormLabel className="mt-2">
             Mobile Number 1 <span className="text-danger">*</span>
           </CFormLabel>
-          <CFormInput
-            value={form.contactDetails.mobileNumber1}
-            onChange={(e) => updateContact('mobileNumber1', e.target.value)}
-            invalid={!!error.mobileNumber1} // <-- ADDED
-          />
-          {error.mobileNumber1 && <div className="invalid-feedback">{error.mobileNumber1}</div>}{' '}
+       <CFormInput
+  type="text"
+  value={form.contactDetails.mobileNumber1}
+  maxLength={10}
+  onChange={(e) => {
+    const value = e.target.value.replace(/\D/g, '');
+
+    setForm((prev) => ({
+      ...prev,
+      contactDetails: {
+        ...prev.contactDetails,
+        mobileNumber1: value,
+      },
+    }));
+  }}
+/>
+
+{/* ✅ THIS IS REQUIRED */}
+{error.mobileNumber1 && (
+  <div className="text-danger mt-1">{error.mobileNumber1}</div>
+)}
+
+
           {/* <-- ADDED */}
           <CFormLabel className="mt-2">Mobile Number 2</CFormLabel>
-          <CFormInput
-            value={form.contactDetails.mobileNumber2}
-            onChange={(e) => updateContact('mobileNumber2', e.target.value)}
-            invalid={!!error.mobileNumber2} // <-- ADDED
-          />
-          {error.mobileNumber2 && <div className="invalid-feedback">{error.mobileNumber2}</div>}{' '}
+         <CFormInput
+  type="text"
+  value={form.contactDetails.mobileNumber2}
+  maxLength={10}
+  onChange={(e) => {
+    const value = e.target.value.replace(/\D/g, ''); // allow only numbers
+
+    setForm((prev) => ({
+      ...prev,
+      contactDetails: {
+        ...prev.contactDetails,
+        mobileNumber2: value,
+      },
+    }));
+  }}
+/>
+
           {/* <-- ADDED */}
           <CFormLabel className="mt-2">Designation</CFormLabel>
           <CFormInput
