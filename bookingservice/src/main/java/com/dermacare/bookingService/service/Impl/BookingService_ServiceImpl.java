@@ -562,12 +562,11 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 	        for (Booking b : bookings) {
 
-	            /* -------------------------------------------------
-	             * CASE 1: TREATMENT-BASED BOOKINGS (WITH SITTINGS)
-	             * ------------------------------------------------- */
+	            /* -------------------------------
+	             * CASE A: TREATMENT BOOKINGS
+	             * ------------------------------- */
 	            if (b.getTreatments() != null
-	                    && b.getTreatments().getGeneratedData() != null
-	                    && !b.getTreatments().getGeneratedData().isEmpty()) {
+	                    && b.getTreatments().getGeneratedData() != null) {
 
 	                for (Map.Entry<String, TreatmentDetailsDTO> entry
 	                        : b.getTreatments().getGeneratedData().entrySet()) {
@@ -577,42 +576,39 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 	                    if (treatment.getDates() == null) continue;
 
-	                    for (DatesDTO dateEntry : treatment.getDates()) {
+	                    for (DatesDTO d : treatment.getDates()) {
 
 	                        LocalDate appointmentDate =
-	                                LocalDate.parse(dateEntry.getDate());
+	                                LocalDate.parse(d.getDate());
 
 	                        boolean add = false;
 
 	                        switch (number) {
 
-	                            // UPCOMING (TODAY + FUTURE)
+	                            // ✅ UPCOMING = STRICTLY FUTURE
 	                            case "1":
-	                                if ("Confirmed".equalsIgnoreCase(dateEntry.getStatus())
-	                                        && !appointmentDate.isBefore(today)) {
+	                                if ("Confirmed".equalsIgnoreCase(d.getStatus())
+	                                        && appointmentDate.isAfter(today)) {
 	                                    add = true;
 	                                }
 	                                break;
 
-	                            // UPCOMING ONLINE
-	                            case "2":
+	                            case "2": // Upcoming Online
 	                                if ("Online Consultation".equalsIgnoreCase(b.getConsultationType())
-	                                        && "Confirmed".equalsIgnoreCase(dateEntry.getStatus())
-	                                        && !appointmentDate.isBefore(today)) {
+	                                        && "Confirmed".equalsIgnoreCase(d.getStatus())
+	                                        && appointmentDate.isAfter(today)) {
 	                                    add = true;
 	                                }
 	                                break;
 
-	                            // COMPLETED
-	                            case "3":
-	                                if ("Completed".equalsIgnoreCase(dateEntry.getStatus())) {
+	                            case "3": // Completed
+	                                if ("Completed".equalsIgnoreCase(d.getStatus())) {
 	                                    add = true;
 	                                }
 	                                break;
 
-	                            // IN-PROGRESS
-	                            case "4":
-	                                if ("In-Progress".equalsIgnoreCase(dateEntry.getStatus())) {
+	                            case "4": // In-Progress
+	                                if ("In-Progress".equalsIgnoreCase(d.getStatus())) {
 	                                    add = true;
 	                                }
 	                                break;
@@ -621,17 +617,18 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                        if (add) {
 	                            BookingResponse temp = toResponse(b);
 	                            temp.setSubServiceName(treatmentName);
-	                            temp.setServiceDate(dateEntry.getDate());
+	                            temp.setServiceDate(d.getDate());
 	                            temp.setServicetime(b.getServicetime());
+	                            temp.setStatus(d.getStatus());
 	                            responses.add(temp);
 	                        }
 	                    }
 	                }
 	            }
 
-	            /* -------------------------------------------------
-	             * CASE 2: NORMAL SERVICE / CONSULTATION BOOKINGS
-	             * ------------------------------------------------- */
+	            /* -------------------------------
+	             * CASE B: NORMAL BOOKINGS
+	             * ------------------------------- */
 	            else if (b.getServiceDate() != null) {
 
 	                LocalDate appointmentDate =
@@ -641,32 +638,29 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 	                switch (number) {
 
-	                    // UPCOMING (TODAY + FUTURE)
+	                    // ✅ UPCOMING = STRICTLY FUTURE
 	                    case "1":
 	                        if ("Confirmed".equalsIgnoreCase(b.getStatus())
-	                                && !appointmentDate.isBefore(today)) {
+	                                && appointmentDate.isAfter(today)) {
 	                            add = true;
 	                        }
 	                        break;
 
-	                    // UPCOMING ONLINE
-	                    case "2":
+	                    case "2": // Upcoming Online
 	                        if ("Online Consultation".equalsIgnoreCase(b.getConsultationType())
 	                                && "Confirmed".equalsIgnoreCase(b.getStatus())
-	                                && !appointmentDate.isBefore(today)) {
+	                                && appointmentDate.isAfter(today)) {
 	                            add = true;
 	                        }
 	                        break;
 
-	                    // COMPLETED
-	                    case "3":
+	                    case "3": // Completed
 	                        if ("Completed".equalsIgnoreCase(b.getStatus())) {
 	                            add = true;
 	                        }
 	                        break;
 
-	                    // IN-PROGRESS
-	                    case "4":
+	                    case "4": // In-Progress
 	                        if ("In-Progress".equalsIgnoreCase(b.getStatus())) {
 	                            add = true;
 	                        }
@@ -696,6 +690,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 	    return ResponseEntity.status(res.getStatusCode()).body(res);
 	}
+
 
 
 		
