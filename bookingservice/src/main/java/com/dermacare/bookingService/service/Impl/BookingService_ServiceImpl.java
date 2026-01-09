@@ -548,19 +548,26 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	    List<BookingResponse> responses = new ArrayList<>();
 
 	    try {
-	        List<Booking> existingBooking =
+	        List<Booking> bookings =
 	                repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
 
 	        LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
 
-	        if (existingBooking != null && !existingBooking.isEmpty()) {
+	        if (bookings == null || bookings.isEmpty()) {
+	            res.setStatusCode(200);
+	            res.setData(responses);
+	            res.setMessage("Appointments Are Not Found");
+	            return ResponseEntity.ok(res);
+	        }
 
-	            for (Booking b : existingBooking) {
+	        for (Booking b : bookings) {
 
-	                if (b.getTreatments() == null
-	                        || b.getTreatments().getGeneratedData() == null) {
-	                    continue;
-	                }
+	            /* -------------------------------------------------
+	             * CASE 1: TREATMENT-BASED BOOKINGS (WITH SITTINGS)
+	             * ------------------------------------------------- */
+	            if (b.getTreatments() != null
+	                    && b.getTreatments().getGeneratedData() != null
+	                    && !b.getTreatments().getGeneratedData().isEmpty()) {
 
 	                for (Map.Entry<String, TreatmentDetailsDTO> entry
 	                        : b.getTreatments().getGeneratedData().entrySet()) {
@@ -568,52 +575,30 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                    String treatmentName = entry.getKey();
 	                    TreatmentDetailsDTO treatment = entry.getValue();
 
-	                    if (treatment.getDates() == null) {
-	                        continue;
-	                    }
+	                    if (treatment.getDates() == null) continue;
 
 	                    for (DatesDTO dateEntry : treatment.getDates()) {
 
 	                        LocalDate appointmentDate =
 	                                LocalDate.parse(dateEntry.getDate());
 
-	                        // Clone booking per sitting date
-	                        BookingResponse temp = toResponse(b);
-
-	                        // Keep only one treatment
-	                        Map<String, TreatmentDetailsDTO> oneTreatment =
-	                                new HashMap<>();
-	                        oneTreatment.put(treatmentName, treatment);
-
-	                        temp.getTreatments().setGeneratedData(oneTreatment);
-	                        temp.setSubServiceName(treatmentName);
-	                        temp.setServiceDate(dateEntry.getDate());
-	                        temp.setServicetime(b.getServicetime());
-
 	                        boolean add = false;
 
 	                        switch (number) {
 
-	                            // UPCOMING (Today + Future)
+	                            // UPCOMING (TODAY + FUTURE)
 	                            case "1":
-	                                if (
-	                                    (b.getConsultationType().equalsIgnoreCase("Services & Treatments")
-	                                    || b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation")
-	                                    || b.getConsultationType().equalsIgnoreCase("Online Consultation"))
-	                                    && "Confirmed".equalsIgnoreCase(dateEntry.getStatus())
-	                                    && !appointmentDate.isBefore(today)
-	                                ) {
+	                                if ("Confirmed".equalsIgnoreCase(dateEntry.getStatus())
+	                                        && !appointmentDate.isBefore(today)) {
 	                                    add = true;
 	                                }
 	                                break;
 
-	                            // UPCOMING ONLINE ONLY
+	                            // UPCOMING ONLINE
 	                            case "2":
-	                                if (
-	                                    b.getConsultationType().equalsIgnoreCase("Online Consultation")
-	                                    && "Confirmed".equalsIgnoreCase(dateEntry.getStatus())
-	                                    && !appointmentDate.isBefore(today)
-	                                ) {
+	                                if ("Online Consultation".equalsIgnoreCase(b.getConsultationType())
+	                                        && "Confirmed".equalsIgnoreCase(dateEntry.getStatus())
+	                                        && !appointmentDate.isBefore(today)) {
 	                                    add = true;
 	                                }
 	                                break;
@@ -634,25 +619,74 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                        }
 
 	                        if (add) {
+	                            BookingResponse temp = toResponse(b);
+	                            temp.setSubServiceName(treatmentName);
+	                            temp.setServiceDate(dateEntry.getDate());
+	                            temp.setServicetime(b.getServicetime());
 	                            responses.add(temp);
 	                        }
 	                    }
 	                }
 	            }
 
-	            res.setStatusCode(200);
-	            res.setData(responses);
-	            res.setMessage(
-	                    responses.isEmpty()
-	                            ? "Appointments Are Not Found"
-	                            : "Appointments Are Found"
-	            );
+	            /* -------------------------------------------------
+	             * CASE 2: NORMAL SERVICE / CONSULTATION BOOKINGS
+	             * ------------------------------------------------- */
+	            else if (b.getServiceDate() != null) {
 
-	        } else {
-	            res.setStatusCode(200);
-	            res.setData(responses);
-	            res.setMessage("Appointments Are Not Found");
+	                LocalDate appointmentDate =
+	                        LocalDate.parse(b.getServiceDate());
+
+	                boolean add = false;
+
+	                switch (number) {
+
+	                    // UPCOMING (TODAY + FUTURE)
+	                    case "1":
+	                        if ("Confirmed".equalsIgnoreCase(b.getStatus())
+	                                && !appointmentDate.isBefore(today)) {
+	                            add = true;
+	                        }
+	                        break;
+
+	                    // UPCOMING ONLINE
+	                    case "2":
+	                        if ("Online Consultation".equalsIgnoreCase(b.getConsultationType())
+	                                && "Confirmed".equalsIgnoreCase(b.getStatus())
+	                                && !appointmentDate.isBefore(today)) {
+	                            add = true;
+	                        }
+	                        break;
+
+	                    // COMPLETED
+	                    case "3":
+	                        if ("Completed".equalsIgnoreCase(b.getStatus())) {
+	                            add = true;
+	                        }
+	                        break;
+
+	                    // IN-PROGRESS
+	                    case "4":
+	                        if ("In-Progress".equalsIgnoreCase(b.getStatus())) {
+	                            add = true;
+	                        }
+	                        break;
+	                }
+
+	                if (add) {
+	                    BookingResponse temp = toResponse(b);
+	                    responses.add(temp);
+	                }
+	            }
 	        }
+
+	        res.setStatusCode(200);
+	        res.setData(responses);
+	        res.setMessage(
+	                responses.isEmpty()
+	                        ? "Appointments Are Not Found"
+	                        : "Appointments Are Found"
+	        );
 
 	    } catch (Exception e) {
 	        res.setStatusCode(500);
