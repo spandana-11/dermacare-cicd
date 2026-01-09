@@ -539,102 +539,130 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 
 
-	public ResponseEntity<?> filterDoctorAppointmentsByDoctorId(String hospitalId, String doctorId, String number) {
+	public ResponseEntity<?> filterDoctorAppointmentsByDoctorId(
+	        String hospitalId,
+	        String doctorId,
+	        String number) {
+
 	    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
 	    List<BookingResponse> responses = new ArrayList<>();
+
 	    try {
-	        List<Booking> existingBooking = repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
-	        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-	        String currentDate = LocalDate.now(ZoneId.of("Asia/Kolkata")).format(dateFormatter);
+	        List<Booking> existingBooking =
+	                repository.findByClinicIdAndDoctorId(hospitalId, doctorId);
+
+	        LocalDate today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
 
 	        if (existingBooking != null && !existingBooking.isEmpty()) {
+
 	            for (Booking b : existingBooking) {
-	                if (b.getTreatments() != null && b.getTreatments().getGeneratedData() != null) {
-	                    for (Map.Entry<String, TreatmentDetailsDTO> entry : b.getTreatments().getGeneratedData().entrySet()) {
-	                        String treatmentName = entry.getKey();
-	                        TreatmentDetailsDTO t = entry.getValue();
 
-	                        if (t.getDates() != null) {
-	                            for (DatesDTO dateEntry : t.getDates()) {
-	                                // Create a clone of the booking per sitting date
-	                                BookingResponse temp = toResponse(b);
+	                if (b.getTreatments() == null
+	                        || b.getTreatments().getGeneratedData() == null) {
+	                    continue;
+	                }
 
-	                                // Keep only the current treatment in generatedData
-	                                Map<String, TreatmentDetailsDTO> oneTreatment = new HashMap<>();
-	                                oneTreatment.put(treatmentName, t);
-	                                temp.getTreatments().setGeneratedData(oneTreatment);
-	                                temp.setSubServiceName(treatmentName);
+	                for (Map.Entry<String, TreatmentDetailsDTO> entry
+	                        : b.getTreatments().getGeneratedData().entrySet()) {
 
-	                                // Set service date and time per sitting date
-	                                temp.setServiceDate(dateEntry.getDate());
-	                                // If time is specific per sitting, set here; otherwise, fallback to booking time
-	                                temp.setServicetime(b.getServicetime());
+	                    String treatmentName = entry.getKey();
+	                    TreatmentDetailsDTO treatment = entry.getValue();
 
-	                                // Filtering logic based on the 'number' parameter and sitting date status
-	                                boolean add = false;
-	                                switch (number) {
-	                                    case "1":
-	                                        if ((b.getConsultationType().equalsIgnoreCase("Services & Treatments")
-	                                                || b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation")
-	                                                || b.getConsultationType().equalsIgnoreCase("Online Consultation"))
-	                                                && "Confirmed".equalsIgnoreCase(dateEntry.getStatus())
-	                                                && !dateEntry.getDate().equals(currentDate)) {
-	                                            add = true;
-	                                        }
-	                                        break;
+	                    if (treatment.getDates() == null) {
+	                        continue;
+	                    }
 
-	                                    case "2":
-	                                        if (b.getConsultationType().equalsIgnoreCase("Online Consultation")
-	                                                && "Confirmed".equalsIgnoreCase(dateEntry.getStatus())
-	                                                && !dateEntry.getDate().equals(currentDate)) {
-	                                            add = true;
-	                                        }
-	                                        break;
+	                    for (DatesDTO dateEntry : treatment.getDates()) {
 
-	                                    case "3":
-	                                        if ("Completed".equalsIgnoreCase(dateEntry.getStatus())) {
-	                                            add = true;
-	                                        }
-	                                        break;
+	                        LocalDate appointmentDate =
+	                                LocalDate.parse(dateEntry.getDate());
 
-	                                    case "4":
-	                                        if ("In-Progress".equalsIgnoreCase(dateEntry.getStatus())) {
-	                                            add = true;
-	                                        }
-	                                        break;
+	                        // Clone booking per sitting date
+	                        BookingResponse temp = toResponse(b);
+
+	                        // Keep only one treatment
+	                        Map<String, TreatmentDetailsDTO> oneTreatment =
+	                                new HashMap<>();
+	                        oneTreatment.put(treatmentName, treatment);
+
+	                        temp.getTreatments().setGeneratedData(oneTreatment);
+	                        temp.setSubServiceName(treatmentName);
+	                        temp.setServiceDate(dateEntry.getDate());
+	                        temp.setServicetime(b.getServicetime());
+
+	                        boolean add = false;
+
+	                        switch (number) {
+
+	                            // UPCOMING (Today + Future)
+	                            case "1":
+	                                if (
+	                                    (b.getConsultationType().equalsIgnoreCase("Services & Treatments")
+	                                    || b.getConsultationType().equalsIgnoreCase("In-Clinic Consultation")
+	                                    || b.getConsultationType().equalsIgnoreCase("Online Consultation"))
+	                                    && "Confirmed".equalsIgnoreCase(dateEntry.getStatus())
+	                                    && !appointmentDate.isBefore(today)
+	                                ) {
+	                                    add = true;
 	                                }
+	                                break;
 
-	                                if (add) {
-	                                    responses.add(temp);
+	                            // UPCOMING ONLINE ONLY
+	                            case "2":
+	                                if (
+	                                    b.getConsultationType().equalsIgnoreCase("Online Consultation")
+	                                    && "Confirmed".equalsIgnoreCase(dateEntry.getStatus())
+	                                    && !appointmentDate.isBefore(today)
+	                                ) {
+	                                    add = true;
 	                                }
-	                            }
+	                                break;
+
+	                            // COMPLETED
+	                            case "3":
+	                                if ("Completed".equalsIgnoreCase(dateEntry.getStatus())) {
+	                                    add = true;
+	                                }
+	                                break;
+
+	                            // IN-PROGRESS
+	                            case "4":
+	                                if ("In-Progress".equalsIgnoreCase(dateEntry.getStatus())) {
+	                                    add = true;
+	                                }
+	                                break;
+	                        }
+
+	                        if (add) {
+	                            responses.add(temp);
 	                        }
 	                    }
 	                }
 	            }
 
-	            if (!responses.isEmpty()) {
-	                res.setStatusCode(200);
-	                res.setData(responses);
-	                res.setMessage("Appointments Are Found");
-	            } else {
-	                res.setStatusCode(200);
-	                res.setData(responses);
-	                res.setMessage("Appointments Are Not Found");
-	            }
+	            res.setStatusCode(200);
+	            res.setData(responses);
+	            res.setMessage(
+	                    responses.isEmpty()
+	                            ? "Appointments Are Not Found"
+	                            : "Appointments Are Found"
+	            );
+
 	        } else {
 	            res.setStatusCode(200);
 	            res.setData(responses);
 	            res.setMessage("Appointments Are Not Found");
 	        }
+
 	    } catch (Exception e) {
-	        responses = null;
 	        res.setStatusCode(500);
-	        res.setData(responses);
+	        res.setData(null);
 	        res.setMessage(e.getMessage());
 	    }
+
 	    return ResponseEntity.status(res.getStatusCode()).body(res);
 	}
+
 
 		
 	public ResponseEntity<?> getCompletedApntsByDoctorId(String hospitalId,String doctorId) {
