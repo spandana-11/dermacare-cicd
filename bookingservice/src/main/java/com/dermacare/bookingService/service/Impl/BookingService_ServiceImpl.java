@@ -610,13 +610,30 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                                break;
 
 	                            // 4️⃣ ACTIVE / IN-PROGRESS
-	                            case "4": // Active / In-Progress
-	                                if (
-	                                    "In-Progress".equalsIgnoreCase(b.getStatus())
-	                                    && "Pending".equalsIgnoreCase(d.getStatus())
-	                                ) {
+	                            case "4": // Active (ONLY next pending sitting)
+
+	                                if (!"In-Progress".equalsIgnoreCase(b.getStatus())) {
+	                                    break;
+	                                }
+
+	                                // Find earliest pending sitting
+	                                DatesDTO nextPending = null;
+
+	                                for (DatesDTO date : treatment.getDates()) {
+	                                    if ("Pending".equalsIgnoreCase(date.getStatus())) {
+	                                        if (nextPending == null ||
+	                                            LocalDate.parse(date.getDate())
+	                                                     .isBefore(LocalDate.parse(nextPending.getDate()))) {
+	                                            nextPending = date;
+	                                        }
+	                                    }
+	                                }
+
+	                                // Add ONLY the next pending sitting
+	                                if (nextPending != null && d == nextPending) {
 	                                    add = true;
 	                                }
+
 	                                break;
 
 	                        }
