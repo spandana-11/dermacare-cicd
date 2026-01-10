@@ -660,11 +660,13 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                        }
 	                        break;
 
-	                    case "4": // In-Progress
-	                        if ("In-Progress".equalsIgnoreCase(b.getStatus())) {
+	                    case "4": // In-Progress / Active
+	                        // Check if individual sitting is pending OR booking is in-progress
+	                        if ("Pending".equalsIgnoreCase(b.getStatus()) || "In-Progress".equalsIgnoreCase(b.getStatus())) {
 	                            add = true;
 	                        }
 	                        break;
+
 	                }
 
 	                if (add) {
