@@ -585,7 +585,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 	                        switch (number) {
 
-	                            // ✅ UPCOMING = STRICTLY FUTURE
+	                            // 1️⃣ UPCOMING (Future confirmed sittings)
 	                            case "1":
 	                                if ("Confirmed".equalsIgnoreCase(d.getStatus())
 	                                        && appointmentDate.isAfter(today)) {
@@ -593,7 +593,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                                }
 	                                break;
 
-	                            case "2": // Upcoming Online
+	                            // 2️⃣ UPCOMING ONLINE
+	                            case "2":
 	                                if ("Online Consultation".equalsIgnoreCase(b.getConsultationType())
 	                                        && "Confirmed".equalsIgnoreCase(d.getStatus())
 	                                        && appointmentDate.isAfter(today)) {
@@ -601,14 +602,22 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                                }
 	                                break;
 
-	                            case "3": // Completed
+	                            // 3️⃣ COMPLETED
+	                            case "3":
 	                                if ("Completed".equalsIgnoreCase(d.getStatus())) {
 	                                    add = true;
 	                                }
 	                                break;
 
-	                            case "4": // In-Progress
-	                                if ("In-Progress".equalsIgnoreCase(d.getStatus())) {
+	                            // 4️⃣ ACTIVE / IN-PROGRESS
+	                            case "4":
+	                                if (
+	                                    "In-Progress".equalsIgnoreCase(b.getStatus())
+	                                    && (
+	                                        "Pending".equalsIgnoreCase(d.getStatus())
+	                                        || "Confirmed".equalsIgnoreCase(d.getStatus())
+	                                    )
+	                                ) {
 	                                    add = true;
 	                                }
 	                                break;
@@ -638,7 +647,7 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 
 	                switch (number) {
 
-	                    // ✅ UPCOMING = STRICTLY FUTURE
+	                    // 1️⃣ UPCOMING
 	                    case "1":
 	                        if ("Confirmed".equalsIgnoreCase(b.getStatus())
 	                                && appointmentDate.isAfter(today)) {
@@ -646,7 +655,8 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                        }
 	                        break;
 
-	                    case "2": // Upcoming Online
+	                    // 2️⃣ UPCOMING ONLINE
+	                    case "2":
 	                        if ("Online Consultation".equalsIgnoreCase(b.getConsultationType())
 	                                && "Confirmed".equalsIgnoreCase(b.getStatus())
 	                                && appointmentDate.isAfter(today)) {
@@ -654,25 +664,19 @@ public class BookingService_ServiceImpl implements BookingService_Service {
 	                        }
 	                        break;
 
-	                    case "3": // Completed
+	                    // 3️⃣ COMPLETED
+	                    case "3":
 	                        if ("Completed".equalsIgnoreCase(b.getStatus())) {
 	                            add = true;
 	                        }
 	                        break;
 
-	                    case "4": // Active / In-Progress
-	                        if (
-	                            "In-Progress".equalsIgnoreCase(b.getStatus())
-	                            && (
-	                                "Pending".equalsIgnoreCase(b.getStatus())
-	                                || "Confirmed".equalsIgnoreCase(b.getStatus())
-	                            )
-	                        ) {
+	                    // 4️⃣ ACTIVE / IN-PROGRESS
+	                    case "4":
+	                        if ("In-Progress".equalsIgnoreCase(b.getStatus())) {
 	                            add = true;
 	                        }
 	                        break;
-
-
 	                }
 
 	                if (add) {
