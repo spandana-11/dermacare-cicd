@@ -1,9 +1,9 @@
 // export const BASE_URL = 'http://alb-dev-sc-197990416.ap-south-1.elb.amazonaws.com/api'
 // export let wifiUrl = 'localhost'
-export let wifiUrl = 'http://3.6.119.57:9090'
+export let wifiUrl = 'http://52.66.144.177:9090'
 export let splrUrl = 'http:/localhost:8801'
 // export let wifiUrl = '192.168.1.5'
-// http://3.6.119.57:9090
+// http://52.66.144.177:9090
 //https://api.aesthetech.life
 export const SBASE_URL = `${wifiUrl}/clinicadminpublicapis`
 export const BASE_URL = `${wifiUrl}/clinic-admin`
