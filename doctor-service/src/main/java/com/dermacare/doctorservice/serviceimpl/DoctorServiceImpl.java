@@ -189,5 +189,16 @@ public class DoctorServiceImpl implements DoctorService {
 			            return ResponseEntity.status(500).body(ex.getMessage());
 			        }
 			    }
+			 @Override
+			    public ResponseEntity<Response> getDiseasesFromClinicAdmin(String hospitalId) {
+
+			       
+			        return clinicAdminServiceClient.getDiseasesByHospitalId(hospitalId);
+			    }
+			 
+			  @Override
+			    public ResponseEntity<Response> getLabTestsFromClinicAdmin(String hospitalId) {
+			        return clinicAdminServiceClient.getLabTestsByHospitalId(hospitalId);
+			    }
 }
 

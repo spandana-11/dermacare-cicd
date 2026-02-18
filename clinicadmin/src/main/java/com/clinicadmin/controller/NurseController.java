@@ -48,7 +48,7 @@ public class NurseController {
 	}
 
 	// ------------------- Update Nurse -------------------
-	@PutMapping("updateNurse/{nurseId}")
+	@PutMapping("/updateNurse/{nurseId}")
 	public ResponseEntity<Response> updateNurse( @PathVariable String nurseId,
 			@RequestBody NurseDTO dto) {
 		Response response = nurseService.updateNurse(nurseId, dto);
@@ -56,7 +56,7 @@ public class NurseController {
 	}
 
 	// ------------------- Delete Nurse -------------------
-	@DeleteMapping("deleteNurse/{hospitalId}/{nurseId}")
+	@DeleteMapping("/deleteNurse/{hospitalId}/{nurseId}")
 	public ResponseEntity<Response> deleteNurse(@PathVariable String hospitalId, @PathVariable String nurseId) {
 		Response response = nurseService.deleteNurse(hospitalId, nurseId);
 		return ResponseEntity.status(response.getStatus()).body(response);

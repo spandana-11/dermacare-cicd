@@ -15,9 +15,11 @@ import com.clinicadmin.entity.Vitals;
 import com.clinicadmin.feignclient.BookingFeign;
 import com.clinicadmin.repository.VitalsRepository;
 import com.clinicadmin.service.VitalService;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 @Service
 public class VitalServiceImpl implements VitalService {
+	private static final Logger log = LoggerFactory.getLogger(VitalServiceImpl.class);
 
 	@Autowired
 	VitalsRepository vitalsRepository;
@@ -26,24 +28,32 @@ public class VitalServiceImpl implements VitalService {
 
 	@Override
 	public Response postVitals(String bookingId, VitalsDTO dto) {
-	    Response res = new Response();
+		log.info("Post vitals request received | bookingId={}", bookingId);
+
+		Response res = new Response();
 	    try {
 	        // Check if vitals already exist for this bookingId
 	        Optional<Vitals> existingVitals = vitalsRepository.findByBookingId(bookingId);
 	        if (existingVitals.isPresent()) {
-	            res.setSuccess(false);
+				log.warn("Vitals already exist | bookingId={}", bookingId);
+
+	        	res.setSuccess(false);
 //	            res.setData(existingVitals.get());
 	            res.setMessage("Vitals already exist for bookingId: " + bookingId);
 	            res.setStatus(HttpStatus.CONFLICT.value()); // 409 Conflict
 	            return res;
 	        }
 
+			log.info("Fetching booking details via Booking service | bookingId={}", bookingId);
+
 	        ResponseEntity<ResponseStructure<BookingResponse>> bookingResponse =
 	                bookingFeign.getBookedService(bookingId);
 	        BookingResponse resbody = bookingResponse.getBody().getData();
 
 	        if (!resbody.getBookingId().equals(bookingId)) {
-	            res.setSuccess(false);
+				log.warn("Booking mismatch | bookingId={}", bookingId);
+
+	        	res.setSuccess(false);
 	            res.setMessage("Appointment data is not found for this id: " + bookingId);
 	            res.setStatus(HttpStatus.OK.value());
 	            return res;
@@ -61,7 +71,8 @@ public class VitalServiceImpl implements VitalService {
 	        vital.setBookingId(bookingId);
 
 	        Vitals savedVitals = vitalsRepository.save(vital);
-
+	        log.info("Vitals saved successfully | vitalsId={}, bookingId={}",
+					savedVitals.getId(), bookingId);
 	        // Prepare response DTO
 	        VitalsDTO dto1 = new VitalsDTO();
 	        dto1.setId(savedVitals.getId().toString());
@@ -81,6 +92,7 @@ public class VitalServiceImpl implements VitalService {
 
 	        return res;
 	    } catch (Exception e) {
+			log.error("Exception occurred while adding vitals | bookingId={}", bookingId, e);
 	        res.setSuccess(false);
 	        res.setMessage("Exception occurs during adding vitals: " + e.getMessage());
 	        res.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -90,10 +102,14 @@ public class VitalServiceImpl implements VitalService {
 
 	@Override
 	public Response getPatientByBookingIdAndPatientId(String bookingId, String patientId) {
+		log.info("Fetching vitals | bookingId={}, patientId={}", bookingId, patientId);
+
 		Response res = new Response();
 		try {
 			Optional<Vitals> vitals = vitalsRepository.findByBookingIdAndPatientId(bookingId, patientId);
 			if (vitals.isPresent()) {
+				log.info("Vitals found | bookingId={}, patientId={}", bookingId, patientId);
+
 				Vitals savedVitals = vitals.get();
 				VitalsDTO dto1 = new VitalsDTO();
 				dto1.setId(savedVitals.getId().toString()); // ✅ set id
@@ -114,6 +130,7 @@ public class VitalServiceImpl implements VitalService {
 				return res;
 
 			} else {
+				log.info("Vitals not found | bookingId={}, patientId={}", bookingId, patientId);
 				res.setSuccess(true);
 				res.setData(Collections.emptyList());
 				res.setMessage("Vitals data not found ");
@@ -122,6 +139,8 @@ public class VitalServiceImpl implements VitalService {
 				return res;
 			}
 		} catch (Exception e) {
+			log.error("Exception occurred while retrieving vitals | bookingId={}, patientId={}",
+					bookingId, patientId, e);
 			res.setSuccess(false);
 			res.setMessage("Exception occurs during retrieving vitals: " + e.getMessage());
 			res.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -133,25 +152,32 @@ public class VitalServiceImpl implements VitalService {
 
 	@Override
 	public Response updateVitals(String bookingId, String patientId, VitalsDTO dto) {
-	    Response res = new Response();
+		log.info("Update vitals request | bookingId={}, patientId={}", bookingId, patientId);
+
+		Response res = new Response();
 
 	    try {
 	        // 🔹 Check for required input values
 	        if (bookingId == null || bookingId.trim().isEmpty()) {
-	            res.setSuccess(false);
+				log.warn("Invalid bookingId provided");
+
+	        	res.setSuccess(false);
 	            res.setMessage("Booking ID cannot be null or empty");
 	            res.setStatus(HttpStatus.BAD_REQUEST.value());
 	            return res;
 	        }
 
 	        if (patientId == null || patientId.trim().isEmpty()) {
-	            res.setSuccess(false);
+				log.warn("Invalid patientId provided");
+
+	        	res.setSuccess(false);
 	            res.setMessage("Patient ID cannot be null or empty");
 	            res.setStatus(HttpStatus.BAD_REQUEST.value());
 	            return res;
 	        }
 
 	        if (dto == null) {
+	        	log.warn("Vitals DTO is null");
 	            res.setSuccess(false);
 	            res.setMessage("Vitals data cannot be null");
 	            res.setStatus(HttpStatus.BAD_REQUEST.value());
@@ -162,6 +188,8 @@ public class VitalServiceImpl implements VitalService {
 	        Optional<Vitals> vitOpt = vitalsRepository.findByBookingIdAndPatientId(bookingId, patientId);
 
 	        if (vitOpt.isPresent()) {
+				log.debug("Vitals found for update | bookingId={}, patientId={}", bookingId, patientId);
+
 	            Vitals vital = vitOpt.get();
 
 	       
@@ -173,6 +201,8 @@ public class VitalServiceImpl implements VitalService {
 	            if (dto.getWeight() != 0)        vital.setWeight(dto.getWeight());
 
 	            Vitals savedVitals = vitalsRepository.save(vital);
+
+				log.info("Vitals updated successfully | vitalsId={}", savedVitals.getId());
 
 	            // 🔹 Prepare response DTO safely
 	            VitalsDTO dtoResp = new VitalsDTO();
@@ -191,6 +221,8 @@ public class VitalServiceImpl implements VitalService {
 	            res.setMessage("Vitals updated successfully");
 	            res.setStatus(HttpStatus.OK.value());
 	        } else {
+				log.info("Vitals not found for update | bookingId={}, patientId={}", bookingId, patientId);
+
 	            res.setSuccess(true);
 	            res.setData(Collections.emptyList());
 	            res.setMessage("Vitals data not found");
@@ -198,6 +230,8 @@ public class VitalServiceImpl implements VitalService {
 	        }
 
 	    } catch (Exception e) {
+	    	log.error("Exception occurred while updating vitals | bookingId={}, patientId={}",
+					bookingId, patientId, e);
 	        res.setSuccess(false);
 	        res.setMessage("Exception occurred while updating data: " + e.getMessage());
 	        res.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -209,16 +243,22 @@ public class VitalServiceImpl implements VitalService {
 
 	@Override
 	public Response deleteVitals(String bookingId, String patientId) {
+		log.info("Delete vitals request received | bookingId={}, patientId={}", bookingId, patientId);
+
 		Response resp = new Response();
 		try {
 			Optional<Vitals> vit = vitalsRepository.findByBookingIdAndPatientId(bookingId, patientId);
 			if (vit.isPresent()) {
 				vitalsRepository.deleteByBookingIdAndPatientId(bookingId, patientId);
+				log.info("Vitals deleted successfully | bookingId={}, patientId={}",
+						bookingId, patientId);
 				resp.setSuccess(true);
 				resp.setMessage("Vitals Deleted");
 				resp.setStatus(HttpStatus.OK.value());
 				return resp;
 			} else {
+				log.info("Vitals not found for delete | bookingId={}, patientId={}",
+						bookingId, patientId);
 				resp.setSuccess(true);
 				resp.setData(Collections.emptyList());
 				resp.setMessage("Vitals Data not found ");
@@ -227,6 +267,8 @@ public class VitalServiceImpl implements VitalService {
 			}
 
 		} catch (Exception e) {
+			log.error("Exception occurred while deleting vitals | bookingId={}, patientId={}",
+					bookingId, patientId, e);
 			resp.setSuccess(false);
 			resp.setMessage("Exception occured during updating data " + e.getMessage());
 			resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());

@@ -95,4 +95,10 @@ public interface ClinicAdminServiceClient {
 		    ResponseEntity<Response> updateVitals(@PathVariable("bookingId") String bookingId,
 		                                          @PathVariable("patientId") String patientId,
 		                                          @RequestBody VitalsDTO dto);
+		    @GetMapping("/clinic-admin/diseases/{hospitalId}")
+		    public ResponseEntity<Response> getDiseasesByHospitalId(@PathVariable String hospitalId);
+		    
+		    @GetMapping("/clinic-admin/labtests/{hospitalId}")
+		    public ResponseEntity<Response> getLabTestsByHospitalId(@PathVariable String hospitalId);
 		}
+		

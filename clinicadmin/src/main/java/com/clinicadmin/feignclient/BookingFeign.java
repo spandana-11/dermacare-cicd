@@ -95,4 +95,7 @@ public interface BookingFeign {
 	@GetMapping("/api/v1/appointments/Inprogress/patientId/{patientId}")
 	public ResponseEntity<?> getInprogressAppointmentsByPatientId(@PathVariable String patientId);
 	
+	@GetMapping("/api/v1/appointments/Inprogress/patientId/{patientId}/{clinicId}")
+	public ResponseEntity<?> getInprogressAppointmentsByPatientIdAndClinicId(@PathVariable String patientId,@PathVariable String clinicId );
+	
 }

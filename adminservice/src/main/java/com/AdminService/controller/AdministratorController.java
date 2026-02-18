@@ -1,17 +1,12 @@
 package com.AdminService.controller;
-
 import java.util.List;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import com.AdminService.dto.AdministratorDTO;
 import com.AdminService.service.AdministratorService;
 import com.AdminService.util.ResponseStructure;
-
 import lombok.RequiredArgsConstructor;
-
 @RestController
 @RequestMapping("/admin")
 @RequiredArgsConstructor

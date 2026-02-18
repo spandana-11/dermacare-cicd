@@ -14,6 +14,9 @@ public interface BranchService {
 	 ResponseEntity<?> getBranchByClinicId(String clinicId);
 	 Response getBranchesByClinicId(String clinicId);
 	 ResponseEntity<?> getBranchByClinicAndBranchId(String clinicId, String branchId);
+	 public Response startBranchVerification(String branchId);
+	 public Response verifyBranch(String branchId);
+	public Response rejectBranch(String branchId, String reason);
      
 		
 }

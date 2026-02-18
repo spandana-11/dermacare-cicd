@@ -175,4 +175,20 @@ public ResponseEntity<?> getInprogressBookingsByPatientId(String patientId) {
         return ResponseEntity.status(res.getStatusCode()).body(res);
     }
 }
+
+@Override
+public ResponseEntity<?> getInprogressBookingsByPatientIdAndClinicId(String patientId, String clinicId) {
+    ResponseStructure<List<BookingResponse>> res = new ResponseStructure<>();
+    try {
+        return bookingFeign.getInprogressAppointmentsByPatientIdAndClinicId(patientId, clinicId);
+    } catch (FeignException e) {
+        res = new ResponseStructure<>(
+                null,
+                ExtractFeignMessage.clearMessage(e),
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                e.status()
+        );
+        return ResponseEntity.status(res.getStatusCode()).body(res);
+    }
+}
 }

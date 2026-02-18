@@ -102,4 +102,16 @@ public class DoctorController {
     public ResponseEntity<?> getDoctorFutureAppointments(@PathVariable String doctorId) {
         return doctorService.getDoctorFutureAppointments(doctorId);
     }
+    
+    @GetMapping("/getDiseasesByHospitalId/{hospitalId}")
+    public ResponseEntity<Response> getDiseases(@PathVariable String hospitalId) {
+        return doctorService.getDiseasesFromClinicAdmin(hospitalId);
+    }
+    
+    @GetMapping("/getLabTestsByHospitalId/{hospitalId}")
+    public ResponseEntity<Response> getLabTests(
+            @PathVariable String hospitalId) {
+
+        return doctorService.getLabTestsFromClinicAdmin(hospitalId);
+    }
 }

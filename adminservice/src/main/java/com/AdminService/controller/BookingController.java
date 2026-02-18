@@ -12,29 +12,23 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.AdminService.dto.BookingRequset;
 import com.AdminService.dto.BookingResponse;
 import com.AdminService.dto.BookingResponseDTO;
 import com.AdminService.service.BookingServiceImpl;
 import com.AdminService.util.Response;
 import com.AdminService.util.ResponseStructure;
-
 @RestController
 @RequestMapping("/admin")
 //@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class BookingController {
-
     @Autowired
     private BookingServiceImpl serviceImpl;
-    
     @PostMapping("/bookService")
     public ResponseEntity<?> bookService(@RequestBody BookingRequset req) {
         Response response = serviceImpl.bookService(req);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
-
-
     @GetMapping("/getAllBookedServices")
     public ResponseEntity<ResponseStructure<List<BookingResponse>>> getAllBookedServices() {
         ResponseStructure<List<BookingResponse>> response = serviceImpl.getAllBookedServices();

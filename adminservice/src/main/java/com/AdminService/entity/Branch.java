@@ -35,6 +35,8 @@ public class Branch {
 	private double branchOverallRating;
 	private String role;            
 	private Map<String, List<String>> permissions;
+	private String Status;
+
 
 
 

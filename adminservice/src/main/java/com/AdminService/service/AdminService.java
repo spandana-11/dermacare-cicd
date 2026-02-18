@@ -29,6 +29,16 @@ public Response getAllClinics();
 Response updateClinic(String clinicId, ClinicDTO clinic);
 Response deleteClinic(String clinicId);
 
+////================= CLINIC VERIFICATION FLOW =================
+//
+////Start verification (Admin action)
+//Response startVerificationProcess(String clinicId);
+//
+////Verify clinic (Approve)
+//Response verifyClinic(String clinicId);
+//
+////Reject clinic
+//Response rejectClinic(String clinicId, String reason);
 
 //CLINIC CREDENTIALS
 public Response getClinicCredentials(String userName);
@@ -103,6 +113,12 @@ ResponseEntity<ResponseStructure<SubServicesDto>> updateBySubServiceId(String ho
 ResponseEntity<ResponseStructure<SubServicesDto>> getSubServiceByServiceId( String hospitalId, String subServiceId);
 
 ResponseEntity<ResponseStructure<List<SubServicesDto>>> getSubServiceByHospitalId(String hospitalId);
+
+Response rejectClinic(String clinicId, String reason);
+
+Response verifyClinic(String clinicId);
+
+Response startVerificationProcess(String clinicId);
 
 
 }
