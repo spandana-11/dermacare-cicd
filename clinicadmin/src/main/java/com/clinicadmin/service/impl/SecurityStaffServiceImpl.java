@@ -1,13 +1,12 @@
 package com.clinicadmin.service.impl;
 
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.time.LocalDate;
-import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,10 +28,10 @@ import com.clinicadmin.utils.SecurityStaffMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
-
 @Service
 @RequiredArgsConstructor
 public class SecurityStaffServiceImpl implements SecurityStaffService {
+	private static final Logger log = LoggerFactory.getLogger(SecurityStaffServiceImpl.class);
 
 	@Autowired
 	private SecurityStaffRepository repository;
@@ -51,18 +50,25 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 
 	@Override
 	public ResponseStructure<SecurityStaffDTO> addSecurityStaff(SecurityStaffDTO dto) {
-
+		log.info("Add SecurityStaff request | contactNumber={}, branchId={}",
+				dto.getContactNumber(), dto.getBranchId());
 		// Check if contact number already exists
 		List<SecurityStaff> existingContacts = repository.findByContactNumber(dto.getContactNumber());
 		if (!existingContacts.isEmpty()) {
+			log.warn("Contact number already exists | contactNumber={}", dto.getContactNumber());
+
 			return ResponseStructure.buildResponse(null, "Contact number already exists", HttpStatus.CONFLICT,
 					HttpStatus.CONFLICT.value());
 		}
 		if (credentialsRepository.existsByUsername(dto.getContactNumber())) {
+			log.warn("Login credentials already exist | username={}", dto.getContactNumber());
+
 			return ResponseStructure.buildResponse(null, "Login credentials already exist for this mobile number",
 					HttpStatus.CONFLICT, HttpStatus.CONFLICT.value());
 		}
 		dto.setSecurityStaffId(IdGenerator.generateSecurityStaffId());
+	
+		log.info("Fetching branch details via Admin Service | branchId={}", dto.getBranchId());
 
 		ResponseEntity<Response> res = adminServiceClient.getBranchById(dto.getBranchId());
 		Branch br = objectMapper.convertValue(res.getBody().getData(), Branch.class);
@@ -71,6 +77,8 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 		staff.setBranchName(br.getBranchName());
 
 		SecurityStaff saved = repository.save(staff);
+	
+		log.info("SecurityStaff saved | securityStaffId={}", saved.getSecurityStaffId());
 
 		String username = saved.getContactNumber();
 		String rawPassword = generateStructuredPassword();
@@ -81,6 +89,9 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 				.branchId(saved.getBranchId()).branchName(saved.getBranchName()).username(username)
 				.password(encodedPassword).role(dto.getRole()).permissions(saved.getPermissions()).build();
 		credentialsRepository.save(credentials);
+		
+		log.info("Login credentials created | securityStaffId={}", saved.getSecurityStaffId());
+
 		SecurityStaffDTO responseDTO = SecurityStaffMapper.toDTO(saved);
 		responseDTO.setBranchName(saved.getBranchName());
 		responseDTO.setUserName(username);
@@ -91,8 +102,12 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 
 	@Override
 	public ResponseStructure<SecurityStaff> updateSecurityStaff(SecurityStaff staff) {
-	    Optional<SecurityStaff> existingOpt = repository.findById(staff.getSecurityStaffId());
+		log.info("Update SecurityStaff request | securityStaffId={}", staff.getSecurityStaffId());
+
+		Optional<SecurityStaff> existingOpt = repository.findById(staff.getSecurityStaffId());
 	    if (existingOpt.isEmpty()) {
+	    	log.warn("SecurityStaff not found for update | securityStaffId={}",
+					staff.getSecurityStaffId());
 	        return ResponseStructure.buildResponse(null, "Security staff not found",
 	                HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.value());
 	    }
@@ -102,6 +117,8 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 	            .anyMatch(s -> !s.getSecurityStaffId().equals(staff.getSecurityStaffId()));
 
 	    if (conflict) {
+	    	log.warn("Contact number conflict during update | contactNumber={}",
+					staff.getContactNumber());
 	        return ResponseStructure.buildResponse(null, "Contact number already exists",
 	                HttpStatus.CONFLICT, HttpStatus.CONFLICT.value());
 	    }
@@ -135,6 +152,7 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 	    existing.setUpdatedDate(LocalDate.now().toString());
 	    // ---------- Save ----------
 	    SecurityStaff updated = repository.save(existing);
+		log.info("SecurityStaff updated | securityStaffId={}", updated.getSecurityStaffId());
 
 	    // ---------- Decode Before Response ----------
 	    updated.setPoliceVerification(SecurityStaffMapper.decode(updated.getPoliceVerification()));
@@ -149,20 +167,36 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 
 	@Override
 	public ResponseStructure<SecurityStaffDTO> getSecurityStaffById(String staffId) {
+		log.info("Fetching SecurityStaff by ID | securityStaffId={}", staffId);
+
 		return repository.findById(staffId)
-				.map(staff -> ResponseStructure.buildResponse(SecurityStaffMapper.toDTO(staff), "Staff found",
-						HttpStatus.OK, HttpStatus.OK.value()))
-				.orElse(ResponseStructure.buildResponse(null, "Staff not found", HttpStatus.NOT_FOUND,
-						HttpStatus.NOT_FOUND.value()));
+				.map(staff -> {
+					log.info("SecurityStaff found | securityStaffId={}", staffId);
+					return ResponseStructure.buildResponse(
+							SecurityStaffMapper.toDTO(staff),
+							"Staff found",
+							HttpStatus.OK,
+							HttpStatus.OK.value());
+				})
+				.orElseGet(() -> {
+					log.warn("SecurityStaff not found | securityStaffId={}", staffId);
+					return ResponseStructure.buildResponse(
+							null,
+							"Staff not found",
+							HttpStatus.NOT_FOUND,
+							HttpStatus.NOT_FOUND.value());
+				});
 	}
 
 	@Override
 	public ResponseStructure<List<SecurityStaffDTO>> getAllByClinicId(String clinicId) {
+		log.info("Fetching all SecurityStaff by clinicId={}", clinicId);
 		List<SecurityStaff> staffList = repository.findByClinicId(clinicId);
 
 		List<SecurityStaffDTO> dtoList = staffList.stream().map(SecurityStaffMapper::toDTO)
 				.collect(Collectors.toList());
-
+		log.info("SecurityStaff fetch completed | clinicId={}, count={}",
+				clinicId, dtoList.size());
 		return ResponseStructure.buildResponse(dtoList,
 				dtoList.isEmpty() ? "No staff found for this clinic" : "Staff list fetched", HttpStatus.OK,
 				HttpStatus.OK.value());
@@ -170,8 +204,12 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 
 	@Override
 	public ResponseStructure<String> deleteSecurityStaff(String staffId) {
-	    Optional<SecurityStaff> existing = repository.findById(staffId);
+		log.info("Delete SecurityStaff request | securityStaffId={}", staffId);
+
+		Optional<SecurityStaff> existing = repository.findById(staffId);
 	    if (existing.isEmpty()) {
+			log.warn("SecurityStaff not found for delete | securityStaffId={}", staffId);
+
 	        return ResponseStructure.buildResponse(
 	            null,
 	            "Staff not found",
@@ -182,11 +220,14 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 
 	    // ✅ Delete staff record
 	    repository.deleteById(staffId);
+		log.info("SecurityStaff deleted | securityStaffId={}", staffId);
 
 	    // ✅ Delete corresponding credentials if exist
 	    Optional<DoctorLoginCredentials> credentials = credentialsRepository.findByStaffId(staffId);
 	    if (credentials.isPresent()) {
 	        credentialsRepository.deleteById(credentials.get().getId());
+			log.info("Login credentials deleted | securityStaffId={}", staffId);
+
 	    }
 
 	    return ResponseStructure.buildResponse(
@@ -200,9 +241,13 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 	
 	@Override
 	public ResponseStructure<List<SecurityStaffDTO>> getSecurityStaffByClinicIdAndBranchId(String clinicId, String branchId) {
-	    List<SecurityStaff> staffList = repository.findByClinicIdAndBranchId(clinicId, branchId);
+		log.info("Fetching SecurityStaff | clinicId={}, branchId={}", clinicId, branchId);
+
+		List<SecurityStaff> staffList = repository.findByClinicIdAndBranchId(clinicId, branchId);
 
 	    if (staffList == null || staffList.isEmpty()) {
+			log.info("No SecurityStaff found | clinicId={}, branchId={}", clinicId, branchId);
+
 	        return ResponseStructure.buildResponse(
 	                null,
 	                "No security staff found for Clinic ID: " + clinicId + " and Branch ID: " + branchId,
@@ -214,6 +259,7 @@ public class SecurityStaffServiceImpl implements SecurityStaffService {
 	    List<SecurityStaffDTO> dtoList = staffList.stream()
 	            .map(SecurityStaffMapper::toDTO) // Converts Entity to DTO
 	            .collect(Collectors.toList());
+		log.info("SecurityStaff fetched successfully | count={}", dtoList.size());
 
 	    return ResponseStructure.buildResponse(
 	            dtoList,

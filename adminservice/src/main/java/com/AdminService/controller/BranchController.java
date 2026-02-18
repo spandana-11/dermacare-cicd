@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
 import com.AdminService.dto.BranchDTO;
 import com.AdminService.service.BranchServiceImpl;
 import com.AdminService.util.Response;
@@ -42,6 +44,23 @@ public class BranchController {
 		Response response = serviceImpl.createBranch(branchDto);
 		return response;
 	}
+	  @PutMapping("/startBranchVerification/{branchId}")
+	    public Response startVerification(@PathVariable String branchId) {
+	        return serviceImpl.startBranchVerification(branchId);
+	    }
+	// ================= VERIFY BRANCH =================
+	    @PutMapping("/verifyBranch/{branchId}")
+	    public Response verifyBranch(@PathVariable String branchId) {
+	        return serviceImpl.verifyBranch(branchId);
+	    }
+	 // ================= REJECT BRANCH =================
+	    @PutMapping("/rejectBranch/{branchId}")
+	    public Response rejectBranch(
+	            @PathVariable String branchId,
+	            @RequestParam String reason) {
+
+	        return serviceImpl.rejectBranch(branchId, reason);
+	    }
 
 	@PutMapping("/updateBranch/{branchId}")
 	public Response updateBranch(@PathVariable String branchId, @RequestBody BranchDTO branchDto) {

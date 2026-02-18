@@ -14,32 +14,32 @@ public class StockController {
 
     private final StockService stockService;   // ✅ DO NOT ASSIGN NULL
 
-    @PostMapping("/api/pharmacy/addStock")
+    @PostMapping("/api/pharmacy/stockMaster/add")
     public Response addStock(@RequestBody StockDTO dto) {
         return stockService.addStock(dto);
     }
 
-    @PutMapping("/api/pharmacy/updateStockById/{id}")
+    @PutMapping("/api/pharmacy/stockMaster/update/{id}")
     public Response updateStock(@PathVariable String id, @RequestBody StockDTO dto) {
         return stockService.updateStock(id, dto);
     }
 
-    @GetMapping("/api/pharmacy/getStockById/{id}")
+    @GetMapping("/api/pharmacy/stockMaster/{id}")
     public Response getStockById(@PathVariable String id) {
         return stockService.getStockById(id);
     }
 
-    @GetMapping("/api/pharmacy/getStockByProductId/{productId}")
+    @GetMapping("/api/pharmacy/stockMaster/product//{productId}")
     public Response getStockByProductId(@PathVariable String productId) {
         return stockService.getStockByProductId(productId);
     }
 
-    @GetMapping("/api/pharmacy/getAllStock")
+    @GetMapping("/api/pharmacy/stockMaster/all")
     public Response getAllStock() {
         return stockService.getAllStock();
     }
 
-    @DeleteMapping("/api/pharmacy/deleteStockById/{id}")
+    @DeleteMapping("/api/pharmacy/stockMaster/delete/{id}")
     public Response deleteStock(@PathVariable String id) {
         return stockService.deleteStock(id);
     }

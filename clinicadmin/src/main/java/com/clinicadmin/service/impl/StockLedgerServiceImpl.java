@@ -1,5 +1,7 @@
 package com.clinicadmin.service.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.clinicadmin.dto.Response;
@@ -15,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class StockLedgerServiceImpl implements StockLedgerService {
 
+    private static final Logger log = LoggerFactory.getLogger(StockLedgerServiceImpl.class);
+
     private final PharmacyManagementFeignClient pharmacyFeignClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -23,9 +27,18 @@ public class StockLedgerServiceImpl implements StockLedgerService {
     // --------------------------------------------------------------------------
     @Override
     public Response addPurchase(String purchaseBillNo, StockDTO dto) {
+
+        log.info("Add Purchase Stock request | purchaseBillNo={}, productId={}",
+                purchaseBillNo, dto.getProductId());
+
         try {
-            return pharmacyFeignClient.addPurchase(purchaseBillNo, dto);
+            Response response = pharmacyFeignClient.addPurchase(purchaseBillNo, dto);
+            log.info("Purchase stock added successfully | purchaseBillNo={}", purchaseBillNo);
+            return response;
         } catch (FeignException ex) {
+
+            log.error("Feign error while adding purchase stock | purchaseBillNo={}, status={}",
+                    purchaseBillNo, ex.status(), ex);
             return extractFeignError(ex);
         }
     }
@@ -35,9 +48,18 @@ public class StockLedgerServiceImpl implements StockLedgerService {
     // --------------------------------------------------------------------------
     @Override
     public Response addSale(String productId, String batchNo, int qty, String saleId) {
+
+        log.info("Add Sale Stock request | productId={}, batchNo={}, qty={}, saleId={}",
+                productId, batchNo, qty, saleId);
+
         try {
-            return pharmacyFeignClient.addSale(productId, batchNo, qty, saleId);
+            Response response = pharmacyFeignClient.addSale(productId, batchNo, qty, saleId);
+            log.info("Sale stock added successfully | productId={}, saleId={}", productId, saleId);
+            return response;
         } catch (FeignException ex) {
+
+            log.error("Feign error while adding sale stock | productId={}, saleId={}, status={}",
+                    productId, saleId, ex.status(), ex);
             return extractFeignError(ex);
         }
     }
@@ -47,9 +69,19 @@ public class StockLedgerServiceImpl implements StockLedgerService {
     // --------------------------------------------------------------------------
     @Override
     public Response addDamage(String productId, String batchNo, int qty, String reason) {
+
+        log.info("Add Damage Stock request | productId={}, batchNo={}, qty={}",
+                productId, batchNo, qty);
+
         try {
-            return pharmacyFeignClient.addDamage(productId, batchNo, qty, reason);
+            Response response = pharmacyFeignClient.addDamage(productId, batchNo, qty, reason);
+            log.info("Damage stock recorded successfully | productId={}, batchNo={}",
+                    productId, batchNo);
+            return response;
         } catch (FeignException ex) {
+
+            log.error("Feign error while adding damage stock | productId={}, batchNo={}, status={}",
+                    productId, batchNo, ex.status(), ex);
             return extractFeignError(ex);
         }
     }
@@ -58,9 +90,15 @@ public class StockLedgerServiceImpl implements StockLedgerService {
     // COMMON FEIGN ERROR HANDLER (Same as your SupplierServiceImpl)
     // --------------------------------------------------------------------------
     private Response extractFeignError(FeignException ex) {
+
+        log.warn("Extracting Feign error response | status={}", ex.status());
+
         try {
             return objectMapper.readValue(ex.contentUTF8(), Response.class);
         } catch (Exception parseEx) {
+
+            log.error("Failed to parse Feign error response from pharmacy service", parseEx);
+
             Response fallback = new Response();
             fallback.setStatus(500);
             fallback.setMessage("Unexpected error from pharmacy service: " + ex.getMessage());

@@ -1,7 +1,6 @@
 package com.AdminService.controller;
 import java.util.List;
 import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,8 +12,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.AdminService.dto.AdminHelper;
 import com.AdminService.dto.CategoryDto;
 import com.AdminService.dto.ClinicCredentialsDTO;
@@ -28,9 +27,7 @@ import com.AdminService.service.AdminService;
 import com.AdminService.util.PermissionsUtil;
 import com.AdminService.util.Response;
 import com.AdminService.util.ResponseStructure;
-
 import jakarta.validation.Valid;
-
 @RestController
 
 @RequestMapping("/admin")
@@ -65,7 +62,7 @@ public class AdminController {
 		 Response response = serviceImpl.adminLogin(helperAdmin.getUserName(), helperAdmin.getPassword());
 
 		 if(response != null && response.getStatus() != 0) {
-
+ 
 			 return ResponseEntity.status(response.getStatus()).body(response);
 
 		 }else {
@@ -76,21 +73,40 @@ public class AdminController {
     }    
 
 	@PostMapping("/CreateClinic")
-
-	public ResponseEntity<?> clinicRegistration(@RequestBody @Valid ClinicDTO clinic) {
+	public ResponseEntity<?> clinicRegistration(
+	        @RequestBody @Valid ClinicDTO clinic) {
 
 	    Response response = serviceImpl.createClinic(clinic);
 
 	    if (response != null && response.getStatus() != 0) {
-
 	        return ResponseEntity.status(response.getStatus()).body(response);
-
 	    } else {
-
-	        return null;
-
+	        return ResponseEntity.internalServerError().build();
 	    }
+	}
+	
+	@PutMapping("/start-verification/{clinicId}")
+	public ResponseEntity<Response> startVerification(
+	        @PathVariable String clinicId) {
 
+	    Response response = serviceImpl.startVerificationProcess(clinicId);
+	    return ResponseEntity.status(response.getStatus()).body(response);
+	}
+
+	@PutMapping("/verify/{clinicId}")
+	public ResponseEntity<Response> verifyClinic(
+	        @PathVariable String clinicId) {
+
+	    Response response = serviceImpl.verifyClinic(clinicId);
+	    return ResponseEntity.status(response.getStatus()).body(response);
+	}
+	@PutMapping("/reject/{clinicId}")
+	public ResponseEntity<Response> rejectClinic(
+	        @PathVariable String clinicId,
+	        @RequestParam String reason) {
+
+	    Response response = serviceImpl.rejectClinic(clinicId, reason);
+	    return ResponseEntity.status(response.getStatus()).body(response);
 	}
 
 

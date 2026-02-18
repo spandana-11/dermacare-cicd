@@ -1,5 +1,7 @@
 package com.clinicadmin.service.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.LocalDate;
@@ -30,6 +32,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class ReceptionistServiceImpl implements ReceptionistService {
+	private static final Logger log = LoggerFactory.getLogger(ReceptionistServiceImpl.class);
 
 	@Autowired
 	private ReceptionistRepository repository;
@@ -48,14 +51,23 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 
 	@Override
 	public ResponseStructure<ReceptionistRequestDTO> createReceptionist(ReceptionistRequestDTO dto) {
+		log.info("Create Receptionist request | contactNumber={}, branchId={}",
+				dto.getContactNumber(), dto.getBranchId());
+
 		if (repository.existsByContactNumber(dto.getContactNumber())) {
+			log.warn("Receptionist already exists with contactNumber={}", dto.getContactNumber());
+
 			return ResponseStructure.buildResponse(null, "Receptionist with this contact number already exists",
 					HttpStatus.CONFLICT, HttpStatus.CONFLICT.value());
 		}
 		if (credentialsRepository.existsByUsername(dto.getContactNumber())) {
+			log.warn("Login credentials already exist | username={}", dto.getContactNumber());
+
 			return ResponseStructure.buildResponse(null, "Login credentials already exist for this mobile number",
 					HttpStatus.CONFLICT, HttpStatus.CONFLICT.value());
 		}
+		log.info("Fetching branch details via Admin Service | branchId={}", dto.getBranchId());
+
 		ResponseEntity<Response> res = adminServiceClient.getBranchById(dto.getBranchId());
 		Branch br = objectMapper.convertValue(res.getBody().getData(), Branch.class);
 
@@ -64,6 +76,7 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 		entity.setBranchName(br.getBranchName());
 
 		ReceptionistEntity saved = repository.save(entity);
+		log.info("Receptionist saved | receptionistId={}", saved.getId());
 
 		String username = dto.getContactNumber();
 		String rawPassword = generateStructuredPassword();
@@ -74,6 +87,7 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 				.branchId(saved.getBranchId()).branchName(saved.getBranchName()).username(username)
 				.password(encodedPassword).role(dto.getRole()).permissions(saved.getPermissions()).build();
 		credentialsRepository.save(credentials);
+		log.info("Login credentials created | receptionistId={}", saved.getId());
 
 		ReceptionistRequestDTO responseDTO = ReceptionistMapper.toDTO(saved);
 		responseDTO.setBranchName(saved.getBranchName());
@@ -86,20 +100,29 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 
 	@Override
 	public ResponseStructure<ReceptionistRequestDTO> getReceptionistById(String id) {
+		log.info("Fetching Receptionist by id={}", id);
+
 		Optional<ReceptionistEntity> optional = repository.findById(id);
 		if (optional.isEmpty()) {
+			log.warn("Receptionist not found | id={}", id);
+
 			return ResponseStructure.buildResponse(null, "Receptionist not found", HttpStatus.NOT_FOUND,
 					HttpStatus.NOT_FOUND.value());
 		}
+		log.info("Receptionist found | id={}", id);
+
 		return ResponseStructure.buildResponse(ReceptionistMapper.toDTO(optional.get()),
 				"Receptionist retrieved successfully", HttpStatus.OK, HttpStatus.OK.value());
 	}
 
 	@Override
 	public ResponseStructure<List<ReceptionistRequestDTO>> getAllReceptionists() {
+		log.info("Fetching all Receptionists");
+
 		List<ReceptionistEntity> entities = repository.findAll();
 		List<ReceptionistRequestDTO> dtos = entities.stream().map(ReceptionistMapper::toDTO)
 				.collect(Collectors.toList());
+		log.info("Receptionists fetch completed | count={}", dtos.size());
 
 		return ResponseStructure.buildResponse(dtos,
 				dtos.isEmpty() ? "No Receptionists found" : "Receptionists retrieved successfully", HttpStatus.OK,
@@ -109,8 +132,12 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 
 	@Override
 	public ResponseStructure<ReceptionistRequestDTO> updateReceptionist(String id, ReceptionistRequestDTO dto) {
-	    Optional<ReceptionistEntity> optional = repository.findById(id);
+		log.info("Update Receptionist request | receptionistId={}", id);
+
+		Optional<ReceptionistEntity> optional = repository.findById(id);
 	    if (optional.isEmpty()) {
+			log.warn("Receptionist not found for update | receptionistId={}", id);
+
 	        return ResponseStructure.buildResponse(
 	            null,
 	            "Receptionist not found",
@@ -167,10 +194,13 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 	    existing.setUpdatedDate(LocalDate.now().toString());
 	    // 🔹 Save receptionist entity
 	    ReceptionistEntity updated = repository.save(existing);
+		log.info("Receptionist updated successfully | receptionistId={}", updated.getId());
 
 	    // 🔹 Sync with DoctorLoginCredentials using receptionist.id
 	    Optional<DoctorLoginCredentials> credsOpt = credentialsRepository.findByStaffId(updated.getId());
 	    if (credsOpt.isPresent()) {
+			log.info("Syncing login credentials | receptionistId={}", updated.getId());
+
 	        DoctorLoginCredentials creds = credsOpt.get();
 
 	        creds.setStaffName(updated.getFullName());
@@ -208,9 +238,13 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 
 	@Override
 	public ResponseStructure<String> deleteReceptionist(String id) {
-	    try {
+		log.info("Delete Receptionist request | receptionistId={}", id);
+
+		try {
 	        Optional<ReceptionistEntity> optional = repository.findById(id);
 	        if (optional.isEmpty()) {
+				log.warn("Receptionist not found for delete | receptionistId={}", id);
+
 	            return ResponseStructure.buildResponse(
 	                null,
 	                "Receptionist not found",
@@ -221,11 +255,14 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 
 	        // ✅ Delete receptionist record
 	        repository.deleteById(id);
+			log.info("Receptionist deleted | receptionistId={}", id);
 
 	        // ✅ Delete corresponding login credentials (if any)
 	        Optional<DoctorLoginCredentials> credentials = credentialsRepository.findByStaffId(id);
 	        if (credentials.isPresent()) {
 	            credentialsRepository.deleteById(credentials.get().getId());
+				log.info("Login credentials deleted | receptionistId={}", id);
+
 	        }
 
 	        return ResponseStructure.buildResponse(
@@ -236,6 +273,8 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 	        );
 
 	    } catch (Exception e) {
+			log.error("Error deleting receptionist | receptionistId={}", id, e);
+
 	        return ResponseStructure.buildResponse(
 	            null,
 	            "Error deleting receptionist: " + e.getMessage(),
@@ -323,9 +362,12 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 
 	@Override
 	public ResponseStructure<List<ReceptionistRequestDTO>> getReceptionistsByClinic(String clinicId) {
+		log.info("Fetching Receptionists by clinicId={}", clinicId);
+
 		List<ReceptionistEntity> entities = repository.findByClinicId(clinicId);
 		List<ReceptionistRequestDTO> dtos = entities.stream().map(ReceptionistMapper::toDTO)
 				.collect(Collectors.toList());
+		log.info("Receptionists fetched | clinicId={}, count={}", clinicId, dtos.size());
 
 		return ResponseStructure.buildResponse(dtos, dtos.isEmpty() ? "No receptionists found for clinic " + clinicId
 				: "Receptionists retrieved successfully", HttpStatus.OK, HttpStatus.OK.value());
@@ -334,25 +376,38 @@ public class ReceptionistServiceImpl implements ReceptionistService {
 	@Override
 	public ResponseStructure<ReceptionistRequestDTO> getReceptionistByClinicAndId(String clinicId,
 			String receptionistId) {
+		log.info("Fetching Receptionist | clinicId={}, receptionistId={}",
+				clinicId, receptionistId);
+		
 		ReceptionistEntity entity = repository.findByClinicIdAndId(clinicId, receptionistId)
 				.orElseThrow(() -> new RuntimeException("Receptionist not found with clinicId: " + clinicId
 						+ " and receptionistId: " + receptionistId));
 
+	    log.debug("Receptionist entity fetched successfully | receptionistId={}",
+	            receptionistId);
+	    
 		ReceptionistRequestDTO dto = ReceptionistMapper.toDTO(entity);
 
+		  log.info("Receptionist fetched successfully | clinicId={}, receptionistId={}",
+		            clinicId, receptionistId);
+		  
 		return ResponseStructure.<ReceptionistRequestDTO>builder().statusCode(200)
 				.message("Receptionist data fetched successfully").data(dto).build();
 	}
 	@Override
 	public ResponseStructure<List<ReceptionistRequestDTO>> getReceptionistsByClinicAndBranch(String clinicId, String branchId) {
-	    // Fetch receptionist entities from repository by clinicId and branchId
+		log.info("Fetching Receptionists | clinicId={}, branchId={}", clinicId, branchId);
+
+		// Fetch receptionist entities from repository by clinicId and branchId
 	    List<ReceptionistEntity> entities = repository.findByClinicIdAndBranchId(clinicId, branchId);
 
 	    // Map entities to DTOs
 	    List<ReceptionistRequestDTO> dtos = entities.stream()
 	            .map(ReceptionistMapper::toDTO)
 	            .collect(Collectors.toList());
-
+	    log.info("Receptionists fetched | clinicId={}, branchId={}, count={}",
+				clinicId, branchId, dtos.size());
+	    
 	    // Build response
 	    String message = dtos.isEmpty() 
 	            ? "No receptionists found for clinic " + clinicId + " and branch " + branchId 

@@ -59,7 +59,7 @@ public class SecurityStaffController {
         ResponseStructure<List<SecurityStaffDTO>> response = service.getAllByClinicId(clinicId);
         return new ResponseEntity<>(response, response.getHttpStatus());}
 
-    @DeleteMapping("deleteSecurityStaffById/{staffId}")
+    @DeleteMapping("/deleteSecurityStaffById/{staffId}")
     public ResponseEntity<ResponseStructure<String>> deleteSecurityStaff(@PathVariable String staffId) {
         ResponseStructure<String> response = service.deleteSecurityStaff(staffId);
         return new ResponseEntity<>(response, response.getHttpStatus());
