@@ -813,6 +813,8 @@ public class AdminServiceImpl implements AdminService {
 
 	                clnc.setWebsite(clinic.getWebsite() != null ? clinic.getWebsite() : "");
 
+					clnc.setStatus(clinic.getStatus());
+					
 	                clnc.setLicenseNumber(clinic.getLicenseNumber() != null ? clinic.getLicenseNumber() : "");
 
 	                clnc.setIssuingAuthority(clinic.getIssuingAuthority() != null ? clinic.getIssuingAuthority() : "");
