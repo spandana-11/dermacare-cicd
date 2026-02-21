@@ -7,7 +7,8 @@ import com.dermaCare.customerService.entity.ConsultationEntity;
 public interface ConsultationRep extends MongoRepository<ConsultationEntity, String> {
 
 	ConsultationEntity findByconsultationId(String id);
-
-	ConsultationEntity findByConsultationType(String consultationType);
+	ConsultationEntity findByConsultationType(String type);
+	
+	
 	
 }
