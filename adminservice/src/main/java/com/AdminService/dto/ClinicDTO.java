@@ -44,8 +44,6 @@ public class ClinicDTO {
 	@NotBlank(message = "Hospital logo (Base64) is required")
 	private String hospitalLogo;
 
-	private String Status;
-	
 	@NotBlank(message = "Email is required")
 	@Email(message = "Invalid email format")
 	private String emailAddress;
@@ -120,4 +118,5 @@ public class ClinicDTO {
 	private String instagramHandle;
 	private String twitterHandle;
 	private String facebookHandle;
+	private String status;
 }
