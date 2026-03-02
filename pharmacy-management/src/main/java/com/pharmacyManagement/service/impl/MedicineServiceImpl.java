@@ -31,12 +31,12 @@ public class MedicineServiceImpl implements MedicineService {
 
         Medicine saved = repository.save(medicine);
 
-        return Response.builder()
-                .success(true)
-                .message("Medicine created successfully")
-                .status(201)
-                .data(MedicineMapper.toDTO(saved))
-                .build();
+        return new Response(
+                true,
+                MedicineMapper.toDTO(saved),
+                "Medicine created successfully",
+                201
+        );
     }
 
     @Override
@@ -60,15 +60,14 @@ public class MedicineServiceImpl implements MedicineService {
         existing.setClinicId(dto.getClinicId());
         existing.setBranchId(dto.getBranchId());
 
-
         Medicine saved = repository.save(existing);
 
-        return Response.builder()
-                .success(true)
-                .message("Medicine updated successfully")
-                .status(200)
-                .data(MedicineMapper.toDTO(saved)) // DTO mapping only for response
-                .build();
+        return new Response(
+                true,
+                MedicineMapper.toDTO(saved),
+                "Medicine updated successfully",
+                200
+        );
     }
 
     // 3️⃣ GET ALL
@@ -80,12 +79,12 @@ public class MedicineServiceImpl implements MedicineService {
                 .map(MedicineMapper::toDTO)
                 .toList();
 
-        return Response.builder()
-                .success(true)
-                .message("All medicines fetched")
-                .status(200)
-                .data(list)
-                .build();
+        return new Response(
+                true,
+                list,
+                "All medicines fetched",
+                200
+        );
     }
 
     // 4️⃣ GET BY ID
@@ -95,12 +94,12 @@ public class MedicineServiceImpl implements MedicineService {
         Medicine medicine = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Medicine not found"));
 
-        return Response.builder()
-                .success(true)
-                .message("Medicine fetched successfully")
-                .status(200)
-                .data(MedicineMapper.toDTO(medicine))
-                .build();
+        return new Response(
+                true,
+                MedicineMapper.toDTO(medicine),
+                "Medicine fetched successfully",
+                200
+        );
     }
 
     // 5️⃣ DELETE
@@ -112,13 +111,14 @@ public class MedicineServiceImpl implements MedicineService {
 
         repository.deleteById(id);
 
-        return Response.builder()
-                .success(true)
-                .message("Medicine deleted successfully")
-                .status(200)
-                .build();
+        return new Response(
+                true,
+                null,
+                "Medicine deleted successfully",
+                200
+        );
     }
-    
+
     @Override
     public Response getMedicineByBarcode(String barcode) {
 
@@ -126,50 +126,29 @@ public class MedicineServiceImpl implements MedicineService {
 
             // 1️⃣ Null or Empty Check
             if (barcode == null || barcode.trim().isEmpty()) {
-                return Response.builder()
-                        .success(false)
-                        .message("Barcode cannot be empty")
-                        .status(400)
-                        .build();
+                return new Response(false, null, "Barcode cannot be empty", 400);
             }
 
             barcode = barcode.trim();
 
             // 2️⃣ Format Validation
             if (!barcode.matches("^BC\\d{8,}$")) {
-                return Response.builder()
-                        .success(false)
-                        .message("Invalid barcode format")
-                        .status(400)
-                        .build();
+                return new Response(false, null, "Invalid barcode format", 400);
             }
 
             // 3️⃣ Fetch from DB
             Medicine medicine = repository.findByBarcode(barcode).orElse(null);
 
             if (medicine == null) {
-                return Response.builder()
-                        .success(false)
-                        .message("Medicine not found for barcode: " + barcode)
-                        .status(404)
-                        .build();
+                return new Response(false, null, "Medicine not found for barcode: " + barcode, 404);
             }
 
             // 4️⃣ Success Response
-            return Response.builder()
-                    .success(true)
-                    .message("Medicine fetched successfully")
-                    .status(200)
-                    .data(MedicineMapper.toDTO(medicine))
-                    .build();
+            return new Response(true, MedicineMapper.toDTO(medicine), "Medicine fetched successfully", 200);
 
         } catch (Exception e) {
 
-            return Response.builder()
-                    .success(false)
-                    .message("Something went wrong while fetching medicine")
-                    .status(500)
-                    .build();
+            return new Response(false, null, "Something went wrong while fetching medicine", 500);
         }
     }
 
