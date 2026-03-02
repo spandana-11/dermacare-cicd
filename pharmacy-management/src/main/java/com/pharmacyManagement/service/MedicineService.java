@@ -1,17 +1,19 @@
 package com.pharmacyManagement.service;
 
-import com.pharmacyManagement.dto.MedicineDto;
+import com.pharmacyManagement.dto.MedicineDTO;
 import com.pharmacyManagement.dto.Response;
 
 public interface MedicineService {
 
-    Response saveMedicine(MedicineDto dto);
+    Response addMedicine(MedicineDTO dto);
 
-    Response getMedicineById(String id);
+    Response updateMedicine(String id, MedicineDTO dto);
 
     Response getAllMedicines();
 
-    Response updateMedicine(String id, MedicineDto dto);
+    Response getMedicineById(String id);
 
     Response deleteMedicine(String id);
+    
+    Response getMedicineByBarcode(String barcode);
 }

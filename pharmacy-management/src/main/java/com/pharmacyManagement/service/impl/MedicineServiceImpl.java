@@ -1,204 +1,184 @@
 package com.pharmacyManagement.service.impl;
 
-import com.pharmacyManagement.dto.MedicineDto;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.pharmacyManagement.dto.MedicineDTO;
 import com.pharmacyManagement.dto.Response;
 import com.pharmacyManagement.entity.Medicine;
 import com.pharmacyManagement.repository.MedicineRepository;
 import com.pharmacyManagement.service.MedicineService;
+import com.pharmacyManagement.util.MedicineMapper;
+
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-
 public class MedicineServiceImpl implements MedicineService {
- 
-	@Autowired
-    private  MedicineRepository repository;
 
+    private final MedicineRepository repository;
+
+    // 1️⃣ ADD MEDICINE
     @Override
-    public Response saveMedicine(MedicineDto dto) {
+    public Response addMedicine(MedicineDTO dto) {
 
-        Response response = new Response();
+        Medicine medicine = MedicineMapper.toEntity(dto);
 
-        try {
-            if (dto == null) {
-                return buildError(response, "Medicine details cannot be null", HttpStatus.BAD_REQUEST);
-            }
+        medicine.setBarcode(generateBarcode(dto.getHsnCode()));
+        medicine.setCreatedAt(LocalDateTime.now());
 
-            if (dto.getMedicineName() == null || dto.getMedicineName().trim().isEmpty()) {
-                return buildError(response, "Medicine name is required", HttpStatus.BAD_REQUEST);
-            }
+        Medicine saved = repository.save(medicine);
 
-            // Duplicate Check
-            if (repository.existsByMedicineNameIgnoreCase(dto.getMedicineName())) {
-                return buildError(response, "Medicine already exists: " + dto.getMedicineName(), HttpStatus.CONFLICT);
-            }
-
-            Medicine saved = repository.save(mapToEntity(dto));
-
-            response.setSuccess(true);
-            response.setMessage("Medicine added successfully");
-            response.setData(mapToDto(saved));
-            response.setStatus(HttpStatus.CREATED.value());
-
-        } catch (Exception ex) {
-            return buildError(response, "Error occurred while saving medicine", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        return response;
+        return Response.builder()
+                .success(true)
+                .message("Medicine created successfully")
+                .status(201)
+                .data(MedicineMapper.toDTO(saved))
+                .build();
     }
 
     @Override
-    public Response updateMedicine(String id, MedicineDto dto) {
+    public Response updateMedicine(String id, MedicineDTO dto) {
 
-        Response response = new Response();
+        Medicine existing = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Medicine not found"));
 
-        try {
-            if (id == null || id.trim().isEmpty()) {
-                return buildError(response, "Medicine ID cannot be empty", HttpStatus.BAD_REQUEST);
-            }
+        // Update only editable fields
+        existing.setProductName(dto.getProductName());
+        existing.setBrandName(dto.getBrandName());
+        existing.setCategory(dto.getCategory());
+        existing.setComposition(dto.getComposition());
+        existing.setManufacturer(dto.getManufacturer());
+        existing.setPackSize(dto.getPackSize());
+        existing.setHsnCode(dto.getHsnCode());
+        existing.setGstPercent(dto.getGstPercent());
+        existing.setMrp(dto.getMrp());
+        existing.setMinStock(dto.getMinStock());
+        existing.setStatus(dto.getStatus());
+        existing.setClinicId(dto.getClinicId());
+        existing.setBranchId(dto.getBranchId());
 
-            Medicine existing = repository.findById(id).orElse(null);
 
-            if (existing == null) {
-                return buildError(response, "Medicine not found: " + id, HttpStatus.NOT_FOUND);
-            }
+        Medicine saved = repository.save(existing);
 
-            // If user tries to change name, check duplicate
-            if (dto.getMedicineName() != null &&
-                !dto.getMedicineName().equalsIgnoreCase(existing.getMedicineName())) {
-                
-                if (repository.existsByMedicineNameIgnoreCase(dto.getMedicineName())) {
-                    return buildError(response, "Medicine already exists: " + dto.getMedicineName(), HttpStatus.CONFLICT);
-                }
-                existing.setMedicineName(dto.getMedicineName());
-            }
-
-            if (dto.getGeneric() != null)
-                existing.setGeneric(dto.getGeneric());
-
-            Medicine updated = repository.save(existing);
-
-            response.setSuccess(true);
-            response.setMessage("Medicine updated successfully");
-            response.setData(mapToDto(updated));
-            response.setStatus(HttpStatus.OK.value());
-
-        } catch (Exception ex) {
-            return buildError(response, "Error occurred while updating medicine", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        return response;
+        return Response.builder()
+                .success(true)
+                .message("Medicine updated successfully")
+                .status(200)
+                .data(MedicineMapper.toDTO(saved)) // DTO mapping only for response
+                .build();
     }
 
-    @Override
-    public Response getMedicineById(String id) {
-
-        Response response = new Response();
-
-        try {
-            if (id == null || id.trim().isEmpty()) {
-                return buildError(response, "Medicine ID cannot be empty", HttpStatus.BAD_REQUEST);
-            }
-
-            Medicine medicine = repository.findById(id).orElse(null);
-
-            if (medicine == null) {
-                return buildError(response, "Medicine not found: " + id, HttpStatus.NOT_FOUND);
-            }
-
-            response.setSuccess(true);
-            response.setMessage("Medicine retrieved successfully");
-            response.setData(mapToDto(medicine));
-            response.setStatus(HttpStatus.OK.value());
-
-        } catch (Exception ex) {
-            return buildError(response, "Error occurred while fetching medicine", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        return response;
-    }
-
+    // 3️⃣ GET ALL
     @Override
     public Response getAllMedicines() {
 
-        Response response = new Response();
+        List<MedicineDTO> list = repository.findAll()
+                .stream()
+                .map(MedicineMapper::toDTO)
+                .toList();
 
-        try {
-            List<MedicineDto> list = repository.findAll()
-                    .stream()
-                    .map(this::mapToDto)
-                    .collect(Collectors.toList());
-
-            response.setSuccess(true);
-            response.setMessage("Medicines fetched successfully");
-            response.setData(list);
-            response.setStatus(HttpStatus.OK.value());
-
-        } catch (Exception ex) {
-            return buildError(response, "Error occurred while fetching medicines", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        return response;
+        return Response.builder()
+                .success(true)
+                .message("All medicines fetched")
+                .status(200)
+                .data(list)
+                .build();
     }
 
+    // 4️⃣ GET BY ID
+    @Override
+    public Response getMedicineById(String id) {
+
+        Medicine medicine = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Medicine not found"));
+
+        return Response.builder()
+                .success(true)
+                .message("Medicine fetched successfully")
+                .status(200)
+                .data(MedicineMapper.toDTO(medicine))
+                .build();
+    }
+
+    // 5️⃣ DELETE
     @Override
     public Response deleteMedicine(String id) {
 
-        Response response = new Response();
+        repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Medicine not found"));
+
+        repository.deleteById(id);
+
+        return Response.builder()
+                .success(true)
+                .message("Medicine deleted successfully")
+                .status(200)
+                .build();
+    }
+    
+    @Override
+    public Response getMedicineByBarcode(String barcode) {
 
         try {
-            if (id == null || id.trim().isEmpty()) {
-                return buildError(response, "Medicine ID cannot be empty", HttpStatus.BAD_REQUEST);
+
+            // 1️⃣ Null or Empty Check
+            if (barcode == null || barcode.trim().isEmpty()) {
+                return Response.builder()
+                        .success(false)
+                        .message("Barcode cannot be empty")
+                        .status(400)
+                        .build();
             }
 
-            if (!repository.existsById(id)) {
-                return buildError(response, "Medicine not found: " + id, HttpStatus.NOT_FOUND);
+            barcode = barcode.trim();
+
+            // 2️⃣ Format Validation
+            if (!barcode.matches("^BC\\d{8,}$")) {
+                return Response.builder()
+                        .success(false)
+                        .message("Invalid barcode format")
+                        .status(400)
+                        .build();
             }
 
-            repository.deleteById(id);
+            // 3️⃣ Fetch from DB
+            Medicine medicine = repository.findByBarcode(barcode).orElse(null);
 
-            response.setSuccess(true);
-            response.setMessage("Medicine deleted successfully");
-            response.setStatus(HttpStatus.OK.value());
+            if (medicine == null) {
+                return Response.builder()
+                        .success(false)
+                        .message("Medicine not found for barcode: " + barcode)
+                        .status(404)
+                        .build();
+            }
 
-        } catch (Exception ex) {
-            return buildError(response, "Error occurred while deleting medicine", HttpStatus.INTERNAL_SERVER_ERROR);
+            // 4️⃣ Success Response
+            return Response.builder()
+                    .success(true)
+                    .message("Medicine fetched successfully")
+                    .status(200)
+                    .data(MedicineMapper.toDTO(medicine))
+                    .build();
+
+        } catch (Exception e) {
+
+            return Response.builder()
+                    .success(false)
+                    .message("Something went wrong while fetching medicine")
+                    .status(500)
+                    .build();
         }
-
-        return response;
     }
 
-    // ---------------------- Mapping Methods ------------------------
+    // 🔢 BARCODE LOGIC
+    private String generateBarcode(String hsnCode) {
 
-    private MedicineDto mapToDto(Medicine m) {
-        MedicineDto dto = new MedicineDto();
-        dto.setId(m.getId());
-        dto.setMedicineName(m.getMedicineName());
-        dto.setGeneric(m.getGeneric());
-        return dto;
-    }
+        String timePart = String.valueOf(System.currentTimeMillis());
 
-    private Medicine mapToEntity(MedicineDto dto) {
-        Medicine m = new Medicine();
-        m.setId(dto.getId());
-        m.setMedicineName(dto.getMedicineName());
-        m.setGeneric(dto.getGeneric());
-        return m;
-    }
-
-    // ---------------------- Error Response Helper ------------------------
-    private Response buildError(Response response, String message, HttpStatus status) {
-        response.setSuccess(false);
-        response.setMessage(message);
-        response.setStatus(status.value());
-        return response;
+        return "BC" + hsnCode +
+                timePart.substring(timePart.length() - 4);
     }
 }
