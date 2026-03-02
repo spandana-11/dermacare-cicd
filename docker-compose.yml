@@ -173,21 +173,6 @@ services:
     networks:
       - app-network
 
-  pharmacy-management:
-    build: ./pharmacy-management
-    container_name: pharmacy_management_service
-    ports:
-      - "8801:8801"
-    environment:
-      - JAVA_TOOL_OPTIONS=-XX:-UseContainerSupport
-      - SPRING_APPLICATION_NAME=pharmacy-management
-      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/PharmacyManagement
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-    depends_on:
-      - mongodb
-      - eureka-server
-    networks:
-      - app-network
 
   clinic-admin-web:
     build: ./clinic-admin-web
