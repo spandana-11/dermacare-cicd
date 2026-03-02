@@ -1,23 +1,26 @@
 package com.pharmacyManagement.dto;
 
-import java.util.List;
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Response {
-	private boolean success;
-	private Object data;
-	private String message;
-	private int status;
+    private boolean success;
+    private Object data;
+    private String message;
+    private int status;
+
+    // Add this manually for production
+    public Response(boolean success, Object data, String message, int status) {
+        this.success = success;
+        this.data = data;
+        this.message = message;
+        this.status = status;
+    }
 }
