@@ -171,7 +171,7 @@ public class AreaServiceImpl implements AreaService {
 //	                }
 //	            }
 //	        }
-	        //  FLATTEN  all areaNames into one list
+	        //  FLATTEN  All areaNames into one list
 	        List<String> allAreaNames = areas.stream()
 	                .flatMap(a -> a.getAreaNames().stream())
 	                .distinct() // optional: remove duplicates
