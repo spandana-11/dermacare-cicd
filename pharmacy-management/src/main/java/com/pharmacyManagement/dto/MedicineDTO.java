@@ -15,7 +15,7 @@ public class MedicineDTO {
 
     private String id;
     private String barcode;
-
+// nam
     private String productName;
     private String brandName;
     private String category;
