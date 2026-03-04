@@ -1,4 +1,3 @@
-// src/styles/constants.ts
 
 export const COLORS = {
   primary: '#0061c2',
@@ -14,8 +13,15 @@ export const COLORS = {
   theme: '#f3f4f7',
   bgcolor: '#a5c4d4ff',
   logocolor: '#000',
-}
 
+}
+  export const NGK_COLORS = {
+  primary: '#ff2e85',
+  primaryLight: '#ff95c9',
+  primarySoft: '#ffeaf4',
+  textDark: '#222222',
+  borderSoft: '#ffd1e6',
+}
 export const FONT_SIZES = {
   xs: '0.75rem', // 12px
   sm: '0.875rem', // 14px

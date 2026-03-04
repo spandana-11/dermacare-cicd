@@ -1,0 +1,53 @@
+.themed-tabs {
+  border-bottom: 1px solid var(--cui-border-color);
+}
+
+.theme-tab {
+  font-weight: 600;
+  color: var(--cui-body-color);
+}
+
+.theme-tab.active {
+  color: var(--cui-primary);
+  border-bottom: 3px solid var(--cui-primary);
+}
+
+.theme-input {
+  width: 250px;
+  border-radius: 8px;
+}
+
+.themed-table-head th {
+  background-color: var(--cui-light-bg);
+  font-weight: 700;
+}
+
+.status-select {
+  width: 140px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--cui-border-color);
+}
+
+.status-select.confirmed {
+  background-color: var(--cui-info-bg);
+  color: var(--cui-info-text);
+}
+
+.status-pill {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.status-pill.completed {
+  background-color: var(--cui-success-bg);
+  color: var(--cui-success-text);
+}
+
+.themed-pagination .page-item.active .page-link {
+  background-color: var(--cui-primary);
+  border-color: var(--cui-primary);
+}

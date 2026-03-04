@@ -1,4 +1,3 @@
-import React from "react";
 import { CCol, CFormLabel, CFormInput, CButton, CTooltip } from "@coreui/react";
 
 const FileInput = ({
@@ -11,7 +10,7 @@ const FileInput = ({
   errors,
   setErrors,
   inputRef,
-  maxSize = 250 * 1024, // default 250 KB
+  maxSize = 500 * 1024, // default 250 KB
   required = true,       // <-- new prop
 }) => {
   const handleClearFile = () => {

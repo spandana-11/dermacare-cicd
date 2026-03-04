@@ -33,7 +33,7 @@ const ProviderManagement = () => {
     }
     fetchData()
   }, [])
-  
+
 
   // Handling search functionality
   useEffect(() => {
@@ -90,37 +90,37 @@ const ProviderManagement = () => {
   }
 
   // Custom styles for DataTable
-const customStyles = {
-  headCells: {
-    style: {
-      backgroundColor: '#F4F6F8',
-      color: '#333333',
-      fontSize: '16px',
-      fontWeight: 'bold',
-      borderBottom: 'thin solid #DADCE0',
-    },
-  },
-  rows: {
-    style: {
-      fontSize: '14px',
-      color: '#333333',
-      '&:nth-of-type(even)': {
-        backgroundColor: '#FFFFFF',
-      },
-      '&:nth-of-type(odd)': {
-        backgroundColor: '#FAFAFA',
-      },
-      '&:hover': {
-        backgroundColor: '#E9E9E9',
+  const customStyles = {
+    headCells: {
+      style: {
+        backgroundColor: '#F4F6F8',
+        color: '#333333',
+        fontSize: '16px',
+        fontWeight: 'bold',
+        borderBottom: 'thin solid #DADCE0',
       },
     },
-  },
-  cells: {
-    style: {
-      borderBottom: 'thin solid #DADCE0',
+    rows: {
+      style: {
+        fontSize: '14px',
+        color: '#333333',
+        '&:nth-of-type(even)': {
+          backgroundColor: '#FFFFFF',
+        },
+        '&:nth-of-type(odd)': {
+          backgroundColor: '#FAFAFA',
+        },
+        '&:hover': {
+          backgroundColor: '#E9E9E9',
+        },
+      },
     },
-  },
-};
+    cells: {
+      style: {
+        borderBottom: 'thin solid #DADCE0',
+      },
+    },
+  };
 
 
   return (
@@ -129,6 +129,7 @@ const customStyles = {
         <CInputGroup className="mb-3 w-50">
           <CFormInput
             type="text"
+            style={{ border: '1px solid var(--color-black)', }}
             id="search-input"
             placeholder="Search by full name, mobile, or email"
             value={searchQuery}

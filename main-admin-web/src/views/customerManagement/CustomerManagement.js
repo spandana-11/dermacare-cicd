@@ -18,24 +18,18 @@ import {
   CTableDataCell,
   CPagination,
   CPaginationItem,
-  CModal,
-  CModalHeader,
-  CModalTitle,
-  CModalBody,
-  CModalFooter,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { Edit2, Eye, Trash2 } from 'lucide-react'
+import { Eye, Trash2 } from 'lucide-react'
 import { cilSearch } from '@coreui/icons'
 import {
   CustomerData,
   deleteCustomerData,
   addCustomer,
-  getCustomerByMobile,
   updateCustomerData,
 } from './CustomerAPI'
 import { ToastContainer, toast } from 'react-toastify'
-import { ConfirmationModal } from '../../Utils/ConfirmationDelete'
+import ConfirmationModal from '../../components/ConfirmationModal'
 import { COLORS } from '../../Constant/Themes'
 import LoadingIndicator from '../../Utils/loader'
 
@@ -47,8 +41,7 @@ const CustomerManagement = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(5)
-
+  const [itemsPerPage, setItemsPerPage] = useState(10)
   const [isAdding, setIsAdding] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [currentMobile, setCurrentMobile] = useState(null)
@@ -56,13 +49,17 @@ const CustomerManagement = () => {
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [customerIdToDelete, setCustomerIdToDelete] = useState(null)
   const [formErrors, setFormErrors] = useState({})
+  const [selectedMobiles, setSelectedMobiles] = useState([])
+  const [isMultiDelete, setIsMultiDelete] = useState(false)
+  const [delloading, setDelLoading] = useState(false)
+  const [customerNameToDelete, setCustomerNameToDelete] = useState('')
 
   const [formData, setFormData] = useState({
     fullName: '',
-    mobileNumber: '',
+    mobile: '',
     gender: '',
     emailId: '',
-    dateOfBirth: '',
+    dob: '',
     referCode: '',
   })
 
@@ -72,14 +69,8 @@ const CustomerManagement = () => {
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredData.length / itemsPerPage)
 
-  const handlePerChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page)
-    }
-  }
-  // Calculate today's date for minimum date restriction in the form
-  // const today = new Date()
-  // const todayISO = getISODate(today)
+
+
   const centeredMessageStyle = {
     display: 'flex',
     justifyContent: 'center',
@@ -114,18 +105,32 @@ const CustomerManagement = () => {
   }, [fetchCustomers])
 
   useEffect(() => {
-    const trimmedQuery = searchQuery.toLowerCase().trim()
-    if (!trimmedQuery) {
+    if (!searchQuery.trim()) {
       setFilteredData(customerData)
       setCurrentPage(1)
       return
     }
 
+    const trimmedQuery = searchQuery.toLowerCase().trim()
+
     const filtered = customerData.filter((customer) => {
+      const fullName = (customer?.fullName || '').toLowerCase()
+      const mobile = (customer?.mobile || '').toString()
+      const registrationCode = (customer?.registrationCode || '').toLowerCase()
+      const customerId = (customer?.customerId || '').toLowerCase()
+      const addressPincode = (customer?.address?.pincode || '').toString()
+
+      const serviceTypeMatch = (customer?.serviceType || []).some((type) =>
+        type.toLowerCase().includes(trimmedQuery)
+      )
+
       return (
-        (customer?.fullName || '').toLowerCase().startsWith(trimmedQuery) ||
-        (customer?.mobileNumber || '').toString().startsWith(trimmedQuery) ||
-        (customer?.emailId || '').toLowerCase().startsWith(trimmedQuery)
+        fullName.includes(trimmedQuery) ||
+        mobile.includes(trimmedQuery) ||
+        registrationCode.includes(trimmedQuery) ||
+        customerId.includes(trimmedQuery) ||
+        addressPincode.includes(trimmedQuery) ||
+        serviceTypeMatch
       )
     })
 
@@ -133,80 +138,22 @@ const CustomerManagement = () => {
     setCurrentPage(1)
   }, [searchQuery, customerData])
 
-  const handleCustomerViewDetails = (mobileNumber) => {
-    navigate(`/customer-management/${mobileNumber}`)
+
+  const handleCustomerViewDetails = (mobile) => {
+    navigate(`/customer-management/${mobile}`)
   }
 
-  const handleDeleteCustomer = async (mobileNumber) => {
-    // const confirmed = window.confirm('Are you sure you want to delete this customer?')
-    setCustomerIdToDelete(mobileNumber)
-    setIsModalVisible(true)
 
-    try {
-      await deleteCustomerData(mobileNumber)
-      toast.success('Customer deleted successfully')
-      const updatedData = customerData.filter((customer) => customer?.mobileNumber !== mobileNumber)
-      setCustomerData(updatedData)
-      setFilteredData(updatedData)
-    } catch (error) {
-      console.error('Delete failed:', error)
-      toast.error('Failed to delete customer')
-    }
-  }
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
 
-  const handleEditCustomer = async (mobileNumber) => {
-    try {
-      setLoading(true)
-      const response = await getCustomerByMobile(mobileNumber)
-      const customer = response.data || response
-
-      console.log('Customer data:', customer)
-
-      let formattedDate = ''
-
-      if (customer.dateOfBirth) {
-        const dobStr = customer.dateOfBirth.trim()
-
-        if (/^\d{2}-\d{2}-\d{4}$/.test(dobStr)) {
-          // Format: DD-MM-YYYY — safely parse manually
-          const [day, month, year] = dobStr.split('-')
-          formattedDate = `${year}-${month}-${day}` // convert to input-friendly format
-        } else {
-          // Try parsing YYYY-MM-DD or ISO string
-          const parsedDate = new Date(dobStr)
-          if (!isNaN(parsedDate)) {
-            const year = parsedDate.getFullYear().toString().padStart(4, '0')
-            const month = String(parsedDate.getMonth() + 1).padStart(2, '0')
-            const day = String(parsedDate.getDate()).padStart(2, '0')
-            formattedDate = `${year}-${month}-${day}`
-          }
-        }
-      }
-
-      setFormData({
-        fullName: customer.fullName || '',
-        mobileNumber: customer.mobileNumber || '',
-        gender: customer.gender || '',
-        emailId: customer.emailId || '',
-        dateOfBirth: formattedDate,
-        referCode: customer.referCode || '',
-      })
-
-      setCurrentMobile(mobileNumber)
-      setIsEditing(true)
-      setIsAdding(true)
-    } catch (error) {
-      console.error('Failed to fetch customer:', error)
-      toast.error('Failed to load customer data')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= Math.ceil(filteredData.length / itemsPerPage)) {
-      setCurrentPage(page)
-    }
+  const handleSelectOne = (mobile) => {
+    setSelectedMobiles((prev) =>
+      prev.includes(mobile)
+        ? prev.filter((m) => m !== mobile)
+        : [...prev, mobile]
+    )
   }
 
   const handleInputChange = (e) => {
@@ -228,7 +175,7 @@ const CustomerManagement = () => {
       return
     }
     if (!isEditing) {
-      const alreadyExists = customerData.some((cust) => cust.mobileNumber === formData.mobileNumber)
+      const alreadyExists = customerData.some((cust) => cust.mobile === formData.mobile)
       const alreadyExistsEmial = customerData.some((cust) => cust.emailId === formData.emailId)
       if (alreadyExists) {
         toast.error('Mobile Number already exists.')
@@ -243,18 +190,18 @@ const CustomerManagement = () => {
       const updatedFormData = { ...formData }
 
       // Format DOB if exists
-      if (updatedFormData.dateOfBirth) {
-        const dateObj = new Date(updatedFormData.dateOfBirth)
+      if (updatedFormData.dob) {
+        const dateObj = new Date(updatedFormData.dob)
         if (!isNaN(dateObj)) {
           const day = String(dateObj.getDate()).padStart(2, '0')
           const month = String(dateObj.getMonth() + 1).padStart(2, '0')
           const year = dateObj.getFullYear()
-          updatedFormData.dateOfBirth = `${day}-${month}-${year}`
+          updatedFormData.dob = `${day}-${month}-${year}`
         }
       }
 
       if (isEditing) {
-        await updateCustomerData(updatedFormData.mobileNumber, updatedFormData)
+        await updateCustomerData(updatedFormData.mobile, updatedFormData)
         toast.success('Customer updated successfully')
       } else {
         await addCustomer(updatedFormData)
@@ -273,11 +220,6 @@ const CustomerManagement = () => {
     }
   }
 
-  // const alreadyExists = customerData.some((cust) => cust.mobileNumber === formData.mobileNumber)
-  // if (!isEditing && alreadyExists) {
-  //   toast.error('Customer already exists.')
-  //   return
-  // }
 
   const handleCancel = () => {
     setIsAdding(false)
@@ -285,14 +227,41 @@ const CustomerManagement = () => {
     setCurrentMobile(null)
     setFormData({
       fullName: '',
-      mobileNumber: '',
+      mobile: '',
       gender: '',
       emailId: '',
-      dateOfBirth: '',
+      dob: '',
       referCode: '',
     })
     setFormErrors({})
+
+    // Preserve search filtered data
+    if (searchQuery.trim()) {
+      // If search query exists, keep filteredData as is
+      setFilteredData(
+        customerData.filter((customer) => {
+          const trimmedQuery = searchQuery.toLowerCase().trim()
+          const fullNameMatch = (customer?.fullName || '').toLowerCase().startsWith(trimmedQuery)
+          const mobileMatch = (customer?.mobile || '').toString().startsWith(trimmedQuery)
+          const emailMatch = (customer?.emailId || '').toLowerCase().startsWith(trimmedQuery)
+
+          const addressPincode = customer?.address?.match(/\b\d{6}\b/)?.[0] || ''
+          const pincodeMatch = addressPincode.startsWith(trimmedQuery)
+
+          const serviceTypeMatch = (customer?.serviceType || []).some(
+            (type) => type.toLowerCase().startsWith(trimmedQuery)
+          )
+
+          return fullNameMatch || mobileMatch || emailMatch || pincodeMatch || serviceTypeMatch
+        })
+      )
+    } else {
+      // If no search query, show all data
+      setFilteredData(customerData)
+    }
+    setCurrentPage(1)
   }
+
 
   const paginatedData = filteredData.slice(
     (currentPage - 1) * itemsPerPage,
@@ -309,8 +278,8 @@ const CustomerManagement = () => {
     return ''
   }
   useEffect(() => {
-    if (formData.dateOfBirth) {
-      const dateObj = new Date(formData.dateOfBirth)
+    if (formData.dob) {
+      const dateObj = new Date(formData.dob)
       if (!isNaN(dateObj)) {
         const day = String(dateObj.getDate()).padStart(2, '0')
         const month = String(dateObj.getMonth() + 1).padStart(2, '0')
@@ -322,48 +291,84 @@ const CustomerManagement = () => {
     } else {
       setFormattedDisplayDate('')
     }
-  }, [formData.dateOfBirth])
+  }, [formData.dob])
+
+
+  const adjustCurrentPageAfterDelete = (updatedLength) => {
+    const newTotalPages = Math.ceil(updatedLength / itemsPerPage)
+
+    setCurrentPage((prevPage) =>
+      prevPage > newTotalPages ? Math.max(newTotalPages, 1) : prevPage
+    )
+  }
 
   const confirmDeleteCustomer = async () => {
     try {
-      await deleteCustomerData(customerIdToDelete)
-      toast.success('Customer deleted successfully')
+      setDelLoading(true)
+      if (isMultiDelete) {
+        await Promise.all(
+          selectedMobiles.map((mobile) => deleteCustomerData(mobile))
+        )
 
-      setCustomerData((prev) =>
-        prev.filter((c) => c.mobileNumber !== customerIdToDelete)
-      )
-      setFilteredData((prev) =>
-        prev.filter((c) => c.mobileNumber !== customerIdToDelete)
-      )
+        toast.success('Selected customers deleted successfully')
+
+        setCustomerData((prev) => {
+          const updated = prev.filter((c) => !selectedMobiles.includes(c.mobile))
+          adjustCurrentPageAfterDelete(updated.length)
+          return updated
+        })
+
+        setFilteredData((prev) => {
+          const updated = prev.filter((c) => !selectedMobiles.includes(c.mobile))
+          adjustCurrentPageAfterDelete(updated.length)
+          return updated
+        })
+
+        setSelectedMobiles([])
+        setIsMultiDelete(false)
+      } else {
+        await deleteCustomerData(customerIdToDelete)
+        toast.success('Customer deleted successfully')
+
+        setCustomerData((prev) => {
+          const updated = prev.filter((c) => c.mobile !== customerIdToDelete)
+          adjustCurrentPageAfterDelete(updated.length)
+          return updated
+        })
+
+        setFilteredData((prev) => {
+          const updated = prev.filter((c) => c.mobile !== customerIdToDelete)
+          adjustCurrentPageAfterDelete(updated.length)
+          return updated
+        })
+      }
     } catch (error) {
       console.error('Delete failed:', error)
       toast.error('Failed to delete customer')
     } finally {
+      setDelLoading(false)
       setIsModalVisible(false)
       setCustomerIdToDelete(null)
+      setCustomerNameToDelete('')
     }
   }
+
 
   const validateForm = () => {
     const errors = {}
 
     // Full Name Validation
     if (!formData.fullName.trim()) {
-      errors.fullName = 'Full Name is required';
+      errors.fullName = 'Full Name is required'
     } else if (/\d/.test(formData.fullName)) {
-      errors.fullName = 'Numbers are not allowed in Full Name';
-    } else if (!/^[A-Za-z.\s]+$/.test(formData.fullName)) {
-      errors.fullName = 'Only letters, spaces, and dots are allowed';
-    } else if (formData.fullName.trim().length < 3) {
-      errors.fullName = 'Full Name must be at least 3 characters long';
+      errors.fullName = 'Name should not contain numbers'
     }
 
-
     // Mobile Number Validation
-    if (!formData.mobileNumber.trim()) {
-      errors.mobileNumber = 'Mobile number is required'
-    } else if (!/^[1-9]\d{9}$/.test(formData.mobileNumber)) {
-      errors.mobileNumber = 'Mobile number must be 10 digits (starting from 1-9)'
+    if (!formData.mobile.trim()) {
+      errors.mobile = 'Mobile number is required'
+    } else if (!/^[1-9]\d{9}$/.test(formData.mobile)) {
+      errors.mobile = 'Mobile number must be 10 digits (starting from 1-9)'
     }
 
     // ✅ Email ID Validation
@@ -374,25 +379,25 @@ const CustomerManagement = () => {
     }
 
     // ✅ Date of Birth Validation
-    if (!formData.dateOfBirth.trim()) {
-      errors.dateOfBirth = 'Date of Birth is required'
+    if (!formData.dob.trim()) {
+      errors.dob = 'Date of Birth is required'
     } else {
-      const date = new Date(formData.dateOfBirth)
+      const date = new Date(formData.dob)
       const year = date.getFullYear()
       const today = new Date()
 
       if (isNaN(date)) {
-        errors.dateOfBirth = 'Invalid Date of Birth'
+        errors.dob = 'Invalid Date of Birth'
       } else if (year.toString().length !== 4) {
-        errors.dateOfBirth = 'Year must be 4 digits'
+        errors.dob = 'Year must be 4 digits'
       } else if (date > today) {
-        errors.dateOfBirth = 'Date of Birth cannot be in the future'
+        errors.dob = 'Date of Birth cannot be in the future'
       } else {
         const oldestAllowedDate = new Date()
         oldestAllowedDate.setFullYear(today.getFullYear() - 100)
 
         if (date < oldestAllowedDate) {
-          errors.dateOfBirth = 'Date of Birth must not be more than 120 years ago'
+          errors.dob = 'Date of Birth must not be more than 120 years ago'
         }
       }
     }
@@ -418,34 +423,48 @@ const CustomerManagement = () => {
         <>
           <CRow className="d-flex align-items-center mb-3">
             <div className="col-md-9 d-flex">
-              <CForm className="w-100">
+              <CForm style={{ width: "50%" }}>
                 <CInputGroup>
                   <CFormInput
                     type="text"
-                    style={{ border: "1px solid #7e3a93" }}
-                    placeholder="Search by name, mobile, or email"
+                    style={{ border: '1px solid var(--color-black)', }}
+                    placeholder="Search by name, mobile, or registrationcode"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
-                  <CInputGroupText style={{ border: "1px solid #7e3a93" }}>
+                  <CInputGroupText style={{ border: '1px solid var(--color-black)', }}>
                     <CIcon icon={cilSearch} />
                   </CInputGroupText>
                 </CInputGroup>
               </CForm>
+
+
             </div>
 
+
+            {/* 🗑 Delete Selected */}
             <div className="col-md-3 d-flex justify-content-end">
-              <CButton color="secondary"
-                style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }} onClick={() => setIsAdding(true)}>
-                Add New Customer
-              </CButton>
+              {selectedMobiles.length > 0 && (
+                <CButton
+                  color="secondary"
+                  style={{ backgroundColor: 'var(--color-black)', color: COLORS.white }}
+                  disabled={selectedMobiles.length === 0}
+                  onClick={() => {
+                    setIsMultiDelete(true)
+                    setIsModalVisible(true)
+                  }}
+                >
+                  Delete Selected ({selectedMobiles.length})
+                </CButton>
+              )}
             </div>
           </CRow>
 
+
           {loading ? (
-            <CTable striped hover responsive>
-              <CTableHead className='pink-table'>
-                <CTableRow>
+            <CTable >
+              <CTableHead >
+                <CTableRow className="text-center" >
                   <CTableHeaderCell colSpan={6} className="text-center">
                     <LoadingIndicator message="Loading customer data..." />
                   </CTableHeaderCell>
@@ -460,47 +479,57 @@ const CustomerManagement = () => {
             <>
               <CTable striped hover responsive>
                 <CTableHead className='pink-table'>
-                  <CTableRow>
-                    <CTableHeaderCell>S.No</CTableHeaderCell>
-                    <CTableHeaderCell>Full Name</CTableHeaderCell>
-                    <CTableHeaderCell>Mobile Number</CTableHeaderCell>
-                    <CTableHeaderCell>Gender</CTableHeaderCell>
-                    <CTableHeaderCell>Date Of Birth</CTableHeaderCell>
-                    <CTableHeaderCell className="text-center">Actions</CTableHeaderCell>
+                  <CTableRow className="text-center">
+
+                    <CTableHeaderCell >
+                      Select
+                    </CTableHeaderCell>
+                    <CTableHeaderCell >S.No</CTableHeaderCell>
+                    <CTableHeaderCell >Full Name</CTableHeaderCell>
+                    <CTableHeaderCell >Mobile Number</CTableHeaderCell>
+                    <CTableHeaderCell >Gender</CTableHeaderCell>
+                    <CTableHeaderCell >Date Of Birth</CTableHeaderCell>
+                    <CTableHeaderCell >Registration Code</CTableHeaderCell>
+                    <CTableHeaderCell >Actions</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
 
                 <CTableBody className='pink-table'>
                   {currentItems.map((customer, index) => (
-                    <CTableRow key={customer.mobileNumber || index}>
+                    <CTableRow key={customer.mobile || index} className="text-center align-middle">
+                      {/* Row Checkbox */}
+                      <CTableDataCell>
+                        <input
+                          type="checkbox"
+                          checked={selectedMobiles.includes(customer.mobile)}
+                          onChange={() => handleSelectOne(customer.mobile)}
+                        />
+                      </CTableDataCell>
+
                       <CTableDataCell>{indexOfFirstItem + index + 1}</CTableDataCell>
                       <CTableDataCell>{customer?.fullName || '-'}</CTableDataCell>
-                      <CTableDataCell>{customer?.mobileNumber || '-'}</CTableDataCell>
+                      <CTableDataCell>{customer?.mobile || '-'}</CTableDataCell>
                       <CTableDataCell>{customer?.gender || '-'}</CTableDataCell>
-                      <CTableDataCell>{customer?.dateOfBirth || '-'}</CTableDataCell>
+                      <CTableDataCell>{customer?.dob || '-'}</CTableDataCell>
+                      <CTableDataCell>{customer?.registrationCode || 'NA'}</CTableDataCell>
 
-                      <CTableDataCell className="text-center">
+                      <CTableDataCell>
                         <div className="d-flex justify-content-center align-items-center gap-2">
                           <button
                             className="actionBtn view"
-                            onClick={() => handleCustomerViewDetails(customer?.mobileNumber)}
+                            onClick={() => handleCustomerViewDetails(customer?.mobile)}
                             title="View"
                           >
                             <Eye size={18} />
                           </button>
 
-                          <button
-                            className="actionBtn edit"
-                            onClick={() => handleEditCustomer(customer?.mobileNumber)}
-                            title="Edit"
-                          >
-                            <Edit2 size={18} />
-                          </button>
 
                           <button
                             className="actionBtn delete"
                             onClick={() => {
-                              setCustomerIdToDelete(customer?.mobileNumber)
+                              setCustomerIdToDelete(customer?.mobile)
+                              setCustomerNameToDelete(customer?.fullName || 'this customer')
+                              setIsMultiDelete(false)
                               setIsModalVisible(true)
                             }}
                             title="Delete"
@@ -509,23 +538,59 @@ const CustomerManagement = () => {
                           </button>
                         </div>
 
-                        <ConfirmationModal
-                          isVisible={isModalVisible}
-                          message="Are you sure you want to delete this customer?"
-                          onConfirm={confirmDeleteCustomer}
-                          onCancel={() => {
-                            setIsModalVisible(false)
-                            setCustomerIdToDelete(null)
-                          }}
-                        />
                       </CTableDataCell>
                     </CTableRow>
                   ))}
                 </CTableBody>
               </CTable>
 
+              <ConfirmationModal
+                isVisible={isModalVisible}
+                message={
+                  <div style={{ lineHeight: 1.6 }}>
+                    <div style={{ fontSize: '16px' }}>
+                      {isMultiDelete ? (
+                        <>
+                          Are you sure you want to delete{' '}
+                          <strong>{selectedMobiles.length} customers</strong>?
+                        </>
+                      ) : (
+                        <>
+                          Are you sure you want to delete{' '}
+                          <strong style={{ color: 'var(--color-black)' }}>
+                            {customerNameToDelete}
+                          </strong>
+                          ?
+                        </>
+                      )}
+                    </div>
+                  </div>
+                }
+                confirmText={
+                  delloading ? (
+                    <span className="d-flex align-items-center">
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                      />
+                      Deleting...
+                    </span>
+                  ) : (
+                    'Yes, Delete'
+                  )
+                }
+                onConfirm={confirmDeleteCustomer}
+                onCancel={() => {
+                  setIsModalVisible(false)
+                  setCustomerIdToDelete(null)
+                  setCustomerNameToDelete('')
+                  setIsMultiDelete(false)
+                }}
+              />
+
+
               {filteredData.length > 0 && (
-                <div className="d-flex justify-content-between align-items-center mt-3">
+                <div className="d-flex justify-content-between px-3 pb-3 mt-3">
                   {/* Rows per page dropdown */}
                   <div>
                     <label className="me-2">Rows per page:</label>
@@ -543,39 +608,49 @@ const CustomerManagement = () => {
                       <option value={50}>50</option>
                     </CFormSelect>
                   </div>
-
-                  {/* Showing info */}
                   <div>
-                    Showing {indexOfFirstItem + 1} to{' '}
-                    {Math.min(indexOfLastItem, filteredData.length)} of {filteredData.length} entries
-                  </div>
+                    {/* Showing info */}
+                    <div>
+                      Showing {indexOfFirstItem + 1} to{' '}
+                      {Math.min(indexOfLastItem, filteredData.length)} of {filteredData.length} entries
+                    </div>
 
-                  {/* Pagination */}
-                  <CPagination align="end">
-                    <CPaginationItem
-                      disabled={currentPage === 1}
-                      onClick={() => handlePageChange(currentPage - 1)}
-                    >
-                      Previous
-                    </CPaginationItem>
-
-                    {[...Array(totalPages)].map((_, idx) => (
+                    {/* Pagination */}
+                    <CPagination align="end" className="mt-2 themed-pagination">
                       <CPaginationItem
-                        key={idx + 1}
-                        active={currentPage === idx + 1}
-                        onClick={() => handlePageChange(idx + 1)}
+                        disabled={currentPage === 1}
+                        onClick={() => handlePageChange(currentPage - 1)}
                       >
-                        {idx + 1}
+                        Previous
                       </CPaginationItem>
-                    ))}
 
-                    <CPaginationItem
-                      disabled={currentPage === totalPages}
-                      onClick={() => handlePageChange(currentPage + 1)}
-                    >
-                      Next
-                    </CPaginationItem>
-                  </CPagination>
+
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter((page) => {
+                          if (totalPages <= 5) return true;
+                          if (currentPage <= 3) return page <= 5;
+                          if (currentPage >= totalPages - 2)
+                            return page >= totalPages - 4;
+                          return page >= currentPage - 2 && page <= currentPage + 2;
+                        })
+                        .map((page) => (
+                          <CPaginationItem
+                            key={page}
+                            active={page === currentPage}
+                            onClick={() => handlePageChange(page)}
+                          >
+                            {page}
+                          </CPaginationItem>
+                        ))}
+
+                      <CPaginationItem
+                        disabled={currentPage === totalPages}
+                        onClick={() => handlePageChange(currentPage + 1)}
+                      >
+                        Next
+                      </CPaginationItem>
+                    </CPagination>
+                  </div>
                 </div>
               )}
             </>
@@ -598,19 +673,7 @@ const CustomerManagement = () => {
                   onChange={handleInputChange}
                   invalid={!!formErrors.fullName}
                   style={{ textTransform: "capitalize" }}
-                  onKeyDown={(e) => {
-                    if (/\d/.test(e.key)) {   // ❌ Block number keys
-                      e.preventDefault();
-                    }
-                  }}
-                  onPaste={(e) => {
-                    if (/\d/.test(e.clipboardData.getData('text'))) {
-                      e.preventDefault();    // ❌ Prevent pasting numbers
-                      toast.error("Numbers are not allowed in Full Name");
-                    }
-                  }}
                 />
-
                 {formErrors.fullName && (
                   <div className="text-danger small">{formErrors.fullName}</div>
                 )}
@@ -621,8 +684,8 @@ const CustomerManagement = () => {
                   <span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormInput
-                  name="mobileNumber"
-                  value={formData.mobileNumber}
+                  name="mobile"
+                  value={formData.mobile}
                   onChange={handleInputChange}
                   // disabled
                   onKeyDown={(e) => {
@@ -632,12 +695,12 @@ const CustomerManagement = () => {
                   }}
                   onPaste={(e) => e.preventDefault()}
                   maxLength={10}
-                  invalid={!!formErrors.mobileNumber}
+                  invalid={!!formErrors.mobile}
                   disabled={isEditing}
                 />
 
-                {formErrors.mobileNumber && (
-                  <div className="text-danger small">{formErrors.mobileNumber}</div>
+                {formErrors.mobile && (
+                  <div className="text-danger small">{formErrors.mobile}</div>
                 )}
               </CCol>
             </CRow>
@@ -665,16 +728,16 @@ const CustomerManagement = () => {
                   <span className="text-danger">*</span>
                 </CFormLabel>
                 <CFormInput
-                  name="dateOfBirth"
-                  value={formData.dateOfBirth}
+                  name="dob"
+                  value={formData.dob}
                   onChange={handleInputChange}
                   type="date"
                   max={new Date().toISOString().split('T')[0]} // 🚫 Future dates disabled
-                  invalid={!!formErrors.dateOfBirth}
+                  invalid={!!formErrors.dob}
                 />
 
-                {formErrors.dateOfBirth && (
-                  <div className="text-danger small">{formErrors.dateOfBirth}</div>
+                {formErrors.dob && (
+                  <div className="text-danger small">{formErrors.dob}</div>
                 )}
 
                 {formattedDisplayDate && (

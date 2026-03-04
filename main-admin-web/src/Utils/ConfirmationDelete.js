@@ -5,8 +5,8 @@ import { CButton, CModal, CModalBody, CModalFooter, CModalHeader } from "@coreui
       <CModal
         visible={isVisible}
         onClose={onCancel}
-        // Keeps modal centered without outside click close
-        alignment="top" // 👈 Places modal at the top
+      
+        alignment="top"
         backdrop={false}
         
       >

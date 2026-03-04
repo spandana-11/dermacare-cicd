@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { CButton } from '@coreui/react'
 import { useNavigation } from '../Usecontext/NavigationProvider'
 
-
 const BackButton = () => {
   const { goBack } = useNavigation()
   const [isHovered, setIsHovered] = useState(false)
