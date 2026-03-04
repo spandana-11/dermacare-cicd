@@ -1,16 +1,14 @@
 import React from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import Logo from './header/DermaLogoP.png'
+import { useLocation } from 'react-router-dom'
+import Logo from './header/GlowKaart.png'
 
 import {
-  CCloseButton,
   CSidebar,
-  CSidebarBrand,
   CSidebarFooter,
   CSidebarHeader,
   CSidebarToggler,
 } from '@coreui/react'
-import CIcon from '@coreui/icons-react'
 
 import { AppSidebarNav } from './AppSidebarNav'
 import './sidebar.css'
@@ -23,11 +21,15 @@ const AppSidebar = () => {
   const dispatch = useDispatch()
   const unfoldable = useSelector((state) => state.sidebarUnfoldable)
   const sidebarShow = useSelector((state) => state.sidebarShow)
+  const location = useLocation() // get current path
+
+  // Hide sidebar only on /clinicRegistration
+  if (location.pathname === '/clinic-Registration') return null
 
   return (
     <CSidebar
       className="border-end"
-     style={{ background: 'var(--color-bgcolor)' }}
+      style={{ background: 'var(--color-bgcolor)' }}
       color={COLORS.teal}
       position="fixed"
       unfoldable={unfoldable}
@@ -41,36 +43,48 @@ const AppSidebar = () => {
           <div className="d-flex justify-content-center">
             <img
               src={Logo}
-              alt="DermaCare Logo"
-              style={{ width: '140px', height: '120px', marginBottom: '0px', marginLeft: '30px' }}
+              alt="Glowkart Logo"
+              style={{ height: '120px', marginBottom: '0px' }}
             />
           </div>
           <div
             className="d-flex justify-content-center underline-none"
             style={{ marginLeft: '20px' }}
           >
-            <h1
-              style={{
-                fontSize: '30px',
-                background: 'linear-gradient(to right, #0072CE, #00AEEF)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                fontWeight: 'bold',
-              }}
-            >
-              DermaCare
-            </h1>
+
           </div>
         </div>
-        {/* <CCloseButton
-          className="d-lg-none"
-          dark
-          onClick={() => dispatch({ type: 'set', sidebarShow: false })}
-        /> */}
       </CSidebarHeader>
+
       <AppSidebarNav items={navigation} />
-      <CSidebarFooter className="border-top d-none d-lg-flex">
-        <CSidebarToggler onClick={() => dispatch({ type: 'set', sidebarShow: !sidebarShow })} />
+      <CSidebarFooter className="border-top d-none d-lg-flex flex-column align-items-center py-2">
+        <div
+          style={{
+            fontSize: '14px',
+            fontWeight: 'bold',
+            color: ` var(--color-black)`,
+            lineHeight: '1.2',
+          }}
+        >
+          Neeha&apos;s GlowKart
+        </div>
+
+        <div
+          style={{
+            fontSize: '12px',
+            fontWeight: 'bold',
+            color: `var(--color-black)`,
+            marginBottom: '6px',
+          }}
+        >
+         Udit Cosmetech Private Limited
+        </div>
+
+        <CSidebarToggler
+          onClick={() =>
+            dispatch({ type: 'set', sidebarShow: !sidebarShow })
+          }
+        />
       </CSidebarFooter>
     </CSidebar>
   )

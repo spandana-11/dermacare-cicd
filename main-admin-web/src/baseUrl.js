@@ -1,212 +1,149 @@
-// export const BASE_URL = 'http://alb-dev-sc-197990416.ap-south-1.elb.amazonaws.com/api'
-// const ipUrl = 'localhost'
+import axios from "axios"
 const ipUrl = '52.66.144.177:9090'
 export const BASE_URL = `http://${ipUrl}`
 export const CLINIC_ADMIN_URL = `http://${ipUrl}`
 export const MainAdmin_URL = `${BASE_URL}/admin`
-export const Procedure_URL=`http://${ipUrl}`
-export const ClinicBase_url=`${BASE_URL}/admin`
-// export let wifiUrl = '192.168.1.7'
-
-// export const CUSTOMER_SERVICE_URL = `http://${ipUrl}:8083/api`
+export const Procedure_URL = `http://${ipUrl}`
+export const ClinicBase_url = `${BASE_URL}/admin`
 export const Booking_service_Url = `http://${ipUrl}/api`
-
-// export const BOOKING_SERVICE_URL = `http://${ipUrl}:8087/api/v1`
-// export const BASE_URLS = `http://${ipUrl}:8080/api/v1`
-// export const CLINIC_URL = `http://${ipUrl}:8081`
 export const SERVICE_URL = `admin/updateByServiceId`
-
-//sub-service
 export const subService_URL = `http://${ipUrl}/admin`
 export const ADD_SERVICE = 'addService'
 export const GET_ALL_SERVICES = 'getAllServices'
 export const DELETE_SERVICE_URL = `deleteService`
-export const updateService = 'updateByServiceId'
-
 export const getService = 'getServiceById'
-// export const getServiceByServiceId='getServiceByServiceId'
 export const Category = 'category/getServices'
- 
-// login
 export const endPoint = 'admin/adminLogin'
-
-// Category Management
 export const CategoryAllData = 'admin/getCategories'
-
 export const AddCategory = 'admin/addCategory'
-
 export const UpdateCategory = 'admin/updateCategory'
-
 export const deleteCategory = 'admin/deleteCategory'
-
-// Clinic Management
 export const ClinicAllData = 'admin/getAllClinics'
-
 export const AddClinic = 'admin/CreateClinic'
-
 export const UpdateClinic = 'admin/updateClinic'
-
 export const DeleteClinic = 'admin/deleteClinic'
-
-export const getAllQuestions='admin/clinicQuestions/getAll'
-
-export const postAllQuestionsAndAnswers='admin/clinicQA/postQuestionsAndAnswer'
-// Doctor Management
 export const DoctorAllData = '/clinic-admin/doctors/hospitalById'
 export const AddDoctor = 'clinic-admin/addDoctor'
-
 export const UpdateDoctor = 'admin/updateDoctor'
-
 export const deleteDoctor = 'admin/deleteDoctor'
 export const GetBranches_ByClinicId = 'admin/getBranchByClinicId'
-
-export const getDoctorsByHospitalIdAndBranchId='admin/getDoctorsByHospitalIdAndBranchId'
-
-// Customer Management
-export const CustomerAllData = 'admin/getAllCustomers'
-
+export const getDoctorsByHospitalIdAndBranchId = 'admin/getDoctorsByHospitalIdAndBranchId'
 export const AddCustomer = 'admin/saveBasicDetails'
-
 export const updateCustomer = 'admin/updateCustomerBasicDetails'
-
-export const deleteCustomer = 'admin/deleteCustomerBasicDetails'
-
-export const getBasicDetails = 'admin/getBasicDetails'
-// export const bookServices ='customers/bookServices'
-// export const deleteAppointments ='customers/deleteService'
-
-// Service management
-// export const AddService = 'services/addService'
-// export const updateService = 'services/updateService'
-// export const deleteService = 'services/deleteByServiceID'
-
-//Subservice
 export const getSubservices = 'admin/getAllSubServices'
 export const addSubservices = 'admin/addSubService'
 export const deleteSubservices = 'admin/deleteSubService'
 export const updateSubservices = 'admin/updateBySubServiceId'
-
-// Provider Management
-
 export const ProviderAllData = 'admin/getAllProviderDetails'
-
 export const BasicDetails = 'admin/getCaregiverDetails'
-
 export const updateBasic = 'admin/updateCaregiver'
-
 export const BasicProfile = 'admin/getProviderBasicProfile'
-
 export const UpdateBasicProfile = 'admin/updateBasicProfile'
-
 export const qualification = 'admin/getQualificationDetails'
-
 export const updateQualification = 'admin/updateQualification'
-
 export const Experience = 'admin/getExperienceDetails'
-
 export const updateExperience = 'admin/updateExperienceDetails'
-
 export const AddExperience = 'providers/addExperienceDetails'
-
 export const DeleteExperience = 'admin/deleteExperience'
-
 export const courseCertification = 'admin/getCourseCertificationDetails'
-
 export const updateCourse = 'admin/updateCourseCertification'
-
 export const deleteCourse = 'admin/deleteCourseCertification'
-
 export const Bank = 'admin/getBankAccountDetails'
-
 export const updateBank = 'admin/updateBankAccount'
-
 export const Verification = 'admin/getVerficationDetails'
-
 export const updateVerification = 'admin/verfiyProvider'
-
 export const getAppointments = 'admin/appointments'
-
-// Appointment Management
-// export const getAllBookingDetails = 'admin/getAllBookingDetails'
-// Reassign Appointment
 export const getData = 'admin/NotificationToAdminForProviderReassign'
-
 export const postData = 'admin/providerReassign'
-
-// export const allBooking_sevices = getAllBookedServices
-// export const GetBookingBy_ClinicId = 'customer/getAllBookedServicesByClinicId'
-// export const GetBookingBy_DoctorId = 'admin/getBookingByDoctorId'
-//appointments
 export const GetBy_DoctorId = 'admin/getDoctorById'
 export const getAllBookedServices = 'admin/getAllBookedServices'
 export const DeleteBookings = 'admin/deleteServiceByBookedId'
-
-// Service management
-// export const getService = 'admin/getAllServices'
 export const getServiceByCategory = 'admin/getServiceById'
-export const deleteService = 'admin/deleteService'
-
-//categoryAdvertisement
 export const getAllCategoryAdvertisement = 'admin/categoryAdvertisement/getAll'
 export const AddCategoryAdvertisement = 'admin/categoryAdvertisement/add'
 export const deleteCategoryAdvertisement = 'admin/categoryAdvertisement/deleteByCarouselId'
-
-//ads service
-
-//serviceAdvertisement
 export const getAllServiceAdvertisement = 'admin/ServiceAdvertisement/getAll'
 export const AddServiceAdvertisement = 'admin/ServiceAdvertisement/add'
 export const deleteServiceAdvertisement = 'admin/ServiceAdvertisement/deleteByCarouselId'
-
-
 export const doctorAvailableUrl = 'doctorId'
 export const getAllDoctors = `doctors`
-
 export const getDoctorByClinicId = 'doctors/hospitalById'
-
-//opt  SUb Service
 export const subservice = 'getSubServicesByServiceId'
 export const getSubServicesbyserviceId = 'serviceId'
 export const getadminSubServicesbyserviceId = `admin/getSubServicesByServiceId`
 export const getSubServiceBySubServiceId = `admin/getSubServiceBySubServiceId`
 export const getservice = 'admin/getServiceById'
-
-export const addDoctorUrl=`admin/addDoctor`
-
-export const AddSubService = 'admin/addSubService'
-
+export const addDoctorUrl = `admin/addDoctor`
 export const getService_ByClinicId = 'admin/getSubServiceByHospitalId'
-
 export const service = 'admin/getAllSubServices'
-
-export const deleteSubService='admin/deleteSubService'
-
-//Branch CRUD
-
-export const createBranch='admin/createBranch'
-
-export const deleteBranch='admin/deleteBranch'
-
-export const getBranchByClinicId='admin/getBranchByClinicId'
-
-export const getBranchById='admin/getBranchById'
-
-export const getAllBranches='admin/getAllBranches'
-
-export const updateBranches='admin/updateBranch'
-
-// export const getBranchByClinicAndBranchId='admin/getBranchByClinicAndBranchId'
-
-//Procedure CRUD
-
-//Procedure_URL
-
-export const addProcedureDetails='admin/addSubService'
-
-export const deleteProcedureDetails='admin/deleteSubService'
-
-export const updateProcedureDetails='admin/updateSubService'
+export const deleteSubService = 'admin/deleteSubService'
+export const createBranch = 'admin/createBranch'
+export const deleteBranch = 'admin/deleteBranch'
+export const getBranchByClinicId = 'admin/getBranchByClinicId'
+export const getBranchById = 'admin/getBranchById'
+export const getAllBranches = 'admin/getAllBranches'
+export const updateBranches = 'admin/updateBranch'
+export const addProcedureDetails = 'admin/addSubService'
+export const deleteProcedureDetails = 'admin/deleteSubService'
+export const updateProcedureDetails = 'admin/updateSubService'
+export const getSubService = 'admin/getSubService'
 
 
 
-export const getSubService='admin/getSubService'
+
+// GlowKart API's
+export const BASE_URL_API = "https://glowkartapi.ashokfruit.shop/admin";
+export const Production_URL_API = "https://api.ngkderma.com/admin";
+
+export const NGkRegistrationBaseUrl='https://glowkartapi.ashokfruit.shop'
+// Clinic
+export const CLINIC_REGISTRATION_URL = `${BASE_URL_API}/clinics/register`;
+// UPDATE CLINIC
+export const updateClinic = (clinicId, payload) => {
+  return axios.put(
+    `${BASE_URL_API}/clinics/${clinicId}`,
+    payload
+  );
+};
+
+// DELETE CLINIC
+export const deleteClinic = (clinicId) => {
+  return axios.delete(
+    `${BASE_URL_API}/clinics/${clinicId}`
+  );
+};
+
+// Procedure Endpoints
+export const PROCEDURE_CREATE_URL = `${BASE_URL_API}/procedures/create`;
+export const PROCEDURE_GET_ALL_URL = `${BASE_URL_API}/procedures/all`;
+export const PROCEDURE_GET_BY_ID_URL = (id) => `${BASE_URL_API}/procedures/get/${id}`;
+export const PROCEDURE_UPDATE_URL = (id) => `${BASE_URL_API}/procedures/update/${id}`;
+export const PROCEDURE_DELETE_URL = (id) => `${BASE_URL_API}/procedures/delete/${id}`;
+
+
+
+export const AllClinicData = `${BASE_URL_API}/clinics`
+
+export const statusapi = {
+    startClinic: (id) => axios.put(`${AllClinicData}/${id}/start-verification`),
+    verifyClinic: (id) => axios.put(`${AllClinicData}/${id}/verify`),
+    rejectClinic: (id, reason) =>
+        axios.put(`${AllClinicData}/${id}/reject`, { reason }),
+};
+
+export const NGkRegistrationLink = `${NGkRegistrationBaseUrl}/onboard/request-link`
+export const getAllQuestions = '/clinicQuestions/getAll'
+export const postAllQuestionsAndAnswers = '/clinicQA/postQuestionsAndAnswer'
+export const REGISTRATION_CODE_GET_ALL_URL_DEV=`${BASE_URL_API}/registration/all`
+export const REGISTRATION_CODE_GET_ALL_URL=`https://api.ngkderma.com/admin/api/registration/all`
+
+
+export const getBasicDetails = 'customers'
+export const CustomerAllData = 'customers/all'
+export const deleteService = 'procedure-pricing/delete'
+export const updateService = 'pricing/update'
+export const AddSubService = 'pricing/create'
+
+
+
+export const PushNotificationBaseUrl=""

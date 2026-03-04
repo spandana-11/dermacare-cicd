@@ -23,7 +23,6 @@ import {
   CTableDataCell,
   CPagination,
   CPaginationItem, CCardBody,
-  CSpinner,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilSearch, cilTrash } from '@coreui/icons'
@@ -32,7 +31,6 @@ import 'react-toastify/dist/ReactToastify.css'
 import { getAllServices, postServiceData, updateServiceData, deleteServiceData, getServiceByServiceId } from './ServiceAPI'
 import { CategoryData } from '../categoryManagement/CategoryAPI'
 import Select from 'react-select'
-import { cilXCircle } from '@coreui/icons'
 import LoadingIndicator from '../../Utils/loader'
 import { Edit2, Eye, Trash2 } from 'lucide-react'
 import { COLORS } from '../../Constant/Themes'
@@ -40,7 +38,6 @@ import { ConfirmationModal } from '../../Utils/ConfirmationDelete'
 
 const ServiceManagement = () => {
   const fileInputRef = useRef(null);
-
   const [searchQuery, setSearchQuery] = useState('')
   const [service, setService] = useState([])
   const [categories, setCategories] = useState([])
@@ -53,24 +50,21 @@ const ServiceManagement = () => {
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [serviceIdToDelete, setServiceIdToDelete] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(5)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
   const [selectedService, setSelectedService] = useState(null)
   const [viewModalVisible, setViewModalVisible] = useState(false)
-
   const [errors, setErrors] = useState({
     serviceName: '',
     categoryId: '',
     description: '',
     serviceImage: '',
   })
-
   const [newService, setNewService] = useState({
     serviceName: '',
     categoryId: '',
     description: '',
     serviceImage: null,
   })
-
   const [updatedService, setUpdatedService] = useState({
     ServiceId: '',
     ServiceName: '',
@@ -79,7 +73,6 @@ const ServiceManagement = () => {
     serviceImage: null,
     existingImageName: ''
   })
-
   const [editErrors, setEditErrors] = useState({})
 
   const fetchData = async () => {
@@ -89,12 +82,10 @@ const ServiceManagement = () => {
       if (!servicesResponse || !servicesResponse.data) {
         throw new Error('Invalid services response')
       }
-
       const categoriesResponse = await CategoryData()
       if (!categoriesResponse || !categoriesResponse.data) {
         throw new Error('Invalid categories response')
       }
-
       setService(servicesResponse.data.data || servicesResponse.data)
       setCategories(categoriesResponse.data)
     } catch (error) {
@@ -105,6 +96,7 @@ const ServiceManagement = () => {
       setLoading(false)
     }
   }
+
   const handleViewService = async (serviceId) => {
     const data = await getServiceByServiceId(serviceId);
     setSelectedService(data);
@@ -152,11 +144,6 @@ const ServiceManagement = () => {
       return
     }
 
-    // if (file.size > 100 * 1024) {
-    //   setErrors((prev) => ({ ...prev, serviceImage: "File size must be < 100kb" }))
-    //   return
-    // }
-
     const reader = new FileReader()
     reader.onloadend = () => {
       let base64String = reader.result.split(",")[1]
@@ -169,10 +156,8 @@ const ServiceManagement = () => {
 
   const handleServiceChange = (e) => {
     const { name, value } = e.target;
-
     // Replace multiple spaces with a single space
     const sanitizedValue = value.replace(/\s+/g, ' ');
-
     // Update state exactly as typed
     setNewService((prev) => ({
       ...prev,
@@ -205,8 +190,6 @@ const ServiceManagement = () => {
 
   };
 
-
-
   const validateForm = () => {
     const newErrors = {}
 
@@ -217,10 +200,6 @@ const ServiceManagement = () => {
     if (!newService.serviceName?.trim()) {
       newErrors.serviceName = 'Service name is required'
     }
-
-    // if (!newService.description?.trim()) {
-    //   newErrors.description = 'Description is required'
-    // }
 
     if (!newService.serviceImage) {
       newErrors.serviceImage = 'Service image is required'
@@ -236,10 +215,6 @@ const ServiceManagement = () => {
     if (!updatedService.ServiceName?.trim()) {
       newErrors.ServiceName = "Service name is required"
     }
-
-    // if (!updatedService.description?.trim()) {
-    //   newErrors.description = "Description is required"
-    // }
 
     if (!updatedService.categoryId) {
       newErrors.categoryId = "Category is required"
@@ -261,12 +236,6 @@ const ServiceManagement = () => {
         error = "Service name is required"
       }
     }
-
-    // if (name === "description") {
-    //   if (!value.trim()) {
-    //     error = "Description is required"
-    //   }
-    // }
 
     if (name === "categoryId") {
       if (!value) {
@@ -292,7 +261,6 @@ const ServiceManagement = () => {
 
     const trimmedName = (newService.serviceName || '').trim();
     const trimmedDescription = (newService.description || '').trim();
-
     const newErrors = {}; // collect all errors before deciding to return
 
     // --- Validate Service Name ---
@@ -305,15 +273,6 @@ const ServiceManagement = () => {
     } else if (trimmedName.length < 3) {
       newErrors.serviceName = "Service name must be at least 3 characters long.";
     }
-
-    // --- Validate Description ---
-    // if (!trimmedDescription) {
-    //   newErrors.description = "Description is required.";
-    // } else if (trimmedDescription.length < 10) {
-    //   newErrors.description = "Description must be at least 10 characters long.";
-    // } else if (!/^[A-Za-z0-9\s.,-]+$/.test(trimmedDescription)) {
-    //   newErrors.description = "Description can only contain letters, numbers, spaces, commas, periods, and hyphens.";
-    // }
 
     // --- Validate Category ---
     if (!newService.categoryId) {
@@ -391,12 +350,9 @@ const ServiceManagement = () => {
   const handleUpdateService = async () => {
     const trimmedName = (updatedService.ServiceName || '').trim();
     const trimmedDescription = (updatedService.description || '').trim();
-
     // 🔄 Reset previous errors
     setEditErrors({});
-
     const newErrors = {};
-
     // 🔍 Service Name Validation
     if (!trimmedName) {
       newErrors.ServiceName = "Service Name is required.";
@@ -407,15 +363,6 @@ const ServiceManagement = () => {
     } else if (trimmedName.length < 3) {
       newErrors.ServiceName = "Service Name must be at least 3 characters long.";
     }
-
-    // 🔍 Description Validation
-    // if (!trimmedDescription) {
-    //   newErrors.description = "Description is required.";
-    // } else if (trimmedDescription.length <5) {
-    //   newErrors.description = "Description must be at least 5 characters long.";
-    // } else if (!/^[A-Za-z0-9\s@&\-\.,()]+$/.test(trimmedDescription)) {
-    //   newErrors.description = "Description can include letters, numbers, spaces, and special characters like @, &, -, ., (, ).";
-    // }
 
     if (!updatedService.categoryId) {
       newErrors.categoryId = "Category is required.";
@@ -523,9 +470,8 @@ const ServiceManagement = () => {
     <div className="container-fluid p-4">
       <ToastContainer />
       <CCard>
-
         <CCardHeader className="d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">Service Management</h5>
+          <h5 className="mb-0">Procedure Management</h5>
           <div className="d-flex" style={{ gap: '1rem' }}>
             <CInputGroup style={{ width: '300px' }}>
               <CFormInput
@@ -554,23 +500,23 @@ const ServiceManagement = () => {
           <>
             <CTable striped hover responsive>
               <CTableHead className='pink-table'>
-                <CTableRow>
+                <CTableRow className="text-center">
                   <CTableHeaderCell >S.No</CTableHeaderCell>
                   <CTableHeaderCell>Service Name</CTableHeaderCell>
                   <CTableHeaderCell>Category Name</CTableHeaderCell>
                   <CTableHeaderCell>Description</CTableHeaderCell>
-                  <CTableHeaderCell className="text-center">Actions</CTableHeaderCell>
+                  <CTableHeaderCell>Actions</CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
               <CTableBody className='pink-table'>
                 {currentItems && currentItems.length > 0 ? (
                   currentItems.map((service, index) => (
-                    <CTableRow key={service.serviceId || index}>
+                    <CTableRow key={service.serviceId || index} className="text-center align-middle">
                       <CTableDataCell>{(currentPage - 1) * itemsPerPage + index + 1}</CTableDataCell>
                       <CTableDataCell>{service.serviceName}</CTableDataCell>
                       <CTableDataCell>{service.categoryName}</CTableDataCell>
                       <CTableDataCell>{service.description || 'N/A'}</CTableDataCell>
-                      <CTableDataCell className="text-center">
+                      <CTableDataCell>
                         <div className="d-flex justify-content-center align-items-center gap-2">
                           <button
                             // color="primary"
@@ -633,7 +579,7 @@ const ServiceManagement = () => {
                   <span className="me-3">
                     Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredData.length)} of {filteredData.length} entries
                   </span>
-                  <CPagination>
+                  <CPagination align="end" className="mt-2 themed-pagination">
                     <CPaginationItem
                       onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                       disabled={currentPage === 1}
@@ -750,11 +696,6 @@ const ServiceManagement = () => {
                 <label className="form-label">
                   Service Image <span style={{ color: 'red' }}>*</span>
                 </label>
-
-                {/* <div className="mb-3 position-relative">
-  <label className="form-label">
-    Service Image <span style={{ color: "red" }}>*</span>
-  </label> */}
 
                 {/* File Input */}
                 <CFormInput

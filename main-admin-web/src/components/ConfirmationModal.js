@@ -13,7 +13,7 @@ const ConfirmationModal = ({
   cancelColor = 'secondary',
 }) => {
   return (
-    <CModal visible={isVisible} onClose={onCancel} alignment="center" backdrop="static" className='custom-modal'>
+    <CModal visible={isVisible} onClose={onCancel} alignment="top" >
       {/* Header */}
       <CModalHeader>
         <CModalTitle style={{ color: 'var(--color-black)' }}>⚠ {title}</CModalTitle>
@@ -33,7 +33,7 @@ const ConfirmationModal = ({
           onClick={onConfirm}
           style={{
             minWidth: '100px',
-            color: 'red',
+            color: 'white',
             backgroundColor: 'var(--color-black)',
           }}
         >

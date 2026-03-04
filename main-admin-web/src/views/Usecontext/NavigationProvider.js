@@ -6,14 +6,14 @@ const NavigationContext = createContext()
 export const NavigationProvider = ({ children }) => {
   const navigate = useNavigate()
   const location = useLocation()
-  const [stack, setStack] = useState(['/dashboard']) // always start with dashboard
+  const [stack, setStack] = useState(['/clinic-management']) // always start with dashboard
 
   // track every route change
   useEffect(() => {
     if (stack[stack.length - 1] !== location.pathname) {
       setStack((prev) => [...prev, location.pathname])
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [location.pathname])
 
   const push = (path) => {
@@ -29,7 +29,7 @@ export const NavigationProvider = ({ children }) => {
       setStack(newStack)
       navigate(prev)
     } else {
-      navigate('/dashboard') // fallback
+      navigate('/clinic-management') // fallback
     }
   }
 

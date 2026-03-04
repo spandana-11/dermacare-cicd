@@ -1,14 +1,9 @@
 import React from 'react'
 import {
   CButton,
-  CCard,
-  CCardBody,
-  CCardHeader,
   CCol,
   CForm,
   CFormInput,
-  CFormLabel,
-  CFormTextarea,
   CRow,
 } from '@coreui/react'
 

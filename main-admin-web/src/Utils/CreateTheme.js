@@ -1,6 +1,5 @@
 import { createTheme } from 'react-data-table-component'
 
-// Optional: create or override a dark theme if needed
 export default createTheme('darkCustom', {
   text: {
     primary: '#ffffff',

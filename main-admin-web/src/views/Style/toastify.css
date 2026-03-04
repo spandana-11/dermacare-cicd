@@ -1,6 +1,4 @@
-/* toastify-custom.css */
 
-/* General toast style */
 .Toastify__toast {
   background-color: var(--color-black) !important;
   color: white !important;

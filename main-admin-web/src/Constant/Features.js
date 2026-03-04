@@ -1,5 +1,5 @@
  export const features = [
-  "Dashboard",
+
   "Appointments",
   "Employee management",
   "Disease-Management",

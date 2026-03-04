@@ -47,28 +47,16 @@ import 'react-toastify/dist/ReactToastify.css'
 const PersonalViewDetails = () => {
   const { id } = useParams()
   const [error, setError] = useState('')
-
   const [Basic, setBasic] = useState('')
   const [editBasic, setEditedBasic] = useState({})
   const [editBasicMode, setEditBasicMode] = useState(false)
-
   const [Personal, setPersonal] = useState('')
   const [editedPersonal, setEditedPersonal] = useState({})
   const [editMode, setEditMode] = useState(false)
   const [activeTab, setActiveTab] = useState('basic')
   const [uploadedFile, setUploadedFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
-
-  const [errors, setErrors] = useState({
-    mobileNumber: '',
-    aadhaarCardNumber: '',
-    emailId: '',
-    pinCode: '',
-    fatherName: '',
-    city: '',
-    state: '',
-  })
-
+  const [errors, setErrors] = useState({ mobileNumber: '', aadhaarCardNumber: '', emailId: '', pinCode: '', fatherName: '', city: '', state: '' })
   const [Qualification, setQualification] = useState(null)
   const [editedQualification, setEditedQualification] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -78,14 +66,11 @@ const PersonalViewDetails = () => {
     yearOfPassing: '',
     specialization: '',
   })
-
   const [newQualifications, setNewQualifications] = useState([])
   const [editQualificationMode, setEditQualificationMode] = useState(false)
-
   const [experience, setExperience] = useState([])
   const [editedExperience, setEditedExperience] = useState([])
   const [expUploadedFile, setExpUploadedFile] = useState([])
-
   const [editExperienceMode, setEditExperienceMode] = useState(
     new Array(experience.length).fill(false),
   )
@@ -95,7 +80,6 @@ const PersonalViewDetails = () => {
     specialization: '',
     yearsOfExperience: '',
   })
-
   const [isAddingNewExperience, setIsAddingNewExperience] = useState(false)
   const [newExperience, setNewExperience] = useState({
     jobTitleRole: '',
@@ -105,7 +89,6 @@ const PersonalViewDetails = () => {
     endDate: '',
     uploadExperienceCertificates: [],
   })
-
   const [course, setCourse] = useState([])
   const [editedCourse, setEditedCourse] = useState([])
   const [editCourseMode, setEditCourseMode] = useState(new Array(experience.length).fill(false))
@@ -1746,7 +1729,7 @@ const PersonalViewDetails = () => {
 
   return (
     <div>
-      <CModal visible={!!previewUrl} onClose={() => setPreviewUrl(null)}  className="custom-modal"
+      <CModal visible={!!previewUrl} onClose={() => setPreviewUrl(null)} className="custom-modal"
         backdrop="static">
         <CModalHeader>
           <CModalTitle>Preview Certificate </CModalTitle>
@@ -1925,93 +1908,93 @@ const PersonalViewDetails = () => {
                 </CAccordionBody>
               </CAccordionItem>
 
-              
+
             </CAccordion>
           )}
 
 
 
-{activeTab === 'doctorsDetails' && (
-  <CAccordion className="mt-4" activeItemKey={1}>
-    <CAccordionItem itemKey={0}>
-      <CAccordionHeader>
-        <span>Clinic Details</span>
-      </CAccordionHeader>
-      <CAccordionBody>
-        {Basic && Object.keys(Basic).length > 0 ? (
-          <div
-            className="clinic-details-grid mt-3"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '20px',
-            }}
-          >
-            {/* Administrator Name */}
-            <div>
-              <strong>Administrator Name:</strong><br />
-              {Basic.adminName || 'NA'}
-            </div>
+          {activeTab === 'doctorsDetails' && (
+            <CAccordion className="mt-4" activeItemKey={1}>
+              <CAccordionItem itemKey={0}>
+                <CAccordionHeader>
+                  <span>Clinic Details</span>
+                </CAccordionHeader>
+                <CAccordionBody>
+                  {Basic && Object.keys(Basic).length > 0 ? (
+                    <div
+                      className="clinic-details-grid mt-3"
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(2, 1fr)',
+                        gap: '20px',
+                      }}
+                    >
+                      {/* Administrator Name */}
+                      <div>
+                        <strong>Administrator Name:</strong><br />
+                        {Basic.adminName || 'NA'}
+                      </div>
 
-            {/* Clinic Registration No */}
-            <div>
-              <strong>Clinic Registration No:</strong><br />
-              {Basic.registrationNo || 'NA'}
-            </div>
+                      {/* Clinic Registration No */}
+                      <div>
+                        <strong>Clinic Registration No:</strong><br />
+                        {Basic.registrationNo || 'NA'}
+                      </div>
 
-            {/* GST No */}
-            <div>
-              <strong>GST No:</strong><br />
-              {Basic.gstNumber || 'NA'}
-            </div>
+                      {/* GST No */}
+                      <div>
+                        <strong>GST No:</strong><br />
+                        {Basic.gstNumber || 'NA'}
+                      </div>
 
-            {/* Clinic Logo */}
-            <div>
-              <strong>Clinic Logo:</strong><br />
-              {Basic.logoUrl ? (
-                <img src={Basic.logoUrl} alt="Clinic Logo" style={{ width: '100px', height: '100px' }} />
-              ) : (
-                'No Logo Available'
-              )}
-            </div>
+                      {/* Clinic Logo */}
+                      <div>
+                        <strong>Clinic Logo:</strong><br />
+                        {Basic.logoUrl ? (
+                          <img src={Basic.logoUrl} alt="Clinic Logo" style={{ width: '100px', height: '100px' }} />
+                        ) : (
+                          'No Logo Available'
+                        )}
+                      </div>
 
-            {/* Clinic Description */}
-            <div>
-              <strong>Clinic Description:</strong><br />
-              {Basic.description || 'NA'}
-            </div>
+                      {/* Clinic Description */}
+                      <div>
+                        <strong>Clinic Description:</strong><br />
+                        {Basic.description || 'NA'}
+                      </div>
 
-            {/* Working Days & Timings */}
-            <div>
-              <strong>Working Days & Timings:</strong><br />
-              {Basic.workingHours || 'NA'}
-            </div>
+                      {/* Working Days & Timings */}
+                      <div>
+                        <strong>Working Days & Timings:</strong><br />
+                        {Basic.workingHours || 'NA'}
+                      </div>
 
-            {/* Status */}
-            <div>
-              <strong>Status:</strong><br />
-              {Basic.status || 'NA'}
-            </div>
-          </div>
-        ) : (
-          <div
-            style={{
-              textAlign: 'center',
-              padding: '1rem',
-              fontSize: '1.2rem',
-              color: 'gray',
-              fontStyle: 'italic',
-            }}
-          >
-            No clinic details available.
-          </div>
-        )}
-      </CAccordionBody>
-    </CAccordionItem>
-  </CAccordion>
-)}
+                      {/* Status */}
+                      <div>
+                        <strong>Status:</strong><br />
+                        {Basic.status || 'NA'}
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        textAlign: 'center',
+                        padding: '1rem',
+                        fontSize: '1.2rem',
+                        color: 'gray',
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      No clinic details available.
+                    </div>
+                  )}
+                </CAccordionBody>
+              </CAccordionItem>
+            </CAccordion>
+          )}
 
-          
+
 
           {activeTab === 'Appointments' && (
             <CAccordion className="mt-4" activeItemKey={0}>

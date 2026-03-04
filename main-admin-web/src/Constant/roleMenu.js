@@ -1,8 +1,8 @@
-// rolePermissions.js
+
 export const roleMenu = {
-  //Admin Permissions
+
   admin: {
-    Dashboard: ['read'],
+
     Appointments: ['create', 'read', 'update', 'delete'],
     'Employee management': ['create', 'read', 'update', 'delete'],
     'Disease-Management': ['create', 'read', 'update', 'delete'],
@@ -33,7 +33,7 @@ export const roleMenu = {
   },
   //Lab Technician Permissions
   labTechnician: {
-    Dashboard: ['read'],
+
     Appointments: ['read', 'update'],
     Tests: ['read'],
     Treatments: ['read', 'update'],
@@ -42,7 +42,7 @@ export const roleMenu = {
   },
   //Receptionist Permissions
   receptionist: {
-    Dashboard: ['read'],
+
     Appointments: ['create', 'read', 'update'],
     Payouts: ['read'],
     Help: ['read'],

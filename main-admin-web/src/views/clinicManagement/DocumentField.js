@@ -17,8 +17,8 @@ const DocumentField = ({
   const normalizedData = Array.isArray(base64Data)
     ? base64Data
     : base64Data
-    ? [base64Data]
-    : []
+      ? [base64Data]
+      : []
 
   const getFileInfo = (data) => {
     if (!data || typeof data !== 'string') return { mime: '', ext: '', isPreviewable: false }
@@ -189,7 +189,7 @@ const DocumentField = ({
           type="file"
           multiple={uploadType === 'multiple'}
           ref={fileInputRef}
-  className="form-control" // ✅ standard input box styling
+          className="form-control" // ✅ standard input box styling
           onChange={handleFileSelect}
         />
       )}
