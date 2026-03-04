@@ -5,18 +5,13 @@ import com.pharmacyManagement.dto.Response;
 
 public interface PurchaseBillService {
 
-	Response savePurchase(PurchaseBillDTO dto);
+	Response createPurchase(PurchaseBillDTO dto);
 
-	Response getPurchaseById(String id);
+	Response getAll();
 
-	Response getAllPurchases();
+	Response getPuchaseByPurchasedId(String purchaseId);
 
-	Response deletePurchase(String id);
+	Response updatePurchase(String purchaseId, PurchaseBillDTO dto);
 
-	Response updatePurchase(String id, PurchaseBillDTO dto);
-
-	Response getPurchaseByPurchaseBillNo(String purchaseBillNo);
-
-	Response getPurchaseByDateRange(String fromDate, String toDate);
-
+	Response deletePurchase(String purchaseId);
 }

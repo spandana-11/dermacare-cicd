@@ -1,79 +1,62 @@
 package com.pharmacyManagement.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.pharmacyManagement.dto.PurchaseBillDTO;
 import com.pharmacyManagement.dto.Response;
 import com.pharmacyManagement.service.PurchaseBillService;
 
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/purchase")
-
-@RequiredArgsConstructor
+@RequestMapping("/purchases")
+@Slf4j
 public class PurchaseBillController {
 
+	@Autowired
+	private PurchaseBillService purchaseService;
 
-    private final PurchaseBillService purchaseBillService;
+	@PostMapping
+	public ResponseEntity<Response> createPurchase(@RequestBody PurchaseBillDTO dto) {
 
-    // =============================
-    //   SAVE PURCHASE BILL
-    // =============================
-    @PostMapping("/save")
-    public ResponseEntity<Response> savePurchaseBill(@Valid @RequestBody PurchaseBillDTO dto) {
-        Response response = purchaseBillService.savePurchase(dto);
-        return ResponseEntity.status(response.getStatus()).body(response);
-    }
-    @PutMapping("/update/{id}")
-    public ResponseEntity<Response> updatePurchaseBill(
-            @PathVariable String id,
-            @Valid @RequestBody PurchaseBillDTO dto) {
+		log.info("API Call: Create Purchase");
+		Response res = purchaseService.createPurchase(dto);
+		return ResponseEntity.status(res.getStatus()).body(res);
+	}
 
-        Response response = purchaseBillService.updatePurchase(id, dto);
-        return ResponseEntity.status(response.getStatus()).body(response);
-    }
+	@GetMapping
+	public ResponseEntity<Response> getAllPurchases() {
 
-    @GetMapping("/getById/{id}")
-    public ResponseEntity<Response> getPurchaseBillById(@PathVariable String id) {
-        Response response = purchaseBillService.getPurchaseById(id);
-        return ResponseEntity.status(response.getStatus()).body(response);
-    }
-    @GetMapping("/getByBillNo/{billNo}")
-    public ResponseEntity<Response> getPurchaseBillByBillNo(@PathVariable String billNo) {
-        Response response = purchaseBillService.getPurchaseByPurchaseBillNo(billNo);
-        return ResponseEntity.status(response.getStatus()).body(response);
-    }
+		log.info("API Call: Get All Purchases");
+		Response res = purchaseService.getAll();
+		return ResponseEntity.status(res.getStatus()).body(res);
+	}
 
-    @GetMapping("/all")
-    public ResponseEntity<Response> getAllPurchaseBills() {
-        Response response = purchaseBillService.getAllPurchases();
-        return ResponseEntity.status(response.getStatus()).body(response);
-    }
+	@GetMapping("/{purchaseId}")
+	public ResponseEntity<Response> getPurchaseById(@PathVariable String purchaseId) {
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Response> deletePurchaseBill(@PathVariable String id) {
-        Response response = purchaseBillService.deletePurchase(id);
-        return ResponseEntity.status(response.getStatus()).body(response);
-    }
-    
-    @GetMapping("/search/date/{fromDate}/{toDate}")
-    public ResponseEntity<Response> getByDateRange(
-            @PathVariable String fromDate,
-            @PathVariable String toDate) {
+		log.info("API Call: Get Purchase By Id");
+		Response res = purchaseService.getPuchaseByPurchasedId(purchaseId);
+		return ResponseEntity.status(res.getStatus()).body(res);
+	}
 
-        Response res = purchaseBillService.getPurchaseByDateRange(fromDate, toDate);
-        return ResponseEntity.status(res.getStatus()).body(res);
-    }
+	@PutMapping("/{purchaseId}")
+	public ResponseEntity<Response> updatePurchase(
+			@PathVariable String purchaseId,
+			@RequestBody PurchaseBillDTO dto) {
 
+		log.info("API Call: Update Purchase");
+		Response res = purchaseService.updatePurchase(purchaseId, dto);
+		return ResponseEntity.status(res.getStatus()).body(res);
+	}
 
+	@DeleteMapping("/{purchaseId}")
+	public ResponseEntity<Response> deletePurchase(@PathVariable String purchaseId) {
+
+		log.info("API Call: Delete Purchase");
+		Response res = purchaseService.deletePurchase(purchaseId);
+		return ResponseEntity.status(res.getStatus()).body(res);
+	}
 }
