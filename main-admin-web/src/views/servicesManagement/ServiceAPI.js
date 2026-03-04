@@ -1,8 +1,10 @@
 import axios from 'axios'
 import {
+  SERVICE_URL,
   GET_ALL_SERVICES,
   ADD_SERVICE,
   subService_URL,
+  BASE_URL,
   DELETE_SERVICE_URL,
   getService,
   updateService,
@@ -26,8 +28,9 @@ export const getAllServices = async () => {
 
 export const getServiceByServiceId = async (serviceId) => {
   try {
+
     const response = await axios.get(`${subService_URL}/getServiceByServiceId/${serviceId}`)
-    console.log('this response is', `${subService_URL}/getServiceByServiceId/${serviceId}`)
+    console.log('this response is',`${subService_URL}/getServiceByServiceId/${serviceId}`)
     return response.data?.data || null
   } catch (error) {
     console.error('Error fetching services by category:', error)
@@ -40,6 +43,8 @@ export const getServiceByCategoryId = async (categoryId) => {
     const response = await axios.get(`${subService_URL}/${getService}/${categoryId}`, {
       validateStatus: (status) => status >= 200 && status <= 302, // Accept 302 as a valid response
     })
+
+    // If the server redirects, follow the 'Location' header
     if (response.status === 302 && response.headers.location) {
       const redirectedResponse = await axios.get(response.headers.location)
       return redirectedResponse.data?.data || []

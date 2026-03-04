@@ -1,10 +1,10 @@
-
+// src/components/ProtectedRoute.js
 import React from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated =
-    !!localStorage.getItem('userId') && !!localStorage.getItem('authentication')
+    !!localStorage.getItem('userName') && !!localStorage.getItem('authentication')
 
   const location = useLocation()
 

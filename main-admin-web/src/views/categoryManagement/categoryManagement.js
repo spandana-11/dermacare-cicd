@@ -39,7 +39,7 @@ import {
   updateCategoryData,
   deleteCategoryData,
 } from './CategoryAPI'
-import  ConfirmationModal  from '../../components/ConfirmationModal'
+import { ConfirmationModal } from '../../Utils/ConfirmationDelete'
 import { COLORS } from '../../Constant/Themes'
 import LoadingIndicator from '../../Utils/loader'
 
@@ -55,7 +55,7 @@ const CategoryManagement = () => {
   const [editCategoryMode, setEditCategoryMode] = useState(false)
   const [categoryToEdit, setCategoryToEdit] = useState(null)
   const [fileKey, setFileKey] = useState(Date.now()) // used to reset file input
-  const [delloading, setDelLoading] = useState(false)
+
   const [errors, setErrors] = useState({
     categoryName: '',
     categoryImage: '',
@@ -76,7 +76,7 @@ const CategoryManagement = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [itemsPerPage, setItemsPerPage] = useState(5)
 
   const fetchData = async () => {
     setLoading(true)
@@ -393,17 +393,12 @@ const CategoryManagement = () => {
   const handleConfirmDelete = async () => {
     console.log(categoryIdToDelete)
     try {
-       setDelLoading(true)
       const data = await deleteCategoryData(categoryIdToDelete)
- 
+      setIsModalVisible(false)
       toast.success(`${data.data}`, { position: 'top-right' })
       fetchData()
     } catch (error) {
       alert('Failed to delete category.')
-    }
-    finally {
-      setDelLoading(false)
-      setIsModalVisible(false)
     }
   }
 
@@ -440,13 +435,13 @@ const CategoryManagement = () => {
             <CInputGroup style={{ width: '300px' }}>
               <CFormInput
                 type="text"
-                style={{ border: '1px solid var(--color-black)', }}
+                style={{ border: "1px solid #7e3a93" }}
                 placeholder="Search by Category Name"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
 
-              <CInputGroupText style={{ border: '1px solid var(--color-black)', }}>
+              <CInputGroupText style={{ border: "1px solid #7e3a93" }}>
                 <CIcon icon={cilSearch} />
               </CInputGroupText>
             </CInputGroup>
@@ -459,18 +454,18 @@ const CategoryManagement = () => {
         ) : (
           <CTable striped hover responsive>
             <CTableHead className="pink-table">
-              <CTableRow className="text-center">
-                <CTableHeaderCell >S.No</CTableHeaderCell>
+              <CTableRow>
+                <CTableHeaderCell className="text-center">S.No</CTableHeaderCell>
                 <CTableHeaderCell>Category Name</CTableHeaderCell>
-                <CTableHeaderCell >Actions</CTableHeaderCell>
+                <CTableHeaderCell className="text-center">Actions</CTableHeaderCell>
               </CTableRow>
             </CTableHead>
 
             <CTableBody className="pink-table">
               {currentItems.length > 0 ? (
                 currentItems.map((category, index) => (
-                  <CTableRow key={category.categoryId} className="text-center align-middle" >
-                    <CTableDataCell>
+                  <CTableRow key={category.categoryId}>
+                    <CTableDataCell className="text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </CTableDataCell>
 
@@ -543,7 +538,7 @@ const CategoryManagement = () => {
                 {Math.min(indexOfLastItem, filteredData.length)} of{' '}
                 {filteredData.length} entries
               </span>
-              <CPagination align="end" className="mt-2 themed-pagination">
+              <CPagination>
                 <CPaginationItem
                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                   disabled={currentPage === 1}
@@ -920,19 +915,6 @@ const CategoryManagement = () => {
       <ConfirmationModal
         isVisible={isModalVisible}
         message="Are you sure you want to delete this category?"
-         confirmText={
-          delloading ? (
-            <>
-              <span className="spinner-border spinner-border-sm me-2 text-white" role="status" />
-              Deleting...
-            </>
-          ) : (
-            'Yes, Delete'
-          )
-        }
-        cancelText="Cancel"
-        confirmColor="danger"
-        cancelColor="secondary"
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
       />

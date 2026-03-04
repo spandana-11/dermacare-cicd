@@ -33,15 +33,17 @@ const AppBreadcrumb = () => {
 
   const breadcrumbs = getBreadcrumbs(currentLocation)
 
+  // ✅ Show Back button for all /employee-management subroutes,
+  // but NOT on the main /employee-management page
   const showBackButton =
     currentLocation.startsWith('/employee-management') &&
     currentLocation !== '/employee-management'
 
   const handleBack = () => {
     if (window.history.length > 2) {
-      navigate(-1)
+      navigate(-1) // Go to previous page if history exists
     } else {
-      navigate('/branch-details')
+      navigate('/branch-details') // Fallback route
     }
   }
 

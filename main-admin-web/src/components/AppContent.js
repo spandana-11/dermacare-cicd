@@ -8,6 +8,7 @@ import LoadingIndicator from '../Utils/loader'
 const AppContent = () => {
   return (
     <CContainer className="px-4" lg>
+      {/* <Suspense fallback={<CSpinner color="primary" />}> */}
         <Routes>
           {routes.map((route, idx) => {
             return (
@@ -22,8 +23,9 @@ const AppContent = () => {
               )
             )
           })}
-          <Route path="/" element={<Navigate to="login" replace />} />
+          <Route path="/" element={<Navigate to="dashboard" replace />} />
         </Routes>
+      {/* </Suspense> */}
     </CContainer>
   )
 }

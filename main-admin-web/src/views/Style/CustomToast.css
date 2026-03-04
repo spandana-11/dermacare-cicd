@@ -1,4 +1,4 @@
-
+/* components/CustomToast.css */
 .custom-toast {
   display: flex;
   align-items: center;
@@ -8,6 +8,9 @@
   font-weight: 500;
   color: #fff;
 }
+
+
+
 .custom-toast .toast-logo {
   width: 30px;
   height: 30px;

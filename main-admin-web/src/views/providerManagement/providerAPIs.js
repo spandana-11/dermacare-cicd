@@ -13,6 +13,7 @@ import {
   AddExperience,
   DeleteExperience,
   courseCertification,
+  updateCourse,
   deleteCourse,
   Bank,
   updateBank,
@@ -24,6 +25,8 @@ export const providerData = async () => {
   try {
     const response = await axios.get(`${BASE_URL}/${ProviderAllData}`)
     console.log(response)
+  
+
     return response.data.map((provider) => ({
       ...provider,
       emailId: provider.providerBasicProfile?.emailId || '',
@@ -44,6 +47,8 @@ export const CustomerData = async (id) => {
   }
 }
 
+// providerAPIs.js
+
 export const updateBasicData = async (id, providerData) => {
   try {
     const response = await axios.put(`${BASE_URL}/${updateBasic}/${id}`, providerData, {
@@ -58,6 +63,10 @@ export const updateBasicData = async (id, providerData) => {
   }
 };
 
+
+
+// basic profile
+
 export const getBasicProfileByID = async (id) => {
   try {
     const response = await axios.get(`${BASE_URL}/${BasicProfile}/${id}`)
@@ -70,8 +79,10 @@ export const getBasicProfileByID = async (id) => {
 
 export const updateProviderData = async (id, providerData) => {
   try {
-    const { id: removedId, ...dataWithoutId } = providerData;
+    const { id: removedId, ...dataWithoutId } = providerData; 
+
     console.log('Provider Data being sent (without id):', dataWithoutId);
+
     const response = await axios.put(`${BASE_URL}/${UpdateBasicProfile}/${id}`, dataWithoutId, {
       headers: {
         'Content-Type': 'application/json',
@@ -86,6 +97,9 @@ export const updateProviderData = async (id, providerData) => {
 };
 
 
+
+// qualification details
+
 export const getQualificationID = async (id) => {
   try {
     const response = await axios.get(`${BASE_URL}/${qualification}/${id}`)
@@ -99,7 +113,7 @@ export const getQualificationID = async (id) => {
 
 export const updateQualificationData = async (id, providerData) => {
   try {
-    const { id: removedId, ...dataWithoutId } = providerData;
+    const { id: removedId, ...dataWithoutId } = providerData; 
     const response = await axios.put(`${BASE_URL}/${updateQualification}/${id}`, dataWithoutId, {
       headers: {
         'Content-Type': 'application/json',
@@ -109,7 +123,7 @@ export const updateQualificationData = async (id, providerData) => {
     return response.data;
   } catch (error) {
     console.error('Error updating Qualifications details:', error.response?.data || error.message);
-    throw error;
+    throw error; 
   }
 };
 
@@ -128,17 +142,17 @@ export const getExperienceID = async (id) => {
 export const postExperienceData = async (id, providerData) => {
   try {
     const requestData = {
-      experienceList: providerData.experienceList,
+      experienceList: providerData.experienceList, 
     };
-    console.log('Sending data to API:', id, requestData);
+    console.log('Sending data to API:', id, requestData); 
 
     const response = await axios.post(`${BASE_URL}/${AddExperience}/${id}`, requestData, {
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json', 
       },
     });
 
-    return response.data;
+    return response.data; 
   } catch (error) {
     console.error('Error sending experience data to API:', error);
 
@@ -175,6 +189,9 @@ export const updateExperienceData = async (mobileNumber, index, experienceData) 
   }
 };
 
+
+
+
 export const deleteExperienceData = async (mobileNumber, index) => {
   try {
     const response = await axios.delete(
@@ -191,6 +208,9 @@ export const deleteExperienceData = async (mobileNumber, index) => {
     return { success: false, message: "Error deleting experience" };
   }
 };
+
+
+// Course Certification
 
 export const getCourseCertification = async (id) => {
   try {
@@ -247,7 +267,7 @@ export const updateCourseData = async (mobileNumber, index, courseList) => {
     console.log('Final Course Data being sent to API:', JSON.stringify(requestData, null, 2));
 
     const response = await axios.put(
-      `${BASE_URL}/updateCourseCertification/${mobileNumber}/${index}`,
+      `${BASE_URL}/updateCourseCertification/${mobileNumber}/${index}`, 
       requestData,
       {
         headers: {
@@ -262,6 +282,12 @@ export const updateCourseData = async (mobileNumber, index, courseList) => {
     throw new Error(`API Error: ${error.response?.data?.message || error.message}`);
   }
 };
+
+
+
+
+
+
 
 export const deleteCourseData = async (mobileNumber, index) => {
   try {
@@ -281,6 +307,10 @@ export const deleteCourseData = async (mobileNumber, index) => {
 };
 
 
+
+
+// bank details
+
 export const getBankID = async (id) => {
   try {
     const response = await axios.get(`${BASE_URL}/${Bank}/${id}`)
@@ -293,7 +323,7 @@ export const getBankID = async (id) => {
 
 export const updateBankData = async (id, providerData) => {
   try {
-    const { id: removedId, ...dataWithoutId } = providerData;
+    const { id: removedId, ...dataWithoutId } = providerData; 
 
     // Sending the data as JSON
     const response = await axios.put(`${BASE_URL}/${updateBank}/${id}`, dataWithoutId, {
@@ -305,7 +335,7 @@ export const updateBankData = async (id, providerData) => {
     return response.data;
   } catch (error) {
     console.error('Error updating bank details:', error.response?.data || error.message);
-    throw error;
+    throw error; 
   }
 };
 
@@ -323,9 +353,9 @@ export const getVerificationID = async (mobileNumber) => {
 }
 
 export const updateVerificationData = async (mobileNumber, providerData) => {
-  const { id, data, message, ...dataWithoutId } = providerData;
+  const { id, data,message, ...dataWithoutId } = providerData;
 
-  console.log('Sending data to API:', mobileNumber, dataWithoutId);
+  console.log('Sending data to API:', mobileNumber, dataWithoutId); 
 
   try {
     const response = await axios.put(

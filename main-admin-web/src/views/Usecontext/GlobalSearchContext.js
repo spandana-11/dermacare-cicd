@@ -1,4 +1,4 @@
-
+// src/views/Usecontext/GlobalSearchContext.js
 import React, { createContext, useContext, useState } from 'react'
 
 const GlobalSearchContext = createContext()
