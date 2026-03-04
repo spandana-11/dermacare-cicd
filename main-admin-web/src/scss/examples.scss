@@ -1,5 +1,5 @@
-
-$enable-deprecation-messages: false; 
+/* stylelint-disable declaration-no-important, scss/selector-no-redundant-nesting-selector */
+$enable-deprecation-messages: false; /* stylelint-disable-line scss/dollar-variable-default */
 
 @import "@coreui/coreui/scss/functions";
 @import "@coreui/coreui/scss/variables";
@@ -18,7 +18,7 @@ $enable-deprecation-messages: false;
     margin-top: 1.5rem;
   }
 
-
+  // Components examples
   .preview {
     + p {
       margin-top: 2rem;

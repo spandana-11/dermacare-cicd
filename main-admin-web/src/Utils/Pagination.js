@@ -1,33 +1,36 @@
 import React from 'react'
-import { CFormSelect, CPagination, CPaginationItem } from '@coreui/react'
+import { CButton, CFormSelect } from '@coreui/react'
 
-const Pagination = ({
-  currentPage,
-  totalPages,
-  pageSize,
-  totalItems,
-  onPageChange,
-  onPageSizeChange,
-}) => {
-  const startEntry = (currentPage - 1) * pageSize + 1
-  const endEntry = Math.min(currentPage * pageSize, totalItems)
+const Pagination = ({ currentPage, totalPages, pageSize, onPageChange, onPageSizeChange }) => {
+  const handlePrev = () => {
+    if (currentPage > 1) onPageChange(currentPage - 1)
+  }
 
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      onPageChange(newPage)
+  const handleNext = () => {
+    if (currentPage < totalPages) onPageChange(currentPage + 1)
+  }
+
+  // Calculate page numbers (show max 5 at a time)
+  const getPageNumbers = () => {
+    const pageNumbers = []
+    const startPage = Math.floor((currentPage - 1) / 5) * 5 + 1
+    const endPage = Math.min(startPage + 4, totalPages)
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i)
     }
+    return pageNumbers
   }
 
   return (
     <div className="d-flex justify-content-between align-items-center mt-3">
-
       {/* Rows per page */}
       <div className="d-flex align-items-center gap-2">
         <span>Rows per page:</span>
         <CFormSelect
           value={pageSize}
           onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          style={{ width: '80px' }}
+          style={{ width: '100px' }}
         >
           <option value={5}>5</option>
           <option value={10}>10</option>
@@ -36,44 +39,41 @@ const Pagination = ({
         </CFormSelect>
       </div>
 
-      {/* Pagination info + buttons */}
-      <div className="text-end">
-        <span className="d-block mb-1">
-          Showing {startEntry} to {endEntry} of {totalItems} entries
+      {/* Pagination */}
+      <div className="d-flex align-items-center gap-2">
+        <CButton size="sm" onClick={handlePrev} disabled={currentPage === 1} color="secondary">
+          Prev
+        </CButton>
+
+        {getPageNumbers().map((page) => (
+          <CButton
+            key={page}
+            size="sm"
+            style={{
+              backgroundColor: currentPage === page ? 'var(--color-black)' : '#fff',
+              color: currentPage === page ? '#fff' : 'var(--color-black)',
+              border: '1px solid #ccc',
+              borderRadius: '5px',
+              minWidth: '35px',
+            }}
+            onClick={() => onPageChange(page)}
+          >
+            {page}
+          </CButton>
+        ))}
+
+        <CButton
+          size="sm"
+          onClick={handleNext}
+          disabled={currentPage === totalPages}
+          color="secondary"
+        >
+          Next
+        </CButton>
+
+        <span style={{ marginLeft: '10px' }}>
+          Page {currentPage} of {totalPages}
         </span>
-
-        <CPagination align="end" className="themed-pagination">
-          <CPaginationItem
-            disabled={currentPage === 1}
-            onClick={() => handlePageChange(currentPage - 1)}
-          >
-            Previous
-          </CPaginationItem>
-
-          {Array.from({ length: totalPages }, (_, i) => i + 1)
-            .filter((page) => {
-              if (totalPages <= 5) return true
-              if (currentPage <= 3) return page <= 5
-              if (currentPage >= totalPages - 2) return page >= totalPages - 4
-              return page >= currentPage - 2 && page <= currentPage + 2
-            })
-            .map((page) => (
-              <CPaginationItem
-                key={page}
-                active={page === currentPage}
-                onClick={() => handlePageChange(page)}
-              >
-                {page}
-              </CPaginationItem>
-            ))}
-
-          <CPaginationItem
-            disabled={currentPage === totalPages}
-            onClick={() => handlePageChange(currentPage + 1)}
-          >
-            Next
-          </CPaginationItem>
-        </CPagination>
       </div>
     </div>
   )

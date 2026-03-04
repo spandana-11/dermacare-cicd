@@ -12,7 +12,6 @@ export const FileInputWithRemove = ({
   multiple = false,
   invalid,
 }) => {
-
   const renderFilePreview = () => {
     if (!file || (Array.isArray(file) && file.length === 0)) return null
 

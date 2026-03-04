@@ -13,6 +13,15 @@
   transition: all 0.2s ease;
 }
 
+/* .customer-card:hover {
+  background-color: var(--main-color);
+  color: white;
+} */
+
+/* .customer-card:hover strong {
+  color: white !important;
+} */
+
 .col-item {
   margin-bottom: 6px;
 }

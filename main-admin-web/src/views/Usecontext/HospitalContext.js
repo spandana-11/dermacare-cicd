@@ -36,6 +36,8 @@ export const HospitalProvider = ({ children }) => {
     else localStorage.removeItem('selectedHospital')
   }, [selectedHospital])
 
+
+
   // Fetch hospital details
   const fetchHospital = useCallback(async (id) => {
     if (!id) return
@@ -115,7 +117,7 @@ export const HospitalProvider = ({ children }) => {
         fetchAllData,
         fetchDoctors,
         fetchHospital,
-
+        
       }}
     >
       {children}

@@ -367,7 +367,7 @@ case 'specialization':
         const fileSizeInBytes = (base64Length * 3) / 4 - padding
 
         if (fileSizeInBytes > 250 * 1024) {
-          error = 'Profile Image must be less than 500KB.'
+          error = 'Profile Image must be less than 250KB.'
         }
       }
       break
@@ -388,13 +388,13 @@ case 'specialization':
       if (!value || value.trim() === '') {
         error = 'Medical Fitness Certificate is required.'
       } else {
-        // ✅ Base64 file size check (500 KB max)
+        // ✅ Base64 file size check (250 KB max)
         const base64Length = value.length - (value.indexOf(',') + 1)
         const padding = value.endsWith('==') ? 2 : value.endsWith('=') ? 1 : 0
         const fileSizeInBytes = (base64Length * 3) / 4 - padding
 
-        if (fileSizeInBytes > 500 * 1024) {
-          error = 'Medical Fitness Certificate must be less than 500KB.'
+        if (fileSizeInBytes > 250 * 1024) {
+          error = 'Medical Fitness Certificate must be less than 250KB.'
         }
       }
       break
@@ -405,13 +405,13 @@ case 'specialization':
         if (formData.qualificationOrCertifications.trim() === '') {
           error = 'Invalid Training Guard License file.'
         } else {
-          // ✅ Size check (500 KB max)
+          // ✅ Size check (250 KB max)
           const base64Length = value.length - (value.indexOf(',') + 1)
           const padding = value.endsWith('==') ? 2 : value.endsWith('=') ? 1 : 0
           const fileSizeInBytes = (base64Length * 3) / 4 - padding
 
-          if (fileSizeInBytes > 500 * 1024) {
-            error = 'Qualification/Certification file must be less than 500KB.'
+          if (fileSizeInBytes > 250 * 1024) {
+            error = 'Qualification/Certification file must be less than 250KB.'
           }
         }
       }
@@ -439,13 +439,13 @@ case 'specialization':
         if (!isValidFile) {
           error = 'Only PDF or image files (png, jpeg, jpg) are allowed.'
         } else {
-          // ✅ File size check (max 500 KB)
+          // ✅ File size check (max 250 KB)
           const base64Length = value.length - (value.indexOf(',') + 1)
           const padding = value.endsWith('==') ? 2 : value.endsWith('=') ? 1 : 0
           const fileSizeInBytes = (base64Length * 3) / 4 - padding
 
-          if (fileSizeInBytes > 500 * 1024) {
-            error = 'Qualification/Nursing Certificate must be less than 500KB.'
+          if (fileSizeInBytes > 250 * 1024) {
+            error = 'Qualification/Nursing Certificate must be less than 250KB.'
           } else {
             error = ''
           }

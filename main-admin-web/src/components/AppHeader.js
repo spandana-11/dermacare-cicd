@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react'
-import { useLocation } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import {
   CContainer,
+  CDropdown,
   CHeader,
   CHeaderNav,
   CHeaderToggler,
@@ -12,6 +13,7 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import ThemeSelector from '../Constant/ThemeSelector'
+
 import { cilBell, cilList, cilMenu, cilEnvelopeOpen } from '@coreui/icons'
 import { AppBreadcrumb } from './index'
 import { AppHeaderDropdown } from './header/index'
@@ -19,27 +21,16 @@ import { AppHeaderDropdown } from './header/index'
 const AppHeader = () => {
   const headerRef = useRef()
   const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
+
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.sidebarShow)
-  const location = useLocation()
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (headerRef.current) {
+    document.addEventListener('scroll', () => {
+      headerRef.current &&
         headerRef.current.classList.toggle('shadow-sm', document.documentElement.scrollTop > 0)
-      }
-    }
-
-    document.addEventListener('scroll', handleScroll)
-    return () => {
-      document.removeEventListener('scroll', handleScroll)
-    }
+    })
   }, [])
-
-  // After all hooks, decide if we render
-  const shouldRenderHeader = location.pathname !== '/clinic-Registration'
-
-  if (!shouldRenderHeader) return null
 
   return (
     <CHeader
@@ -58,10 +49,19 @@ const AppHeader = () => {
 
         <CHeaderNav className="d-none d-md-flex">
           <CNavItem>
-            <CNavLink href="#" style={{ color: 'var(--color-black)' }}>Users</CNavLink>
+            <CNavLink to="/dashboard" as={NavLink} style={{ color: 'var(--color-black)' }}>
+              Dashboard
+            </CNavLink>
           </CNavItem>
           <CNavItem>
-            <CNavLink href="#" style={{ color: 'var(--color-black)' }}>Settings</CNavLink>
+            <CNavLink href="#" style={{ color: 'var(--color-black)' }}>
+              Users
+            </CNavLink>
+          </CNavItem>
+          <CNavItem>
+            <CNavLink href="#" style={{ color: 'var(--color-black)' }}>
+              Settings
+            </CNavLink>
           </CNavItem>
         </CHeaderNav>
 
