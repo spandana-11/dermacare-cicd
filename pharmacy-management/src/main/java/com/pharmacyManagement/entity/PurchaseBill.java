@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import com.pharmacyManagement.dto.Dates;
 import com.pharmacyManagement.dto.PaymentDetails;
 import com.pharmacyManagement.dto.Summary;
-import com.pharmacyManagement.dto.SupplierDTO;
+import com.pharmacyManagement.dto.SuplierInPurchaseDTO;
 import com.pharmacyManagement.dto.TaxDetails;
 
 import lombok.Data;
@@ -20,11 +20,12 @@ public class PurchaseBill {
     @Id
     private String purchaseId;
     private String purchaseBillNo;
+    private String orderId;
     private String invoiceNo;
     private String financialYear;
     private Dates dates;
     private TaxDetails taxDetails;
-    private SupplierDTO supplierDetails;
+    private SuplierInPurchaseDTO supplierDetails;
     private PaymentDetails paymentDetails;
     private List<PurchaseItem> items;
     private Summary summary;

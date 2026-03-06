@@ -1,12 +1,18 @@
 package com.pharmacyManagement.service.impl;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+
 import com.pharmacyManagement.dto.Response;
 import com.pharmacyManagement.dto.SupplierDTO;
+import com.pharmacyManagement.dto.SupplierLoginRequest;
 import com.pharmacyManagement.entity.Supplier;
 import com.pharmacyManagement.repository.SupplierRepository;
 import com.pharmacyManagement.service.SupplierService;
@@ -20,6 +26,7 @@ public class SupplierServiceImpl implements SupplierService {
 	private static final Logger log = LoggerFactory.getLogger(SupplierServiceImpl.class);
 
 	private final SupplierRepository supplierRepository;
+	private final EmailService emailService;
 
 	// ---------------------------------------------------------
 	// CREATE SUPPLIER
@@ -41,8 +48,8 @@ public class SupplierServiceImpl implements SupplierService {
 			}
 
 			if (dto.getContactDetails() == null ||
-				dto.getContactDetails().getMobileNumber1() == null ||
-				dto.getContactDetails().getMobileNumber1().trim().isEmpty()) 
+				dto.getContactDetails().getMobileNumber() == null ||
+				dto.getContactDetails().getMobileNumber().trim().isEmpty()) 
 			{
 				return buildError(response, "Primary mobile number is required", HttpStatus.BAD_REQUEST);
 			}
@@ -53,8 +60,8 @@ public class SupplierServiceImpl implements SupplierService {
 						HttpStatus.CONFLICT);
 			}
 
-			if (supplierRepository.existsByContactDetailsMobileNumber1(dto.getContactDetails().getMobileNumber1())) {
-				return buildError(response, "Mobile number already exists: " + dto.getContactDetails().getMobileNumber1(),
+			if (supplierRepository.existsByContactDetailsMobileNumber(dto.getContactDetails().getMobileNumber())) {
+				return buildError(response, "Mobile number already exists: " + dto.getContactDetails().getMobileNumber(),
 						HttpStatus.CONFLICT);
 			}
 
@@ -66,7 +73,31 @@ public class SupplierServiceImpl implements SupplierService {
 
 			// -------- SAVE SUPPLIER --------
 			Supplier supplier = mapToEntity(dto);
+
+			// Generate Supplier ID
+			String supplierId = generateSupplierId();
+			supplier.setSupplierId(supplierId);
+
+			// Username = Supplier ID
+			supplier.setUserName(supplierId);
+
+			// Generate Password
+			String password = generatePassword();
+			supplier.setPassword(password);
+
 			supplierRepository.save(supplier);
+
+			// Send credentials to email
+			Map<String, String> emailData = new HashMap<>();
+			emailData.put("subject", "Supplier Account Created");
+			emailData.put("message", "Your supplier account has been created successfully.");
+			emailData.put("username", supplier.getUserName());
+			emailData.put("password", password);
+
+			emailService.sendEmail(
+			        supplier.getContactDetails().getEmail(),
+			        emailData
+			);
 
 			log.info("Supplier added successfully: {}", supplier.getSupplierId());
 
@@ -281,6 +312,8 @@ public class SupplierServiceImpl implements SupplierService {
 		supplier.setNonLocalSupplier(dto.isNonLocalSupplier());
 		supplier.setActive(dto.isActive());
 		supplier.setContactDetails(dto.getContactDetails());
+		supplier.setUserName(dto.getUserName());
+		supplier.setPassword(dto.getPassword());
 
 		return supplier;
 	}
@@ -303,10 +336,64 @@ public class SupplierServiceImpl implements SupplierService {
 		dto.setNonLocalSupplier(supplier.isNonLocalSupplier());
 		dto.setActive(supplier.isActive());
 		dto.setContactDetails(supplier.getContactDetails());
+		dto.setUserName(supplier.getUserName());
+		dto.setUserName(supplier.getUserName());
+		dto.setPassword(supplier.getPassword());
+		
+		
 
 		return dto;
 	}
-	
+	@Override
+	public Response supplierLogin(SupplierLoginRequest request) {
+
+	    Response response = new Response();
+
+	    try {
+
+	        Optional<Supplier> optionalSupplier =
+	                supplierRepository.findByUserName(request.getUserName());
+
+	        if (optionalSupplier.isEmpty()) {
+	            response.setSuccess(false);
+	            response.setMessage("Invalid username");
+	            response.setStatus(HttpStatus.NOT_FOUND.value());
+	            response.setData(null);
+	            return response;
+	        }
+
+	        Supplier supplier = optionalSupplier.get();
+
+	        if (!supplier.getPassword().equals(request.getPassword())) {
+	            response.setSuccess(false);
+	            response.setMessage("Invalid password");
+	            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+	            response.setData(null);
+	            return response;
+	        }
+
+	        // Login Response Data
+	        Map<String, Object> loginData = new HashMap<>();
+	        loginData.put("supplierId", supplier.getSupplierId());
+	        loginData.put("supplierName", supplier.getSupplierName());
+	        loginData.put("contactPerson", supplier.getContactDetails().getContactPerson());
+	        loginData.put("mobileNumber", supplier.getContactDetails().getMobileNumber());
+
+	        response.setSuccess(true);
+	        response.setMessage("Login successful");
+	        response.setStatus(HttpStatus.OK.value());
+	        response.setData(loginData);
+
+	    } catch (Exception e) {
+	        log.error("Supplier login error", e);
+	        response.setSuccess(false);
+	        response.setMessage("Login failed due to server error");
+	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	        response.setData(null);
+	    }
+
+	    return response;
+	}
 
 	// ---------------------------------------------------------
 	// UTILITY METHOD
@@ -317,5 +404,11 @@ public class SupplierServiceImpl implements SupplierService {
 		r.setStatus(status.value());
 		return r;
 	}
-
+	
+	private String generateSupplierId() {
+	    return "SUP-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+	}
+	private String generatePassword() {
+	    return java.util.UUID.randomUUID().toString().substring(0,8);
+	}
 }

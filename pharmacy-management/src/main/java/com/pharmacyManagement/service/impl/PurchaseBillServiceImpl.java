@@ -1,7 +1,7 @@
 // ---------- PurchaseBillServiceImpl.java ----------
 package com.pharmacyManagement.service.impl;
 
-import java.util.Collections;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,36 +32,57 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 	@Autowired
 	private InventoryRepository inventoryRepository;
 
+	@Override
 	public Response createPurchase(PurchaseBillDTO dto) {
 
-		log.info("Creating purchase for Bill No: {}", dto.getPurchaseBillNo());
+	    log.info("Creating purchase for Bill No: {}", dto.getPurchaseBillNo());
 
-		PurchaseBill purchase = new PurchaseBill();
+	    Response res = new Response();
 
-		purchase.setPurchaseBillNo(dto.getPurchaseBillNo());
-		purchase.setInvoiceNo(dto.getInvoiceNo());
-		purchase.setFinancialYear(dto.getFinancialYear());
-		purchase.setDates(dto.getDates());
-		purchase.setTaxDetails(dto.getTaxDetails());
-		purchase.setSupplierDetails(dto.getSupplierDetails());
-		purchase.setPaymentDetails(dto.getPaymentDetails());
-		purchase.setItems(dto.getItems());
+	    try {
 
-		calculateAmounts(purchase);
-		updateInventory(purchase);
+	        PurchaseBill purchase = new PurchaseBill();
 
-		purchase.setStatus("CREATED");
+	        purchase.setPurchaseBillNo(dto.getPurchaseBillNo());
+	        purchase.setOrderId(dto.getOrderId());
+	        purchase.setInvoiceNo(dto.getInvoiceNo());
+	        purchase.setFinancialYear(dto.getFinancialYear());
+	        purchase.setDates(dto.getDates());
+	        purchase.setTaxDetails(dto.getTaxDetails());
+	        purchase.setSupplierDetails(dto.getSupplierDetails());
+	        purchase.setPaymentDetails(dto.getPaymentDetails());
+	        purchase.setItems(dto.getItems());
+	        
 
-		PurchaseBill saved = purchaseRepository.save(purchase);
+	        purchase.setStatus("CREATED");
+	        purchase.setCreatedAt(LocalDateTime.now().toString());
 
-		log.info("Purchase created successfully with ID: {}", saved.getPurchaseId());
+	        // calculate bill amounts
+	        calculateAmounts(purchase);
 
-		Response res = new Response();
-		res.setSuccess(true);
-		res.setData(saved);
-		res.setMessage("Purchase created successfully");
-		res.setStatus(HttpStatus.OK.value());
-		return res;
+	        // update inventory
+	        updateInventory(purchase);
+
+	        // save purchase
+	        PurchaseBill savedPurchase = purchaseRepository.save(purchase);
+
+	        log.info("Purchase created successfully with ID: {}", savedPurchase.getPurchaseId());
+
+	        res.setSuccess(true);
+	        res.setData(savedPurchase);
+	        res.setMessage("Purchase created successfully");
+	        res.setStatus(HttpStatus.OK.value());
+
+	    } catch (Exception e) {
+
+	        log.error("Error while creating purchase", e);
+
+	        res.setSuccess(false);
+	        res.setMessage("Exception occurred while creating purchase");
+	        res.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	    }
+
+	    return res;
 	}
 
 	private void calculateAmounts(PurchaseBill purchase) {
@@ -199,6 +220,7 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 		PurchaseBill purchase = optional.get();
 
 		purchase.setPurchaseBillNo(dto.getPurchaseBillNo());
+        purchase.setOrderId(dto.getOrderId());
 		purchase.setInvoiceNo(dto.getInvoiceNo());
 		purchase.setFinancialYear(dto.getFinancialYear());
 		purchase.setDates(dto.getDates());
@@ -206,6 +228,7 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 		purchase.setSupplierDetails(dto.getSupplierDetails());
 		purchase.setPaymentDetails(dto.getPaymentDetails());
 		purchase.setItems(dto.getItems());
+		purchase.setUpdatedAt(LocalDateTime.now().toString());
 
 		calculateAmounts(purchase);
 		updateInventory(purchase);
@@ -219,6 +242,7 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 
 		return res;
 	}
+
 	@Override
 	public Response deletePurchase(String purchaseId) {
 

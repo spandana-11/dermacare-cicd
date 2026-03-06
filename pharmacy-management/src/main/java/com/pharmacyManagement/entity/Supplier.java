@@ -29,4 +29,6 @@ public class Supplier {
 	private boolean nonLocalSupplier;
 	private boolean active;
 	private SupplierContactDetails contactDetails;
+	private String userName;
+	private String password;
 }

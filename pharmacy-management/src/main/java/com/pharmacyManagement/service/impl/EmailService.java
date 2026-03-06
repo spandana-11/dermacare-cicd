@@ -1,4 +1,4 @@
-package com.AdminService.service;
+package com.pharmacyManagement.service.impl;
 
 import java.util.Map;
 
@@ -28,7 +28,7 @@ public class EmailService {
         );
         this.clinicLoginUrl = env.getProperty(
                 "notification.clinic-login-url",
-                "http://52.66.144.177:3000/clinic-admin"
+                "http://52.66.144.177:9090/supplier-Dashboard"
         );
     }
 
@@ -136,7 +136,7 @@ public class EmailService {
         // Clinic login credentials
         if (username != null && password != null) {
             body.append(String.format("""
-                    <h3 style="color:#D2025B;">Clinic Login Credentials</h3>
+                    <h3 style="color:#D2025B;">Supplier Login Credentials</h3>
                     <p style="background:#f4f4f4; padding:10px; border-radius:4px;">
                         <b>Username:</b> %s<br>
                         <b>Password:</b> %s
