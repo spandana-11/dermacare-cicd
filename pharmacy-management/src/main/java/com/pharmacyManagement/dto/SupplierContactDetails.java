@@ -9,7 +9,7 @@ public class SupplierContactDetails {
 	private String telephoneNumber;
 	private String faxNumber;
 	private String contactPerson;
-	private String mobileNumber1;
+	private String mobileNumber;
 	private String mobileNumber2;
 	private String designation;
 	private String department;

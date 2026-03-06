@@ -2,6 +2,7 @@ package com.pharmacyManagement.service;
 
 import com.pharmacyManagement.dto.Response;
 import com.pharmacyManagement.dto.SupplierDTO;
+import com.pharmacyManagement.dto.SupplierLoginRequest;
 
 public interface SupplierService {
 
@@ -14,4 +15,6 @@ public interface SupplierService {
 	Response getAllSuppliers();
 
 	Response deleteSupplier(String supplierId);
+
+	Response supplierLogin(SupplierLoginRequest request);
 }

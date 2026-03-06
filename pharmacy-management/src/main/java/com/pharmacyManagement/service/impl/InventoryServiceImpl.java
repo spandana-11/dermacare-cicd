@@ -15,6 +15,11 @@ import com.pharmacyManagement.entity.Inventory;
 import com.pharmacyManagement.repository.InventoryRepository;
 import com.pharmacyManagement.service.InventoryService;
 
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -84,17 +89,29 @@ public class InventoryServiceImpl implements InventoryService {
 	    dto.setGstPercent(inv.getGstPercent());
 	    dto.setSupplier(inv.getSupplierId());
 
-	    LocalDate expiry = LocalDate.parse(inv.getExpiryDate());
-	    long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiry);
+	    try {
 
-	    dto.setDaysLeft(daysLeft);
+	        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
-	    if (daysLeft <= 0)
-	        dto.setStatus("EXPIRED");
-	    else if (daysLeft <= 30)
-	        dto.setStatus("NEAR_EXPIRY");
-	    else
-	        dto.setStatus("ACTIVE");
+	        LocalDate expiryDate = LocalDate.parse(inv.getExpiryDate(), formatter);
+
+	        long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiryDate);
+
+	        dto.setDaysLeft(daysLeft);
+
+	        if (daysLeft <= 0) {
+	            dto.setStatus("EXPIRED");
+	        } else if (daysLeft <= 30) {
+	            dto.setStatus("NEAR_EXPIRY");
+	        } else {
+	            dto.setStatus("ACTIVE");
+	        }
+
+	    } catch (Exception e) {
+
+	        dto.setDaysLeft(0);
+	        dto.setStatus("INVALID_DATE");
+	    }
 
 	    res.setSuccess(true);
 	    res.setData(dto);
@@ -168,6 +185,8 @@ public class InventoryServiceImpl implements InventoryService {
 
 	    log.info("Fetching inventory list");
 
+	    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
 	    List<InventoryResponseDTO> inventoryList = inventoryRepository.findAll()
 	            .stream()
 	            .map(inv -> {
@@ -186,18 +205,24 @@ public class InventoryServiceImpl implements InventoryService {
 	                dto.setGstPercent(inv.getGstPercent());
 	                dto.setSupplier(inv.getSupplierId());
 
-	                // Expiry Calculation
-	                LocalDate expiry = LocalDate.parse(inv.getExpiryDate());
-	                long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiry);
+	                try {
+	                    // Expiry Calculation
+	                    LocalDate expiry = LocalDate.parse(inv.getExpiryDate(), formatter);
+	                    long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiry);
 
-	                dto.setDaysLeft(daysLeft);
+	                    dto.setDaysLeft(daysLeft);
 
-	                if (daysLeft <= 0) {
-	                    dto.setStatus("EXPIRED");
-	                } else if (daysLeft <= 30) {
-	                    dto.setStatus("NEAR_EXPIRY");
-	                } else {
-	                    dto.setStatus("ACTIVE");
+	                    if (daysLeft <= 0) {
+	                        dto.setStatus("EXPIRED");
+	                    } else if (daysLeft <= 30) {
+	                        dto.setStatus("NEAR_EXPIRY");
+	                    } else {
+	                        dto.setStatus("ACTIVE");
+	                    }
+
+	                } catch (Exception e) {
+	                    dto.setDaysLeft(0);
+	                    dto.setStatus("INVALID_DATE");
 	                }
 
 	                return dto;
