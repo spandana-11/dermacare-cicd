@@ -17,4 +17,6 @@ public interface SupplierService {
 	Response deleteSupplier(String supplierId);
 
 	Response supplierLogin(SupplierLoginRequest request);
+
+	Response getSuppliersByClinicAndBranch(String clinicId, String branchId);
 }

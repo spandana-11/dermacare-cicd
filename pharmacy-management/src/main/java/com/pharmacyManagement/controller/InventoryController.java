@@ -72,4 +72,13 @@ public class InventoryController {
 
         return ResponseEntity.status(res.getStatus()).body(res);
     }
+    @GetMapping("/clinic/{clinicId}/branch/{branchId}")
+    public ResponseEntity<Response> getInventoryByClinicAndBranch(
+            @PathVariable String clinicId,
+            @PathVariable String branchId) {
+
+        Response res = inventoryService.getInventoryByClinicAndBranch(clinicId, branchId);
+
+        return ResponseEntity.status(res.getStatus()).body(res);
+    }
 }

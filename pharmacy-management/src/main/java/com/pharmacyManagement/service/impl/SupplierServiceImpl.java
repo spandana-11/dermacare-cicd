@@ -314,6 +314,8 @@ public class SupplierServiceImpl implements SupplierService {
 		supplier.setContactDetails(dto.getContactDetails());
 		supplier.setUserName(dto.getUserName());
 		supplier.setPassword(dto.getPassword());
+		supplier.setClinicId(dto.getClinicId());
+		supplier.setBranchId(dto.getBranchId());
 
 		return supplier;
 	}
@@ -339,6 +341,8 @@ public class SupplierServiceImpl implements SupplierService {
 		dto.setUserName(supplier.getUserName());
 		dto.setUserName(supplier.getUserName());
 		dto.setPassword(supplier.getPassword());
+		dto.setClinicId(supplier.getClinicId());
+		dto.setBranchId(supplier.getBranchId());
 		
 		
 
@@ -378,9 +382,11 @@ public class SupplierServiceImpl implements SupplierService {
 	        loginData.put("supplierName", supplier.getSupplierName());
 	        loginData.put("contactPerson", supplier.getContactDetails().getContactPerson());
 	        loginData.put("mobileNumber", supplier.getContactDetails().getMobileNumber());
+	        loginData.put("clinicId", supplier.getClinicId());
+	        loginData.put("branchId", supplier.getBranchId());
 
 	        response.setSuccess(true);
-	        response.setMessage("Login successful");
+	        response.setMessage("Login successful. Welcome back, " + supplier.getSupplierName() + ".");
 	        response.setStatus(HttpStatus.OK.value());
 	        response.setData(loginData);
 
@@ -388,6 +394,41 @@ public class SupplierServiceImpl implements SupplierService {
 	        log.error("Supplier login error", e);
 	        response.setSuccess(false);
 	        response.setMessage("Login failed due to server error");
+	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	        response.setData(null);
+	    }
+
+	    return response;
+	}
+	
+	@Override
+	public Response getSuppliersByClinicAndBranch(String clinicId, String branchId) {
+
+	    Response response = new Response();
+
+	    try {
+
+	        List<Supplier> suppliers =
+	                supplierRepository.findByClinicIdAndBranchId(clinicId, branchId);
+
+	        if (suppliers.isEmpty()) {
+	            response.setSuccess(false);
+	            response.setMessage("No suppliers found");
+	            response.setStatus(HttpStatus.NOT_FOUND.value());
+	            response.setData(null);
+	            return response;
+	        }
+
+	        response.setSuccess(true);
+	        response.setMessage("Suppliers fetched successfully");
+	        response.setStatus(HttpStatus.OK.value());
+	        response.setData(suppliers);
+
+	    } catch (Exception e) {
+	        log.error("Error fetching suppliers", e);
+
+	        response.setSuccess(false);
+	        response.setMessage("Error fetching suppliers");
 	        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
 	        response.setData(null);
 	    }

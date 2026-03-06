@@ -26,4 +26,7 @@ public class Inventory {
     private double gstPercent;
 
     private String supplierId;
+    private String clinicId;
+    private String branchId;
+    
 }

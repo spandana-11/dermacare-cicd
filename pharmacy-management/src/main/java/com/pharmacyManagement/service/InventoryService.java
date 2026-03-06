@@ -17,4 +17,5 @@ public interface InventoryService {
 
 	Response deleteInventory(String medicineId, String batchNo);
 
+	public Response getInventoryByClinicAndBranch(String clinicId, String branchId);
 }

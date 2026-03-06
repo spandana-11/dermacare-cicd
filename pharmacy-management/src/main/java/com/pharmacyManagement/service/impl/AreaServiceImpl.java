@@ -31,7 +31,7 @@ public class AreaServiceImpl implements AreaService {
 			Optional<City> city = cityRepository.findById(dto.getCityId());
 
 			if (city.isEmpty()) {
-				return new Response(false, null, "City not found for given cityId: " + dto.getCityId(), 404);
+				return new Response(false, null, "City not found for given cityId: " + dto.getCityId(), 404,null);
 			}
 
 			
@@ -40,7 +40,7 @@ public class AreaServiceImpl implements AreaService {
 				boolean exists = areaRepository.existsByAreaNamesAndCityId(areaName, dto.getCityId());
 
 				if (exists) {
-					return new Response(false, null, "Area '" + areaName + "' already exists in this city", 400);
+					return new Response(false, null, "Area '" + areaName + "' already exists in this city", 400,null);
 				}
 			}
 
@@ -54,10 +54,10 @@ public class AreaServiceImpl implements AreaService {
 			AreaDTO responseDTO = new AreaDTO(saved.getId(), saved.getAreaNames(), saved.getCityId(),
 					saved.getCityName());
 
-			return new Response(true, responseDTO, "Areas added successfully", 200);
+			return new Response(true, responseDTO, "Areas added successfully", 200,null);
 
 		} catch (Exception e) {
-			return new Response(false, null, "Failed to add areas: " + e.getMessage(), 500);
+			return new Response(false, null, "Failed to add areas: " + e.getMessage(), 500,null);
 		}
 	}
 
@@ -67,12 +67,12 @@ public class AreaServiceImpl implements AreaService {
 			Optional<Area> existing = areaRepository.findById(id);
 
 			if (existing.isEmpty()) {
-				return new Response(false, null, "Area not found", 404);
+				return new Response(false, null, "Area not found", 404,null);
 			}
 
 			Optional<City> city = cityRepository.findById(dto.getCityId());
 			if (city.isEmpty()) {
-				return new Response(false, null, "City not found", 404);
+				return new Response(false, null, "City not found", 404,null);
 			}
 
 			Area area = existing.get();
@@ -85,10 +85,10 @@ public class AreaServiceImpl implements AreaService {
 			AreaDTO responseDTO = new AreaDTO(updated.getId(), updated.getAreaNames(), updated.getCityId(),
 					updated.getCityName());
 
-			return new Response(true, responseDTO, "Area updated successfully", 200);
+			return new Response(true, responseDTO, "Area updated successfully", 200, null);
 
 		} catch (Exception e) {
-			return new Response(false, null, "Failed to update area: " + e.getMessage(), 500);
+			return new Response(false, null, "Failed to update area: " + e.getMessage(), 500, null);
 		}
 	}
 
@@ -98,17 +98,17 @@ public class AreaServiceImpl implements AreaService {
 			Optional<Area> area = areaRepository.findById(id);
 
 			if (area.isEmpty()) {
-				return new Response(false, null, "Area not found", 404);
+				return new Response(false, null, "Area not found", 404, null);
 			}
 
 			Area a = area.get();
 
 			AreaDTO dto = new AreaDTO(a.getId(), a.getAreaNames(), a.getCityId(), a.getCityName());
 
-			return new Response(true, dto, "Area found", 200);
+			return new Response(true, dto, "Area found", 200, null);
 
 		} catch (Exception e) {
-			return new Response(false, null, "Failed to fetch area: " + e.getMessage(), 500);
+			return new Response(false, null, "Failed to fetch area: " + e.getMessage(), 500, null);
 		}
 	}
 
@@ -119,10 +119,10 @@ public class AreaServiceImpl implements AreaService {
 					.map(a -> new AreaDTO(a.getId(), a.getAreaNames(), a.getCityId(), a.getCityName()))
 					.collect(Collectors.toList());
 
-			return new Response(true, list, "All areas fetched", 200);
+			return new Response(true, list, "All areas fetched", 200, null);
 
 		} catch (Exception e) {
-			return new Response(false, null, "Failed to fetch areas: " + e.getMessage(), 500);
+			return new Response(false, null, "Failed to fetch areas: " + e.getMessage(), 500, null);
 		}
 	}
 
@@ -130,14 +130,14 @@ public class AreaServiceImpl implements AreaService {
 	public Response deleteArea(String id) {
 		try {
 			if (!areaRepository.existsById(id)) {
-				return new Response(false, null, "Area not found", 404);
+				return new Response(false, null, "Area not found", 404, null);
 			}
 
 			areaRepository.deleteById(id);
-			return new Response(true, null, "Area deleted successfully", 200);
+			return new Response(true, null, "Area deleted successfully", 200, null);
 
 		} catch (Exception e) {
-			return new Response(false, null, "Failed to delete area: " + e.getMessage(), 500);
+			return new Response(false, null, "Failed to delete area: " + e.getMessage(), 500, null);
 		}
 	}
 	
@@ -145,18 +145,18 @@ public class AreaServiceImpl implements AreaService {
 	public Response getAreasByCityId(String cityId) {
 	    try {
 	        if (cityId == null || cityId.trim().isEmpty()) {
-	            return new Response(false, null, "cityId cannot be null or empty", 400);
+	            return new Response(false, null, "cityId cannot be null or empty", 400, null);
 	        }
 
 	        Optional<City> city = cityRepository.findById(cityId);
 	        if (city.isEmpty()) {
-	            return new Response(false, null, "City not found for cityId: " + cityId, 404);
+	            return new Response(false, null, "City not found for cityId: " + cityId, 404, null);
 	        }
 
 	        List<Area> areas = areaRepository.findByCityId(cityId);
 
 	        if (areas.isEmpty()) {
-	            return new Response(false, null, "No areas found for cityId: " + cityId, 404);
+	            return new Response(false, null, "No areas found for cityId: " + cityId, 404, null);
 	        }
 
 //	        List<String> allAreaNames = new ArrayList<>();
@@ -178,10 +178,10 @@ public class AreaServiceImpl implements AreaService {
 	                .collect(Collectors.toList());
            Map<String,List<String>> allAreas=new HashMap();
            allAreas.put("areaNames",allAreaNames);
-	        return new Response(true, allAreas, "Areas fetched for cityId: " + cityId, 200);
+	        return new Response(true, allAreas, "Areas fetched for cityId: " + cityId, 200, null);
 
 	    } catch (Exception e) {
-	        return new Response(false, null, "Failed to fetch areas: " + e.getMessage(), 500);
+	        return new Response(false, null, "Failed to fetch areas: " + e.getMessage(), 500, null);
 	    }
 	}
 

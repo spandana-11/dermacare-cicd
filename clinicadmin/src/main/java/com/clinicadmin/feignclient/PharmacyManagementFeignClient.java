@@ -1,5 +1,10 @@
 package com.clinicadmin.feignclient;
+
+import java.time.LocalDate;
+import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -10,10 +15,20 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.clinicadmin.dto.AreaDTO;
 import com.clinicadmin.dto.CityDTO;
 import com.clinicadmin.dto.MedicineDetailDTO;
+import com.clinicadmin.dto.OpSalesRequest;
 import com.clinicadmin.dto.PurchaseBillDTO;
 import com.clinicadmin.dto.Response;
+import com.clinicadmin.dto.SalesReturnCreateResponse;
+import com.clinicadmin.dto.SalesReturnRequest;
+import com.clinicadmin.dto.SalesReturnResponse;
+import com.clinicadmin.dto.SalesReturnSummaryResponse;
+import com.clinicadmin.dto.SalesReturnUpdateRequest;
 import com.clinicadmin.dto.StockDTO;
 import com.clinicadmin.dto.SupplierDTO;
+import com.clinicadmin.utils.ApiResponse;
+import jakarta.validation.Valid;
+
+
 @FeignClient(name = "pharmacy-management")
 public interface PharmacyManagementFeignClient {
 
@@ -178,6 +193,90 @@ Response changeStatus(@PathVariable("id") String id, @RequestParam("status") Str
             @PathVariable("qty") int qty,
             @PathVariable("reason") String reason
     );
+    
+    
+    ///OP-SALES
+    
+    @PostMapping("/api/pharmacy/op-sales/createOpSales")
+    public ResponseEntity<Response> createOpSales(
+            @RequestBody OpSalesRequest request);
+    
+    @PutMapping("/api/pharmacy/op-sales/updateSale/{id}")
+    public ResponseEntity<Response> updateOpSales(
+            @PathVariable String id,
+            @RequestBody OpSalesRequest request);
+    
+    @GetMapping("/api/pharmacy/op-sales/getAllOpSales/{clinicId}/{branchId}")
+    public ResponseEntity<Response> getAllOpSales(
+            @PathVariable String clinicId,
+            @PathVariable String branchId);
+    
+    @GetMapping("/api/pharmacy/op-sales/bill/{billNo}")
+    public ResponseEntity<Response> getByBillNo(
+            @PathVariable String billNo);
+    
+    @GetMapping("/api/pharmacy/op-sales/id/{id}")
+    public ResponseEntity<Response> getById(
+            @PathVariable String id);
+    
+    @GetMapping("/api/pharmacy/op-sales/{clinicId}/{branchId}/opno/{opNo}")
+    public ResponseEntity<Response> getByOpNo(
+    		 @PathVariable String clinicId,
+    		 @PathVariable String branchId,
+    		 @PathVariable String opNo) ;
+    
+    @DeleteMapping("/api/pharmacy/op-sales/{clinicId}/{branchId}/{id}")
+    public ResponseEntity<Response> deleteOpSales(
+            @PathVariable String id,
+            @PathVariable String clinicId,
+            @PathVariable String branchId);
+    
+    @GetMapping("/api/pharmacy/op-sales/filter")
+    public ResponseEntity<Response> filterOpSales(
+            @RequestParam(required = false) String clinicId,
+            @RequestParam(required = false) String branchId,
+            @RequestParam(required = false) String billNo,
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String mobile,
+            @RequestParam(required = false) String consultingDoctor,
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate) ;
+
+
+
+//// SALES RETURN
+      
+    @PostMapping("/api/pharmacy/sales-return/create-sales-return")
+    public ResponseEntity<ApiResponse<SalesReturnCreateResponse>> create(
+            @Valid @RequestBody SalesReturnRequest request);
+    
+    
+    @GetMapping("/api/pharmacy/sales-return/get-by-returnNo/{returnNo}")
+    public ResponseEntity<ApiResponse<SalesReturnResponse>> getByReturnNo(
+            @PathVariable String returnNo);
+    
+    
+    @PutMapping("/api/pharmacy/sales-return/update/{returnNo}")
+    public ResponseEntity<ApiResponse<Void>> update(
+            @PathVariable String returnNo,
+            @Valid @RequestBody SalesReturnUpdateRequest request);
+    
+    @DeleteMapping("/api/pharmacy/sales-return/cancel/{returnNo}")
+    public ResponseEntity<ApiResponse<Void>> cancel(
+            @PathVariable String returnNo);
+    
+    @GetMapping("/api/pharmacy/sales-return/filter")
+    public ResponseEntity<ApiResponse<List<SalesReturnSummaryResponse>>> filter(
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String mobileNo,
+            @RequestParam(required = false) String billNo,
+            @RequestParam(required = false) String returnType,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) String clinicId,
+            @RequestParam(required = false) String branchId);
+
+
 }
 
 
