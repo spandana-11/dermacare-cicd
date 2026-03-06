@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.clinicadmin.dto.Response;
+import com.clinicadmin.utils.ExtractFeignMessage;
+
+import feign.FeignException.FeignClientException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -49,5 +52,16 @@ public class GlobalExceptionHandler {
         response.setData(errors);
 
         return ResponseEntity.badRequest().body(response);
+    }
+    
+    @ExceptionHandler(FeignClientException.class)
+    public ResponseEntity<Response> handleGenericException(FeignClientException ex) {
+    	Response res = new Response();
+    	res.setStatus(ex.status());
+      	res.setMessage(ExtractFeignMessage.clearMessage(ex));
+      	res.setSuccess(false);   
+       return ResponseEntity
+                .status(ex.status())
+                .body(res);
     }
 }

@@ -47,6 +47,8 @@ public class InventoryServiceImpl implements InventoryService {
 	    inventory.setMrp(dto.getMrp());
 	    inventory.setGstPercent(dto.getGstPercent());
 	    inventory.setSupplierId(dto.getSupplier());
+	    inventory.setClinicId(dto.getClinicId());
+	    inventory.setBranchId(dto.getBranchId());
 
 	    Inventory saved = inventoryRepository.save(inventory);
 
@@ -88,6 +90,8 @@ public class InventoryServiceImpl implements InventoryService {
 	    dto.setMrp(inv.getMrp());
 	    dto.setGstPercent(inv.getGstPercent());
 	    dto.setSupplier(inv.getSupplierId());
+	    dto.setClinicId(inv.getClinicId());
+	    dto.setBranchId(inv.getBranchId());
 
 	    try {
 
@@ -147,6 +151,7 @@ public class InventoryServiceImpl implements InventoryService {
 	    inv.setMrp(dto.getMrp());
 	    inv.setGstPercent(dto.getGstPercent());
 	    inv.setSupplierId(dto.getSupplier());
+	    inv.setClinicId(dto.getClinicId());
 
 	    Inventory updated = inventoryRepository.save(inv);
 
@@ -204,6 +209,8 @@ public class InventoryServiceImpl implements InventoryService {
 	                dto.setMrp(inv.getMrp());
 	                dto.setGstPercent(inv.getGstPercent());
 	                dto.setSupplier(inv.getSupplierId());
+	                dto.setClinicId(inv.getClinicId());
+	                dto.setBranchId(inv.getBranchId());
 
 	                try {
 	                    // Expiry Calculation
@@ -259,6 +266,42 @@ public class InventoryServiceImpl implements InventoryService {
 	    res.setSuccess(true);
 	    res.setMessage("Inventory deleted successfully");
 	    res.setStatus(HttpStatus.OK.value());
+
+	    return res;
+	}
+	@Override
+	public Response getInventoryByClinicAndBranch(String clinicId, String branchId) {
+
+	    List<Inventory> list = inventoryRepository.findByClinicIdAndBranchId(clinicId, branchId);
+
+	    List<InventoryResponseDTO> dtoList = list.stream().map(inv -> {
+
+	        InventoryResponseDTO dto = new InventoryResponseDTO();
+
+	        dto.setMedicineId(inv.getProductId());
+	        dto.setMedicineName(inv.getProductName());
+	        dto.setBatchNo(inv.getBatchNo());
+	        dto.setMfgDate(inv.getMfgDate());
+	        dto.setExpiryDate(inv.getExpiryDate());
+	        dto.setAvailableQty(inv.getAvailableQty());
+	        dto.setMinStock(inv.getMinStock());
+	        dto.setPurchaseRate(inv.getPurchaseRate());
+	        dto.setMrp(inv.getMrp());
+	        dto.setGstPercent(inv.getGstPercent());
+	        dto.setSupplier(inv.getSupplierId());
+
+	        dto.setClinicId(inv.getClinicId());
+	        dto.setBranchId(inv.getBranchId());
+
+	        return dto;
+
+	    }).toList();
+
+	    Response res = new Response();
+	    res.setSuccess(true);
+	    res.setData(dtoList);
+	    res.setMessage("Inventory fetched successfully");
+	    res.setStatus(200);
 
 	    return res;
 	}

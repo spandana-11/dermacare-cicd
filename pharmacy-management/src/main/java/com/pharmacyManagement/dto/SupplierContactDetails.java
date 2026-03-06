@@ -10,9 +10,6 @@ public class SupplierContactDetails {
 	private String faxNumber;
 	private String contactPerson;
 	private String mobileNumber;
-	private String mobileNumber2;
-	private String designation;
-	private String department;
 	private String website;
 	private String email;
 }

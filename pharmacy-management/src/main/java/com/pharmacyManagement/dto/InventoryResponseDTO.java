@@ -15,11 +15,12 @@ public class InventoryResponseDTO {
 
     private double availableQty;
     private double minStock;
-
     private double purchaseRate;
     private double mrp;
     private double gstPercent;
-
     private String supplier;
     private String status;
+    private String clinicId;
+    private String branchId;
+    
 }

@@ -25,7 +25,7 @@ public class CityServiceImpl implements CityService {
         try {
 
             if (cityRepository.existsByCityNameIgnoreCase(dto.getCityName())) {
-                return new Response(false, null, "City already exists", 400);
+                return new Response(false, null, "City already exists", 400, null);
             }
 
             City city = new City();
@@ -36,10 +36,10 @@ public class CityServiceImpl implements CityService {
             responseDTO.setId(savedCity.getId());
             responseDTO.setCityName(savedCity.getCityName());
 
-            return new Response(true, responseDTO, "City added successfully", 200);
+            return new Response(true, responseDTO, "City added successfully", 200,null);
 
         } catch (Exception e) {
-            return new Response(false, null, "Failed to add city: " + e.getMessage(), 500);
+            return new Response(false, null, "Failed to add city: " + e.getMessage(), 500,null);
         }
     }
 
@@ -55,10 +55,10 @@ public class CityServiceImpl implements CityService {
                         return dto;
                     }).collect(Collectors.toList());
 
-            return new Response(true, list, "All cities fetched", 200);
+            return new Response(true, list, "All cities fetched", 200,null);
 
         } catch (Exception e) {
-            return new Response(false, null, "Failed to fetch cities: " + e.getMessage(), 500);
+            return new Response(false, null, "Failed to fetch cities: " + e.getMessage(), 500,null);
         }
     }
 
@@ -68,17 +68,17 @@ public class CityServiceImpl implements CityService {
             Optional<City> city = cityRepository.findById(id);
 
             if (city.isEmpty()) {
-                return new Response(false, null, "City not found", 404);
+                return new Response(false, null, "City not found", 404,null);
             }
 
             CityDTO dto = new CityDTO();
             dto.setId(city.get().getId());
             dto.setCityName(city.get().getCityName());
 
-            return new Response(true, dto, "City found", 200);
+            return new Response(true, dto, "City found", 200,null);
 
         } catch (Exception e) {
-            return new Response(false, null, "Failed to fetch city: " + e.getMessage(), 500);
+            return new Response(false, null, "Failed to fetch city: " + e.getMessage(), 500,null);
         }
     }
 
@@ -88,7 +88,7 @@ public class CityServiceImpl implements CityService {
             Optional<City> existingCity = cityRepository.findById(id);
 
             if (existingCity.isEmpty()) {
-                return new Response(false, null, "City not found", 404);
+                return new Response(false, null, "City not found", 404,null);
             }
 
             City city = existingCity.get();
@@ -99,10 +99,10 @@ public class CityServiceImpl implements CityService {
             updatedDTO.setId(updated.getId());
             updatedDTO.setCityName(updated.getCityName());
 
-            return new Response(true, updatedDTO, "City updated successfully", 200);
+            return new Response(true, updatedDTO, "City updated successfully", 200,null);
 
         } catch (Exception e) {
-            return new Response(false, null, "Failed to update city: " + e.getMessage(), 500);
+            return new Response(false, null, "Failed to update city: " + e.getMessage(), 500,null);
         }
     }
 
@@ -110,14 +110,14 @@ public class CityServiceImpl implements CityService {
     public Response deleteCity(String id) {
         try {
             if (!cityRepository.existsById(id)) {
-                return new Response(false, null, "City not found", 404);
+                return new Response(false, null, "City not found", 404,null);
             }
 
             cityRepository.deleteById(id);
-            return new Response(true, null, "City deleted successfully", 200);
+            return new Response(true, null, "City deleted successfully", 200,null);
 
         } catch (Exception e) {
-            return new Response(false, null, "Failed to delete city: " + e.getMessage(), 500);
+            return new Response(false, null, "Failed to delete city: " + e.getMessage(), 500,null);
         }
     }
 }

@@ -25,4 +25,7 @@ public class SupplierDTO {
 	private SupplierContactDetails contactDetails;
 	private String userName;
 	private String password;
+	
+	private String clinicId;
+	private String branchId;
 }

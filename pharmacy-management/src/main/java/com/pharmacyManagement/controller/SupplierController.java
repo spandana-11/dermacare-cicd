@@ -89,4 +89,17 @@ public class SupplierController {
 
         return ResponseEntity.status(response.getStatus()).body(response);
     }
+    
+    @GetMapping("/getSuppliersByClinicIdAndBranchId/{clinicId}/{branchId}")
+    public ResponseEntity<Response> getSuppliersByClinicAndBranch(
+            @PathVariable String clinicId,
+            @PathVariable String branchId) {
+
+        log.info("API Call: Get Suppliers by clinicId {} and branchId {}", clinicId, branchId);
+
+        Response response =
+                supplierService.getSuppliersByClinicAndBranch(clinicId, branchId);
+
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
 }
