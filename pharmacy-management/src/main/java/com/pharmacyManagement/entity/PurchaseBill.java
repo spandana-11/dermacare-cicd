@@ -32,6 +32,9 @@ public class PurchaseBill {
     private String status; // "ACTIVE | CANCELLED",
     private String createdAt;
     private String updatedAt;
+    private String clinicId;
+    private String branchId;
+    
 }
 //  private String date;
 //  private String time;

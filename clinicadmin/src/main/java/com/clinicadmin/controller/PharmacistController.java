@@ -151,7 +151,12 @@ public class PharmacistController {
     }
 
     @GetMapping("/getMedicineTypes/{clinicId}")
-    public ResponseEntity<Response> getMedicineTypes(@PathVariable String clinicId) {
+    public ResponseEntity<Response> getMedicineType(@PathVariable String clinicId) {
         return pharmacistService.getMedicineTypes(clinicId);
+    }
+    
+    @GetMapping("/getMedicineTypesById/{Id}")
+    public ResponseEntity<Response> getMedicineTypes(@PathVariable String Id) {
+        return pharmacistService.getMedicineType(Id);
     }
 }

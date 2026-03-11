@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MedicineTypeDTO {
-    private String clinicId;
+  private String id;
     private List<String> medicineTypes;
 }

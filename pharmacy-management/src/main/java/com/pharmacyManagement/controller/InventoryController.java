@@ -2,83 +2,83 @@ package com.pharmacyManagement.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.pharmacyManagement.dto.InventoryResponseDTO;
 import com.pharmacyManagement.dto.Response;
 import com.pharmacyManagement.service.InventoryService;
 
 import lombok.extern.slf4j.Slf4j;
+
 @RestController
 @RequestMapping("/inventory")
 @Slf4j
 public class InventoryController {
 
-    @Autowired
-    private InventoryService inventoryService;
+	@Autowired
+	private InventoryService inventoryService;
 
-    @GetMapping
-    public ResponseEntity<Response> getAllInventory() {
+	// Get inventory by clinic & branch
+	@GetMapping("/clinic/{clinicId}/branch/{branchId}")
+	public ResponseEntity<Response> getAllInventory(@PathVariable String clinicId, @PathVariable String branchId) {
 
-        Response res = inventoryService.getAllInventory();
-        return ResponseEntity.status(res.getStatus()).body(res);
-    }
+		Response res = inventoryService.getAllInventory(clinicId, branchId);
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Response> getInventoryById(@PathVariable String id) {
+		return ResponseEntity.status(res.getStatus()).body(res);
+	}
 
-        Response res = inventoryService.getInventoryById(id);
-        return ResponseEntity.status(res.getStatus()).body(res);
-    }
+	// Get inventory by id
+	@GetMapping("/{id}")
+	public ResponseEntity<Response> getInventoryById(@PathVariable String id) {
 
-    @PostMapping
-    public ResponseEntity<Response> createInventory(@RequestBody InventoryResponseDTO dto) {
+		Response res = inventoryService.getInventoryById(id);
 
-        Response res = inventoryService.createInventory(dto);
-        return ResponseEntity.status(res.getStatus()).body(res);
-    }
+		return ResponseEntity.status(res.getStatus()).body(res);
+	}
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Response> updateInventory(
-            @PathVariable String id,
-            @RequestBody InventoryResponseDTO dto) {
+	// Create inventory
+	@PostMapping
+	public ResponseEntity<Response> createInventory(@RequestBody InventoryResponseDTO dto) {
 
-        Response res = inventoryService.updateInventory(id, dto);
-        return ResponseEntity.status(res.getStatus()).body(res);
-    }
+		Response res = inventoryService.createInventory(dto);
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Response> deleteInventory(@PathVariable String id) {
+		return ResponseEntity.status(res.getStatus()).body(res);
+	}
 
-        Response res = inventoryService.deleteInventory(id);
-        return ResponseEntity.status(res.getStatus()).body(res);
-    }
-    
-    @DeleteMapping("/{medicineId}/{batchNo}")
-    public ResponseEntity<Response> deleteInventory(
-            @PathVariable String medicineId,
-            @PathVariable String batchNo) {
+	// Update inventory
+	@PutMapping("/{id}")
+	public ResponseEntity<Response> updateInventory(@PathVariable String id, @RequestBody InventoryResponseDTO dto) {
 
-        log.info("API Call: Delete Inventory");
+		Response res = inventoryService.updateInventory(id, dto);
 
-        Response res = inventoryService.deleteInventory(medicineId, batchNo);
+		return ResponseEntity.status(res.getStatus()).body(res);
+	}
 
-        return ResponseEntity.status(res.getStatus()).body(res);
-    }
-    @GetMapping("/clinic/{clinicId}/branch/{branchId}")
-    public ResponseEntity<Response> getInventoryByClinicAndBranch(
-            @PathVariable String clinicId,
-            @PathVariable String branchId) {
+	// Delete inventory by id
+	@DeleteMapping("/{id}")
+	public ResponseEntity<Response> deleteInventory(@PathVariable String id) {
 
-        Response res = inventoryService.getInventoryByClinicAndBranch(clinicId, branchId);
+		Response res = inventoryService.deleteInventory(id);
 
-        return ResponseEntity.status(res.getStatus()).body(res);
-    }
+		return ResponseEntity.status(res.getStatus()).body(res);
+	}
+
+	// Delete inventory by medicineId + batchNo
+	@DeleteMapping("/medicine/{medicineId}/batch/{batchNo}")
+	public ResponseEntity<Response> deleteInventoryByBatch(@PathVariable String medicineId,
+			@PathVariable String batchNo) {
+
+		Response res = inventoryService.deleteInventory(medicineId, batchNo);
+
+		return ResponseEntity.status(res.getStatus()).body(res);
+	}
+//
+//	@GetMapping("/clinic/{clinicId}/branch/{branchId}")
+//	public ResponseEntity<Response> getInventoryByClinicAndBranch(@PathVariable String clinicId,
+//			@PathVariable String branchId) {
+//
+//		Response res = inventoryService.getInventoryByClinicAndBranch(clinicId, branchId);
+//
+//		return ResponseEntity.status(res.getStatus()).body(res);
+//	}
 }

@@ -2,6 +2,7 @@ package com.dermacare.doctorservice.serviceimpl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,22 +13,28 @@ import com.dermacare.doctorservice.model.MedicineType;
 import com.dermacare.doctorservice.repository.MedicineTypeRepository;
 import com.dermacare.doctorservice.service.MedicineTypeService;
 
-import lombok.RequiredArgsConstructor;
-
 @Service
-@RequiredArgsConstructor
 public class MedicineTypeServiceImpl implements MedicineTypeService {
-@Autowired
-    private  MedicineTypeRepository repository;
 
-
+    @Autowired
+    private MedicineTypeRepository repository;
 
     @Override
     public Response addMedicineType(MedicineTypeDTO dto) {
-        MedicineType entity = repository.findByClinicId(dto.getClinicId())
-                .orElseGet(() -> toEntity(dto)); // use inline mapper
 
-        // ✅ Add without duplicates
+        MedicineType entity;
+
+        if (dto.getId() != null) {
+            entity = repository.findById(dto.getId()).orElse(new MedicineType());
+        } else {
+            entity = new MedicineType();
+            entity.setMedicineTypes(new ArrayList<>());
+        }
+
+        if (entity.getMedicineTypes() == null) {
+            entity.setMedicineTypes(new ArrayList<>());
+        }
+
         for (String type : dto.getMedicineTypes()) {
             if (!entity.getMedicineTypes().contains(type)) {
                 entity.getMedicineTypes().add(type);
@@ -40,19 +47,20 @@ public class MedicineTypeServiceImpl implements MedicineTypeService {
                 .success(true)
                 .status(201)
                 .message("Medicine types updated successfully")
-                .data(toDTO(saved)) // use inline mapper
+                .data(toDTO(saved))
                 .build();
     }
 
     @Override
-    public Response getMedicineTypesByClinicId(String clinicId) {
-        MedicineType entity = repository.findByClinicId(clinicId).orElse(null);
+    public Response getMedicineTypesById(String id) {
 
-        if (entity == null) {
+        Optional<MedicineType> entity = repository.findById(id);
+
+        if (entity.isEmpty()) {
             return Response.builder()
                     .success(false)
                     .status(404)
-                    .message("No medicine types found for clinicId: " + clinicId)
+                    .message("Medicine types not found")
                     .data(null)
                     .build();
         }
@@ -61,58 +69,54 @@ public class MedicineTypeServiceImpl implements MedicineTypeService {
                 .success(true)
                 .status(200)
                 .message("Fetched medicine types successfully")
-                .data(toDTO(entity))
+                .data(toDTO(entity.get()))
                 .build();
     }
 
     @Override
     public Response searchOrAddMedicineType(MedicineTypeDTO dto) {
- 
-        MedicineType entity = repository.findByClinicId(dto.getClinicId())
-                .orElseGet(() -> {
-                    MedicineType newEntity = new MedicineType();
-                    newEntity.setClinicId(dto.getClinicId());
-                    newEntity.setMedicineTypes(new ArrayList<>());
-                    return newEntity;
-                });
 
-     
+        // get first document if exists
+        List<MedicineType> list = repository.findAll();
+
+        MedicineType entity;
+
+        if (list.isEmpty()) {
+            entity = new MedicineType();
+            entity.setMedicineTypes(new ArrayList<>());
+        } else {
+            entity = list.get(0); // assuming only one document
+        }
+
         List<String> added = new ArrayList<>();
+
         for (String type : dto.getMedicineTypes()) {
+
             if (!entity.getMedicineTypes().contains(type)) {
                 entity.getMedicineTypes().add(type);
                 added.add(type);
             }
         }
 
- 
         MedicineType saved = repository.save(entity);
 
-
         String msg = added.isEmpty()
-                ? "Medicine types already exist for clinic"
+                ? "Medicine types already exist"
                 : "New medicine types added: " + added;
 
         return Response.builder()
                 .success(true)
                 .status(200)
                 .message(msg)
-                .data(new MedicineTypeDTO(saved.getClinicId(), saved.getMedicineTypes()))
+                .data(toDTO(saved))
                 .build();
     }
-
     private MedicineTypeDTO toDTO(MedicineType entity) {
-        MedicineTypeDTO dto = new MedicineTypeDTO();
-        dto.setClinicId(entity.getClinicId());
-        dto.setMedicineTypes(entity.getMedicineTypes());
-        return dto;
-    }
 
-    // ✅ Convert DTO -> Entity
-    private MedicineType toEntity(MedicineTypeDTO dto) {
-        MedicineType entity = new MedicineType();
-        entity.setClinicId(dto.getClinicId());
-        entity.setMedicineTypes(dto.getMedicineTypes() != null ? dto.getMedicineTypes() : new ArrayList<>());
-        return entity;
+        MedicineTypeDTO dto = new MedicineTypeDTO();
+        dto.setId(entity.getId());
+        dto.setMedicineTypes(entity.getMedicineTypes());
+
+        return dto;
     }
 }

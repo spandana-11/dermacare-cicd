@@ -20,4 +20,6 @@ public class PurchaseBillDTO {
 	private PaymentDetails paymentDetails;
 
 	private List<PurchaseItem> items;
+	private String clinicId;
+	private String branchId;
 }

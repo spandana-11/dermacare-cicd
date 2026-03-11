@@ -20,7 +20,7 @@ public class MedicineType {
 
     @Id
     private String id;
-    private String clinicId;
+   
     private List<String> medicineTypes; 
     
  
