@@ -174,6 +174,8 @@ public class SupplierServiceImpl implements SupplierService {
 				existing.setContactDetails(dto.getContactDetails());
 
 			existing.setActive(dto.isActive());
+			existing.setPreviousAdjustment(dto.getPreviousAdjustment());
+			existing.setDuePaidBill(dto.getDuePaidBill());
 
 			supplierRepository.save(existing);
 
@@ -316,6 +318,8 @@ public class SupplierServiceImpl implements SupplierService {
 		supplier.setPassword(dto.getPassword());
 		supplier.setClinicId(dto.getClinicId());
 		supplier.setBranchId(dto.getBranchId());
+		supplier.setPreviousAdjustment(dto.getPreviousAdjustment());
+		supplier.setDuePaidBill(dto.getDuePaidBill());
 
 		return supplier;
 	}
@@ -343,6 +347,8 @@ public class SupplierServiceImpl implements SupplierService {
 		dto.setPassword(supplier.getPassword());
 		dto.setClinicId(supplier.getClinicId());
 		dto.setBranchId(supplier.getBranchId());
+		dto.setPreviousAdjustment(supplier.getPreviousAdjustment());
+		dto.setDuePaidBill(supplier.getDuePaidBill());
 		
 		
 

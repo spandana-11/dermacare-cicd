@@ -29,7 +29,7 @@ public class MedicineDTO {
     private double minStock;
 
     private String status;
-    private String productType;
+    
 
     private String clinicId;
     private String branchId;
