@@ -94,12 +94,13 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 		double totalGST = 0;
 		double grandTotal = 0;
 		double totalDiscountAmount = 0;
-		double totalCostPrice=0;
+		double totalCostPrice = 0;
+		double totalActualMedicineCost=0;
 
 		for (PurchaseItem item : purchase.getItems()) {
 
 			double baseAmount = item.getQuantity() * item.getCostPrice(); // T
-			
+
 			item.setTotalLineCostAmount(baseAmount);
 
 			double discountAmount = baseAmount * item.getDiscountPercent() / 100;
@@ -120,17 +121,19 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 			double netAmount = taxableAmount;
 
 			item.setNetAmount(netAmount);
-
+			double totalQtyforLine = item.getQuantity() + item.getFreeQuantity();
+			item.setTotalQty(totalQtyforLine);
 			totalQty += item.getQuantity() + item.getFreeQuantity();
 			totalGST += gstAmount;
 			grandTotal += netAmount;
 			totalDiscountAmount += discountAmount;
-			totalCostPrice+=baseAmount;
-			item.setTotalQty(totalQty);
+			totalCostPrice += baseAmount;
+			totalActualMedicineCost+=acutalMedicineCost;
 		}
 
 		Summary summary = new Summary();
 		summary.setTotalQuantity(totalQty);
+		summary.setActualMedicineExcludedCost(totalActualMedicineCost);
 		summary.setTotalDiscountedAmount(totalDiscountAmount);
 		summary.setTotalGSTAmount(totalGST);
 		summary.setTotalCostPrice(totalCostPrice);
