@@ -8,4 +8,5 @@ public interface MedicineTypeService {
 //    Response getMedicineTypesByClinicId(String clinicId);
 	Response searchOrAddMedicineType(MedicineTypeDTO dto);
 	Response getMedicineTypesById(String id);
+	Response getAllMedicineTypes();
 }

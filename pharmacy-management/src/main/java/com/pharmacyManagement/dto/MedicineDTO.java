@@ -24,11 +24,12 @@ public class MedicineDTO {
     private String packSize;
     private String hsnCode;
 
-    private Integer gstPercent;
-    private Double mrp;
-    private Integer minStock;
+    private double gstPercent;
+    private double mrp;
+    private double minStock;
 
     private String status;
+    private String productType;
 
     private String clinicId;
     private String branchId;

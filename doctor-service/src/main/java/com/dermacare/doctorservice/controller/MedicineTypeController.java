@@ -37,4 +37,14 @@ public class MedicineTypeController {
                 .status(response.getStatus())
                 .body(response);
     }
+    
+    @GetMapping("/getAllMedicineTypes")
+    public ResponseEntity<Response> getAllMedicineTypes() {
+
+        Response response = service.getAllMedicineTypes();
+
+        return ResponseEntity
+                .status(response.getStatus())
+                .body(response);
+    }
 }

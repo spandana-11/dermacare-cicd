@@ -1,6 +1,7 @@
 package com.pharmacyManagement.service.impl;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -131,6 +132,9 @@ public class InventoryServiceImpl implements InventoryService {
 
 		dto.setAvailableQty(inv.getAvailableQty());
 		dto.setMinStock(inv.getMinStock());
+		dto.setBrand(inv.getBrand());
+		dto.setProductType(inv.getProductType());
+		dto.setPack(inv.getPack());
 
 		dto.setPurchaseRate(inv.getPurchaseRate());
 		dto.setMrp(inv.getMrp());
@@ -142,7 +146,9 @@ public class InventoryServiceImpl implements InventoryService {
 		dto.setClinicId(inv.getClinicId());
 		dto.setBranchId(inv.getBranchId());
 
-		LocalDate expiry = LocalDate.parse(inv.getExpiryDate());
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
+		LocalDate expiry = LocalDate.parse(inv.getExpiryDate(), formatter);
 
 		long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiry);
 

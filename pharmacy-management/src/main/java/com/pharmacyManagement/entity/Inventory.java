@@ -22,7 +22,7 @@ public class Inventory {
 	private String batchNo;
 	private String mfgDate;
 	private String expiryDate;
-
+	private String hsnCode;
 //    private String daysLeft;
 
 	private double availableQty;

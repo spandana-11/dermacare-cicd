@@ -59,6 +59,7 @@ public class MedicineServiceImpl implements MedicineService {
         existing.setStatus(dto.getStatus());
         existing.setClinicId(dto.getClinicId());
         existing.setBranchId(dto.getBranchId());
+     
 
 
         Medicine saved = repository.save(existing);
