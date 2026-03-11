@@ -5,8 +5,9 @@ import lombok.Data;
 @Data
 public class Summary {
 	private double totalQuantity;
-	private double totalFreeQuantity;
 	private double totalTaxableAmount;
+	private double totalDiscountedAmount;
 	private double totalGSTAmount;
+	private double totalCostPrice;
 	private double grandTotal;
 }

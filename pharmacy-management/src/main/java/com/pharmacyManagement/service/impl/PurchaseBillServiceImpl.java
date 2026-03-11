@@ -93,36 +93,47 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 		double totalQty = 0;
 		double totalGST = 0;
 		double grandTotal = 0;
+		double totalDiscountAmount = 0;
+		double totalCostPrice=0;
 
 		for (PurchaseItem item : purchase.getItems()) {
 
-			double baseAmount = item.getQuantity() * item.getCostPrice();
+			double baseAmount = item.getQuantity() * item.getCostPrice(); // T
+			
+			item.setTotalLineCostAmount(baseAmount);
 
 			double discountAmount = baseAmount * item.getDiscountPercent() / 100;
 
 			item.setDiscountAmount(discountAmount);
 
-			double taxableAmount = baseAmount - discountAmount;
+			double taxableAmount = baseAmount - discountAmount; // after discount
 
-			double gstAmount = taxableAmount * item.getGstPercent() / 100;
+			double gstAmount = baseAmount * item.getGstPercent() / 100;
 
 			item.setGstAmount(gstAmount);
 			item.setCgstAmount(gstAmount / 2);
 			item.setSgstAmount(gstAmount / 2);
 
-			double netAmount = taxableAmount + gstAmount;
+			double acutalMedicineCost = baseAmount - gstAmount;
+			item.setActualMedicineCostExculdeGst(acutalMedicineCost);
+
+			double netAmount = taxableAmount;
 
 			item.setNetAmount(netAmount);
 
 			totalQty += item.getQuantity() + item.getFreeQuantity();
 			totalGST += gstAmount;
 			grandTotal += netAmount;
+			totalDiscountAmount += discountAmount;
+			totalCostPrice+=baseAmount;
+			item.setTotalQty(totalQty);
 		}
 
 		Summary summary = new Summary();
-
 		summary.setTotalQuantity(totalQty);
+		summary.setTotalDiscountedAmount(totalDiscountAmount);
 		summary.setTotalGSTAmount(totalGST);
+		summary.setTotalCostPrice(totalCostPrice);
 		summary.setGrandTotal(grandTotal);
 
 		purchase.setSummary(summary);
@@ -142,16 +153,15 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 
 		for (PurchaseItem item : purchase.getItems()) {
 
-			// Fetch Medicine
 			Medicine medicine = medicineRepository.findById(item.getProductId())
 					.orElseThrow(() -> new RuntimeException("Medicine not found with id: " + item.getProductId()));
 
-			// Validate clinicId
+			// Validate clinic
 			if (!medicine.getClinicId().equals(purchase.getClinicId())) {
 				throw new RuntimeException("ClinicId mismatch between Medicine and PurchaseBill");
 			}
 
-			// Validate branchId
+			// Validate branch
 			if (!medicine.getBranchId().equals(purchase.getBranchId())) {
 				throw new RuntimeException("BranchId mismatch between Medicine and PurchaseBill");
 			}
@@ -159,14 +169,13 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 			Inventory inventory = inventoryRepository.findByMedicineIdAndBatchNoAndClinicIdAndBranchId(
 					item.getProductId(), item.getBatchNo(), purchase.getClinicId(), purchase.getBranchId());
 
-			double addedQty = item.getQuantity() + item.getFreeQuantity();
+			double totalQty = item.getQuantity() + item.getFreeQuantity();
 
 			if (inventory != null) {
 
 				log.info("Existing inventory found for medicine {} batch {}", item.getProductId(), item.getBatchNo());
 
-				inventory.setAvailableQty(inventory.getAvailableQty() + addedQty);
-
+				inventory.setAvailableQty(inventory.getAvailableQty() + totalQty);
 				inventory.setPurchaseRate(item.getCostPrice());
 				inventory.setMrp(medicine.getMrp());
 				inventory.setExpiryDate(item.getExpiryDate());
@@ -179,19 +188,18 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 
 				inventory.setMedicineId(medicine.getId());
 				inventory.setMedicineName(medicine.getProductName());
+				inventory.setBrand(medicine.getBrandName());
 				inventory.setHsnCode(medicine.getHsnCode());
 				inventory.setProductType(medicine.getCategory());
 				inventory.setPack(medicine.getPackSize());
 				inventory.setGstPercent(medicine.getGstPercent());
-				inventory.setBrand(medicine.getBrandName());
-				inventory.setHsnCode(medicine.getHsnCode());
-				inventory.setProductType(medicine.getCategory());
 
 				inventory.setBatchNo(item.getBatchNo());
 				inventory.setMfgDate(item.getMfgDate());
 				inventory.setExpiryDate(item.getExpiryDate());
 
-				inventory.setAvailableQty(addedQty);
+				inventory.setAvailableQty(totalQty);
+				inventory.setTotalQty(totalQty);
 
 				inventory.setPurchaseRate(item.getCostPrice());
 				inventory.setMrp(medicine.getMrp());
