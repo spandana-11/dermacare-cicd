@@ -64,6 +64,9 @@ public interface DoctorServiceFeign {
 	
 	 @GetMapping("/api/doctors/getMedicineTypes/{id}")
 	 public ResponseEntity<Response> getMedicineType(@PathVariable String id);
+	 
+	 @GetMapping("/api/doctors/getAllMedicineTypes")
+	    public ResponseEntity<Response> getAllMedicineTypes();
 
 // ------------- ------ getVisitHistoryByPatient ---------------------------
 	@GetMapping("/api/doctors/visitHistory/{patientId}")

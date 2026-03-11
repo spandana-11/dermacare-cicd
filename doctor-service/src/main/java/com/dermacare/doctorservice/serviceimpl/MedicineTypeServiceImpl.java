@@ -119,4 +119,33 @@ public class MedicineTypeServiceImpl implements MedicineTypeService {
 
         return dto;
     }
+    
+    @Override
+    public Response getAllMedicineTypes() {
+
+        Response response = new Response();
+
+        try {
+
+            List<MedicineType> list = repository.findAll();
+
+            if (list.isEmpty()) {
+                response.setSuccess(false);
+                response.setMessage("No medicine types found");
+                response.setStatus(404);
+            } else {
+                response.setSuccess(true);
+                response.setData(list);
+                response.setMessage("Medicine types fetched successfully");
+                response.setStatus(200);
+            }
+
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Error fetching medicine types");
+            response.setStatus(500);
+        }
+
+        return response;
+    }
 }

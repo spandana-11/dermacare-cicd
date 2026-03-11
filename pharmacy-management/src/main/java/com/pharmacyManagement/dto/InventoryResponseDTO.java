@@ -17,6 +17,7 @@ public class InventoryResponseDTO {
 	private String batchNo;
 	private String mfgDate;
 	private String expiryDate;
+	private String hsnCode;
 
 	private double daysLeft;
 
