@@ -22,14 +22,14 @@ public class PurchaseItem {
 	private double discountPercent;
 	private double discountAmount;
 
-
 //	private double baseAmount;
 
 	private double gstAmount;
 	private double cgstAmount;
 	private double sgstAmount;
-
+	private double totalLineCostAmount;
 	private double netAmount;
-	
+	private double actualMedicineCostExculdeGst;
+	private double totalQty; // qunatity+freeQuanttiy
 
 }

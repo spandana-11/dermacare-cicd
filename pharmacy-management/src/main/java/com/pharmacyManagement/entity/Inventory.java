@@ -35,6 +35,7 @@ public class Inventory {
 	private String supplierId;
 
 	private String supplier;
+	private double totalQty;
 
 	private String status;
 	// ✅ Multi tenant fields
