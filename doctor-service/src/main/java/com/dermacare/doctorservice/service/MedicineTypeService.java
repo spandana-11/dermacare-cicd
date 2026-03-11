@@ -5,6 +5,7 @@ import com.dermacare.doctorservice.dto.Response;
 
 public interface MedicineTypeService {
     Response addMedicineType(MedicineTypeDTO dto);
-    Response getMedicineTypesByClinicId(String clinicId);
+//    Response getMedicineTypesByClinicId(String clinicId);
 	Response searchOrAddMedicineType(MedicineTypeDTO dto);
+	Response getMedicineTypesById(String id);
 }

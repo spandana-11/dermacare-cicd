@@ -5,17 +5,17 @@ import com.pharmacyManagement.dto.Response;
 
 public interface InventoryService {
 
-	Response createInventory(InventoryResponseDTO dto);
+    Response createInventory(InventoryResponseDTO dto);
 
-	Response getInventoryById(String inventoryId);
+    Response getInventoryById(String inventoryId);
 
-	Response updateInventory(String inventoryId, InventoryResponseDTO dto);
+    Response getAllInventory(String clinicId, String branchId);
 
-	Response deleteInventory(String inventoryId);
+    Response updateInventory(String inventoryId, InventoryResponseDTO dto);
 
-	Response getAllInventory();
+    Response deleteInventory(String inventoryId);
 
-	Response deleteInventory(String medicineId, String batchNo);
+    Response deleteInventory(String medicineId, String batchNo);
 
-	public Response getInventoryByClinicAndBranch(String clinicId, String branchId);
+//	public Response getInventoryByClinicAndBranch(String clinicId, String branchId);
 }

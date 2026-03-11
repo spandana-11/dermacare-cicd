@@ -649,6 +649,23 @@ public class PharmacistServiceImpl implements PharmacistService {
 	        }
 	    }
 	}
+		@Override
+		public ResponseEntity<Response> getMedicineType(String Id) {
+		    try {
+		        return doctorServiceFeign.getMedicineType(Id);
+		    } catch (FeignException ex) {
+		        try {
+		            Response doctorResponse = mapper.readValue(ex.contentUTF8(), Response.class);
+		            return ResponseEntity.status(ex.status()).body(doctorResponse);
+		        } catch (Exception e) {
+		            Response fallback = new Response();
+		            fallback.setSuccess(false);
+		            fallback.setMessage("Doctor Service error: " + ex.getMessage());
+		            fallback.setStatus(ex.status());
+		            return ResponseEntity.status(ex.status()).body(fallback);
+		        }
+		    }
+	}
 
 
 

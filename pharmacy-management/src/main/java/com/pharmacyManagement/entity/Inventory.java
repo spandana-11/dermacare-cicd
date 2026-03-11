@@ -1,32 +1,44 @@
 package com.pharmacyManagement.entity;
 
-import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import lombok.Data;
 
 @Data
 @Document(collection = "inventory")
 public class Inventory {
 
-    @Id
-    private String inventoryId;
+	@Id
+	private String inventoryId;
 
-    private String productId;
-    private String productName;
+	private String medicineId;
+	private String medicineName;
 
-    private String batchNo;
-    private String expiryDate;
-    private String mfgDate;
+	private String brand;
+	private String productType;
+	private String pack;
 
-    private double availableQty;
-    private double minStock;
+	private String batchNo;
+	private String mfgDate;
+	private String expiryDate;
 
-    private double purchaseRate;
-    private double mrp;
-    private double gstPercent;
+//    private String daysLeft;
 
-    private String supplierId;
-    private String clinicId;
-    private String branchId;
-    
+	private double availableQty;
+	private double minStock;
+
+	private double purchaseRate;
+	private double mrp;
+	private double gstPercent;
+
+	private String supplierId;
+
+	private String supplier;
+
+	private String status;
+	// ✅ Multi tenant fields
+	private String clinicId;
+	private String branchId;
+
 }

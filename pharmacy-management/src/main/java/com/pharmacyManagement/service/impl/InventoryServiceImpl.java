@@ -15,11 +15,6 @@ import com.pharmacyManagement.entity.Inventory;
 import com.pharmacyManagement.repository.InventoryRepository;
 import com.pharmacyManagement.service.InventoryService;
 
-
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -32,277 +27,154 @@ public class InventoryServiceImpl implements InventoryService {
 	@Override
 	public Response createInventory(InventoryResponseDTO dto) {
 
-	    log.info("Creating inventory for medicine {}", dto.getMedicineName());
+		Inventory inventory = new Inventory();
 
-	    Inventory inventory = new Inventory();
+		inventory.setMedicineId(dto.getMedicineId());
+		inventory.setMedicineName(dto.getMedicineName());
+		inventory.setBatchNo(dto.getBatchNo());
+		inventory.setMfgDate(dto.getMfgDate());
+		inventory.setExpiryDate(dto.getExpiryDate());
+		inventory.setAvailableQty(dto.getAvailableQty());
+		inventory.setMinStock(dto.getMinStock());
+		inventory.setPurchaseRate(dto.getPurchaseRate());
+		inventory.setMrp(dto.getMrp());
+		inventory.setGstPercent(dto.getGstPercent());
+		inventory.setSupplierId(dto.getSupplierId());
+		inventory.setSupplier(dto.getSupplier());
 
-	    inventory.setProductId(dto.getMedicineId());
-	    inventory.setProductName(dto.getMedicineName());
-	    inventory.setBatchNo(dto.getBatchNo());
-	    inventory.setMfgDate(dto.getMfgDate());
-	    inventory.setExpiryDate(dto.getExpiryDate());
-	    inventory.setAvailableQty(dto.getAvailableQty());
-	    inventory.setMinStock(dto.getMinStock());
-	    inventory.setPurchaseRate(dto.getPurchaseRate());
-	    inventory.setMrp(dto.getMrp());
-	    inventory.setGstPercent(dto.getGstPercent());
-	    inventory.setSupplierId(dto.getSupplier());
-	    inventory.setClinicId(dto.getClinicId());
-	    inventory.setBranchId(dto.getBranchId());
+		inventory.setClinicId(dto.getClinicId());
+		inventory.setBranchId(dto.getBranchId());
 
-	    Inventory saved = inventoryRepository.save(inventory);
+		inventory.setStatus("ACTIVE");
 
-	    Response res = new Response();
-	    res.setSuccess(true);
-	    res.setData(saved);
-	    res.setMessage("Inventory created successfully");
-	    res.setStatus(HttpStatus.OK.value());
+		Inventory saved = inventoryRepository.save(inventory);
 
-	    return res;
+		return Response.builder().success(true).data(saved).message("Inventory created successfully")
+				.status(HttpStatus.OK.value()).build();
 	}
+
 	@Override
 	public Response getInventoryById(String inventoryId) {
 
-	    Optional<Inventory> optional = inventoryRepository.findById(inventoryId);
+		Optional<Inventory> optional = inventoryRepository.findById(inventoryId);
 
-	    Response res = new Response();
+		if (optional.isEmpty()) {
 
-	    if (optional.isEmpty()) {
+			return Response.builder().success(false).message("Inventory not found").status(HttpStatus.NOT_FOUND.value())
+					.build();
+		}
 
-	        res.setSuccess(false);
-	        res.setMessage("Inventory not found with id: " + inventoryId);
-	        res.setStatus(HttpStatus.NOT_FOUND.value());
-	        return res;
-	    }
+		InventoryResponseDTO dto = mapToDTO(optional.get());
 
-	    Inventory inv = optional.get();
-
-	    InventoryResponseDTO dto = new InventoryResponseDTO();
-
-	    dto.setMedicineId(inv.getProductId());
-	    dto.setMedicineName(inv.getProductName());
-	    dto.setBatchNo(inv.getBatchNo());
-	    dto.setMfgDate(inv.getMfgDate());
-	    dto.setExpiryDate(inv.getExpiryDate());
-	    dto.setAvailableQty(inv.getAvailableQty());
-	    dto.setMinStock(inv.getMinStock());
-	    dto.setPurchaseRate(inv.getPurchaseRate());
-	    dto.setMrp(inv.getMrp());
-	    dto.setGstPercent(inv.getGstPercent());
-	    dto.setSupplier(inv.getSupplierId());
-	    dto.setClinicId(inv.getClinicId());
-	    dto.setBranchId(inv.getBranchId());
-
-	    try {
-
-	        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-
-	        LocalDate expiryDate = LocalDate.parse(inv.getExpiryDate(), formatter);
-
-	        long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiryDate);
-
-	        dto.setDaysLeft(daysLeft);
-
-	        if (daysLeft <= 0) {
-	            dto.setStatus("EXPIRED");
-	        } else if (daysLeft <= 30) {
-	            dto.setStatus("NEAR_EXPIRY");
-	        } else {
-	            dto.setStatus("ACTIVE");
-	        }
-
-	    } catch (Exception e) {
-
-	        dto.setDaysLeft(0);
-	        dto.setStatus("INVALID_DATE");
-	    }
-
-	    res.setSuccess(true);
-	    res.setData(dto);
-	    res.setMessage("Inventory fetched successfully");
-	    res.setStatus(HttpStatus.OK.value());
-
-	    return res;
+		return Response.builder().success(true).data(dto).message("Inventory fetched successfully")
+				.status(HttpStatus.OK.value()).build();
 	}
+
+	@Override
+	public Response getAllInventory(String clinicId, String branchId) {
+
+		List<InventoryResponseDTO> list = inventoryRepository.findByClinicIdAndBranchId(clinicId, branchId).stream()
+				.map(this::mapToDTO).toList();
+
+		return Response.builder().success(true).data(list).message("Inventory fetched successfully")
+				.status(HttpStatus.OK.value()).build();
+	}
+
 	@Override
 	public Response updateInventory(String inventoryId, InventoryResponseDTO dto) {
 
-	    Optional<Inventory> optional = inventoryRepository.findById(inventoryId);
+		Optional<Inventory> optional = inventoryRepository.findById(inventoryId);
 
-	    Response res = new Response();
+		if (optional.isEmpty()) {
 
-	    if (optional.isEmpty()) {
+			return Response.builder().success(false).message("Inventory not found").status(HttpStatus.NOT_FOUND.value())
+					.build();
+		}
 
-	        res.setSuccess(false);
-	        res.setMessage("Inventory not found");
-	        res.setStatus(HttpStatus.NOT_FOUND.value());
-	        return res;
-	    }
+		Inventory inv = optional.get();
 
-	    Inventory inv = optional.get();
+		inv.setMedicineName(dto.getMedicineName());
+		inv.setBatchNo(dto.getBatchNo());
+		inv.setMfgDate(dto.getMfgDate());
+		inv.setExpiryDate(dto.getExpiryDate());
+		inv.setAvailableQty(dto.getAvailableQty());
+		inv.setMinStock(dto.getMinStock());
+		inv.setPurchaseRate(dto.getPurchaseRate());
+		inv.setMrp(dto.getMrp());
 
-	    inv.setProductName(dto.getMedicineName());
-	    inv.setBatchNo(dto.getBatchNo());
-	    inv.setMfgDate(dto.getMfgDate());
-	    inv.setExpiryDate(dto.getExpiryDate());
-	    inv.setAvailableQty(dto.getAvailableQty());
-	    inv.setMinStock(dto.getMinStock());
-	    inv.setPurchaseRate(dto.getPurchaseRate());
-	    inv.setMrp(dto.getMrp());
-	    inv.setGstPercent(dto.getGstPercent());
-	    inv.setSupplierId(dto.getSupplier());
-	    inv.setClinicId(dto.getClinicId());
+		Inventory updated = inventoryRepository.save(inv);
 
-	    Inventory updated = inventoryRepository.save(inv);
-
-	    res.setSuccess(true);
-	    res.setData(updated);
-	    res.setMessage("Inventory updated successfully");
-	    res.setStatus(HttpStatus.OK.value());
-
-	    return res;
+		return Response.builder().success(true).data(updated).message("Inventory updated successfully")
+				.status(HttpStatus.OK.value()).build();
 	}
+
 	@Override
 	public Response deleteInventory(String inventoryId) {
 
-	    Response res = new Response();
+		inventoryRepository.deleteById(inventoryId);
 
-	    Optional<Inventory> optional = inventoryRepository.findById(inventoryId);
-
-	    if (optional.isEmpty()) {
-
-	        res.setSuccess(false);
-	        res.setMessage("Inventory not found");
-	        res.setStatus(HttpStatus.NOT_FOUND.value());
-	        return res;
-	    }
-
-	    inventoryRepository.deleteById(inventoryId);
-
-	    res.setSuccess(true);
-	    res.setMessage("Inventory deleted successfully");
-	    res.setStatus(HttpStatus.OK.value());
-
-	    return res;
+		return Response.builder().success(true).message("Inventory deleted successfully").status(HttpStatus.OK.value())
+				.build();
 	}
-	@Override
-	public Response getAllInventory() {
 
-	    log.info("Fetching inventory list");
+	private InventoryResponseDTO mapToDTO(Inventory inv) {
 
-	    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+		InventoryResponseDTO dto = new InventoryResponseDTO();
 
-	    List<InventoryResponseDTO> inventoryList = inventoryRepository.findAll()
-	            .stream()
-	            .map(inv -> {
+		dto.setInventoryId(inv.getInventoryId());
+		dto.setMedicineId(inv.getMedicineId());
+		dto.setMedicineName(inv.getMedicineName());
 
-	                InventoryResponseDTO dto = new InventoryResponseDTO();
+		dto.setBatchNo(inv.getBatchNo());
+		dto.setMfgDate(inv.getMfgDate());
+		dto.setExpiryDate(inv.getExpiryDate());
 
-	                dto.setMedicineId(inv.getProductId());
-	                dto.setMedicineName(inv.getProductName());
-	                dto.setBatchNo(inv.getBatchNo());
-	                dto.setMfgDate(inv.getMfgDate());
-	                dto.setExpiryDate(inv.getExpiryDate());
-	                dto.setAvailableQty(inv.getAvailableQty());
-	                dto.setMinStock(inv.getMinStock());
-	                dto.setPurchaseRate(inv.getPurchaseRate());
-	                dto.setMrp(inv.getMrp());
-	                dto.setGstPercent(inv.getGstPercent());
-	                dto.setSupplier(inv.getSupplierId());
-	                dto.setClinicId(inv.getClinicId());
-	                dto.setBranchId(inv.getBranchId());
+		dto.setAvailableQty(inv.getAvailableQty());
+		dto.setMinStock(inv.getMinStock());
 
-	                try {
-	                    // Expiry Calculation
-	                    LocalDate expiry = LocalDate.parse(inv.getExpiryDate(), formatter);
-	                    long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiry);
+		dto.setPurchaseRate(inv.getPurchaseRate());
+		dto.setMrp(inv.getMrp());
+		dto.setGstPercent(inv.getGstPercent());
 
-	                    dto.setDaysLeft(daysLeft);
+		dto.setSupplierId(inv.getSupplierId());
+		dto.setSupplier(inv.getSupplier());
 
-	                    if (daysLeft <= 0) {
-	                        dto.setStatus("EXPIRED");
-	                    } else if (daysLeft <= 30) {
-	                        dto.setStatus("NEAR_EXPIRY");
-	                    } else {
-	                        dto.setStatus("ACTIVE");
-	                    }
+		dto.setClinicId(inv.getClinicId());
+		dto.setBranchId(inv.getBranchId());
 
-	                } catch (Exception e) {
-	                    dto.setDaysLeft(0);
-	                    dto.setStatus("INVALID_DATE");
-	                }
+		LocalDate expiry = LocalDate.parse(inv.getExpiryDate());
 
-	                return dto;
+		long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiry);
 
-	            }).toList();
+		dto.setDaysLeft(daysLeft);
 
-	    Response res = new Response();
-	    res.setSuccess(true);
-	    res.setData(inventoryList);
-	    res.setMessage("Inventory fetched successfully");
-	    res.setStatus(HttpStatus.OK.value());
+		if (daysLeft <= 0)
+			dto.setStatus("EXPIRED");
+		else if (daysLeft <= 30)
+			dto.setStatus("NEAR_EXPIRY");
+		else
+			dto.setStatus("ACTIVE");
 
-	    return res;
+		return dto;
 	}
+
 	@Override
 	public Response deleteInventory(String medicineId, String batchNo) {
 
-	    log.info("Deleting inventory for medicineId {} and batch {}", medicineId, batchNo);
+		log.info("Deleting inventory for medicineId {} batch {}", medicineId, batchNo);
 
-	    Response res = new Response();
+		Inventory inventory = inventoryRepository.findByMedicineIdAndBatchNo(medicineId, batchNo);
 
-	    Inventory inventory = inventoryRepository.findByProductIdAndBatchNo(medicineId, batchNo);
+		if (inventory == null) {
 
-	    if (inventory == null) {
+			return Response.builder().success(false)
+					.message("Inventory not found for medicineId: " + medicineId + " batch: " + batchNo)
+					.status(HttpStatus.NOT_FOUND.value()).build();
+		}
 
-	        res.setSuccess(false);
-	        res.setMessage("Inventory not found for medicineId: " + medicineId + " and batchNo: " + batchNo);
-	        res.setStatus(HttpStatus.NOT_FOUND.value());
-	        return res;
-	    }
+		inventoryRepository.delete(inventory);
 
-	    inventoryRepository.deleteByProductIdAndBatchNo(medicineId, batchNo);
-
-	    res.setSuccess(true);
-	    res.setMessage("Inventory deleted successfully");
-	    res.setStatus(HttpStatus.OK.value());
-
-	    return res;
-	}
-	@Override
-	public Response getInventoryByClinicAndBranch(String clinicId, String branchId) {
-
-	    List<Inventory> list = inventoryRepository.findByClinicIdAndBranchId(clinicId, branchId);
-
-	    List<InventoryResponseDTO> dtoList = list.stream().map(inv -> {
-
-	        InventoryResponseDTO dto = new InventoryResponseDTO();
-
-	        dto.setMedicineId(inv.getProductId());
-	        dto.setMedicineName(inv.getProductName());
-	        dto.setBatchNo(inv.getBatchNo());
-	        dto.setMfgDate(inv.getMfgDate());
-	        dto.setExpiryDate(inv.getExpiryDate());
-	        dto.setAvailableQty(inv.getAvailableQty());
-	        dto.setMinStock(inv.getMinStock());
-	        dto.setPurchaseRate(inv.getPurchaseRate());
-	        dto.setMrp(inv.getMrp());
-	        dto.setGstPercent(inv.getGstPercent());
-	        dto.setSupplier(inv.getSupplierId());
-
-	        dto.setClinicId(inv.getClinicId());
-	        dto.setBranchId(inv.getBranchId());
-
-	        return dto;
-
-	    }).toList();
-
-	    Response res = new Response();
-	    res.setSuccess(true);
-	    res.setData(dtoList);
-	    res.setMessage("Inventory fetched successfully");
-	    res.setStatus(200);
-
-	    return res;
+		return Response.builder().success(true).message("Inventory deleted successfully").status(HttpStatus.OK.value())
+				.build();
 	}
 }

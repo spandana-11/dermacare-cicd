@@ -12,6 +12,7 @@ public class PurchaseItem {
 	private String category;
 	private double quantity;
 	private String packSize;
+	private String mfgDate;
 
 	private double freeQuantity;
 	private double gstPercent;
@@ -29,5 +30,6 @@ public class PurchaseItem {
 	private double sgstAmount;
 
 	private double netAmount;
+	
 
 }

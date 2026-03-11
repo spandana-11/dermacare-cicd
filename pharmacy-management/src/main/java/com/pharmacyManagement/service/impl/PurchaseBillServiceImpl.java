@@ -1,4 +1,3 @@
-// ---------- PurchaseBillServiceImpl.java ----------
 package com.pharmacyManagement.service.impl;
 
 import java.time.LocalDateTime;
@@ -14,9 +13,11 @@ import com.pharmacyManagement.dto.PurchaseBillDTO;
 import com.pharmacyManagement.dto.Response;
 import com.pharmacyManagement.dto.Summary;
 import com.pharmacyManagement.entity.Inventory;
+import com.pharmacyManagement.entity.Medicine;
 import com.pharmacyManagement.entity.PurchaseBill;
 import com.pharmacyManagement.entity.PurchaseItem;
 import com.pharmacyManagement.repository.InventoryRepository;
+import com.pharmacyManagement.repository.MedicineRepository;
 import com.pharmacyManagement.repository.PurchaseBillRepository;
 import com.pharmacyManagement.service.PurchaseBillService;
 
@@ -26,246 +27,304 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PurchaseBillServiceImpl implements PurchaseBillService {
 
-	@Autowired
-	private PurchaseBillRepository purchaseRepository;
+    @Autowired
+    private PurchaseBillRepository purchaseRepository;
 
-	@Autowired
-	private InventoryRepository inventoryRepository;
+    @Autowired
+    private InventoryRepository inventoryRepository;
+    
+    @Autowired
+    private MedicineRepository medicineRepository;
+    
+    @Override
+    public Response createPurchase(PurchaseBillDTO dto) {
 
-	@Override
-	public Response createPurchase(PurchaseBillDTO dto) {
+        log.info("Creating purchase for Bill No: {}", dto.getPurchaseBillNo());
 
-	    log.info("Creating purchase for Bill No: {}", dto.getPurchaseBillNo());
+        Response res = new Response();
 
-	    Response res = new Response();
+        try {
 
-	    try {
+            PurchaseBill purchase = new PurchaseBill();
 
-	        PurchaseBill purchase = new PurchaseBill();
+            purchase.setPurchaseBillNo(dto.getPurchaseBillNo());
+            purchase.setOrderId(dto.getOrderId());
+            purchase.setInvoiceNo(dto.getInvoiceNo());
+            purchase.setFinancialYear(dto.getFinancialYear());
+            purchase.setDates(dto.getDates());
+            purchase.setTaxDetails(dto.getTaxDetails());
+            purchase.setSupplierDetails(dto.getSupplierDetails());
+            purchase.setPaymentDetails(dto.getPaymentDetails());
+            purchase.setItems(dto.getItems());
 
-	        purchase.setPurchaseBillNo(dto.getPurchaseBillNo());
-	        purchase.setOrderId(dto.getOrderId());
-	        purchase.setInvoiceNo(dto.getInvoiceNo());
-	        purchase.setFinancialYear(dto.getFinancialYear());
-	        purchase.setDates(dto.getDates());
-	        purchase.setTaxDetails(dto.getTaxDetails());
-	        purchase.setSupplierDetails(dto.getSupplierDetails());
-	        purchase.setPaymentDetails(dto.getPaymentDetails());
-	        purchase.setItems(dto.getItems());
-	        
+            purchase.setClinicId(dto.getClinicId());
+            purchase.setBranchId(dto.getBranchId());
 
-	        purchase.setStatus("CREATED");
-	        purchase.setCreatedAt(LocalDateTime.now().toString());
+            purchase.setStatus("CREATED");
+            purchase.setCreatedAt(LocalDateTime.now().toString());
 
-	        // calculate bill amounts
-	        calculateAmounts(purchase);
+            calculateAmounts(purchase);
 
-	        // update inventory
-	        updateInventory(purchase);
+            updateInventory(purchase);
 
-	        // save purchase
-	        PurchaseBill savedPurchase = purchaseRepository.save(purchase);
+            PurchaseBill savedPurchase = purchaseRepository.save(purchase);
 
-	        log.info("Purchase created successfully with ID: {}", savedPurchase.getPurchaseId());
+            res.setSuccess(true);
+            res.setData(savedPurchase);
+            res.setMessage("Purchase created successfully");
+            res.setStatus(HttpStatus.OK.value());
 
-	        res.setSuccess(true);
-	        res.setData(savedPurchase);
-	        res.setMessage("Purchase created successfully");
-	        res.setStatus(HttpStatus.OK.value());
+        } catch (Exception e) {
 
-	    } catch (Exception e) {
+            log.error("Error while creating purchase", e);
 
-	        log.error("Error while creating purchase", e);
+            res.setSuccess(false);
+            res.setMessage("Exception occurred while creating purchase");
+            res.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
 
-	        res.setSuccess(false);
-	        res.setMessage("Exception occurred while creating purchase");
-	        res.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-	    }
+        return res;
+    }
 
-	    return res;
-	}
+    private void calculateAmounts(PurchaseBill purchase) {
 
-	private void calculateAmounts(PurchaseBill purchase) {
+        log.info("Calculating purchase amounts...");
 
-		log.info("Calculating purchase amounts...");
+        double totalQty = 0;
+        double totalGST = 0;
+        double grandTotal = 0;
 
-		double totalQty = 0;
-		double totalGST = 0;
-		double grandTotal = 0;
+        for (PurchaseItem item : purchase.getItems()) {
 
-		for (PurchaseItem item : purchase.getItems()) {
+            double baseAmount = item.getQuantity() * item.getCostPrice();
 
-			double base = item.getQuantity() * item.getCostPrice();
-			double discount = base * item.getDiscountPercent() / 100;
+            double discountAmount = baseAmount * item.getDiscountPercent() / 100;
 
-			item.setDiscountAmount(discount);
+            item.setDiscountAmount(discountAmount);
 
-			double taxable = base - discount;
-			double gst = taxable * item.getGstPercent() / 100; // have doubt gst calculate on after discount before dis
+            double taxableAmount = baseAmount - discountAmount;
 
-			item.setGstAmount(gst);
-			item.setCgstAmount(gst / 2);
-			item.setSgstAmount(gst / 2);
+            double gstAmount = taxableAmount * item.getGstPercent() / 100;
 
-			double net = taxable + gst;
-			item.setNetAmount(net);
+            item.setGstAmount(gstAmount);
+            item.setCgstAmount(gstAmount / 2);
+            item.setSgstAmount(gstAmount / 2);
 
-			totalQty += item.getQuantity();
-			totalGST += gst;
-			grandTotal += net;
-		}
+            double netAmount = taxableAmount + gstAmount;
 
-		Summary summary = new Summary();
-		summary.setTotalQuantity(totalQty);
-		summary.setTotalGSTAmount(totalGST);
-		summary.setGrandTotal(grandTotal);
+            item.setNetAmount(netAmount);
 
-		purchase.setSummary(summary);
+            totalQty += item.getQuantity() + item.getFreeQuantity();
+            totalGST += gstAmount;
+            grandTotal += netAmount;
+        }
 
-		PaymentDetails payment = purchase.getPaymentDetails();
-		double due = grandTotal - payment.getPaidAmount();
-		payment.setDueAmount(due);
+        Summary summary = new Summary();
 
-		log.info("Purchase calculation completed. Grand Total: {}", grandTotal);
-	}
+        summary.setTotalQuantity(totalQty);
+        summary.setTotalGSTAmount(totalGST);
+        summary.setGrandTotal(grandTotal);
 
-	private void updateInventory(PurchaseBill purchase) {
+        purchase.setSummary(summary);
 
-		log.info("Updating inventory for purchase: {}", purchase.getPurchaseBillNo());
+        PaymentDetails payment = purchase.getPaymentDetails();
 
-		for (PurchaseItem item : purchase.getItems()) {
+        double dueAmount = grandTotal - payment.getPaidAmount();
 
-			Inventory inventory = inventoryRepository.findByProductIdAndBatchNo(item.getProductId(), item.getBatchNo());
+        payment.setDueAmount(dueAmount);
 
-			if (inventory != null) {
+        log.info("Purchase calculation completed. Grand Total: {}", grandTotal);
+    }
 
-				log.info("Existing stock found for product {} batch {}", item.getProductId(), item.getBatchNo());
+    private void updateInventory(PurchaseBill purchase) {
 
-				inventory.setAvailableQty(inventory.getAvailableQty() + item.getQuantity() + item.getFreeQuantity());
-			} else {
+        log.info("Updating inventory for purchase: {}", purchase.getPurchaseBillNo());
 
-				log.info("Creating new inventory entry for product {}", item.getProductId());
+        for (PurchaseItem item : purchase.getItems()) {
 
-				inventory = new Inventory();
-				inventory.setProductId(item.getProductId());
-				inventory.setProductName(item.getProductName());
-				inventory.setBatchNo(item.getBatchNo());
-				inventory.setExpiryDate(item.getExpiryDate());
-				inventory.setAvailableQty(item.getQuantity() + item.getFreeQuantity());
-				inventory.setPurchaseRate(item.getCostPrice());
-				inventory.setMrp(item.getMrp());
-				inventory.setGstPercent(item.getGstPercent());
-				inventory.setSupplierId(purchase.getSupplierDetails().getSupplierId());
-			}
+            // Fetch medicine details
+            Optional<Medicine> medicineOpt = medicineRepository.findById(item.getProductId());
 
-			inventoryRepository.save(inventory);
-		}
+            Medicine medicine = medicineOpt.orElse(null);
 
-		log.info("Inventory update completed.");
-	}
-	@Override
-	public Response getPuchaseByPurchasedId(String purchaseId) {
-		Response res= new Response();
-		try {
-			Optional<PurchaseBill> purchaseBill=purchaseRepository.findById(purchaseId);
-			if(purchaseBill.isPresent()) {
-				PurchaseBill dbData=purchaseBill.get();
-				res.setSuccess(true);
-				res.setData(dbData);
-				res.setMessage("Puchased data fetched successfully");
-				res.setStatus(HttpStatus.OK.value());
-			}
-			else {
-				res.setSuccess(false);
-				res.setMessage("Puchased data not found with this Id: "+purchaseId);
-				res.setStatus(HttpStatus.OK.value());	
-			}
-		}
-		catch(Exception e) {
-			res.setSuccess(false);
-			res.setMessage("Exception occured while fitching puchased data ");
-			res.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());	
-		}
-		return res;
-	}
+            Inventory inventory = inventoryRepository
+                    .findByMedicineIdAndBatchNoAndClinicIdAndBranchId(
+                            item.getProductId(),
+                            item.getBatchNo(),
+                            purchase.getClinicId(),
+                            purchase.getBranchId()
+                    );
 
-	public Response getAll() {
-		log.info("Fetching all purchases");
-		List<PurchaseBill> purchasedData = purchaseRepository.findAll();
-		Response res = new Response();
-		res.setSuccess(true);
-		res.setData(purchasedData);
-		res.setMessage("Fetched Purchased data");
-		res.setStatus(HttpStatus.OK.value());
-		return res;
+            double addedQty = item.getQuantity() + item.getFreeQuantity();
 
-	}
-	@Override
-	public Response updatePurchase(String purchaseId, PurchaseBillDTO dto) {
+            if (inventory != null) {
 
-		log.info("Updating purchase with ID: {}", purchaseId);
+                log.info("Existing inventory found for medicine {} batch {}", item.getProductId(), item.getBatchNo());
 
-		Response res = new Response();
+                inventory.setAvailableQty(inventory.getAvailableQty() + addedQty);
 
-		Optional<PurchaseBill> optional = purchaseRepository.findById(purchaseId);
+                inventory.setPurchaseRate(item.getCostPrice());
+                inventory.setMrp(item.getMrp());
+                inventory.setExpiryDate(item.getExpiryDate());
 
-		if (optional.isEmpty()) {
+            } else {
 
-			res.setSuccess(false);
-			res.setMessage("Purchase not found with id: " + purchaseId);
-			res.setStatus(HttpStatus.NOT_FOUND.value());
-			return res;
-		}
+                log.info("Creating new inventory entry for medicine {}", item.getProductId());
 
-		PurchaseBill purchase = optional.get();
+                inventory = new Inventory();
 
-		purchase.setPurchaseBillNo(dto.getPurchaseBillNo());
+                inventory.setMedicineId(item.getProductId());
+
+                // Map medicine details
+                if (medicine != null) {
+
+                    inventory.setMedicineName(medicine.getProductName());
+                    inventory.setBrand(medicine.getBrandName());
+                    inventory.setPack(medicine.getPackSize());
+                    inventory.setProductType(medicine.getCategory());
+
+                } else {
+
+                    inventory.setMedicineName(item.getProductName());
+                }
+
+                inventory.setBatchNo(item.getBatchNo());
+                inventory.setMfgDate(item.getMfgDate());
+                inventory.setExpiryDate(item.getExpiryDate());
+
+                inventory.setAvailableQty(addedQty);
+
+                inventory.setPurchaseRate(item.getCostPrice());
+                inventory.setMrp(item.getMrp());
+                inventory.setGstPercent(item.getGstPercent());
+
+                inventory.setSupplierId(purchase.getSupplierDetails().getSupplierId());
+                inventory.setSupplier(purchase.getSupplierDetails().getSupplierName());
+
+                inventory.setClinicId(purchase.getClinicId());
+                inventory.setBranchId(purchase.getBranchId());
+
+                inventory.setStatus("ACTIVE");
+            }
+
+            inventoryRepository.save(inventory);
+        }
+
+        log.info("Inventory update completed.");
+    }
+    
+    @Override
+    public Response getPuchaseByPurchasedId(String purchaseId) {
+
+        Response res = new Response();
+
+        Optional<PurchaseBill> purchaseBill = purchaseRepository.findById(purchaseId);
+
+        if (purchaseBill.isPresent()) {
+
+            res.setSuccess(true);
+            res.setData(purchaseBill.get());
+            res.setMessage("Purchased data fetched successfully");
+            res.setStatus(HttpStatus.OK.value());
+
+        } else {
+
+            res.setSuccess(false);
+            res.setMessage("Purchased data not found with id: " + purchaseId);
+            res.setStatus(HttpStatus.NOT_FOUND.value());
+        }
+
+        return res;
+    }
+
+    @Override
+    public Response getAll() {
+
+        log.info("Fetching all purchases");
+
+        List<PurchaseBill> purchasedData = purchaseRepository.findAll();
+
+        Response res = new Response();
+
+        res.setSuccess(true);
+        res.setData(purchasedData);
+        res.setMessage("Fetched purchase data");
+        res.setStatus(HttpStatus.OK.value());
+
+        return res;
+    }
+
+    @Override
+    public Response updatePurchase(String purchaseId, PurchaseBillDTO dto) {
+
+        log.info("Updating purchase with ID: {}", purchaseId);
+
+        Response res = new Response();
+
+        Optional<PurchaseBill> optional = purchaseRepository.findById(purchaseId);
+
+        if (optional.isEmpty()) {
+
+            res.setSuccess(false);
+            res.setMessage("Purchase not found with id: " + purchaseId);
+            res.setStatus(HttpStatus.NOT_FOUND.value());
+            return res;
+        }
+
+        PurchaseBill purchase = optional.get();
+
+        purchase.setPurchaseBillNo(dto.getPurchaseBillNo());
         purchase.setOrderId(dto.getOrderId());
-		purchase.setInvoiceNo(dto.getInvoiceNo());
-		purchase.setFinancialYear(dto.getFinancialYear());
-		purchase.setDates(dto.getDates());
-		purchase.setTaxDetails(dto.getTaxDetails());
-		purchase.setSupplierDetails(dto.getSupplierDetails());
-		purchase.setPaymentDetails(dto.getPaymentDetails());
-		purchase.setItems(dto.getItems());
-		purchase.setUpdatedAt(LocalDateTime.now().toString());
+        purchase.setInvoiceNo(dto.getInvoiceNo());
+        purchase.setFinancialYear(dto.getFinancialYear());
+        purchase.setDates(dto.getDates());
+        purchase.setTaxDetails(dto.getTaxDetails());
+        purchase.setSupplierDetails(dto.getSupplierDetails());
+        purchase.setPaymentDetails(dto.getPaymentDetails());
+        purchase.setItems(dto.getItems());
 
-		calculateAmounts(purchase);
-		updateInventory(purchase);
+        purchase.setClinicId(dto.getClinicId());
+        purchase.setBranchId(dto.getBranchId());
 
-		PurchaseBill updated = purchaseRepository.save(purchase);
+        purchase.setUpdatedAt(LocalDateTime.now().toString());
 
-		res.setSuccess(true);
-		res.setData(updated);
-		res.setMessage("Purchase updated successfully");
-		res.setStatus(HttpStatus.OK.value());
+        calculateAmounts(purchase);
 
-		return res;
-	}
+        updateInventory(purchase);
 
-	@Override
-	public Response deletePurchase(String purchaseId) {
+        PurchaseBill updated = purchaseRepository.save(purchase);
 
-		log.info("Deleting purchase with ID: {}", purchaseId);
+        res.setSuccess(true);
+        res.setData(updated);
+        res.setMessage("Purchase updated successfully");
+        res.setStatus(HttpStatus.OK.value());
 
-		Response res = new Response();
+        return res;
+    }
 
-		Optional<PurchaseBill> optional = purchaseRepository.findById(purchaseId);
+    @Override
+    public Response deletePurchase(String purchaseId) {
 
-		if (optional.isEmpty()) {
+        log.info("Deleting purchase with ID: {}", purchaseId);
 
-			res.setSuccess(false);
-			res.setMessage("Purchase not found with id: " + purchaseId);
-			res.setStatus(HttpStatus.NOT_FOUND.value());
-			return res;
-		}
+        Response res = new Response();
 
-		purchaseRepository.deleteById(purchaseId);
+        Optional<PurchaseBill> optional = purchaseRepository.findById(purchaseId);
 
-		res.setSuccess(true);
-		res.setMessage("Purchase deleted successfully");
-		res.setStatus(HttpStatus.OK.value());
+        if (optional.isEmpty()) {
 
-		return res;
-	}
+            res.setSuccess(false);
+            res.setMessage("Purchase not found with id: " + purchaseId);
+            res.setStatus(HttpStatus.NOT_FOUND.value());
+            return res;
+        }
+
+        purchaseRepository.deleteById(purchaseId);
+
+        res.setSuccess(true);
+        res.setMessage("Purchase deleted successfully");
+        res.setStatus(HttpStatus.OK.value());
+
+        return res;
+    }
 }
