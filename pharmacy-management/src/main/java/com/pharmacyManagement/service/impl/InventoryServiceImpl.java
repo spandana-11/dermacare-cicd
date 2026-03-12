@@ -146,7 +146,7 @@ public class InventoryServiceImpl implements InventoryService {
 		dto.setClinicId(inv.getClinicId());
 		dto.setBranchId(inv.getBranchId());
 
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
 		LocalDate expiry = LocalDate.parse(inv.getExpiryDate(), formatter);
 
