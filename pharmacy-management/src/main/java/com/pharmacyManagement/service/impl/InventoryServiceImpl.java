@@ -132,6 +132,7 @@ public class InventoryServiceImpl implements InventoryService {
 
 		dto.setAvailableQty(inv.getAvailableQty());
 		dto.setMinStock(inv.getMinStock());
+		dto.setHsnCode(inv.getHsnCode());
 		dto.setBrand(inv.getBrand());
 		dto.setProductType(inv.getProductType());
 		dto.setPack(inv.getPack());

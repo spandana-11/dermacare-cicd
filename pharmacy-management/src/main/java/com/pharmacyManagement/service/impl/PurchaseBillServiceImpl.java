@@ -196,6 +196,8 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 				inventory.setProductType(medicine.getCategory());
 				inventory.setPack(medicine.getPackSize());
 				inventory.setGstPercent(medicine.getGstPercent());
+				inventory.setHsnCode(medicine.getHsnCode());
+				inventory.setMinStock(medicine.getMinStock());
 
 				inventory.setBatchNo(item.getBatchNo());
 				inventory.setMfgDate(item.getMfgDate());
