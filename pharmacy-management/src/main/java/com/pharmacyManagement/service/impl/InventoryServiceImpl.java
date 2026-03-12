@@ -153,14 +153,22 @@ public class InventoryServiceImpl implements InventoryService {
 
 		long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiry);
 
-		dto.setDaysLeft(daysLeft);
 
-		if (daysLeft <= 0)
-			dto.setStatus("EXPIRED");
-		else if (daysLeft <= 30)
-			dto.setStatus("NEAR_EXPIRY");
-		else
-			dto.setStatus("ACTIVE");
+	    if (inv.getAvailableQty() == 0) {
+	        dto.setStatus("OUT_OF_STOCK");
+	    } 
+	    else if (daysLeft <= 0) {
+	        dto.setStatus("EXPIRED");
+	    } 
+	    else if (daysLeft <= 30) {
+	        dto.setStatus("EXPIRING_SOON");
+	    } 
+	    else if (inv.getAvailableQty() <= inv.getMinStock()) {
+	        dto.setStatus("LOW_STOCK");
+	    } 
+	    else {
+	        dto.setStatus("NORMAL");
+	    }
 
 		return dto;
 	}
