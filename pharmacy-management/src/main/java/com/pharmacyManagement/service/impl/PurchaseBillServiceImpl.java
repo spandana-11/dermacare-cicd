@@ -168,9 +168,14 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 			if (!medicine.getBranchId().equals(purchase.getBranchId())) {
 				throw new RuntimeException("BranchId mismatch between Medicine and PurchaseBill");
 			}
-
-			Inventory inventory = inventoryRepository.findByMedicineIdAndBatchNoAndClinicIdAndBranchId(
-					item.getProductId(), item.getBatchNo(), purchase.getClinicId(), purchase.getBranchId());
+			   // Updated search condition
+	        Inventory inventory = inventoryRepository
+	                .findByMedicineIdAndBatchNoAndExpiryDateAndClinicIdAndBranchId(
+	                        item.getProductId(),
+	                        item.getBatchNo(),
+	                        item.getExpiryDate(),
+	                        purchase.getClinicId(),
+	                        purchase.getBranchId());
 
 			double totalQty = item.getQuantity() + item.getFreeQuantity();
 

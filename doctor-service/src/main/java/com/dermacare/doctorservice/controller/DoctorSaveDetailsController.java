@@ -96,4 +96,13 @@ public class DoctorSaveDetailsController {
         Response response = service.getDoctorDetailsByCustomerId(customerId);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
-}
+    
+    @GetMapping("/getDoctorSaveDetails/{customerId}")
+    public ResponseEntity<DoctorSaveDetailsDTO> getDoctorSaveDetails(@PathVariable String customerId) {
+    	DoctorSaveDetailsDTO response = service.getDoctorLatestDetailsByCustomerId(customerId);
+        if(response != null) {
+    	return ResponseEntity.status(200).body(response);
+    }else {
+    	return null;
+    }
+}}

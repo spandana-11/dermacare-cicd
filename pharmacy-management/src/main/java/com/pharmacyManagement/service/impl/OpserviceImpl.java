@@ -6,412 +6,522 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.springframework.http.ResponseEntity;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pharmacyManagement.dto.DoctorSaveDetailsDTO;
 import com.pharmacyManagement.dto.OpMedicineDTO;
 import com.pharmacyManagement.dto.OpNoResponse;
 import com.pharmacyManagement.dto.OpSalesRequest;
 import com.pharmacyManagement.dto.OpSalesResponse;
 import com.pharmacyManagement.dto.Response;
+import com.pharmacyManagement.entity.Inventory;
+import com.pharmacyManagement.entity.Medicine;
 import com.pharmacyManagement.entity.OpMedicine;
 import com.pharmacyManagement.entity.OpSales;
+import com.pharmacyManagement.entity.PaymentEntry;
+import com.pharmacyManagement.feign.DoctorFeign;
+import com.pharmacyManagement.repository.InventoryRepository;
+import com.pharmacyManagement.repository.MedicineRepository;
 import com.pharmacyManagement.repository.OpSalesRepository;
 import com.pharmacyManagement.service.Opservice;
 import com.pharmacyManagement.util.DuplicateBillNoException;
 import com.pharmacyManagement.util.ResourceNotFoundException;
+import com.pharmacyManagement.util.ValidationException;
 
 @Service
 public class OpserviceImpl implements Opservice {
-	
-	@Autowired
-	public OpSalesRepository opSalesRepository;
-	
-	
-	  private static final Logger log = LoggerFactory.getLogger(OpserviceImpl.class);
-	   
-	   
-	 public ResponseEntity<Response> createOpSales(OpSalesRequest request) {
-		  Response res = new Response();
-	        log.info("Creating OP Sales with billNo: {}", request.getBillNo());
 
-	        if (opSalesRepository.existsByBillNo(request.getBillNo())) {
-	            throw new DuplicateBillNoException("Bill number '" + request.getBillNo() + "' already exists.");
-	        }
+    @Autowired
+    private OpSalesRepository opSalesRepository;
+    
+    @Autowired
+    private DoctorFeign doctorFeign;
+    
+    @Autowired
+    private MedicineRepository inventoryRepository;
 
-	        MedicineSummary summary = computeSummary(new ObjectMapper().convertValue(request.getMedicines(), new TypeReference<List<OpMedicine>>() {}));
-	        double amountPaid      = nvl(request.getAmountPaid());
-	        double due             = round2(summary.finalTotal - amountPaid);
-	        // amountToBePaid = remaining to be collected; 0 if already paid in full
-	        double amountToBePaid  = due > 0 ? due : 0.0;
-	        double dueAmount       = due > 0 ? due : 0.0;
+    // ── FIX: inject ObjectMapper as a Spring bean instead of using new ObjectMapper() ──
+    @Autowired
+    private ObjectMapper objectMapper;
 
-	        OpSales opSales = OpSales.builder()
-	                .billNo(request.getBillNo())
-	                .billDate(request.getBillDate())
-	                .billTime(request.getBillTime())
-	                .visitType(request.getVisitType())
-	                .opNo(request.getOpNo())
-	                .payCategory(request.getPayCategory())
-	                .patientName(request.getPatientName())
-	                .mobile(request.getMobile())
-	                .age(request.getAge())
-	                .sex(request.getSex())
-	                .consultingDoctor(request.getConsultingDoctor())
-	                .includeReturns(request.getIncludeReturns())
-	                .medicines(new ObjectMapper().convertValue(request.getMedicines(), new TypeReference<List<OpMedicine>>() {}))
-	                .totalAmt(summary.totalAmt)
-	                .avgDiscPercent(summary.avgDiscPercent)
-	                .totalDiscAmt(summary.totalDiscAmt)
-	                .totalGstAmount(summary.totalGstAmount)
-	                .netAmount(summary.netAmount)
-	                .amountPaid(amountPaid)
-	                .amountToBePaid(amountToBePaid)
-	                .dueAmount(dueAmount)
-	                .finalTotal(summary.finalTotal)
-	                .clinicId(request.getClinicId())
-	                .branchId(request.getBranchId())
-	                .createdAt(LocalDateTime.now())
-	                .build();
+    private static final Logger log = LoggerFactory.getLogger(OpserviceImpl.class);
 
-	        OpSales saved = opSalesRepository.save(opSales);
-	        log.info("OP Sales created with id: {}", saved.getId());
-	        OpSalesResponse opSalesResponse = toResponse(saved);
-	        if(opSalesResponse != null) {
-	        	res.setMessage("OP Sales created successfully");
-	        	res.setData(opSalesResponse);
-	        	res.setStatus(200);
-	        	res.setSuccess(true);
-	        }else {
-	        	res.setMessage("Unable to create OP Sales");
-	        	res.setStatus(400);
-	        	res.setSuccess(false);
-	        }
-	        return ResponseEntity.status(res.getStatus()).body(res);
-	    }
+    // =========================================================================
+    //  1. CREATE
+    // =========================================================================
+    @Override
+    public ResponseEntity<Response> createOpSales(OpSalesRequest request) {
+        Response res = new Response();
+        log.info("Creating OP Sales with billNo: {}", request.getBillNo());
 
-	    // ─────────────────────────────────────────────────────────────────────
-	    // 2. UPDATE
-	    // ─────────────────────────────────────────────────────────────────────
-	    public ResponseEntity<Response> updateOpSales(String id, OpSalesRequest request) {
-	        log.info("Updating OP Sales with id: {}", id);
-	        Response res = new Response();
-	        OpSales existing = opSalesRepository.findById(id)
-	                .orElseThrow(() -> new ResourceNotFoundException("OP Sales not found with id: " + id));
+        // Duplicate bill check
+        if (opSalesRepository.existsByBillNo(request.getBillNo())) {
+            throw new DuplicateBillNoException(
+                    "Bill number '" + request.getBillNo() + "' already exists.");
+        }
 
-	        if (!existing.getBillNo().equals(request.getBillNo())
-	                && opSalesRepository.existsByBillNo(request.getBillNo())) {
-	            throw new DuplicateBillNoException("Bill number '" + request.getBillNo() + "' already exists.");
-	        }
+        // Cross-field medicine validation
+        validateMedicines(request.getMedicines());
 
-	        MedicineSummary summary = computeSummary(new ObjectMapper().convertValue(request.getMedicines(), new TypeReference<List<OpMedicine>>() {}));
-	        double amountPaid     = nvl(request.getAmountPaid());
-	        double due            = round2(summary.finalTotal - amountPaid);
-	        double amountToBePaid = due > 0 ? due : 0.0;
-	        double dueAmount      = due > 0 ? due : 0.0;
-	        LocalDateTime now     = LocalDateTime.now();
+        // Compute totals
+        List<OpMedicine> medicines = toOpMedicineList(request.getMedicines());
+        MedicineSummary summary    = computeSummary(medicines);
 
-	        existing.setBillNo(request.getBillNo());
-	        existing.setBillDate(request.getBillDate());
-	        existing.setBillTime(request.getBillTime());
-	        existing.setVisitType(request.getVisitType());
-	        existing.setOpNo(request.getOpNo());
-	        existing.setPayCategory(request.getPayCategory());
-	        existing.setPatientName(request.getPatientName());
-	        existing.setMobile(request.getMobile());
-	        existing.setAge(request.getAge());
-	        existing.setSex(request.getSex());
-	        existing.setConsultingDoctor(request.getConsultingDoctor());
-	        existing.setIncludeReturns(request.getIncludeReturns());
-	        existing.setMedicines(new ObjectMapper().convertValue(request.getMedicines(), new TypeReference<List<OpMedicine>>() {}));
-	        existing.setTotalAmt(summary.totalAmt);
-	        existing.setAvgDiscPercent(summary.avgDiscPercent);
-	        existing.setTotalDiscAmt(summary.totalDiscAmt);
-	        existing.setTotalGstAmount(summary.totalGstAmount);
-	        existing.setNetAmount(summary.netAmount);
-	        existing.setAmountPaid(amountPaid);
-	        existing.setAmountToBePaid(amountToBePaid);
-	        existing.setDueAmount(dueAmount);
-	        existing.setFinalTotal(summary.finalTotal);
-	        existing.setClinicId(request.getClinicId());
-	        existing.setBranchId(request.getBranchId());
-	        existing.setUpdatedAt(now);
-	        opSalesRepository.save(existing);
-	        if(opSalesRepository.save(existing) != null) {
-	        	res.setMessage("OP Sales updated successfully");
-	        	res.setStatus(200);
-	        	res.setSuccess(true);
-	        }else {
-	        	res.setMessage("Unable to update OP Sales");
-	        	res.setStatus(400);
-	        	res.setSuccess(false);
-	        }
-	        return ResponseEntity.status(res.getStatus()).body(res);
-	    }
+        double amountPaid = nvl(request.getAmountPaid());
 
-	    // ─────────────────────────────────────────────────────────────────────
-	    // 3. GET ALL
-	    // ─────────────────────────────────────────────────────────────────────
-	    public ResponseEntity<Response> getAllOpSales(String clinicId, String branchId) {
-	    	  Response res = new Response();
-	    	log.info("Fetching all OP Sales for clinicId: {}, branchId: {}", clinicId, branchId);
-	        List<OpSalesResponse> lst = opSalesRepository.findByClinicIdAndBranchId(clinicId, branchId)
-	                .stream().map(this::toResponse).collect(Collectors.toList());
-	        if(!lst.isEmpty()) {
-	        	res.setMessage("OP Sales retrieved successfully");
-	        	res.setStatus(200);
-	        	res.setData(lst);
-	        	res.setSuccess(true);
-	        }else {
-	        	res.setMessage("Unable to retrieve OP Sales");
-	        	res.setStatus(404);
-	        	res.setSuccess(false);
-	        }
-	        return ResponseEntity.status(res.getStatus()).body(res);
-	     }
+        // amountPaid must not exceed finalTotal
+        if (amountPaid > summary.finalTotal) {
+            throw new ValidationException(
+                    "Amount paid (" + amountPaid + ") cannot exceed the total bill amount ("
+                    + summary.finalTotal + ").");
+        }
 
-	    // ─────────────────────────────────────────────────────────────────────
-	    // 4a. GET BY BILL NO
-	    // ─────────────────────────────────────────────────────────────────────
-	    public ResponseEntity<Response> getByBillNo(String billNo) {
-	    	  Response res = new Response();
-	    	log.info("Fetching OP Sales by billNo: {}", billNo);
-	        OpSalesResponse ops =  toResponse(opSalesRepository.findByBillNo(billNo)
-	                .orElseThrow(() -> new ResourceNotFoundException("OP Sales not found with billNo: " + billNo)));
-	        if(ops!= null) {
-	        	res.setMessage("OP Sales retrieved successfully");
-	        	res.setStatus(200);
-	        	res.setData(ops);
-	        	res.setSuccess(true);
-	        }else {
-	        	res.setMessage("Unable to retrieve OP Sales");
-	        	res.setStatus(404);
-	        	res.setSuccess(false);
-	        }
-	        return ResponseEntity.status(res.getStatus()).body(res);
-	    }
+        double due = round2(summary.finalTotal - amountPaid);
 
-	    // ─────────────────────────────────────────────────────────────────────
-	    // 4b. GET BY ID
-	    // ─────────────────────────────────────────────────────────────────────
-	    public ResponseEntity<Response> getById(String id) {
-	    	  Response res = new Response();
-	    	log.info("Fetching OP Sales by id: {}", id);
-	        OpSalesResponse ops = toResponse(opSalesRepository.findById(id)
-	                .orElseThrow(() -> new ResourceNotFoundException("OP Sales not found with id: " + id)));
-	        if(ops!= null) {
-	        	res.setMessage("OP Sales retrieved successfully");
-	        	res.setStatus(200);
-	        	res.setData(ops);
-	        	res.setSuccess(true);
-	        }else {
-	        	res.setMessage("Unable to retrieve OP Sales");
-	        	res.setStatus(404);
-	        	res.setSuccess(false);
-	        }
-	        return ResponseEntity.status(res.getStatus()).body(res);
-	    }
+        // First PaymentEntry
+        PaymentEntry firstPayment = PaymentEntry.builder()
+                .amountPaid(amountPaid)
+                .dueAmount(due)
+                .paidAt(LocalDateTime.now())
+                .build();
 
-	    // ─────────────────────────────────────────────────────────────────────
-	    // 5. GET BY OPNO
-	    // ─────────────────────────────────────────────────────────────────────
-	    public ResponseEntity<Response> getByOpNo(String clinicId, String branchId, String opNo) {
-	    	  Response res = new Response();
-	    	log.info("Fetching by opNo: {}, clinicId: {}, branchId: {}", opNo, clinicId, branchId);
+        List<PaymentEntry> paymentHistory = new ArrayList<>();
+        paymentHistory.add(firstPayment);
 
-	        boolean exists = opSalesRepository.existsByOpNoAndClinicIdAndBranchId(opNo, clinicId, branchId);
+        OpSales opSales = OpSales.builder()
+                .billNo(request.getBillNo())
+                .billDate(request.getBillDate())
+                .billTime(request.getBillTime())
+                .visitType(request.getVisitType())
+                .opNo(request.getOpNo())
+                .payCategory(request.getPayCategory())
+                .patientName(request.getPatientName())
+                .mobile(request.getMobile())
+                .age(request.getAge())
+                .sex(request.getSex())
+                .consultingDoctor(request.getConsultingDoctor())
+                .includeReturns(request.getIncludeReturns())
+                .medicines(medicines)
+                .totalAmt(summary.totalAmt)
+                .avgDiscPercent(summary.avgDiscPercent)
+                .totalDiscAmt(summary.totalDiscAmt)
+                .totalGstAmount(summary.totalGstAmount)
+                .netAmount(summary.netAmount)
+                .amountPaid(amountPaid)
+                .amountToBePaid(paymentHistory)
+                .dueAmount(due)
+                .finalTotal(summary.finalTotal)
+                .clinicId(request.getClinicId())
+                .branchId(request.getBranchId())
+                .createdAt(LocalDateTime.now())
+                .build();
 
-	        if (!exists) {
-	        	OpNoResponse opNoResponse = OpNoResponse.builder()
-	                    .opNo(opNo)
-	                    .visitType("new")
-	                    .medicines(new ArrayList<>())
-	                    .clinicId(clinicId)
-	                    .branchId(branchId)
-	                    .build();
-	        	res.setMessage("OP Sales Not Found with OpNo");
-	        	res.setStatus(404);
-	        	res.setData(opNoResponse);
-	        	res.setSuccess(false);
-	        	 return ResponseEntity.status(res.getStatus()).body(res);
-	        }
+        OpSales saved = opSalesRepository.save(opSales);
+        log.info("OP Sales created with id: {}", saved.getId());
 
-	        OpSales latest = opSalesRepository
-	                .findTopByOpNoAndClinicIdAndBranchIdOrderByCreatedAtDesc(opNo, clinicId, branchId)
-	                .orElseThrow(() -> new ResourceNotFoundException("No record found for opNo: " + opNo));
-	       List<OpMedicineDTO> op =  new ObjectMapper().convertValue(latest.getMedicines(), new TypeReference<List<OpMedicineDTO>>() {});
-	   	OpNoResponse opNoResponse = OpNoResponse.builder()
-	                .opNo(latest.getOpNo())
-	                .visitType("existing")
-	                .patientName(latest.getPatientName())
-	                .mobile(latest.getMobile())
-	                .age(latest.getAge())
-	                .sex(latest.getSex())
-	                .medicines(latest.getMedicines() != null ? op: new ArrayList<>())
-	                .clinicId(clinicId)
-	                .branchId(branchId)
-	                .build();
-	   	res.setMessage("OP Sales Found with OpNo");
-    	res.setStatus(200);
-    	res.setData(opNoResponse);
-    	res.setSuccess(true);
-    	 return ResponseEntity.status(res.getStatus()).body(res);
-	    }
+        OpSalesResponse opSalesResponse = toResponse(saved);
+        if (opSalesResponse != null) {
+            res.setMessage("OP Sales created successfully");
+            res.setData(opSalesResponse);
+            res.setStatus(200);
+            res.setSuccess(true);
+        } else {
+            res.setMessage("Unable to create OP Sales");
+            res.setStatus(400);
+            res.setSuccess(false);
+        }
+        return ResponseEntity.status(res.getStatus()).body(res);
+    }
 
-	    // ─────────────────────────────────────────────────────────────────────
-	    // 6. DELETE
-	    // ─────────────────────────────────────────────────────────────────────
-	    public ResponseEntity<Response> deleteOpSales(String clinicId, String branchId, String id) {
-	    	  Response res = new Response();
-	    	log.info("Deleting OP Sales id: {}, clinicId: {}, branchId: {}", id, clinicId, branchId);
-	        OpSales opSales = opSalesRepository.findByIdAndClinicIdAndBranchId(id, clinicId, branchId)
-	                .orElseThrow(() -> new ResourceNotFoundException(
-	                        "OP Sales not found with id: " + id + " for clinic/branch"));
-	           opSalesRepository.delete(opSales);
-	        	res.setMessage("OP Sales Deleted Successfully");
-	        	res.setStatus(200);
-	        	res.setSuccess(true);
-	        	log.info("OP Sales deleted with id: {}", id);
-	        	 return ResponseEntity.status(res.getStatus()).body(res);
-	        }
-	        
+    @Override
+    public ResponseEntity<Response> updateOpSales(String id, OpSalesRequest request) {
+        log.info("Updating OP Sales with id: {}", id);
+        Response res = new Response();
 
-	    // ─────────────────────────────────────────────────────────────────────
-	    // 7. FILTER
-	    // ─────────────────────────────────────────────────────────────────────
-public ResponseEntity<Response> filterOpSales(String clinicId, String branchId,
-                String billNo, String patientName,
-                String mobile, String consultingDoctor,
-                String fromDate, String toDate) {
-	  Response res = new Response();
-log.info("Filtering OP Sales for clinicId: {}, branchId: {}", clinicId, branchId);
+        OpSales existing = opSalesRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "OP Sales not found with id: " + id));
 
-// Step 1: Fetch from repository using field-based query
-List<OpSales> rawList = opSalesRepository
-.findByClinicIdAndBranchIdAndBillNoContainingIgnoreCaseAndPatientNameContainingIgnoreCaseAndMobileAndConsultingDoctorContainingIgnoreCase(
-isPresent(clinicId)          ? clinicId          : "",
-isPresent(branchId)          ? branchId          : "",
-isPresent(billNo)            ? billNo            : "",
-isPresent(patientName)       ? patientName       : "",
-isPresent(mobile)            ? mobile            : "",
-isPresent(consultingDoctor)  ? consultingDoctor  : ""
-);
+        if (!existing.getBillNo().equals(request.getBillNo())
+                && opSalesRepository.existsByBillNo(request.getBillNo())) {
+            throw new DuplicateBillNoException(
+                    "Bill number '" + request.getBillNo() + "' already exists.");
+        }
 
-// Step 2: Parse dates for in-memory filtering
-DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd"); // adjust pattern as needed
-LocalDate from = isPresent(fromDate) ? LocalDate.parse(fromDate, formatter) : null;
-LocalDate to   = isPresent(toDate)   ? LocalDate.parse(toDate,   formatter) : null;
-////System.out.println(rawList);
-// Step 3: Filter by date range in-memory
-List<OpSalesResponse> lst = rawList.stream()
-.filter(sale -> {
-if (sale.getBillDate() == null) return false;
-LocalDate billDate = LocalDate.parse(sale.getBillDate(), formatter);
-if (from != null && billDate.isBefore(from)) return false;
-if (to   != null && billDate.isAfter(to))    return false;
-return true;
-})
-.map(this::toResponse)
-.collect(Collectors.toList());
-	///System.out.println(lst);
-// Step 4: Build response
-if (!lst.isEmpty()) {
-res.setMessage("OP Sales retrieved successfully");
-res.setStatus(200);
-res.setData(lst);
-res.setSuccess(true);
-return ResponseEntity.status(res.getStatus()).body(res);
-} else {
-res.setMessage("Unable to retrieve OP Sales");
-res.setStatus(404);
-res.setSuccess(false);
-return ResponseEntity.status(res.getStatus()).body(res);
-}
-}
+        // Cross-field medicine validation on updated medicines
+        validateMedicines(request.getMedicines());
 
-	    // ─────────────────────────────────────────────────────────────────────
-	    // PRIVATE HELPERS
-	    // ─────────────────────────────────────────────────────────────────────
+        List<OpMedicine> updatedMedicines = toOpMedicineList(request.getMedicines());
+        MedicineSummary summary           = computeSummary(updatedMedicines);
 
-	    /**
-	     * Computes all financial summary fields from the medicines list.
-	     * totalAmt        = sum of totalA  (qty * rate)
-	     * totalDiscAmt    = sum of |discAmtB|
-	     * totalGstAmount  = sum of gstAmtC
-	     * netAmount       = totalAmt - totalDiscAmt
-	     * finalTotal      = sum of finalAmountABC
-	     * avgDiscPercent  = average of discPercent across all medicines
-	     */
-	    private MedicineSummary computeSummary(List<OpMedicine> medicines) {
-	        MedicineSummary s = new MedicineSummary();
-	        if (medicines == null || medicines.isEmpty()) return s;
+        double newAmountPaid = nvl(request.getAmountPaid());
 
-	        double sumDiscPercent = 0;
-	        for (OpMedicine m : medicines) {
-	            s.totalAmt       += nvl(m.getTotalA());
-	            s.totalDiscAmt   += Math.abs(nvl(m.getDiscAmtB()));
-	            s.totalGstAmount += nvl(m.getGstAmtC());
-	            s.finalTotal     += nvl(m.getFinalAmountABC());
-	            sumDiscPercent   += nvl(m.getDiscPercent());
-	        }
-	        s.netAmount      = s.totalAmt - s.totalDiscAmt;
-	        s.avgDiscPercent = sumDiscPercent / medicines.size();
+        if (newAmountPaid > summary.finalTotal) {
+            throw new ValidationException(
+                    "Amount paid (" + newAmountPaid + ") cannot exceed the total bill amount ("
+                    + summary.finalTotal + ").");
+        }
 
-	        // Round all to 2 decimal places
-	        s.totalAmt       = round2(s.totalAmt);
-	        s.totalDiscAmt   = round2(s.totalDiscAmt);
-	        s.totalGstAmount = round2(s.totalGstAmount);
-	        s.netAmount      = round2(s.netAmount);
-	        s.avgDiscPercent = round2(s.avgDiscPercent);
-	        s.finalTotal     = round2(s.finalTotal);
-	        return s;
-	    }
+        double newDue = round2(summary.finalTotal - newAmountPaid);
 
-	    /** Map OpSales entity → OpSalesResponse DTO */
-	    private OpSalesResponse toResponse(OpSales o) {
-	        return OpSalesResponse.builder()
-	                .id(o.getId())
-	                .billNo(o.getBillNo())
-	                .billDate(o.getBillDate())
-	                .billTime(o.getBillTime())
-	                .visitType(o.getVisitType())
-	                .opNo(o.getOpNo())
-	                .payCategory(o.getPayCategory())
-	                .patientName(o.getPatientName())
-	                .mobile(o.getMobile())
-	                .age(o.getAge())
-	                .sex(o.getSex())
-	                .consultingDoctor(o.getConsultingDoctor())
-	                .includeReturns(o.getIncludeReturns())
-	                .medicines(new ObjectMapper().convertValue(o.getMedicines(), new TypeReference<List<OpMedicineDTO>>() {}))
-	                .totalAmt(o.getTotalAmt())
-	                .avgDiscPercent(o.getAvgDiscPercent())
-	                .totalDiscAmt(o.getTotalDiscAmt())
-	                .totalGstAmount(o.getTotalGstAmount())
-	                .netAmount(o.getNetAmount())
-	                .amountPaid(o.getAmountPaid())
-	                .amountToBePaid(o.getAmountToBePaid())
-	                .dueAmount(o.getDueAmount())
-	                .finalTotal(o.getFinalTotal())
-	                .clinicId(o.getClinicId())
-	                .branchId(o.getBranchId())
-	                .createdAt(o.getCreatedAt())
-	                .updatedAt(o.getUpdatedAt())
-	                .build();
-	    }
+        // ── Rebuild payment history: start fresh on a full update ──
+        PaymentEntry updatedPayment = PaymentEntry.builder()
+                .amountPaid(newAmountPaid)
+                .dueAmount(newDue)
+                .paidAt(LocalDateTime.now())
+                .build();
 
-	    private double nvl(Double val) { return val != null ? val : 0.0; }
-	    private double round2(double val) { return Math.round(val * 100.0) / 100.0; }
-	    private boolean isPresent(String s) { return s != null && !s.isBlank(); }
+        List<PaymentEntry> paymentHistory = new ArrayList<>();
+        paymentHistory.add(updatedPayment);
 
-	    private static class MedicineSummary {
-	        double totalAmt = 0, avgDiscPercent = 0, totalDiscAmt = 0;
-	        double totalGstAmount = 0, netAmount = 0, finalTotal = 0;
-	    }
+        existing.setBillNo(request.getBillNo());
+        existing.setBillDate(request.getBillDate());
+        existing.setBillTime(request.getBillTime());
+        existing.setVisitType(request.getVisitType());
+        existing.setOpNo(request.getOpNo());
+        existing.setPayCategory(request.getPayCategory());
+        existing.setPatientName(request.getPatientName());
+        existing.setMobile(request.getMobile());
+        existing.setAge(request.getAge());
+        existing.setSex(request.getSex());
+        existing.setConsultingDoctor(request.getConsultingDoctor());
+        existing.setIncludeReturns(request.getIncludeReturns());
+        existing.setMedicines(updatedMedicines);
+        existing.setTotalAmt(summary.totalAmt);
+        existing.setAvgDiscPercent(summary.avgDiscPercent);
+        existing.setTotalDiscAmt(summary.totalDiscAmt);
+        existing.setTotalGstAmount(summary.totalGstAmount);
+        existing.setNetAmount(summary.netAmount);
+        existing.setAmountPaid(newAmountPaid);
+        existing.setAmountToBePaid(paymentHistory);   // ── FIX: List<PaymentEntry>
+        existing.setDueAmount(newDue);
+        existing.setFinalTotal(summary.finalTotal);
+        existing.setClinicId(request.getClinicId());
+        existing.setBranchId(request.getBranchId());
+        existing.setUpdatedAt(LocalDateTime.now());
 
+        // ── FIX: save only once (original code saved twice) ──
+        OpSales saved = opSalesRepository.save(existing);
+
+        if (saved != null) {
+            res.setMessage("OP Sales updated successfully");
+            res.setStatus(200);
+            res.setSuccess(true);
+            res.setData(toResponse(saved));
+        } else {
+            res.setMessage("Unable to update OP Sales");
+            res.setStatus(400);
+            res.setSuccess(false);
+        }
+        return ResponseEntity.status(res.getStatus()).body(res);
+    }
+
+    // =========================================================================
+    //  3. GET ALL
+    // =========================================================================
+    @Override
+    public ResponseEntity<Response> getAllOpSales(String clinicId, String branchId) {
+        Response res = new Response();
+        log.info("Fetching all OP Sales for clinicId: {}, branchId: {}", clinicId, branchId);
+
+        List<OpSalesResponse> lst = opSalesRepository
+                .findByClinicIdAndBranchId(clinicId, branchId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+
+        if (!lst.isEmpty()) {
+            res.setMessage("OP Sales retrieved successfully");
+            res.setStatus(200);
+            res.setData(lst);
+            res.setSuccess(true);
+        } else {
+            res.setMessage("Unable to retrieve OP Sales");
+            res.setStatus(404);
+            res.setSuccess(false);
+        }
+        return ResponseEntity.status(res.getStatus()).body(res);
+    }
+
+    // =========================================================================
+    //  4a. GET BY BILL NO
+    // =========================================================================
+    @Override
+    public ResponseEntity<Response> getByBillNo(String billNo) {
+        Response res = new Response();
+        log.info("Fetching OP Sales by billNo: {}", billNo);
+
+        OpSalesResponse ops = toResponse(
+                opSalesRepository.findByBillNo(billNo)
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "OP Sales not found with billNo: " + billNo)));
+
+        if (ops != null) {
+            res.setMessage("OP Sales retrieved successfully");
+            res.setStatus(200);
+            res.setData(ops);
+            res.setSuccess(true);
+        } else {
+            res.setMessage("Unable to retrieve OP Sales");
+            res.setStatus(404);
+            res.setSuccess(false);
+        }
+        return ResponseEntity.status(res.getStatus()).body(res);
+    }
+
+    // =========================================================================
+    //  4b. GET BY ID
+    // =========================================================================
+    @Override
+    public ResponseEntity<Response> getById(String id) {
+        Response res = new Response();
+        log.info("Fetching OP Sales by id: {}", id);
+
+        OpSalesResponse ops = toResponse(
+                opSalesRepository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "OP Sales not found with id: " + id)));
+
+        if (ops != null) {
+            res.setMessage("OP Sales retrieved successfully");
+            res.setStatus(200);
+            res.setData(ops);
+            res.setSuccess(true);
+        } else {
+            res.setMessage("Unable to retrieve OP Sales");
+            res.setStatus(404);
+            res.setSuccess(false);
+        }
+        return ResponseEntity.status(res.getStatus()).body(res);
+    }
+
+    // =========================================================================
+    //  5. GET BY OPNO
+    // =========================================================================
+    @Override
+    public ResponseEntity<Response> getByOpNo(String clinicId, String branchId, String opNo) {
+        Response res = new Response();
+        log.info("Fetching by opNo: {}, clinicId: {}, branchId: {}", opNo, clinicId, branchId);
+        try {
+        DoctorSaveDetailsDTO doctorSaveDetailsDTO = doctorFeign.getDoctorSaveDetails(opNo).getBody();
+        System.out.println(doctorSaveDetailsDTO);
+        List<String> lst = doctorSaveDetailsDTO.getPrescription().getMedicines().stream().map(n->n.getId()).toList();
+        List<Medicine> lt = new ArrayList<>();
+        for(String s : lst) {
+         Medicine invent = inventoryRepository.findById(s).get();
+        lt.add(invent);}
+        if(lt.isEmpty()) {
+            res.setMessage("OP Sales Not Found with OpNo");
+            res.setStatus(404);
+            res.setSuccess(false);
+        }else {       
+        res.setMessage("OP Sales Found with OpNo");
+        res.setStatus(200);
+        res.setData(lt);
+        res.setSuccess(true);
+        }}catch(Exception e) {}
+        return ResponseEntity.status(res.getStatus()).body(res);}
+  
+
+    // =========================================================================
+    //  6. DELETE
+    // =========================================================================
+    @Override
+    public ResponseEntity<Response> deleteOpSales(String clinicId, String branchId, String id) {
+        Response res = new Response();
+        log.info("Deleting OP Sales id: {}, clinicId: {}, branchId: {}", id, clinicId, branchId);
+
+        OpSales opSales = opSalesRepository
+                .findByIdAndClinicIdAndBranchId(id, clinicId, branchId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "OP Sales not found with id: " + id + " for clinic/branch"));
+
+        opSalesRepository.delete(opSales);
+        res.setMessage("OP Sales Deleted Successfully");
+        res.setStatus(200);
+        res.setSuccess(true);
+        log.info("OP Sales deleted with id: {}", id);
+        return ResponseEntity.status(res.getStatus()).body(res);
+    }
+
+    // =========================================================================
+    //  7. FILTER
+    // =========================================================================
+    @Override
+    public ResponseEntity<Response> filterOpSales(String clinicId, String branchId,
+            String billNo, String patientName,
+            String mobile, String consultingDoctor,
+            String fromDate, String toDate) {
+
+        Response res = new Response();
+        log.info("Filtering OP Sales for clinicId: {}, branchId: {}", clinicId, branchId);
+
+        List<OpSales> rawList = opSalesRepository
+                .findByClinicIdAndBranchIdAndBillNoContainingIgnoreCaseAndPatientNameContainingIgnoreCaseAndMobileAndConsultingDoctorContainingIgnoreCase(
+                        isPresent(clinicId)         ? clinicId         : "",
+                        isPresent(branchId)         ? branchId         : "",
+                        isPresent(billNo)           ? billNo           : "",
+                        isPresent(patientName)      ? patientName      : "",
+                        isPresent(mobile)           ? mobile           : "",
+                        isPresent(consultingDoctor) ? consultingDoctor : "");
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate from = isPresent(fromDate) ? LocalDate.parse(fromDate, formatter) : null;
+        LocalDate to   = isPresent(toDate)   ? LocalDate.parse(toDate,   formatter) : null;
+
+        List<OpSalesResponse> lst = rawList.stream()
+                .filter(sale -> {
+                    if (sale.getBillDate() == null) return false;
+                    LocalDate billDate = LocalDate.parse(sale.getBillDate(), formatter);
+                    if (from != null && billDate.isBefore(from)) return false;
+                    if (to   != null && billDate.isAfter(to))    return false;
+                    return true;
+                })
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+
+        if (!lst.isEmpty()) {
+            res.setMessage("OP Sales retrieved successfully");
+            res.setStatus(200);
+            res.setData(lst);
+            res.setSuccess(true);
+        } else {
+            res.setMessage("Unable to retrieve OP Sales");
+            res.setStatus(404);
+            res.setSuccess(false);
+        }
+        return ResponseEntity.status(res.getStatus()).body(res);
+    }
+
+    // =========================================================================
+    //  CROSS-FIELD MEDICINE VALIDATION
+    // =========================================================================
+    private void validateMedicines(List<OpMedicineDTO> medicines) {
+        if (medicines == null || medicines.isEmpty()) return;
+
+        final double TOLERANCE = 0.02;
+
+        for (int i = 0; i < medicines.size(); i++) {
+            OpMedicineDTO m = medicines.get(i);
+            String prefix   = "Medicine[" + i + "] (" + m.getMedicineName() + "): ";
+
+            double qty         = m.getQty()       != null ? m.getQty() : 0;
+            double rate        = nvl(m.getRate());
+            double totalA      = nvl(m.getTotalA());
+            double discPercent = nvl(m.getDiscPercent());
+            double discAmtB    = nvl(m.getDiscAmtB());
+            double netAmtAB    = nvl(m.getNetAmtAB());
+            double gstPercent  = nvl(m.getGstPercent());
+            double gstAmtC     = nvl(m.getGstAmtC());
+            double finalAmt    = nvl(m.getFinalAmountABC());
+
+            // totalA = qty × rate
+            double expectedTotalA = round2(qty * rate);
+            if (Math.abs(totalA - expectedTotalA) > TOLERANCE)
+                throw new ValidationException(prefix + "totalA (" + totalA
+                        + ") does not match qty × rate (" + expectedTotalA + ").");
+
+            // discAmtB = -(totalA × discPercent / 100)
+            double expectedDiscAmt = round2(-(totalA * discPercent / 100.0));
+            if (Math.abs(discAmtB - expectedDiscAmt) > TOLERANCE)
+                throw new ValidationException(prefix + "discAmtB (" + discAmtB
+                        + ") does not match -(totalA × discPercent/100) (" + expectedDiscAmt + ").");
+
+            // netAmtAB = totalA + discAmtB
+            double expectedNetAmt = round2(totalA + discAmtB);
+            if (Math.abs(netAmtAB - expectedNetAmt) > TOLERANCE)
+                throw new ValidationException(prefix + "netAmtAB (" + netAmtAB
+                        + ") does not match totalA + discAmtB (" + expectedNetAmt + ").");
+
+            // gstAmtC = netAmtAB × gstPercent / 100
+            double expectedGstAmt = round2(netAmtAB * gstPercent / 100.0);
+            if (Math.abs(gstAmtC - expectedGstAmt) > TOLERANCE)
+                throw new ValidationException(prefix + "gstAmtC (" + gstAmtC
+                        + ") does not match netAmtAB × gstPercent/100 (" + expectedGstAmt + ").");
+
+            // finalAmountABC = netAmtAB + gstAmtC
+            double expectedFinal = round2(netAmtAB + gstAmtC);
+            if (Math.abs(finalAmt - expectedFinal) > TOLERANCE)
+                throw new ValidationException(prefix + "finalAmountABC (" + finalAmt
+                        + ") does not match netAmtAB + gstAmtC (" + expectedFinal + ").");
+        }
+    }
+
+    // =========================================================================
+    //  PRIVATE HELPERS
+    // =========================================================================
+    private MedicineSummary computeSummary(List<OpMedicine> medicines) {
+        MedicineSummary s = new MedicineSummary();
+        if (medicines == null || medicines.isEmpty()) return s;
+
+        double sumDiscPercent = 0;
+        for (OpMedicine m : medicines) {
+            s.totalAmt       += nvl(m.getTotalA());
+            s.totalDiscAmt   += Math.abs(nvl(m.getDiscAmtB()));
+            s.totalGstAmount += nvl(m.getGstAmtC());
+            s.finalTotal     += nvl(m.getFinalAmountABC());
+            sumDiscPercent   += nvl(m.getDiscPercent());
+        }
+        s.netAmount      = s.totalAmt - s.totalDiscAmt;
+        s.avgDiscPercent = sumDiscPercent / medicines.size();
+
+        s.totalAmt       = round2(s.totalAmt);
+        s.totalDiscAmt   = round2(s.totalDiscAmt);
+        s.totalGstAmount = round2(s.totalGstAmount);
+        s.netAmount      = round2(s.netAmount);
+        s.avgDiscPercent = round2(s.avgDiscPercent);
+        s.finalTotal     = round2(s.finalTotal);
+        return s;
+    }
+
+    private OpSalesResponse toResponse(OpSales o) {
+        return OpSalesResponse.builder()
+                .id(o.getId())
+                .billNo(o.getBillNo())
+                .billDate(o.getBillDate())
+                .billTime(o.getBillTime())
+                .visitType(o.getVisitType())
+                .opNo(o.getOpNo())
+                .payCategory(o.getPayCategory())
+                .patientName(o.getPatientName())
+                .mobile(o.getMobile())
+                .age(o.getAge())
+                .sex(o.getSex())
+                .consultingDoctor(o.getConsultingDoctor())
+                .includeReturns(o.getIncludeReturns())
+                .medicines(objectMapper.convertValue(
+                        o.getMedicines(), new TypeReference<List<OpMedicineDTO>>() {}))
+                .totalAmt(o.getTotalAmt())
+                .avgDiscPercent(o.getAvgDiscPercent())
+                .totalDiscAmt(o.getTotalDiscAmt())
+                .totalGstAmount(o.getTotalGstAmount())
+                .netAmount(o.getNetAmount())
+                .amountPaid(o.getAmountPaid())
+                .amountToBePaid(o.getAmountToBePaid())   // List<PaymentEntry>
+                .dueAmount(o.getDueAmount())
+                .finalTotal(o.getFinalTotal())
+                .clinicId(o.getClinicId())
+                .branchId(o.getBranchId())
+                .createdAt(o.getCreatedAt())
+                .updatedAt(o.getUpdatedAt())
+                .build();
+    }
+
+    private List<OpMedicine> toOpMedicineList(List<OpMedicineDTO> dtos) {
+        return objectMapper.convertValue(dtos, new TypeReference<List<OpMedicine>>() {});
+    }
+
+    private double nvl(Double val)      { return val != null ? val : 0.0; }
+    private double round2(double val)   { return Math.round(val * 100.0) / 100.0; }
+    private boolean isPresent(String s) { return s != null && !s.isBlank(); }
+
+    private static class MedicineSummary {
+        double totalAmt = 0, avgDiscPercent = 0, totalDiscAmt = 0;
+        double totalGstAmount = 0, netAmount = 0, finalTotal = 0;
+    }
 }

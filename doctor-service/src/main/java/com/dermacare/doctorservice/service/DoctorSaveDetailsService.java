@@ -28,5 +28,8 @@ public interface DoctorSaveDetailsService {
 	Response getDoctorDetailsByCustomerId(String customerId);
 	
 	public Response updateDoctorDetailsByBookingId(String id, DoctorSaveDetailsDTO dto);
-	    
-	}
+	 
+	 public DoctorSaveDetailsDTO getDoctorLatestDetailsByCustomerId(String customerId);
+		    
+	
+}
