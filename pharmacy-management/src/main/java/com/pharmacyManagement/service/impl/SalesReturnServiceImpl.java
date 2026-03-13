@@ -14,6 +14,7 @@ import com.pharmacyManagement.dto.SalesReturnUpdateRequest;
 import com.pharmacyManagement.entity.SalesReturn;
 import com.pharmacyManagement.entity.SalesReturnItem;
 import com.pharmacyManagement.enums.ReturnStatus;
+import com.pharmacyManagement.repository.OpSalesRepository;
 import com.pharmacyManagement.repository.SalesReturnRepository;
 import com.pharmacyManagement.service.SalesReturnService;
 import com.pharmacyManagement.util.BusinessException;
@@ -32,12 +33,14 @@ public class SalesReturnServiceImpl implements SalesReturnService {
     public SalesReturnCustomRepository customRepository;
     @Autowired
     public SalesReturnMapper mapper;
+    @Autowired
+    public OpSalesRepository opSalesRepository;
 
     // ── CREATE ─────────────────────────────────────────────────────────────
     @Override
     public SalesReturnCreateResponse createReturn(SalesReturnRequest request) {
         log.info("Creating sales return for bill: {}", request.getReturnDetails().getOriginalBillNo());
-
+      if(opSalesRepository.findByBillNo(request.getOriginalBillNo()).get().getIncludeReturns()) {
         validateItemQuantities(request.getItems());
 
         SalesReturnRequest.PatientDetailsRequest pd = request.getPatientDetails();
@@ -70,7 +73,9 @@ public class SalesReturnServiceImpl implements SalesReturnService {
         SalesReturn saved = repository.save(entity);
         log.info("Sales return created: {}", saved.getReturnNo());
         return mapper.toCreateResponse(saved);
-    }
+      }else{
+    	  return null;
+     }}
 
     // ── GET ────────────────────────────────────────────────────────────────
     @Override

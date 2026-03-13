@@ -26,8 +26,8 @@ public class OpSales {
     @Indexed(unique = true)
     private String billNo;
 
-    private String billDate;      // stored as "YYYY-MM-DD"
-    private String billTime;      // stored as "HH:MM AM/PM"
+    private String billDate;          // stored as "YYYY-MM-DD"
+    private String billTime;          // stored as "HH:MM AM/PM"
     private String visitType;
     private String opNo;
     private String payCategory;
@@ -37,7 +37,6 @@ public class OpSales {
     private String sex;
     private String consultingDoctor;
     private Boolean includeReturns;
-
     private List<OpMedicine> medicines;
 
     // Computed summary fields
@@ -46,11 +45,24 @@ public class OpSales {
     private Double totalDiscAmt;
     private Double totalGstAmount;
     private Double netAmount;
-    private Double amountPaid;
-    private Double amountToBePaid;
-    private Double dueAmount;
-    private Double finalTotal;
 
+    /**
+     * Total amount paid so far (sum of all PaymentEntry.amountPaid).
+     * Kept for quick lookup without iterating the list.
+     */
+    private Double amountPaid;
+
+    /**
+     * Payment history. Each element records one installment:
+     *   { amountPaid: 500, dueAmount: 500, paidAt: ... }  ← first payment
+     *   { amountPaid: 500, dueAmount:   0, paidAt: ... }  ← final payment
+     */
+    private List<PaymentEntry> amountToBePaid;
+
+    /** Convenience field: latest due amount (last entry's dueAmount) */
+    private Double dueAmount;
+
+    private Double finalTotal;
     private String clinicId;
     private String branchId;
 

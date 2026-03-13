@@ -991,5 +991,25 @@ public class DoctorSaveDetailsServiceImpl implements DoctorSaveDetailsService {
         }
         return "Booking Service unreachable or internal error";
     }
+    
+    
+    @Override
+    public DoctorSaveDetailsDTO getDoctorLatestDetailsByCustomerId(String customerId) {
+    	try {
+       List<DoctorSaveDetails> optional = repository.findByCustomerId(customerId);
+        if(optional != null && !optional.isEmpty()) {
+        	ObjectMapper mapper = new ObjectMapper();
+	        mapper.registerModule(new JavaTimeModule());
+	        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+	        DoctorSaveDetails doctorSaveDetails = optional.get(optional.size() - 1);
+	        DoctorSaveDetailsDTO doctorSaveDetailsDTO = mapper.convertValue(doctorSaveDetails, DoctorSaveDetailsDTO.class);
+        return doctorSaveDetailsDTO;
+        }else {
+        return null;
+        }}catch(Exception e) {
+        	 return null;
+        }
+    }
+  
 
 }

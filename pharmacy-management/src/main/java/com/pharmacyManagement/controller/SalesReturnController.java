@@ -42,9 +42,14 @@ public class SalesReturnController {
             @Valid @RequestBody SalesReturnRequest request) {
 
         SalesReturnCreateResponse data = service.createReturn(request);
+        if(data != null) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Sales return created successfully", data));
-    }
+        }else {
+        	 return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                     .body(ApiResponse.success("Sales return created successfully", data));
+           	
+        }}
 
     /**
      * GET /api/op-sales-return/{returnNo}

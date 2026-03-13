@@ -3,13 +3,17 @@ package com.pharmacyManagement.service.impl;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.pharmacyManagement.dto.InventoryGetAllResponse;
 import com.pharmacyManagement.dto.InventoryResponseDTO;
 import com.pharmacyManagement.dto.Response;
 import com.pharmacyManagement.entity.Inventory;
@@ -74,11 +78,75 @@ public class InventoryServiceImpl implements InventoryService {
 	@Override
 	public Response getAllInventory(String clinicId, String branchId) {
 
-		List<InventoryResponseDTO> list = inventoryRepository.findByClinicIdAndBranchId(clinicId, branchId).stream()
-				.map(this::mapToDTO).toList();
+		List<Inventory> inventories = inventoryRepository
+				.findByClinicIdAndBranchId(clinicId, branchId);
 
-		return Response.builder().success(true).data(list).message("Inventory fetched successfully")
-				.status(HttpStatus.OK.value()).build();
+		Map<String, List<Inventory>> grouped =
+				inventories.stream()
+				.collect(Collectors.groupingBy(Inventory::getMedicineId));
+
+		List<InventoryGetAllResponse> responseList = new ArrayList<>();
+
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+		for (Map.Entry<String, List<Inventory>> entry : grouped.entrySet()) {
+
+			List<Inventory> inventoryList = entry.getValue();
+			Inventory first = inventoryList.get(0);
+
+			InventoryGetAllResponse dto = new InventoryGetAllResponse();
+
+			dto.setMedicineId(first.getMedicineId());
+			dto.setMedicineName(first.getMedicineName());
+			dto.setBrand(first.getBrand());
+			dto.setProductType(first.getProductType());
+			dto.setHsnCode(first.getHsnCode());
+			dto.setMinStock(first.getMinStock());
+			dto.setGstPercent(first.getGstPercent());
+
+			double totalQty = inventoryList.stream()
+					.mapToDouble(Inventory::getAvailableQty)
+					.sum();
+
+			dto.setAvailableQty(totalQty);
+
+			dto.setInventory(inventoryList);
+
+			// STATUS PRIORITY
+			String finalStatus = "NORMAL";
+
+			for (Inventory inv : inventoryList) {
+
+				LocalDate expiry = LocalDate.parse(inv.getExpiryDate(), formatter);
+				long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiry);
+
+				if (daysLeft <= 0) {
+					finalStatus = "EXPIRED";
+					break;
+				}
+				else if (daysLeft <= 30) {
+					finalStatus = "EXPIRING_SOON";
+				}
+				else if (inv.getAvailableQty() == 0 && !finalStatus.equals("EXPIRING_SOON")) {
+					finalStatus = "OUT_OF_STOCK";
+				}
+				else if (inv.getAvailableQty() <= inv.getMinStock()
+						&& finalStatus.equals("NORMAL")) {
+					finalStatus = "LOW_STOCK";
+				}
+			}
+
+			dto.setStatus(finalStatus);
+
+			responseList.add(dto);
+		}
+
+		return Response.builder()
+				.success(true)
+				.data(responseList)
+				.message("Inventory fetched successfully")
+				.status(HttpStatus.OK.value())
+				.build();
 	}
 
 	@Override
@@ -153,7 +221,9 @@ public class InventoryServiceImpl implements InventoryService {
 
 		long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiry);
 
+		dto.setDaysLeft(daysLeft);
 
+		// STATUS LOGIC
 	    if (inv.getAvailableQty() == 0) {
 	        dto.setStatus("OUT_OF_STOCK");
 	    } 
