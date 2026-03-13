@@ -78,75 +78,88 @@ public class InventoryServiceImpl implements InventoryService {
 	@Override
 	public Response getAllInventory(String clinicId, String branchId) {
 
-		List<Inventory> inventories = inventoryRepository
-				.findByClinicIdAndBranchId(clinicId, branchId);
+	    List<Inventory> inventories =
+	            inventoryRepository.findByClinicIdAndBranchId(clinicId, branchId);
 
-		Map<String, List<Inventory>> grouped =
-				inventories.stream()
-				.collect(Collectors.groupingBy(Inventory::getMedicineId));
+	    Map<String, List<Inventory>> grouped =
+	            inventories.stream()
+	            .collect(Collectors.groupingBy(Inventory::getMedicineId));
 
-		List<InventoryGetAllResponse> responseList = new ArrayList<>();
+	    List<InventoryGetAllResponse> responseList = new ArrayList<>();
 
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+	    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-		for (Map.Entry<String, List<Inventory>> entry : grouped.entrySet()) {
+	    for (Map.Entry<String, List<Inventory>> entry : grouped.entrySet()) {
 
-			List<Inventory> inventoryList = entry.getValue();
-			Inventory first = inventoryList.get(0);
+	        List<Inventory> inventoryList = entry.getValue();
+	        Inventory first = inventoryList.get(0);
 
-			InventoryGetAllResponse dto = new InventoryGetAllResponse();
+	        InventoryGetAllResponse dto = new InventoryGetAllResponse();
 
-			dto.setMedicineId(first.getMedicineId());
-			dto.setMedicineName(first.getMedicineName());
-			dto.setBrand(first.getBrand());
-			dto.setProductType(first.getProductType());
-			dto.setHsnCode(first.getHsnCode());
-			dto.setMinStock(first.getMinStock());
-			dto.setGstPercent(first.getGstPercent());
+	        dto.setMedicineId(first.getMedicineId());
+	        dto.setMedicineName(first.getMedicineName());
+	        dto.setBrand(first.getBrand());
+	        dto.setProductType(first.getProductType());
+	        dto.setHsnCode(first.getHsnCode());
+	        dto.setMinStock(first.getMinStock());
+	        dto.setGstPercent(first.getGstPercent());
 
-			double totalQty = inventoryList.stream()
-					.mapToDouble(Inventory::getAvailableQty)
-					.sum();
+	        double totalQty = inventoryList.stream()
+	                .mapToDouble(Inventory::getAvailableQty)
+	                .sum();
 
-			dto.setAvailableQty(totalQty);
+	        dto.setAvailableQty(totalQty);
 
-			dto.setInventory(inventoryList);
+	        // Default medicine level status
+	        String finalStatus = "NORMAL";
 
-			// STATUS PRIORITY
-			String finalStatus = "NORMAL";
+	        for (Inventory inv : inventoryList) {
 
-			for (Inventory inv : inventoryList) {
+	            LocalDate expiry = LocalDate.parse(inv.getExpiryDate(), formatter);
+	            long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiry);
 
-				LocalDate expiry = LocalDate.parse(inv.getExpiryDate(), formatter);
-				long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiry);
+	            String batchStatus = "NORMAL";
 
-				if (daysLeft <= 0) {
-					finalStatus = "EXPIRED";
-					break;
-				}
-				else if (daysLeft <= 30) {
-					finalStatus = "EXPIRING_SOON";
-				}
-				else if (inv.getAvailableQty() == 0 && !finalStatus.equals("EXPIRING_SOON")) {
-					finalStatus = "OUT_OF_STOCK";
-				}
-				else if (inv.getAvailableQty() <= inv.getMinStock()
-						&& finalStatus.equals("NORMAL")) {
-					finalStatus = "LOW_STOCK";
-				}
-			}
+	            if (daysLeft <= 0) {
+	                batchStatus = "EXPIRED";
+	                finalStatus = "EXPIRED";
+	            }
+	            else if (daysLeft <= 30) {
+	                batchStatus = "EXPIRING_SOON";
+	                if (!finalStatus.equals("EXPIRED")) {
+	                    finalStatus = "EXPIRING_SOON";
+	                }
+	            }
+	            else if (inv.getAvailableQty() <= 0) {
+	                batchStatus = "OUT_OF_STOCK";
+	                if (finalStatus.equals("NORMAL")) {
+	                    finalStatus = "OUT_OF_STOCK";
+	                }
+	            }
+	            else if (inv.getAvailableQty() <= inv.getMinStock()) {
+	                batchStatus = "LOW_STOCK";
+	                if (finalStatus.equals("NORMAL")) {
+	                    finalStatus = "LOW_STOCK";
+	                }
+	            }
 
-			dto.setStatus(finalStatus);
+	            // Set status for each inventory batch
+	            inv.setStatus(batchStatus);
+	        }
 
-			responseList.add(dto);
-		}
+	        dto.setStatus(finalStatus);
 
-		return Response.builder()
-				.success(true)
-				.data(responseList)
-				.message("Inventory fetched successfully")
-				.status(HttpStatus.OK.value())
-				.build();
+	        dto.setInventory(inventoryList);
+
+	        responseList.add(dto);
+	    }
+
+	    return Response.builder()
+	            .success(true)
+	            .data(responseList)
+	            .message("Inventory fetched successfully")
+	            .status(HttpStatus.OK.value())
+	            .build();
 	}
 
 	@Override
