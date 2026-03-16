@@ -19,4 +19,9 @@ public interface PurchaseBillRepository extends MongoRepository<PurchaseBill, St
 	@Query("{ 'date' : { $gte: ?0, $lte: ?1 } }")
 	List<PurchaseBill> findByDateRange(String fromDate, String toDate);
 
+	List<PurchaseBill> findByClinicIdAndBranchId(String clinicId, String branchId);
+
+	Optional<PurchaseBill> findByClinicIdAndBranchIdAndPurchaseBillNo(String clinicId, String branchId,
+			String purchaseBillNo);
+
 }

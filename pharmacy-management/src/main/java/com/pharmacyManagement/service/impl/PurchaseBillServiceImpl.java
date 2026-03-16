@@ -341,4 +341,54 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 
 		return res;
 	}
+	@Override
+	public Response getPurchaseByClinicIdAndBranchId(String clinicId, String branchId) {
+
+	    Response res = new Response();
+
+	    List<PurchaseBill> list =
+	            purchaseRepository.findByClinicIdAndBranchId(clinicId, branchId);
+
+	    if (!list.isEmpty()) {
+
+	        res.setSuccess(true);
+	        res.setData(list);
+	        res.setMessage("Purchase bills fetched successfully");
+	        res.setStatus(HttpStatus.OK.value());
+
+	    } else {
+
+	        res.setSuccess(false);
+	        res.setMessage("No purchase bills found");
+	        res.setStatus(HttpStatus.NOT_FOUND.value());
+	    }
+
+	    return res;
+	}
+
+	@Override
+	public Response getPurchaseByClinicBranchAndBillNo(String clinicId,String branchId,String purchaseBillNo) {
+
+	    Response res = new Response();
+
+	    Optional<PurchaseBill> purchaseBill =
+	            purchaseRepository.findByClinicIdAndBranchIdAndPurchaseBillNo(
+	                    clinicId, branchId, purchaseBillNo);
+
+	    if (purchaseBill.isPresent()) {
+
+	        res.setSuccess(true);
+	        res.setData(purchaseBill.get());
+	        res.setMessage("Purchase bill fetched successfully");
+	        res.setStatus(HttpStatus.OK.value());
+
+	    } else {
+
+	        res.setSuccess(false);
+	        res.setMessage("Purchase bill not found");
+	        res.setStatus(HttpStatus.NOT_FOUND.value());
+	    }
+
+	    return res;
+	}
 }

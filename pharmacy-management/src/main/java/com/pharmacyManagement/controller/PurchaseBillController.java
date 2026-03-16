@@ -59,4 +59,27 @@ public class PurchaseBillController {
 		Response res = purchaseService.deletePurchase(purchaseId);
 		return ResponseEntity.status(res.getStatus()).body(res);
 	}
+	
+	@GetMapping("/getPurchaseByClinicIdAndBranchId/{clinicId}/{branchId}")
+	public ResponseEntity<Response> getPurchaseByClinicAndBranch(
+	        @PathVariable String clinicId,
+	        @PathVariable String branchId) {
+
+	    Response res = purchaseService.getPurchaseByClinicIdAndBranchId(clinicId, branchId);
+
+	    return ResponseEntity.status(res.getStatus()).body(res);
+	}
+	
+	@GetMapping("/getPurchaseByclinicIdBranchIdBillNo/{clinicId}/{branchId}/{purchaseBillNo}")
+	public ResponseEntity<Response> getPurchaseByclinicIdBranchIdBillNo(
+	        @PathVariable String clinicId,
+	        @PathVariable String branchId,
+	        @PathVariable String purchaseBillNo) {
+
+	    Response res =
+	            purchaseService.getPurchaseByClinicBranchAndBillNo(
+	                    clinicId, branchId, purchaseBillNo);
+
+	    return ResponseEntity.status(res.getStatus()).body(res);
+	}
 }
