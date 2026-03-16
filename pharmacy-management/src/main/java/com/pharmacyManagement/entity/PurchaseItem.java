@@ -31,5 +31,6 @@ public class PurchaseItem {
 	private double netAmount;
 	private double actualMedicineCostExculdeGst;
 	private double totalQty; // qunatity+freeQuanttiy
+	private double availableQty;
 
 }

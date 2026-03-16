@@ -1,6 +1,7 @@
 package com.pharmacyManagement.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 
@@ -19,4 +20,5 @@ public interface InventoryRepository extends MongoRepository<Inventory, String> 
 	            String clinicId,
 	            String branchId
 	    );
+	Optional<Inventory> findByMedicineIdAndClinicIdAndBranchId(String productId, String clinicId, String branchId);
 }
