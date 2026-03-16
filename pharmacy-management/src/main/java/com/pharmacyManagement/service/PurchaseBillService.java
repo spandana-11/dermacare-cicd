@@ -14,4 +14,8 @@ public interface PurchaseBillService {
 	Response updatePurchase(String purchaseId, PurchaseBillDTO dto);
 
 	Response deletePurchase(String purchaseId);
+
+	Response getPurchaseByClinicIdAndBranchId(String clinicId, String branchId);
+
+	Response getPurchaseByClinicBranchAndBillNo(String clinicId, String branchId, String purchaseBillNo);
 }
