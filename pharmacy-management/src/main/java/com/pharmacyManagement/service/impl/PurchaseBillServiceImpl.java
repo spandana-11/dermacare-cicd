@@ -346,13 +346,31 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 
 	    Response res = new Response();
 
-	    List<PurchaseBill> list =
+	    List<PurchaseBill> bills =
 	            purchaseRepository.findByClinicIdAndBranchId(clinicId, branchId);
 
-	    if (!list.isEmpty()) {
+	    if (!bills.isEmpty()) {
+
+	        for (PurchaseBill bill : bills) {
+
+	            for (PurchaseItem item : bill.getItems()) {
+
+	                Optional<Inventory> inventory =
+	                        inventoryRepository.findByMedicineIdAndClinicIdAndBranchId(
+	                                item.getProductId(),
+	                                clinicId,
+	                                branchId);
+
+	                if (inventory.isPresent()) {
+	                    item.setAvailableQty(inventory.get().getAvailableQty());
+	                } else {
+	                    item.setAvailableQty(0);
+	                }
+	            }
+	        }
 
 	        res.setSuccess(true);
-	        res.setData(list);
+	        res.setData(bills);
 	        res.setMessage("Purchase bills fetched successfully");
 	        res.setStatus(HttpStatus.OK.value());
 
@@ -365,9 +383,11 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 
 	    return res;
 	}
-
 	@Override
-	public Response getPurchaseByClinicBranchAndBillNo(String clinicId,String branchId,String purchaseBillNo) {
+	public Response getPurchaseByClinicBranchAndBillNo(
+	        String clinicId,
+	        String branchId,
+	        String purchaseBillNo) {
 
 	    Response res = new Response();
 
@@ -377,8 +397,29 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 
 	    if (purchaseBill.isPresent()) {
 
+	        PurchaseBill bill = purchaseBill.get();
+
+	        // 🔹 Fetch availableQty from Inventory
+	        if (bill.getItems() != null) {
+
+	            for (PurchaseItem item : bill.getItems()) {
+
+	                Optional<Inventory> inventory =
+	                        inventoryRepository.findByMedicineIdAndClinicIdAndBranchId(
+	                                item.getProductId(),
+	                                clinicId,
+	                                branchId);
+
+	                if (inventory.isPresent()) {
+	                    item.setAvailableQty(inventory.get().getAvailableQty());
+	                } else {
+	                    item.setAvailableQty(0);
+	                }
+	            }
+	        }
+
 	        res.setSuccess(true);
-	        res.setData(purchaseBill.get());
+	        res.setData(bill);
 	        res.setMessage("Purchase bill fetched successfully");
 	        res.setStatus(HttpStatus.OK.value());
 
