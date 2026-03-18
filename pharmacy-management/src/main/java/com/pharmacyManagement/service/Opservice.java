@@ -7,11 +7,10 @@ import com.pharmacyManagement.dto.Response;
 public interface Opservice {
 	
 	// 1. CREATE
-    ResponseEntity<Response> createOpSales(OpSalesRequest request);
-
+	  ResponseEntity<Response> createOpSales(OpSalesRequest request);
+		   
     // 2. UPDATE
-    ResponseEntity<Response> updateOpSales(String id, OpSalesRequest request);
-
+	 public ResponseEntity<Response> updateOpSales(OpSalesRequest request);
     // 3. GET ALL
     ResponseEntity<Response> getAllOpSales(String clinicId, String branchId);
 
@@ -22,8 +21,8 @@ public interface Opservice {
     ResponseEntity<Response> getById(String id);
 
     // 5. GET BY OPNO
-    ResponseEntity<Response> getByOpNo(String clinicId, String branchId, String opNo);
-
+    public ResponseEntity<Response> getByOpNo(String clinicId, String branchId, String opNo,String mobileNumber);
+        
     // 6. DELETE
     ResponseEntity<Response> deleteOpSales(String clinicId, String branchId, String id);
 

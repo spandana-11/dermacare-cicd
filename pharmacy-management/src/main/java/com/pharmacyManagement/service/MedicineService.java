@@ -1,6 +1,7 @@
 package com.pharmacyManagement.service;
 
 import com.pharmacyManagement.dto.MedicineDTO;
+import com.pharmacyManagement.dto.MedicineInventoryDto;
 import com.pharmacyManagement.dto.Response;
 
 public interface MedicineService {
@@ -16,4 +17,7 @@ public interface MedicineService {
     Response deleteMedicine(String id);
     
     Response getMedicineByBarcode(String barcode);
+    
+    public MedicineInventoryDto getMedicineInventory(String medicineId);
+
 }

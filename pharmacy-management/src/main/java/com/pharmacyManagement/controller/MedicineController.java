@@ -4,6 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.pharmacyManagement.dto.MedicineDTO;
+import com.pharmacyManagement.dto.MedicineInventoryDto;
 import com.pharmacyManagement.dto.Response;
 import com.pharmacyManagement.service.MedicineService;
 
@@ -66,5 +67,15 @@ public class MedicineController {
 
         return ResponseEntity.status(response.getStatus())
                 .body(response);
+    }
+    
+    
+    @GetMapping("/medicineInventory/{medicineId}")
+    public ResponseEntity<MedicineInventoryDto> getMedicineInventory(@PathVariable String medicineId) {
+
+        MedicineInventoryDto response =
+        		service.getMedicineInventory(medicineId);
+
+        return ResponseEntity.ok(response);
     }
 }

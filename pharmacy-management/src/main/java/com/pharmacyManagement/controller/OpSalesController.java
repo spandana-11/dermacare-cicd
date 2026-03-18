@@ -24,7 +24,6 @@ public class OpSalesController {
 	@Autowired
     private Opservice opSalesService;
     
-
     // ─────────────────────────────────────────────────────────────
     // 1. CREATE
     // ─────────────────────────────────────────────────────────────
@@ -39,13 +38,12 @@ public class OpSalesController {
     // ─────────────────────────────────────────────────────────────
     // 2. UPDATE
     // ─────────────────────────────────────────────────────────────
-    @PutMapping("/updateSale/{id}")
+    @PutMapping("/updateSale")
     public ResponseEntity<Response> updateOpSales(
-            @PathVariable String id,
             @RequestBody OpSalesRequest request) {
 
-        log.info("REST request to update OP Sales id: {}", id);
-        return opSalesService.updateOpSales(id, request);
+        log.info("REST request to update OP Sales id: {}", request.getBillNo());
+        return opSalesService.updateOpSales(request);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -85,14 +83,17 @@ public class OpSalesController {
     // ─────────────────────────────────────────────────────────────
     // 5. GET BY OPNO
     // ─────────────────────────────────────────────────────────────
-    @GetMapping("/{clinicId}/{branchId}/opno/{opNo}")
+    @GetMapping("/{clinicId}/{branchId}/opno/{opNo}/{mobileNumber}")
     public ResponseEntity<Response> getByOpNo(
     		 @PathVariable String clinicId,
     		 @PathVariable String branchId,
-    		 @PathVariable String opNo) {
+    		 @PathVariable String opNo,
+    		 @PathVariable String mobileNumber) {
 
         log.info("REST request to fetch OP Sales by opNo");
-        return opSalesService.getByOpNo(clinicId, branchId, opNo);
+        System.out.println(opNo); 
+        System.out.println(mobileNumber);
+        return opSalesService.getByOpNo(clinicId, branchId, opNo,mobileNumber);
     }
 
     // ─────────────────────────────────────────────────────────────

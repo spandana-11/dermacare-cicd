@@ -3,11 +3,15 @@ package com.pharmacyManagement.service.impl;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.pharmacyManagement.dto.MedicineDTO;
+import com.pharmacyManagement.dto.MedicineInventoryDto;
 import com.pharmacyManagement.dto.Response;
+import com.pharmacyManagement.entity.Inventory;
 import com.pharmacyManagement.entity.Medicine;
+import com.pharmacyManagement.repository.InventoryRepository;
 import com.pharmacyManagement.repository.MedicineRepository;
 import com.pharmacyManagement.service.MedicineService;
 import com.pharmacyManagement.util.MedicineMapper;
@@ -19,6 +23,13 @@ import lombok.RequiredArgsConstructor;
 public class MedicineServiceImpl implements MedicineService {
 
     private final MedicineRepository repository;
+    
+    @Autowired
+    private MedicineRepository medicineRepository;
+
+    @Autowired
+    private InventoryRepository inventoryRepository;
+
 
     // 1️⃣ ADD MEDICINE
     @Override
@@ -181,5 +192,42 @@ public class MedicineServiceImpl implements MedicineService {
 
         return "BC" + hsnCode +
                 timePart.substring(timePart.length() - 4);
+    }
+    
+    
+    public MedicineInventoryDto getMedicineInventory(String medicineId) {
+
+        Medicine medicine = medicineRepository.findById(medicineId)
+                .orElseThrow(() -> new RuntimeException("Medicine not found"));
+
+        Inventory inventory = inventoryRepository.findByMedicineId(medicineId)
+                .orElseThrow(() -> new RuntimeException("Inventory not found"));
+
+        MedicineInventoryDto dto = new MedicineInventoryDto();
+
+        // Medicine fields
+        dto.setId(medicine.getId());
+        dto.setBarcode(medicine.getBarcode());
+        dto.setProductName(medicine.getProductName());
+        dto.setBrandName(medicine.getBrandName());
+        dto.setCategory(medicine.getCategory());
+        dto.setComposition(medicine.getComposition());
+        dto.setManufacturer(medicine.getManufacturer());
+        dto.setPackSize(medicine.getPackSize());
+        dto.setHsnCode(medicine.getHsnCode());
+        dto.setGstPercent(medicine.getGstPercent());
+        dto.setMrp(medicine.getMrp());
+        dto.setMinStock(medicine.getMinStock());
+        dto.setStatus(medicine.getStatus());
+        dto.setClinicId(medicine.getClinicId());
+        dto.setBranchId(medicine.getBranchId());
+        dto.setCreatedAt(medicine.getCreatedAt());
+        dto.setAvailableQty(inventory.getAvailableQty());
+        // Inventory fields
+        dto.setPack(inventory.getPack());
+        dto.setBatchNo(inventory.getBatchNo());
+        dto.setExpiryDate(inventory.getExpiryDate());
+
+        return dto;
     }
 }

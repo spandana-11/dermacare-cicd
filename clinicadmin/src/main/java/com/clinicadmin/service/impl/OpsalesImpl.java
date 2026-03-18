@@ -29,13 +29,11 @@ public class OpsalesImpl implements OpService {
      return res;
   }
       
-      public ResponseEntity<Response> updateOpSales(
-              String id,
-              OpSalesRequest request) {
+      public ResponseEntity<Response> updateOpSales(OpSalesRequest request) {
     	  ResponseEntity<Response> res = null;
     	  try {
-          log.info("CLINIC-ADMIN:REST request to update OP Sales id: {}", id);
-          res = pharmacyManagementFeignClient.updateOpSales(id, request);}
+          log.info("CLINIC-ADMIN:REST request to update OP Sales id: {}", request.getBillNo());
+          res = pharmacyManagementFeignClient.updateOpSales(request);}
     	  catch(FeignClientException e) {}
     	  return res;
       }
