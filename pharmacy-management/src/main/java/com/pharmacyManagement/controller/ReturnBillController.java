@@ -21,7 +21,7 @@ public class ReturnBillController {
     private  ReturnBillService service;
 
     // =========================
-    // ✅ CREATE
+    //  CREATE RETURN BILL
     // =========================
     @PostMapping("/createReturnBill")
     public ResponseEntity<Response> createReturnBill(@RequestBody ReturnBillDTO dto) {
@@ -32,7 +32,7 @@ public class ReturnBillController {
     }
 
     // =========================
-    // ✅ GET BY RECEIPT NO
+    //  GET BY RECEIPT NO
     // =========================
     @GetMapping("getByreceiptNo/{receiptNo}")
     public ResponseEntity<Response> getByreceiptNo(@PathVariable String receiptNo) {
@@ -43,9 +43,9 @@ public class ReturnBillController {
     }
 
     // =========================
-    // ✅ GET BY CLINIC + BRANCH
+    //  GET BY CLINIC + BRANCH
     // =========================
-    @GetMapping("/getByClinicIdAndBranchId/{clinicId}/{branchId}")
+    @GetMapping("/getReturnByClinicIdAndBranchId/{clinicId}/{branchId}")
     public ResponseEntity<Response> getByClinicIdAndBranchId(
             @PathVariable String clinicId,
             @PathVariable String branchId) {
@@ -54,9 +54,32 @@ public class ReturnBillController {
 
         return ResponseEntity.status(res.getStatus()).body(res);
     }
+    // =========================
+    //  UPDATE BY RECEIPT NO 
+    // =========================
+    @PutMapping("updateByReceiptNo/{receiptNo}")
+    public ResponseEntity<Response> updateByReceiptNo(
+            @PathVariable String receiptNo,
+            @RequestBody ReturnBillDTO dto) {
+
+        Response res = service.updateByReceiptNo(receiptNo, dto);
+        return ResponseEntity.status(res.getStatus()).body(res);
+    }
+    // =========================
+    //  GET BY CLINICID  BRANCHID AND RECEIPT NO
+    // =========================
+    @GetMapping("/getByClinicIdBranchIdAndReceiptNo/{clinicId}/{branchId}/{receiptNo}")
+    public ResponseEntity<Response> getByClinicIdBranchIdAndReceiptNo(
+            @PathVariable String clinicId,
+            @PathVariable String branchId,
+            @PathVariable String receiptNo) {
+
+        Response res = service.getByClinicBranchAndReceiptNo(clinicId, branchId, receiptNo);
+        return ResponseEntity.status(res.getStatus()).body(res);
+    }
 
     // =========================
-    // ✅ DELETE
+    //  DELETE BY RECEIPT NO
     // =========================
     @DeleteMapping("/deleteByreceiptNo/{receiptNo}")
     public ResponseEntity<Response> deleteByreceiptNo(@PathVariable String receiptNo) {

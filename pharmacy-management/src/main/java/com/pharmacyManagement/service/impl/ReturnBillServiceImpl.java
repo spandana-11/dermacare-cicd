@@ -37,7 +37,7 @@ public class ReturnBillServiceImpl implements ReturnBillService {
     private  MongoTemplate mongoTemplate;
 
     // =========================
-    // ✅ CREATE
+    //  CREATE RETURN BILL 
     // =========================
     @Override
     public Response createReturnBill(ReturnBillDTO dto) {
@@ -70,7 +70,7 @@ public class ReturnBillServiceImpl implements ReturnBillService {
     }
 
     // =========================
-    // ✅ GET BY ID
+    //  GET BY RECEPITNO
     // =========================
     @Override
     public Response getByreceiptNo(String receiptNo) {
@@ -107,7 +107,7 @@ public class ReturnBillServiceImpl implements ReturnBillService {
     }
 
     // =========================
-    // ✅ GET BY CLINIC + BRANCH
+    //  GET BY CLINIC + BRANCH
     // =========================
     @Override
     public Response getByClinicIdAndBranchId(String clinicId, String branchId) {
@@ -146,7 +146,7 @@ public class ReturnBillServiceImpl implements ReturnBillService {
     }
 
     // =========================
-    // ✅ DELETE
+    //  DELETE BY RECEIPTNO
     // =========================
     @Override
     public Response deleteByreceiptNo(String receiptNo) {
@@ -180,12 +180,129 @@ public class ReturnBillServiceImpl implements ReturnBillService {
 
         return res;
     }
+    
+    // =========================
+    //  GET BY CLINIC ID BRANCH ID AND RECEIPTNO
+    // =========================
+    @Override
+    public Response getByClinicBranchAndReceiptNo(String clinicId, String branchId, String receiptNo) {
 
-    // =========================================================
-    // 🔥 REUSABLE METHODS (IMPORTANT)
-    // =========================================================
+        Response res = new Response();
 
-    // ✅ Generate Receipt No
+        try {
+
+            Optional<ReturnBill> optional =
+                    repository.findByReceiptNoAndClinicIdAndBranchId(receiptNo, clinicId, branchId);
+
+            if (optional.isEmpty()) {
+
+                res.setSuccess(false);
+                res.setMessage("Data not found");
+                res.setStatus(HttpStatus.NOT_FOUND.value());
+                return res;
+            }
+
+            ReturnBillDTO dto = mapToDTO(optional.get());
+
+            res.setSuccess(true);
+            res.setMessage("Fetched successfully");
+            res.setStatus(HttpStatus.OK.value());
+            res.setData(dto);
+
+        } catch (Exception e) {
+
+            res.setSuccess(false);
+            res.setMessage("Error: " + e.getMessage());
+            res.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+        return res;
+    }
+    
+    // =========================
+    //  UPDATE BY RECEIPTNO
+    // =========================
+
+    @Override
+    public Response updateByReceiptNo(String receiptNo, ReturnBillDTO dto) {
+
+        Response res = new Response();
+
+        try {
+
+            Optional<ReturnBill> optional = repository.findById(receiptNo);
+
+            if (optional.isEmpty()) {
+
+                res.setSuccess(false);
+                res.setMessage("Return bill not found with receiptNo: " + receiptNo);
+                res.setStatus(HttpStatus.NOT_FOUND.value());
+                return res;
+            }
+
+            ReturnBill entity = optional.get();
+
+            entity.setBillNo(dto.getBillNo());
+            entity.setSupplierName(dto.getSupplierName());
+            entity.setSupplierId(dto.getSupplierId());
+            entity.setReturnType(dto.getReturnType());
+            entity.setRefundMode(dto.getRefundMode());
+            entity.setClinicId(dto.getClinicId());
+            entity.setBranchId(dto.getBranchId());
+            entity.setCreatedBy(dto.getCreatedBy());
+
+         
+            List<ReturnItem> items = dto.getItems().stream().map(i -> {
+
+                ReturnItem item = new ReturnItem();
+
+                item.setProductId(i.getProductId());
+                item.setProductName(i.getProductName());
+                item.setBatchNo(i.getBatchNo());
+                item.setReturnQty(i.getReturnQty());
+                item.setNetRate(i.getNetRate());
+                item.setMrp(i.getMrp());
+                item.setReason(i.getReason());
+                item.setAvailableStock(i.getAvailableStock());
+
+                //  calculation
+                double returnAmount = i.getReturnQty() * i.getNetRate();
+                item.setReturnAmount(returnAmount);
+
+                return item;
+
+            }).collect(Collectors.toList());
+
+            entity.setItems(items);
+
+         
+            double totalAmount = items.stream()
+                    .mapToDouble(ReturnItem::getReturnAmount)
+                    .sum();
+
+            entity.setTotalAmount(totalAmount);
+
+            repository.save(entity);
+
+          
+            ReturnBillDTO responseDTO = mapToDTO(entity);
+
+            res.setSuccess(true);
+            res.setMessage("Updated successfully");
+            res.setStatus(HttpStatus.OK.value());
+            res.setData(responseDTO);
+
+        } catch (Exception e) {
+
+            res.setSuccess(false);
+            res.setMessage("Error: " + e.getMessage());
+            res.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+        return res;
+    }
+
+    //  Generate Receipt No
     private String generateReceiptNo(String supplierName) {
 
         String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
@@ -210,7 +327,7 @@ public class ReturnBillServiceImpl implements ReturnBillService {
         return prefix + "-" + date + "-" + String.format("%04d", seq);
     }
 
-    // ✅ DTO → ENTITY
+    //  DTO → ENTITY
     private ReturnBill mapToEntity(ReturnBillDTO dto, String receiptNo) {
 
         ReturnBill entity = new ReturnBill();
@@ -257,7 +374,7 @@ public class ReturnBillServiceImpl implements ReturnBillService {
         return entity;
     }
 
-    // ✅ ENTITY → DTO
+    //  ENTITY → DTO
     private ReturnBillDTO mapToDTO(ReturnBill entity) {
 
         ReturnBillDTO dto = new ReturnBillDTO();

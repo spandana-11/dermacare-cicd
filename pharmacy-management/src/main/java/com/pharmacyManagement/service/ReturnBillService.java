@@ -12,4 +12,8 @@ public interface ReturnBillService {
     Response getByClinicIdAndBranchId(String clinicId, String branchId);
 
     Response deleteByreceiptNo(String receiptNo);
+
+	Response getByClinicBranchAndReceiptNo(String clinicId, String branchId, String receiptNo);
+
+	Response updateByReceiptNo(String receiptNo, ReturnBillDTO dto);
 }
