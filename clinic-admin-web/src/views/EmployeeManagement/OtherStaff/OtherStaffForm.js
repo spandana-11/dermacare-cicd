@@ -1103,7 +1103,7 @@ const OtherStaffForm = ({
                                                 handleNestedChange('bankAccountDetails', 'branchName', '')
                                               }
                                             } catch (err) {
-                                              showCustomToast('Error fetching bank details', 'error')
+                                              // showCustomToast('Error fetching bank details', 'error')
                                               handleNestedChange('bankAccountDetails', 'bankName', '')
                                               handleNestedChange('bankAccountDetails', 'branchName', '')
                                             } finally {

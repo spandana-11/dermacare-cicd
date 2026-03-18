@@ -47,9 +47,9 @@ export const postClinicData = async (serviceData) => {
     return response.data
   } catch (error) {
     console.error('Error response:', error.response)
-    alert(
-      `Error: ${error.response.status} - ${error.response.data.message || error.response.statusText}`,
-    )
+    // alert(
+    //   `Error: ${error.response.status} - ${error.response.data.message || error.response.statusText}`,
+    // )
   }
 }
 

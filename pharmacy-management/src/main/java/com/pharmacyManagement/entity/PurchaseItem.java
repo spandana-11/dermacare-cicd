@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class PurchaseItem {
 	private String productId;
+	private String purchaseBillNo;
 	private String productName;
 	private String batchNo;
 	private String expiryDate;

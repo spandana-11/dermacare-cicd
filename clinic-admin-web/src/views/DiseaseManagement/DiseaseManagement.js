@@ -108,7 +108,7 @@ const DiseasesManagement = () => {
       // fetchData()
       fetchDataByHid(hospitalId)
     } catch (error) {
-      showCustomToast('Failed to delete disease.', 'error')
+      // showCustomToast('Failed to delete disease.', 'error')
       console.error('Delete error:', error)
     }
      finally {
@@ -204,7 +204,7 @@ const DiseasesManagement = () => {
         error.response?.data?.message ||
         error.response?.statusText ||
         'An unexpected error occurred.'
-      showCustomToast(`Error adding disease: ${errorMessage}`, 'error')
+      // showCustomToast(`Error adding disease: ${errorMessage}`, 'error')
     } finally {
       setSaveLoading(false)
     }
@@ -258,7 +258,7 @@ const DiseasesManagement = () => {
       setEditDiseaseMode(false)
     } catch (error) {
       console.error('Update error:', error)
-      showCustomToast('Failed to update disease.', 'error')
+      // showCustomToast('Failed to update disease.', 'error')
     }
      finally {
       setSaveLoading(false)

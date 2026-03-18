@@ -1,6 +1,5 @@
 // import https from 'https'
-import axios from 'axios'
-import { https } from '../../Utils/Interceptors'
+import { http, https } from '../../Utils/Interceptors'
 import { wifiUrl } from '../../baseUrl'
 
 // ======================================================
@@ -8,7 +7,7 @@ import { wifiUrl } from '../../baseUrl'
 // ======================================================
 export const Areadata = async () => {
   try {
-    const response = await axios.get(`${wifiUrl}/api/pharmacy/area/all`)
+    const response = await http.get(`${wifiUrl}/api/pharmacy/area/all`)
     console.log('area data:', response.data)
     return response.data
   } catch (error) {
@@ -36,7 +35,7 @@ export const getAreabyId = async (id) => {
 }
 export const getAreabyCityId = async (cityId) => {
   try {
-    const response = await axios.get(`${wifiUrl}/api/pharmacy/area/city/${cityId}`)
+    const response = await http.get(`${wifiUrl}/api/pharmacy/area/city/${cityId}`)
     console.log('area data:', response.data)
     return response.data
   } catch (error) {
@@ -60,7 +59,7 @@ export const postAreaData = async (data) => {
       areaNames: data.areaNames, // ✅ correct array
     }
 
-    const response = await axios.post(`${wifiUrl}/api/pharmacy/area/save`, requestData)
+    const response = await http.post(`${wifiUrl}/api/pharmacy/area/save`, requestData)
     return response.data
   } catch (error) {
     console.error('Area Save Error:', error)

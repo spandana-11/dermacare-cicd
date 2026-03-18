@@ -752,7 +752,7 @@ const ServiceManagement = () => {
   console.error('Error in handleAddService:', error?.response);
 
 
-  showCustomToast(response.data.message, 'success', { position: 'top-right' })
+  // showCustomToast(response.data.message, 'success', { position: 'top-right' })
 
 } finally {
       setSaveLoading(false)
@@ -879,7 +879,7 @@ const ServiceManagement = () => {
       fetchData()
     } catch (error) {
       console.error('Update failed:', error)
-      showCustomToast('Error updating service.', { position: 'top-right' }, 'error')
+      // showCustomToast('Error updating service.', { position: 'top-right' }, 'error')
     } finally {
       setSaveLoading(false)
     }

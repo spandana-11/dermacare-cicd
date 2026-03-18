@@ -239,7 +239,7 @@ const CategoryManagement = () => {
       setModalVisible(false)
     } catch (error) {
       console.error('Error adding category:', error)
-      showCustomToast(error.message, { position: 'top-right' },'error')
+      // showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
   const handleCategoryEdit = (category) => {
@@ -272,7 +272,7 @@ const CategoryManagement = () => {
       fetchData()
     } catch (error) {
       console.error('Error updating category:', error)
-      showCustomToast(error.message, { position: 'top-right' },'error')
+      // showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
 

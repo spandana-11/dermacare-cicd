@@ -37,6 +37,9 @@ const CustomerManagement = React.lazy(() => import('./views/customerManagement/C
 const LabTechnicianManagement = React.lazy(
   () => import('./views/EmployeeManagement/LabTechnicians/LabTechniciansManagement'),
 )
+const PackageManagement = React.lazy(
+  () => import('./views/Packages/PAckagemanagement'),
+)
 const FrontDeskManagement = React.lazy(
   () => import('./views/EmployeeManagement/FrontDesk/FrontDeskManagement'),
 )
@@ -84,10 +87,17 @@ const routes = [
     name: 'Lab Technician',
     element: LabTechnicianManagement,
   },
+  
   { path: '/employee-management/pharmacist', name: 'Pharmacist', element: PharmacistManagement },
   { path: '/employee-management', name: 'Employee Management', element: EmployeeManagement },
 
   { path: '/pharmacy-management', name: 'Pharmacy Management', element: PharmacyManagement },
+ { 
+  path: '/package-management', 
+  name: 'Package Management', 
+  element: PackageManagement 
+}
+,
   { path: '/receptionist', name: 'Receptionist', element: Receptionist },
 
   { path: '/disease', name: 'Disease Management', element: Disease },

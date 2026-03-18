@@ -115,7 +115,7 @@ const SecurityManagement = () => {
         setModalVisible(true) // keep modal open
       } else {
         console.error('API error:', err)
-        showCustomToast('Failed to save Other Staff.', 'error')
+        // showCustomToast('Failed to save Other Staff.', 'error')
       }
     }
   }
@@ -129,7 +129,7 @@ const SecurityManagement = () => {
       setTechnicians((prev) => prev.filter((t) => t.securityStaffId !== id))
       showCustomToast('Security deleted successfully!', 'success')
     } catch (err) {
-      showCustomToast('❌ Failed to delete security.', 'error')
+      // showCustomToast('❌ Failed to delete security.', 'error')
       console.error('Delete error:', err)
     } finally {
       setIsModalVisible(false) // close modal after action

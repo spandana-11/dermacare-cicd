@@ -318,7 +318,7 @@ const PersonalViewDetails = () => {
         console.error('Mobile number (ID) is undefined or invalid')
       }
     } catch (error) {
-      showCustomToast(error.message, { position: 'top-right' },'error')
+      // showCustomToast(error.message, { position: 'top-right' },'error')
       setError('Failed to update caregiver details.')
     } finally {
       setLoading(false)
@@ -413,7 +413,7 @@ const PersonalViewDetails = () => {
       fetchAllData(id)
     } catch (error) {
       console.error('Error updating Basic details:', error.response ? error.response.data : error)
-      showCustomToast(error.message, { position: 'top-right' },'error')
+      // showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
 
@@ -545,7 +545,7 @@ const PersonalViewDetails = () => {
         'Error updating Qualifications details:',
         error.response ? error.response.data : error,
       )
-      showCustomToast(error.message, { position: 'top-right' },'error')
+      // showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
 
@@ -691,7 +691,7 @@ const PersonalViewDetails = () => {
         autoClose: 3000,
       })
     } catch (error) {
-      showCustomToast(error.message, { position: 'top-right' },'error')
+      // showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
 
@@ -744,7 +744,7 @@ const PersonalViewDetails = () => {
       }
     } catch (error) {
       console.error('Error removing experience:', error)
-      showCustomToast(error.message, { position: 'top-right' },'error')
+      // showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
 
@@ -906,7 +906,7 @@ const PersonalViewDetails = () => {
         await fetchAllData(id)
       }
     } catch (error) {
-      showCustomToast(error.message, { position: 'top-right' },'error')
+      // showCustomToast(error.message, { position: 'top-right' },'error')
 
       if (error.response) {
         console.error('API response error:', error.response.data)
@@ -1093,7 +1093,7 @@ const PersonalViewDetails = () => {
       }
     } catch (error) {
       console.error('Error updating course:', error.response?.data || error.message);
-      showCustomToast(error.message, { position: 'top-right' },'error')
+      // showCustomToast(error.message, { position: 'top-right' },'error')
     }
   };
   
@@ -1147,7 +1147,7 @@ const PersonalViewDetails = () => {
       }
     } catch (error) {
       console.error('Error removing course:', error)
-      showCustomToast(error.message, { position: 'top-right' },'error')
+      // showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
 
@@ -1249,7 +1249,7 @@ const PersonalViewDetails = () => {
         await fetchAllData(id)
       }
     } catch (error) {
-      showCustomToast(error.message, { position: 'top-right' },'error')
+      // showCustomToast(error.message, { position: 'top-right' },'error')
 
       if (error.response) {
         console.error('API response error:', error.response.data)
@@ -1422,7 +1422,7 @@ const PersonalViewDetails = () => {
       })
     } catch (error) {
       console.error('Error updating bank details:', error.response ? error.response.data : error)
-      showCustomToast(error.message, { position: 'top-right' },'error')
+      // showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
 
@@ -1497,7 +1497,7 @@ const PersonalViewDetails = () => {
         'Error updating Verification details:',
         error.response ? error.response.data : error,
       )
-      showCustomToast(error.message, { position: 'top-right' },'error')
+      // showCustomToast(error.message, { position: 'top-right' },'error')
     }
   }
 

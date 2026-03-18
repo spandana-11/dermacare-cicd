@@ -71,6 +71,13 @@ export const getNavigation = (permissions = {}) => {
       as: NavLink,
       icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
     },
+    {
+      component: CNavItem,
+      to: '/PAckagemanagement',
+      name: 'Package Management',
+      as: NavLink,
+      icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
+    },
 
     {
       component: CNavItem,
@@ -142,9 +149,13 @@ export const getNavigation = (permissions = {}) => {
  if (!permissions || typeof permissions !== 'object') return []
 
   // return allNav.filter((item) => permissions[item.name])
-  return allNav.filter(
-  (item) => permissions[item.name] || item.name === 'Patient Management'
+ return allNav.filter(
+  (item) =>
+    permissions[item.name] ||
+    item.name === 'Patient Management' ||
+    item.name === 'Package Management'
 )
+
 
 }
 

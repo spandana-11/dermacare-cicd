@@ -186,7 +186,7 @@ const GenericConsentForm = () => {
       setIsAdding(false) // ✅ enable adding after delete
     } catch (error) {
       console.error('Error deleting Generic Form:', error)
-      showCustomToast('Failed to delete form.', 'error')
+      // showCustomToast('Failed to delete form.', 'error')
     } finally {
       setDelLoading(false)
     }

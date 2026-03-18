@@ -1,6 +1,5 @@
 // import https from 'https'
-import axios from 'axios'
-import { https } from '../../Utils/Interceptors'
+import { http, https } from '../../Utils/Interceptors'
 import { wifiUrl } from '../../baseUrl'
 
 // ======================================================
@@ -8,7 +7,7 @@ import { wifiUrl } from '../../baseUrl'
 // ======================================================
 export const Citydata = async () => {
   try {
-    const response = await axios.get(`${wifiUrl}/api/pharmacy/city/all`)
+    const response = await http.get(`${wifiUrl}/api/pharmacy/city/all`)
     console.log('city data:', response.data.data)
     return response.data.data || [] // <-- return the array of cities
   } catch (error) {
@@ -42,7 +41,7 @@ export const getCitybyId = async (id) => {
 // ======================================================
 export const postCityData = async (data) => {
  try {
-    const response = await axios.post(
+    const response = await http.post(
       `${wifiUrl}/api/pharmacy/city/save`,
       data,
       {

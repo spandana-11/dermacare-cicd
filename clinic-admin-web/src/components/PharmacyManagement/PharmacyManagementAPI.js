@@ -1,15 +1,14 @@
 import axios from "axios";
-import { BASE_URL } from "../../baseUrl"; // Make sure this includes protocol: http:// or https://
-
+import { BASE_URL, } from "../../baseUrl"; // Make sure this includes protocol: http:// or https://
+import { http } from "../../Utils/Interceptors";
 
 // ✅ Fetch all medicine types for a clinic
-export const getMedicineTypes = async (clinicId) => {
-  if (!clinicId) return []
+export const getMedicineTypes = async () => {
 
   try {
-    const response = await axios.get(`${BASE_URL}/getMedicineTypes/${clinicId}`)
+    const response = await http.get(`${BASE_URL}/getAllMedicineTypes`)
     console.log('🔍 Medicine Types Response:', response.data)
-    return response.data?.data?.medicineTypes || []
+   return response.data?.data?.[0]?.medicineTypes || []
   } catch (error) {
     console.error('❌ Error fetching medicine types:', error)
     return []
@@ -34,7 +33,6 @@ export const addMedicineType = async ({ clinicId, typeName }) => {
 }
 
 
-// ✅ Fetch medicine templates by clinicId
 // ✅ Save prescription API (with multiple medicines)
 export const saveMedicineTemplate = async (formData) => {
   const clinicId = localStorage.getItem("HospitalId");

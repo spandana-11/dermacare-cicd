@@ -25,7 +25,7 @@ const ConsentFormHandler = ({ appointment, doctor, selectedHospital, hospitalId 
           showCustomToast('No consent form data found.','error')
         }
       } catch (err) {
-        showCustomToast('Error fetching consent form data.','error')
+        // showCustomToast('Error fetching consent form data.','error')
       } finally {
         setLoading(false)
       }

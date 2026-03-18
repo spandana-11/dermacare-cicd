@@ -13,7 +13,7 @@ export const getPharmacistsByDept = (pharmacistId) => {
 // PharmacistAPI.js
 export const addPharmacist = (payload) => {
   // return axios.post("http://localhost:8080/clinic-admin/addPharmacist", payload, {
-  return axios.post(`${BASE_URL}/addPharmacist`, payload, {
+  return http.post(`${BASE_URL}/addPharmacist`, payload, {
     headers: { "Content-Type": "application/json" },
   })
 }

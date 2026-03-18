@@ -23,7 +23,7 @@ export const updateDoctorAvailability = async (doctorId, isAvailable) => {
     // You can check either axios status or your API success field
     return response.status === 200 && response.data.success === true
   } catch (error) {
-    showCustomToast(`${error.message}` || 'Failed to update doctor availability','error')
+    // showCustomToast(`${error.message}` || 'Failed to update doctor availability','error')
     console.error('❌ Error updating availability:', error)
     return false
   }
@@ -38,7 +38,7 @@ export const handleDeleteToggle = async (doctorID) => {
     // Optional: return true or response if needed
     return response
   } catch (error) {
-    showCustomToast(`${error.message}` || 'Failed to delete doctor','error')
+    // showCustomToast(`${error.message}` || 'Failed to delete doctor','error')
     console.error('Error occurred while deleting doctor:', error.response?.data || error.message)
     // Optional: return false or error if needed
     return false

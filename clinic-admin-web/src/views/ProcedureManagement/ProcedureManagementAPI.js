@@ -130,7 +130,7 @@ export const postServiceData = async (serviceData, id) => {
     return response
   } catch (error) {
     console.error('Error response:', error.response)
-   showCustomToast(`${error.response.data.message || error.response.statusText}`,'error')
+  //  showCustomToast(`${error.response.data.message || error.response.statusText}`,'error')
   }
 }
 

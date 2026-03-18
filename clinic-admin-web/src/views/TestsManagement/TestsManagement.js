@@ -106,7 +106,7 @@ const TestsManagement = () => {
       // fetchData()
       fetchDataById(hospitalId)
     } catch (error) {
-      showCustomToast('Failed to delete test.', 'error')
+      // showCustomToast('Failed to delete test.', 'error')
       console.error('Delete error:', error)
     } finally {
       setDelLoading(false)
@@ -188,6 +188,7 @@ const TestsManagement = () => {
         {
           position: 'top-right',
         },
+        
       )
       setModalVisible(false)
       return
@@ -212,7 +213,7 @@ const TestsManagement = () => {
         error.response?.data?.message ||
         error.response?.statusText ||
         'An unexpected error occurred.'
-      showCustomToast(`Error adding test: ${errorMessage}`, { position: 'top-right' }, 'error')
+      // showCustomToast(`Error adding test: ${errorMessage}`, { position: 'top-right' }, 'error')
     } finally {
       setSaveLoading(false)
     }
@@ -257,7 +258,7 @@ const TestsManagement = () => {
       fetchDataById(hospitalId)
     } catch (error) {
       console.error('Update error:', error)
-      showCustomToast('Failed to update test.', 'error')
+      // showCustomToast('Failed to update test.', 'error')
     } finally {
       setSaveLoading(false)
     }

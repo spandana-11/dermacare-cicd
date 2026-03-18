@@ -251,7 +251,7 @@ const CustomerManagement = () => {
       setIsViewModalVisible(true)
     } catch (error) {
       console.error('Failed to fetch customer:', error)
-      showCustomToast('Failed to load customer data', 'error')
+      // showCustomToast('Failed to load customer data', 'error')
     } finally {
       setLoading(false)
     }
@@ -269,7 +269,7 @@ const CustomerManagement = () => {
       setCustomerData(updatedData)
     } catch (error) {
       console.error('Delete failed:', error)
-      showCustomToast('Failed to delete customer', 'error')
+      // showCustomToast('Failed to delete customer', 'error')
     }
   }
 
@@ -348,7 +348,7 @@ const CustomerManagement = () => {
       // setIsViewModalVisible(true)
     } catch (error) {
       console.error('Failed to fetch customer:', error)
-      showCustomToast('Failed to load customer data', 'error')
+      // showCustomToast('Failed to load customer data', 'error')
     } finally {
       setLoading(false)
     }
@@ -584,7 +584,7 @@ const CustomerManagement = () => {
       setCustomerData(updatedData)
     } catch (error) {
       console.error('Delete failed:', error)
-      showCustomToast('Failed to delete customer', 'error')
+      // showCustomToast('Failed to delete customer', 'error')
     } finally {
       setIsModalVisible(false)
       setDelLoading(false)

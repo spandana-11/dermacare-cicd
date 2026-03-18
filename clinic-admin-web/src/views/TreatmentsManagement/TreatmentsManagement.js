@@ -129,7 +129,7 @@ const TreatmentsManagement = () => {
       // fetchData()
       fetchDataBy_HId(hospitalId)
     } catch (error) {
-      showCustomToast('Failed to delete treatment.', 'error')
+      // showCustomToast('Failed to delete treatment.', 'error')
       console.error('Delete error:', error)
     } finally {
       setDelLoading(false)
@@ -196,7 +196,7 @@ const TreatmentsManagement = () => {
         error.response?.data?.message ||
         error.response?.statusText ||
         'An unexpected error occurred.'
-      showCustomToast(`Error adding treatment: ${errorMessage}`, { position: 'top-right' }, 'error')
+      // showCustomToast(`Error adding treatment: ${errorMessage}`, { position: 'top-right' }, 'error')
     } finally {
       setSaveLoading(false)
     }
@@ -245,7 +245,7 @@ const TreatmentsManagement = () => {
       setEditTreatmentMode(false)
     } catch (error) {
       console.error('Update error:', error)
-      showCustomToast('Failed to update treatment.', 'error')
+      // showCustomToast('Failed to update treatment.', 'error')
     } finally {
       setSaveLoading(false)
     }

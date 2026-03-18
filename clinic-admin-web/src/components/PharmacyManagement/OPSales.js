@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React, { useState, useEffect } from 'react'
 import {
   CRow,
@@ -14,19 +15,70 @@ import {
   CTableBody,
   CTableDataCell,
   CCardBody,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilSave, cilPrint, cilMagnifyingGlass, cilPencil, cilTrash } from '@coreui/icons'
 import { getAllOpSales } from './OpSalesAPI'
-import { Edit2, Trash } from 'lucide-react'
+import { Edit2, Trash2,Eye } from 'lucide-react'
+import { showCustomToast } from '../../Utils/Toaster'
+import { useMedicines } from '../../Context/MedicineContext'
+import Select from 'react-select'
+import { dummyMedicines, dummyPatients } from './Reorder/dummyProductData'
+import { http } from '../../Utils/Interceptors'
+import { useHospital } from '../../views/Usecontext/HospitalContext'
+import { formatDateTime } from '../../Utils/FormatDate'
+import { getInventory } from './InventoryAPI'
 
+const handleSearch = () => {
+  const searchValue = search.trim().toLowerCase()
 
+  if (!searchValue) {
+    setFilteredList(historyList)
+    return
+  }
 
-const OPSales = ({ getAllOpSales }) => {
+  const filtered = historyList.filter((item) => {
+    const billNo = item.billNo ? String(item.billNo).toLowerCase() : ''
+    const mobile = item.mobile ? String(item.mobile) : ''
+    const name = item.patientName ? item.patientName.toLowerCase() : ''
+
+    return (
+      billNo.includes(searchValue) ||
+      mobile.includes(searchValue) ||
+      name.includes(searchValue)
+    )
+  })
+
+  setFilteredList(filtered)
+}
+const OPSales = () => {
   const [OpsaleData, setOpSaleData] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [viewModal, setViewModal] = useState(false)
+const [selectedSale, setSelectedSale] = useState(null)
+  const { medicines, loading,inventory,fetchInventory } = useMedicines()
+  const [editModal, setEditModal] = useState(false);
+  const { doctorData, fetchDoctors } = useHospital()
+  const [oploading, setOPLoading] = useState(false)
+  const [editSaleId, setEditSaleId] = useState(null)
   const [search, setSearch] = useState('')
+  const [printModal, setPrintModal] = useState(false)
   const [billNo, setBillNo] = useState('')
+  const [historyModal, setHistoryModal] = useState(false)
+  const [patientMode, setPatientMode] = useState('manual')
+const [filteredList, setFilteredList] = useState([]) 
+  const [searchData, setSearchData] = useState({
+    billNo: '',
+    mobileNo: '',
+    fileNo: '',
+  })
+  const [historyList, setHistoryList] = useState([])
+  const [includeReturns, setIncludeReturns] = useState(false)
+
   const [financialYear, setFinancialYear] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
@@ -34,6 +86,7 @@ const OPSales = ({ getAllOpSales }) => {
   const [patientDetails, setPatientDetails] = useState({})
   const [roomDetails, setRoomDetails] = useState({})
   const [opNo, setOpNo] = useState('')
+
   const [selectionType, setSelectionType] = useState('')
   const [selectionBy, setSelectionBy] = useState('')
   const [medName, setMedName] = useState('')
@@ -44,18 +97,26 @@ const OPSales = ({ getAllOpSales }) => {
   const [currentStock, setCurrentStock] = useState('')
   const [batchNo, setBatchNo] = useState('')
   const [qty, setQty] = useState('')
-  const [rate, setRate] = useState('')
+  const [mrp, setmrp] = useState('')
+  const [paid, setPaid] = useState(0)
+  const [paidNow, setPaidNow] = useState(0)
+
+  const [totalPaid, setTotalPaid] = useState(0)
+  const doctorList = doctorData?.data || []
+
+  console.log(doctorData.data)
+
   const [discPerc, setDiscPerc] = useState('')
   const [discAmt, setDiscAmt] = useState('')
   const [totalAmt, setTotalAmt] = useState('')
   const [expDate, setExpDate] = useState('')
-  const [mrp, setMrp] = useState('')
+  // const [mrp, setMrp] = useState('')
 
   const [formRow, setFormRow] = useState({
     medicineName: '',
     batchNo: '',
     qty: '',
-    rate: '',
+    mrp: '',
     disc: '',
     vatPercent: '',
     paidAmt: '',
@@ -66,24 +127,131 @@ const OPSales = ({ getAllOpSales }) => {
 
   useEffect(() => {
     loadOpSales()
+    fetchInventory()
+
   }, [])
+ const handleSave = async () => {
+  console.log("opsales calling")
+
+  try {
+    const now = new Date()
+
+    const billDate = now.toISOString().slice(0, 10)
+
+    const billTime = now.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+
+    const medicinesPayload = OpsaleData.map((m) => ({
+      medicineId: m.medicineId,
+      medicineName: m.medicineName,
+      batchNo:  m.batchNo,
+      expDate: m.expiryDate,
+      qty: m.qty,
+      rate: m.mrp,
+      totalA: m.total,
+      discPercent: m.disc,
+      discAmtB: m.discAmount,
+      netAmtAB: m.netAmt,
+      gstPercent: m.gstPercent,
+      gstAmtC: m.gstamt,
+      finalAmountABC: m.finalamount,
+    }))
+
+    const payload = {
+      billNo: billNo,
+      billDate: billDate,
+      billTime: billTime,
+      visitType: patientMode === 'manual' ? 'Out Patient (Manual)' : 'Fetch by OPNO',
+      opNo: opNo,
+      payCategory: 'SELF PAY',
+      patientName: patientDetails.name,
+      mobile: patientDetails.mobilenumber,
+      age: 5,
+      sex: patientDetails.sex,
+      consultingDoctor: patientDetails.consultingDoctor,
+      includeReturns: includeReturns,
+      medicines: medicinesPayload,
+      amountPaid: paidNow,
+      clinicId: localStorage.getItem('HospitalId'),
+      branchId: localStorage.getItem('branchId'),
+    }
+
+    console.log("Payload:", payload)
+
+    let response
+
+    // 🔹 EDIT API
+    if (editSaleId) {
+      response = await http.put(`/op-sales/updateSale/${editSaleId}`, payload)
+    } 
+    // 🔹 CREATE API
+    else {
+      response = await http.post('/op-sales/createOpSales', payload)
+    }
+
+    if (response.status === 200) {
+      showCustomToast(editSaleId ? "Updated successfully ✅" : "Saved successfully ✅")
+
+      setEditSaleId(null)
+
+      loadOpSales() // refresh history list
+    }
+
+  } catch (error) {
+    console.log(error)
+    showCustomToast('Failed to save ❌')
+  }
+}
+  const handleView = (index) => {
+ const sale = filteredList[index]   // or your table data array
+  setSelectedSale(sale)
+  setViewModal(true)
+}
+
+  // const handleSave = () => {
+  //   const payload = {
+  //     billNo,
+  //     patientDetails,
+  //     items: OpsaleData,
+  //     total: totals.netAmt,
+  //     paid,
+  //     due: totals.netAmt - paid,
+  //   }
+
+  //   console.log(payload)
+  // }
 
   // ---------------- GET ALL PURCHASES ----------------
-  const loadOpSales = async () => {
-    if (!getAllOpSales) return // function not provided
-    setLoading(true)
+ const loadOpSales = async () => { 
+    setOPLoading(true)
     try {
       const data = await getAllOpSales()
-      // Expecting `data` to be an array of rows matching the table shape
-      setOpSaleData(Array.isArray(data) ? data : [])
+      // Expecting data to be an array of rows matching the table shape
+      console.log('loadOpSales data', data)
+      setHistoryList(Array.isArray(data) ? data : [])
     } catch (err) {
       console.error('loadOpSales error', err)
-      setOpSaleData([])
+      setHistoryList([])
     } finally {
-      setLoading(false)
+      setOPLoading(false)
     }
   }
+  
+useEffect(() => {
+  const searchValue = search.trim().toLowerCase()
 
+  const filtered = historyList.filter((item) => {
+    return (
+      item.billNo?.toString().toLowerCase().includes(searchValue) ||
+      item.mobile?.toString().includes(searchValue) ||
+      item.patientName?.toLowerCase().includes(searchValue)
+    )
+  })
+
+  setFilteredList(filtered)
+}, [search, historyList])
   // Handle input change for form row
   const handleRowChange = (e) => {
     const { name, value } = e.target
@@ -94,11 +262,11 @@ const OPSales = ({ getAllOpSales }) => {
   const handleAddOrUpdate = () => {
     // compute numeric fields carefully (digit-by-digit as required by instruction)
     const qty = Number(formRow.qty) || 0
-    const rate = Number(formRow.rate) || 0
+    const mrp = Number(formRow.mrp) || 0
     const discPct = Number(formRow.disc) || 0
     const vatPct = Number(formRow.vatPercent) || 0
 
-    const total = Number((qty * rate).toFixed(2))
+    const total = Number((qty * mrp).toFixed(2))
     const discAmount = Number(((discPct / 100) * total).toFixed(2))
     const netBeforeVat = Number((total - discAmount).toFixed(2))
     const vatAmount = Number(((vatPct / 100) * netBeforeVat).toFixed(2))
@@ -108,7 +276,8 @@ const OPSales = ({ getAllOpSales }) => {
       medicineName: formRow.medicineName,
       batchNo: formRow.batchNo,
       qty,
-      rate,
+      availableQty: currentStock,
+      mrp,
       total,
       disc: discPct,
       discAmount,
@@ -134,27 +303,92 @@ const OPSales = ({ getAllOpSales }) => {
       medicineName: '',
       batchNo: '',
       qty: '',
-      rate: '',
+      mrp: '',
       disc: '',
       vatPercent: '',
       paidAmt: '',
     })
   }
 
-  const handleEdit = (index) => {
-    const row = OpsaleData[index]
-    if (!row) return
-    setFormRow({
-      medicineName: row.medicineName || '',
-      batchNo: row.batchNo || '',
-      qty: row.qty || '',
-      rate: row.rate || '',
-      disc: row.disc || '',
-      vatPercent: row.vatPercent || '',
-      paidAmt: row.paidAmt || '',
-    })
-    setEditIndex(index)
-  }
+const handleEdit = (index) => {
+  const sale = historyList[index]
+
+  if (!sale) return
+
+  // set edit mode
+  setEditSaleId(sale.id)
+
+  // set bill number
+  setBillNo(sale.billNo)
+
+  // set patient details
+  setPatientDetails({
+    name: sale.patientName,
+    mobilenumber: sale.mobile,
+    age: sale.age,
+    sex: sale.sex,
+    consultingDoctor: sale.consultingDoctor,
+  })
+
+  // load medicines into table
+ const handleEdit = (index) => {
+  const sale = filteredList[index] // ✅ IMPORTANT FIX
+
+  if (!sale) return
+
+  setEditSaleId(sale.id)
+  setBillNo(sale.billNo)
+
+  setPatientDetails({
+    name: sale.patientName,
+    mobilenumber: sale.mobile,
+    age: sale.age,
+    sex: sale.sex,
+    consultingDoctor: sale.consultingDoctor,
+  })
+
+  const rows = sale.medicines?.map((med) => ({
+    medicineId: med.medicineId,
+
+    // ✅ FIXED
+    medicineName: med.medicineName || med.productName || 'Unknown',
+
+    // ✅ FIXED
+    batchNo: med.batchNo || med.batch_number || '-',
+
+    // ✅ FIXED (MAIN ISSUE)
+    expiryDate: med.expDate || med.expiryDate || '-',
+
+    qty: med.qty || 0,
+    mrp: med.rate || 0,
+
+    total: med.totalA || 0,
+    disc: med.discPercent || 0,
+    discAmount: med.discAmtB || 0,
+    netAmt: med.netAmtAB || 0,
+
+    gstPercent: med.gstPercent || 0,
+    gstamt: med.gstAmtC || 0,
+    finalamount: med.finalAmountABC || 0,
+
+    availableQty: med.availableQty || 0,
+  })) || []
+
+  console.log("EDIT ROWS:", rows) // 🔍 DEBUG
+
+  setOpSaleData(rows)
+  setPaidNow(sale.amountPaid || 0)
+  setHistoryModal(false)
+}
+
+  setOpSaleData(rows)
+
+  // set paid amount
+  setPaidNow(sale.amountPaid || 0)
+
+  // close history modal
+  setHistoryModal(false)
+}
 
   const handleDelete = (index) => {
     const filtered = OpsaleData.filter((_, i) => i !== index)
@@ -166,175 +400,318 @@ const OPSales = ({ getAllOpSales }) => {
         medicineName: '',
         batchNo: '',
         qty: '',
-        rate: '',
+        mrp: '',
         disc: '',
         vatPercent: '',
         paidAmt: '',
       })
     }
   }
+  const genemrpBillNo = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString()
+  }
+
+  useEffect(() => {
+    setBillNo(genemrpBillNo())
+  }, [])
 
   // Recalculate totals whenever OpsaleData changes
   useEffect(() => {
     let totalAmt = 0
-    let totalTax = 0
-    let netAmt = 0
+    let gstTotal = 0
+    let finalTotal = 0
+    let discTotal = 0
+
     OpsaleData.forEach((r) => {
-      totalAmt += Number(r.total) || 0
-      totalTax += Number(r.vatAmount) || 0
-      netAmt += Number(r.netAmt) || 0
+      totalAmt += r.total || 0
+
+      gstTotal += r.gstamt || 0
+
+      finalTotal += r.netAmt || 0
+
+      discTotal += r.discAmount || 0
     })
+
     setTotals({
-      totalAmt: Number(totalAmt.toFixed(2)),
-      totalTax: Number(totalTax.toFixed(2)),
-      netAmt: Number(netAmt.toFixed(2)),
+      totalAmt: Math.round(totalAmt),
+      totalTax: Math.round(gstTotal),
+      netAmt: Math.round(finalTotal),
+      discTotal: Math.round(discTotal),
     })
   }, [OpsaleData])
+  // const fetchPatientByOpNo = async () => {
+  //   try {
+  //     const response = await fetch(`/api/patient/${opNo}`)
+  //     const data = await response.json()
+
+  //     setPatientDetails(data)
+  //   } catch (error) {
+  //     console.error('Patient fetch error', error)
+  //   }
+  // }
+  const fetchPatientByOpNo = () => {
+    const patient = dummyPatients[opNo]
+
+    if (!patient) return
+
+    // set patient
+
+    setPatientDetails({
+      name: patient.name,
+      mobilenumber: patient.mobilenumber,
+      age: patient.age,
+      sex: patient.sex,
+      consultingDoctor: patient.consultingDoctor,
+    })
+
+    // set medicines
+
+    const rows = patient.medicines.map((id) => {
+      const med = dummyMedicines.find((m) => m.id === id)
+      if (!med) return null
+
+
+      // return createRowFromMedicine(med)
+      return createRowFromMedicine(med)
+    })
+
+    setOpSaleData(rows)
+  }
+  useEffect(() => {
+    if (opNo) fetchPatientByOpNo()
+  }, [opNo])
+
+  const createRowFromMedicine = (med, qty = 1, disc = 0) => {
+    const mrp = Number(med.mrp)
+    const gstPercent = Number(med.gstPercent)
+
+    const total = qty * mrp
+
+    const discAmount = (disc / 100) * total
+
+    const net = total - discAmount
+
+    // GST inside mrp (only for display)
+
+    const gstAmount = (net * gstPercent) / (100 + gstPercent)
+
+    return {
+      medicineId: med.id,
+      medicineName: med.productName,
+      batchNo: med.batchNo,
+      expDate: med.expiryDate,
+
+      qty,
+
+      mrp,
+
+      disc,
+
+      gstPercent: gstPercent,
+
+      total: Math.round(total),
+
+      discAmount: Math.round(discAmount),
+
+      netAmt: Math.round(net),
+
+      gstamt: Math.round(gstAmount),
+
+      finalamount: Math.round(net),
+    }
+  }
+  const handleSave1 = async () => {
+    try {
+      const payload = {
+        billNo,
+        patientDetails,
+        items: OpsaleData,
+        totals,
+      }
+
+      // 🔹 Call your API here
+      // await saveOpSale(payload)
+
+      console.log('Saved:', payload)
+
+      // ✅ Open print modal after save
+      setPrintModal(true)
+    } catch (error) {
+      console.error('Save failed', error)
+    }
+  }
+
+
+
+  const medicineOptions = medicines.map((med) => ({
+    value: med.id,
+    label: med.productName,
+  }))
+
+  const doctorOptions = (doctorList || []).map((doc) => ({
+    value: doc.doctorId,
+    label: doc.doctorName,
+  }))
+
+  const dummyOpHistory = {
+    101: [1, 2],
+    102: [3],
+  }
+  const updateRow = (index, field, value) => {
+    const updated = [...OpsaleData]
+
+    updated[index][field] = Number(value)
+
+    const r = updated[index]
+
+    const total = r.qty * r.mrp
+
+    const discAmount = (r.disc / 100) * total
+
+    const net = total - discAmount
+
+    const gstAmount = (net * r.gstPercent) / (100 + r.gstPercent)
+
+    r.total = Math.round(total)
+
+    r.discAmount = Math.round(discAmount)
+
+    r.netAmt = Math.round(net)
+
+    r.gstamt = Math.round(gstAmount)
+
+    r.finalamount = Math.round(net)
+
+    setOpSaleData(updated)
+  }
+  const netAmount = totals.netAmt || 0
+
+  // const finalTotal = totals.netAmt
+
+  // const dueAmount = 0
+
+  useEffect(() => {
+    const paidValue = Number(paidNow) || 0
+
+    setTotalPaid(paidValue)
+  }, [paidNow])
+
+  const dueAmount = netAmount - totalPaid
+
+  const amountToBePaid = paidNow
+
+  const finalTotal = netAmount
 
   return (
     <div
       className="p-3"
-       style={{
-    color: 'var(--color-black)', // your text color
-      fontSize: '13px',
-  }}
+      style={{
+        color: 'var(--color-black)', // your text color
+        fontSize: '13px',
+      }}
     >
       {/* TOP HEADER */}
-<CRow className="align-items-center mb-2 flex-wrap">
-  <CCol xs={12} sm={2} className="d-flex align-items-center mb-2 mb-sm-0">
-    <CFormLabel className="me-2 fw-bold">BillNo :</CFormLabel>
-    <span className="fw-bold">{billNo || ''}</span>
-  </CCol>
+      <CRow className="align-items-center mb-3">
+        {/* Bill No - Left Side */}
+        <CCol xs={12} sm={4} md={3} className="mb-2 mb-sm-0">
+          <div className="d-flex align-items-center">
+            <CFormLabel className="fw-bold mb-0 me-2" style={{ minWidth: '75px' }}>
+              Bill No:
+            </CFormLabel>
 
-  <CCol xs={12} sm={10} className="d-flex flex-wrap justify-content-end gap-2 align-items-center">
-    <div className="d-flex align-items-center flex-grow-1 flex-sm-grow-0">
-      <CFormLabel className="me-2 fw-bold">From</CFormLabel>
-      <CFormInput
-        type="date"
-        size="sm"
-        value={dateFrom}
-        onChange={(e) => setDateFrom(e.target.value)}
-        style={{ minWidth: 90, maxWidth: 140, flex: 1 }}
-      />
-    </div>
+            <span className="fw-bold text-primary">{billNo || ''}</span>
+          </div>
+        </CCol>
 
-    <div className="d-flex align-items-center flex-grow-1 flex-sm-grow-0">
-      <CFormLabel className="me-2 fw-bold">To</CFormLabel>
-      <CFormInput
-        type="date"
-        size="sm"
-        value={dateTo}
-        onChange={(e) => setDateTo(e.target.value)}
-        style={{ minWidth: 90, maxWidth: 140, flex: 1 }}
-      />
-    </div>
+        {/* Date & Time - Right Side */}
+        <CCol xs={12} sm={8} md={9} className="d-flex justify-content-sm-end gap-2">
+          <CFormInput
+            type="date"
+            size="sm"
+            defaultValue={new Date().toISOString().slice(0, 10)}
+            style={{ width: 150 }}
+          />
 
-    <div className="d-flex align-items-center flex-grow-1 flex-sm-grow-0">
-      <CFormLabel className="ms-2 fw-bold mb-0">Financial Year:</CFormLabel>
-      <span className="ms-2">2025-2026</span>
-    </div>
-
-    <CFormInput
-      type="date"
-      size="sm"
-      defaultValue={new Date().toISOString().slice(0, 10)}
-      style={{ minWidth: 90, maxWidth: 140, flex: 1 }}
-    />
-    <CFormInput
-      type="time"
-      size="sm"
-      defaultValue={new Date().toTimeString().slice(0, 8)}
-      style={{ minWidth: 90, maxWidth: 140, flex: 1 }}
-    />
-  </CCol>
-</CRow>
-
-
-
-
-
-
+          <CFormInput
+            type="time"
+            size="sm"
+            defaultValue={new Date().toTimeString().slice(0, 5)}
+            style={{ width: 120 }}
+          />
+        </CCol>
+      </CRow>
 
       {/* OUT/IN PATIENT + OPNO + PAYCATEGORY + DATETIME */}
-   <CRow className="mb-3 g-3">
+      <CRow className="mb-3 g-3">
+        {/* Out / In Patient */}
+        <CCol xs={12} sm={4} md={4} className="d-flex flex-wrap align-items-center gap-3">
+          <div className="form-check d-flex align-items-center">
+            <input
+              className="form-check-input"
+              type="radio"
+              name="patientMode"
+              id="manualEntry"
+              value="manual"
+              checked={patientMode === 'manual'}
+              onChange={() => setPatientMode('manual')}
+            />
+            <label className="form-check-label ms-2 fw-bold" htmlFor="manualEntry">
+              Out Patient (Manual)
+            </label>
+          </div>
 
-  {/* Out / In Patient */}
-  <CCol xs={12} sm={4} md={3} className="d-flex flex-wrap align-items-center gap-3">
-    <div className="form-check d-flex align-items-center fw-bold">
-      <input
-        className="form-check-input "
-        type="radio"
-        name="statusRadio"
-        id="outPatient"
-        value="outPatient"
-        checked={statusFilters === 'outPatient'}
-        onChange={() => setStatusFilters('outPatient')}
-      />
-      <label className="form-check-label ms-2 Fw-bold" htmlFor="outPatient">
-        Out Patient
-      </label>
-    </div>
+          <div className="form-check d-flex align-items-center">
+            <input
+              className="form-check-input"
+              type="radio"
+              name="patientMode"
+              id="fetchOp"
+              value="fetch"
+              checked={patientMode === 'fetch'}
+              onChange={() => setPatientMode('fetch')}
+            />
+            <label className="form-check-label ms-2 fw-bold" htmlFor="fetchOp">
+              Fetch by OPNO
+            </label>
+          </div>
+          <CFormInput
+            type="text"
+            placeholder="Enter OPNO/Mobile Number"
+            disabled={patientMode !== 'fetch'}
+            value={opNo}
+            onChange={(e) => setOpNo(e.target.value)}
+            style={{ height: 30, fontSize: '12px' }}
+          />
+        </CCol>
 
-    {/* <div className="form-check d-flex align-items-center">
-      <input
-        className="form-check-input"
-        type="radio"
-        name="statusRadio"
-        id="inPatient"
-        value="inPatient"
-        checked={statusFilters === 'inPatient'}
-        onChange={() => setStatusFilters('inPatient')}
-      />
-      <label className="form-check-label ms-2" htmlFor="inPatient">
-        In Patient
-      </label>
-    </div> */}
-  </CCol>
+        {/* Pay Category */}
+        <CCol xs={12} sm={6} md={3} className="d-flex align-items-center">
+          <CFormLabel className="mb-0 me-2 fw-bold" style={{ whiteSpace: 'nowrap' }}>
+            Pay Category:
+          </CFormLabel>
+          <CFormSelect
+            // disabled
+            value="SELF PAY"
+            className="bg-light w-100"
+            style={{ height: '30px', fontSize: '12px' }}
+          >
+            <option value="">Select Pay Category</option>
+            <option value="SELF PAY">SELF PAY</option>
+            <option value="INSURANCE">INSURANCE</option>
+            <option value="CORPOmrp">CORPOmrp</option>
+            <option value="GOVERNMENT SCHEME">GOVERNMENT SCHEME</option>
+            <option value="OTHER">OTHER</option>
+          </CFormSelect>
+        </CCol>
 
-  {/* OPNO */}
-  <CCol xs={12} sm={4} md={2} className="d-flex align-items-center">
-    <CFormLabel className="mb-0 me-2 fw-bold" style={{ whiteSpace: "nowrap" }}>
-      OPNO:
-    </CFormLabel>
-    <CFormInput
-      type="text"
-      placeholder="Enter OPNO"
-      className="w-100"
-      style={{ height: 30 ,fontSize:"12px"}}
-      value={opNo}
-      onChange={(e) => setOpNo(e.target.value)}
-    />
-  </CCol>
-
-  {/* Pay Category */}
-   <CCol xs={12} sm={6} md={3} className="d-flex align-items-center">
-  <CFormLabel className="mb-0 me-2 fw-bold" style={{ whiteSpace: 'nowrap' }}>
-    Pay Category:
-  </CFormLabel>
-  <CFormSelect
-    // disabled
-    value="SELF PAY"
-    className="bg-light w-100"
-    style={{ height: '30px', fontSize: '12px' }}
-  >
-    <option value="">Select Pay Category</option>
-    <option value="SELF PAY">SELF PAY</option>
-    <option value="INSURANCE">INSURANCE</option>
-    <option value="CORPORATE">CORPORATE</option>
-    <option value="GOVERNMENT SCHEME">GOVERNMENT SCHEME</option>
-    <option value="OTHER">OTHER</option>
-  </CFormSelect>
-</CCol>
-
-
-  {/* Bill Date & Time */}
- <CCol xs={12} md={4}>
-  <div className="d-flex flex-wrap align-items-center justify-content-md-end gap-2">
-    <CFormLabel className="fw-bold mb-0" style={{ whiteSpace: "nowrap" }}>
+        {/* Bill Date & Time */}
+        <CCol xs={12} md={4}>
+          <div className="d-flex flex-wrap align-items-center justify-content-md-end gap-2">
+            {/* <CFormLabel className="fw-bold mb-0" style={{ whiteSpace: "nowrap" }}>
       Bill Date & Time:
-    </CFormLabel>
+    </CFormLabel> */}
 
-    <CFormInput
+            {/* <CFormInput
       type="datetime-local"
       defaultValue={new Date().toISOString().slice(0, 19)}
       style={{
@@ -343,510 +720,404 @@ const OPSales = ({ getAllOpSales }) => {
        fontSize:"12px" ,// smaller text
         padding: "2px 6px",
       }}
-    />
-  </div>
-</CCol>
-
-
-</CRow>
-
+    /> */}
+          </div>
+        </CCol>
+      </CRow>
 
       {/* Patient blocks */}
-      <div style={{ display: 'flex', gap: 12 }}>
-        <div
-          style={{
-            position: 'relative',
-            flex: 1,
-            border: '2px solid var(--color-black)',
-            borderRadius: 6,
-            padding: 12,
-            background: 'white',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              top: -12,
-              left: 16,
-              background: 'white',
-              padding: '0 8px',
-              fontWeight: 'bold',
-              color: 'var(--color-black)',
-            }}
-          >
-            Patient Details
-          </div>
-          <div className="d-flex mb-1 align-items-center">
-            <CFormLabel className="fw-bold mb-0 me-2" style={{ width: 60 }}>
-              Name:
-            </CFormLabel>
-            <span className="fw-semibold">{patientDetails?.name || '--'}</span>
-          </div>
-          <div className="d-flex mb-1 align-items-center justify-content-between">
-            <div className="d-flex align-items-center">
-              <CFormLabel className="fw-bold mb-0 me-2" style={{ width: 60 }}>
-                Age:
-              </CFormLabel>
-              <span className="fw-semibold">{patientDetails?.age || '--'}</span>
-            </div>
-            <div className="d-flex align-items-center">
-              <CFormLabel className="fw-bold mb-0 me-2">Sex:</CFormLabel>
-              <span className="fw-semibold">{patientDetails?.sex || '--'}</span>
-            </div>
-          </div>
-          <div className="d-flex align-items-center justify-content-between">
-            <div className="d-flex align-items-center">
-              <CFormLabel className="fw-bold mb-0 me-2" style={{ width: 60 }}>
-                M.Status:
-              </CFormLabel>
-              <span className="fw-semibold">{patientDetails?.maritalStatus || '--'}</span>
-            </div>
-            <div className="d-flex align-items-center">
-              <CFormLabel className="fw-bold mb-0 me-2">Cons.Doc:</CFormLabel>
-              <span className="fw-semibold">{patientDetails?.consultingDoctor || '--'}</span>
-            </div>
-          </div>
-        </div>
+      <div
+        style={{
+          border: '2px solid var(--color-black)',
+          borderRadius: 6,
+          padding: 15,
+          background: '#fff',
+        }}
+      >
+        <h6 className="fw-bold mb-3">Patient Details</h6>
 
-        {/* <div
-          style={{
-            position: 'relative',
-            flex: 1,
-            border: '2px solid var(--color-black)',
-            borderRadius: 6,
-            padding: 12,
-            background: 'white',
-          }}
-        > */}
-          {/* <div
-            style={{
-              position: 'absolute',
-              top: -12,
-              left: 16,
-              background: 'white',
-              padding: '0 8px',
-              fontWeight: 'bold',
-              color: 'var(--color-black)',
-            }}
-          >
-            Patient Type & Room Details
-          </div>
-          <div className="d-flex mb-1 align-items-center">
-            <CFormLabel className="fw-bold mb-0" style={{ width: 120 }}>
-              Pat.Type:
-            </CFormLabel>
-            <span className="fw-semibold">{roomDetails?.patientType || '--'}</span>
-          </div>
-          <div className="d-flex mb-1 align-items-center">
-            <CFormLabel className="fw-bold mb-0" style={{ width: 120 }}>
-              Referral:
-            </CFormLabel>
-            <span className="fw-semibold">{roomDetails?.referral || '--'}</span>
-          </div>
-          <div className="d-flex align-items-center">
-            <CFormLabel className="fw-bold mb-0" style={{ width: 120 }}>
-              Reg.Date:
-            </CFormLabel>
-            <span className="fw-semibold">{roomDetails?.regDate || '--'}</span>
-          </div> */}
-        {/* </div> */}
+        <CRow className="g-2">
+          <CCol md={6}>
+            <CFormLabel>Name</CFormLabel>
+            <CFormInput
+              type="text"
+              value={patientDetails?.name || ''}
+              disabled={patientMode === 'fetch'}
+              onChange={(e) => setPatientDetails({ ...patientDetails, name: e.target.value })}
+            />
+          </CCol>
+
+          <CCol md={6}>
+            <CFormLabel>Mobile Number</CFormLabel>
+            <CFormInput
+              type="text"
+              value={patientDetails?.mobilenumber || ''}
+              disabled={patientMode === 'fetch'}
+              onChange={(e) =>
+                setPatientDetails({ ...patientDetails, mobilenumber: e.target.value })
+              }
+            />
+          </CCol>
+
+          <CCol md={3}>
+            <CFormLabel>Age</CFormLabel>
+            <CFormInput
+              type="number"
+              value={patientDetails?.age || ''}
+              disabled={patientMode === 'fetch'}
+              onChange={(e) => setPatientDetails({ ...patientDetails, age: e.target.value })}
+            />
+          </CCol>
+
+          <CCol md={3}>
+            <CFormLabel>Sex</CFormLabel>
+            <CFormSelect
+              value={patientDetails?.sex || ''}
+              disabled={patientMode === 'fetch'}
+              onChange={(e) => setPatientDetails({ ...patientDetails, sex: e.target.value })}
+            >
+              <option value="">Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </CFormSelect>
+          </CCol>
+
+          <CCol md={6}>
+            <CFormLabel>Consulting Doctor</CFormLabel>
+            <Select
+              options={doctorOptions}
+              placeholder="Select Doctor"
+              value={
+                doctorOptions.find((d) => d.label === patientDetails?.consultingDoctor) || null
+              }
+              onChange={(selected) =>
+                setPatientDetails({
+                  ...patientDetails,
+                  consultingDoctor: selected?.label || '',
+                  doctorId: selected?.value || '',
+                })
+              }
+              isClearable
+            />
+          </CCol>
+        </CRow>
       </div>
 
       {/* Entry controls */}
-    <CRow className="mb-3 mt-3 g-3">
+      <CRow className="mb-3 mt-3 align-items-end g-3">
+        {/* Medicine Name */}
+        <CCol xs={12} md={6}>
+          <CFormLabel className="fw-semibold mb-1">Medicine Name</CFormLabel>
 
-  {/* Selection Type */}
-  <CCol xs={12} sm={6} md={3} className="d-flex align-items-center">
-    <CFormLabel className="mb-0 me-2">Selection Type:</CFormLabel>
-   <CFormSelect
-  value={selectionType}
-  onChange={(e) => setSelectionType(e.target.value)}
-  className="bg-light"
-  style={{ height: 30, fontSize: "12px" }}
->
-  <option value="single">SINGLE</option>
-  <option value="multiple">MULTIPLE</option>
-  <option value="all">ALL</option>
-</CFormSelect>
+          {/* <Select
+            options={medicineOptions}
+            value={medicineOptions.find((opt) => opt.value === medName)}
+            onChange={(selected) => setMedName(selected?.value)}
+            placeholder="Search Medicine"
+            isClearable
+          /> */}
 
-  </CCol>
+         <Select
+  options={medicineOptions}
+  value={medicineOptions.find((opt) => opt.value === medName)}
+ onChange={async (selected) => {
+  if (!selected) return;
 
-  {/* Selection By */}
-  <CCol xs={12} sm={6} md={3} className="d-flex align-items-center">
-    <CFormLabel className="mb-0 me-2">Selection By:</CFormLabel>
+  setMedName(selected.value); // ✅ important
 
-  <CFormSelect
-  value={selectionBy}
-  onChange={(e) => setSelectionBy(e.target.value)}
-  className="bg-light"
-  style={{ height: 30, fontSize: "12px" }}
->
-  <option value="name">NAME</option>
-  <option value="code">CODE</option>
-  <option value="generic">GENERIC</option>
-  <option value="barcode">BARCODE</option>
-  <option value="rackno">RACK NO</option>
-</CFormSelect>
+  const med = medicines.find((m) => m.id === selected.value);
 
-  </CCol>
+  if (!med) {
+    console.log("Medicine not found ❌", selected.value);
+    return;
+  }
 
-  {/* Med Name */}
-  <CCol xs={12} md={4} className="d-flex align-items-center">
-    <CFormLabel className="mb-0 me-2">Med Name:</CFormLabel>
-    <CFormInput
-      value={medName}
-      onChange={(e) => setMedName(e.target.value)}
-      placeholder="Enter medicine name"
-      className="flex-grow-1"
-      style={{
-        // border: 'none',
-        // borderBottom: '2px solid var(--color-black)',
-        background: 'transparent',fontSize:"12px"
-      }}
-    />
-  </CCol>
+  const invList = await getInventory(med.id);
+  const invArray = Array.isArray(invList)
+  ? invList
+  : Array.isArray(invList?.data)
+  ? invList.data
+  : [];
 
-  {/* Include Returns */}
-  <CCol xs={6} sm={4} md={1} className="d-flex align-items-center">
-    <CFormCheck id="returnsCheck" label="Include Returns" />
-  </CCol>
+  const invData = invArray.find(
+  (item) => item.medicineId === med.id
+);
+  const inv = invData?.inventory?.[0] || {};
 
-  {/* Button */}
-  <CCol xs={6} sm={4} md={1} className="d-flex align-items-center justify-content-end">
-    <CButton   style={{ backgroundColor: 'var(--color-black)', color: 'white' }}  size="sm" onClick={handleAddOrUpdate}>
-      {editIndex !== null ? 'Update' : 'Update Stock'}
-    </CButton>
-  </CCol>
+  const row = {
+    medicineId: med.id,
+    medicineName: med.productName || med.medicineName || "Unknown",
 
-</CRow>
+    batchNo: inv?.batchNo || "-",
+    expiryDate: inv?.expiryDate || "-",
+  availableQty: inv.availableQty || 0,
+    qty: qty,
+    mrp: inv?.mrp || med.mrp || 0,
 
-   <div
-  className="p-2 mb-2"
-  // style={{
-  //   border: "2px solid var(--color-black)",
-  //   borderRadius: "4px",
-  // }}
->
-  <CRow className="g-2">
+    disc: discPerc,
+    gstPercent: inv?.gstPercent || 0,
 
-    {/* Rack No */}
-    <CCol xs={6} sm={4} md={2}>
-      <label className="fw-bold small d-block">Rack No</label>
-      <CFormInput className="border border-secondary" disabled />
-    </CCol>
+    total: inv?.mrp || med.mrp || 0,
+    discAmount: discAmt,
+    netAmt: inv?.mrp || med.mrp || 0,
+    gstamt: 0,
+    finalamount: inv?.mrp || med.mrp || 0,
+  };
 
-    {/* VAT */}
-    <CCol xs={6} sm={4} md={2}>
-      <label className="fw-bold small d-block">VAT</label>
-      <CFormInput className="border border-secondary" disabled />
-    </CCol>
+  setOpSaleData((prev) => [...prev, row]);
+}}
+  placeholder="Search Medicine"
+  isClearable
+/>
+        </CCol>
+        {/* Include Returns */}
+        <CCol xs={12} md={6} className="d-flex align-items-center">
+          <CFormCheck
+            id="returnsCheck"
+            label="Include Returns"
+            checked={includeReturns}
+            onChange={(e) => setIncludeReturns(e.target.checked)}
+          />
+        </CCol>
+      </CRow>
 
-    {/* VAT Amount */}
-    <CCol xs={6} sm={4} md={2}>
-      <label className="fw-bold small d-block">VAT Amt</label>
-      <CFormInput className="border border-secondary" disabled />
-    </CCol>
-
-    {/* Current Stock */}
-    <CCol xs={6} sm={4} md={2}>
-      <label className="fw-bold small d-block">Current Stock</label>
-      <CFormInput className="border border-secondary" disabled />
-    </CCol>
-
-    {/* Batch No */}
-    <CCol xs={6} sm={4} md={2}>
-      <label className="fw-bold small d-block">Batch No</label>
-      <CFormInput
-        value={batchNo}
-        onChange={(e) => setBatchNo(e.target.value)}
-        className="border border-secondary"
-      />
-    </CCol>
-
-    {/* Req Qty */}
-    <CCol xs={6} sm={4} md={2}>
-      <label className="fw-bold small d-block">Req Qty</label>
-      <CFormInput
-        value={qty}
-        onChange={(e) => setQty(e.target.value)}
-        className="border border-secondary"
-      />
-    </CCol>
-
-    {/* Rate */}
-    <CCol xs={6} sm={4} md={2}>
-      <label className="fw-bold small d-block">Rate</label>
-      <CFormInput
-        value={rate}
-        onChange={(e) => setRate(e.target.value)}
-        className="border border-secondary"
-      />
-    </CCol>
-
-    {/* Disc % */}
-    <CCol xs={6} sm={4} md={2}>
-      <label className="fw-bold small d-block">Disc %</label>
-      <CFormInput
-        value={discPerc}
-        onChange={(e) => setDiscPerc(e.target.value)}
-        className="border border-secondary"
-      />
-    </CCol>
-
-    {/* Disc Amt */}
-    <CCol xs={6} sm={4} md={2}>
-      <label className="fw-bold small d-block">Disc Amt</label>
-      <CFormInput
-        value={discAmt}
-        onChange={(e) => setDiscAmt(e.target.value)}
-        className="border border-secondary"
-      />
-    </CCol>
-
-    {/* Total Amt */}
-    <CCol xs={6} sm={4} md={2}>
-      <label className="fw-bold small d-block">Total Amt</label>
-      <CFormInput
-        value={totalAmt}
-        onChange={(e) => setTotalAmt(e.target.value)}
-        className="border border-secondary"
-      />
-    </CCol>
-
-    {/* Exp Date */}
-    <CCol xs={6} sm={4} md={2}>
-      <label className="fw-bold small d-block">Exp Date</label>
-      <CFormInput
-        type="date"
-        value={expDate}
-        onChange={(e) => setExpDate(e.target.value)}
-        className="border border-secondary"
-      />
-    </CCol>
-
-    {/* MRP */}
-    <CCol xs={6} sm={4} md={2}>
-      <label className="fw-bold small d-block">MRP</label>
-      <CFormInput className="border border-secondary" disabled />
-    </CCol>
-
-  </CRow>
-</div>
-
-
+      <div
+        className="p-2 mb-2"
+        // style={{
+        //   border: "2px solid var(--color-black)",
+        //   borderRadius: "4px",
+        // }}
+      ></div>
 
       {/* TABLE */}
       <div style={{ position: 'relative', marginTop: 8 }}>
-    <div
-  style={{
-    maxHeight: "260px", // adjust height as needed
-    overflowY: "auto",
-    overflowX: "auto",
-    border: "1px solid #ddd",
-    borderRadius: "4px",
-  }}
->
-  <CTable bordered hover responsive="sm">
+        <div
+          style={{
+            maxHeight: '260px', // adjust height as needed
+            overflowY: 'auto',
+            overflowX: 'auto',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+          }}
+        >
+          <CTable bordered hover responsive="sm">
+            {/* TODO:check duplication for medicine*/}
 
-    <CTableHead className="pink-table w-auto">
-      <CTableRow style={{ color: 'var(--color-black)' }}>
-        <CTableHeaderCell style={{ width: '40px' }}>S.No</CTableHeaderCell>
-        <CTableHeaderCell>Medicine Name</CTableHeaderCell>
-        <CTableHeaderCell style={{ width: '100px' }}>BatchNo</CTableHeaderCell>
-        <CTableHeaderCell style={{ width: '70px' }}>Qty</CTableHeaderCell>
-        <CTableHeaderCell style={{ width: '90px' }}>Rate</CTableHeaderCell>
-        <CTableHeaderCell style={{ width: '70px' }}>Total</CTableHeaderCell>
-        <CTableHeaderCell style={{ width: '60px' }}>Disc</CTableHeaderCell>
-        <CTableHeaderCell style={{ width: '70px' }}>DiscAmt</CTableHeaderCell>
-        <CTableHeaderCell style={{ width: '100px' }}>NetAmt</CTableHeaderCell>
-        <CTableHeaderCell style={{ width: '80px' }}>VAT%</CTableHeaderCell>
-        <CTableHeaderCell style={{ width: '60px' }}>PaidAmt</CTableHeaderCell>
-        <CTableHeaderCell style={{ width: '80px' }}>Actions</CTableHeaderCell>
-      </CTableRow>
-    </CTableHead>
+            <CTableHead className="pink-table w-auto">
+              <CTableRow style={{ color: 'var(--color-black)' }}>
+                <CTableHeaderCell style={{ width: '40px' }}>S.No</CTableHeaderCell>
+                <CTableHeaderCell>Medicine Name</CTableHeaderCell>
+                <CTableHeaderCell style={{ width: '100px' }}>BatchNo</CTableHeaderCell>
+                <CTableHeaderCell style={{ width: '100px' }}>Expiry Date</CTableHeaderCell>
+                <CTableHeaderCell style={{ width: '70px' }}>Available Qty</CTableHeaderCell>
 
-    <CTableBody>
-      {loading && (
-        <CTableRow>
-          <CTableDataCell colSpan={12} className="text-center">
-            Loading Opsales...
-          </CTableDataCell>
-        </CTableRow>
-      )}
+                <CTableHeaderCell style={{ width: '70px' }}>Qty</CTableHeaderCell>
+                
+                <CTableHeaderCell style={{ width: '90px' }}>MRP</CTableHeaderCell>
+                <CTableHeaderCell className="text-center" style={{ width: '70px' }}>
+                  {`Total \n (A)`}{' '}
+                </CTableHeaderCell>
+                <CTableHeaderCell style={{ width: '60px' }}>Disc %</CTableHeaderCell>
+                <CTableHeaderCell
+                  className="text-center"
+                  style={{ width: '70px' }}
+                >{`DiscAmt \n(B)`}</CTableHeaderCell>
+                <CTableHeaderCell
+                  className="text-center"
+                  style={{ width: '100px' }}
+                >{`NetAmt \n(A-B)`}</CTableHeaderCell>
+               <CTableHeaderCell
+                  className="text-center"
+                  style={{ width: '100px' }}
+                >{`GST %`}</CTableHeaderCell>
+               {/*   <CTableHeaderCell
+                  className="text-center"
+                  style={{ width: '60px' }}
+                >{`GST \n(C)`}</CTableHeaderCell> */}
+                <CTableHeaderCell
+                  className="text-center"
+                  style={{ width: '60px' }}
+                >{`Final Amount`}</CTableHeaderCell>
+                <CTableHeaderCell style={{ width: '80px' }}>Actions</CTableHeaderCell>
+              </CTableRow>
+            </CTableHead>
 
-      {!loading && OpsaleData.length === 0 && (
-       <CTableRow>
-  <CTableDataCell colSpan={12} className="text-center"  style={{ color: 'var(--color-black)' }}>
-    No OP Sales records found.
-  </CTableDataCell>
-</CTableRow>
+            <CTableBody>
+              {oploading && (
+                <CTableRow>
+                  <CTableDataCell colSpan={12} className="text-center">
+                    Loading Opsales...
+                  </CTableDataCell>
+                </CTableRow>
+              )}
 
-      )}
+              {!oploading && OpsaleData.length === 0 && (
+                <CTableRow>
+                  <CTableDataCell
+                    colSpan={12}
+                    className="text-center"
+                    style={{ color: 'var(--color-black)' }}
+                  >
+                    No OP Sales records found.
+                  </CTableDataCell>
+                </CTableRow>
+              )}
 
-      {!loading &&
-        OpsaleData.map((item, index) => (
-          <CTableRow key={index}>
-            <CTableDataCell>{index + 1}</CTableDataCell>
-            <CTableDataCell>{item.medicineName}</CTableDataCell>
-            <CTableDataCell>{item.batchNo}</CTableDataCell>
-            <CTableDataCell>{item.qty}</CTableDataCell>
-            <CTableDataCell>{item.rate}</CTableDataCell>
-            <CTableDataCell>{item.total}</CTableDataCell>
-            <CTableDataCell>{item.disc}</CTableDataCell>
-            <CTableDataCell>{item.discAmount}</CTableDataCell>
-            <CTableDataCell>{item.netAmt}</CTableDataCell>
-            <CTableDataCell>{item.vatPercent}</CTableDataCell>
-            <CTableDataCell>{item.paidAmt}</CTableDataCell>
-            <CTableDataCell>
-             {/* Edit Button */}
-<CButton
-  color="info"
-  size="sm"
-  className="actionBtn"
-  style={{ color: 'var(--color-black)' }}
-  onClick={() => handleEdit(index)}
-  title="Edit"
->
-  <Edit2 size={18} />
-</CButton>
+              {!oploading &&
+                OpsaleData.map((item, index) => (
+                  <CTableRow key={index}>
+                    <CTableDataCell>{index + 1}</CTableDataCell>
+                    <CTableDataCell>{item.medicineName}</CTableDataCell>
+                    <CTableDataCell>{item.batchNo}</CTableDataCell>
+                    <CTableDataCell>{item.expiryDate}</CTableDataCell>
+                    <CTableDataCell>{item.availableQty}</CTableDataCell>
 
-{/* Delete Button */}
-<CButton
-  color="danger"
-  size="sm"
-  className="actionBtn ms-1"
-  style={{ color: 'var(--color-black)' }}
-  onClick={() => handleDelete(index)}
-  title="Delete"
->
-  <Trash size={18} />
-</CButton>
+                    <CTableDataCell>
+                      <input
+                        value={item.qty}
+                        onChange={(e) => updateRow(index, 'qty', e.target.value)}
+                        style={{ width: 60 }}
+                      />
+                    </CTableDataCell>
+                    <CTableDataCell>{item.mrp}</CTableDataCell>
 
-            </CTableDataCell>
-          </CTableRow>
-        ))}
-    </CTableBody>
-  </CTable>
-</div>
+                    <CTableDataCell>{item.total}</CTableDataCell>
+                    <CTableDataCell>
+                      <input
+                        value={item.disc}
+                        onChange={(e) => updateRow(index, 'disc', e.target.value)}
+                        style={{ width: 60 }}
+                      />
+                    </CTableDataCell>
+                    <CTableDataCell>{item.discAmount}</CTableDataCell>
+                    <CTableDataCell>{item.netAmt}</CTableDataCell>
+                    <CTableDataCell>{item.gstPercent}</CTableDataCell>
+                    {/* <CTableDataCell>{item.gstamt}</CTableDataCell> */}
 
+                    <CTableDataCell>{item.finalamount}</CTableDataCell>
+                    <CTableDataCell>
+                     
+
+                      {/* Delete Button */}
+                      <CButton  color="danger"
+      size="sm"
+      className="actionBtn" onClick={() => handleDelete(index)}>
+                        <Trash2 size={16} />
+                      </CButton>
+                    </CTableDataCell>
+                  </CTableRow>
+                ))}
+            </CTableBody>
+          </CTable>
+        </div>
 
         {/* TOTALS */}
         <CCardBody style={{ padding: '10px 0 0 0' }}>
-          <CRow className="g-2 border-bottom pb-2">
+          <CRow className="g-2 border-bottom pb-2 d-flex justify-content-end">
+            {/* LEFT TOTALS */}
+
             <CCol md={3}>
               <CRow className="mb-2">
                 <CCol xs={6}>
                   <CFormLabel className="text-end fw-bold mb-0">Total Amt</CFormLabel>
                 </CCol>
+
                 <CCol xs={6}>
-                  <CFormInput disabled value={totals.totalAmt} className="text-end bg-light"  style={{fontSize:'12px'}}/>
+                  <CFormInput disabled value={totals.totalAmt} className="text-end bg-light" />
                 </CCol>
               </CRow>
 
               <CRow className="mb-2">
                 <CCol xs={6}>
-                  <CFormLabel className="text-end fw-bold mb-0">Disc(%)</CFormLabel>
+                  <CFormLabel className="text-end fw-bold mb-0">Total DiscAmt</CFormLabel>
                 </CCol>
-                <CCol xs={6}>
-                  <CFormInput disabled value={0} className="text-end bg-light"   style={{fontSize:'12px'}}/>
-                </CCol>
-              </CRow>
-              <CRow className="mb-2">
-                <CCol xs={6}>
-                  <CFormLabel className="text-end mb-0 fw-bold">DiscAmt</CFormLabel>
-                </CCol>
-                <CCol xs={6}>
-                  <CFormInput disabled value={0} className="text-end bg-light"  style={{fontSize:'12px'}}/>
-                </CCol>
-              </CRow>
 
-  <CRow>
-                
-              </CRow>
-              <CRow className="mb-2">
-                <CCol xs={6}>
-                  <CFormLabel className="text-end fw-bold mb-0">Net Amt</CFormLabel>
-                </CCol>
-                <CCol xs={6}>
-                  <CFormInput disabled value={totals.netAmt} className="text-end bg-light"  style={{fontSize:'12px'}}/>
-                </CCol>
-              </CRow>          
-            </CCol>
-                  <CCol md={3}>
-              {['Paid Amt', 'Balance Amt', 'DuePaid','Total Tax'].map((item) => (
-                <CRow className="mb-2" key={item}>
-                  <CCol xs={6}>
-                    <CFormLabel className="text-end fw-bold mb-0">{item}</CFormLabel>
-                  </CCol>
-                  <CCol xs={6}>
-                    <CFormInput disabled value={0} className="text-end bg-light"  style={{fontSize:'12px'}}/>
-                  </CCol>
-                </CRow>
-              ))}
-
-              <CRow>
-                <CCol xs={6}>
-                  <CFormLabel className="fw-bold mb-0">Bill Due Date</CFormLabel>
-                </CCol>
                 <CCol xs={6}>
                   <CFormInput
-                    type="date"
                     disabled
-                    value={new Date().toISOString().slice(0, 10)}
-                    className="bg-light"
-                     style={{fontSize:'12px',}}
+                    value={totals.discTotal || 0}
+                    className="text-end bg-light"
                   />
                 </CCol>
               </CRow>
+
+              <CRow className="mb-2">
+                {/* <CCol xs={6}>
+                  <CFormLabel className="text-end fw-bold mb-0">Total GST</CFormLabel>
+                </CCol> */}
+
+                {/* <CCol xs={6}>
+                  <CFormInput disabled value={totals.totalTax} className="text-end bg-light" />
+                </CCol> */}
+              </CRow>
             </CCol>
+
+            {/* RIGHT TOTALS */}
 
             <CCol md={3}>
-              {['SGST', 'CGST', 'IGST', 'CST'].map((tax) => (
-                <CRow className="mb-2" key={tax}>
-                  <CCol xs={6}>
-                    <CFormLabel className="text-end fw-bold mb-0">{tax}</CFormLabel>
-                  </CCol>
-                  <CCol xs={6}>
-                    <CFormInput disabled value={0} className="text-end bg-light"  style={{fontSize:'12px'}}/>
-                  </CCol>
-                </CRow>
-              ))}
+              <CRow className="mb-2">
+                <CCol xs={6}>
+                  <CFormLabel  className="text-end fw-bold mb-0">Net Amount</CFormLabel>
+                </CCol>
+
+                <CCol xs={6}>
+                  <CFormInput disabled value={netAmount} />
+                </CCol>
+              </CRow>
+
+              <CRow className="mb-2">
+                <CCol xs={6}>
+                  <CFormLabel  className="text-end fw-bold mb-0">Current Payment Amount</CFormLabel>
+                </CCol>
+
+                <CCol xs={6}>
+                  <CFormInput value={paidNow} onChange={(e) => setPaidNow(e.target.value)} />
+                </CCol>
+              </CRow>
+
+              <CRow className="mb-2">
+                <CCol xs={6}>
+                  <CFormLabel  className="text-end fw-bold mb-0">Amount Paid</CFormLabel>
+                </CCol>
+
+                <CCol xs={6}>
+                  <CFormInput disabled value={amountToBePaid} />
+                </CCol>
+              </CRow>
+
+              <CRow className="mb-2">
+                <CCol xs={6}>
+                  <CFormLabel  className="text-end fw-bold mb-0">Due Amount</CFormLabel>
+                </CCol>
+
+                <CCol xs={6}>
+                  <CFormInput disabled value={dueAmount < 0 ? 0 : dueAmount} />
+                </CCol>
+              </CRow>
+
+              <CRow className="mb-2">
+                <CCol xs={6}>
+                  <CFormLabel  className="text-end fw-bold mb-0">Final Total</CFormLabel>
+                </CCol>
+
+                <CCol xs={6}>
+                  <CFormInput disabled value={finalTotal} />
+                </CCol>
+              </CRow>
             </CCol>
-
-            <CCol md={3}>
-              {['Total Tax', 'Final Total', 'Previous Adj', 'Net Payable'].map((item) => (
-                <CRow className="mb-2" key={item}>
-                  <CCol xs={6}>
-                    <CFormLabel className="text-end fw-bold mb-0" >{item}</CFormLabel>
-                  </CCol>
-                  <CCol xs={6}>
-                    <CFormInput
-                      disabled
-                      value={item === 'Total Tax' ? totals.totalTax : 0}
-                      className="text-end bg-light"
-                       style={{fontSize:'12px'}}
-                    />
-                  </CCol>
-                </CRow>
-              ))}
-            </CCol>
-
-      
-
-            
           </CRow>
         </CCardBody>
       </div>
 
-      {/* SEARCH / NAV */}
-    <div
+      {/* <div
   className="d-flex flex-wrap align-items-center mt-3 gap-3 p-2"
   style={{
     // border: '1px solid var(--color-black)',
     borderRadius: 6,
   }}
->
-  <div className="d-flex align-items-center gap-2">
+> */}
+      {/* <div className="d-flex align-items-center gap-2">
     <CFormLabel className="fw-bold mb-0">Search</CFormLabel>
     <CFormInput
       type="text"
@@ -855,9 +1126,9 @@ const OPSales = ({ getAllOpSales }) => {
       onChange={(e) => setSearch(e.target.value)}
       style={{ width: 160, height: 30 ,fontSize:"12px" }}
     />
-  </div>
+  </div> */}
 
-  <div className="d-flex align-items-center gap-2">
+      {/* <div className="d-flex align-items-center gap-2">
     <CFormLabel className="fw-bold mb-0">From</CFormLabel>
     <CFormInput
       type="date"
@@ -865,9 +1136,9 @@ const OPSales = ({ getAllOpSales }) => {
       onChange={(e) => setDateFrom(e.target.value)}
       style={{ width: 130, height: 30 ,fontSize:"12px",color:'var(--color-black)'}}
     />
-  </div>
+  </div> */}
 
-  <div className="d-flex align-items-center gap-2">
+      {/* <div className="d-flex align-items-center gap-2">
     <CFormLabel className="fw-bold mb-0">To</CFormLabel>
     <CFormInput
       type="date"
@@ -875,32 +1146,310 @@ const OPSales = ({ getAllOpSales }) => {
       onChange={(e) => setDateTo(e.target.value)}
       style={{ width: 130, height: 30 ,fontSize:"12px"}}
     />
-  </div>
+  </div> */}
 
-  {/* Icons */}
-  <div className="d-flex align-items-center gap-3">
-    <CIcon icon={cilSave} size="lg" style={{ cursor: 'pointer' }} />
-    <CIcon icon={cilPrint} size="lg" style={{ cursor: 'pointer' }} />
-    <CIcon icon={cilMagnifyingGlass} size="lg" style={{ cursor: 'pointer' }} />
-  </div>
+      {/* Icons */}
+      <div>
+        <div className="d-flex align-items-center mt-2">
+          <div className="ms-auto d-flex justify-content-between w-100">
+            <CButton
+              style={{
+                color: 'var(--color-black)',
+                backgroundColor: 'var(--color-bgcolor)',
+              }}
+              onClick={() => setHistoryModal(true)}
+            >
+              View Patient Medical History
+            </CButton>
+            {/*  TODO:  open modal with all patients medicine history with search bill no,mobile no and file no  */}
 
-  {/* Button */}
-  <CButton color="light" size="sm" style={{fontSize:"12px"}}>
-    {editIndex !== null ? 'Update' : 'PrintTextBill'}
-    
+            <CButton
+              style={{
+                color: 'var(--color-black)',
+                backgroundColor: 'var(--color-bgcolor)',
+              }}
+              onClick={handleSave}
+            >
+              {/*  TODO:  after save open modal with print option should be included  */}
+              Save
+            </CButton>
+          </div>
+        </div>
+        <CModal
+          visible={historyModal}
+          onClose={() => setHistoryModal(false)}
+          size="lg"
+          alignment="center"
+          scrollable
+          backdrop="static"
+        >
+          <CModalHeader>
+            <CModalTitle>Patient Medicine History</CModalTitle>
+          </CModalHeader>
+
+          <CModalBody>
+            {/* 🔍 Search Section */}
+            <CRow className="mb-3">
+              <CCol md={9}>
+             <CFormInput
+  placeholder="Search by Bill No / Mobile No / OP No"
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
+  }}
+/>
+              </CCol>
+
+              <CCol md={3}>
+                <CButton
+                  className="w-100"
+                  onClick={handleSearch}
+                  style={{ backgroundColor: "var(--color-black)", color: "#fff" }}
+                >
+                  Search
+                </CButton>
+              </CCol>
+            </CRow>
+
+            {/* 📋 History Table */}
+            <CTable bordered hover responsive className="pink-table">
+              <CTableHead>
+                <CTableRow>
+                  <CTableHeaderCell>Bill No</CTableHeaderCell>
+                  <CTableHeaderCell>Patient Name</CTableHeaderCell>
+                  <CTableHeaderCell>Mobile</CTableHeaderCell>
+                  <CTableHeaderCell>Total Amount</CTableHeaderCell>
+                  <CTableHeaderCell>Due Amount</CTableHeaderCell>
+                  <CTableHeaderCell>Last Paid Amount</CTableHeaderCell>
+                  <CTableHeaderCell>Last Paid Date</CTableHeaderCell>
+                  <CTableHeaderCell style={{ width: '120px' }}>Actions</CTableHeaderCell>
+                </CTableRow>
+              </CTableHead>
+
+              <CTableBody>
+                {filteredList.length > 0 ? (
+                  filteredList.map((item, index) => (
+                    <CTableRow key={index}>
+                      <CTableDataCell>{item.billNo}</CTableDataCell>
+                      <CTableDataCell>{item.patientName}</CTableDataCell>
+                      <CTableDataCell>{item.mobile}</CTableDataCell>
+                      <CTableDataCell>{item.totalAmt}</CTableDataCell>
+                      <CTableDataCell>{item.dueAmount}</CTableDataCell>
+                      {/* <CTableDataCell>{item.amountToBePaid[0]?.amountPaid}</CTableDataCell> */}
+                   <CTableDataCell>
+  {item.amountToBePaid?.[0]?.paidAt
+    ? formatDateTime(item.amountToBePaid[0].paidAt)
+    : "-"}
+</CTableDataCell>
+                    <CTableDataCell>
+
+  {/* View Button */}
+  <CButton
+    className="actionBtn me-1"
+    style={{ color: 'var(--color-black)' }}
+    color="info"
+    size="sm"
+    onClick={() => handleView(index)}
+    title="View"
+  >
+    <Eye size={18} />
   </CButton>
 
-  {/* Checkbox (push to right on large screens) */}
-  <div className="ms-lg-auto d-flex align-items-center">
+  {/* Edit Button */}
+  <CButton
+    className="actionBtn me-1"
+    style={{ color: 'var(--color-black)' }}
+    color="warning"
+    size="sm"
+    onClick={() => handleEdit(index)}
+    title="Edit"
+  >
+    <Edit2 size={18} />
+  </CButton>
+
+  {/* Delete Button */}
+  <CButton
+    className="actionBtn"
+    color="danger"
+    size="sm"
+    style={{ color: 'var(--color-black)' }}
+    onClick={() => handleDelete(index)}
+    title="Delete"
+  >
+    <Trash2 size={18} />
+  </CButton>
+
+</CTableDataCell>
+                    </CTableRow>
+                  ))
+                ) : (
+                  <CTableRow>
+                    <CTableDataCell colSpan="6" className="text-center">
+                      No records found
+                    </CTableDataCell>
+                  </CTableRow>
+                )}
+              </CTableBody>
+            </CTable>
+          </CModalBody>
+
+          <CModalFooter>
+            <CButton color="secondary" onClick={() => setHistoryModal(false)}>
+              Close
+            </CButton>
+          </CModalFooter>
+        </CModal>
+        <CModal
+          visible={printModal}
+          onClose={() => setPrintModal(false)}
+          size="lg"
+          alignment="center"
+        >
+          <CModalHeader>
+            <CModalTitle>Print Bill Preview</CModalTitle>
+          </CModalHeader>
+
+          <CModalBody>
+            <div id="print-section">
+              <h5>Bill No: {billNo}</h5>
+              <p>
+                <strong>Patient:</strong> {patientDetails?.name}
+              </p>
+              <p>
+                <strong>Mobile:</strong> {patientDetails?.mobilenumber}
+              </p>
+
+              <hr />
+
+              <CTable bordered>
+                <CTableHead>
+                  <CTableRow>
+                    <CTableHeaderCell>Medicine</CTableHeaderCell>
+                    <CTableHeaderCell>Qty</CTableHeaderCell>
+                    <CTableHeaderCell>MRP</CTableHeaderCell>
+                    <CTableHeaderCell>Total</CTableHeaderCell>
+                  </CTableRow>
+                </CTableHead>
+                <CTableBody>
+                  {OpsaleData.map((item, index) => (
+                    <CTableRow key={index}>
+                      <CTableDataCell>{item.medicineName}</CTableDataCell>
+                      <CTableDataCell>{item.qty}</CTableDataCell>
+                      <CTableDataCell>{item.mrp}</CTableDataCell>
+                      <CTableDataCell>{item.total}</CTableDataCell>
+                    </CTableRow>
+                  ))}
+                </CTableBody>
+              </CTable>
+
+              <hr />
+
+              <h6>Total Amount: ₹ {totals.netAmt}</h6>
+            </div>
+          </CModalBody>
+
+          <CModalFooter>
+            <CButton color="primary" onClick={() => window.print()}>
+              Print
+            </CButton>
+
+            <CButton color="secondary" onClick={() => setPrintModal(false)}>
+              Close
+            </CButton>
+          </CModalFooter>
+        </CModal>
+        <CModal
+  visible={viewModal}
+  onClose={() => setViewModal(false)}
+  size="lg"
+  alignment="center"
+  scrollable
+>
+  <CModalHeader>
+    <CModalTitle>OP Sales Details</CModalTitle>
+  </CModalHeader>
+
+  <CModalBody>
+
+    {selectedSale && (
+      <>
+        <h6>Patient Details</h6>
+
+        <p><b>Bill No:</b> {selectedSale.billNo}</p>
+        <p><b>Patient Name:</b> {selectedSale.patientName}</p>
+        <p><b>Mobile:</b> {selectedSale.mobile}</p>
+        <p><b>Doctor:</b> {selectedSale.consultingDoctor}</p>
+        <p><b>Visit Type:</b> {selectedSale.visitType}</p>
+
+        <hr />
+
+        <h6>Medicines</h6>
+
+        <CTable bordered responsive>
+          <CTableHead>
+            <CTableRow>
+              <CTableHeaderCell>Medicine</CTableHeaderCell>
+              <CTableHeaderCell>Qty</CTableHeaderCell>
+              <CTableHeaderCell>Rate</CTableHeaderCell>
+              <CTableHeaderCell>Total</CTableHeaderCell>
+            </CTableRow>
+          </CTableHead>
+
+          <CTableBody>
+            {selectedSale.medicines?.map((med, i) => (
+              <CTableRow key={i}>
+                <CTableDataCell>{med.medicineName}</CTableDataCell>
+                <CTableDataCell>{med.qty}</CTableDataCell>
+                <CTableDataCell>{med.rate}</CTableDataCell>
+                <CTableDataCell>{med.totalA}</CTableDataCell>
+              </CTableRow>
+            ))}
+          </CTableBody>
+        </CTable>
+
+        <hr />
+
+        <h6>Payment Details</h6>
+
+        <p><b>Total Amount:</b> ₹ {selectedSale.totalAmt}</p>
+        <p><b>Amount Paid:</b> ₹ {selectedSale.amountPaid}</p>
+        <p><b>Due Amount:</b> ₹ {selectedSale.dueAmount}</p>
+
+      </>
+    )}
+
+  </CModalBody>
+
+  <CModalFooter>
+    <CButton color="secondary" onClick={() => setViewModal(false)}>
+      Close
+    </CButton>
+  </CModalFooter>
+</CModal>
+
+        {/* <CIcon icon={cilPrint} size="lg" style={{ cursor: 'pointer' }} /> */}
+        {/* <CIcon icon={cilMagnifyingGlass} size="lg" style={{ cursor: 'pointer' }} /> */}
+        {/* </div> */}
+
+        {/* Button */}
+        {/* <CButton color="light" size="sm" style={{fontSize:"12px"}}>
+    {editIndex !== null ? 'Update' : 'PrintTextBill'}
+    
+  </CButton> */}
+
+        {/* Checkbox (push to right on large screens) */}
+        {/* <div className="ms-lg-auto d-flex align-items-center">
     <CFormCheck
       type="checkbox"
       id="displayOpSaleDetails"
       label="Include Returns"
       className="text-dark"
     />
-  </div>
-</div>
-
+  </div> */}
+      </div>
     </div>
   )
 }

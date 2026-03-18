@@ -280,7 +280,7 @@ const InProgressAppointmentsPage = () => {
         error?.response?.data?.message ||
         error?.message ||
         'Something went wrong while booking. Please try again.'
-      showCustomToast(msg, 'error')
+      // showCustomToast(msg, 'error')
       console.error('Booking failed:', error)
     }
   }

@@ -35,14 +35,27 @@ import {
 import { showCustomToast } from '../../Utils/Toaster'
 import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import { useMedicines } from '../../Context/MedicineContext'
+import Select from "react-select";
 
 const MedicineTemplate = () => {
-  const [medicines, setMedicines] = useState([])
   const [medicineType, setMedicineType] = useState([])
+const { medicines, fetchMedicines } = useMedicines()
+  const [errors, setErrors] = useState({})  
+
+  const [medicinestemplate, setMedicinestemplate] = useState([])
+  const medicineOptions = medicines.map((medicine) => ({
+  value: medicine.id,
+  label: `${medicine.productName} - ${medicine.brandName} - ${medicine.composition} - ${medicine.category}`,
+  data: medicine,
+}));
+
+  
   const [showModal, setShowModal] = useState(false)
   const [viewModal, setViewModal] = useState(false)
   const [viewData, setViewData] = useState(null)
   const [formErrors, setFormErrors] = useState({})
+  const [medicineList, setMedicineList] = useState([])
   const [search, setSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(5)
@@ -58,6 +71,31 @@ const MedicineTemplate = () => {
     { value: 'night', label: 'Night' },
     { value: 'NA', label: 'NA' },
   ]
+//   const medicineLists = [
+//   { id: 1, name: "Paracetamol 500mg", brand: "Crocin", type: "Tablet", dose: "500mg" },
+//   { id: 2, name: "Amoxicillin 250mg", brand: "Mox", type: "Capsule", dose: "250mg" },
+//   { id: 3, name: "Azithromycin 500mg", brand: "Azee", type: "Tablet", dose: "500mg" },
+//   { id: 4, name: "Ibuprofen 400mg", brand: "Brufen", type: "Tablet", dose: "400mg" },
+//   { id: 5, name: "Cetirizine 10mg", brand: "Zyrtec", type: "Tablet", dose: "10mg" },
+//   { id: 6, name: "Metformin 500mg", brand: "Glyciphage", type: "Tablet", dose: "500mg" },
+//   { id: 7, name: "Pantoprazole 40mg", brand: "Pan", type: "Tablet", dose: "40mg" },
+//   { id: 8, name: "ORS Powder", brand: "Electral", type: "Powder", dose: "1 Sachet" },
+//   { id: 9, name: "Cough Syrup", brand: "Benadryl", type: "Syrup", dose: "5ml" },
+//   { id: 10, name: "Insulin Injection", brand: "Huminsulin", type: "Injection", dose: "10 IU" },
+//   { id: 11, name: "Diclofenac Gel", brand: "Voveran", type: "Ointment", dose: "Pea-sized" },
+//   { id: 12, name: "Vitamin C 500mg", brand: "Limcee", type: "Tablet", dose: "500mg" }
+// ];
+// const medicineTypes = [
+//   "Tablet",
+//   "Capsule",
+//   "Syrup",
+//   "Injection",
+//   "Ointment",
+//   "Powder",
+//   "Drops",
+//   "Inhaler",
+//   "Gel"
+// ];
 
   const initialFormData = {
     id: null,
@@ -88,32 +126,55 @@ const MedicineTemplate = () => {
   // ================================
   // Fetch Medicine Types
   // ================================
-  useEffect(() => {
-    const fetchTypes = async () => {
-      const clinicId = localStorage.getItem('HospitalId')
-      if (!clinicId) return
-      const types = await getMedicineTypes(clinicId)
-      setMedicineType(types || [])
-    }
-    fetchTypes()
-  }, [])
+//   useEffect(() => {
+//     const fetchTypes = async () => {
+//       const clinicId = localStorage.getItem('HospitalId')
+//       if (!clinicId) return
+//       const types = await getMedicineTypes(clinicId)
+//       setMedicineType(types || [])
+//     }
+//     fetchTypes()
+//   }, [])
+//   const handleChangeMedicine = (selectedName) => {
+//   const selectedMedicine = medicineList.find(
+//     (med) => med.name === selectedName
+//   );
+
+//   if (selectedMedicine) {
+//     setFormData({
+//       ...formData,
+//       name: selectedMedicine.name,
+//       dose: selectedMedicine.dose,
+//       medicineType: selectedMedicine.type
+//     });
+//   }
+// };
 
   // ================================
   // Fetch Medicines
   // ================================
-  useEffect(() => {
-    fetchMedicines()
-  }, [])
+ 
 
-  const fetchMedicines = async () => {
-    const prescriptions = await getPrescriptionsByClinicId()
+ const fetchMedicinesTemplate = async () => {
+  try {
+    const prescriptions = await getPrescriptionsByClinicId();
+
+    console.log("Prescriptions:", prescriptions);
+
     if (prescriptions && prescriptions.length > 0) {
-      const allMeds = prescriptions.flatMap((p) => p.medicines)
-      setMedicines(allMeds)
+      const allMeds = prescriptions.flatMap((p) => p.medicines || []);
+      setMedicinestemplate(allMeds);
     } else {
-      setMedicines([])
+      setMedicinestemplate([]);
     }
+  } catch (error) {
+    console.error("Error fetching medicines:", error);
   }
+};
+   useEffect(() => {
+     fetchMedicines();  
+    fetchMedicinesTemplate()
+  }, [])
 
   // ================================
   // Handle Change
@@ -122,6 +183,29 @@ const MedicineTemplate = () => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     setFormErrors((prev) => ({ ...prev, [field]: '' }))
   }
+  
+const MedicineChange = (field, value) => {
+  if (field === "medicineId") {
+    const selectedMedicine = medicineLists.find(
+      (med) => med.id === Number(value)
+    );
+
+    if (selectedMedicine) {
+      setFormData({
+        ...formData,
+        medicineId: value,
+        medicineType: selectedMedicine.type,
+        dose: selectedMedicine.dose,
+      });
+      return;
+    }
+  }
+
+  setFormData({
+    ...formData,
+    [field]: value,
+  });
+};
 
   const validateForm = () => {
     const errors = {}
@@ -135,11 +219,11 @@ const MedicineTemplate = () => {
     // Medicine Info
     // ----------------------------
     if (!formData.name?.trim()) {
-      errors.name = 'Medicine Name is required'
+      errors.name = 'Product Name is required'
     } else if (!medicineRegex.test(formData.name.trim())) {
       errors.name = 'Only letters, numbers, and symbols (.,-/+%) are allowed'
     } else if (!hasAlphabet.test(formData.name.trim())) {
-      errors.name = 'Medicine Name must include at least one letter'
+      errors.name = 'Product Name must include at least one letter'
     }
 
     if (!formData.dose?.trim()) {
@@ -166,14 +250,7 @@ const MedicineTemplate = () => {
     if (!formData.food) errors.food = 'Food Instructions are required'
 
     // Manufacturer / Inventory Info
-    if (!formData.nameAndAddressOfTheManufacturer?.trim())
-      errors.nameAndAddressOfTheManufacturer = 'Manufacturer is required'
-    if (!formData.dateOfManufacturing) errors.dateOfManufacturing = 'Manufacturing Date is required'
-    if (!formData.dateOfExpriy) errors.dateOfExpriy = 'Expiry Date is required'
-    else if (formData.dateOfManufacturing && formData.dateOfExpriy <= formData.dateOfManufacturing)
-      errors.dateOfExpriy = 'Expiry date must be after Manufacturing date'
-    if (!formData.manufacturingLicenseNumber?.trim())
-      errors.manufacturingLicenseNumber = 'License Number is required'
+  
 
     setFormErrors(errors)
     return Object.keys(errors).length === 0
@@ -184,19 +261,19 @@ const MedicineTemplate = () => {
   const handleSave = async () => {
     console.log('Clicked Save, formData:', formData)
 
-    if (!validateForm()) return
+    // if (!validateForm()) return
 
     try {
       setLoading(true)
       if (formData.id) {
         // UPDATE FLOW
-        console.log('Updating medicine with ID:', formData.id)
+        console.log('Updating medicine template with ID:', formData.id)
         const updatedMedicine = await updateMedicine(formData.id, formData)
-        setMedicines((prev) => prev.map((m) => (m.id === formData.id ? updatedMedicine : m)))
-        showCustomToast('Medicine updated successfully!', 'success')
+        await fetchMedicinesTemplate()
+        showCustomToast('Medicine Template updated successfully!', 'success')
       } else {
         // ADD FLOW
-        console.log('Adding new medicine...')
+        console.log('Adding new medicine template...')
         const newMedicine = await saveMedicineTemplate(formData)
 
         if (!newMedicine.id) {
@@ -205,18 +282,18 @@ const MedicineTemplate = () => {
           return
         }
 
-        setMedicines((prev) => [...prev, newMedicine])
-        showCustomToast('Medicine added successfully!', 'success')
+       await fetchMedicinesTemplate()
+        showCustomToast('Medicine Template added successfully!', 'success')
       }
 
       // ✅ Reset modal & state
       setShowModal(false)
       setFormData(initialFormData)
       setFormErrors({})
-      fetchMedicines()
+      fetchMedicinesTemplate()
     } catch (error) {
       console.error('Error saving medicine:', error)
-      showCustomToast('Failed to save medicine!', 'error')
+      // showCustomToast('Failed to save medicine!', 'error')
     } finally {
       setLoading(false)
     }
@@ -225,13 +302,23 @@ const MedicineTemplate = () => {
   // ================================
   // Edit Data
   // ================================
-  const handleEdit = (medicine) => {
-    // Make sure the medicine object has an id
-    console.log('Editing medicine:', medicine)
-    setFormData(medicine)
-    setShowModal(true)
-  }
-  const handleView = (medicine) => {
+ const handleEdit = (medicine) => {
+  console.log("Editing medicine:", medicine);
+
+  const selectedMedicine = medicines.find(
+    (m) =>
+      m.productName === medicine.name &&
+      m.brandName === medicine.brandName
+  );
+
+  setFormData({
+    ...medicine,
+    medicineId: selectedMedicine?.id || "",
+  });
+
+  setShowModal(true);
+};
+    const handleView = (medicine) => {
     setViewData(medicine)
     setViewModal(true)
   }
@@ -240,6 +327,7 @@ const MedicineTemplate = () => {
     setMedicineIdToDelete(id)
     setIsDeleteModalVisible(true)
   }
+ 
 
   const handleCreateMedicineType = async (inputValue) => {
     try {
@@ -261,13 +349,15 @@ const MedicineTemplate = () => {
       }
     } catch (error) {
       console.error('❌ Error adding medicine type:', error)
-      showCustomToast('Error adding medicine type!', 'error')
+      // showCustomToast('Error adding medicine type!', 'error')
     }
   }
 
-  const filteredMedicines = medicines.filter((med) =>
-    (med.name || '').toLowerCase().includes(search.toLowerCase()),
-  )
+ const filteredMedicines = medicinestemplate.filter((med) =>
+  `${med.name} ${med.brandName} ${med.dose}`
+    .toLowerCase()
+    .includes(search.toLowerCase())
+)
 
   const slotCount = () => {
     switch (formData.remindWhen) {
@@ -314,14 +404,14 @@ const MedicineTemplate = () => {
       const success = await deletePrescriptionById(medicineIdToDelete)
 
       if (success) {
-        setMedicines((prev) => prev.filter((med) => med.id !== medicineIdToDelete))
-        showCustomToast('Medicine deleted successfully!', 'success')
+        setMedicinestemplate((prev) => prev.filter((med) => med.id !== medicineIdToDelete))
+        showCustomToast('Medicine Template deleted successfully!', 'success')
       } else {
         showCustomToast('Failed to delete medicine!', 'error')
       }
     } catch (error) {
       console.error('Error deleting medicine:', error)
-      showCustomToast('An unexpected error occurred!', 'error')
+      // showCustomToast('An unexpected error occurred!', 'error')
     } finally {
       setIsDeleteModalVisible(false)
       setMedicineIdToDelete(null)
@@ -350,7 +440,7 @@ const MedicineTemplate = () => {
                   setShowModal(true) // Open modal
                 }}
               >
-                Add Medicine
+                Add Medicine Template
               </CButton>
       </div>
 
@@ -360,7 +450,7 @@ const MedicineTemplate = () => {
           <CTableHead className="pink-table w-auto">
             <CTableRow>
               <CTableHeaderCell>S.No</CTableHeaderCell>
-              <CTableHeaderCell>Medicine Name</CTableHeaderCell>
+              <CTableHeaderCell>Product Name</CTableHeaderCell>
               <CTableHeaderCell>Dosage</CTableHeaderCell>
               <CTableHeaderCell>Medicine Type</CTableHeaderCell>
               <CTableHeaderCell>Duration</CTableHeaderCell>
@@ -451,7 +541,7 @@ const MedicineTemplate = () => {
       >
         <CModalHeader className="bg-light border-bottom">
           <CModalTitle className="fw-bold">
-            {formData.id ? '✏️ Edit Medicine' : '➕ Add Medicine'}
+            {formData.id ? '✏️ Edit Medicine Template' : '➕ Add Medicine Template'}
           </CModalTitle>
         </CModalHeader>
         <CModalBody>
@@ -460,54 +550,85 @@ const MedicineTemplate = () => {
             Medicine Information
           </h6>
           <CRow className="g-3 mb-3">
-            <CCol md={6}>
-              <CFormInput
-                label={
-                  <>
-                    Medicine Name <span className="text-danger">*</span>
-                  </>
-                }
-                placeholder="Enter medicine name"
-                value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
-              />
-              {formErrors.name && <small className="text-danger">{formErrors.name}</small>}
-            </CCol>
-            <CCol md={6}>
-              <CFormInput
-                label={
-                  <>
-                    Dosage <span className="text-danger">*</span>
-                  </>
-                }
-                placeholder="100mg or Pea-sized"
-                value={formData.dose}
-                onChange={(e) => handleChange('dose', e.target.value)}
-              />
-              {formErrors.dose && <small className="text-danger">{formErrors.dose}</small>}
-            </CCol>
-            <CCol md={6}>
-              <label className="form-label">
-                Medicine Type<span className="text-danger">*</span>
-              </label>
-              <CreatableSelect
-                isClearable
-                options={medicineType.map((t) => ({ label: t, value: t }))}
-                value={
-                  formData.medicineType
-                    ? { label: formData.medicineType, value: formData.medicineType }
-                    : null
-                }
-                onChange={(selected) =>
-                  handleChange('medicineType', selected ? selected.value : '')
-                }
-                onCreateOption={handleCreateMedicineType}
-                placeholder="Choose or create type..."
-              />
-              {formErrors.medicineType && (
-                <small className="text-danger">{formErrors.medicineType}</small>
-              )}
-            </CCol>
+ <CCol md={12}>
+  <div>
+    <label>
+      Product Name <span className="text-danger">*</span>
+    </label>
+
+    <Select
+      placeholder="Search Product..."
+      options={medicineOptions}
+      isSearchable
+      value={medicineOptions.find(
+        (option) => String(option.value) === String(formData.medicineId)
+      ) || null}
+      onChange={(selectedOption) => {
+        const selectedMedicine = selectedOption?.data;
+
+        setFormData((prev) => ({
+          ...prev,
+          medicineId: selectedOption?.value || "",
+          name: selectedMedicine?.productName || "",
+          brandName: selectedMedicine?.brandName || "",
+          nameAndAddressOfTheManufacturer: selectedMedicine?.manufacturer || "",
+          dose: selectedMedicine?.composition || "",
+          medicineType: selectedMedicine?.category || "",
+        }));
+      }}
+      isClearable
+    />
+  </div>
+</CCol>
+            
+
+          {/* <CCol md={6}>
+  <CFormInput
+    label={
+      <>
+        Dosage <span className="text-danger">*</span>
+      </>
+    }
+    placeholder="100mg or Pea-sized"
+    value={formData.dose || ""}
+    onChange={(e) => handleChange("dose", e.target.value)}
+  />
+   
+</CCol>
+         <CCol md={6}>
+  <CFormSelect
+    label={
+      <>
+        Brand Name <span className="text-danger">*</span>
+      </>
+    }
+    value={formData.brandName || ""}
+    onChange={(e) => handleChange("brandName", e.target.value)}
+  >
+    <option value="">Select Brand Name</option>
+
+    {medicines.map((medicine) => (
+      <option key={medicine.id} value={medicine.brandName}>
+        {medicine.brandName}
+      </option>
+    ))}
+  </CFormSelect>
+
+  {errors.brandName && (
+    <small className="text-danger">{errors.brandName}</small>
+  )}
+</CCol>
+       <CCol md={6}>
+  <CFormInput
+    label={
+      <>
+        Medicine Type <span className="text-danger">*</span>
+      </>
+    }
+    value={formData.medicineType || ""}
+    readOnly
+  />
+</CCol> */}
           </CRow>
 
           {/* Prescription Section */}
@@ -663,7 +784,7 @@ const MedicineTemplate = () => {
           <CRow className="g-3">
             <CCol md={4}>
               <CFormInput
-                label="Serial Number"
+                label="Serial Number"//TODO: remove this once discuused with backend
                 value={formData.serialNumber}
                 onChange={(e) => {
                   const onlyNums = e.target.value // keep digits only
@@ -673,27 +794,34 @@ const MedicineTemplate = () => {
             </CCol>
             <CCol md={4}>
               <CFormInput
-                label="Brand Name"
+                label="Brand Name"//TODO: reflect from backend
                 value={formData.brandName}
                 onChange={(e) => handleChange('brandName', e.target.value)}
               />
             </CCol>
             <CCol md={4}>
+              
               <CFormInput
+              //TODO: reflect from backend
                 label={
                   <>
-                    Manufacturer <span className="text-danger">*</span>
+                    Manufacturer 
                   </>
                 }
                 value={formData.nameAndAddressOfTheManufacturer}
-                onChange={(e) => handleChange('nameAndAddressOfTheManufacturer', e.target.value)}
+                            onChange={(e) =>
+  setFormData((prev) => ({
+    ...prev,
+    nameAndAddressOfTheManufacturer: e.target.value,
+  }))
+}
+
               />
-              {formErrors.nameAndAddressOfTheManufacturer && (
-                <small className="text-danger">{formErrors.nameAndAddressOfTheManufacturer}</small>
-              )}
+           
             </CCol>
           <CCol md={6}>
   <CFormInput
+  //TODO: reflect from backend
     type="date"
     label={
       <>
@@ -721,6 +849,7 @@ const MedicineTemplate = () => {
 
 <CCol md={6}>
   <CFormInput
+  //TODO: reflect from backend
     type="date"
     label={
       <>
@@ -752,9 +881,10 @@ const MedicineTemplate = () => {
   <CFormInput
     label={
       <>
-        License Number <span className="text-danger">*</span>
+        License Number 
+        <span className="text-danger">*</span> 
       </>
-    }
+    }//TODO: remove this once discused with backend
     value={formData.manufacturingLicenseNumber || ''}
     onChange={(e) => {
       const value = e.target.value
@@ -789,11 +919,13 @@ const MedicineTemplate = () => {
             <CCol md={6}>
               <CFormInput
                 type="number"
+    //TODO: remove this once discused with backend
                 label="Stock"
                 min="0"
                 value={formData.stock}
                 onChange={(e) => handleChange('stock', e.target.value)}
               />
+              
             </CCol>
           </CRow>
         </CModalBody>
@@ -821,7 +953,7 @@ const MedicineTemplate = () => {
                 Saving...
               </>
             ) : (
-              'Save Medicine'
+              'Save Medicine Template'
             )}
           </CButton>
         </CModalFooter>
@@ -850,7 +982,7 @@ const MedicineTemplate = () => {
                 <CCardBody>
                   <CRow className="mb-2">
                     <CCol md={6}>
-                      <strong>📌 Name:</strong> <span>{viewData.name}</span>
+                      <strong>📌 ProductName:</strong> <span>{viewData.name}</span>
                     </CCol>
                     <CCol md={6}>
                       <strong>💊 Dosage:</strong> <span>{viewData.dose}</span>
@@ -859,7 +991,7 @@ const MedicineTemplate = () => {
 
                   <CRow className="mb-2">
                     <CCol md={6}>
-                      <strong>🔖 Type:</strong> <span>{viewData.medicineType}</span>
+                      <strong>🔖 Medicine Type:</strong> <span>{viewData.medicineType}</span>
                     </CCol>
                     <CCol md={6}>
                       <strong>⏳ Duration:</strong>{' '}
@@ -908,7 +1040,7 @@ const MedicineTemplate = () => {
                     </CCol>
                     <CCol md={6}>
                       <strong>🏭 Manufacturer:</strong>{' '}
-                      <span>{viewData.nameAndAddressOfTheManufacturer}</span>
+                      <span>{viewData.manufacturer}</span>
                     </CCol>
                   </CRow>
 

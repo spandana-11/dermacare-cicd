@@ -1,8 +1,8 @@
 import { BASE_URL } from '../../../baseUrl'
 import { http } from '../../../Utils/Interceptors'
 
-export const getAllAdmins = (clinicId) => {
-  return http.get(`${BASE_URL}/getAllAdministrators/${clinicId}`)
+export const getAllAdmins = (clinicId,branchId) => {
+  return http.get(`${BASE_URL}/getAllAdministrators/${clinicId}/${branchId}`)
 }
 export const addAdmin = (data) => {
   return http.post(`${BASE_URL}/addAdministrator`, data)

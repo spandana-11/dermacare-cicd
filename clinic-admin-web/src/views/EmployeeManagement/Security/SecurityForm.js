@@ -845,7 +845,7 @@ if (value && !emailPattern.test(value)) {
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>
-                    Department <span style={{ color: 'red' }}>*</span>
+                    Department 
                   </CFormLabel>
                   <CFormInput
                     value={formData.department}
@@ -870,7 +870,7 @@ if (value && !emailPattern.test(value)) {
                     }}
                   />
 
-                  {errors.department && <div className="text-danger mt-1">{errors.department}</div>}
+                  {/* {errors.department && <div className="text-danger mt-1">{errors.department}</div>} */}
                 </div>
                 <div className="col-md-4">
                   <CFormLabel>
@@ -1190,7 +1190,7 @@ if (value && !emailPattern.test(value)) {
                                     handleNestedChange('bankAccountDetails', 'branchName', '')
                                   }
                                 } catch (err) {
-                                  showCustomToast('Error fetching bank details', 'error')
+                                  // showCustomToast('Error fetching bank details', 'error')
                                   handleNestedChange('bankAccountDetails', 'bankName', '')
                                   handleNestedChange('bankAccountDetails', 'branchName', '')
                                 } finally {

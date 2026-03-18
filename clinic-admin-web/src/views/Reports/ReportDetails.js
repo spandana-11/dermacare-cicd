@@ -111,7 +111,7 @@ const ReportDetails = () => {
     try {
       if (!appointmentInfo?.bookingId) return
 
-      const response = await axios.get(
+      const response = await http.get(
         `${BASE_URL}/getReportByBookingId/${appointmentInfo.bookingId}`
       )
 
@@ -344,7 +344,7 @@ const ReportDetails = () => {
       })
     } catch (err) {
       console.error('Error uploading report:', err)
-      showCustomToast('Upload failed', 'error')
+      // showCustomToast('Upload failed', 'error')
     } finally {
       setLoading(false)
     }
@@ -384,7 +384,7 @@ const ReportDetails = () => {
       setDeleteTarget(null)
     } catch (error) {
       console.error('Error deleting report file:', error)
-      showCustomToast('Failed to delete file.', 'error')
+      // showCustomToast('Failed to delete file.', 'error')
     } finally {
       SetDelloading(false)
     }
@@ -417,7 +417,7 @@ const ReportDetails = () => {
       showCustomToast('All files downloaded successfully.', 'success')
     } catch (error) {
       console.error('Error downloading all files:', error)
-      showCustomToast('Failed to download all files.', 'error')
+      // showCustomToast('Failed to download all files.', 'error')
     }
   }
 
@@ -447,7 +447,8 @@ const ReportDetails = () => {
             <p>
               <strong>Gender:</strong> {appointmentInfo.gender}
             </p>
-           <strong>Problem:</strong> {appointmentInfo.problem || 'N/A'}
+             <p>
+           <strong>Problem:</strong> {appointmentInfo.problem || 'N/A'}</p>
           </div>
           <div className="col-md-6 ps-md-4">
             <p>

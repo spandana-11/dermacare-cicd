@@ -130,38 +130,42 @@ const ProcedureConsentForm = () => {
 
   // Fetch subServices based on serviceId
   useEffect(() => {
-    if (!newService.serviceId) {
-      setSubServiceOptions([])
-      return
-    }
-    const fetchSubServices = async () => {
-      try {
-        const res = await subServiceData(newService.serviceId)
-        const subList = res?.data || []
+  if (!newService.serviceId) {
+    setSubServiceOptions([])
+    return
+  }
 
-        // Flatten all subservices
-        let allSubServices = []
-        if (Array.isArray(subList)) {
-          allSubServices = subList.flatMap((item) => item.subServices || [])
-        } else if (subList?.subServices) {
-          allSubServices = subList.subServices
-        }
+  const fetchSubServices = async () => {
+    try {
+      const res = await subServiceData(newService.serviceId)
+      const subList = res?.data || []
 
-        // Extract all subServiceIds
-        const subServiceIds = allSubServices.map((sub) => sub.subServiceId)
-
-        // Check details and filter by consentFormType
-        await checkSubServiceDetails(subServiceIds)
-
-        console.log('All SubServices:', allSubServices)
-      } catch (e) {
-        console.error('Error fetching subServices', e)
-        setSubServiceOptions([])
+      // 🔹 Flatten all subservices
+      let allSubServices = []
+      if (Array.isArray(subList)) {
+        allSubServices = subList.flatMap((item) => item.subServices || [])
+      } else if (subList?.subServices) {
+        allSubServices = subList.subServices
       }
-    }
 
-    fetchSubServices()
-  }, [newService.serviceId])
+      // ✅ SET OPTIONS HERE (THIS WAS MISSING)
+      setSubServiceOptions(allSubServices)
+
+      // optional: validate already selected ones
+      if (selectedSubService.length > 0) {
+        checkSubServiceDetails(selectedSubService)
+      }
+
+      console.log('All SubServices:', allSubServices)
+    } catch (e) {
+      console.error('Error fetching subServices', e)
+      setSubServiceOptions([])
+    }
+  }
+
+  fetchSubServices()
+}, [newService.serviceId])
+
 
   useEffect(() => {
     const fetchForms = async () => {
@@ -198,38 +202,25 @@ const ProcedureConsentForm = () => {
       return updatedState
     })
   }
-  const checkSubServiceDetails = async (ids) => {
-    const hospitalId = localStorage.getItem('HospitalId')
-    let filteredSubServices = []
-    let incomplete = false
+ const checkSubServiceDetails = async (ids) => {
+  let incomplete = false
 
-    const detailsArray = await Promise.all(ids.map((id) => getSubServiceById(hospitalId, id)))
+  const detailsArray = await Promise.all(
+    ids.map((id) => getSubServiceById(hospitalId, id))
+  )
 
-    detailsArray.forEach((data) => {
-      if (!data) return // skip null/undefined
-
-      // If data is an array, use it; if object, wrap it in array
-      const subArray = Array.isArray(data) ? data : [data]
-
-      // Filter only consentFormType === '2'
-      const consent2Subs = subArray.filter((sub) => sub.consentFormType === '2')
-
-      filteredSubServices.push(...consent2Subs)
-
-      // Check for missing price/finalCost
-      consent2Subs.forEach((sub) => {
-        if (!sub.price || !sub.finalCost) {
-          incomplete = true
-        }
-      })
+  detailsArray.forEach((data) => {
+    const arr = Array.isArray(data) ? data : [data]
+    arr.forEach((sub) => {
+      if (!sub.price || !sub.finalCost) {
+        incomplete = true
+      }
     })
+  })
 
-    // ✅ Update state
-    setSubServiceOptions(filteredSubServices)
-    setIsSubServiceComplete(!incomplete)
+  setIsSubServiceComplete(!incomplete)
+}
 
-    console.log('Filtered SubServices with consentFormType=2:', filteredSubServices)
-  }
 
   console.log(subServiceOptions)
   const handleSubServiceChange = (e) => {
@@ -445,7 +436,7 @@ const ProcedureConsentForm = () => {
       }
     } catch (err) {
       console.error('Error in editProcedureForm:', err)
-      showCustomToast('Unable to prepare edit form. Check console for details.', 'error')
+      // showCustomToast('Unable to prepare edit form. Check console for details.', 'error')
     }
   }
 
@@ -464,7 +455,7 @@ const ProcedureConsentForm = () => {
       setProcedureForms(updated)
     } catch (error) {
       console.error('Error deleting Procedure Form:', error)
-      showCustomToast('Failed to delete procedure form.', 'error')
+      // showCustomToast('Failed to delete procedure form.', 'error')
     } finally {
       setDelLoading(false)
     }

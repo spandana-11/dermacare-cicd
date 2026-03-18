@@ -75,6 +75,15 @@ public class InventoryServiceImpl implements InventoryService {
 				.status(HttpStatus.OK.value()).build();
 	}
 
+    // ✅ ADD HERE
+    private static final Map<String, Integer> STATUS_PRIORITY = Map.of(
+            "EXPIRED", 1,
+            "OUT_OF_STOCK", 2,
+            "EXPIRING_SOON", 3,
+            "LOW_STOCK", 4,
+            "NORMAL", 5
+    );
+	
 	@Override
 	public Response getAllInventory(String clinicId, String branchId) {
 
@@ -83,7 +92,7 @@ public class InventoryServiceImpl implements InventoryService {
 
 	    Map<String, List<Inventory>> grouped =
 	            inventories.stream()
-	            .collect(Collectors.groupingBy(Inventory::getMedicineId));
+	                    .collect(Collectors.groupingBy(Inventory::getMedicineId));
 
 	    List<InventoryGetAllResponse> responseList = new ArrayList<>();
 
@@ -104,51 +113,28 @@ public class InventoryServiceImpl implements InventoryService {
 	        dto.setMinStock(first.getMinStock());
 	        dto.setGstPercent(first.getGstPercent());
 
+	        // ✅ Total Quantity
 	        double totalQty = inventoryList.stream()
 	                .mapToDouble(Inventory::getAvailableQty)
 	                .sum();
 
 	        dto.setAvailableQty(totalQty);
 
-	        // Default medicine level status
+	        // ✅ Default final status
 	        String finalStatus = "NORMAL";
 
 	        for (Inventory inv : inventoryList) {
 
-	            LocalDate expiry = LocalDate.parse(inv.getExpiryDate(), formatter);
-	            long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiry);
-
-	            String batchStatus = "NORMAL";
-
-	            if (daysLeft <= 0) {
-	                batchStatus = "EXPIRED";
-	                finalStatus = "EXPIRED";
-	            }
-	            else if (daysLeft <= 30) {
-	                batchStatus = "EXPIRING_SOON";
-	                if (!finalStatus.equals("EXPIRED")) {
-	                    finalStatus = "EXPIRING_SOON";
-	                }
-	            }
-	            else if (inv.getAvailableQty() <= 0) {
-	                batchStatus = "OUT_OF_STOCK";
-	                if (finalStatus.equals("NORMAL")) {
-	                    finalStatus = "OUT_OF_STOCK";
-	                }
-	            }
-	            else if (inv.getAvailableQty() <= inv.getMinStock()) {
-	                batchStatus = "LOW_STOCK";
-	                if (finalStatus.equals("NORMAL")) {
-	                    finalStatus = "LOW_STOCK";
-	                }
-	            }
-
-	            // Set status for each inventory batch
+	            String batchStatus = getBatchStatus(inv, formatter);
 	            inv.setStatus(batchStatus);
+
+	            // ✅ Priority comparison (REAL-TIME FIX)
+	            if (STATUS_PRIORITY.get(batchStatus) < STATUS_PRIORITY.get(finalStatus)) {
+	                finalStatus = batchStatus;
+	            }
 	        }
 
 	        dto.setStatus(finalStatus);
-
 	        dto.setInventory(inventoryList);
 
 	        responseList.add(dto);
@@ -160,6 +146,25 @@ public class InventoryServiceImpl implements InventoryService {
 	            .message("Inventory fetched successfully")
 	            .status(HttpStatus.OK.value())
 	            .build();
+	}
+	private String getBatchStatus(Inventory inv, DateTimeFormatter formatter) {
+
+	    LocalDate expiry = LocalDate.parse(inv.getExpiryDate(), formatter);
+	    long daysLeft = ChronoUnit.DAYS.between(LocalDate.now(), expiry);
+
+	    // 🔴 Highest priority
+	    if (daysLeft <= 0) return "EXPIRED";
+
+	    // 🔴 Next priority
+	    if (inv.getAvailableQty() <= 0) return "OUT_OF_STOCK";
+
+	    // 🟠
+	    if (daysLeft <= 30) return "EXPIRING_SOON";
+
+	    // 🟡
+	    if (inv.getAvailableQty() <= inv.getMinStock()) return "LOW_STOCK";
+
+	    return "NORMAL";
 	}
 
 	@Override

@@ -555,7 +555,7 @@ const ClinicRegistration = () => {
       fetchData()
     } catch (error) {
       console.error('Error updating service:', error)
-     showCustomToast('Failed to update service. Please try again.', { position: 'top-right' },'error')
+    //  showCustomToast('Failed to update service. Please try again.', { position: 'top-right' },'error')
     }
   }
 

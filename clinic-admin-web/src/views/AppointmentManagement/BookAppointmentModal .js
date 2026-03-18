@@ -962,7 +962,7 @@ useEffect(() => {
     console.log('Validating bookingDetails...', bookingDetails)
 
     if (!validate()) {
-      showCustomToast('Please fix the errors before submitting.', 'error')
+      // showCustomToast('Please fix the errors before submitting.', 'error')
       return
     }
 
@@ -1081,7 +1081,7 @@ useEffect(() => {
       }, 1000)
     } catch (err) {
       console.error('❌ Follow-up Error:', err)
-      showCustomToast('Failed to submit follow-up booking', 'error')
+      // showCustomToast('Failed to submit follow-up booking', 'error')
     }
   }
 
