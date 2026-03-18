@@ -19,6 +19,7 @@ public interface OpSalesRepository extends MongoRepository<OpSales, String> {
 
     // Get all by clinicId and branchId
     List<OpSales> findByClinicIdAndBranchId(String clinicId, String branchId);
+    List<OpSales> findByClinicIdAndBranchIdAndOpNo(String clinicId, String branchId, String opno);
 
     // Find by opNo, clinicId, branchId — latest record
     Optional<OpSales> findTopByOpNoAndClinicIdAndBranchIdOrderByCreatedAtDesc(

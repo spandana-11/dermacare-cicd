@@ -26,6 +26,8 @@ public interface CustomerOnboardingService {
 	public Response getCustomersByPatientId(String patientId,String clinicId);
 	
 	public CustomerOnbordingDTO getCustomerByToken(String token);
+	public Response getCustomerByMobiileNumber(String mobilenumber);
+		
 //
 //	Response resetPassword(ChangeDoctorPasswordDTO dto);
 }

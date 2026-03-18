@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+import org.springframework.data.annotation.CreatedDate;
+
 /**
  * Represents a single payment installment.
  * Stored as an embedded object inside OpSales.amountToBePaid list.
@@ -16,13 +18,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PaymentEntry {
-
-    /** Amount paid in this installment */
-    private Double amountPaid;
-
-    /** Remaining due after this installment */
-    private Double dueAmount;
-
-    /** Timestamp when this payment was recorded */
+    private Double amountPaid;       // amount paid in this installment
+    private Double alreadyPaid;      // total paid before this installment
+    private Double totalPaidSoFar;   // alreadyPaid + amountPaid
+    private Double dueAmount; 
+    @CreatedDate
     private LocalDateTime paidAt;
 }

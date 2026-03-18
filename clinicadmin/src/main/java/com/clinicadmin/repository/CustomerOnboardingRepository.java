@@ -9,6 +9,7 @@ import com.clinicadmin.entity.CustomerOnbording;
 
 public interface CustomerOnboardingRepository extends MongoRepository<CustomerOnbording, String> {
 	Optional<CustomerOnbording> findByCustomerId(String customerId); // ✅ works because field exists
+	Optional<CustomerOnbording> findByMobileNumber(String mbilenumber); // ✅ works because field exists
 
 	void deleteByCustomerId(String customerId);
 

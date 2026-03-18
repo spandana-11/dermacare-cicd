@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.clinicadmin.dto.AreaDTO;
 import com.clinicadmin.dto.CityDTO;
 import com.clinicadmin.dto.MedicineDetailDTO;
+import com.clinicadmin.dto.MedicineInventoryDto;
 import com.clinicadmin.dto.OpSalesRequest;
 import com.clinicadmin.dto.PurchaseBillDTO;
 import com.clinicadmin.dto.Response;
@@ -125,19 +126,19 @@ Response deleteSupplier(@PathVariable String supplierId);
 
 
 ////////////////MedicanDetails/////////////////
-@PostMapping("/api/pharmacy/medicine/addMedicine")
+@PostMapping("/api/pharmacy/medicines/addMedicine")
 Response addMedicine(@RequestBody MedicineDetailDTO dto);
 
-@GetMapping("/api/pharmacy/medicine/getMedicineById/{id}")
+@GetMapping("/api/pharmacy/medicines/getMedicineById/{id}")
 Response getMedicineById(@PathVariable String id);
 
-@GetMapping("/api/pharmacy/medicine/getAllMedicines")
+@GetMapping("/api/pharmacy/medicines/getAllMedicines")
 Response getAllMedicines();
 
-@PutMapping("/api/pharmacy/medicine/updateMedicineById/{id}")
+@PutMapping("/api/pharmacy/medicines/updateMedicineById/{id}")
 Response updateMedicine(@PathVariable String id, @RequestBody MedicineDetailDTO dto);
 
-@DeleteMapping("/api/pharmacy/medicine/deleteMedicineById/{id}")
+@DeleteMapping("/api/pharmacy/medicines/deleteMedicineById/{id}")
 Response deleteMedicine(@PathVariable String id);
 
                      ////////////Stock/////////////
@@ -201,9 +202,8 @@ Response changeStatus(@PathVariable("id") String id, @RequestParam("status") Str
     public ResponseEntity<Response> createOpSales(
             @RequestBody OpSalesRequest request);
     
-    @PutMapping("/api/pharmacy/op-sales/updateSale/{id}")
+    @PutMapping("/api/pharmacy/op-sales/updateSale")
     public ResponseEntity<Response> updateOpSales(
-            @PathVariable String id,
             @RequestBody OpSalesRequest request);
     
     @GetMapping("/api/pharmacy/op-sales/getAllOpSales/{clinicId}/{branchId}")
@@ -277,6 +277,14 @@ Response changeStatus(@PathVariable("id") String id, @RequestParam("status") Str
             @RequestParam(required = false) String branchId);
 
 
+    
+    
+    ///MEDICINEINVENTORY
+    
+    @GetMapping("/api/pharmacy/medicines/medicineInventory/{medicineId}")
+    public ResponseEntity<MedicineInventoryDto> getMedicineInventory(@PathVariable String medicineId);
+
+    
 }
 
 

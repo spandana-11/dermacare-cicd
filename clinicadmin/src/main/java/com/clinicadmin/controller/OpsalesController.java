@@ -37,13 +37,11 @@ public class OpsalesController {
     // ─────────────────────────────────────────────────────────────
     // 2. UPDATE
     // ─────────────────────────────────────────────────────────────
-    @PutMapping("/updateSale/{id}")
-    public Object updateOpSales(
-            @PathVariable String id,
-            @RequestBody OpSalesRequest request) {
+    @PutMapping("/updateSale")
+    public Object updateOpSales(@RequestBody OpSalesRequest request) {
 
-        log.info("REST request to update OP Sales id: {}", id);
-        return opSalesService.updateOpSales(id, request);
+        log.info("REST request to update OP Sales id: {}", request.getBillNo());
+        return opSalesService.updateOpSales(request);
     }
 
     // ─────────────────────────────────────────────────────────────

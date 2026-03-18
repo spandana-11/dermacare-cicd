@@ -137,6 +137,29 @@ public class CustomerOnboardingServiceImpl implements CustomerOnboardingService 
 		return response;
 	}
 
+	
+	@Override
+	public Response getCustomerByMobiileNumber(String mobilenumber) {
+		Response response = new Response();
+		try {
+			Optional<CustomerOnbording> optional = onboardingRepository.findByMobileNumber(mobilenumber);
+			if (optional.isPresent()) {
+				response.setSuccess(true);
+				response.setMessage("Customer found successfully");
+				response.setData(convertToDTO(optional.get()));
+				response.setStatus(200);
+			} else {
+				response.setSuccess(false);
+				response.setMessage("Customer not found with ID: " + mobilenumber);
+				response.setStatus(404);
+			}
+		} catch (Exception e) {
+			response.setSuccess(false);
+			response.setMessage("Error fetching customer: " + e.getMessage());
+			response.setStatus(500);
+		}
+		return response;
+	}
 	// ----------------- UPDATE -----------------
 	@Override
 	public Response updateCustomer(String customerId, CustomerOnbordingDTO dto) {

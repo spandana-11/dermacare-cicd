@@ -19,8 +19,10 @@ import org.springframework.stereotype.Service;
 import com.pharmacyManagement.dto.Response;
 import com.pharmacyManagement.dto.ReturnBillDTO;
 import com.pharmacyManagement.dto.ReturnItemDTO;
+import com.pharmacyManagement.entity.Inventory;
 import com.pharmacyManagement.entity.ReturnBill;
 import com.pharmacyManagement.entity.ReturnItem;
+import com.pharmacyManagement.repository.InventoryRepository;
 import com.pharmacyManagement.repository.ReturnBillRepository;
 import com.pharmacyManagement.service.ReturnBillService;
 import com.pharmacyManagement.util.Counter;
@@ -35,6 +37,9 @@ public class ReturnBillServiceImpl implements ReturnBillService {
     private  ReturnBillRepository repository;
 	@Autowired
     private  MongoTemplate mongoTemplate;
+	
+	@Autowired
+	private InventoryRepository inventoryRepository;
 
     // =========================
     //  CREATE RETURN BILL 
@@ -242,6 +247,35 @@ public class ReturnBillServiceImpl implements ReturnBillService {
 
             ReturnBill entity = optional.get();
 
+            // =========================
+            // 🔥 STEP 1: REVERSE OLD STOCK
+            // =========================
+            if (entity.getItems() != null) {
+                for (ReturnItem oldItem : entity.getItems()) {
+
+                    Optional<Inventory> optionalInventory =
+                            inventoryRepository.findByMedicineIdAndBatchNoAndClinicIdAndBranchId(
+                                    oldItem.getProductId(),
+                                    oldItem.getBatchNo(),
+                                    entity.getClinicId(),
+                                    entity.getBranchId());
+
+                    if (optionalInventory.isPresent()) {
+
+                        Inventory inventory = optionalInventory.get();
+
+                        // ✅ ADD BACK OLD RETURN QTY
+                        double updatedQty = inventory.getAvailableQty() + oldItem.getReturnQty();
+
+                        inventory.setAvailableQty(updatedQty);
+                        inventoryRepository.save(inventory);
+                    }
+                }
+            }
+
+            // =========================
+            // 🔥 STEP 2: UPDATE FIELDS
+            // =========================
             entity.setBillNo(dto.getBillNo());
             entity.setSupplierName(dto.getSupplierName());
             entity.setSupplierId(dto.getSupplierId());
@@ -251,7 +285,9 @@ public class ReturnBillServiceImpl implements ReturnBillService {
             entity.setBranchId(dto.getBranchId());
             entity.setCreatedBy(dto.getCreatedBy());
 
-         
+            // =========================
+            // 🔥 STEP 3: APPLY NEW STOCK REDUCTION
+            // =========================
             List<ReturnItem> items = dto.getItems().stream().map(i -> {
 
                 ReturnItem item = new ReturnItem();
@@ -265,9 +301,36 @@ public class ReturnBillServiceImpl implements ReturnBillService {
                 item.setReason(i.getReason());
                 item.setAvailableStock(i.getAvailableStock());
 
-                //  calculation
                 double returnAmount = i.getReturnQty() * i.getNetRate();
                 item.setReturnAmount(returnAmount);
+
+                // =========================
+                // 🔥 REDUCE NEW STOCK
+                // =========================
+                Optional<Inventory> optionalInventory =
+                        inventoryRepository.findByMedicineIdAndBatchNoAndClinicIdAndBranchId(
+                                i.getProductId(),
+                                i.getBatchNo(),
+                                dto.getClinicId(),
+                                dto.getBranchId());
+
+                if (optionalInventory.isPresent()) {
+
+                    Inventory inventory = optionalInventory.get();
+
+                    double currentQty = inventory.getAvailableQty();
+                    double updatedQty = currentQty - i.getReturnQty();
+
+                    if (updatedQty < 0) {
+                        throw new RuntimeException("Stock not sufficient for product: " + i.getProductName());
+                    }
+
+                    inventory.setAvailableQty(updatedQty);
+                    inventoryRepository.save(inventory);
+
+                } else {
+                    throw new RuntimeException("Inventory not found for product: " + i.getProductId());
+                }
 
                 return item;
 
@@ -275,7 +338,9 @@ public class ReturnBillServiceImpl implements ReturnBillService {
 
             entity.setItems(items);
 
-         
+            // =========================
+            // 🔥 TOTAL CALCULATION
+            // =========================
             double totalAmount = items.stream()
                     .mapToDouble(ReturnItem::getReturnAmount)
                     .sum();
@@ -284,7 +349,6 @@ public class ReturnBillServiceImpl implements ReturnBillService {
 
             repository.save(entity);
 
-          
             ReturnBillDTO responseDTO = mapToDTO(entity);
 
             res.setSuccess(true);
@@ -301,7 +365,6 @@ public class ReturnBillServiceImpl implements ReturnBillService {
 
         return res;
     }
-
     //  Generate Receipt No
     private String generateReceiptNo(String supplierName) {
 
@@ -327,52 +390,92 @@ public class ReturnBillServiceImpl implements ReturnBillService {
         return prefix + "-" + date + "-" + String.format("%04d", seq);
     }
 
-    //  DTO → ENTITY
-    private ReturnBill mapToEntity(ReturnBillDTO dto, String receiptNo) {
+//  DTO → ENTITY
+private ReturnBill mapToEntity(ReturnBillDTO dto, String receiptNo) {
 
-        ReturnBill entity = new ReturnBill();
+    ReturnBill entity = new ReturnBill();
 
-        entity.setReceiptNo(receiptNo);
-        entity.setBillNo(dto.getBillNo());
-        entity.setSupplierName(dto.getSupplierName());
-        entity.setSupplierId(dto.getSupplierId());
-        entity.setReturnType(dto.getReturnType());
-        entity.setRefundMode(dto.getRefundMode());
-        entity.setClinicId(dto.getClinicId());
-        entity.setBranchId(dto.getBranchId());
-        entity.setDate(LocalDateTime.now());
-        entity.setCreatedBy(dto.getCreatedBy());
+    entity.setReceiptNo(receiptNo);
+    entity.setBillNo(dto.getBillNo());
+    entity.setSupplierName(dto.getSupplierName());
+    entity.setSupplierId(dto.getSupplierId());
+    entity.setReturnType(dto.getReturnType());
+    entity.setRefundMode(dto.getRefundMode());
+    entity.setClinicId(dto.getClinicId());
+    entity.setBranchId(dto.getBranchId());
+    entity.setDate(LocalDateTime.now()); // you can later replace with @CreatedDate
+    entity.setCreatedBy(dto.getCreatedBy());
 
-        List<ReturnItem> items = dto.getItems().stream().map(i -> {
+    // =========================
+    // 🔥 ITEMS + INVENTORY UPDATE
+    // =========================
+    List<ReturnItem> items = dto.getItems().stream().map(i -> {
 
-            ReturnItem item = new ReturnItem();
+        ReturnItem item = new ReturnItem();
 
-            item.setProductId(i.getProductId());
-            item.setProductName(i.getProductName());
-            item.setBatchNo(i.getBatchNo());
-            item.setReturnQty(i.getReturnQty());
-            item.setNetRate(i.getNetRate());
-            item.setMrp(i.getMrp());
-            item.setReason(i.getReason());
-            item.setAvailableStock(i.getAvailableStock());
+        item.setProductId(i.getProductId());
+        item.setProductName(i.getProductName());
+        item.setBatchNo(i.getBatchNo());
+        item.setReturnQty(i.getReturnQty());
+        item.setNetRate(i.getNetRate());
+        item.setMrp(i.getMrp());
+        item.setReason(i.getReason());
+        item.setAvailableStock(i.getAvailableStock());
 
-            double returnAmount = i.getReturnQty() * i.getNetRate();
-            item.setReturnAmount(returnAmount);
+        // ✅ RETURN AMOUNT CALCULATION
+        double returnAmount = i.getReturnQty() * i.getNetRate();
+        item.setReturnAmount(returnAmount);
 
-            return item;
+        // =========================
+        // 🔥 INVENTORY REDUCTION
+        // =========================
+        Optional<Inventory> optionalInventory =
+                inventoryRepository.findByMedicineIdAndBatchNoAndClinicIdAndBranchId(
+                        i.getProductId(),
+                        i.getBatchNo(),
+                        dto.getClinicId(),
+                        dto.getBranchId());
 
-        }).collect(Collectors.toList());
+        if (optionalInventory.isPresent()) {
 
-        entity.setItems(items);
+            Inventory inventory = optionalInventory.get();
 
-        double totalAmount = items.stream()
-                .mapToDouble(ReturnItem::getReturnAmount)
-                .sum();
+            double currentQty = inventory.getAvailableQty();
 
-        entity.setTotalAmount(totalAmount);
+            double updatedQty = currentQty - i.getReturnQty();
 
-        return entity;
-    }
+            // ❗ VALIDATION
+            if (updatedQty < 0) {
+                throw new RuntimeException(
+                        "Return quantity exceeds available stock for product: " + i.getProductName());
+            }
+
+            inventory.setAvailableQty(updatedQty);
+
+            inventoryRepository.save(inventory);
+
+        } else {
+            throw new RuntimeException(
+                    "Inventory not found for product: " + i.getProductId());
+        }
+
+        return item;
+
+    }).collect(Collectors.toList());
+
+    entity.setItems(items);
+
+    // =========================
+    // ✅ TOTAL CALCULATION
+    // =========================
+    double totalAmount = items.stream()
+            .mapToDouble(ReturnItem::getReturnAmount)
+            .sum();
+
+    entity.setTotalAmount(totalAmount);
+
+    return entity;
+}
 
     //  ENTITY → DTO
     private ReturnBillDTO mapToDTO(ReturnBill entity) {

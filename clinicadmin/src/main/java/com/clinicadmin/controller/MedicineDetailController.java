@@ -46,4 +46,11 @@ public class MedicineDetailController {
         Response response = medicineDetailService.deleteMedicine(id);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
+    
+    
+    @GetMapping("/api/pharmacy/getMedicineInventory/{medicineId}")
+    public ResponseEntity<Response> getMedicineInventory(String medicineId) {
+        return medicineDetailService.fetchMedicineInventory(medicineId);
+    }
+    
 }

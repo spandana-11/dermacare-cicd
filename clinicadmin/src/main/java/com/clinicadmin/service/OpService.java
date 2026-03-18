@@ -8,7 +8,6 @@ public interface OpService {
 	           OpSalesRequest request);
 	 
 	 public Object updateOpSales(
-             String id,
              OpSalesRequest request) ;
 	 
 	 public Object getAllOpSales(
