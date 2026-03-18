@@ -195,6 +195,7 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 				inventory = new Inventory();
 
 				inventory.setMedicineId(medicine.getId());
+				inventory.setPurchaseBillNo(item.getPurchaseBillNo());
 				inventory.setMedicineName(medicine.getProductName());
 				inventory.setBrand(medicine.getBrandName());
 				inventory.setHsnCode(medicine.getHsnCode());

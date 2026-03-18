@@ -29,16 +29,19 @@ import { showCustomToast } from '../../Utils/Toaster'
 import { SupplierData, postSupplierData } from '../PharmacyManagement/SupplierInfoAPI'
 import { Citydata, postCityData } from './CityAPIs'
 import { Areadata, getAreabyCityId, postAreaData } from './AreaAPI'
+import SupplierDataList from './Reorder/SupplierDataList'
+import { useMedicines } from '../../Context/MedicineContext'
 
 const SupplierInfo = () => {
-  const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [cities, setCities] = useState([])
   const [areas, setAreas] = useState([])
+  const [suppliers, setSuppliers] = useState([])
   const [supplierData, setSupplierData] = useState([])
   const [error, setError] = useState([])
   const [showCityModal, setShowCityModal] = useState(false)
   const [showAreaModal, setShowAreaModal] = useState(false)
+  const { supplier, fetchSuppliers, loading } = useMedicines()
 
   const [newCityName, setNewCityName] = useState('')
   const [newAreaName, setNewAreaName] = useState('')
@@ -46,14 +49,14 @@ const SupplierInfo = () => {
   const [newArea, setNewArea] = useState('') // input for new area
   const [currentDate, setCurrentDate] = useState('')
   const [currentTime, setCurrentTime] = useState('')
-
+  const [viewModal, setViewModal] = useState(false)
   // ---------- FORM STATE ----------
   const [form, setForm] = useState({
     supplierName: '',
     gstNumber: '',
     registrationNumber: '',
-    cstNumber: '',
-    tinNumber: '',
+    cstNumber: '64', //TODO: have to remove this after discussion with backend
+    tinNumber: '65', //TODO: have to remove this after discussion with backend
     form20B: '',
     form21B: '',
     address: '',
@@ -68,10 +71,10 @@ const SupplierInfo = () => {
       telephoneNumber: '',
       faxNumber: '',
       contactPerson: '',
-      mobileNumber1: '',
-      mobileNumber2: '',
-      designation: '',
-      department: '',
+      mobileNumber: '',
+      // mobileNumber2: '97868768766', //TODO: have to remove this after discussion with backend
+      // designation: 'cdvf', //TODO: have to remove this after discussion with backend
+      // department: 'dfvf', //TODO: have to remove this after discussion with backend
       website: '',
       email: '',
     },
@@ -107,18 +110,9 @@ const SupplierInfo = () => {
   }
 
   // ---------- FETCH SUPPLIERS ----------
-  const fetchSupplier = useCallback(async () => {
-    try {
-      const data = await SupplierData()
-      setSupplierData(Array.isArray(data) ? data : [])
-    } catch (err) {
-      console.error('Error fetching suppliers:', err)
-    }
-  }, [])
-
   useEffect(() => {
-    fetchSupplier()
-  }, [fetchSupplier])
+    fetchSuppliers()
+  }, [])
 
   // ---------- FETCH CITIES ----------
   useEffect(() => {
@@ -176,18 +170,18 @@ const SupplierInfo = () => {
   // ---------- SAVE SUPPLIER ----------
   const handleFinalSave = async () => {
     const errors = validateForm()
-    if (Object.keys(errors).length > 0) {
-      setError(errors)
-      showCustomToast('Please fill all required fields', 'error')
-      return
-    }
+    // if (Object.keys(errors).length > 0) {
+    //   setError(errors)
+    //   showCustomToast('Please fill all required fields', 'error')
+    //   return
+    // }
     const payload = { ...form }
 
     try {
       const res = await postSupplierData(payload)
       showCustomToast('Supplier Added Successfully', 'success')
 
-      fetchSupplier()
+      fetchSuppliers()
 
       // RESET FORM
       setForm({
@@ -209,10 +203,10 @@ const SupplierInfo = () => {
           telephoneNumber: '',
           faxNumber: '',
           contactPerson: '',
-          mobileNumber1: '',
-          mobileNumber2: '',
-          designation: '',
-          department: '',
+          mobileNumber: '',
+          // mobileNumber2: '',
+          // designation: '',
+          // department: '',
           website: '',
           email: '',
         },
@@ -262,6 +256,9 @@ const SupplierInfo = () => {
       showCustomToast('Select a city first', 'error')
       return
     }
+    const viewsupplierModal = async () => {
+      setViewModal(true)
+    }
 
     await postAreaData({
       cityId: cityObj.id,
@@ -284,51 +281,54 @@ const SupplierInfo = () => {
     setNewAreaName('')
     setShowAreaModal(false)
   }
- const validateForm = () => {
-  const errors = {};
-  const mobileRegex = /^[6-9]\d{9}$/;
 
-  if (!form.supplierName?.trim()) errors.supplierName = 'Supplier Name is required';
-  if (!form.gstNumber?.trim()) errors.gstNumber = 'GST Number is required';
-  if (!form.registrationNumber?.trim())
-    errors.registrationNumber = 'Registration Number is required';
-  
-  if (!form.form20B?.trim()) errors.form20B = 'Form 20B is required';
-  if (!form.cstNumber?.trim()) errors.cstNumber = 'CST number is required';
-  if (!form.form21B?.trim()) errors.form21B = 'Form 21B is required';
-  if (!form.address?.trim()) errors.address = 'Address is required';
-  if (!form.city?.trim()) errors.city = 'City is required';
-  if (!form.area?.trim()) errors.area = 'Area is required';
-
-  // Contact Person
-  if (!form.contactDetails?.contactPerson?.trim()) {
-    errors.contactPerson = 'Contact Person is required';
+  const viewsupplierModal = async () => {
+    setViewModal(true)
   }
+  const validateForm = () => {
+    const errors = {}
+    const mobileRegex = /^[6-9]\d{9}$/
 
-  // ✅ Mobile Number 1 (REQUIRED)
-  if (!form.contactDetails?.mobileNumber1?.trim()) {
-    errors.mobileNumber1 = 'Mobile number is required';
-  } else if (!mobileRegex.test(form.contactDetails.mobileNumber1)) {
-    errors.mobileNumber1 = 'Enter a valid 10-digit mobile number';
-  }
+    if (!form.supplierName?.trim()) errors.supplierName = 'Supplier Name is required'
+    if (!form.gstNumber?.trim()) errors.gstNumber = 'GST Number is required'
+    if (!form.registrationNumber?.trim())
+      errors.registrationNumber = 'Registration Number is required'
 
-  // Mobile Number 2 (OPTIONAL)
-  if (form.contactDetails?.mobileNumber2?.trim()) {
-    if (!mobileRegex.test(form.contactDetails.mobileNumber2)) {
-      errors.mobileNumber2 = 'Enter a valid 10-digit mobile number';
+    if (!form.form20B?.trim()) errors.form20B = 'Form 20B is required'
+    if (!form.cstNumber?.trim()) errors.cstNumber = 'CST number is required'
+    if (!form.form21B?.trim()) errors.form21B = 'Form 21B is required'
+    if (!form.address?.trim()) errors.address = 'Address is required'
+    if (!form.city?.trim()) errors.city = 'City is required'
+    if (!form.area?.trim()) errors.area = 'Area is required'
+
+    // Contact Person
+    if (!form.contactDetails?.contactPerson?.trim()) {
+      errors.contactPerson = 'Contact Person is required'
     }
+
+    // ✅ Mobile Number 1 (REQUIRED)
+    if (!form.contactDetails?.mobileNumber?.trim()) {
+      errors.mobileNumber = 'Mobile number is required'
+    } else if (!mobileRegex.test(form.contactDetails.mobileNumber)) {
+      errors.mobileNumber = 'Enter a valid 10-digit mobile number'
+    }
+
+    // Mobile Number 2 (OPTIONAL)
+    if (form.contactDetails?.mobileNumber2?.trim()) {
+      if (!mobileRegex.test(form.contactDetails.mobileNumber2)) {
+        errors.mobileNumber2 = 'Enter a valid 10-digit mobile number'
+      }
+    }
+
+    // Email
+    if (!form.contactDetails?.email?.trim()) {
+      errors.email = 'Email is required'
+    } else if (!/\S+@\S+\.\S+/.test(form.contactDetails.email)) {
+      errors.email = 'Invalid email format'
+    }
+
+    return errors
   }
-
-  // Email
-  if (!form.contactDetails?.email?.trim()) {
-    errors.email = 'Email is required';
-  } else if (!/\S+@\S+\.\S+/.test(form.contactDetails.email)) {
-    errors.email = 'Invalid email format';
-  }
-
-  return errors;
-};
-
 
   return (
     <div
@@ -401,7 +401,7 @@ const SupplierInfo = () => {
         <div className="flex-fill border p-3 rounded">
           <h6 className="fw-bold">Supplier Details</h6>
           <CFormLabel>
-            Supplier Name <span className="text-danger">*</span>
+            Supplier Name (Agency Name) <span className="text-danger">*</span>
           </CFormLabel>
           <CFormInput
             value={form.supplierName}
@@ -419,7 +419,7 @@ const SupplierInfo = () => {
           />
           {error.gstNumber && <div className="invalid-feedback">{error.gstNumber}</div>}
           <CFormLabel className="mt-2">
-             Reg No <span className="text-danger">*</span>
+            Reg No <span className="text-danger">*</span>
           </CFormLabel>
           <CFormInput
             value={form.registrationNumber}
@@ -429,23 +429,6 @@ const SupplierInfo = () => {
           {error.registrationNumber && (
             <div className="invalid-feedback">{error.registrationNumber}</div>
           )}
-          <CFormLabel className="mt-2">
-            CST No <span className="text-danger">*</span>
-          </CFormLabel>
-          <CFormInput
-            value={form.cstNumber}
-            onChange={(e) => updateForm('cstNumber', e.target.value)}
-            invalid={!!error.cstNumber}
-          />
-          {error.cstNumber && <div className="invalid-feedback">{error.cstNumber}</div>}
-          <CFormLabel className="mt-2">TIN No</CFormLabel>
-          <CFormInput
-            value={form.tinNumber}
-            onChange={(e) => updateForm('tinNumber', e.target.value)}
-            // Since it's optional, only apply invalid style if we add a format validation
-            invalid={!!error.tinNumber}
-          />
-          {error.tinNumber && <div className="invalid-feedback">{error.tinNumber}</div>}
           <CFormLabel className="mt-2">
             Form 20B <span className="text-danger">*</span>
           </CFormLabel>
@@ -475,7 +458,7 @@ const SupplierInfo = () => {
           />
           {error.address && <div className="invalid-feedback">{error.address}</div>}{' '}
           {/* <-- ADDED */}
-          <CFormLabel className="fw-bold mb-0" style={{ width: 130 }}>
+          <CFormLabel className=" mb-2 mt-3" style={{ width: 130 }}>
             City <span className="text-danger">*</span>
           </CFormLabel>
           <div className="d-flex align-items-start gap-2">
@@ -504,7 +487,7 @@ const SupplierInfo = () => {
             </CButton>
           </div>
           {error.city && <div className="invalid-feedback d-block">{error.city}</div>}
-          <CFormLabel className="fw-bold mb-0" style={{ width: 130 }}>
+          <CFormLabel className=" mb-2 mt-3" style={{ width: 130 }}>
             Area <span className="text-danger">*</span>
           </CFormLabel>
           <div className="d-flex align-items-start gap-2">
@@ -537,9 +520,7 @@ const SupplierInfo = () => {
 
         {/* RIGHT BOX */}
         <div className="flex-fill border p-3 rounded">
-          <h6 className="fw-bold">
-            Contact Details 
-          </h6>
+          <h6 className="fw-bold">Contact Details</h6>
           <CFormLabel>State</CFormLabel>
           <CFormInput
             value={form.contactDetails.state}
@@ -558,11 +539,6 @@ const SupplierInfo = () => {
             value={form.contactDetails.telephoneNumber}
             onChange={(e) => updateContact('telephoneNumber', e.target.value)}
           />
-          <CFormLabel className="mt-2">Fax</CFormLabel>
-          <CFormInput
-            value={form.contactDetails.faxNumber}
-            onChange={(e) => updateContact('faxNumber', e.target.value)}
-          />
           <CFormLabel className="mt-2">
             Contact Person <span className="text-danger">*</span>
           </CFormLabel>
@@ -574,67 +550,26 @@ const SupplierInfo = () => {
           {error.contactPerson && <div className="invalid-feedback">{error.contactPerson}</div>}{' '}
           {/* <-- ADDED */}
           <CFormLabel className="mt-2">
-            Mobile Number 1 <span className="text-danger">*</span>
+            Mobile Number <span className="text-danger">*</span>
           </CFormLabel>
-       <CFormInput
-  type="text"
-  value={form.contactDetails.mobileNumber1}
-  maxLength={10}
-  onChange={(e) => {
-    const value = e.target.value.replace(/\D/g, '');
-
-    setForm((prev) => ({
-      ...prev,
-      contactDetails: {
-        ...prev.contactDetails,
-        mobileNumber1: value,
-      },
-    }));
-  }}
-/>
-
-{/* ✅ THIS IS REQUIRED */}
-{error.mobileNumber1 && (
-  <div className="text-danger mt-1">{error.mobileNumber1}</div>
-)}
-
-
-          {/* <-- ADDED */}
-          <CFormLabel className="mt-2">Mobile Number 2</CFormLabel>
-         <CFormInput
-  type="text"
-  value={form.contactDetails.mobileNumber2}
-  maxLength={10}
-  onChange={(e) => {
-    const value = e.target.value.replace(/\D/g, ''); // allow only numbers
-
-    setForm((prev) => ({
-      ...prev,
-      contactDetails: {
-        ...prev.contactDetails,
-        mobileNumber2: value,
-      },
-    }));
-  }}
-/>
-
-          {/* <-- ADDED */}
-          <CFormLabel className="mt-2">Designation</CFormLabel>
           <CFormInput
-            value={form.contactDetails.designation}
-            onChange={(e) => updateContact('designation', e.target.value)}
-            invalid={!!error.designation} // <-- ADDED (Based on previous validation logic)
+            type="text"
+            value={form.contactDetails.mobileNumber}
+            maxLength={10}
+            onChange={(e) => {
+              const value = e.target.value.replace(/\D/g, '')
+
+              setForm((prev) => ({
+                ...prev,
+                contactDetails: {
+                  ...prev.contactDetails,
+                  mobileNumber: value,
+                },
+              }))
+            }}
           />
-          {error.designation && <div className="invalid-feedback">{error.designation}</div>}{' '}
-          {/* <-- ADDED */}
-          <CFormLabel className="mt-2">Department</CFormLabel>
-          <CFormInput
-            value={form.contactDetails.department}
-            onChange={(e) => updateContact('department', e.target.value)}
-            invalid={!!error.department} // <-- ADDED (Based on previous validation logic)
-          />
-          {error.department && <div className="invalid-feedback">{error.department}</div>}{' '}
-          {/* <-- ADDED */}
+          {/* ✅ THIS IS REQUIRED */}
+          {error.mobileNumber && <div className="text-danger mt-1">{error.mobileNumber}</div>}
           <CFormLabel className="mt-2">Website</CFormLabel>
           <CFormInput
             value={form.contactDetails.website}
@@ -678,26 +613,58 @@ const SupplierInfo = () => {
           style={{ width: '160px', height: '25px', padding: '0 5px' }}
           className="me-3"
         /> */}
-<div className="d-flex justify-content-end">
-  <CButton
-    onClick={handleFinalSave}
-    style={{
-      color: 'var(--color-black)',
-      backgroundColor: 'var(--color-bgcolor)',
-    }}
-  >
-    Save
-  </CButton>
-</div>
+        <div className="d-flex justify-content-between w-100">
+          <CButton
+            onClick={viewsupplierModal}
+            style={{
+              color: 'var(--color-black)',
+              backgroundColor: 'var(--color-bgcolor)',
+            }}
+          >
+            View Supplier
+          </CButton>
+          <CButton
+            onClick={handleFinalSave}
+            style={{
+              color: 'var(--color-black)',
+              backgroundColor: 'var(--color-bgcolor)',
+            }}
+          >
+            Save
+          </CButton>
+        </div>
 
+        <CModal visible={viewModal} onClose={() => setViewModal(false)} size="xl">
+          <CModalHeader>
+            <CModalTitle>Supplier List</CModalTitle>
+          </CModalHeader>
 
+          <CModalBody>
+            <SupplierDataList
+              suppliers={supplier}
+              onEdit={(supplier) => {
+                console.log('Edit:', supplier)
+              }}
+              onDelete={(id) => {
+                console.log('Delete:', id)
+              }}
+              loading={loading}
+            />
+          </CModalBody>
+
+          <CModalFooter>
+            <CButton color="secondary" onClick={() => setViewModal(false)}>
+              Close
+            </CButton>
+          </CModalFooter>
+        </CModal>
 
         {/* <CIcon icon={cilPrint} size="lg" className="mx-1" style={{ cursor: 'pointer' }} /> */}
         {/* <CIcon icon={cilMagnifyingGlass} size="lg" className="mx-1" style={{ cursor: 'pointer' }} /> */}
       </div>
 
       {/* CITY MODAL */}
-      <CModal visible={showCityModal} onClose={() => setShowCityModal(false)} backdrop="static" >
+      <CModal visible={showCityModal} onClose={() => setShowCityModal(false)} backdrop="static">
         <CModalHeader>
           <CModalTitle>Add City</CModalTitle>
         </CModalHeader>
@@ -709,12 +676,17 @@ const SupplierInfo = () => {
           />
         </CModalBody>
         <CModalFooter>
-          <CButton onClick={handleAddCity} style={{backgroundColor:"var(--color-black)" ,color:"white"}}>Save</CButton>
+          <CButton
+            onClick={handleAddCity}
+            style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+          >
+            Save
+          </CButton>
         </CModalFooter>
       </CModal>
 
       {/* AREA MODAL */}
-      <CModal visible={showAreaModal} onClose={() => setShowAreaModal(false)} backdrop="static" >
+      <CModal visible={showAreaModal} onClose={() => setShowAreaModal(false)} backdrop="static">
         <CModalHeader>
           <CModalTitle>Add Area</CModalTitle>
         </CModalHeader>
@@ -726,7 +698,12 @@ const SupplierInfo = () => {
           />
         </CModalBody>
         <CModalFooter>
-          <CButton onClick={handleAddArea} style={{backgroundColor:"var(--color-black)" ,color:"white"}}>Save</CButton>
+          <CButton
+            onClick={handleAddArea}
+            style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+          >
+            Save
+          </CButton>
         </CModalFooter>
       </CModal>
     </div>

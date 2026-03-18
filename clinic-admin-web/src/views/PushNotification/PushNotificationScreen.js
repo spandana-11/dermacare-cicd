@@ -201,7 +201,7 @@ const fetchNotifications = async () => {
         // setResponseLog({ error: 'Operation failed!' })
       }
     } catch (error) {
-      showCustomToast(`${error.message}`, 'error')
+      // showCustomToast(`${error.message}`, 'error')
       // setResponseLog({ error: error.message })
     } finally {
       setIsLoading(false)
@@ -226,12 +226,13 @@ const fetchNotifications = async () => {
     if (res.data.success) {
       showCustomToast('Notification deleted successfully!')
       fetchNotifications()
-    } else {
-      showCustomToast('Failed to delete notification', 'error')
-    }
+    } 
+    // else {
+    //   showCustomToast('Failed to delete notification', 'error')
+    // }
   } catch (error) {
     console.error('Error deleting notification:', error)
-    showCustomToast('Error while deleting notification', 'error')
+    // showCustomToast('Error while deleting notification', 'error')
   } finally {
     setIsLoading(false)
     setDeleteConfirm(false)

@@ -43,13 +43,14 @@ const AdminManagement = () => {
   const [modalData, setModalData] = useState(null) // store username & password
   const [modalTVisible, setModalTVisible] = useState(false)
   const clinicID = localStorage.getItem('HospitalId')
+  const branchID=localStorage.getItem('branchId')
   const fetchAdmins = async () => {
     setLoading(true)
     try {
-      // const clinicID = localStorage.getItem('HospitalId')
-      // const branchID = localStorage.getItem('branchId')
-      if (clinicID) {
-        const res = await getAllAdmins(clinicID) // wait for API
+      const clinicID = localStorage.getItem('HospitalId')
+      const branchID = localStorage.getItem('branchId')
+      if (clinicID,branchID) {
+        const res = await getAllAdmins(clinicID,branchID) // wait for API
         console.log('API Response:', res)
         setLoading(false)
         // ✅ update state with actual data, not Promise
@@ -123,7 +124,7 @@ const handleSave = async (formData) => {
       setAdmins((prev) => prev.filter((t) => t.adminId !== adminId))
       showCustomToast('Admin deleted successfully!', 'success')
     } catch (err) {
-      showCustomToast('Failed to delete admin.', 'error')
+      // showCustomToast('Failed to delete admin.', 'error')
       console.error('Delete error:', err)
     } finally {
       setDelLoading(false)

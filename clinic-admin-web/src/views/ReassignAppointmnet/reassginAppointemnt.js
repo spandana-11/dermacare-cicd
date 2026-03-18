@@ -143,10 +143,10 @@ const ReassignAppointment = () => {
     } catch (error) {
       console.error('Reassign failed:', error?.response?.data || error.message)
 
-      showCustomToast(error?.response?.data?.message || 'Reassignment failed. Please try again.', 'error',{
-        position: 'top-right',
-        autoClose: 3000,
-      })
+      // showCustomToast(error?.response?.data?.message || 'Reassignment failed. Please try again.', 'error',{
+      //   position: 'top-right',
+      //   autoClose: 3000,
+      // })
     }
   }
 

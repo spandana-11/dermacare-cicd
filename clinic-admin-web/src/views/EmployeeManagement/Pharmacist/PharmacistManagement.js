@@ -125,7 +125,7 @@ const PharmacistManagement = () => {
       }
     } catch (err) {
       console.error('API error:', err)
-      showCustomToast(err.response?.data?.message || '❌ Failed to save pharmacist.', 'error')
+      // showCustomToast(err.response?.data?.message || '❌ Failed to save pharmacist.', 'error')
     }
   }
 
@@ -138,7 +138,7 @@ const PharmacistManagement = () => {
       showCustomToast('Pharmacist deleted successfully!', 'success')
     } catch (err) {
       console.error('Delete error:', err)
-      showCustomToast('❌ Failed to delete pharmacist.', 'error')
+      // showCustomToast('❌ Failed to delete pharmacist.', 'error')
     } finally {
       setIsModalVisible(false)
       setDelLoading(false)

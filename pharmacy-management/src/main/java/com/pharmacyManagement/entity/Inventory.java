@@ -11,7 +11,7 @@ public class Inventory {
 
 	@Id
 	private String inventoryId;
-
+	private String purchaseBillNo;
 	private String medicineId;
 	private String medicineName;
 

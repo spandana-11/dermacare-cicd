@@ -182,7 +182,7 @@ const AppointmentDetails = () => {
       setFormData({ height: '', weight: '', bloodPressure: '', temperature: '', bmi: '' })
       fetchVitals()
     } catch (error) {
-      showCustomToast('Failed to add vitals','error')
+      // showCustomToast('Failed to add vitals','error')
     }
     finally{
       setLoading(false)
@@ -196,7 +196,7 @@ const AppointmentDetails = () => {
       setShowModal(false)
       fetchVitals()
     } catch (error) {
-      showCustomToast('Failed to update vitals','error')
+      // showCustomToast('Failed to update vitals','error')
     }
   }
   const handleDeleteVitals = async () => {
@@ -206,7 +206,7 @@ const AppointmentDetails = () => {
 
       setVitals(null)
     } catch (error) {
-      showCustomToast('Failed to delete vitals','error')
+      // showCustomToast('Failed to delete vitals','error')
     }
   }
   const regexRules = {

@@ -6,6 +6,7 @@ import { Delete, Edit, Trash } from 'lucide-react'
 import { toast } from 'react-toastify'
 import ConfirmationModal from '../../components/ConfirmationModal'
 import { showCustomToast } from '../../Utils/Toaster'
+import { http } from '../../Utils/Interceptors'
 
 const PrivacyPolicyManager = () => {
   const [selectedFile, setSelectedFile] = useState(null)
@@ -24,7 +25,7 @@ const PrivacyPolicyManager = () => {
   const fetchPolicies = async () => {
     const clinicId = localStorage.getItem('HospitalId')
     try {
-      const res = await axios.get(`${BASE_URL}/getPoliciesByClinicId/${clinicId}`)
+      const res = await http.get(`${BASE_URL}/getPoliciesByClinicId/${clinicId}`)
       if (res.data?.data) setPolicies(res.data.data)
       else if (Array.isArray(res.data)) setPolicies(res.data)
     } catch (err) {
@@ -68,7 +69,7 @@ const PrivacyPolicyManager = () => {
       // get base64 string only
       const base64File = reader.result.split(',')[1]
       try {
-        await axios.post(
+        await http.post(
           `${BASE_URL}/createPolicy`,
           {
             clinicId: clinicId,
@@ -83,7 +84,7 @@ const PrivacyPolicyManager = () => {
         fetchPolicies()
       } catch (err) {
         console.error('Upload error:', err.response || err)
-        showCustomToast(`File upload failed. Check console for details.`, 'warning')
+        // showCustomToast(`File upload failed. Check console for details.`, 'warning')
       }
     }
   }
@@ -92,7 +93,7 @@ const PrivacyPolicyManager = () => {
   const handleView = async (policy) => {
     try {
       if (!policyCache[policy.id]) {
-        const res = await axios.get(`${BASE_URL}/getPolicyById/${policy.id}`)
+        const res = await http.get(`${BASE_URL}/getPolicyById/${policy.id}`)
 
         // check both structures
         const base64File = res.data?.data?.privacyPolicy || res.data?.privacyPolicy
@@ -128,7 +129,7 @@ const PrivacyPolicyManager = () => {
       }
     } catch (err) {
       console.error('View error:', err.response || err)
-      showCustomToast(`Unable to fetch file.`, 'warning')
+      // showCustomToast(`Unable to fetch file.`, 'warning')
     }
   }
 
@@ -154,7 +155,7 @@ const PrivacyPolicyManager = () => {
       const base64File = reader.result.split(',')[1]
       try {
         setSaveLoading(true)
-        await axios.put(
+        await http.put(
           `${BASE_URL}/updatePolicy/${editingPolicyId}`,
           { privacyPolicy: base64File },
           { headers: { 'Content-Type': 'application/json' } },
@@ -166,7 +167,7 @@ const PrivacyPolicyManager = () => {
         fetchPolicies()
       } catch (err) {
         console.error('Update error:', err.response || err)
-        showCustomToast(`Update failed.`, 'success')
+        // showCustomToast(`Update failed.`, 'success')
       } finally {
         setSaveLoading(false)
       }
@@ -175,12 +176,12 @@ const PrivacyPolicyManager = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`${BASE_URL}/deletePolicyById/${id}`)
+      await http.delete(`${BASE_URL}/deletePolicyById/${id}`)
       showCustomToast(`Policy deleted successfully!`, 'success')
       fetchPolicies()
     } catch (err) {
       console.error('Delete error:', err.response || err)
-      showCustomToast(`Delete failed.`, 'error')
+      // showCustomToast(`Delete failed.`, 'error')
     } finally {
       setIsModalVisible(false)
     }

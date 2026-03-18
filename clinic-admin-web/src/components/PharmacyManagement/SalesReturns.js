@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react'
+/* eslint-disable react/jsx-key */
+import React, { useState } from 'react'
 import {
   CRow,
   CCol,
+  CCard,
+  CCardBody,
   CFormLabel,
   CFormInput,
-  CFormCheck,
   CFormSelect,
   CButton,
   CTable,
@@ -13,470 +15,401 @@ import {
   CTableHeaderCell,
   CTableBody,
   CTableDataCell,
-  CCardBody,
 } from '@coreui/react'
-import { Edit2, Trash } from 'lucide-react'
+import { createReturnBill, getBillByNo } from './OpSalesAPI'
+import { showCustomToast } from '../../Utils/Toaster'
+import { Spinner } from 'react-bootstrap'
 
-const SalesReturns = () => {
-  const [patientType, setPatientType] = useState('DIRECT')
+const OPSalesReturn = () => {
   const [billNo, setBillNo] = useState('')
-  const [returnDate, setReturnDate] = useState('')
-  const [fromDate, setFromDate] = useState('')
-  const [toDate, setToDate] = useState('')
-  const [batchWise, setBatchWise] = useState(false)
-
-  const [patientDetails] = useState({
-   
+  const [returnNo] = useState(`RET-${Date.now()}`)
+  const [refundMode, setRefundMode] = useState('Cash')
+  const [returnType, setReturnType] = useState('Partial')
+  const [medicines, setMedicines] = useState([])
+  const [showBill, setShowBill] = useState(false)
+  const [patient, setPatient] = useState({})
+  const [fetchLoading, setFetchLoading] = useState(false)
+  const [billNoError, setBillNoError] = useState('')
+  const [summary, setSummary] = useState({
+    totalReturn: 0,
+    totalDiscount: 0,
+    totalGST: 0,
+    netRefund: 0,
   })
 
-  const [rows, setRows] = useState([])
-  const [form, setForm] = useState({
-    medicineName: '',
-    qty: '',
-    rate: '',
-    disc: '',
-    vat: '',
-  })
+  // ================= FETCH BILL =================
+  const fetchBillData = async () => {
+    if (!billNo) {
+      setBillNoError('Bill number required')
+      return
+    }
+    try {
+      setFetchLoading(true)
+      const res = await getBillByNo(billNo)
+      const bill = res.data
+      if (!bill) {
+        showCustomToast(bill.message || 'Bill not found')
+        return
+      }
+      console.log('bill data:', res)
+      if (res.status === 200) {
+        // ✅ patient data
+        setPatient({
+          fileNo: bill.opNo || bill.mobile,
+          patientName: bill.patientName,
+          mobile: bill.mobile,
+        })
+        if (bill && bill.medicines) {
+          const formatted = bill.medicines.map((m, i) => ({
+            id: i + 1,
+            medicineId: i + 1,
+            name: m.medicineName,
+            batch: m.batchNo,
+            soldQty: m.qty,
+            returnQty: 0,
+            rate: m.rate,
+            discPercent: m.discPercent || 0,
+            gstPercent: m.gstPercent || 0,
+          }))
 
-  const [editIndex, setEditIndex] = useState(null)
-
-  // ---------------- CALCULATIONS ----------------
-  const calculateRow = (row) => {
-    const qty = Number(row.qty || 0)
-    const rate = Number(row.rate || 0)
-    const disc = Number(row.disc || 0)
-    const vat = Number(row.vat || 0)
-
-    const total = qty * rate
-    const discAmt = (total * disc) / 100
-    const netBeforeVat = total - discAmt
-    const vatAmt = (netBeforeVat * vat) / 100
-    const netAmt = netBeforeVat + vatAmt
-
-    return {
-      ...row,
-      total: total.toFixed(2),
-      discAmt: discAmt.toFixed(2),
-      netAmt: netAmt.toFixed(2),
+          setMedicines(formatted)
+        }
+      } else {
+        showCustomToast(bill.message || 'Bill not found')
+        return
+      }
+    } catch (err) {
+      showCustomToast(err.response.data.message || 'Bill not found')
+      console.log(err)
+    } finally {
+      setFetchLoading(false)
     }
   }
 
-  const totals = rows.reduce(
-    (acc, r) => {
-      acc.total += Number(r.total || 0)
-      acc.vat += (Number(r.netAmt || 0) - Number(r.total || 0))
-      acc.net += Number(r.netAmt || 0)
-      return acc
-    },
-    { total: 0, vat: 0, net: 0 },
-  )
+  // ================= HANDLE RETURN QTY =================
+  const handleReturnQty = (index, value) => {
+    const updated = [...medicines]
 
-  // ---------------- HANDLERS ----------------
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-  }
-
-  const handleAdd = () => {
-    const newRow = calculateRow(form)
-
-    if (editIndex !== null) {
-      const updated = [...rows]
-      updated[editIndex] = newRow
-      setRows(updated)
-      setEditIndex(null)
-    } else {
-      setRows([...rows, newRow])
+    if (value > updated[index].soldQty) {
+      showCustomToast('Return qty cannot exceed sold qty')
+      return
     }
 
-    setForm({ medicineName: '', qty: '', rate: '', disc: '', vat: '' })
+    updated[index].returnQty = Number(value)
+    setMedicines(updated)
+    calculateSummary(updated)
   }
 
-  const handleEdit = (index) => {
-    setForm(rows[index])
-    setEditIndex(index)
+  // ================= CALCULATIONS =================
+  const calculateSummary = (data) => {
+    let totalReturn = 0
+    let totalDiscount = 0
+    let totalGST = 0
+
+    data.forEach((item) => {
+      const gross = item.returnQty * item.rate
+      const discount = (gross * item.discPercent) / 100
+      const taxable = gross - discount
+      const gst = (taxable * item.gstPercent) / 100
+
+      totalReturn += gross
+      totalDiscount += discount
+      totalGST += gst
+    })
+
+    const netRefund = totalReturn - totalDiscount + totalGST
+
+    setSummary({
+      totalReturn,
+      totalDiscount,
+      totalGST,
+      netRefund,
+    })
   }
 
-  const handleDelete = (index) => {
-    setRows(rows.filter((_, i) => i !== index))
+  // ================= SAVE RETURN =================
+  const handleSave = async () => {
+    const returnedItems = medicines.filter((m) => m.returnQty > 0)
+
+    if (returnedItems.length === 0) {
+      showCustomToast('Please enter return quantity')
+      return
+    }
+
+    const payload = {
+      returnHeader: {
+        returnNo,
+        originalBillNo: billNo,
+        returnType,
+        refundMode,
+        returnDate: new Date(),
+        totalReturnAmount: summary.totalReturn,
+        totalDiscount: summary.totalDiscount,
+        totalGST: summary.totalGST,
+        netRefundAmount: summary.netRefund,
+      },
+      returnItems: returnedItems.map((item) => ({
+        medicineId: item.medicineId,
+        medicineName: item.name,
+        batchNo: item.batch,
+        soldQty: item.soldQty,
+        returnQty: item.returnQty,
+        rate: item.rate,
+        discountPercent: item.discPercent,
+        gstPercent: item.gstPercent,
+      })),
+    }
+
+    console.log('🔥 RETURN PAYLOAD:', payload)
+
+    // 👉 Call your API here
+    // await axios.post('/api/op-sales-return', payload)
+
+    setShowBill(true)
+    showCustomToast('Return Saved Successfully')
   }
 
-  // ---------------- UI ----------------
+  // ================= UI =================
   return (
-    <div className="p-3" style={{ fontSize: '13px' }}>
-      <h5 className="fw-bold mb-3">Sales Returns</h5>
+    <CCard>
+      <CCardBody>
+        <CRow className="mb-4 g-4">
+          {/* ================= LEFT SIDE - AUTO FETCHED DETAILS ================= */}
+          <CCol md={6}>
+            <CCard className="p-3 shadow-sm" style={{ color: 'var(--color-black)' }}>
+              <h6 className="fw-bold mb-3">Patient Details</h6>
 
-      {/* HEADER */}
-      <CRow className="mb-3 align-items-center">
-        <CCol md={3}>
-          <CFormLabel className="fw-bold">Bill No</CFormLabel>
-          <CFormSelect size="sm" value={billNo} onChange={(e) => setBillNo(e.target.value)}>
-            <option>Select</option>
-            <option>3212</option>
-            <option>3213</option>
-          </CFormSelect>
-        </CCol>
+              <CRow className="g-3">
+                <CCol md={12}>
+                  <CFormLabel>File No</CFormLabel>
+                  <CFormInput value={patient.fileNo || ''} disabled size="sm" />
+                </CCol>
 
-       
+                <CCol md={12}>
+                  <CFormLabel>Patient Name</CFormLabel>
+                  <CFormInput value={patient.patientName || ''} disabled size="sm" />
+                </CCol>
 
-        <CCol md={3}>
-          <CFormLabel className="fw-bold">From</CFormLabel>
-          <CFormInput type="date" size="sm" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-        </CCol>
-
-        <CCol md={3}>
-          <CFormLabel className="fw-bold">To</CFormLabel>
-          <CFormInput type="date" size="sm" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-        </CCol>
-      </CRow>
-
-      {/* PATIENT TYPE */}
-      <CRow className="mb-2">
-        {['DIRECT', 'OUT PATIENT'].map((type) => (
-          <CCol md={2} key={type}>
-            <CFormCheck
-              type="radio"
-              name="patientType"
-              label={type}
-              checked={patientType === type}
-              onChange={() => setPatientType(type)}
-            />
+                <CCol md={12}>
+                  <CFormLabel>Mobile No</CFormLabel>
+                  <CFormInput value={patient.mobile || ''} disabled size="sm" />
+                </CCol>
+              </CRow>
+            </CCard>
           </CCol>
-        ))}
-        
-      </CRow>
+          {/* ================= RIGHT SIDE - BILL & RETURN INFO ================= */}
+          <CCol md={6}>
+            <CCard className="p-3 shadow-sm">
+              <h6 className="fw-bold mb-3">Return Details</h6>
 
-      {/* PATIENT DETAILS */}
-      <div className="border p-2 mb-3">
-        <div><strong>Name :</strong> {patientDetails.name}</div>
-        <div><strong>Address :</strong> {patientDetails.address}</div>
-        <div><strong>Mobile No :</strong> {patientDetails.mobile}</div>
-      </div>
+              <CRow className="g-3 align-items-end" style={{ color: 'var(--color-black)' }}>
+                {/* Bill No + Fetch Button in Same Row */}
+                <CCol md={8}>
+                  <CFormLabel>Original Bill No</CFormLabel>
 
-      {/* ENTRY FORM */}
-     <CRow className="g-2 mb-3 align-items-end">
+                  <CFormInput
+                    value={billNo}
+                    size="sm"
+                    placeholder="Enter Bill Number"
+                    onChange={(e) => {
+                      setBillNo(e.target.value)
 
-  {/* Medicine Name */}
-  <CCol md={3}>
-    <CFormLabel className="fw-bold small">Medicine Name</CFormLabel>
-    <CFormInput
-      name="medicineName"
-      value={form.medicineName}
-      onChange={handleChange}
-      placeholder="Medicine Name"
-      size="sm"
-    />
-  </CCol>
+                      // ✅ hide error when typing
+                      if (e.target.value) {
+                        setBillNoError('')
+                      }
+                    }}
+                    invalid={!!billNoError}
+                  />
 
-  {/* Issued Qty */}
-  <CCol md={1}>
-    <CFormLabel className="fw-bold small">Issued Qty</CFormLabel>
-    <CFormInput
-      name="issuedQty"
-      value={form.issuedQty}
-      disabled
-      size="sm"
-    />
-  </CCol>
+                  {billNoError && <div style={{ color: 'red', fontSize: 12 }}>{billNoError}</div>}
+                </CCol>
 
-  {/* Return Qty */}
-  <CCol md={1}>
-    <CFormLabel className="fw-bold small">Return Qty</CFormLabel>
-    <CFormInput
-      name="returnQty"
-      value={form.returnQty}
-      onChange={handleChange}
-      size="sm"
-    />
-  </CCol>
+                <CCol md={4} className="d-flex">
+                  <CButton
+                    size="sm"
+                    className="w-100"
+                    onClick={fetchBillData}
+                    style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+                  >
+                    {fetchLoading ? <Spinner size="sm" /> : 'Fetch Bill'}
+                  </CButton>
+                </CCol>
 
-  {/* Rate */}
-  <CCol md={1}>
-    <CFormLabel className="fw-bold small">Rate</CFormLabel>
-    <CFormInput
-      name="rate"
-      value={form.rate}
-      onChange={handleChange}
-      size="sm"
-    />
-  </CCol>
+                {/* Return Type */}
+                <CCol md={12}>
+                  <CFormLabel>Return Type</CFormLabel>
+                  <CFormSelect
+                    value={returnType}
+                    onChange={(e) => setReturnType(e.target.value)}
+                    size="sm"
+                  >
+                    <option value="Partial">Partial</option>
+                    <option value="Full">Full</option>
+                  </CFormSelect>
+                </CCol>
 
-  {/* Disc % */}
-  <CCol md={1}>
-    <CFormLabel className="fw-bold small">Disc %</CFormLabel>
-    <CFormInput
-      name="disc"
-      value={form.disc}
-      onChange={handleChange}
-      size="sm"
-    />
-  </CCol>
+                {/* Refund Mode */}
+                <CCol md={12}>
+                  <CFormLabel>Refund Mode</CFormLabel>
+                  <CFormSelect
+                    value={refundMode}
+                    onChange={(e) => setRefundMode(e.target.value)}
+                    size="sm"
+                  >
+                    <option value="Cash">Cash</option>
+                    <option value="UPI">UPI</option>
+                    <option value="Card">Card</option>
+                    <option value="Adjust">Adjust to Credit</option>
+                  </CFormSelect>
+                </CCol>
+              </CRow>
+            </CCard>
+          </CCol>
+        </CRow>
 
-  {/* Disc Amt */}
-  <CCol md={1}>
-    <CFormLabel className="fw-bold small">Disc Amt</CFormLabel>
-    <CFormInput
-      name="discAmt"
-      value={form.discAmt}
-      disabled
-      size="sm"
-    />
-  </CCol>
-
-  {/* Total Amt */}
-  <CCol md={1}>
-    <CFormLabel className="fw-bold small">Total Amt</CFormLabel>
-    <CFormInput
-      name="totalAmt"
-      value={form.totalAmt}
-      disabled
-      size="sm"
-    />
-  </CCol>
-
-  {/* Batch No */}
-  <CCol md={2}>
-    <CFormLabel className="fw-bold small">Batch No</CFormLabel>
-    <CFormInput
-      name="batchNo"
-      value={form.batchNo}
-      onChange={handleChange}
-      size="sm"
-    />
-  </CCol>
-
-  {/* Exp Date */}
-  <CCol md={1}>
-    <CFormLabel className="fw-bold small">Exp Date</CFormLabel>
-    <CFormInput
-      type="date"
-      name="expDate"
-      value={form.expDate}
-      onChange={handleChange}
-      size="sm"
-    />
-  </CCol>
-
-</CRow>
-
-
-      <CButton size="sm" color="dark" onClick={handleAdd}>
-        {editIndex !== null ? 'Update' : 'Add'}
-      </CButton>
-
-      {/* TABLE */}
-      <div className="mt-3">
-        <CTable bordered hover>
+        {/* TABLE */}
+        <CTable bordered responsive className="pink-table">
           <CTableHead>
             <CTableRow>
-              <CTableHeaderCell>S.No</CTableHeaderCell>
-              <CTableHeaderCell>Medicine Name</CTableHeaderCell>
-              <CTableHeaderCell>Qty</CTableHeaderCell>
+              <CTableHeaderCell>Medicine</CTableHeaderCell>
+              <CTableHeaderCell>Batch</CTableHeaderCell>
+              <CTableHeaderCell>Sold Qty</CTableHeaderCell>
+              <CTableHeaderCell>Return Qty</CTableHeaderCell>
               <CTableHeaderCell>Rate</CTableHeaderCell>
-               <CTableHeaderCell>Disc(%)</CTableHeaderCell>
-              <CTableHeaderCell>DiscAmt</CTableHeaderCell>
-
-              <CTableHeaderCell>Total</CTableHeaderCell>
-              <CTableHeaderCell>NetAmt</CTableHeaderCell>
-              <CTableHeaderCell>VAT %</CTableHeaderCell>
-
-              <CTableHeaderCell>Actions</CTableHeaderCell>
+              <CTableHeaderCell>Disc%</CTableHeaderCell>
+              <CTableHeaderCell>GST%</CTableHeaderCell>
+              <CTableHeaderCell>Net</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
 
           <CTableBody>
-            {rows.length === 0 && (
-              <CTableRow>
-                <CTableDataCell colSpan={8} className="text-center">
-                  No records found
-                </CTableDataCell>
-              </CTableRow>
-            )}
+            {medicines.map((item, index) => {
+              const gross = item.returnQty * item.rate
+              const discount = (gross * item.discPercent) / 100
+              const taxable = gross - discount
+              const gst = (taxable * item.gstPercent) / 100
+              const net = taxable + gst
 
-            {rows.map((r, i) => (
-              <CTableRow key={i}>
-                <CTableDataCell>{i + 1}</CTableDataCell>
-                <CTableDataCell>{r.medicineName}</CTableDataCell>
-                <CTableDataCell>{r.qty}</CTableDataCell>
-                <CTableDataCell>{r.rate}</CTableDataCell>
-                <CTableDataCell>{r.total}</CTableDataCell>
-                <CTableDataCell>{r.disc}</CTableDataCell>
-
-                <CTableDataCell>{r.discAmt}</CTableDataCell>
-                <CTableDataCell>{r.netAmt}</CTableDataCell>
-                <CTableDataCell>{r.vat}</CTableDataCell>
-
-                <CTableDataCell>
-                  <Edit2 size={16} onClick={() => handleEdit(i)} style={{ cursor: 'pointer' }} />
-                  <Trash size={16} className="ms-2" onClick={() => handleDelete(i)} style={{ cursor: 'pointer' }} />
-                </CTableDataCell>
-              </CTableRow>
-            ))}
+              return (
+                <CTableRow key={item.id}>
+                  <CTableDataCell>{item.name}</CTableDataCell>
+                  <CTableDataCell>{item.batch}</CTableDataCell>
+                  <CTableDataCell>{item.soldQty}</CTableDataCell>
+                  <CTableDataCell>
+                    <CFormInput
+                      type="number"
+                      min="0"
+                      value={item.returnQty}
+                      onChange={(e) => handleReturnQty(index, e.target.value)}
+                    />
+                  </CTableDataCell>
+                  <CTableDataCell>{item.rate}</CTableDataCell>
+                  <CTableDataCell>{item.discPercent}</CTableDataCell>
+                  <CTableDataCell>{item.gstPercent}</CTableDataCell>
+                  <CTableDataCell>₹{net.toFixed(2)}</CTableDataCell>
+                </CTableRow>
+              )
+            })}
           </CTableBody>
         </CTable>
-      </div>
 
-      {/* SUMMARY */}
-    <CCardBody className="mt-3 border-top pt-3">
-  <CRow className="g-3">
+        {/* SUMMARY */}
+        <CRow className="mt-4" style={{ color: 'var(--color-black)' }}>
+          <CCol md={3}>
+            <strong>Total:</strong> ₹{summary.totalReturn.toFixed(2)}
+          </CCol>
+          <CCol md={3}>
+            <strong>Discount:</strong> ₹{summary.totalDiscount.toFixed(2)}
+          </CCol>
+          <CCol md={3}>
+            <strong>GST:</strong> ₹{summary.totalGST.toFixed(2)}
+          </CCol>
+          <CCol md={3}>
+            <strong>Net Refund:</strong> ₹{summary.netRefund.toFixed(2)}
+          </CCol>
+        </CRow>
 
-    {/* LEFT BLOCK */}
-    <CCol md={4}>
-      <CRow className="mb-2">
-        <CCol xs={6}>
-          <CFormLabel className="fw-bold text-end mb-0">Total Amt</CFormLabel>
-        </CCol>
-        <CCol xs={6}>
-          <CFormInput
-            disabled
-            value={totals.total.toFixed(2)}
-            className="text-end bg-light"
-            size="sm"
-          />
-        </CCol>
-      </CRow>
+        <CRow className="mt-5 d-flex justify-content-between">
+          <CCol xs="auto">
+            <CButton
+              style={{ backgroundColor: 'var(--color-bgcolor)', color: 'var(--color-black)' }}
+              onClick={() => setShowModal(true)}
+            >
+              View Sales Return Bill
+            </CButton>
+          </CCol>
+          <CCol xs="auto">
+            <CButton
+              style={{ backgroundColor: 'var(--color-black)', color: 'white' }}
+              onClick={handleSave}
+            >
+              Save & Generate Bill
+            </CButton>
+          </CCol>
+        </CRow>
 
-      <CRow className="mb-2">
-        <CCol xs={6}>
-          <CFormLabel className="fw-bold text-end mb-0">Disc (%)</CFormLabel>
-        </CCol>
-        <CCol xs={6}>
-          <CFormInput
-            disabled
-            value={0}
-            className="text-end bg-light"
-            size="sm"
-          />
-        </CCol>
-      </CRow>
+        {/* RETURN BILL */}
+        {showBill && (
+          <div id="printableArea" className="mt-5 p-4 border">
+            <h4 className="text-center">RETURN BILL / CREDIT NOTE</h4>
+            <hr />
+            <p>
+              <strong>Return No:</strong> {returnNo}
+            </p>
+            <p>
+              <strong>Original Bill No:</strong> {billNo}
+            </p>
+            <p>
+              <strong>Date:</strong> {new Date().toLocaleString()}
+            </p>
+            <p>
+              <strong>Refund Mode:</strong> {refundMode}
+            </p>
 
-      <CRow className="mb-2">
-        <CCol xs={6}>
-          <CFormLabel className="fw-bold text-end mb-0">Disc Amt</CFormLabel>
-        </CCol>
-        <CCol xs={6}>
-          <CFormInput
-            disabled
-            value={0}
-            className="text-end bg-light"
-            size="sm"
-          />
-        </CCol>
-      </CRow>
+            <CTable bordered>
+              <CTableHead>
+                <CTableRow>
+                  <CTableHeaderCell>Medicine</CTableHeaderCell>
+                  <CTableHeaderCell>Qty</CTableHeaderCell>
+                  <CTableHeaderCell>Amount</CTableHeaderCell>
+                </CTableRow>
+              </CTableHead>
+              <CTableBody>
+                {medicines
+                  .filter((m) => m.returnQty > 0)
+                  .map((item) => (
+                    <CTableRow key={item.id}>
+                      <CTableDataCell>{item.name}</CTableDataCell>
+                      <CTableDataCell>{item.returnQty}</CTableDataCell>
+                      <CTableDataCell>
+                        ₹
+                        {(
+                          item.returnQty * item.rate -
+                          (item.returnQty * item.rate * item.discPercent) / 100 +
+                          ((item.returnQty * item.rate -
+                            (item.returnQty * item.rate * item.discPercent) / 100) *
+                            item.gstPercent) /
+                            100
+                        ).toFixed(2)}
+                      </CTableDataCell>
+                    </CTableRow>
+                  ))}
+              </CTableBody>
+            </CTable>
 
-      <CRow>
-        <CCol xs={6}>
-          <CFormLabel className="fw-bold text-end mb-0">Net Amt</CFormLabel>
-        </CCol>
-        <CCol xs={6}>
-          <CFormInput
-            disabled
-            value={totals.net.toFixed(2)}
-            className="text-end bg-light"
-            size="sm"
-          />
-        </CCol>
-      </CRow>
-    </CCol>
+            <h5 className="text-end">Net Refund: ₹{summary.netRefund.toFixed(2)}</h5>
 
-    {/* MIDDLE BLOCK */}
-    <CCol md={4}>
-      <CRow className="mb-2">
-        <CCol xs={6}>
-          <CFormLabel className="fw-bold text-end mb-0">Paid Amt</CFormLabel>
-        </CCol>
-        <CCol xs={6}>
-          <CFormInput
-            disabled
-            value={0}
-            className="text-end bg-light"
-            size="sm"
-          />
-        </CCol>
-      </CRow>
-
-      <CRow className="mb-2">
-        <CCol xs={6}>
-          <CFormLabel className="fw-bold text-end mb-0">Balance Amt</CFormLabel>
-        </CCol>
-        <CCol xs={6}>
-          <CFormInput
-            disabled
-            value={0}
-            className="text-end bg-light"
-            size="sm"
-          />
-        </CCol>
-      </CRow>
-
-      <CRow>
-        <CCol xs={6}>
-          <CFormLabel className="fw-bold text-end mb-0">Return Amt</CFormLabel>
-        </CCol>
-        <CCol xs={6}>
-          <CFormInput
-            disabled
-            value={totals.net.toFixed(2)}
-            className="text-end bg-light"
-            size="sm"
-          />
-        </CCol>
-      </CRow>
-    </CCol>
-
-    {/* RIGHT BLOCK */}
-    <CCol md={4}>
-      <CRow className="mb-2">
-        <CCol xs={5}>
-          <CFormLabel className="fw-bold mb-0">VAT Amt</CFormLabel>
-        </CCol>
-        <CCol xs={7}>
-          <CFormInput
-            disabled
-            value={totals.vat.toFixed(2)}
-            className="bg-light"
-            size="sm"
-          />
-        </CCol>
-      </CRow>
-
-      <CRow className="mb-2">
-        <CCol xs={5}>
-          <CFormLabel className="fw-bold mb-0">Reason</CFormLabel>
-        </CCol>
-        <CCol xs={7}>
-          <CFormSelect size="sm">
-            <option>RETURN</option>
-            <option>DAMAGED</option>
-            <option>EXPIRED</option>
-          </CFormSelect>
-        </CCol>
-      </CRow>
-
-      <CRow>
-        <CCol xs={5}>
-          <CFormLabel className="fw-bold mb-0">Auth Name</CFormLabel>
-        </CCol>
-        <CCol xs={7}>
-          <CFormSelect size="sm">
-            <option>DR. KUMAR</option>
-            <option>DR. SURESH</option>
-          </CFormSelect>
-        </CCol>
-      </CRow>
-    </CCol>
-
-  </CRow>
-</CCardBody>
-
-
-      {/* ACTIONS */}
-      <div className="d-flex justify-content-end gap-2 mt-3">
-        <CButton color="secondary">Print</CButton>
-        <CButton color="info">Tracking</CButton>
-        <CButton color="danger">Close</CButton>
-      </div>
-    </div>
+            <div className="text-center mt-3">
+              <CButton color="dark" onClick={() => window.print()}>
+                Print
+              </CButton>
+            </div>
+          </div>
+        )}
+      </CCardBody>
+    </CCard>
   )
 }
 
-export default SalesReturns
+export default OPSalesReturn

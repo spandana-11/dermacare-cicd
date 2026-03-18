@@ -1,6 +1,7 @@
 import React from 'react'
 import { CSpinner } from '@coreui/react'
 
+// eslint-disable-next-line react/prop-types
 const LoadingIndicator = ({ message = 'Loading...' }) => {
   return (
     <div

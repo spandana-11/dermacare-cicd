@@ -108,7 +108,7 @@ const OtherStaffManagement = () => {
       showCustomToast('Other Staff deleted successfully!', 'success')
       fetchTechs()
     } catch (err) {
-      showCustomToast('❌ Failed to delete Other Staff.', 'error')
+      // showCustomToast('❌ Failed to delete Other Staff.', 'error')
       console.error('Delete error:', err)
     } finally {
       setIsModalVisible(false) // close modal after action

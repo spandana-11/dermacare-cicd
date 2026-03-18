@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { CTabs, CNav, CNavItem, CNavLink, CTabContent, CTabPane } from '@coreui/react'
 
 import MedicineTemplate from '../PharmacyManagement/MedicineTemplate'
@@ -9,10 +9,20 @@ import Purchases from '../PharmacyManagement/Purchases'
 import StockReturns from '../PharmacyManagement/StockReturns'
 import MoneyReceipts from '../PharmacyManagement/MoneyReceipts'
 import SupplierInfo from '../PharmacyManagement/SupplierInfo'
+import AddMedicine from './AddMedicine'
+import PharmacyReports from './PharmacyReports'
+import  OrderDetails  from './Reorder/OrderDetails'
+import {ordersData} from './Reorder/dummyProductData'
 
 const PharmacyManagement = () => {
   const [activeKey, setActiveKey] = useState(0)
 
+  useEffect(() => {
+    if (ordersData && ordersData.products) {
+      setProducts(ordersData.products)
+       console.log(ordersData)
+    }
+  }, [ordersData])
   return (
     <div className="pharmacy-management w-100">
       <CTabs activeKey={activeKey}>
@@ -23,18 +33,19 @@ const PharmacyManagement = () => {
               onClick={() => setActiveKey(0)}
               style={{ color: 'var(--color-black)',cursor:'pointer' }}
             >
-              Medicine Template
+              Add Medicine 
             </CNavLink>
           </CNavItem>
-          <CNavItem>
+              <CNavItem>
             <CNavLink
               active={activeKey === 1}
               onClick={() => setActiveKey(1)}
-              style={{ color: 'var(--color-black)' ,cursor:'pointer'}}
+              style={{ color: 'var(--color-black)',cursor:'pointer' }}
             >
-              Inventory
+              Medicine Template
             </CNavLink>
           </CNavItem>
+         
           <CNavItem>
             <CNavLink
               active={activeKey === 2}
@@ -71,16 +82,16 @@ const PharmacyManagement = () => {
               Stock Returns
             </CNavLink>
           </CNavItem>
-          <CNavItem>
+           <CNavItem>
             <CNavLink
               active={activeKey === 6}
               onClick={() => setActiveKey(6)}
               style={{ color: 'var(--color-black)' ,cursor:'pointer'}}
             >
-              Money Receipts
+              Inventory
             </CNavLink>
           </CNavItem>
-          <CNavItem>
+           <CNavItem>
             <CNavLink
               active={activeKey === 7}
               onClick={() => setActiveKey(7)}
@@ -89,15 +100,44 @@ const PharmacyManagement = () => {
               Suppliers
             </CNavLink>
           </CNavItem>
+          <CNavItem>
+            <CNavLink
+              active={activeKey === 8}
+              onClick={() => setActiveKey(8)}
+              style={{ color: 'var(--color-black)' ,cursor:'pointer'}}
+            >
+              Money Receipts
+            </CNavLink>
+          </CNavItem>
+           <CNavItem>
+            <CNavLink
+              active={activeKey === 9}
+              onClick={() => setActiveKey(9)}
+              style={{ color: 'var(--color-black)',cursor:'pointer' }}
+            >
+              Reports
+            </CNavLink>
+          </CNavItem>
+            <CNavItem>
+            <CNavLink
+              active={activeKey === 10}
+              onClick={() => setActiveKey(10)}
+              style={{ color: 'var(--color-black)',cursor:'pointer' }}
+            >
+              Order Details
+            </CNavLink>
+          </CNavItem>
+         
         </CNav>
 
         <CTabContent className="mt-3">
           <CTabPane visible={activeKey === 0}>
+            <AddMedicine/>
+          </CTabPane>
+         < CTabPane visible={activeKey === 1}>
             <MedicineTemplate />
           </CTabPane>
-          <CTabPane visible={activeKey === 1}>
-            <Inventory />
-          </CTabPane>
+          
           <CTabPane visible={activeKey === 2}>
             <OPSales />
           </CTabPane>
@@ -111,10 +151,20 @@ const PharmacyManagement = () => {
             <StockReturns />
           </CTabPane>
           <CTabPane visible={activeKey === 6}>
+            <Inventory />
+          </CTabPane>
+           <CTabPane visible={activeKey === 7}>
+            <SupplierInfo />
+          </CTabPane>
+          <CTabPane visible={activeKey === 8}>
             <MoneyReceipts />
           </CTabPane>
-          <CTabPane visible={activeKey === 7}>
-            <SupplierInfo />
+         
+          <CTabPane visible={activeKey === 9}>
+            <PharmacyReports />
+          </CTabPane>
+          <CTabPane visible={activeKey === 10}>
+            <OrderDetails />
           </CTabPane>
         </CTabContent>
       </CTabs>

@@ -154,7 +154,7 @@ const LabTechnicianManagement = () => {
       setTechnicians((prev) => prev.filter((t) => t.id !== id))
       showCustomToast('Technician deleted successfully!', 'success')
     } catch (err) {
-      showCustomToast('❌ Failed to delete technician.', 'error')
+      // showCustomToast('❌ Failed to delete technician.', 'error')
       console.error('Delete error:', err)
     } finally {
       setIsModalVisible(false) // close modal after action

@@ -14,6 +14,9 @@ const Page500 = React.lazy(() => import('./views/pages/page500/Page500'))
 
 import ProtectedRoute from './components/ProtectedRoute'
 import { injectTheme } from './Constant/Themes'
+import SupplierApp from './components/PharmacyManagement/Reorder/SupplierApp'
+import { listenNotification } from './firebase'
+import { LogoLoader } from './Utils/LogoLoder'
 
 const App = () => {
   const { isColorModeSet, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
@@ -24,41 +27,38 @@ const App = () => {
   }, [])
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const theme = urlParams.get('theme')?.match(/^[A-Za-z0-9\s]+/)?.[0]
+    setColorMode('light')
+  }, [])
 
-    if (theme) {
-      setColorMode(theme)
-    } else if (!isColorModeSet()) {
-      setColorMode(storedTheme)
-    }
-  }, [storedTheme, isColorModeSet, setColorMode])
+  useEffect(() => {
+    listenNotification()
+  }, [])
 
   return (
-   
-      <Suspense fallback={<CSpinner color="primary" variant="grow" />}>
-        <Routes>
-          {/* ✅ Lowercase redirect for consistency */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+    <Suspense fallback={<LogoLoader />}>
+    {/* <Suspense> */}
+      <Routes>
+        {/* ✅ Lowercase redirect for consistency */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-          {/* Public routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/404" element={<Page404 />} />
-          <Route path="/500" element={<Page500 />} />
+        {/* Public routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/404" element={<Page404 />} />
+        <Route path="/500" element={<Page500 />} />
+        <Route path="/supplier-Dashboard" element={<SupplierApp />} />
 
-          {/* Protected routes - catch all */}
-          <Route
-            path="*"
-            element={
-              <ProtectedRoute>
-                <DefaultLayout />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </Suspense>
-    
+        {/* Protected routes - catch all */}
+        <Route
+          path="*"
+          element={
+            <ProtectedRoute>
+              <DefaultLayout />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </Suspense>
   )
 }
 

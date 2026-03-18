@@ -67,7 +67,7 @@ const PageLayout = ({ title, children, branch }) => {
                 style={{
                   width: '80px',
                   height: '80px',
-                  objectFit: 'cover',
+                  objectFit: 'fill',
                   borderRadius: '8px',
                   border: '1px solid #ddd',
                 }}

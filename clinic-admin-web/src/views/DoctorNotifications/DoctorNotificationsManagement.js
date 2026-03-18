@@ -94,7 +94,7 @@ const DoctorNotifications = () => {
       }
     } catch (error) {
       console.error('Error in fetchNotifications:', error)
-      showCustomToast('Failed to fetch notifications','error')
+      // showCustomToast('Failed to fetch notifications','error')
       setNotifications([])
     }
   }
@@ -138,7 +138,7 @@ const DoctorNotifications = () => {
           setNotifications([])
         }
       } catch (error) {
-        showCustomToast('Error fetching doctor list.','error')
+        // showCustomToast('Error fetching doctor list.','error')
       } finally {
         setLoading(false) // ✅ stop loading after everything
       }

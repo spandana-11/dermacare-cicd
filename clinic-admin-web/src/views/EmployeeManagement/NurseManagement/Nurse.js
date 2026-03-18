@@ -149,7 +149,7 @@ const NurseManagement = () => {
       showCustomToast('Nurse deleted successfully!', 'success')
     } catch (err) {
       console.error('Delete error:', err)
-      showCustomToast('Failed to delete nurse.', 'error')
+      // showCustomToast('Failed to delete nurse.', 'error')
     } finally {
       setDelLoading(false)
       setIsModalVisible(false)

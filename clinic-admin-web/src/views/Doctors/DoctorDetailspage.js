@@ -252,7 +252,7 @@ const DoctorDetailsPage = () => {
       }
     } catch (err) {
       console.error('Update error:', err)
-      showCustomToast('Error while updating doctor', 'error')
+      // showCustomToast('Error while updating doctor', 'error')
     } finally {
       setSaveLoading(false)
     }
@@ -1672,7 +1672,7 @@ showCustomToast(`Generated ${slots.length} slots`, "success")
                       )}
                     </CCol>
                        <CCol xs={12}>
-              <div className="d-flex align-items-center flex-wrap gap-4">
+              {/* <div className="d-flex align-items-center flex-wrap gap-4">
                 <strong>Consultation Type:</strong>
 
                 <CFormCheck
@@ -1693,7 +1693,7 @@ showCustomToast(`Generated ${slots.length} slots`, "success")
                   checked={enabledTypes.online}
                   onChange={() => toggleType('online')}
                 />
-              </div>
+              </div> */}
             </CCol>
 
                     <CRow style={{ color: 'var(--color-black)' }}>

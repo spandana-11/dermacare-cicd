@@ -1,5 +1,4 @@
-import axios from 'axios'
-import { wifiUrl } from '../baseUrl'
+import { BASE_URL, wifiUrl } from '../baseUrl'
 
 // export const getInProgressBookings = async (patientId) => {
 //   try {
@@ -25,5 +24,5 @@ import { http } from '../Utils/Interceptors'
 export const getInProgressfollowupBookings = (patientId) => {
   const clinicid = localStorage.getItem('HospitalId')
 
-  return http.get(`${wifiUrl}/api/customer/bookings/Inprogress/patientId/${patientId}/${clinicid}`)
+  return http.get(`${BASE_URL}/bookings/Inprogress/patientId/${patientId}/${clinicid}`)
 }

@@ -127,7 +127,7 @@ const BookingSearch = ({
         await fetchSlots(booking.doctorId)
       } catch (err) {
         console.error('Error fetching slots:', err)
-        showCustomToast('Failed to load doctor slots.','error')
+        // showCustomToast('Failed to load doctor slots.','error')
       }
     }
 

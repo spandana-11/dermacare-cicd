@@ -92,7 +92,7 @@ const ReferDoctorManagement = () => {
         showCustomToast('ReferDoctor added successfully!', 'success')
       }
     } catch (err) {
-      showCustomToast('❌ Failed to save ReferDoctor.', 'error')
+      // showCustomToast('❌ Failed to save ReferDoctor.', 'error')
       console.error('API error:', err)
     }
   }
@@ -106,7 +106,7 @@ const ReferDoctorManagement = () => {
       setTechnicians((prev) => prev.filter((t) => t.id !== id))
       showCustomToast('ReferDoctor deleted successfully!', 'success')
     } catch (err) {
-      showCustomToast('❌ Failed to delete ReferDoctor.', 'error')
+      // showCustomToast('❌ Failed to delete ReferDoctor.', 'error')
       console.error('Delete error:', err)
     } finally {
       setIsModalVisible(false) // close modal after action

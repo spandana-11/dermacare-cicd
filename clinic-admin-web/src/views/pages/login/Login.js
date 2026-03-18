@@ -33,6 +33,7 @@ import DermaLogo from 'src/assets/images/DermaCare.png' // adjust path if needed
 import { COLORS } from '../../../Constant/Themes'
 import { toast, ToastContainer } from 'react-toastify'
 import { showCustomToast } from '../../../Utils/Toaster'
+import { getFCMToken } from '../../../firebase'
 
 const Login = () => {
   const [activeTab, setActiveTab] = useState('clinic') // clinic | doctor
@@ -71,22 +72,29 @@ const Login = () => {
     setErrorMessage('')
 
     try {
+      // ✅ get FCM token first
+      await Notification.requestPermission()
+      const fcmToken = await getFCMToken()
+      console.log(fcmToken)
       let res
+      const loginBody = {
+        userName,
+        password,
+        role,
+        fcmToken: fcmToken || '',
+        deviceType: 'web',
+      }
 
       // ✅ Call correct API based on role
       if (role.toLowerCase() === 'admin') {
-        const resposnse = await http.post(
-          `/clinicLogin`,
-          { userName, password, role },
-          { headers: { 'Content-Type': 'application/json' } },
-        )
+        const resposnse = await http.post(`/clinicLogin`, loginBody, {
+          headers: { 'Content-Type': 'application/json' },
+        })
         res = resposnse
       } else {
-        const resposnse = await http.post(
-          `/loginUsingRoles`,
-          { userName, password, role },
-          { headers: { 'Content-Type': 'application/json' } },
-        )
+        const resposnse = await http.post(`/loginUsingRoles`, loginBody, {
+          headers: { 'Content-Type': 'application/json' },
+        })
         res = resposnse.data
       }
 
@@ -182,17 +190,17 @@ const Login = () => {
       if (backendMessage) {
         if (backendMessage.toLowerCase().includes('username')) {
           setErrorMessage('Invalid username. Please try again.')
-          showCustomToast('Invalid username. Please try again.', 'error')
+          // showCustomToast('Invalid username. Please try again.', 'error')
         } else if (backendMessage.toLowerCase().includes('password')) {
           setErrorMessage('Invalid password. Please try again.')
-          showCustomToast('Invalid password. Please try again.', 'error')
+          // showCustomToast('Invalid password. Please try again.', 'error')
         } else {
           setErrorMessage(backendMessage)
-          showCustomToast(backendMessage, 'error')
+          // showCustomToast(backendMessage, 'error')
         }
       } else {
         setErrorMessage('An unexpected error occurred. Please try again later.')
-        showCustomToast('An unexpected error occurred. Please try again later.', 'error')
+        // showCustomToast('An unexpected error occurred. Please try again later.', 'error')
       }
     } finally {
       setIsLoading(false)
@@ -418,6 +426,7 @@ const Login = () => {
             href="https://chiselontechnologies.com"
             target="_blank"
             style={{ color: COLORS.primary }}
+            rel="noreferrer"
           >
             About Chiselon Technologies
           </a>

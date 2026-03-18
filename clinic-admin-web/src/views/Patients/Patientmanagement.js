@@ -26,6 +26,8 @@ import { Eye,Edit2 ,Trash  } from 'lucide-react'
 import axios from 'axios'
 import { BASE_URL, wifiUrl } from '../../baseUrl'
 import Pagination from '../../Utils/Pagination'
+import LoadingIndicator from '../../Utils/loader'
+import { http } from '../../Utils/Interceptors'
 
 const PatientManagement = () => {
   const [activeKey, setActiveKey] = useState(1)
@@ -106,7 +108,7 @@ const totalPages = Math.ceil(patients.length / pageSize);
  const fetchAppointments = async (patientId) => {
   try {
     setLoading(true);
-    const response = await axios.get(`${BASE_URL}/bookings/byPatientId/${patientId}`);
+    const response = await http.get(`${BASE_URL}/bookings/byPatientId/${patientId}`);
     console.log('Full API response:', response.data);
 
     const data = response.data?.data || [];
@@ -136,7 +138,7 @@ const totalPages = Math.ceil(patients.length / pageSize);
   try {
   setLoading(true)
 
-    const response = await axios.get(`${BASE_URL}/visitHistory/${patientId}`)
+    const response = await http.get(`${BASE_URL}/visitHistory/${patientId}`)
     console.log('Visit History Response:', response.data)
     // setResponseMessage(response.data?.message || '')
     const data = response.data?.data.visitHistory
@@ -155,7 +157,7 @@ const fetchReportByBookingId = async (bookingId) => {
   try {
     setReportLoading(true);
 
-    const response = await axios.get(
+    const response = await http.get(
       `${BASE_URL}/getReportByBookingId/${bookingId}`
     );
 
@@ -252,9 +254,10 @@ useEffect(() => {
             {/* 🔹 Patient Info Tab */}
             <CTabPane role="tabpanel" visible={activeKey === 1}>
               {loading ? (
-                <div className="text-center py-3">
-                  <CSpinner color="primary" /> Loading...
-                </div>
+                <LoadingIndicator message='Patient management'/>
+                // <div className="text-center py-3">
+                //   <CSpinner color="primary" /> Loading...
+                // </div>
               ) : error ? (
                 <p className="text-danger">{error}</p>
               ) : (

@@ -175,7 +175,7 @@ import { showCustomToast } from './Toaster'
 export const http = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,
-  timeout: 20000,
+  timeout: 10000,
 })
 export const https = axios.create({
   splrURL:wifiUrl,

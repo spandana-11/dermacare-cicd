@@ -123,7 +123,7 @@ const FrontDeskManagement = () => {
       // setModalVisible(false)
       // setSelectedTech(null)
     } catch (err) {
-      showCustomToast('❌ Failed to save receptionist.', 'error')
+      // showCustomToast('❌ Failed to save receptionist.', 'error')
       console.error('API error:', err)
     }
   }
