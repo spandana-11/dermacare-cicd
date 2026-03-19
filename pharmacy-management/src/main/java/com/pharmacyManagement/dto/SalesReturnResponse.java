@@ -1,5 +1,6 @@
 package com.pharmacyManagement.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.pharmacyManagement.enums.RefundMode;
 import com.pharmacyManagement.enums.ReturnStatus;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SalesReturnResponse {
 
     private String returnNo;

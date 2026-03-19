@@ -5,9 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.clinicadmin.dto.OpSalesRequest;
 import com.clinicadmin.dto.Response;
-import com.clinicadmin.exceptions.FeignClientException;
 import com.clinicadmin.feignclient.PharmacyManagementFeignClient;
 import com.clinicadmin.service.OpService;
+import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -25,7 +25,7 @@ public class OpsalesImpl implements OpService {
      try {
       log.info("CLINIC-ADMIN:REST request to create OP Sales");
       res = pharmacyManagementFeignClient.createOpSales(request);
-     }catch(FeignClientException e){}
+     }catch(FeignException e){}
      return res;
   }
       
@@ -34,7 +34,7 @@ public class OpsalesImpl implements OpService {
     	  try {
           log.info("CLINIC-ADMIN:REST request to update OP Sales id: {}", request.getBillNo());
           res = pharmacyManagementFeignClient.updateOpSales(request);}
-    	  catch(FeignClientException e) {}
+    	  catch(FeignException e) {}
     	  return res;
       }
       
@@ -46,7 +46,7 @@ public class OpsalesImpl implements OpService {
     	  try {
           log.info("CLINIC-ADMIN:REST request to fetch all OP Sales");
           res = pharmacyManagementFeignClient.getAllOpSales(clinicId, branchId);
-    	  }catch(FeignClientException e) {}
+    	  }catch(FeignException e) {}
     	  return res;
       }
       
@@ -57,7 +57,7 @@ public class OpsalesImpl implements OpService {
     	  try {
           log.info("CLINIC-ADMIN: REST request to fetch OP Sales by billNo: {}", billNo);
           res =  pharmacyManagementFeignClient.getByBillNo(billNo);
-    	  }catch(FeignClientException e) {}
+    	  }catch(FeignException e) {}
     	  return res;
       }
       
@@ -69,7 +69,7 @@ public class OpsalesImpl implements OpService {
     	  try {
           log.info("CLINIC-ADMIN:REST request to fetch OP Sales by id: {}", id);
           res = pharmacyManagementFeignClient.getById(id);}
-    	  catch(FeignClientException e) {}
+    	  catch(FeignException e) {}
     	  return res;
       }
       
@@ -82,7 +82,7 @@ public class OpsalesImpl implements OpService {
     	  try {
           log.info("CLINIC-ADMIN: REST request to fetch OP Sales by opNo");
           return pharmacyManagementFeignClient.getByOpNo(clinicId, branchId, opNo);}
-    	  catch(FeignClientException e) {}
+    	  catch(FeignException e) {}
     	  return res;
       }
       
@@ -96,7 +96,7 @@ public class OpsalesImpl implements OpService {
     	  try {
           log.info("CLINIC-ADMIN: REST request to delete OP Sales id: {}", id);
           return pharmacyManagementFeignClient.deleteOpSales(clinicId, branchId, id);}
-    	  catch(FeignClientException e) {}
+    	  catch(FeignException e) {}
     	  return res;
       }
       
@@ -124,7 +124,7 @@ public class OpsalesImpl implements OpService {
                   fromDate,
                   toDate
           );
-    	  }catch(FeignClientException e) {}
+    	  }catch(FeignException e) {}
     	  return res;
     	  }
 

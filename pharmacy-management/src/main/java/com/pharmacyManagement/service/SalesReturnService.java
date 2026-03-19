@@ -1,6 +1,10 @@
 package com.pharmacyManagement.service;
 
 import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+
+import com.pharmacyManagement.dto.Response;
 import com.pharmacyManagement.dto.SalesReturnCreateResponse;
 import com.pharmacyManagement.dto.SalesReturnFilterRequest;
 import com.pharmacyManagement.dto.SalesReturnRequest;
@@ -17,6 +21,8 @@ public interface SalesReturnService {
     void updateReturn(String returnNo, SalesReturnUpdateRequest request);
 
     void cancelReturn(String returnNo);
+    
+    public ResponseEntity<Response> getAllSalesReturns();
 
     List<SalesReturnSummaryResponse> filterReturns(SalesReturnFilterRequest filter);
 }

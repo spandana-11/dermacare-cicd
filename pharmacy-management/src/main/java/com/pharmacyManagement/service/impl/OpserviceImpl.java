@@ -55,6 +55,9 @@ public class OpserviceImpl implements Opservice {
     // ── FIX: inject ObjectMapper as a Spring bean instead of using new ObjectMapper() ──
     @Autowired
     private ObjectMapper objectMapper;
+    
+    @Autowired
+    private InventoryServiceImpl inventoryServiceImpl;
 
     private static final Logger log = LoggerFactory.getLogger(OpserviceImpl.class);
 
@@ -65,6 +68,7 @@ public class OpserviceImpl implements Opservice {
     public ResponseEntity<Response> createOpSales(OpSalesRequest request){
     	Response res = new Response();
     	OpSales opsale = null;
+    	//System.out.println(request.getMedicines());
     	try {
     		Optional<OpSales> opsales = opSalesRepository.findByBillNo(request.getBillNo());
     		if(opsales.isPresent()) {
@@ -75,14 +79,24 @@ public class OpserviceImpl implements Opservice {
     		List<OpMedicine> lst = validateMedicines(request.getMedicines());  
     		opsale = calculateValues(lst,request);
     		opsale.setMedicines(lst);
+    		//System.out.println(opsale.getMedicines());
     		opSalesRepository.save(opsale);
+    		updateInventory(opsale);
     		res.setMessage("Opsales saved successfully");
 			res.setStatus(200);
 			res.setSuccess(true);
+			res.setData(objectMapper.convertValue(opsale, OpSalesResponse.class));
     		}}catch(Exception e) {}
     	return ResponseEntity.status(res.getStatus()).body(res);
     }
      
+    
+    public void updateInventory(OpSales opsale) {
+    	try {
+    		for(OpMedicine m : opsale.getMedicines() ) {
+    	inventoryServiceImpl.updateInventoryByMedicineId(m.getMedicineId(), m.getBatchNo(), "-", m.getQty());
+      }}catch(Exception e) {}}
+    
    
     public ResponseEntity<Response> updateOpSales(OpSalesRequest request){
     	Response res = new Response();
@@ -146,6 +160,7 @@ public class OpserviceImpl implements Opservice {
     		    		res.setMessage("Opsales updated successfully");
     					res.setStatus(200);
     					res.setSuccess(true);
+    					res.setData(objectMapper.convertValue(op, OpSalesResponse.class));  		    		
     		        }}else {  		 
     		res.setMessage("Opsale Not Found to Update");
 			res.setStatus(404);

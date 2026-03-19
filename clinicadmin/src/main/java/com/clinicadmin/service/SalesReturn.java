@@ -3,6 +3,8 @@ package com.clinicadmin.service;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+
+import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.SalesReturnCreateResponse;
 import com.clinicadmin.dto.SalesReturnRequest;
 import com.clinicadmin.dto.SalesReturnResponse;
@@ -34,5 +36,8 @@ public interface SalesReturn {
 	            LocalDate toDate,
 	           String clinicId,
 	          String branchId);
+	  
+	  public ResponseEntity<Response> getAllSalesReturns();
+		        
 
 }

@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class OpMedicine {
 	
+	    private String medicineId;
 	    private String medicineName;
 	    private String batchNo;
 	    private Double qty;

@@ -280,4 +280,32 @@ public class InventoryServiceImpl implements InventoryService {
 		return Response.builder().success(true).message("Inventory deleted successfully").status(HttpStatus.OK.value())
 				.build();
 	}
+	
+	
+	
+	public Response updateInventoryByMedicineId(String medicineId,String batchNo,String action,double qty) {
+   
+		Response res = new Response();
+		try {
+		Inventory optional = inventoryRepository.findByMedicineIdAndBatchNo(medicineId, batchNo);
+
+		if (optional == null) {
+
+			res = Response.builder().success(false).message("Inventory not found").status(HttpStatus.NOT_FOUND.value())
+					.build();
+		}else {
+			if(action.equalsIgnoreCase("-")) {
+			optional.setAvailableQty(optional.getAvailableQty() - qty);	
+			}else {
+			optional.setAvailableQty(optional.getAvailableQty() + qty);					
+			}
+			inventoryRepository.save(optional);
+			res = Response.builder().success(true).data(null).message("Inventory updated successfully")
+			.status(HttpStatus.OK.value()).build();
+		}
+		}catch(Exception e) {}
+		return res;
+	}
+
+	
 }
