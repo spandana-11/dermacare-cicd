@@ -1,10 +1,13 @@
 package com.pharmacyManagement.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import com.pharmacyManagement.dto.Response;
 import com.pharmacyManagement.dto.SalesReturnCreateResponse;
 import com.pharmacyManagement.dto.SalesReturnFilterRequest;
 import com.pharmacyManagement.dto.SalesReturnRequest;
@@ -35,12 +38,16 @@ public class SalesReturnServiceImpl implements SalesReturnService {
     public SalesReturnMapper mapper;
     @Autowired
     public OpSalesRepository opSalesRepository;
+    
+    @Autowired
+    private InventoryServiceImpl inventoryServiceImpl;
+
 
     // ── CREATE ─────────────────────────────────────────────────────────────
     @Override
     public SalesReturnCreateResponse createReturn(SalesReturnRequest request) {
         log.info("Creating sales return for bill: {}", request.getReturnDetails().getOriginalBillNo());
-      if(opSalesRepository.findByBillNo(request.getOriginalBillNo()).get().getIncludeReturns()) {
+      if(opSalesRepository.findByBillNo(request.getOriginalBillNo()).isPresent()&&opSalesRepository.findByBillNo(request.getOriginalBillNo()).get().getIncludeReturns()) {
         validateItemQuantities(request.getItems());
 
         SalesReturnRequest.PatientDetailsRequest pd = request.getPatientDetails();
@@ -71,12 +78,22 @@ public class SalesReturnServiceImpl implements SalesReturnService {
                 .build();
 
         SalesReturn saved = repository.save(entity);
+        updateInventory(entity);
         log.info("Sales return created: {}", saved.getReturnNo());
         return mapper.toCreateResponse(saved);
       }else{
     	  return null;
      }}
-
+    
+      
+    public void updateInventory(SalesReturn opsale) {
+    	try {
+    		for(SalesReturnItem m : opsale.getItems()) {
+    		inventoryServiceImpl.updateInventoryByMedicineId(m.getMedicineId(), m.getBatchNo(), "+", m.getReturnQty()
+    				);
+      }}catch(Exception e) {}}
+    
+    
     // ── GET ────────────────────────────────────────────────────────────────
     @Override
     public SalesReturnResponse getByReturnNo(String returnNo) {
@@ -165,4 +182,30 @@ public class SalesReturnServiceImpl implements SalesReturnService {
     private String generateReturnNo() {
         return "SRN" + System.currentTimeMillis();
     }
+    
+    @Override
+    public ResponseEntity<Response> getAllSalesReturns() {
+     Response res = new Response();
+      List<SalesReturnResponse> list = new LinkedList<>();
+      try {
+       List<SalesReturn> entity = repository.findAll();
+       if(!entity.isEmpty()) {
+       for(SalesReturn s : entity) {
+       SalesReturnResponse response = mapper.toResponse(s);
+       response.setItems(mapper.toItemDtoList(s.getItems()));
+       list.add(response);}
+       res.setMessage("salesreturns retrieved succesfully");
+       res.setStatus(200);
+       res.setSuccess(true);
+       res.setData(list);
+       }else {
+    	   res.setMessage("salesreturns not found");
+           res.setStatus(404);
+           res.setSuccess(false);
+	}}catch(Exception e) {}
+        return ResponseEntity.status(res.getStatus()).body(res);
+    }
+    
 }
+
+

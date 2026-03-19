@@ -21,7 +21,7 @@ public interface InventoryRepository extends MongoRepository<Inventory, String> 
 	Inventory findByMedicineIdAndBatchNo(String medicineId, String batchNo);
 
 
-	Optional<Inventory> findByMedicineId(String medicineId);
+	Optional<Inventory> findByMedicineId	(String medicineId);
 
 	 Inventory findByMedicineIdAndBatchNoAndExpiryDateAndClinicIdAndBranchId(
 	            String medicineId,

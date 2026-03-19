@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.clinicadmin.dto.Response;
 import com.clinicadmin.dto.SalesReturnCreateResponse;
 import com.clinicadmin.dto.SalesReturnRequest;
 import com.clinicadmin.dto.SalesReturnResponse;
@@ -47,6 +49,13 @@ public class SalesReturnController {
 
 	        return service.getByReturnNo(returnNo);
 	         }
+	    
+	    @GetMapping("/getAllSalesReturns")
+	    public ResponseEntity<Response> getAllSalesReturns() {
+
+	        return service.getAllSalesReturns();
+	      }
+
 
 	    /**
 	     * PUT /api/op-sales-return/{returnNo}

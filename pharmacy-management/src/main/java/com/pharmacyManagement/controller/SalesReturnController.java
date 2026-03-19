@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.pharmacyManagement.dto.ApiResponse;
+import com.pharmacyManagement.dto.Response;
 import com.pharmacyManagement.dto.SalesReturnCreateResponse;
 import com.pharmacyManagement.dto.SalesReturnFilterRequest;
 import com.pharmacyManagement.dto.SalesReturnRequest;
@@ -47,7 +48,7 @@ public class SalesReturnController {
                 .body(ApiResponse.success("Sales return created successfully", data));
         }else {
         	 return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                     .body(ApiResponse.success("Sales return created successfully", data));
+                     .body(ApiResponse.success("sales returns unprocessed", data));
            	
         }}
 
@@ -61,6 +62,13 @@ public class SalesReturnController {
 
         SalesReturnResponse data = service.getByReturnNo(returnNo);
         return ResponseEntity.ok(ApiResponse.success(null, data));
+    }
+
+    
+    @GetMapping("/getAllSalesReturns")
+    public ResponseEntity<Response> getAllSalesReturns() {
+
+     return service.getAllSalesReturns();
     }
 
     /**

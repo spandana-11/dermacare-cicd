@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OpMedicineDTO {
-	
+	    private String medicineId;
 	    private String medicineName;
 	    private String batchNo;
 	    private Double qty;

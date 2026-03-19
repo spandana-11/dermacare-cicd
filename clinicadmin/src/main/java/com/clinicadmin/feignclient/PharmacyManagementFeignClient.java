@@ -250,6 +250,8 @@ Response changeStatus(@PathVariable("id") String id, @RequestParam("status") Str
     public ResponseEntity<ApiResponse<SalesReturnCreateResponse>> create(
             @Valid @RequestBody SalesReturnRequest request);
     
+    @GetMapping("/api/pharmacy/sales-return/getAllSalesReturns")
+    public ResponseEntity<Response> getAllSalesReturns();
     
     @GetMapping("/api/pharmacy/sales-return/get-by-returnNo/{returnNo}")
     public ResponseEntity<ApiResponse<SalesReturnResponse>> getByReturnNo(
