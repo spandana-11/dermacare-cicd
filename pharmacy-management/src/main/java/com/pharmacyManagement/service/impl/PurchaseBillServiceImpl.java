@@ -350,22 +350,33 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 	    List<PurchaseBill> bills =
 	            purchaseRepository.findByClinicIdAndBranchId(clinicId, branchId);
 
-	    if (!bills.isEmpty()) {
+	    if (bills != null && !bills.isEmpty()) {
 
 	        for (PurchaseBill bill : bills) {
 
-	            for (PurchaseItem item : bill.getItems()) {
+	            if (bill.getItems() != null) {
 
-	                Optional<Inventory> inventory =
-	                        inventoryRepository.findByMedicineIdAndClinicIdAndBranchId(
-	                                item.getProductId(),
-	                                clinicId,
-	                                branchId);
+	                for (PurchaseItem item : bill.getItems()) {
 
-	                if (inventory.isPresent()) {
-	                    item.setAvailableQty(inventory.get().getAvailableQty());
-	                } else {
-	                    item.setAvailableQty(0);
+	                   
+	                    List<Inventory> inventoryList =
+	                            inventoryRepository.findByMedicineIdAndClinicIdAndBranchId(
+	                                    item.getProductId(),
+	                                    clinicId,
+	                                    branchId);
+
+	                    if (inventoryList != null && !inventoryList.isEmpty()) {
+
+	                        // ✅ Sum all available quantities (best approach)
+	                        double totalQty = inventoryList.stream()
+	                                .mapToDouble(Inventory::getAvailableQty)
+	                                .sum();
+
+	                        item.setAvailableQty(totalQty);
+
+	                    } else {
+	                        item.setAvailableQty(0);
+	                    }
 	                }
 	            }
 	        }
@@ -405,14 +416,22 @@ public class PurchaseBillServiceImpl implements PurchaseBillService {
 
 	            for (PurchaseItem item : bill.getItems()) {
 
-	                Optional<Inventory> inventory =
+	                // ✅ Changed Optional → List
+	                List<Inventory> inventoryList =
 	                        inventoryRepository.findByMedicineIdAndClinicIdAndBranchId(
 	                                item.getProductId(),
 	                                clinicId,
 	                                branchId);
 
-	                if (inventory.isPresent()) {
-	                    item.setAvailableQty(inventory.get().getAvailableQty());
+	                if (inventoryList != null && !inventoryList.isEmpty()) {
+
+	                    // 👉 Best: Sum all quantities
+	                	int totalQty = inventoryList.stream()
+	                	        .mapToInt(inv -> (int) inv.getAvailableQty())
+	                	        .sum();
+
+	                	item.setAvailableQty(totalQty);
+
 	                } else {
 	                    item.setAvailableQty(0);
 	                }
