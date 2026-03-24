@@ -13,7 +13,8 @@ public interface OpSalesRepository extends MongoRepository<OpSales, String> {
 
     // Find by billNo
     Optional<OpSales> findByBillNo(String billNo);
-
+    
+    OpSales findByBillNoAndMedicinesMedicineId(String billNo,String medicineId);
     // Check if billNo exists (for duplicate validation)
     boolean existsByBillNo(String billNo);
 
@@ -29,8 +30,7 @@ public interface OpSalesRepository extends MongoRepository<OpSales, String> {
     boolean existsByOpNoAndClinicIdAndBranchId(String opNo, String clinicId, String branchId);
 
     // Delete by id, clinicId, branchId
-    @Query(value = "{ 'id': ?0, 'clinicId': ?1, 'branchId': ?2 }")
-    Optional<OpSales> findByIdAndClinicIdAndBranchId(String id, String clinicId, String branchId);
+    Optional<OpSales> findByBillNoIgnoreCaseAndClinicIdAndBranchId(String id, String clinicId, String branchId);
 
 
     List<OpSales> findByClinicIdAndBranchIdAndBillNoContainingIgnoreCaseAndPatientNameContainingIgnoreCaseAndMobileAndConsultingDoctorContainingIgnoreCase(

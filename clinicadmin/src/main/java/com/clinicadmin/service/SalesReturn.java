@@ -38,6 +38,9 @@ public interface SalesReturn {
 	          String branchId);
 	  
 	  public ResponseEntity<Response> getAllSalesReturns();
+	  
+	  public ResponseEntity<Response> getAllSalesByClinicAndBranchId(String cid, String bid);
+		    
 		        
 
 }

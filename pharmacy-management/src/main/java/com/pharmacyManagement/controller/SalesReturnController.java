@@ -71,6 +71,13 @@ public class SalesReturnController {
      return service.getAllSalesReturns();
     }
 
+    
+    @GetMapping("/getAllSales/hospitalId/{hospitalId}/branchId/{branchId}")
+    public ResponseEntity<Response> getAllSalesByClinicAndBranchId(@PathVariable String hospitalId,
+    		@PathVariable String branchId) {
+
+     return service.getAllSalesReturnsByClinicAndBranchId(hospitalId, branchId);
+    }
     /**
      * PUT /api/op-sales-return/{returnNo}
      * Modify an existing return

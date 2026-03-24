@@ -23,6 +23,7 @@ public interface SalesReturnService {
     void cancelReturn(String returnNo);
     
     public ResponseEntity<Response> getAllSalesReturns();
-
+    public ResponseEntity<Response> getAllSalesReturnsByClinicAndBranchId(String clinicId, String branchId);
+           
     List<SalesReturnSummaryResponse> filterReturns(SalesReturnFilterRequest filter);
 }

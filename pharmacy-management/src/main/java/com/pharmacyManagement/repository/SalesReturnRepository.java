@@ -4,6 +4,8 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 import com.pharmacyManagement.entity.SalesReturn;
 import com.pharmacyManagement.enums.ReturnStatus;
+
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -16,5 +18,8 @@ public interface SalesReturnRepository extends MongoRepository<SalesReturn, Stri
     boolean existsByReturnNo(String returnNo);
 
     boolean existsByOriginalBillNo(String originalBillNo);
+    
+    List<SalesReturn> findByClinicIdAndBranchId(String cid,String bid);
+    
 }
 

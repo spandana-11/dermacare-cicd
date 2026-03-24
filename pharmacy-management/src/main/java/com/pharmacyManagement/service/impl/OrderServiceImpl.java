@@ -1,19 +1,28 @@
 package com.pharmacyManagement.service.impl;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.pharmacyManagement.dto.BranchDTO;
+import com.pharmacyManagement.dto.ClinicDTO;
 import com.pharmacyManagement.dto.OrderDTO;
 import com.pharmacyManagement.dto.ProductDTO;
 import com.pharmacyManagement.dto.Response;
+import com.pharmacyManagement.dto.StatusHistoryDTO;
+import com.pharmacyManagement.dto.SuppliersDTO;
+import com.pharmacyManagement.entity.Branch;
+import com.pharmacyManagement.entity.Clinic;
 import com.pharmacyManagement.entity.Order;
 import com.pharmacyManagement.entity.Product;
+import com.pharmacyManagement.entity.StatusHistory;
+import com.pharmacyManagement.entity.Suppliers;
 import com.pharmacyManagement.repository.OrderRepository;
 import com.pharmacyManagement.service.OrderService;
 
@@ -67,7 +76,8 @@ public class OrderServiceImpl implements OrderService {
 
         Response res = new Response();
 
-        List<Order> orders = repository.findByClinicIdAndBranchId(clinicId, branchId);
+        List<Order> orders =
+                repository.findByClinic_ClinicIdAndBranch_BranchId(clinicId, branchId);
 
         if (orders.isEmpty()) {
             res.setSuccess(false);
@@ -92,7 +102,8 @@ public class OrderServiceImpl implements OrderService {
         Response res = new Response();
 
         Optional<Order> optional =
-                repository.findByClinicIdAndBranchIdAndOrderId(clinicId, branchId, orderId);
+                repository.findByClinic_ClinicIdAndBranch_BranchIdAndOrderId(
+                        clinicId, branchId, orderId);
 
         if (optional.isEmpty()) {
             res.setSuccess(false);
@@ -108,7 +119,6 @@ public class OrderServiceImpl implements OrderService {
         return res;
     }
     
-    // ================= UPDATE =================
     @Override
     public Response updateOrder(String orderId, OrderDTO dto) {
 
@@ -125,24 +135,83 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = optional.get();
 
-        // 🔥 Manual update (NO mapToEntity)
-        if (dto.getClinicId() != null) order.setClinicId(dto.getClinicId());
-        if (dto.getClinicName() != null) order.setClinicName(dto.getClinicName());
-        if (dto.getBranchId() != null) order.setBranchId(dto.getBranchId());
-        if (dto.getBranchName() != null) order.setBranchName(dto.getBranchName());
+        // ✅ Clinic
+        if (dto.getClinic() != null) {
+            if (order.getClinic() == null) order.setClinic(new Clinic());
 
-        if (dto.getSupplierId() != null) order.setSupplierId(dto.getSupplierId());
-        if (dto.getSupplierName() != null) order.setSupplierName(dto.getSupplierName());
-        if (dto.getSupplierEmail() != null) order.setSupplierEmail(dto.getSupplierEmail());
+            if (dto.getClinic().getClinicId() != null)
+                order.getClinic().setClinicId(dto.getClinic().getClinicId());
 
+            if (dto.getClinic().getClinicName() != null)
+                order.getClinic().setClinicName(dto.getClinic().getClinicName());
+        }
+
+        // ✅ Branch
+        if (dto.getBranch() != null) {
+            if (order.getBranch() == null) order.setBranch(new Branch());
+
+            if (dto.getBranch().getBranchId() != null)
+                order.getBranch().setBranchId(dto.getBranch().getBranchId());
+
+            if (dto.getBranch().getBranchName() != null)
+                order.getBranch().setBranchName(dto.getBranch().getBranchName());
+        }
+
+        // ✅ Supplier
+        if (dto.getSupplier() != null) {
+            if (order.getSupplier() == null) order.setSupplier(new Suppliers());
+
+            if (dto.getSupplier().getSupplierId() != null)
+                order.getSupplier().setSupplierId(dto.getSupplier().getSupplierId());
+
+            if (dto.getSupplier().getSupplierName() != null)
+                order.getSupplier().setSupplierName(dto.getSupplier().getSupplierName());
+
+            if (dto.getSupplier().getSupplierEmail() != null)
+                order.getSupplier().setSupplierEmail(dto.getSupplier().getSupplierEmail());
+        }
+
+        // ✅ Delivery
         if (dto.getExpectedDeliveryDate() != null)
             order.setExpectedDeliveryDate(dto.getExpectedDeliveryDate());
 
-        if (dto.getStatus() != null)
-            order.setStatus(dto.getStatus());
+        if (dto.getExpectedDeliveryDays() != 0)
+            order.setExpectedDeliveryDays(dto.getExpectedDeliveryDays());
 
-        // Product update
+        // ✅ Status History
+        if (dto.getStatusHistory() != null && !dto.getStatusHistory().isEmpty()) {
+
+            if (order.getStatusHistory() == null) {
+                order.setStatusHistory(new ArrayList<>());
+            }
+
+            for (StatusHistoryDTO shDto : dto.getStatusHistory()) {
+
+                StatusHistory sh = new StatusHistory();
+                sh.setStatus(shDto.getStatus());
+                sh.setTimestamp(
+                        shDto.getTimestamp() != null
+                                ? shDto.getTimestamp()
+                                : Instant.now().toString()
+                );
+
+                order.getStatusHistory().add(sh);
+            }
+
+            // 🔥 Update overallStatus
+            StatusHistory latest =
+                    order.getStatusHistory().get(order.getStatusHistory().size() - 1);
+
+            order.setOverallStatus(latest.getStatus());
+        }
+
+        // ✅ Overall Reason
+        if (dto.getOverallReason() != null)
+            order.setOverallReason(dto.getOverallReason());
+
+        // ✅ Products
         if (dto.getProducts() != null) {
+
             List<Product> products = dto.getProducts().stream().map(p -> {
                 Product pr = new Product();
                 pr.setProductId(p.getProductId());
@@ -150,11 +219,21 @@ public class OrderServiceImpl implements OrderService {
                 pr.setHsnCode(p.getHsnCode());
                 pr.setPackSize(p.getPackSize());
                 pr.setQuantityRequested(p.getQuantityRequested());
+
+                pr.setStatus(p.getStatus());
+                pr.setRejectionReason(p.getRejectionReason());
+
                 return pr;
             }).toList();
 
             order.setProducts(products);
         }
+
+        // ✅ Audit
+        if (dto.getUpdatedBy() != null)
+            order.setUpdatedBy(dto.getUpdatedBy());
+
+        order.setUpdatedAt(Instant.now().toString());
 
         repository.save(order);
 
@@ -165,7 +244,6 @@ public class OrderServiceImpl implements OrderService {
 
         return res;
     }
-
     // ================= DELETE =================
     @Override
     public Response deleteOrder(String orderId) {
@@ -197,37 +275,94 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = new Order();
 
-        order.setClinicId(dto.getClinicId());
-        order.setClinicName(dto.getClinicName());
+        order.setOrderId(dto.getOrderId());
 
-        order.setBranchId(dto.getBranchId());
-        order.setBranchName(dto.getBranchName());
+  
+        if (dto.getClinic() != null) {
+            Clinic clinic = new Clinic();
+            clinic.setClinicId(dto.getClinic().getClinicId());
+            clinic.setClinicName(dto.getClinic().getClinicName());
+            order.setClinic(clinic);
+        }
 
-        order.setSupplierId(dto.getSupplierId());
-        order.setSupplierName(dto.getSupplierName());
-        order.setSupplierEmail(dto.getSupplierEmail());
-        order.setStatus("PENDING");
+
+        if (dto.getBranch() != null) {
+            Branch branch = new Branch();
+            branch.setBranchId(dto.getBranch().getBranchId());
+            branch.setBranchName(dto.getBranch().getBranchName());
+            order.setBranch(branch);
+        }
+
+      
+        if (dto.getSupplier() != null) {
+            Suppliers supplier = new Suppliers();
+            supplier.setSupplierId(dto.getSupplier().getSupplierId());
+            supplier.setSupplierName(dto.getSupplier().getSupplierName());
+            supplier.setSupplierEmail(dto.getSupplier().getSupplierEmail());
+            order.setSupplier(supplier);
+        }
+
         order.setExpectedDeliveryDays(dto.getExpectedDeliveryDays());
         order.setExpectedDeliveryDate(dto.getExpectedDeliveryDate());
 
-        // Product Mapping
+      
+        List<StatusHistory> historyList = new ArrayList<>();
+
+        if (dto.getStatusHistory() != null && !dto.getStatusHistory().isEmpty()) {
+
+            historyList = dto.getStatusHistory().stream().map(h -> {
+                StatusHistory sh = new StatusHistory();
+                sh.setStatus(h.getStatus());
+                sh.setTimestamp(
+                        h.getTimestamp() != null
+                                ? h.getTimestamp()
+                                : Instant.now().toString()
+                );
+                return sh;
+            }).toList();
+
+        } else {
+            // 👉 Default PENDING
+            StatusHistory sh = new StatusHistory();
+            sh.setStatus("PENDING");
+            sh.setTimestamp(Instant.now().toString());
+            historyList.add(sh);
+        }
+
+        order.setStatusHistory(historyList);
+
+   
+        order.setOverallStatus(historyList.get(historyList.size() - 1).getStatus());
+
+     
         if (dto.getProducts() != null) {
+
             List<Product> productList = dto.getProducts().stream().map(p -> {
+
                 Product product = new Product();
                 product.setProductId(p.getProductId());
                 product.setProductName(p.getProductName());
                 product.setHsnCode(p.getHsnCode());
                 product.setPackSize(p.getPackSize());
                 product.setQuantityRequested(p.getQuantityRequested());
+
+              
+                product.setStatus(p.getStatus() != null ? p.getStatus() : "PENDING");
+                product.setRejectionReason(p.getRejectionReason());
+
                 return product;
-            }).collect(Collectors.toList());
+
+            }).toList();
 
             order.setProducts(productList);
         }
 
+    
+        order.setCreatedBy(dto.getCreatedBy());
+        order.setCreatedAt(Instant.now().toString());
+
         return order;
     }
-
     // ===============================
     // 🔁 ENTITY → DTO
     // ===============================
@@ -235,30 +370,76 @@ public class OrderServiceImpl implements OrderService {
 
         OrderDTO dto = new OrderDTO();
 
-        dto.setClinicId(order.getClinicId());
-        dto.setClinicName(order.getClinicName());
-
-        dto.setBranchId(order.getBranchId());
-        dto.setBranchName(order.getBranchName());
-
-        dto.setSupplierId(order.getSupplierId());
-        dto.setSupplierName(order.getSupplierName());
-        dto.setSupplierEmail(order.getSupplierEmail());
-        dto.setStatus(order.getStatus());
+        dto.setOrderId(order.getOrderId());
         dto.setExpectedDeliveryDays(order.getExpectedDeliveryDays());
         dto.setExpectedDeliveryDate(order.getExpectedDeliveryDate());
 
-        // Product Mapping
+        dto.setOverallStatus(order.getOverallStatus());
+        dto.setOverallReason(order.getOverallReason());
+
+        dto.setCreatedBy(order.getCreatedBy());
+        dto.setCreatedAt(order.getCreatedAt());
+        dto.setUpdatedBy(order.getUpdatedBy());
+        dto.setUpdatedAt(order.getUpdatedAt());
+
+     
+        if (order.getClinic() != null) {
+            ClinicDTO clinic = new ClinicDTO();
+            clinic.setClinicId(order.getClinic().getClinicId());
+            clinic.setClinicName(order.getClinic().getClinicName());
+            dto.setClinic(clinic);
+        }
+
+   
+        if (order.getBranch() != null) {
+            BranchDTO branch = new BranchDTO();
+            branch.setBranchId(order.getBranch().getBranchId());
+            branch.setBranchName(order.getBranch().getBranchName());
+            dto.setBranch(branch);
+        }
+
+     
+        if (order.getSupplier() != null) {
+            SuppliersDTO supplier = new SuppliersDTO();
+            supplier.setSupplierId(order.getSupplier().getSupplierId());
+            supplier.setSupplierName(order.getSupplier().getSupplierName());
+            supplier.setSupplierEmail(order.getSupplier().getSupplierEmail());
+            dto.setSupplier(supplier);
+        }
+
+     
+        if (order.getStatusHistory() != null) {
+
+            List<StatusHistoryDTO> historyList = order.getStatusHistory().stream().map(h -> {
+                StatusHistoryDTO sh = new StatusHistoryDTO();
+                sh.setStatus(h.getStatus());
+                sh.setTimestamp(h.getTimestamp());
+                return sh;
+            }).toList();
+
+            dto.setStatusHistory(historyList);
+        }
+
+        // =========================
+        // ✅ PRODUCTS
+        // =========================
         if (order.getProducts() != null) {
+
             List<ProductDTO> productDTOList = order.getProducts().stream().map(p -> {
+
                 ProductDTO pdto = new ProductDTO();
                 pdto.setProductId(p.getProductId());
                 pdto.setProductName(p.getProductName());
                 pdto.setHsnCode(p.getHsnCode());
                 pdto.setPackSize(p.getPackSize());
                 pdto.setQuantityRequested(p.getQuantityRequested());
+
+                pdto.setStatus(p.getStatus());
+                pdto.setRejectionReason(p.getRejectionReason());
+
                 return pdto;
-            }).collect(Collectors.toList());
+
+            }).toList();
 
             dto.setProducts(productDTOList);
         }

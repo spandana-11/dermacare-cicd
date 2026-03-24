@@ -2123,7 +2123,7 @@ public Response getDoctorsByHospitalBranchAndSubService(
             log.debug("GET_DOCTORS_BY_HOSPITAL_BRANCH_SUBSERVICE_CT :: TOTAL_DOCTORS :: {}",
                     doctors != null ? doctors.size() : 0);
 
-            if (doctors != null && !doctors.isEmpty()) {
+            if (!doctors.isEmpty()) {
 
                 List<DoctorsDTO> filteredDoctors = doctors.stream()
                         .filter(dto -> {

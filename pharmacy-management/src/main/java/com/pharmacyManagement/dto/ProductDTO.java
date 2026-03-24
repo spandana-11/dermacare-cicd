@@ -9,5 +9,9 @@ public class ProductDTO {
     private String productName;
     private String hsnCode;
     private String packSize;
+
     private int quantityRequested;
+
+    private String status;
+    private String rejectionReason;
 }
