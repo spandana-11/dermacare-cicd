@@ -8,7 +8,7 @@ public class OrderDTO {
 
     private String orderId;
 
-    
+
     private ClinicDTO clinic;
     private BranchDTO branch;
     private SuppliersDTO supplier;

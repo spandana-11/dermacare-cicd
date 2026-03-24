@@ -3,6 +3,7 @@ package com.pharmacyManagement.service.impl;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -195,8 +196,7 @@ public class OrderServiceImpl implements OrderService {
                 sh.setTimestamp(
                         shDto.getTimestamp() != null
                                 ? shDto.getTimestamp()
-                                : LocalDateTime.now(ZoneId.of("Asia/Kolkata"))
-                                      .format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"))
+                                : LocalDateTime.now(ZoneId.of("Asia/Kolkata")).toString()
                 );
 
                 order.getStatusHistory().add(sh);
@@ -247,6 +247,36 @@ public class OrderServiceImpl implements OrderService {
         res.setMessage("Order updated successfully");
         res.setStatus(200);
         res.setData(mapToDTO(order));
+
+        return res;
+    }
+    
+    
+    @Override
+    public Response getOrderByClinicBranchAndSupplierId(
+            String clinicId, String branchId, String supplierId) {
+
+        Response res = new Response();
+
+        List<Order> orders =
+                repository.findByClinic_ClinicIdAndBranch_BranchIdAndSupplier_SupplierId(
+                        clinicId, branchId, supplierId);
+
+        if (orders.isEmpty()) {
+            res.setSuccess(false);
+            res.setMessage("Orders not found");
+            res.setStatus(404);
+            return res;
+        }
+
+        List<OrderDTO> dtoList = orders.stream()
+                .map(this::mapToDTO)
+                .toList();
+
+        res.setSuccess(true);
+        res.setMessage("Orders fetched successfully");
+        res.setStatus(200);
+        res.setData(dtoList);
 
         return res;
     }
@@ -327,8 +357,7 @@ public class OrderServiceImpl implements OrderService {
                 sh.setTimestamp(
                         h.getTimestamp() != null
                                 ? h.getTimestamp()
-                                : LocalDateTime.now(ZoneId.of("Asia/Kolkata"))
-                                      .format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"))
+                                : LocalDateTime.now(ZoneId.of("Asia/Kolkata")).toString()
                 );
 
                 return sh; 
@@ -341,8 +370,7 @@ public class OrderServiceImpl implements OrderService {
             StatusHistory sh = new StatusHistory();
             sh.setStatus("PENDING");
             sh.setTimestamp(
-                    LocalDateTime.now(ZoneId.of("Asia/Kolkata"))
-                            .format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"))
+                    LocalDateTime.now(ZoneId.of("Asia/Kolkata")).toString()
             );
 
             historyList.add(sh);
@@ -384,9 +412,9 @@ public class OrderServiceImpl implements OrderService {
 
     
         order.setCreatedBy(dto.getCreatedBy());
+
         order.setCreatedAt(
-                LocalDateTime.now(ZoneId.of("Asia/Kolkata"))
-                        .format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"))
+                LocalDateTime.now(ZoneId.of("Asia/Kolkata")).toString()
         );
 
         return order;
@@ -444,8 +472,7 @@ public class OrderServiceImpl implements OrderService {
                 sh.setTimestamp(
                         h.getTimestamp() != null
                                 ? h.getTimestamp()
-                                : LocalDateTime.now(ZoneId.of("Asia/Kolkata"))
-                                      .format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"))
+                                : ZonedDateTime.now(ZoneId.of("Asia/Kolkata")).toString()
                 );
                 return sh;
             }).toList();

@@ -13,4 +13,6 @@ public interface OrderService {
 	Response updateOrder(String orderId, OrderDTO dto);
 
 	Response deleteOrder(String orderId);
+
+	Response getOrderByClinicBranchAndSupplierId(String clinicId, String branchId, String supplierId);
 }

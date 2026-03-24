@@ -52,6 +52,18 @@ public class OrderController {
         Response res = service.updateOrder(orderId, dto);
         return ResponseEntity.status(res.getStatus()).body(res);
     }
+    
+    @GetMapping("/getByClinicIdBranchIdSupplierId/{clinicId}/{branchId}/{supplierId}")
+    public ResponseEntity<Response> getByClinicBranchSupplier(
+            @PathVariable String clinicId,
+            @PathVariable String branchId,
+            @PathVariable String supplierId) {
+
+        Response res = service.getOrderByClinicBranchAndSupplierId(
+                clinicId, branchId, supplierId);
+
+        return ResponseEntity.status(res.getStatus()).body(res);
+    }
 
     @DeleteMapping("/deleteByOrderId/{orderId}")
     public ResponseEntity<Response> deleteByOrderId(@PathVariable String orderId) {

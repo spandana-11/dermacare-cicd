@@ -20,4 +20,7 @@ public interface OrderRepository extends MongoRepository<Order, String> {
 
    
     void deleteByOrderId(String orderId);
+
+List<Order> findByClinic_ClinicIdAndBranch_BranchIdAndSupplier_SupplierId(String clinicId, String branchId,
+			String supplierId);
 }
