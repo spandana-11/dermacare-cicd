@@ -2,9 +2,9 @@ package com.pharmacyManagement.service.impl;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -22,20 +22,16 @@ import com.pharmacyManagement.dto.OpNoResponse;
 import com.pharmacyManagement.dto.OpSalesRequest;
 import com.pharmacyManagement.dto.OpSalesResponse;
 import com.pharmacyManagement.dto.Response;
-import com.pharmacyManagement.entity.Inventory;
 import com.pharmacyManagement.entity.Medicine;
 import com.pharmacyManagement.entity.OpMedicine;
 import com.pharmacyManagement.entity.OpSales;
 import com.pharmacyManagement.entity.PaymentEntry;
 import com.pharmacyManagement.feign.ClinicAdminFeign;
 import com.pharmacyManagement.feign.DoctorFeign;
-import com.pharmacyManagement.repository.InventoryRepository;
 import com.pharmacyManagement.repository.MedicineRepository;
 import com.pharmacyManagement.repository.OpSalesRepository;
 import com.pharmacyManagement.service.Opservice;
-import com.pharmacyManagement.util.DuplicateBillNoException;
 import com.pharmacyManagement.util.ResourceNotFoundException;
-import com.pharmacyManagement.util.ValidationException;
 
 @Service
 public class OpserviceImpl implements Opservice {
@@ -76,7 +72,7 @@ public class OpserviceImpl implements Opservice {
     			res.setStatus(409);
     			res.setSuccess(false);
     		}else {
-    		List<OpMedicine> lst = validateMedicines(request.getMedicines());  
+    		List<OpMedicine> lst = validateMedicinesForPostReq(request.getMedicines());  
     		opsale = calculateValues(lst,request);
     		opsale.setMedicines(lst);
     		//System.out.println(opsale.getMedicines());
@@ -105,47 +101,43 @@ public class OpserviceImpl implements Opservice {
     		if(opsales.isPresent()) {
     			if (request.getBillNo() != null || !request.getBillNo().isBlank()) {
     				opsales.get().setBillNo(request.getBillNo());
-    				//System.out.println(request.getBillNo());
+    				System.out.println(request.getBillNo());
     		    }
     		    // ── billDate ─────────────────────────────────────────────────────────────
     		    if (request.getBillDate() != null || !request.getBillDate().isBlank()) {
     		    	opsales.get().setBillDate(request.getBillDate());
-    		    	//System.out.println(request.getBillDate());
+    		    	System.out.println(request.getBillDate());
     		    }
 
     		    // ── billTime ─────────────────────────────────────────────────────────────
     		    if (request.getBillTime() != null || !request.getBillTime().isBlank()) {
     		    	opsales.get().setBillTime(request.getBillTime());
-    		    	//System.out.println(request.getBillTime() );
+    		    	System.out.println(request.getBillTime() );
     		    }
 
     		    // ── patientName ──────────────────────────────────────────────────────────
     		    if (request.getPatientName() != null || !request.getPatientName().isBlank()) {
     		    	opsales.get().setPatientName(request.getPatientName());
-    		    	//System.out.println(request.getPatientName());
+    		    	System.out.println(request.getPatientName());
     		    }
 
     		    // ── includeReturns ───────────────────────────────────────────────────────
     		    if (request.getIncludeReturns() != null) {
     		    	opsales.get().setIncludeReturns(request.getIncludeReturns());
-    		    	//System.out.println(request.getIncludeReturns());
+    		    	System.out.println(request.getIncludeReturns());
     		    }
-    		   // System.out.println(request.getMedicines());
+    		    System.out.println(request.getMedicines());
     		  // ── medicines ────────────────────────────────────────────────────────────
     		    if (request.getMedicines() != null || !request.getMedicines().isEmpty()) {
-    		    	//System.out.println("yyy");
-    		    	List<OpMedicine> lst = validateMedicines(request.getMedicines());
-    		    	List<OpMedicine> reqList = opsales.get().getMedicines();
-    		    	reqList.addAll(lst);
-    		    	opsales.get().setMedicines(reqList);
-    		    	//System.out.println(reqList);
-    		    	//System.out.println(lst);
-    		    }
-   		    
+    		    	System.out.println("yyy");
+    		    	List<OpMedicine> lst = validateMedicines(request.getMedicines(),opsales.get().getBillNo());
+    		    	opsales.get().setMedicines(lst);
+    		    	System.out.println(lst);
+    		    }   		    
     		    // ── clinicId ─────────────────────────────────────────────────────────────
     		    if (request.getClinicId() != null || !request.getClinicId().isBlank()) {
     		    	opsales.get().setClinicId(request.getClinicId() );
-    		    	//System.out.println(request.getClinicId());
+    		    	System.out.println(request.getClinicId());
     		    }
 
     		    // ── branchId ─────────────────────────────────────────────────────────────
@@ -153,10 +145,10 @@ public class OpserviceImpl implements Opservice {
     		    	opsales.get().setBranchId(request.getBranchId());}
     		    
     		    	OpSales opsle = calculateAndUpdateValues(request.getAmountPaid(),opsales.get());
-    		    	//System.out.println(opsle);
+    		    	System.out.println(opsle);
     		    	if(opsle != null) {
     		    		OpSales op = opSalesRepository.save(opsle);  
-    		    		//System.out.println(op);
+    		    	  System.out.println(op);
     		    		res.setMessage("Opsales updated successfully");
     					res.setStatus(200);
     					res.setSuccess(true);
@@ -313,14 +305,19 @@ public class OpserviceImpl implements Opservice {
         log.info("Deleting OP Sales id: {}, clinicId: {}, branchId: {}", id, clinicId, branchId);
 
         OpSales opSales = opSalesRepository
-                .findByIdAndClinicIdAndBranchId(id, clinicId, branchId)
+                .findByBillNoIgnoreCaseAndClinicIdAndBranchId(id, clinicId, branchId)            
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "OP Sales not found with id: " + id + " for clinic/branch"));
-
+        if(opSales != null) {
         opSalesRepository.delete(opSales);
         res.setMessage("OP Sales Deleted Successfully");
         res.setStatus(200);
-        res.setSuccess(true);
+        res.setSuccess(true);}
+        else {
+        	 res.setMessage("OP Sales Not Found");
+             res.setStatus(404);
+             res.setSuccess(false);	
+        }
         log.info("OP Sales deleted with id: {}", id);
         return ResponseEntity.status(res.getStatus()).body(res);
     }
@@ -379,18 +376,103 @@ public class OpserviceImpl implements Opservice {
     }
     
     
-    public List<OpMedicine> validateMedicines(List<OpMedicineDTO> dto){
-    	List<OpMedicineDTO> lst = dto.stream().map(d->{
-    		Double totalA = d.getRate() * d.getQty();
-    		d.setTotalA(totalA);
-    		Double netAmtAB = d.getTotalA() - d.getDiscAmtB();
-    		d.setNetAmtAB(netAmtAB);
-    		d.setFinalAmountABC(netAmtAB);
-    	return d;}).toList();
-    	List<OpMedicine> opMedicineList = objectMapper.convertValue(lst, new TypeReference<List<OpMedicine>>() {
-		});
-    	return opMedicineList;
-    }
+    
+    public List<OpMedicine> validateMedicinesForPostReq(List<OpMedicineDTO> dto){
+    	List<OpMedicineDTO> lst = dto.stream().map(d -> {
+    	    // Calculations on DTO
+    	    Double totalA = d.getRate() * d.getQty();
+    	    d.setTotalA(totalA);
+
+    	    Double netAmtAB = d.getTotalA() - d.getDiscAmtB();
+    	    d.setNetAmtAB(netAmtAB);
+
+    	    d.setFinalAmountABC(netAmtAB);
+
+    	    return d;
+
+    	}).toList();
+
+    	List<OpMedicine> opMedicineList = objectMapper.convertValue(
+    	        lst,
+    	        new TypeReference<List<OpMedicine>>() {}
+    	);
+
+    	return opMedicineList;}
+    
+    
+    public List<OpMedicine> validateMedicines(List<OpMedicineDTO> dto,String billNo){   	
+    	       OpSales opSales = null;
+    	try{
+    		  opSales = opSalesRepository
+  		            .findByBillNo(billNo).get();
+    		  boolean isexist = false;
+  		    if (opSales != null) {
+    		for (OpMedicineDTO d : dto) {
+    		        for (OpMedicine n : opSales.getMedicines()) {
+
+    		            if (n.getMedicineId().equals(d.getMedicineId())) {    		            
+    		                isexist = true;
+    		                if (n.getQty() != null && d.getQty() != null) {
+    		                    n.setQty(n.getQty() + d.getQty());
+    		                }
+    		                // rate
+    		                if (n.getRate() != null && d.getRate() != null) {
+    		                    n.setRate(n.getRate() + d.getRate());
+    		                }
+
+    		                // totalA
+    		                if (n.getTotalA() != null && d.getTotalA() != null) {
+    		                    n.setTotalA(n.getTotalA() + d.getTotalA());
+    		                }
+
+    		                // discPercent
+    		                if (n.getDiscPercent() != null && d.getDiscPercent() != null) {
+    		                    n.setDiscPercent(n.getDiscPercent() + d.getDiscPercent());
+    		                }
+
+    		                // discAmtB
+    		                if (n.getDiscAmtB() != null && d.getDiscAmtB() != null) {
+    		                    n.setDiscAmtB(n.getDiscAmtB() + d.getDiscAmtB());
+    		                }
+
+    		                // netAmtAB
+    		                if (n.getNetAmtAB() != null && d.getNetAmtAB() != null) {
+    		                    n.setNetAmtAB(n.getNetAmtAB() + d.getNetAmtAB());
+    		                }
+
+    		                // gstPercent
+    		                if (n.getGstPercent() != null && d.getGstPercent() != null) {
+    		                    n.setGstPercent(n.getGstPercent() + d.getGstPercent());
+    		                }
+
+    		                // gstAmtC
+    		                if (n.getGstAmtC() != null && d.getGstAmtC() != null) {
+    		                    n.setGstAmtC(n.getGstAmtC() + d.getGstAmtC());
+    		                }
+
+    		                // finalAmountABC
+    		                if (n.getFinalAmountABC() != null && d.getFinalAmountABC() != null) {
+    		                    n.setFinalAmountABC(n.getFinalAmountABC() + d.getFinalAmountABC());
+    		                }}break;} if(!isexist){ opSales.getMedicines().add(
+	    		                    objectMapper.convertValue(d, OpMedicine.class)
+	    		            );}}}
+    		    if(opSales != null) {
+    		    for (OpMedicine d : opSales.getMedicines()) {
+
+    		        Double rate = d.getRate() != null ? d.getRate() : 0.0;
+    		        Double qty = d.getQty() != null ? d.getQty() : 0.0;
+
+    		        Double totalA = rate * qty;
+    		        d.setTotalA(totalA);
+
+    		        Double disc = d.getDiscAmtB() != null ? d.getDiscAmtB() : 0.0;
+    		        Double netAmtAB = totalA - disc;
+    		        d.setNetAmtAB(netAmtAB);
+
+    		        d.setFinalAmountABC(netAmtAB);
+    		    }}}catch(Exception e) {System.out.println(e.getMessage());
+    		    	}return opSales.getMedicines();}
+    		    
     
     public OpSales calculateValues(List<OpMedicine> dto,OpSalesRequest request) {
     OpSales opsales = new ObjectMapper().convertValue(request, OpSales.class);
@@ -419,6 +501,7 @@ public class OpserviceImpl implements Opservice {
         paymentEntry.setAlreadyPaid(0.0);
         paymentEntry.setTotalPaidSoFar(paymentEntry.getAmountPaid() + paymentEntry.getAlreadyPaid());
         paymentEntry.setDueAmount(netAmount - paymentEntry.getTotalPaidSoFar());
+        paymentEntry.setPaidAt(LocalDateTime.now(ZoneId.of("Asia/Kolkata")));
         List<PaymentEntry> pEntry = new ArrayList<>();
         pEntry.add(paymentEntry);
         opsales.setPaymentHistory(pEntry);
@@ -451,6 +534,7 @@ public class OpserviceImpl implements Opservice {
             paymentEntry.setAlreadyPaid(opsales.getAlreadyPaidAmount());
             paymentEntry.setTotalPaidSoFar(amountPaid + paymentEntry.getAlreadyPaid());
             paymentEntry.setDueAmount(netAmount - opsales.getTotalPaidAmount());
+            paymentEntry.setPaidAt(LocalDateTime.now(ZoneId.of("Asia/Kolkata")));
             List<PaymentEntry> pEntry = opsales.getPaymentHistory();
             pEntry.add(paymentEntry);
             opsales.setPaymentHistory(pEntry);

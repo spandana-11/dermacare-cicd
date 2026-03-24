@@ -55,6 +55,13 @@ public class SalesReturnController {
 
 	        return service.getAllSalesReturns();
 	      }
+	    
+	    @GetMapping("/getAllSalesReturns/clinicId/{clinicId}/branchId/{branchId}")
+	    public ResponseEntity<Response> getAllSalesReturnByclinicAndBranchId(@PathVariable String clinicId,@PathVariable String branchId ) {
+
+	        return service.getAllSalesByClinicAndBranchId(clinicId, branchId);
+	      }
+
 
 
 	    /**

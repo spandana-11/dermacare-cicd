@@ -286,6 +286,9 @@ Response changeStatus(@PathVariable("id") String id, @RequestParam("status") Str
     @GetMapping("/api/pharmacy/medicines/medicineInventory/{medicineId}")
     public ResponseEntity<MedicineInventoryDto> getMedicineInventory(@PathVariable String medicineId);
 
+    @GetMapping("/api/pharmacy/sales-return/getAllSales/hospitalId/{hospitalId}/branchId/{branchId}")
+    public ResponseEntity<Response> getAllSalesByClinicAndBranchId(@PathVariable String hospitalId,
+    		@PathVariable String branchId);
     
 }
 

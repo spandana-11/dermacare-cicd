@@ -52,6 +52,15 @@ public class SalesReturnImpl implements SalesReturn {
 		    	}catch(FeignException e) {}
 		    	return res;
 		    }
+	    
+	    
+	    public ResponseEntity<Response> getAllSalesByClinicAndBranchId(String cid, String bid){
+	    	 ResponseEntity<Response> res = null;
+		    	try {
+		    		res = pharmacyManagementFeignClient.getAllSalesByClinicAndBranchId(cid, bid);
+		    	}catch(FeignException e) {}
+		    	return res;
+		    }
 		    
 	   	
 	    public ResponseEntity<ApiResponse<Void>> update(

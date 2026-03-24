@@ -189,6 +189,30 @@ public class SalesReturnServiceImpl implements SalesReturnService {
       List<SalesReturnResponse> list = new LinkedList<>();
       try {
        List<SalesReturn> entity = repository.findAll();
+       if(entity != null || !entity.isEmpty()) {
+       for(SalesReturn s : entity) {
+       SalesReturnResponse response = mapper.toResponse(s);
+       response.setItems(mapper.toItemDtoList(s.getItems()));
+       list.add(response);}
+       res.setMessage("salesreturns retrieved succesfully");
+       res.setStatus(200);
+       res.setSuccess(true);
+       res.setData(list);
+       }else {
+    	   res.setMessage("salesreturns not found");
+           res.setStatus(404);
+           res.setSuccess(false);
+	}}catch(Exception e) {}
+        return ResponseEntity.status(res.getStatus()).body(res);
+    }
+    
+    
+    @Override
+    public ResponseEntity<Response> getAllSalesReturnsByClinicAndBranchId(String clinicId, String branchId) {
+     Response res = new Response();
+      List<SalesReturnResponse> list = new LinkedList<>();
+      try {
+       List<SalesReturn> entity = repository.findByClinicIdAndBranchId(clinicId, branchId);
        if(!entity.isEmpty()) {
        for(SalesReturn s : entity) {
        SalesReturnResponse response = mapper.toResponse(s);

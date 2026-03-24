@@ -22,6 +22,5 @@ public class PaymentEntry {
     private Double alreadyPaid;      // total paid before this installment
     private Double totalPaidSoFar;   // alreadyPaid + amountPaid
     private Double dueAmount; 
-    @CreatedDate
     private LocalDateTime paidAt;
 }
