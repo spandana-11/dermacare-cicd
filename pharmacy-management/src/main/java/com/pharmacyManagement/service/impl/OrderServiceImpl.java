@@ -1,6 +1,6 @@
 package com.pharmacyManagement.service.impl;
 
-import java.time.Instant;
+
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -41,20 +41,20 @@ public class OrderServiceImpl implements OrderService {
 
         try {
 
-            // 🔥 Generate Order ID
+            //  Generate Order ID
             String orderId = "RO-" + System.currentTimeMillis();
 
-            // 🔁 DTO → ENTITY
+            //  DTO → ENTITY
             Order order = mapToEntity(dto);
             order.setOrderId(orderId);
 
             // Save
             Order savedOrder = repository.save(order);
 
-            // 🔁 ENTITY → DTO
+            //  ENTITY → DTO
             OrderDTO responseDto = mapToDTO(savedOrder);
 
-            // ✅ Response
+            //  Response
             response.setSuccess(true);
             response.setMessage("Order created successfully");
             response.setStatus(HttpStatus.CREATED.value());
@@ -137,7 +137,7 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = optional.get();
 
-        // ✅ Clinic
+        //  Clinic
         if (dto.getClinic() != null) {
             if (order.getClinic() == null) order.setClinic(new Clinic());
 
@@ -148,7 +148,7 @@ public class OrderServiceImpl implements OrderService {
                 order.getClinic().setClinicName(dto.getClinic().getClinicName());
         }
 
-        // ✅ Branch
+        //  Branch
         if (dto.getBranch() != null) {
             if (order.getBranch() == null) order.setBranch(new Branch());
 
@@ -159,7 +159,7 @@ public class OrderServiceImpl implements OrderService {
                 order.getBranch().setBranchName(dto.getBranch().getBranchName());
         }
 
-        // ✅ Supplier
+        //  Supplier
         if (dto.getSupplier() != null) {
             if (order.getSupplier() == null) order.setSupplier(new Suppliers());
 
@@ -173,14 +173,14 @@ public class OrderServiceImpl implements OrderService {
                 order.getSupplier().setSupplierEmail(dto.getSupplier().getSupplierEmail());
         }
 
-        // ✅ Delivery
+        //  Delivery
         if (dto.getExpectedDeliveryDate() != null)
             order.setExpectedDeliveryDate(dto.getExpectedDeliveryDate());
 
         if (dto.getExpectedDeliveryDays() != 0)
             order.setExpectedDeliveryDays(dto.getExpectedDeliveryDays());
 
-        // ✅ Status History
+        //  Status History
         if (dto.getStatusHistory() != null && !dto.getStatusHistory().isEmpty()) {
 
             if (order.getStatusHistory() == null) {
@@ -209,11 +209,11 @@ public class OrderServiceImpl implements OrderService {
             order.setOverallStatus(latest.getStatus());
         }
 
-        // ✅ Overall Reason
+        //  Overall Reason
         if (dto.getOverallReason() != null)
             order.setOverallReason(dto.getOverallReason());
 
-        // ✅ Products
+        //  Products
         if (dto.getProducts() != null) {
 
             List<Product> products = dto.getProducts().stream().map(p -> {
@@ -233,7 +233,7 @@ public class OrderServiceImpl implements OrderService {
             order.setProducts(products);
         }
 
-        // ✅ Audit
+        //  Audit
         if (dto.getUpdatedBy() != null)
             order.setUpdatedBy(dto.getUpdatedBy());
 
@@ -273,7 +273,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     // ===============================
-    // 🔁 DTO → ENTITY
+    //  DTO → ENTITY
     // ===============================
     private Order mapToEntity(OrderDTO dto) {
 
@@ -329,13 +329,13 @@ public class OrderServiceImpl implements OrderService {
                                       .format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"))
                 );
 
-                return sh; // ✅ IMPORTANT FIX
+                return sh; 
 
             }).toList();
 
         } else {
 
-            // 👉 Default PENDING (IST time)
+           
             StatusHistory sh = new StatusHistory();
             sh.setStatus("PENDING");
             sh.setTimestamp(
@@ -386,7 +386,7 @@ public class OrderServiceImpl implements OrderService {
         return order;
     }
     // ===============================
-    // 🔁 ENTITY → DTO
+    //  ENTITY → DTO
     // ===============================
     private OrderDTO mapToDTO(Order order) {
 
@@ -447,9 +447,7 @@ public class OrderServiceImpl implements OrderService {
             dto.setStatusHistory(historyList);
         }
 
-        // =========================
-        // ✅ PRODUCTS
-        // =========================
+  
         if (order.getProducts() != null) {
 
             List<ProductDTO> productDTOList = order.getProducts().stream().map(p -> {

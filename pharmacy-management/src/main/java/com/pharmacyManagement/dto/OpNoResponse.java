@@ -20,7 +20,8 @@ public class OpNoResponse {
     private String mobile;
     private Integer age;
     private String sex;
-    private  List<Medicine> medicines;
+    private String doctorName;
+    private List<String> medicines;
     private String clinicId;
     private String branchId;
 }
