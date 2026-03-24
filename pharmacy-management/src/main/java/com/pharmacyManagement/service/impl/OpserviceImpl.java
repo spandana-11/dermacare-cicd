@@ -101,43 +101,43 @@ public class OpserviceImpl implements Opservice {
     		if(opsales.isPresent()) {
     			if (request.getBillNo() != null || !request.getBillNo().isBlank()) {
     				opsales.get().setBillNo(request.getBillNo());
-    				System.out.println(request.getBillNo());
+    				//System.out.println(request.getBillNo());
     		    }
     		    // ── billDate ─────────────────────────────────────────────────────────────
     		    if (request.getBillDate() != null || !request.getBillDate().isBlank()) {
     		    	opsales.get().setBillDate(request.getBillDate());
-    		    	System.out.println(request.getBillDate());
+    		    	//System.out.println(request.getBillDate());
     		    }
 
     		    // ── billTime ─────────────────────────────────────────────────────────────
     		    if (request.getBillTime() != null || !request.getBillTime().isBlank()) {
     		    	opsales.get().setBillTime(request.getBillTime());
-    		    	System.out.println(request.getBillTime() );
+    		    	//System.out.println(request.getBillTime() );
     		    }
 
     		    // ── patientName ──────────────────────────────────────────────────────────
     		    if (request.getPatientName() != null || !request.getPatientName().isBlank()) {
     		    	opsales.get().setPatientName(request.getPatientName());
-    		    	System.out.println(request.getPatientName());
+    		    	///System.out.println(request.getPatientName());
     		    }
 
     		    // ── includeReturns ───────────────────────────────────────────────────────
     		    if (request.getIncludeReturns() != null) {
     		    	opsales.get().setIncludeReturns(request.getIncludeReturns());
-    		    	System.out.println(request.getIncludeReturns());
+    		    	//System.out.println(request.getIncludeReturns());
     		    }
-    		    System.out.println(request.getMedicines());
+    		    //System.out.println(request.getMedicines());
     		  // ── medicines ────────────────────────────────────────────────────────────
     		    if (request.getMedicines() != null || !request.getMedicines().isEmpty()) {
-    		    	System.out.println("yyy");
+    		    	//System.out.println("yyy");
     		    	List<OpMedicine> lst = validateMedicines(request.getMedicines(),opsales.get().getBillNo());
     		    	opsales.get().setMedicines(lst);
-    		    	System.out.println(lst);
+    		    	//System.out.println(lst);
     		    }   		    
     		    // ── clinicId ─────────────────────────────────────────────────────────────
     		    if (request.getClinicId() != null || !request.getClinicId().isBlank()) {
     		    	opsales.get().setClinicId(request.getClinicId() );
-    		    	System.out.println(request.getClinicId());
+    		    	//System.out.println(request.getClinicId());
     		    }
 
     		    // ── branchId ─────────────────────────────────────────────────────────────
@@ -145,10 +145,10 @@ public class OpserviceImpl implements Opservice {
     		    	opsales.get().setBranchId(request.getBranchId());}
     		    
     		    	OpSales opsle = calculateAndUpdateValues(request.getAmountPaid(),opsales.get());
-    		    	System.out.println(opsle);
+    		    	//System.out.println(opsle);
     		    	if(opsle != null) {
     		    		OpSales op = opSalesRepository.save(opsle);  
-    		    	  System.out.println(op);
+    		    	 // System.out.println(op);
     		    		res.setMessage("Opsales updated successfully");
     					res.setStatus(200);
     					res.setSuccess(true);
@@ -158,8 +158,8 @@ public class OpserviceImpl implements Opservice {
 			res.setStatus(404);
 			res.setSuccess(false);
     		}}catch(Exception e) {}
-    	return ResponseEntity.status(res.getStatus()).body(res);
-    }
+    	return ResponseEntity.status(res.getStatus()).body(res);}
+    
         
     @Override
     public ResponseEntity<Response> getAllOpSales(String clinicId, String branchId) {
@@ -273,7 +273,7 @@ public class OpserviceImpl implements Opservice {
         opNoResponse.setAge(Integer.valueOf(customerOnbordingDTO.getAge()));
         opNoResponse.setBranchId(customerOnbordingDTO.getBranchId());
         opNoResponse.setClinicId(customerOnbordingDTO.getHospitalId());
-        opNoResponse.setMedicines(lt);
+        //opNoResponse.setMedicines(lt);
         opNoResponse.setMobile(customerOnbordingDTO.getMobileNumber());
         opNoResponse.setOpNo(customerOnbordingDTO.getCustomerId());
         opNoResponse.setPatientName(customerOnbordingDTO.getFullName());
@@ -322,9 +322,7 @@ public class OpserviceImpl implements Opservice {
         return ResponseEntity.status(res.getStatus()).body(res);
     }
 
-    // =========================================================================
-    //  7. FILTER
-    // =========================================================================
+    
     @Override
     public ResponseEntity<Response> filterOpSales(String clinicId, String branchId,
             String billNo, String patientName,
