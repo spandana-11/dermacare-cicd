@@ -41,20 +41,20 @@ public class OrderServiceImpl implements OrderService {
 
         try {
 
-            //  Generate Order ID
+            
             String orderId = "RO-" + System.currentTimeMillis();
 
-            //  DTO → ENTITY
+         
             Order order = mapToEntity(dto);
             order.setOrderId(orderId);
 
-            // Save
+      
             Order savedOrder = repository.save(order);
 
-            //  ENTITY → DTO
+          
             OrderDTO responseDto = mapToDTO(savedOrder);
 
-            //  Response
+        
             response.setSuccess(true);
             response.setMessage("Order created successfully");
             response.setStatus(HttpStatus.CREATED.value());
@@ -137,7 +137,7 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = optional.get();
 
-        //  Clinic
+     
         if (dto.getClinic() != null) {
             if (order.getClinic() == null) order.setClinic(new Clinic());
 
@@ -148,7 +148,7 @@ public class OrderServiceImpl implements OrderService {
                 order.getClinic().setClinicName(dto.getClinic().getClinicName());
         }
 
-        //  Branch
+   
         if (dto.getBranch() != null) {
             if (order.getBranch() == null) order.setBranch(new Branch());
 
@@ -159,7 +159,7 @@ public class OrderServiceImpl implements OrderService {
                 order.getBranch().setBranchName(dto.getBranch().getBranchName());
         }
 
-        //  Supplier
+    
         if (dto.getSupplier() != null) {
             if (order.getSupplier() == null) order.setSupplier(new Suppliers());
 
@@ -173,14 +173,14 @@ public class OrderServiceImpl implements OrderService {
                 order.getSupplier().setSupplierEmail(dto.getSupplier().getSupplierEmail());
         }
 
-        //  Delivery
+    
         if (dto.getExpectedDeliveryDate() != null)
             order.setExpectedDeliveryDate(dto.getExpectedDeliveryDate());
 
         if (dto.getExpectedDeliveryDays() != 0)
             order.setExpectedDeliveryDays(dto.getExpectedDeliveryDays());
 
-        //  Status History
+   
         if (dto.getStatusHistory() != null && !dto.getStatusHistory().isEmpty()) {
 
             if (order.getStatusHistory() == null) {
@@ -202,18 +202,18 @@ public class OrderServiceImpl implements OrderService {
                 order.getStatusHistory().add(sh);
             }
 
-            // 🔥 Update overallStatus
+        
             StatusHistory latest =
                     order.getStatusHistory().get(order.getStatusHistory().size() - 1);
 
             order.setOverallStatus(latest.getStatus());
         }
 
-        //  Overall Reason
+        
         if (dto.getOverallReason() != null)
             order.setOverallReason(dto.getOverallReason());
 
-        //  Products
+   
         if (dto.getProducts() != null) {
 
             List<Product> products = dto.getProducts().stream().map(p -> {
@@ -223,7 +223,9 @@ public class OrderServiceImpl implements OrderService {
                 pr.setHsnCode(p.getHsnCode());
                 pr.setPackSize(p.getPackSize());
                 pr.setQuantityRequested(p.getQuantityRequested());
-
+                pr.setCategory(p.getCategory());
+                pr.setMrp(p.getMrp());
+                pr.setGst(p.getGst());
                 pr.setStatus(p.getStatus());
                 pr.setRejectionReason(p.getRejectionReason());
 
@@ -233,7 +235,7 @@ public class OrderServiceImpl implements OrderService {
             order.setProducts(products);
         }
 
-        //  Audit
+ 
         if (dto.getUpdatedBy() != null)
             order.setUpdatedBy(dto.getUpdatedBy());
 
@@ -363,6 +365,10 @@ public class OrderServiceImpl implements OrderService {
                 product.setProductName(p.getProductName());
                 product.setHsnCode(p.getHsnCode());
                 product.setPackSize(p.getPackSize());
+                product.setCategory(p.getCategory());
+                product.setMrp(p.getMrp());
+                product.setGst(p.getGst());
+                product.setPackSize(p.getPackSize());
                 product.setQuantityRequested(p.getQuantityRequested());
 
               
@@ -458,7 +464,9 @@ public class OrderServiceImpl implements OrderService {
                 pdto.setHsnCode(p.getHsnCode());
                 pdto.setPackSize(p.getPackSize());
                 pdto.setQuantityRequested(p.getQuantityRequested());
-
+                pdto.setCategory(p.getCategory());
+                pdto.setMrp(p.getMrp());
+                pdto.setGst(p.getGst());
                 pdto.setStatus(p.getStatus());
                 pdto.setRejectionReason(p.getRejectionReason());
 
