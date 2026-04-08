@@ -486,10 +486,11 @@ if (loading) {
                           <div className="d-flex gap-2">
   {/* View Button */}
   <CButton
-  color="info"
+  // color="info"
   size="sm"
   className="actionBtn"
-  style={{ color: 'var(--color-black)' }}
+  
+   style={{ backgroundColor: 'var(--color-bgcolor)', color: 'var(--color-black)' }}
   onClick={() => {
     setSelectedMedicine(med);   // ✅ pass data
     setViewModal(true);         // ✅ correct state name
@@ -500,9 +501,10 @@ if (loading) {
 
   {/* Edit Button */}
    <CButton
-      color="warning"
+      // color="warning"
       size="sm"
       className="actionBtn"
+       style={{ backgroundColor: 'var(--color-bgcolor)', color: 'var(--color-black)' }}
       onClick={() => handleEdit(med)}
     >
       <Edit2 size={18} />
@@ -510,9 +512,10 @@ if (loading) {
 
  {/* DELETE */}
     <CButton
-      color="danger"
+      // color="danger"
       size="sm"
       className="actionBtn"
+       style={{ backgroundColor: 'var(--color-bgcolor)', color: 'var(--color-black)' }}
     onClick={() => {
   setDeleteId(med.id);     // store id
   setDeleteModal(true);    // open confirmation modal

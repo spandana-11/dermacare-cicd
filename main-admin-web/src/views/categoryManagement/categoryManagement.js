@@ -147,40 +147,34 @@ const CategoryManagement = () => {
   }, [modalVisible, editCategoryMode, newCategory, updatedCategory])
 
   const validateField = (name, value) => {
-    let error = ""
+    let error = "";
+
+    const trimmedValue = value?.trim() || "";
 
     if (name === "categoryName") {
-      const trimmedValue = value.trim()
       if (!trimmedValue) {
-        error = "Category name is required."
-      }
-      else if (!/^[A-Za-z0-9\s@&\-\.,()]+$/.test(trimmedValue)) {
-        error = "Category name can include letters, numbers, spaces, and special characters like @, &, -, ., (, ).";
-      }
-      // Disallow only numbers
-      else if (/^\d+$/.test(trimmedValue)) {
-        error = "Category name cannot contain only numbers."
+        error = "Category Name is required.";
+      } else if (trimmedValue.length < 3) {
+        error = "Category Name must be at least 3 characters long.";
+      } else if (/^\d+$/.test(trimmedValue)) {
+        error = "Category Name cannot be only numbers.";
+      } else if (!/^[A-Za-z\s@&\-\.,()]+$/.test(trimmedValue)) {
+        error = "Only letters, spaces & @, &, -, ., (, ) are allowed. Numbers are not permitted.";
       }
     }
 
     if (name === "categoryImage") {
-      if (!value) error = "Category image is required."
+      if (!value) {
+        error = "Category Image is required.";
+      }
     }
 
-    setErrors((prev) => ({ ...prev, [name]: error }))
-    return error === ""
-  }
+    setErrors((prev) => ({ ...prev, [name]: error }));
+    return error === "";
+  };
 
-  const handleCategoryChange = (e) => {
-    const { name, value } = e.target
-    const capitalizedValue =
-      name === "categoryName"
-        ? value.charAt(0).toUpperCase() + value.slice(1)
-        : value
 
-    setNewCategory((prev) => ({ ...prev, [name]: capitalizedValue }))
-    validateField(name, capitalizedValue)
-  }
+
   const handleDeleteCategoryImage = () => {
     setUpdatedCategory((prev) => ({
       ...prev,
@@ -222,54 +216,28 @@ const CategoryManagement = () => {
   }
 
   const handleAddCategory = async () => {
-    const trimmedName = newCategory.categoryName.trim();
-    let isValid = true;
+    const isValidName = validateField("categoryName", newCategory.categoryName);
+    const isValidImage = validateField("categoryImage", newCategory.categoryImage);
 
-    // 🔹 Category Name validation
-    if (!trimmedName) {
-      setErrors(prev => ({ ...prev, categoryName: "Category Name is required" }));
-      isValid = false;
-    } else if (trimmedName.length < 3) {
-      setErrors(prev => ({ ...prev, categoryName: "Category Name must be at least 3 characters long" }));
-      isValid = false;
-    } else if (!/^[A-Za-z0-9\s@&\-\.,()]+$/.test(trimmedName)) {
-      setErrors(prev => ({ ...prev, categoryName: "Category name can include letters, numbers, spaces, and special characters like @, &, -, ., (, )." }));
-      isValid = false;
-    } else if (/^\d+$/.test(trimmedName)) {
-      setErrors(prev => ({ ...prev, categoryName: "Category Name cannot be only numbers" }));
-      isValid = false;
-    } else {
-      setErrors(prev => ({ ...prev, categoryName: "" }));
-    }
-
-    // 🔹 Image validation
-    if (!newCategory.categoryImage) {
-      setErrors(prev => ({ ...prev, categoryImage: "Category Image is required" }));
-      isValid = false;
-    } else {
-      setErrors(prev => ({ ...prev, categoryImage: "" }));
-    }
-
-    if (!isValid) return;
+    if (!isValidName || !isValidImage) return;
 
     try {
       const payload = {
-        categoryName: trimmedName,
+        categoryName: newCategory.categoryName.trim(),
         categoryImage: newCategory.categoryImage,
       };
 
-      const response = await postCategoryData(payload);
+      await postCategoryData(payload);
       toast.success("Category added successfully!");
+
       fetchData();
       setModalVisible(false);
       setNewCategory({ categoryName: "", categoryImage: null });
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "";
-      if (errorMessage.toLowerCase().includes("exists")) {
+      const message = error.response?.data?.message?.toLowerCase() || "";
+      if (message.includes("exists")) {
         setErrors(prev => ({ ...prev, categoryName: "Category Name already exists." }));
-      } else {
-        toast.error("Failed to add category");
-      }
+      } else toast.error("Failed to add category");
     }
   };
 
@@ -287,57 +255,30 @@ const CategoryManagement = () => {
   }
 
   const handleUpdateCategory = async () => {
-    let isValid = true;
-    const trimmedName = updatedCategory.categoryName.trim();
+    const isValidName = validateField("categoryName", updatedCategory.categoryName);
+    const isValidImage = validateField("categoryImage", updatedCategory.categoryImage);
 
-    // 🔹 Category Name validation
-    if (!trimmedName) {
-      setErrors(prev => ({ ...prev, categoryName: "Category Name is required" }));
-      isValid = false;
-    } else if (trimmedName.length < 3) {
-      setErrors(prev => ({ ...prev, categoryName: "Category Name must be at least 3 characters long" }));
-      isValid = false;
-    } else if (!/^[A-Za-z0-9\s@&\-\.,()]+$/.test(trimmedName)) {
-      setErrors(prev => ({ ...prev, categoryName: "Category name can include letters, numbers, spaces, and special characters like @, &, -, ., (, )." }));
-      isValid = false;
-    } else if (/^\d+$/.test(trimmedName)) {
-      setErrors(prev => ({ ...prev, categoryName: "Category Name cannot be only numbers" }));
-      isValid = false;
-    } else {
-      setErrors(prev => ({ ...prev, categoryName: "" }));
-    }
-
-    // 🔹 Image validation
-    if (!updatedCategory.categoryImage) {
-      setErrors(prev => ({ ...prev, categoryImage: "Category Image is required" }));
-      isValid = false;
-    } else {
-      setErrors(prev => ({ ...prev, categoryImage: "" }));
-    }
-
-    if (!isValid) return;
+    if (!isValidName || !isValidImage) return;
 
     try {
-      const updateData = {
-        categoryName: trimmedName,
+      const payload = {
+        categoryName: updatedCategory.categoryName.trim(),
         categoryImage: updatedCategory.categoryImage,
       };
 
-      const response = await updateCategoryData(updateData, updatedCategory.categoryId);
-      if (response) {
-        toast.success("Category updated successfully!");
-        setEditCategoryMode(false);
-        fetchData();
-      }
+      await updateCategoryData(payload, updatedCategory.categoryId);
+      toast.success("Category updated successfully!");
+
+      setEditCategoryMode(false);
+      fetchData();
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "";
-      if (errorMessage.toLowerCase().includes("exists")) {
+      const message = error.response?.data?.message?.toLowerCase() || "";
+      if (message.includes("exists")) {
         setErrors(prev => ({ ...prev, categoryName: "Category Name already exists." }));
-      } else {
-        toast.error("Failed to update category");
-      }
+      } else toast.error("Failed to update category");
     }
   };
+
 
 
 
@@ -389,18 +330,28 @@ const CategoryManagement = () => {
     setCategoryIdToDelete(categoryId)
     setIsModalVisible(true)
   }
+  const adjustPageAfterDelete = () => {
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    if (currentPage > totalPages && currentPage !== 1) {
+      setCurrentPage(totalPages || 1);
+    }
+  };
+  useEffect(() => {
+    adjustPageAfterDelete();
+  }, [filteredData]);
 
   const handleConfirmDelete = async () => {
-    console.log(categoryIdToDelete)
     try {
-      const data = await deleteCategoryData(categoryIdToDelete)
-      setIsModalVisible(false)
-      toast.success(`${data.data}`, { position: 'top-right' })
-      fetchData()
+      const data = await deleteCategoryData(categoryIdToDelete);
+      setIsModalVisible(false);
+      toast.success(`${data.data}`, { position: 'top-right' });
+
+      await fetchData();
+      adjustPageAfterDelete();  // 👈 ADD THIS LINE
     } catch (error) {
-      alert('Failed to delete category.')
+      alert('Failed to delete category.');
     }
-  }
+  };
 
   const handleCancelAdd = () => {
     setNewCategory({
@@ -667,41 +618,27 @@ const CategoryManagement = () => {
               onChange={(e) => {
                 let value = e.target.value;
 
-                // Replace multiple spaces with a single space
+                // Replace multiple spaces with single space
                 value = value.replace(/\s+/g, ' ');
 
+                // Block numbers
+                value = value.replace(/[0-9]/g, '');
+
                 // Capitalize each word
-                const capitalizedValue = value
+                const formatted = value
                   .split(' ')
+                  .filter(word => word.length > 0)
                   .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
                   .join(' ');
 
-                // Update category state
-                setNewCategory(prev => ({ ...prev, categoryName: capitalizedValue }));
+                setNewCategory(prev => ({ ...prev, categoryName: formatted }));
 
-                // Validation
-                const trimmedValue = value.trim();
-
-                if (!trimmedValue) {
-                  setErrors(prev => ({ ...prev, categoryName: 'Category Name is required.' }));
-                }
-                // ❌ Only letters, numbers, spaces allowed
-                else if (!/^[A-Za-z0-9\s@&\-\.,()]+$/.test(trimmedValue)) {
-                  setErrors(prev => ({ ...prev, categoryName: 'Category name can include letters, numbers, spaces, and special characters like @, &, -, ., (, )' }));
-                }
-                // ❌ Only numbers are not allowed
-                else if (/^\d+$/.test(trimmedValue)) {
-                  setErrors(prev => ({ ...prev, categoryName: 'Category Name cannot be only numbers.' }));
-                }
-                // ✅ Minimum length check
-                else if (trimmedValue.length < 3) {
-                  setErrors(prev => ({ ...prev, categoryName: 'Category Name must be at least 3 characters long.' }));
-                }
-                else {
+                // 🔥 Only remove error while typing
+                if (errors.categoryName) {
                   setErrors(prev => ({ ...prev, categoryName: '' }));
                 }
-
               }}
+
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -807,41 +744,28 @@ const CategoryManagement = () => {
               onChange={(e) => {
                 let value = e.target.value;
 
-                // Replace multiple spaces with a single space
+                // Block numbers
+                value = value.replace(/[0-9]/g, '');
+
+                // Remove multiple spaces
                 value = value.replace(/\s+/g, ' ');
 
                 // Capitalize each word
-                const capitalizedValue = value
+                value = value
                   .split(' ')
+                  .filter(word => word.length > 0)
                   .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
                   .join(' ');
 
                 // Update state
-                setUpdatedCategory(prev => ({ ...prev, categoryName: capitalizedValue }));
+                setUpdatedCategory(prev => ({ ...prev, categoryName: value }));
 
-                // Validation
-                const trimmedValue = value.trim();
-
-                if (!trimmedValue) {
-                  setErrors(prev => ({ ...prev, categoryName: 'Category Name is required.' }));
-                }
-                // ❌ Only letters, numbers, spaces allowed
-                else if (!/^[A-Za-z0-9\s@&\-\.,()]+$/.test(trimmedValue)) {
-                  setErrors(prev => ({ ...prev, categoryName: 'Category name can include letters, numbers, spaces, and special characters like @, &, -, ., (, )' }));
-                }
-                // ❌ Only numbers are not allowed
-                else if (/^\d+$/.test(trimmedValue)) {
-                  setErrors(prev => ({ ...prev, categoryName: 'Category Name cannot be only numbers.' }));
-                }
-                // ✅ Minimum length check
-                else if (trimmedValue.length < 3) {
-                  setErrors(prev => ({ ...prev, categoryName: 'Category Name must be at least 3 characters long.' }));
-                }
-                else {
+                // ⭐ ONLY CLEAR ERROR WHEN USER FIXES INPUT
+                if (errors.categoryName) {
                   setErrors(prev => ({ ...prev, categoryName: '' }));
                 }
-
               }}
+
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -849,6 +773,8 @@ const CategoryManagement = () => {
                 }
               }}
             />
+
+
 
             {errors.categoryName && (
               <CFormText className="text-danger">{errors.categoryName}</CFormText>

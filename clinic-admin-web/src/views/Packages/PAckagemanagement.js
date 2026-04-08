@@ -18,13 +18,14 @@ import {
   CForm,
   CFormInput,
 } from '@coreui/react'
+import { useNavigate } from 'react-router-dom'
 
 const PackageManagement = () => {
   const [packages, setPackages] = useState([
     { id: 1, name: 'Skin Care Basic', price: 2999, duration: '30 Days' },
     { id: 2, name: 'Hair Treatment Pro', price: 4999, duration: '45 Days' },
   ])
-
+  const navigate = useNavigate()
   const [showModal, setShowModal] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -38,10 +39,7 @@ const PackageManagement = () => {
   }
 
   const handleSave = () => {
-    setPackages((prev) => [
-      ...prev,
-      { id: Date.now(), ...formData },
-    ])
+    setPackages((prev) => [...prev, { id: Date.now(), ...formData }])
     setFormData({ name: '', price: '', duration: '' })
     setShowModal(false)
   }
@@ -52,6 +50,9 @@ const PackageManagement = () => {
         <strong>Package Management</strong>
         <CButton color="primary" onClick={() => setShowModal(true)}>
           Add Package
+        </CButton>
+        <CButton color="primary" onClick={() => navigate('/attendance')}>
+          Attendance
         </CButton>
       </CCardHeader>
 

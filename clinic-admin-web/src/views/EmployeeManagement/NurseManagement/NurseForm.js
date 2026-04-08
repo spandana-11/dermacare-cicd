@@ -46,6 +46,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
     dateOfJoining: '',
     department: '',
     yearsOfExperience: '',
+    monthlyPaidLeaves: '',
     // specialization: '',
     shiftTimingOrAvailability: '',
     role: 'nurse',
@@ -545,6 +546,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                   <div className="col-md-4">
                     <Row label="Shift Timings" value={formData.shiftTimingOrAvailability} />
                   </div>
+                  
                   <div className="col-md-4">
                     <Row label="Emergency Contact" value={formData.emergencyContactNumber} />
                   </div>
@@ -871,8 +873,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
     />
     {errors.department && <div className="text-danger mt-1">{errors.department}</div>}
   </div>
-
-  <div className="col-md-4">
+   <div className="col-md-4">
     <CFormLabel>
       Years of Experience <span style={{ color: 'red' }}>*</span>
     </CFormLabel>
@@ -890,6 +891,11 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
       <div className="text-danger mt-1">{errors.yearsOfExperience}</div>
     )}
   </div>
+<div className="row mb-6">
+
+
+
+</div>
 </div>
 
 
@@ -924,6 +930,7 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                     <div className="text-danger mt-1">{errors.shiftTimingOrAvailability}</div>
                   )}
                 </div>
+                
 
                 <div className="col-md-4">
                   <CFormLabel>Emergency Contact</CFormLabel>
@@ -957,7 +964,32 @@ const NurseForm = ({ visible, onClose, onSave, initialData, viewMode, nurses, fe
                     <option value="Fully Vaccinated">Fully Vaccinated</option>
                   </CFormSelect>
                 </div>
+                 <div className="col-md-4">
+  <CFormLabel>
+    Monthly Paid Leaves <span style={{ color: 'red' }}>*</span>
+  </CFormLabel>
+
+  <CFormInput
+    type="number"
+    value={formData.monthlyPaidLeaves}
+    onChange={(e) => {
+      const value = e.target.value
+      handleChange('monthlyPaidLeaves', value)
+      const error = validateField('monthlyPaidLeaves', value)
+      setErrors((prev) => ({ ...prev, monthlyPaidLeaves: error }))
+    }}
+    min={0}
+  />
+
+  {errors.monthlyPaidLeaves && (
+    <div className="text-danger mt-1">
+      {errors.monthlyPaidLeaves}
+    </div>
+  )}
+</div>
+                
               </div>
+
 
               {/* 🔹 Address */}
               <h5 className="mt-3">Address</h5>

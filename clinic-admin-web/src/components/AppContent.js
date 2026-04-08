@@ -1,32 +1,30 @@
-import React, { Suspense } from 'react'
+import React from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { CContainer, CSpinner } from '@coreui/react'
-
-// routes config
+import { CContainer } from '@coreui/react'
 import routes from '../routes'
-import LoadingIndicator from '../Utils/loader'
+
+const renderRoutes = (routes) => {
+  return routes.map((route, idx) => {
+    if (route.children) {
+      return (
+        <Route key={idx} path={route.path} element={<route.element />}>
+          {renderRoutes(route.children)}
+        </Route>
+      )
+    }
+
+    return <Route key={idx} path={route.path} element={<route.element />} />
+  })
+}
 
 const AppContent = () => {
   return (
     <CContainer className="px-4" lg>
-      {/* <Suspense fallback={<LoadingIndicator message="Loading..." />}> */}
       <Routes>
-        {routes.map((route, idx) => {
-          return (
-            route.element && (
-              <Route
-                key={idx}
-                path={route.path}
-                exact={route.exact}
-                name={route.name}
-                element={<route.element />}
-              />
-            )
-          )
-        })}
-        <Route path="/" element={<Navigate to="dashboard" replace />} />
+        {renderRoutes(routes)}
+
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
-      {/* </Suspense> */}
     </CContainer>
   )
 }

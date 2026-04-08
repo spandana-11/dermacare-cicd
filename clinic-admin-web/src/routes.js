@@ -31,15 +31,12 @@ const Reports = React.lazy(() => import('./views/Reports/reportManagement'))
 const ReportsDetails = React.lazy(() => import('./views/Reports/ReportDetails'))
 const CustomerViewDetails = React.lazy(
   () => import('./views/customerManagement/CustomerViewDetails'),
-  
 )
 const CustomerManagement = React.lazy(() => import('./views/customerManagement/CustomerManagement'))
 const LabTechnicianManagement = React.lazy(
   () => import('./views/EmployeeManagement/LabTechnicians/LabTechniciansManagement'),
 )
-const PackageManagement = React.lazy(
-  () => import('./views/Packages/PAckagemanagement'),
-)
+const PackageManagement = React.lazy(() => import('./views/Packages/PackageManagement'))
 const FrontDeskManagement = React.lazy(
   () => import('./views/EmployeeManagement/FrontDesk/FrontDeskManagement'),
 )
@@ -64,12 +61,30 @@ const PharmacyManagement = React.lazy(
 const ActiveAppointmentsScreen = React.lazy(
   () => import('./views/AppointmentManagement/In-progressAppointmnets'),
 )
-const PatientManagement = React.lazy(
-  () => import('./views/Patients/Patientmanagement'),
-)
- const ViewPurchaseBills = React.lazy(
+const PatientManagement = React.lazy(() => import('./views/Patients/Patientmanagement'))
+const ViewPurchaseBills = React.lazy(
   () => import('./components/PharmacyManagement/ViewPurchaseBills'),
 )
+
+const EmployeeList = React.lazy(() => import('./views/pages/attendance/EmployeeList'))
+
+const ShiftMaster = React.lazy(() => import('./views/pages/attendance/ShiftMaster'))
+
+const AttendanceEntry = React.lazy(() => import('./views/pages/attendance/AttendanceEntry'))
+
+const AttendanceList = React.lazy(() => import('./views/pages/attendance/AttendanceList'))
+
+const AttendanceReport = React.lazy(() => import('./views/pages/attendance/AttendanceReport'))
+
+const MonthlyReport = React.lazy(() => import('./views/pages/attendance/MonthlyReport'))
+const AttendanceMenu = React.lazy(() => import('./views/pages/attendance/AttendanceMenu'))
+const AttendanceLayout = React.lazy(() => import('./views/pages/attendance/AttendanceLayout'))
+const HolidayMaster = React.lazy(() => import('./views/pages/attendance/HolidayMaster'))
+const LeaveRequest = React.lazy(() => import('./views/pages/attendance/LeaveRequest'))
+const LeaveList = React.lazy(() => import('./views/pages/attendance/LeaveList'))
+const LeaveApproval = React.lazy(() => import('./views/pages/attendance/LeaveApporal'))
+const AssignShift = React.lazy(() => import('./views/pages/attendance/ShiftAssign'))
+
 
 const routes = [
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
@@ -81,23 +96,23 @@ const routes = [
   { path: '/employee-management/security', name: 'Security', element: SecurityManagement },
   { path: '/employee-management/otherstaff', name: 'Other Staff', element: OtherStaffManagement },
   { path: '/employee-management/frontdesk', name: 'Front Desk', element: FrontDeskManagement },
-  { path:"/pharmacy/purchases/bills", name: "View purchase bills", element:ViewPurchaseBills},
+  { path: '/pharmacy/purchases/bills', name: 'View purchase bills', element: ViewPurchaseBills },
   {
     path: '/employee-management/lab-technician',
     name: 'Lab Technician',
     element: LabTechnicianManagement,
   },
-  
+
   { path: '/employee-management/pharmacist', name: 'Pharmacist', element: PharmacistManagement },
   { path: '/employee-management', name: 'Employee Management', element: EmployeeManagement },
 
   { path: '/pharmacy-management', name: 'Pharmacy Management', element: PharmacyManagement },
- { 
-  path: '/package-management', 
-  name: 'Package Management', 
-  element: PackageManagement 
-}
-,
+
+  {
+    path: '/package-management',
+    name: 'Package Management',
+    element: PackageManagement,
+  },
   { path: '/receptionist', name: 'Receptionist', element: Receptionist },
 
   { path: '/disease', name: 'Disease Management', element: Disease },
@@ -140,6 +155,35 @@ const routes = [
   },
   { path: '/customer-management', name: 'Customer Management', element: CustomerManagement },
   { path: '/patient-management', name: 'Patient Management', element: PatientManagement },
+
+  // Attendance
+{
+  path: "/attendance",
+  element: AttendanceLayout,
+  children: [
+  { index: true, element: AttendanceList },
+   { path: "employee-list", element: EmployeeList },
+   { path: "shift-list", element: ShiftMaster },
+   { path: "holiday", element: HolidayMaster },
+   { path: "attendance-entry", element: AttendanceEntry },
+   { path: "attendance-list", element: AttendanceList },
+   { path: "report", element: AttendanceReport },
+   { path: "monthly", element: MonthlyReport },
+   { path: "leave", element: LeaveRequest },
+   { path: "leave-list", element: LeaveList },
+    { path: "leave-approval", element: LeaveApproval },
+    { path: "assignShift", element: AssignShift },
+
+    
+ ],
+}
+  // { path: "/attendance", element: AttendanceMenu },
+  // { path: '/employee-list', element: EmployeeList },
+  // { path: '/shift-list', element: ShiftMaster },
+  // { path: '/attendance-entry', element: AttendanceEntry },
+  // { path: '/attendance-list', element: AttendanceList },
+  // { path: '/report', element: AttendanceReport },
+  // { path: '/monthly', element: MonthlyReport },
 ]
 
 export default routes

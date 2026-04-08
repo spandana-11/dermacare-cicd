@@ -15,7 +15,7 @@ export const suppliers = [
 
 export const dummyMedicines = [
   {
-    id: '69a819ebd4f3c04a6b67bfe5',
+    id: '69ba7e4ffdee1c3cf054c0e45',
     barcode: 'BC30043806',
     productName: 'sephora',
     brandName: 'louis ',
@@ -79,7 +79,10 @@ export const dummyPatients = {
     age: 35,
     sex: 'Male',
     consultingDoctor: 'Dr. Ramesh Kumar',
-    medicines: ['69a819ebd4f3c04a6b67bfe5', '69b143a040bee375d1c27d98'],
+    doctorId: '',
+    patientId: '',
+    customerId: '',
+    medicines: ['69ba7e4ffdee1c3cf054c0e3'],
   },
 
   102: {
@@ -87,8 +90,11 @@ export const dummyPatients = {
     mobilenumber: '9999999999',
     age: 28,
     sex: 'Female',
+    doctorId: '',
+    patientId: '',
+    customerId: '',
     consultingDoctor: 'Dr. Priya Sharma',
-    medicines: ['69a819ebd4f3c04a6b67bfe5'],
+    medicines: ['69ba7e4ffdee1c3cf054c0e3'],
   },
 }
 

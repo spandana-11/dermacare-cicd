@@ -105,3 +105,10 @@ export const deleteReturnBill = async (receiptNo) => {
     throw err
   }
 }
+
+export const getAllSalesReturns = async (clinicId, branchId) => {
+  const res = await axios.get(
+    `${BASE_URL}/sales-return/getAllSalesReturns/clinicId/${clinicId}/branchId/${branchId}`,
+  )
+  return res.data
+}

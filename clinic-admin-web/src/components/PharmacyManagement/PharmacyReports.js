@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo,useEffect } from "react";
 import {
   CCard,
   CCardBody,
@@ -22,31 +22,97 @@ import {
 } from "@coreui/react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { http } from "../../Utils/Interceptors";
+import { wifiUrl } from "../../baseUrl";
+
 
 const PharmacyReport = () => {
   const [activeKey, setActiveKey] = useState(2);
   const [salesFilter, setSalesFilter] = useState("daily");
   const [purchaseFilter, setPurchaseFilter] = useState("daily");
+  const [expiryData, setExpiryData] = useState([]);
+const [salesData, setSalesData] = useState([]);
+const [purchaseData, setPurchaseData] = useState([]);
+const [loading, setLoading] = useState(false);
+  
 
   // ================== DUMMY DATA ==================
 
-  const expiryData = [
-    { name: "Clindamycin Gel", batch: "CLIN01", expiry: "2025-02-01", qty: 20 },
-    { name: "Vitamin C Serum", batch: "VC02", expiry: "2026-03-01", qty: 15 },
-  ];
+  // const expiryData = [
+  //   { name: "Clindamycin Gel", batch: "CLIN01", expiry: "2025-02-01", qty: 20 },
+  //   { name: "Vitamin C Serum", batch: "VC02", expiry: "2026-03-01", qty: 15 },
+  // ];
 
-  const salesData = [
-    { billNo: "S-101", date: "2026-02-20", customername: "Nadhiya",fileno:"1",mobno:"9134378967", total: 500, paymentMode: "Cash" },
-    { billNo: "S-102", date: "2026-02-19", customername: "Prashanth", fileno:"2",mobno:"9134378966" ,total: 1200, paymentMode: "UPI" },
-    { billNo: "S-103", date: "2026-02-10", customername: "Anil",fileno:"3",mobno:"9134378968" , total: 800, paymentMode: "Card" },
-  ];
+  // const salesData = [
+  //   { billNo: "S-101", date: "2026-02-20", customername: "Nadhiya",fileno:"1",mobno:"9134378967", total: 500, paymentMode: "Cash" },
+  //   { billNo: "S-102", date: "2026-02-19", customername: "Prashanth", fileno:"2",mobno:"9134378966" ,total: 1200, paymentMode: "UPI" },
+  //   { billNo: "S-103", date: "2026-02-10", customername: "Anil",fileno:"3",mobno:"9134378968" , total: 800, paymentMode: "Card" },
+  // ];
 
-  const purchaseData = [
-    { billNo: "P-201", supplier: "DermaCare", date: "2026-02-18", total: 10000, paymentMode: "Credit" },
-    { billNo: "P-202", supplier: "Medico", date: "2026-02-05", total: 15000, paymentMode: "Cash" },
-  ];
+  // const purchaseData = [
+  //   { billNo: "P-201", supplier: "DermaCare", date: "2026-02-18", total: 10000, paymentMode: "Credit" },
+  //   { billNo: "P-202", supplier: "Medico", date: "2026-02-05", total: 15000, paymentMode: "Cash" },
+  // ];
 
   // ================== DATE FILTER FUNCTION ==================
+  const fetchExpiryReport = async () => {
+    console.log("Fetching expiry report...");
+  try {
+    const clinicId = localStorage.getItem("HospitalId");
+    const branchId = localStorage.getItem("branchId");
+    
+   
+    const res = await http.get(`${wifiUrl}/api/pharmacy/reports/getExpiredMedicineReport/${clinicId}/${branchId}`);
+    setExpiryData(res.data.data || []);
+  } catch (err) {
+    console.error("Expiry API error", err);
+  }
+};
+
+const fetchSalesReport = async () => {
+  try {
+    // const res = await http.get(`${wifiUrl}/api/pharmacy/opSales/getAll`);
+    
+    // 🔥 Map your existing OP sales API to UI format
+    const mapped = res.data.data.map((item) => ({
+      billNo: item.billNo,
+      date: item.billDate,
+      customername: item.patientName,
+      fileno: item.opNo || "-",
+      mobno: item.mobile,
+      total: item.finalTotal,
+      paymentMode: item.payCategory,
+    }));
+
+    setSalesData(mapped);
+  } catch (err) {
+    console.error("Sales API error", err);
+  }
+};
+
+const fetchPurchaseReport = async () => {
+  try {
+    // const res = await http.get(`${wifiUrl}/api/pharmacy/purchase/getAll`);
+    setPurchaseData(res.data.data || []);
+  } catch (err) {
+    console.error("Purchase API error", err);
+  }
+};
+useEffect(() => {
+  const loadData = async () => {
+    setLoading(true);
+
+    await Promise.all([
+      fetchExpiryReport(),
+      fetchSalesReport(),
+      fetchPurchaseReport(),
+    ]);
+
+    setLoading(false);
+  };
+
+  loadData();
+}, []);
 
   const filterByDate = (data, type) => {
     const today = new Date();
@@ -74,15 +140,15 @@ const PharmacyReport = () => {
     });
   };
 
-  const filteredSales = useMemo(
-    () => filterByDate(salesData, salesFilter),
-    [salesFilter]
-  );
+ const filteredSales = useMemo(
+  () => filterByDate(salesData, salesFilter),
+  [salesFilter, salesData] 
+);
 
-  const filteredPurchase = useMemo(
-    () => filterByDate(purchaseData, purchaseFilter),
-    [purchaseFilter]
-  );
+ const filteredPurchase = useMemo(
+  () => filterByDate(purchaseData, purchaseFilter),
+  [purchaseFilter, purchaseData] 
+);
 
   const totalSales = filteredSales.reduce((sum, s) => sum + s.total, 0);
   const totalPurchase = filteredPurchase.reduce((sum, p) => sum + p.total, 0);
@@ -109,7 +175,7 @@ const PharmacyReport = () => {
     <div className="p-4">
       <CCard className="shadow-sm">
         <CCardHeader>
-          <h4>Pharmacy Reports Dashboard</h4>
+          <h4  style={{  color: 'var(--color-black)' }}>Pharmacy Reports Dashboard</h4>
         </CCardHeader>
 
         <CCardBody>
@@ -117,17 +183,23 @@ const PharmacyReport = () => {
           {/* Tabs */}
           <CNav variant="tabs">
             <CNavItem>
-              <CNavLink active={activeKey === 2} onClick={() => setActiveKey(2)}>
+              <CNavLink active={activeKey === 2} onClick={() => setActiveKey(2)}
+                 style={{ color: 'var(--color-black)'} }
+                >
                 Expiry Report
               </CNavLink>
             </CNavItem>
             <CNavItem>
-              <CNavLink active={activeKey === 3} onClick={() => setActiveKey(3)}>
+              <CNavLink active={activeKey === 3} onClick={() => setActiveKey(3)}
+                 style={{ color: 'var(--color-black)'} }
+                >
                 Sales Report
               </CNavLink>
             </CNavItem>
             <CNavItem>
-              <CNavLink active={activeKey === 4} onClick={() => setActiveKey(4)}>
+              <CNavLink active={activeKey === 4} onClick={() => setActiveKey(4)}
+              style={{ color: 'var(--color-black)'} }
+                >
                 Purchase Report
               </CNavLink>
             </CNavItem>
@@ -139,20 +211,21 @@ const PharmacyReport = () => {
             <CTabPane visible={activeKey === 2}>
               <CButton
                 className="mb-3"
-                color="success"
+                style={{ backgroundColor: 'var(--color-bgcolor)', color: 'var(--color-black)' }}
                 onClick={() => exportToExcel(expiryData, "Expiry_Report")}
               >
                 Export Excel
               </CButton>
 
-              <CTable bordered hover responsive>
+              <CTable className="pink-table">
                 <CTableHead>
                   <CTableRow>
-                    <CTableHeaderCell>Medicine</CTableHeaderCell>
-                    <CTableHeaderCell>Batch</CTableHeaderCell>
-                    <CTableHeaderCell>Expiry</CTableHeaderCell>
-                    <CTableHeaderCell>Days Left</CTableHeaderCell>
+                    <CTableHeaderCell>Medicine Name</CTableHeaderCell>
+                    <CTableHeaderCell>Batch No</CTableHeaderCell>
+                    <CTableHeaderCell>Expiry Date</CTableHeaderCell>
                     <CTableHeaderCell>Qty</CTableHeaderCell>
+                    <CTableHeaderCell>Status</CTableHeaderCell>
+
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
@@ -160,17 +233,14 @@ const PharmacyReport = () => {
                     const daysLeft = calculateDaysLeft(item.expiry);
                     return (
                       <CTableRow key={i}>
-                        <CTableDataCell>{item.name}</CTableDataCell>
-                        <CTableDataCell>{item.batch}</CTableDataCell>
-                        <CTableDataCell>{item.expiry}</CTableDataCell>
-                        <CTableDataCell>
-                          {daysLeft < 0 ? (
-                            <CBadge color="danger">Expired</CBadge>
-                          ) : (
-                            `${daysLeft} days`
-                          )}
+                        <CTableDataCell>{item.medicineName}</CTableDataCell>
+                        <CTableDataCell>{item.batchNumber}</CTableDataCell>
+                        <CTableDataCell>{item.expiryDate}</CTableDataCell>
+                       
+                        <CTableDataCell>{item.quantity}</CTableDataCell>
+                         <CTableDataCell>
+                         {item.status}
                         </CTableDataCell>
-                        <CTableDataCell>{item.qty}</CTableDataCell>
                       </CTableRow>
                     );
                   })}
@@ -194,7 +264,8 @@ const PharmacyReport = () => {
 
                 <CCol md={4}>
                   <CButton
-                    color="success"
+                                        style={{ backgroundColor: 'var(--color-bgcolor)', color: 'var(--color-black)' }}
+
                     onClick={() => exportToExcel(filteredSales, "Sales_Report")}
                   >
                     Export Excel
@@ -202,7 +273,7 @@ const PharmacyReport = () => {
                 </CCol>
               </CRow>
 
-              <CTable bordered hover responsive>
+              <CTable bordered hover responsive className="pink-table">
                 <CTableHead>
                   <CTableRow>
                     <CTableHeaderCell>Bill No</CTableHeaderCell>
@@ -250,7 +321,7 @@ const PharmacyReport = () => {
 
                 <CCol md={4}>
                   <CButton
-                    color="success"
+                    style={{ backgroundColor: 'var(--color-bgcolor)', color: 'var(--color-black)' }}
                     onClick={() => exportToExcel(filteredPurchase, "Purchase_Report")}
                   >
                     Export Excel
@@ -258,7 +329,7 @@ const PharmacyReport = () => {
                 </CCol>
               </CRow>
 
-              <CTable bordered hover responsive>
+              <CTable bordered hover responsive className="pink-table">
                 <CTableHead>
                   <CTableRow>
                     <CTableHeaderCell>Bill No</CTableHeaderCell>

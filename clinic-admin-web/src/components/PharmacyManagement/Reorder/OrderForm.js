@@ -18,6 +18,7 @@ import CIcon from '@coreui/icons-react'
 import { cilPlus, cilTrash } from '@coreui/icons'
 import { showCustomToast } from '../../../Utils/Toaster'
 import capitalizeWords from '../../../Utils/capitalizeWords'
+import { createOrderAPI } from './PharmacyOrderAPI'
 
 // eslint-disable-next-line react/display-name
 const OrderForm = forwardRef(({ onSave }, ref) => {
@@ -44,6 +45,9 @@ const OrderForm = forwardRef(({ onSave }, ref) => {
       productName: '',
       hsnCode: '',
       packSize: '',
+      mrp: '',
+      category: '',
+      gstPercent: '',
       quantityRequested: '',
       // status: '',
       // rejectionReason: null,
@@ -61,9 +65,13 @@ const OrderForm = forwardRef(({ onSave }, ref) => {
     setProducts([
       ...products,
       {
+        productId: '',
         productName: '',
         hsnCode: '',
         packSize: '',
+        mrp: '',
+        category: '',
+        gstPercent: '',
         quantityRequested: '',
       },
     ])
@@ -144,34 +152,29 @@ const OrderForm = forwardRef(({ onSave }, ref) => {
     const updated = products.filter((_, i) => i !== index)
     setProducts(updated)
   }
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     let newErrors = {}
 
-    // Supplier Validation
     if (!formData.supplierId) {
       newErrors.supplierId = 'Please select supplier'
     }
 
-    // Delivery Days Validation
     if (!formData.expectedDeliveryDays) {
       newErrors.expectedDeliveryDays = 'Please enter delivery days'
     } else if (Number(formData.expectedDeliveryDays) <= 0) {
       newErrors.expectedDeliveryDays = 'Delivery days must be greater than 0'
     }
 
-    // ✅ Filter valid products
     const validProducts = products.filter(
       (p) =>
         p.productId && p.productName && p.quantityRequested && Number(p.quantityRequested) >= 1,
     )
 
-    // ❗ At least one product required
     if (validProducts.length === 0) {
       showCustomToast('Please add at least one medicine', 'error')
       return
     }
 
-    // Stop if form errors exist
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
       return
@@ -179,15 +182,61 @@ const OrderForm = forwardRef(({ onSave }, ref) => {
 
     setErrors({})
 
+    // ✅ Prepare API data in backend format
     const finalData = {
-      ...formData,
+      clinic: {
+        clinicId: formData.clinicId, // from state / props / redux
+        clinicName: formData.clinicName,
+      },
+
+      branch: {
+        branchId: formData.branchId,
+        branchName: formData.branchName,
+      },
+
+      supplier: {
+        supplierId: formData.supplierId,
+        supplierName: formData.supplierName,
+        supplierEmail: formData.supplierEmail,
+      },
+
+      expectedDeliveryDays: Number(formData.expectedDeliveryDays),
+
       expectedDeliveryDate: calculateDeliveryDate(formData.expectedDeliveryDays),
-      products: validProducts, // send only valid products
+
+      products: validProducts.map((p) => ({
+        productId: p.productId,
+        productName: p.productName,
+        hsnCode: p.hsnCode,
+        packSize: p.packSize,
+        mrp: p.mrp,
+        category: p.category,
+        gst: p.gstPercent,
+        quantityRequested: Number(p.quantityRequested),
+      })),
+
+      createdBy: localStorage.getItem('staffName') || localStorage.getItem('role'), // or logged user
     }
 
     console.log('FINAL ORDER DATA:', finalData)
-    onSave(finalData)
+
+    try {
+      const res = await createOrderAPI(finalData)
+
+      if (res.status !== 201) {
+        throw new Error(res.data.message)
+      }
+
+      showCustomToast(res.message || 'Order Created Successfully', 'success')
+
+      onSave(finalData)
+    } catch (error) {
+      console.log(error)
+
+      showCustomToast(error?.response?.data?.message || 'Failed to create order', 'error')
+    }
   }
+
   useImperativeHandle(ref, () => ({
     submitForm() {
       handleSubmit()
@@ -199,6 +248,9 @@ const OrderForm = forwardRef(({ onSave }, ref) => {
       label: med.productName,
       hsn: med.hsnCode,
       packSize: med.packSize,
+      mrp: med.mrp,
+      category: med.category,
+      gstPercent: med.gstPercent,
     })) || []
 
   const handleProductChange = (index, fieldOrSelected, value = null) => {
@@ -213,6 +265,9 @@ const OrderForm = forwardRef(({ onSave }, ref) => {
         productId: selected.value,
         productName: selected.label,
         hsnCode: selected.hsn,
+        mrp: selected.mrp,
+        category: selected.category,
+        gstPercent: selected.gstPercent,
         packSize: selected.packSize,
       }
     }
@@ -318,6 +373,12 @@ const OrderForm = forwardRef(({ onSave }, ref) => {
 
             <CCol md={2}>
               <CFormInput label="Pack Size" value={p.packSize} readOnly />
+            </CCol>
+            <CCol md={2}>
+              <CFormInput label="Category" value={p.category} readOnly />
+            </CCol>
+            <CCol md={2}>
+              <CFormInput label="MRP" value={p.mrp} readOnly />
             </CCol>
 
             <CCol md={2}>
