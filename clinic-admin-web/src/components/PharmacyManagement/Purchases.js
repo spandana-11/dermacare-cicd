@@ -39,6 +39,7 @@ import MoneyReceipts from './SupplierMoneyReceipt'
 import { useMedicines } from '../../Context/MedicineContext'
 import { dummyOrders } from './Reorder/dummyProductData'
 import Select from 'react-select'
+import { getAllOrdersAPI } from './Reorder/PharmacyOrderAPI'
 
 const Purchases = ({ goToSupplier }) => {
   const navigate = useNavigate()
@@ -49,7 +50,7 @@ const Purchases = ({ goToSupplier }) => {
   const [error, setError] = useState(null)
   const [saveLoading, setSaveLoading] = useState(false)
   // const [showTotals, setShowTotals] = useState(true)
-
+  const [orders, setOrders] = useState([])
   const { medicines, loading, supplier, fetchSuppliers, medicineTypes } = useMedicines()
   const getInitialPayload = () => ({
     date: new Date().toISOString().slice(0, 10),
@@ -252,38 +253,75 @@ const Purchases = ({ goToSupplier }) => {
   //   }
   // }
 
+  useEffect(() => {
+    loadOrders()
+  }, [])
+
+  const loadOrders = async () => {
+    try {
+      const clinicId = localStorage.getItem('HospitalId')
+      const branchId = localStorage.getItem('branchId')
+
+      const data = await getAllOrdersAPI(clinicId, branchId)
+
+      console.log('API orders', data)
+
+      setOrders(Array.isArray(data) ? data : data.data || [])
+    } catch (err) {
+      showCustomToast(err.response.data.message || 'Error fetching orders', 'error')
+      console.log(err)
+      setOrders([])
+    }
+  }
+
   ////TODO:after order creation comment
   const handleOrderIdChange = (value) => {
     updateTopField('orderId', value)
 
-    const products = dummyOrders[value]
-    console.log(products)
-    if (!products) return
+    const selectedOrder = orders.find((o) => o.orderId === value)
 
-    const mappedRows = products.map((p, index) => ({
-      sno: index + 1,
-      productId: p.productId,
-      productName: p.productName,
-      batchNo: '',
-      mfgDate: '',
-      expDate: '',
-      hsnCode: p.hsnCode,
-      quantity: '',
-      packSize: p.packSize,
-      free: '',
-      mrp: p.mrp,
-      costPrice: '',
-      discPercent: '',
-      gstPercent: p.gstPercent,
-      category: p.category,
+    console.log('selectedOrder', selectedOrder)
+
+    if (!selectedOrder) return
+
+    // ✅ set supplier automatically
+    setPayload((prev) => ({
+      ...prev,
+      supplierId: selectedOrder?.supplier?.supplierId || '',
+      supplierName: selectedOrder?.supplier?.supplierName || '',
     }))
+
+    const mappedRows = selectedOrder.products.map((p, index) => {
+      // ✅ find medicine to get GST / category / mrp
+      const med = medicines.find((m) => m.id === p.productId)
+
+      return {
+        sno: index + 1,
+        productId: p.productId,
+        productName: p.productName,
+        batchNo: '',
+        mfgDate: '',
+        expDate: '',
+        hsnCode: p.hsnCode,
+        quantity: '',
+        packSize: p.packSize,
+        free: '',
+
+        // ✅ fetch from medicine master
+        gstPercent: med?.gstPercent || '',
+        category: med?.category || '',
+        mrp: med?.mrp || '',
+
+        costPrice: '',
+        discPercent: '',
+      }
+    })
 
     setPayload((prev) => ({
       ...prev,
       medicineDetails: mappedRows,
     }))
   }
-
   // fetch purchases (list)
   const fetchPurchase = useCallback(async () => {
     // setLoading(true)

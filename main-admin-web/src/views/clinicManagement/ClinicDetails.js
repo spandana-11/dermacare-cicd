@@ -134,9 +134,9 @@ const ClinicDetails = () => {
       if (!editableClinicData.longitude) {
         errors.longitude = "Longitude is required"
       }
-      if (!editableClinicData.walkthrough?.trim()) {
-        errors.walkthrough = "Walkthrough URL is required"
-      }
+      // if (!editableClinicData.walkthrough?.trim()) {
+      //   errors.walkthrough = "Walkthrough URL is required"
+      // }
       if (!editableClinicData.branch?.trim()) {
         errors.branch = "Branch name is required"
       }
@@ -1105,13 +1105,10 @@ const ClinicDetails = () => {
                             walkthrough: value,
                           }));
 
-                          // ✅ Validation
                           let error = '';
-                          if (!value.trim()) {
-                            error = 'Walkthrough URL is required';
-                          } else if (
-                            !/^https?:\/\/[^\s]+$/.test(value) // basic URL check
-                          ) {
+
+                          // ✅ NOT mandatory → only validate if user enters something
+                          if (value && !/^https?:\/\/[^\s]+$/.test(value)) {
                             error = 'Please enter a valid URL (must start with http:// or https://)';
                           }
 

@@ -28,8 +28,6 @@ import {
 import Select from 'react-select'
 import CIcon from '@coreui/icons-react'
 import { cilSearch } from '@coreui/icons'
-
-
 import { CategoryData } from '../categoryManagement/CategoryAPI'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -281,19 +279,19 @@ const ProcedureManagement = () => {
   }
 
   const handleSubmit = async () => {
-    if (!validateFields()) return
+    if (!validateFields()) return;
 
     try {
       if (editMode && editSubServiceId) {
-        const normalize = (val) => (val ? val.toString().trim().toLowerCase() : '')
+        const normalize = (val) => (val ? val.toString().trim().toLowerCase() : "");
         const existingSubNames = Array.isArray(subServices)
           ? subServices
             .filter((s) => s.id !== editSubServiceId)
             .map((s) => normalize(s.name))
-          : []
+          : [];
 
         for (const sub of selectedSubServices) {
-          const normalized = normalize(sub.subServiceName)
+          const normalized = normalize(sub.subServiceName);
           if (existingSubNames.includes(normalized)) {
             setErrors((prev) => ({
               ...prev,
@@ -309,126 +307,115 @@ const ProcedureManagement = () => {
             serviceName: subService.serviceName,
             subServiceName: subService.subServiceName,
           })),
-        }
+        };
 
         try {
           const res = await axios.put(
             `${BASE_URL}/${updateSubservices}/${editSubServiceId}`,
-            payload,
-          )
+            payload
+          );
 
           if (res?.data?.success) {
-            fetchSubServices()
-            toast.success('Procedure updated successfully!')
+            fetchSubServices();
+            toast.success("Procedure updated successfully!");
           } else {
-            toast.error(res?.data?.message || 'Failed to update Procedure.')
+            toast.error(res?.data?.message || "Failed to update Procedure.");
           }
         } catch (err) {
-          console.error('❌ Update error:', err)
-          toast.error(err.response?.data?.message || 'Error updating Procedure')
+          console.error("❌ Update error:", err);
+          toast.error(err.response?.data?.message || "Error updating Procedure");
         }
       } else {
-        const normalize = (val) => (val ? val.toString().trim().toLowerCase() : '')
+        // 🟣 ADD MODE
+        const normalize = (val) => (val ? val.toString().trim().toLowerCase() : "");
         const existingSubNames = Array.isArray(subServices)
           ? subServices.map((s) => normalize(s.name))
-          : []
+          : [];
 
         for (const sub of selectedSubServices) {
-          const normalized = normalize(sub.subServiceName)
+          const normalized = normalize(sub.subServiceName);
           if (existingSubNames.includes(normalized)) {
             setErrors((prev) => ({
               ...prev,
               subService: `Procedure "${sub.subServiceName}" already exists.`,
-            })); return
+            }));
+            return;
           }
         }
 
-        const formattedSubServices = selectedSubServices.map((subService) => {
-          const selectedService = serviceOptions.find(
-            (s) => s.serviceName === subService.serviceName,
-          )
-
-          return {
-            serviceId: selectedService?.serviceId || '',
-            serviceName: subService.serviceName,
-            subServiceName: subService.subServiceName,
-          }
-        })
+        // 💥 FIXED: DO NOT SEARCH AGAIN. USE STORED VALUES.
+        const formattedSubServices = selectedSubServices.map((sub) => ({
+          serviceId: sub.serviceId,              // ⭐ ALWAYS CORRECT NOW
+          serviceName: sub.serviceName,
+          subServiceName: sub.subServiceName,
+        }));
 
         const payload = {
           categoryId: newService.categoryId,
           subServices: formattedSubServices,
-        }
+        };
 
         try {
-          const res = await postSubService(payload)
+          const res = await postSubService(payload);
           if (res?.data?.success) {
-            toast.success('Procedure added successfully')
+            toast.success("Procedure added successfully");
           } else {
-            toast.error(res?.data?.message || 'Submission failed')
+            toast.error(res?.data?.message || "Submission failed");
           }
         } catch (err) {
-          console.error('Error submitting Procedures:', err)
-          toast.error(err.response?.data?.message || 'Error submitting Procedures')
+          console.error("Error submitting Procedures:", err);
+          toast.error(err.response?.data?.message || "Error submitting Procedures");
         }
       }
 
-      await fetchSubServices()
-      setSelectedSubServices([])
-      setSubServiceInput('')
+      await fetchSubServices();
+      setSelectedSubServices([]);
+      setSubServiceInput("");
       setNewService({
-        categoryName: '',
-        categoryId: '',
-        serviceName: '',
-        serviceId: '',
-      })
-      setEditMode(false)
-      setEditSubServiceId(null)
-      setShowModal(false)
+        categoryName: "",
+        categoryId: "",
+        serviceName: "",
+        serviceId: "",
+      });
+      setEditMode(false);
+      setEditSubServiceId(null);
+      setShowModal(false);
     } catch (err) {
-      console.error('Submission Error:', err)
-      toast.error('Error submitting subservices')
+      console.error("Submission Error:", err);
+      toast.error("Error submitting subservices");
     }
-  }
+  };
+
 
   useEffect(() => {
+    let filtered = [];
+
     if (!searchQuery.trim()) {
-      setFilteredSubServices(subServices)
+      filtered = subServices;
     } else {
-      const lowerSearch = searchQuery.toLowerCase()
-      const filtered = subServices.filter(
+      const lowerSearch = searchQuery.toLowerCase();
+      filtered = subServices.filter(
         (item) =>
           item.category?.toLowerCase()?.includes(lowerSearch) ||
           item.service?.toLowerCase()?.includes(lowerSearch) ||
-          item.name?.toLowerCase()?.includes(lowerSearch),
-      )
-      setFilteredSubServices(filtered)
+          item.name?.toLowerCase()?.includes(lowerSearch)
+      );
     }
-    setCurrentPage(1) // Reset to first page when search changes
-  }, [searchQuery, subServices])
+
+    setFilteredSubServices(filtered);
+
+    // 👉 Keep user on current page, but adjust if not valid
+    const newTotalPages = Math.ceil(filtered.length / itemsPerPage);
+    if (currentPage > newTotalPages) {
+      setCurrentPage(newTotalPages || 1);
+    }
+  }, [searchQuery, subServices, currentPage, itemsPerPage]);
+
 
   return (
     <div className="container-fluid p-4">
       <ToastContainer />
       <CCard>
-        {/* <CRow>
-        <CCol md={6}>
-          <div className="d-flex justify-content-start mb-3">
-            <CFormInput
-              type="text"
-              placeholder="Search by Category, Service, Procedure"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  // Focus on next element or trigger search if needed
-                }
-              }}
-            />
-          </div>
-        </CCol>
-      </CRow> */}
 
         <CCardHeader className="d-flex justify-content-between align-items-center">
           <h4 className="mb-0">Procedure Management</h4>
@@ -476,9 +463,10 @@ const ProcedureManagement = () => {
               <CTableHead className="pink-table">
                 <CTableRow>
                   <CTableHeaderCell >S.No</CTableHeaderCell>
-                  <CTableHeaderCell>Procedure</CTableHeaderCell>
+
                   <CTableHeaderCell>Category</CTableHeaderCell>
                   <CTableHeaderCell>Service</CTableHeaderCell>
+                  <CTableHeaderCell>Procedure</CTableHeaderCell>
                   <CTableHeaderCell className="text-center">Actions</CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
@@ -487,9 +475,10 @@ const ProcedureManagement = () => {
                   currentItems.map((row, index) => (
                     <CTableRow key={row.id}>
                       <CTableDataCell>{(currentPage - 1) * itemsPerPage + index + 1}</CTableDataCell>
-                      <CTableDataCell>{row.name}</CTableDataCell>
+
                       <CTableDataCell>{row.category}</CTableDataCell>
                       <CTableDataCell>{row.service}</CTableDataCell>
+                      <CTableDataCell>{row.name}</CTableDataCell>
                       <CTableDataCell className="text-center">
                         <div className="d-flex justify-content-center align-items-center gap-2">
                           <button
@@ -645,100 +634,111 @@ const ProcedureManagement = () => {
                   </CFormSelect>
                   {errors.service && <div className="text-danger mt-1">{errors.service}</div>}
                 </CCol>
-
                 <CCol md={12}>
-                  <h6>{editMode ? 'Edit Procedure' : 'Add Procedure'} <span className="text-danger">*</span></h6>
+                  <h6>
+                    {editMode ? 'Edit Procedure' : 'Add Procedure'} <span className="text-danger">*</span>
+                  </h6>
 
+                  {/* ---------------- ADD MODE ---------------- */}
                   {!editMode && (
-                    <div className="d-flex flex-wrap gap-2 mb-3">
+                    <div className="d-flex flex-wrap gap-2 mb-3" style={{ width: "100%" }}>
                       <CFormInput
                         placeholder="Enter Procedure"
                         value={subServiceInput}
                         onChange={(e) => {
-                          setSubServiceInput(e.target.value)
-                          if (e.target.value.trim() !== '') {
-                            setErrors((prev) => ({ ...prev, subService: '' }))
+                          const value = e.target.value;
+
+                          // ❌ BLOCK NUMBERS WHILE TYPING
+                          if (/\d/.test(value)) return;
+
+                          // ❌ BLOCK invalid symbols
+                          if (!/^[A-Za-z\s@&\-.()]*$/.test(value)) return;
+
+                          setSubServiceInput(value);
+
+                          if (value.trim() !== '') {
+                            setErrors((prev) => ({ ...prev, subService: '' }));
                           }
                         }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault()
-                            // Trigger the Add button click
-                            document.querySelector('button[color="success"]').click()
+
+                        // ❌ BLOCK PASTING NUMBERS OR INVALID CHARACTERS
+                        onPaste={(e) => {
+                          const pasted = e.clipboardData.getData('text');
+                          if (/\d/.test(pasted) || !/^[A-Za-z\s@&\-.()]+$/.test(pasted)) {
+                            e.preventDefault();
+                            toast.error("❌ Numbers and invalid symbols are not allowed!", { autoClose: 2000 });
                           }
                         }}
                         style={{ flexGrow: 1 }}
                       />
 
-                      {errors.subService && <div className="text-danger mt-1">{errors.subService}</div>}
+                      {errors.subService && (
+                        <div className="text-danger mt-1">{errors.subService}</div>
+                      )}
+
                       <CButton
                         color="success"
                         className="text-white"
                         onClick={() => {
                           const trimmedInput = subServiceInput.trim();
-                          let errorMsg = '';
+                          let errorMsg = "";
 
-                          if (!trimmedInput) {
-                            errorMsg = 'Procedure name is required.';
-                          } else if (/^\d+$/.test(trimmedInput)) {
-                            errorMsg = 'Procedure name cannot contain only numbers.';
-                          } else if (trimmedInput.length < 3) {
-                            errorMsg = 'Procedure name must be at least 3 characters long.';
-                          }
+                          if (!trimmedInput) errorMsg = "Procedure name is required.";
+                          else if (/\d/.test(trimmedInput)) errorMsg = "Numbers are not allowed.";
+                          else if (!/^[A-Za-z\s@&\-.()]+$/.test(trimmedInput))
+                            errorMsg = "Only letters, spaces & @, &, -, ., (, ) allowed.";
+                          else if (trimmedInput.length < 3)
+                            errorMsg = "Minimum 3 characters required.";
 
                           if (errorMsg) {
                             setErrors((prev) => ({ ...prev, subService: errorMsg }));
                             return;
                           }
 
+                          // 🎯 ALWAYS FETCH SERVICE SELECTED IN DROPDOWN
                           const selectedService = serviceOptions.find(
                             (s) => s.serviceId === newService.serviceId
                           );
 
                           if (!selectedService) {
-                            toast.warn('Please select a service first!', {
-                              position: 'top-right',
-                              autoClose: 2000,
-                            });
+                            toast.warn("⚠️ Please select a service first!");
                             return;
                           }
 
+                          // 🎯 FINAL DATA FOR ONE ENTRY
                           const newEntry = {
+                            serviceId: selectedService.serviceId,
                             serviceName: selectedService.serviceName,
                             subServiceName: trimmedInput,
                           };
 
-                          if (
-                            selectedSubServices.some(
-                              (sub) =>
-                                sub.serviceName === newEntry.serviceName &&
-                                sub.subServiceName === newEntry.subServiceName
-                            )
-                          ) {
-                            toast.warn('Procedure already added for this service!', {
-                              position: 'top-right',
-                              autoClose: 2000,
-                            });
+                          // 🚫 Duplicate inside list
+                          const exists = selectedSubServices.some(
+                            (sub) =>
+                              sub.serviceId === newEntry.serviceId &&
+                              sub.subServiceName.toLowerCase() === newEntry.subServiceName.toLowerCase()
+                          );
+
+                          if (exists) {
+                            toast.warn("⚠️ Procedure already added!");
                             return;
                           }
 
-                          setSelectedSubServices((prev) => {
-                            const updated = [...prev, newEntry];
-                            if (updated.length > 0) {
-                              setErrors((prevErrors) => ({ ...prevErrors, subService: '' }));
-                            }
-                            return updated;
-                          });
+                          // 🎯 PUSH ENTRY
+                          setSelectedSubServices((prev) => [...prev, newEntry]);
+                          setSubServiceInput("");
 
-                          setSubServiceInput('');
+                          console.log("✔ NEW ENTRY ADDED:", newEntry);
                         }}
                       >
                         Add
                       </CButton>
 
+
                     </div>
                   )}
 
+                  {/* ---------------- EDIT MODE ---------------- */}
                   {editMode && (
                     <>
                       <CFormInput
@@ -747,24 +747,30 @@ const ProcedureManagement = () => {
                         onChange={(e) => {
                           const value = e.target.value;
                           const trimmedValue = value.trim();
-                          let errorMsg = '';
+                          let errorMsg = "";
 
-                          if (!trimmedValue) {
-                            errorMsg = 'Procedure name is required.';
-                          }
-                          // ❌ Removed symbol restriction so ANY characters are allowed
-                          else if (/^\d+$/.test(trimmedValue)) {
-                            errorMsg = 'Procedure name cannot contain only numbers.';
-                          } else if (trimmedValue.length < 3) {
-                            errorMsg = 'Procedure name must be at least 3 characters long.';
-                          }
+                          // ✋ BLOCK NUMBERS instantly
+                          if (/\d/.test(value)) return;
+
+                          // ✋ BLOCK invalid symbols
+                          if (!/^[A-Za-z\s@&\-.()]*$/.test(value)) return;
+
+                          if (!trimmedValue) errorMsg = "Procedure name is required.";
+                          else if (trimmedValue.length < 3)
+                            errorMsg = "Minimum 3 characters required.";
 
                           setErrors((prev) => ({ ...prev, subService: errorMsg }));
-
-                          setSelectedSubServices([
-                            { ...selectedSubServices[0], subServiceName: value },
-                          ]);
+                          setSelectedSubServices([{ ...selectedSubServices[0], subServiceName: value }]);
                         }}
+
+                        onPaste={(e) => {
+                          const pasted = e.clipboardData.getData('text');
+                          if (/\d/.test(pasted) || !/^[A-Za-z\s@&\-.()]+$/.test(pasted)) {
+                            e.preventDefault();
+                            toast.error("❌ Numbers and invalid symbols are not allowed!");
+                          }
+                        }}
+
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
@@ -774,10 +780,13 @@ const ProcedureManagement = () => {
                         invalid={!!errors.subService}
                       />
 
-                      {errors.subService && <div className="text-danger mt-1">{errors.subService}</div>}
+                      {errors.subService && (
+                        <div className="text-danger mt-1">{errors.subService}</div>
+                      )}
                     </>
                   )}
 
+                  {/* ---------------- SHOW ADDED LIST ---------------- */}
                   {!editMode && selectedSubServices.length > 0 && (
                     <ul className="list-group mt-3">
                       {selectedSubServices.map((sub, index) => (
@@ -800,21 +809,19 @@ const ProcedureManagement = () => {
                       ))}
                     </ul>
                   )}
-
-                  <CModal visible={removeShowModal} onClose={() => setRemoveShowModal(false)}>
-                    <CModalHeader>Confirm Removal</CModalHeader>
-                    <CModalBody>Are you sure you want to remove this item?</CModalBody>
-                    <CModalFooter>
-                      <CButton color="secondary" onClick={() => setRemoveShowModal(false)}>
-                        No
-                      </CButton>
-                      <CButton color="danger" onClick={handleConfirmRemove}>
-                        Yes
-                      </CButton>
-                    </CModalFooter>
-                  </CModal>
                 </CCol>
+
               </CRow>
+
+              {removeShowModal && (
+                <ConfirmationModal
+                  isVisible={removeShowModal}
+                  message="Are you sure you want to delete this item?"
+                  onConfirm={handleConfirmRemove}
+                  onCancel={() => setRemoveShowModal(false)}
+                />
+              )}
+
             </CModalBody>
             <CModalFooter>
               <CButton color="secondary" variant="outline" onClick={handleCloseForm}>

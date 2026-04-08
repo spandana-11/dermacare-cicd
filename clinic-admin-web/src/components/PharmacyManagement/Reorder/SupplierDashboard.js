@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unescaped-entities */
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   CContainer,
   CCard,
@@ -30,12 +30,13 @@ import { formatDateTime } from '../../../Utils/FormatDate'
 import { cilAccountLogout } from '@coreui/icons'
 import CIcon from '@coreui/icons-react'
 import ConfirmModal from '../../ConfirmLogoutModal'
+import { getAllOrdersAPI, getAllOrdersAPIBySupplierId } from './PharmacyOrderAPI'
+import { showCustomToast } from '../../../Utils/Toaster'
+import LoadingIndicator from '../../../Utils/loader'
 
 // eslint-disable-next-line react/prop-types
 const SupplierDashboard = ({ supplierId, onLogout, supplier }) => {
-  const [orders, setOrders] = useState(
-    ordersData.filter((o) => o?.supplier?.supplierId === supplierId),
-  )
+  const [orders, setOrders] = useState([])
   const [statusFilter, setStatusFilter] = useState('PENDING')
   const [expandedOrder, setExpandedOrder] = useState(null)
   const [showModal, setShowModal] = useState(false)
@@ -43,9 +44,43 @@ const SupplierDashboard = ({ supplierId, onLogout, supplier }) => {
   const [currentOrderIndex, setCurrentOrderIndex] = useState(null)
   const [reason, setReason] = useState('')
   const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const [loading, setLoading] = useState(false)
   const toggleProducts = (orderId) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId)
   }
+  useEffect(() => {
+    loadOrders()
+  }, [])
+
+  const loadOrders = async () => {
+    try {
+      setLoading(true)
+      const clinicId = localStorage.getItem('HospitalId')
+      const branchId = localStorage.getItem('branchId')
+      console.log(supplierId)
+
+      const data = await getAllOrdersAPIBySupplierId(clinicId, branchId, supplierId)
+
+      console.log('API orders', data)
+
+      const apiOrders = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : []
+
+      setOrders(apiOrders)
+    } catch (err) {
+      console.log(err)
+
+      showCustomToast(err?.response?.data?.message || 'Error fetching orders', 'error')
+
+      setOrders([])
+    } finally {
+      setLoading(false)
+    }
+  }
+  useEffect(() => {
+    if (!supplierId) return
+
+    setOrders((prev) => prev.filter((o) => o?.supplier?.supplierId === supplierId))
+  }, [supplierId])
 
   const handleProductStatusChange = (orderIndex, productIndex, value) => {
     if (value === 'REJECT') {
@@ -142,6 +177,10 @@ const SupplierDashboard = ({ supplierId, onLogout, supplier }) => {
           <CCardBody className="d-flex justify-content-between align-items-center">
             <div>
               <h4 className="mb-1 fw-bold">{supplier?.supplierName} Dashboard</h4>
+              <div>
+                <strong>Prop: </strong>
+                {supplier?.contactPerson}
+              </div>
               <small className="text-medium-emphasis">Manage and respond to pharmacy orders</small>
             </div>
 
@@ -194,15 +233,24 @@ const SupplierDashboard = ({ supplierId, onLogout, supplier }) => {
       </div>
 
       {/* ================= ORDER LIST ================= */}
-      {filteredOrders.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-5">
+          {/* <div className="spinner-border text-dark" />
+          <div>Loading Orders...</div> */}
+          <LoadingIndicator message="Loading Orders..." />
+        </div>
+      ) : filteredOrders.length === 0 ? (
         <CCard className="text-center shadow-sm border-0 py-5">
           <h5 className="fw-semibold">No Orders Found</h5>
           <p className="text-medium-emphasis mb-0">No orders under "{statusFilter}" status.</p>
         </CCard>
       ) : (
         filteredOrders.map((order, orderIndex) => {
-          const lastStatus = order.statusHistory?.[order.statusHistory.length - 1]
-          console.log(lastStatus)
+          const firstStatus = order?.statusHistory?.[0]?.status || 'NA'
+
+          const firstTime = order?.statusHistory?.[0]?.timestamp || 'NA'
+
+          console.log(firstStatus, firstTime)
           return (
             <CCard key={orderIndex} className="mb-4 shadow-sm border-0">
               {/* ===== ORDER HEADER ===== */}
@@ -286,7 +334,7 @@ const SupplierDashboard = ({ supplierId, onLogout, supplier }) => {
                     <CCol md={3}>
                       <small className="text-medium-emphasis">Last Status Update</small>
                       <div className="fw-semibold">
-                        {lastStatus ? formatDateTime(lastStatus.timestamp) : 'N/A'}
+                        {firstTime ? formatDateTime(firstTime) : 'N/A'}
                       </div>
                     </CCol>
                   </CRow>
@@ -298,6 +346,8 @@ const SupplierDashboard = ({ supplierId, onLogout, supplier }) => {
                         <CTableHeaderCell>Product</CTableHeaderCell>
                         <CTableHeaderCell>HSN</CTableHeaderCell>
                         <CTableHeaderCell>Pack</CTableHeaderCell>
+                        <CTableHeaderCell>Category</CTableHeaderCell>
+                        <CTableHeaderCell>MRP</CTableHeaderCell>
                         <CTableHeaderCell>Qty</CTableHeaderCell>
                         <CTableHeaderCell>Status</CTableHeaderCell>
                         <CTableHeaderCell>Reason</CTableHeaderCell>
@@ -311,6 +361,8 @@ const SupplierDashboard = ({ supplierId, onLogout, supplier }) => {
                           <CTableDataCell>{p.productName}</CTableDataCell>
                           <CTableDataCell>{p.hsnCode}</CTableDataCell>
                           <CTableDataCell>{p.packSize}</CTableDataCell>
+                          <CTableDataCell>{p.category}</CTableDataCell>
+                          <CTableDataCell>{p.mrp}</CTableDataCell>
                           <CTableDataCell>{p.quantityRequested}</CTableDataCell>
 
                           <CTableDataCell>
@@ -325,7 +377,7 @@ const SupplierDashboard = ({ supplierId, onLogout, supplier }) => {
                               <option value="PENDING">PENDING</option>
                               <option value="ACCEPT">ACCEPT</option>
                               <option value="REJECT">REJECT</option>
-                              <option value="DISPATCHED">DISPATCHED</option>
+                              {/* <option value="DISPATCHED">DISPATCHED</option> */}
                             </CFormSelect>
                           </CTableDataCell>
 

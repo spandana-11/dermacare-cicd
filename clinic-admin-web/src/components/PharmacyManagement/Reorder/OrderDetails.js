@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
   CCard,
   CCardBody,
@@ -26,23 +26,52 @@ import {
 
 import { ordersData } from './dummyProductData'
 import OrderForm from './OrderForm'
+import { useMedicines } from '../../../Context/MedicineContext'
+import { getAllOrdersAPI } from './PharmacyOrderAPI'
 
 const OrderDetails = () => {
   const [selectedSupplier, setSelectedSupplier] = useState('')
   const [expandedOrder, setExpandedOrder] = useState(null)
   const [visible, setVisible] = useState(false)
   const formRef = useRef()
-  // ✅ Unique Supplier List from ordersData
-  const supplierList = [
-    ...new Map(
-      (ordersData || []).map((order) => [order?.supplier?.supplierId, order?.supplier]),
-    ).values(),
-  ].filter(Boolean)
+  const { supplier, fetchSuppliers } = useMedicines()
+  
+  const [orders, setOrders] = useState([])
+  useEffect(() => {
+    fetchSuppliers()
+  }, [])
+  console.log(supplier)
+
+  const supplierList = Array.isArray(supplier) ? supplier : []
+  console.log(supplierList)
+  useEffect(() => {
+    loadOrders()
+  }, [])
+
+  const loadOrders = async () => {
+   
+    try {
+     
+      const clinicId = localStorage.getItem('HospitalId')
+      const branchId = localStorage.getItem('branchId')
+
+      const data = await getAllOrdersAPI(clinicId, branchId)
+
+      console.log('API orders', data)
+
+      setOrders(Array.isArray(data) ? data : data.data || [])
+    } catch (err) {
+      showCustomToast(err.response.data.message || 'Error fetching orders', 'error')
+      console.log(err)
+      setOrders([])
+    }
+  }
+
 
   // ✅ Filter Orders by Supplier
   const filteredOrders = selectedSupplier
-    ? ordersData.filter((order) => order?.supplier?.supplierId === selectedSupplier)
-    : ordersData
+    ? orders.filter((order) => order?.supplier?.supplierId === selectedSupplier)
+    : orders
 
   // ✅ Group Orders by Supplier
   const supplierMap = filteredOrders.reduce((acc, order) => {
@@ -62,7 +91,9 @@ const OrderDetails = () => {
     return acc
   }, {})
 
-  const suppliers = Object.values(supplierMap)
+   console.log(supplierMap)
+
+  const suppliersOrder = Object.values(supplierMap)
 
   return (
     <>
@@ -86,6 +117,7 @@ const OrderDetails = () => {
             onChange={(e) => setSelectedSupplier(e.target.value)}
           >
             <option value="">All Suppliers</option>
+
             {supplierList.map((s) => (
               <option key={s.supplierId} value={s.supplierId}>
                 {s.supplierName}
@@ -95,7 +127,7 @@ const OrderDetails = () => {
 
           {/* ✅ Accordion By Supplier */}
           <CAccordion activeItemKey={0}>
-            {suppliers.map((supplierGroup, supIndex) => (
+            {suppliersOrder.map((supplierGroup, supIndex) => (
               <CAccordionItem key={supIndex} itemKey={supIndex}>
                 {/* Supplier Header */}
                 <CAccordionHeader>
@@ -181,6 +213,9 @@ const OrderDetails = () => {
                                       <CTableHeaderCell>Product ID</CTableHeaderCell>
                                       <CTableHeaderCell>HSN</CTableHeaderCell>
                                       <CTableHeaderCell>Pack Size</CTableHeaderCell>
+                                      <CTableHeaderCell>Category</CTableHeaderCell>
+                                      <CTableHeaderCell>MRP</CTableHeaderCell>
+                                      <CTableHeaderCell>GST %</CTableHeaderCell>
                                       <CTableHeaderCell>Quantity</CTableHeaderCell>
                                       <CTableHeaderCell>Status</CTableHeaderCell>
                                       <CTableHeaderCell>Reason</CTableHeaderCell>
@@ -194,6 +229,9 @@ const OrderDetails = () => {
                                         <CTableDataCell>{product.productId}</CTableDataCell>
                                         <CTableDataCell>{product.hsnCode}</CTableDataCell>
                                         <CTableDataCell>{product.packSize}</CTableDataCell>
+                                        <CTableDataCell>{product.category}</CTableDataCell>
+                                        <CTableDataCell>{product.mrp}</CTableDataCell>
+                                        <CTableDataCell>{product.gst}</CTableDataCell>
                                         <CTableDataCell>{product.quantityRequested}</CTableDataCell>
 
                                         <CTableDataCell>
@@ -247,6 +285,7 @@ const OrderDetails = () => {
             onSave={(data) => {
               console.log('Saved:', data)
               setVisible(false) // close modal after submit
+              loadOrders() 
             }}
           />
         </CModalBody>

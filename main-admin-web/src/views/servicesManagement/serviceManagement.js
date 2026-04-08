@@ -142,6 +142,7 @@ const ServiceManagement = () => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem)
   const totalPages = Math.ceil(filteredData.length / itemsPerPage)
+
   const handleFileChange = (e) => {
     const file = e.target.files[0]
 
@@ -170,212 +171,118 @@ const ServiceManagement = () => {
   const handleServiceChange = (e) => {
     const { name, value } = e.target;
 
-    // Replace multiple spaces with a single space
-    const sanitizedValue = value.replace(/\s+/g, ' ');
+    let formatted = value.replace(/\s+/g, ' '); // remove extra spaces
 
-    // Update state exactly as typed
     setNewService((prev) => ({
       ...prev,
-      [name]: sanitizedValue,
+      [name]: formatted,
     }));
 
-    // Clear previous errors
-    setErrors((prev) => ({
-      ...prev,
-      [name]: '',
-    }));
-
-    // Validation
-    if (!sanitizedValue.trim()) {
+    // Clear error when updating value
+    if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
-        [name]: 'Service name is required.',
-      }));
-    } else if (!/^[A-Za-z0-9\s@&#\-\.,()]+$/.test(sanitizedValue)) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: 'Service name can include letters, numbers, spaces, and special characters like @, &, -, ., (, ).',
-      }));
-    } else if (/^\d+$/.test(sanitizedValue)) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: 'Service name cannot contain only numbers.',
+        [name]: '',
       }));
     }
-
   };
 
 
-
-  const validateForm = () => {
-    const newErrors = {}
-
-    if (!newService.categoryId) {
-      newErrors.categoryId = 'Category is required'
-    }
-
-    if (!newService.serviceName?.trim()) {
-      newErrors.serviceName = 'Service name is required'
-    }
-
-    // if (!newService.description?.trim()) {
-    //   newErrors.description = 'Description is required'
-    // }
-
-    if (!newService.serviceImage) {
-      newErrors.serviceImage = 'Service image is required'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const validateEditForm = () => {
-    const newErrors = {}
-
-    if (!updatedService.ServiceName?.trim()) {
-      newErrors.ServiceName = "Service name is required"
-    }
-
-    // if (!updatedService.description?.trim()) {
-    //   newErrors.description = "Description is required"
-    // }
-
-    if (!updatedService.categoryId) {
-      newErrors.categoryId = "Category is required"
-    }
-
-    if (!updatedService.serviceImage && !updatedService.existingImageName) {
-      newErrors.serviceImage = "Service image is required"
-    }
-
-    setEditErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
   const validateEditField = (name, value) => {
-    let error = ""
+    let error = "";
 
-    if (name === "ServiceName") {
-      if (!value.trim()) {
-        error = "Service name is required"
-      }
-    }
+    if (name === "ServiceName" && !value.trim())
+      error = "Service name is required.";
 
-    // if (name === "description") {
-    //   if (!value.trim()) {
-    //     error = "Description is required"
-    //   }
-    // }
+    if (name === "description" && !value.trim())
+      error = "Description is required.";
 
-    if (name === "categoryId") {
-      if (!value) {
-        error = "Category is required"
-      }
-    }
+    if (name === "categoryId" && !value)
+      error = "Category is required.";
 
-    if (name === "serviceImage") {
-      if (!value && !updatedService.existingImageName) {
-        error = "Service image is required"
-      }
-    }
+    if (name === "serviceImage" && !value && !updatedService.existingImageName)
+      error = "Service image is required.";
 
-    setEditErrors((prev) => ({
-      ...prev,
-      [name]: error,
-    }))
-  }
+    setEditErrors(prev => ({ ...prev, [name]: error }));
+    return error === "";
+  };
 
   const handleAddService = async () => {
-    // Reset previous errors
-    setErrors({});
+    setErrors({}); // reset
 
-    const trimmedName = (newService.serviceName || '').trim();
-    const trimmedDescription = (newService.description || '').trim();
+    const trimmedName = newService.serviceName.trim();
+    const trimmedDescription = newService.description.trim();
 
-    const newErrors = {}; // collect all errors before deciding to return
+    const newErrors = {};
 
-    // --- Validate Service Name ---
-    if (!trimmedName) {
+    // ⭐ SERVICE NAME VALIDATION (NO NUMBERS)
+    if (!trimmedName)
       newErrors.serviceName = "Service Name is required.";
-    } else if (!/^[A-Za-z0-9\s@&\-\.,()]+$/.test(trimmedName)) {
-      newErrors.serviceName = "Service Name must only contain letters, numbers, spaces, and special characters like @, &, -, ., (, ).";
-    } else if (/^\d+$/.test(trimmedName)) {
-      newErrors.serviceName = "Service name cannot contain only numbers.";
-    } else if (trimmedName.length < 3) {
-      newErrors.serviceName = "Service name must be at least 3 characters long.";
-    }
+    else if (!/^[A-Za-z\s@&\-\.,()]+$/.test(trimmedName))
+      newErrors.serviceName = "Only letters, spaces & @, &, -, ., (, ) allowed. Numbers are NOT allowed.";
+    else if (/^\d+$/.test(trimmedName))
+      newErrors.serviceName = "Service Name cannot be only numbers.";
+    else if (trimmedName.length < 3)
+      newErrors.serviceName = "Minimum 3 characters required.";
 
-    // --- Validate Description ---
-    // if (!trimmedDescription) {
-    //   newErrors.description = "Description is required.";
-    // } else if (trimmedDescription.length < 10) {
-    //   newErrors.description = "Description must be at least 10 characters long.";
-    // } else if (!/^[A-Za-z0-9\s.,-]+$/.test(trimmedDescription)) {
-    //   newErrors.description = "Description can only contain letters, numbers, spaces, commas, periods, and hyphens.";
-    // }
+    // ⭐ DESCRIPTION VALIDATION (NUMBERS ALLOWED)
+    if (!trimmedDescription)
+      newErrors.description = "Description is required.";
+    else if (trimmedDescription.length < 10)
+      newErrors.description = "Minimum 10 characters required.";
+    else if (!/^[A-Za-z0-9\s@&\-\.,()]+$/.test(trimmedDescription))
+      newErrors.description = "Only letters, numbers, spaces & @, &, -, ., (, ) allowed.";
 
-    // --- Validate Category ---
-    if (!newService.categoryId) {
+    // ⭐ CATEGORY VALIDATION
+    if (!newService.categoryId)
       newErrors.categoryId = "Category is required.";
-    }
 
-    // --- Validate Image ---
-    if (!newService.serviceImage) {
+    // ⭐ IMAGE VALIDATION
+    if (!newService.serviceImage)
       newErrors.serviceImage = "Service image is required.";
-    }
 
-    // --- If any error exists, stop here ---
+    // ❌ STOP IF ERRORS
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
-    // --- Check for duplicates ---
-    const newName = trimmedName.toLowerCase();
+    // 🔁 DUPLICATE CHECK
     const duplicate = service.some(
-      (s) => (s.serviceName || '').trim().toLowerCase() === newName
+      (s) => s.serviceName?.toLowerCase() === trimmedName.toLowerCase()
     );
-
     if (duplicate) {
       setErrors({ serviceName: "Service already exists." });
       return;
     }
 
-    // --- Submit data ---
-    try {
-      const payload = {
-        ...newService,
-        serviceName: trimmedName,
-        description: trimmedDescription,
-      };
+    const payload = {
+      ...newService,
+      serviceName: trimmedName,
+      description: trimmedDescription,
+    };
 
+    try {
       await postServiceData(payload);
       toast.success("Service added successfully!");
       setModalVisible(false);
 
-      // Reset form
+      // Reset Form
       setNewService({
         serviceName: "",
         categoryId: "",
         description: "",
         serviceImage: null,
       });
-      setErrors({});
-      await fetchData();
-    } catch (error) {
-      console.error("Failed to add service:", error);
+
+      fetchData();
+    } catch {
       toast.error("Failed to add service");
     }
   };
 
 
 
-  const handleServiceView = (service) => {
-    console.log("Clicked Service", service)
-    setSelectedService(service)
-    setViewModalVisible(true)
-  }
   const handleServiceEdit = (service) => {
     setUpdatedService({
       ServiceId: service.serviceId,
@@ -389,90 +296,82 @@ const ServiceManagement = () => {
   }
 
   const handleUpdateService = async () => {
-    const trimmedName = (updatedService.ServiceName || '').trim();
-    const trimmedDescription = (updatedService.description || '').trim();
-
-    // 🔄 Reset previous errors
     setEditErrors({});
+
+    const trimmedName = updatedService.ServiceName.trim();
+    const trimmedDescription = updatedService.description.trim();
 
     const newErrors = {};
 
-    // 🔍 Service Name Validation
-    if (!trimmedName) {
+    // ⭐ SERVICE NAME VALIDATION (NO NUMBERS)
+    if (!trimmedName)
       newErrors.ServiceName = "Service Name is required.";
-    } else if (!/^[A-Za-z0-9\s@&\-\.,()]+$/.test(trimmedName)) {
-      newErrors.ServiceName = "Service Name must only contain letters, numbers, spaces, and special characters like @, &, -, ., (, ).";
-    } else if (/^\d+$/.test(trimmedName)) {
-      newErrors.ServiceName = "Service Name cannot contain only numbers.";
-    } else if (trimmedName.length < 3) {
-      newErrors.ServiceName = "Service Name must be at least 3 characters long.";
-    }
+    else if (!/^[A-Za-z\s@&\-\.,()]+$/.test(trimmedName))
+      newErrors.ServiceName = "Only letters, spaces & @, &, -, ., (, ) allowed. Numbers are NOT allowed.";
+    else if (/^\d+$/.test(trimmedName))
+      newErrors.ServiceName = "Service Name cannot be only numbers.";
+    else if (trimmedName.length < 3)
+      newErrors.ServiceName = "Minimum 3 characters required.";
 
-    // 🔍 Description Validation
-    // if (!trimmedDescription) {
-    //   newErrors.description = "Description is required.";
-    // } else if (trimmedDescription.length <5) {
-    //   newErrors.description = "Description must be at least 5 characters long.";
-    // } else if (!/^[A-Za-z0-9\s@&\-\.,()]+$/.test(trimmedDescription)) {
-    //   newErrors.description = "Description can include letters, numbers, spaces, and special characters like @, &, -, ., (, ).";
-    // }
+    // ⭐ DESCRIPTION VALIDATION (NUMBERS ALLOWED)
+    if (!trimmedDescription)
+      newErrors.description = "Description is required.";
+    else if (trimmedDescription.length < 5)
+      newErrors.description = "Minimum 5 characters required.";
+    else if (!/^[A-Za-z0-9\s@&\-\.,()]+$/.test(trimmedDescription))
+      newErrors.description = "Only letters, numbers, spaces & @, &, -, ., (, ) allowed.";
 
-    if (!updatedService.categoryId) {
+    // ⭐ CATEGORY VALIDATION
+    if (!updatedService.categoryId)
       newErrors.categoryId = "Category is required.";
-    }
 
-    // 🔍 Image Validation
-    if (!updatedService.serviceImage) {
+    // ⭐ IMAGE VALIDATION
+    if (!updatedService.serviceImage && !updatedService.existingImageName)
       newErrors.serviceImage = "Service image is required.";
-    }
 
-    // ⛔ Stop if any errors exist
+    // ❌ STOP IF ERRORS
     if (Object.keys(newErrors).length > 0) {
       setEditErrors(newErrors);
       return;
     }
 
+    // 🔁 DUPLICATE CHECK
+    const duplicate = service.some(
+      (s) =>
+        s.serviceName.toLowerCase() === trimmedName.toLowerCase() &&
+        s.serviceId !== updatedService.ServiceId
+    );
+    if (duplicate) {
+      setEditErrors({ ServiceName: "Service already exists." });
+      return;
+    }
+
+    // IMAGE HANDLING
+    let imageBase64 = updatedService.serviceImage;
+    if (imageBase64 && typeof imageBase64 !== "string") {
+      imageBase64 = await toBase64(imageBase64);
+    }
+
+    const payload = {
+      serviceId: updatedService.ServiceId,
+      serviceName: trimmedName,
+      categoryId: updatedService.categoryId,
+      description: trimmedDescription,
+      serviceImage: imageBase64?.includes("base64,")
+        ? imageBase64.split(",")[1]
+        : imageBase64,
+    };
+
     try {
-      // ✅ Check for duplicates (case-insensitive)
-      const newName = trimmedName.toLowerCase();
-      const duplicate = service.some(
-        (s) =>
-          (s.serviceName || '').trim().toLowerCase() === newName &&
-          s.serviceId !== updatedService.ServiceId
-      );
-
-      if (duplicate) {
-        setEditErrors({ ServiceName: "Service already exists." });
-        return;
-      }
-
-      // ✅ Convert image to Base64 if it's a file
-      let imageBase64 = updatedService.serviceImage;
-      if (imageBase64 && typeof imageBase64 !== 'string') {
-        imageBase64 = await toBase64(imageBase64);
-      }
-
-      // ✅ Prepare payload (consistent casing)
-      const payload = {
-        serviceId: updatedService.ServiceId,
-        serviceName: trimmedName,
-        categoryId: updatedService.categoryId,
-        description: trimmedDescription,
-        serviceImage: imageBase64?.includes('base64,')
-          ? imageBase64.split(',')[1]
-          : imageBase64,
-      };
-
       await updateServiceData(payload, updatedService.ServiceId);
-      toast.success('Service updated successfully!');
+      toast.success("Service updated successfully!");
       setEditServiceMode(false);
-      setEditErrors({});
-      await fetchData();
-    } catch (error) {
-      console.error("Update service error:", error);
-      toast.error('Failed to update service');
+      fetchData();
+    } catch {
+      toast.error("Failed to update service");
     }
   };
+
 
   const toBase64 = (file) =>
     new Promise((resolve, reject) => {
@@ -725,7 +624,7 @@ const ServiceManagement = () => {
               {/* Description */}
               <div className="mb-3">
                 <label className="form-label">
-                  Description
+                  Description <span style={{ color: 'red' }}>*</span>
                 </label>
                 <CFormInput
                   type="text"
@@ -921,6 +820,28 @@ const ServiceManagement = () => {
               }}
               id="editServiceForm"
             >
+              {/* Category */}
+              <div className="mb-3">
+                <label className="form-label">Category <span style={{ color: 'red' }}>*</span></label>
+                <CFormSelect
+                  value={updatedService.categoryId}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setUpdatedService({ ...updatedService, categoryId: value })
+                    validateEditField("categoryId", value)
+                  }}
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.categoryId} value={cat.categoryId}>
+                      {cat.categoryName}
+                    </option>
+                  ))}
+                </CFormSelect>
+                {editErrors.categoryId && (
+                  <div className="text-danger">{editErrors.categoryId}</div>
+                )}
+              </div>
               {/* Service Name */}
               <div className="mb-3">
                 <label className="form-label">Service Name <span style={{ color: 'red' }}>*</span></label>
@@ -966,28 +887,7 @@ const ServiceManagement = () => {
                 )}
               </div>
 
-              {/* Category */}
-              <div className="mb-3">
-                <label className="form-label">Category <span style={{ color: 'red' }}>*</span></label>
-                <CFormSelect
-                  value={updatedService.categoryId}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    setUpdatedService({ ...updatedService, categoryId: value })
-                    validateEditField("categoryId", value)
-                  }}
-                >
-                  <option value="">Select Category</option>
-                  {categories.map((cat) => (
-                    <option key={cat.categoryId} value={cat.categoryId}>
-                      {cat.categoryName}
-                    </option>
-                  ))}
-                </CFormSelect>
-                {editErrors.categoryId && (
-                  <div className="text-danger">{editErrors.categoryId}</div>
-                )}
-              </div>
+
 
               {/* Service Image */}
               <div className="mb-3">

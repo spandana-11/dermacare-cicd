@@ -24,7 +24,7 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilSave, cilPrint, cilMagnifyingGlass, cilPencil, cilTrash } from '@coreui/icons'
 import { getAllOpSales } from './OpSalesAPI'
-import { Edit2, Trash2,Eye } from 'lucide-react'
+import { Edit2, Trash2, Eye } from 'lucide-react'
 import { showCustomToast } from '../../Utils/Toaster'
 import { useMedicines } from '../../Context/MedicineContext'
 import Select from 'react-select'
@@ -48,9 +48,7 @@ const handleSearch = () => {
     const name = item.patientName ? item.patientName.toLowerCase() : ''
 
     return (
-      billNo.includes(searchValue) ||
-      mobile.includes(searchValue) ||
-      name.includes(searchValue)
+      billNo.includes(searchValue) || mobile.includes(searchValue) || name.includes(searchValue)
     )
   })
 
@@ -59,9 +57,9 @@ const handleSearch = () => {
 const OPSales = () => {
   const [OpsaleData, setOpSaleData] = useState([])
   const [viewModal, setViewModal] = useState(false)
-const [selectedSale, setSelectedSale] = useState(null)
-  const { medicines, loading,inventory,fetchInventory } = useMedicines()
-  const [editModal, setEditModal] = useState(false);
+  const [selectedSale, setSelectedSale] = useState(null)
+  const { medicines, loading, inventory, fetchInventory } = useMedicines()
+  const [editModal, setEditModal] = useState(false)
   const { doctorData, fetchDoctors } = useHospital()
   const [oploading, setOPLoading] = useState(false)
   const [editSaleId, setEditSaleId] = useState(null)
@@ -70,7 +68,7 @@ const [selectedSale, setSelectedSale] = useState(null)
   const [billNo, setBillNo] = useState('')
   const [historyModal, setHistoryModal] = useState(false)
   const [patientMode, setPatientMode] = useState('manual')
-const [filteredList, setFilteredList] = useState([]) 
+  const [filteredList, setFilteredList] = useState([])
   const [searchData, setSearchData] = useState({
     billNo: '',
     mobileNo: '',
@@ -86,6 +84,9 @@ const [filteredList, setFilteredList] = useState([])
   const [patientDetails, setPatientDetails] = useState({})
   const [roomDetails, setRoomDetails] = useState({})
   const [opNo, setOpNo] = useState('')
+  const [deleteModal, setDeleteModal] = useState(false)
+  const [deleteIndex, setDeleteIndex] = useState(null)
+  const [deleteId, setDeleteId] = useState(null) // for API
 
   const [selectionType, setSelectionType] = useState('')
   const [selectionBy, setSelectionBy] = useState('')
@@ -104,7 +105,7 @@ const [filteredList, setFilteredList] = useState([])
   const [totalPaid, setTotalPaid] = useState(0)
   const doctorList = doctorData?.data || []
 
-  console.log(doctorData.data)
+  // console.log(doctorData.data)
 
   const [discPerc, setDiscPerc] = useState('')
   const [discAmt, setDiscAmt] = useState('')
@@ -128,87 +129,90 @@ const [filteredList, setFilteredList] = useState([])
   useEffect(() => {
     loadOpSales()
     fetchInventory()
-
   }, [])
- const handleSave = async () => {
-  console.log("opsales calling")
+  const handleSave = async () => {
+    console.log('opsales calling')
 
-  try {
-    const now = new Date()
+    try {
+      const now = new Date()
 
-    const billDate = now.toISOString().slice(0, 10)
+      const billDate = now.toISOString().slice(0, 10)
 
-    const billTime = now.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+      const billTime = now.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
 
-    const medicinesPayload = OpsaleData.map((m) => ({
-      medicineId: m.medicineId,
-      medicineName: m.medicineName,
-      batchNo:  m.batchNo,
-      expDate: m.expiryDate,
-      qty: m.qty,
-      rate: m.mrp,
-      totalA: m.total,
-      discPercent: m.disc,
-      discAmtB: m.discAmount,
-      netAmtAB: m.netAmt,
-      gstPercent: m.gstPercent,
-      gstAmtC: m.gstamt,
-      finalAmountABC: m.finalamount,
-    }))
+      const medicinesPayload = OpsaleData.map((m) => ({
+        medicineId: m.medicineId,
+        medicineName: m.medicineName,
+        batchNo: m.batchNo,
+        expDate: m.expiryDate,
+        qty: m.qty,
+        rate: m.mrp,
+        totalA: m.total,
+        discPercent: m.disc,
+        discAmtB: m.discAmount,
+        netAmtAB: m.netAmt,
+        gstPercent: m.gstPercent,
+        gstAmtC: m.gstamt,
+        finalAmountABC: m.finalamount,
+      }))
 
-    const payload = {
-      billNo: billNo,
-      billDate: billDate,
-      billTime: billTime,
-      visitType: patientMode === 'manual' ? 'Out Patient (Manual)' : 'Fetch by OPNO',
-      opNo: opNo,
-      payCategory: 'SELF PAY',
-      patientName: patientDetails.name,
-      mobile: patientDetails.mobilenumber,
-      age: 5,
-      sex: patientDetails.sex,
-      consultingDoctor: patientDetails.consultingDoctor,
-      includeReturns: includeReturns,
-      medicines: medicinesPayload,
-      amountPaid: paidNow,
-      clinicId: localStorage.getItem('HospitalId'),
-      branchId: localStorage.getItem('branchId'),
+      const payload = {
+        billNo: billNo,
+        billDate: billDate,
+        billTime: billTime,
+        visitType: patientMode === 'manual' ? 'Out Patient (Manual)' : 'Fetch by OPNO',
+        opNo: opNo,
+        payCategory: 'SELF PAY',
+        patientName: patientDetails.name,
+        mobile: patientDetails.mobilenumber,
+        age: 5,
+        sex: patientDetails.sex,
+        consultingDoctor: patientDetails.consultingDoctor,
+        includeReturns: includeReturns,
+        medicines: medicinesPayload,
+        amountPaid: paidNow,
+        clinicId: localStorage.getItem('HospitalId'),
+        branchId: localStorage.getItem('branchId'),
+      }
+
+      console.log('Payload:', payload)
+
+      let response
+
+      // 🔹 EDIT API
+      if (editSaleId) {
+        response = await http.put(`/op-sales/updateSale`, payload)
+      }
+      // 🔹 CREATE API
+      else {
+        response = await http.post('/op-sales/createOpSales', payload)
+      }
+
+      if (response.status === 200) {
+        showCustomToast(editSaleId ? 'Updated successfully ✅' : 'Saved successfully ✅')
+
+        setEditSaleId(null)
+
+        loadOpSales() // refresh history list
+      }
+    } catch (error) {
+      console.log(error)
+      showCustomToast('Failed to save ❌')
     }
-
-    console.log("Payload:", payload)
-
-    let response
-
-    // 🔹 EDIT API
-    if (editSaleId) {
-      response = await http.put(`/op-sales/updateSale/${editSaleId}`, payload)
-    } 
-    // 🔹 CREATE API
-    else {
-      response = await http.post('/op-sales/createOpSales', payload)
-    }
-
-    if (response.status === 200) {
-      showCustomToast(editSaleId ? "Updated successfully ✅" : "Saved successfully ✅")
-
-      setEditSaleId(null)
-
-      loadOpSales() // refresh history list
-    }
-
-  } catch (error) {
-    console.log(error)
-    showCustomToast('Failed to save ❌')
   }
-}
   const handleView = (index) => {
- const sale = filteredList[index]   // or your table data array
-  setSelectedSale(sale)
-  setViewModal(true)
-}
+    const sale = filteredList[index] // or your table data array
+    setSelectedSale(sale)
+    setViewModal(true)
+  }
+  const openDeleteModal = (index, id = null) => {
+    setDeleteIndex(index)
+    setDeleteId(id) // sale id (for API)
+    setDeleteModal(true)
+  }
 
   // const handleSave = () => {
   //   const payload = {
@@ -224,7 +228,7 @@ const [filteredList, setFilteredList] = useState([])
   // }
 
   // ---------------- GET ALL PURCHASES ----------------
- const loadOpSales = async () => { 
+  const loadOpSales = async () => {
     setOPLoading(true)
     try {
       const data = await getAllOpSales()
@@ -238,20 +242,20 @@ const [filteredList, setFilteredList] = useState([])
       setOPLoading(false)
     }
   }
-  
-useEffect(() => {
-  const searchValue = search.trim().toLowerCase()
 
-  const filtered = historyList.filter((item) => {
-    return (
-      item.billNo?.toString().toLowerCase().includes(searchValue) ||
-      item.mobile?.toString().includes(searchValue) ||
-      item.patientName?.toLowerCase().includes(searchValue)
-    )
-  })
+  useEffect(() => {
+    const searchValue = search.trim().toLowerCase()
 
-  setFilteredList(filtered)
-}, [search, historyList])
+    const filtered = historyList.filter((item) => {
+      return (
+        item.billNo?.toString().toLowerCase().includes(searchValue) ||
+        item.mobile?.toString().includes(searchValue) ||
+        item.patientName?.toLowerCase().includes(searchValue)
+      )
+    })
+
+    setFilteredList(filtered)
+  }, [search, historyList])
   // Handle input change for form row
   const handleRowChange = (e) => {
     const { name, value } = e.target
@@ -310,85 +314,66 @@ useEffect(() => {
     })
   }
 
-const handleEdit = (index) => {
-  const sale = historyList[index]
+  const handleEdit = async (index) => {
+    const sale = filteredList[index]
+    if (!sale) return
 
-  if (!sale) return
+    setEditSaleId(sale.id)
+    setBillNo(sale.billNo)
 
-  // set edit mode
-  setEditSaleId(sale.id)
+    setPatientDetails({
+      name: sale.patientName,
+      mobilenumber: sale.mobile,
+      age: sale.age,
+      sex: sale.sex,
+      consultingDoctor: sale.consultingDoctor,
+    })
 
-  // set bill number
-  setBillNo(sale.billNo)
+    const rows = await Promise.all(
+      (sale.medicines || []).map(async (med) => {
+        const invList = await getInventory(med.medicineId)
 
-  // set patient details
-  setPatientDetails({
-    name: sale.patientName,
-    mobilenumber: sale.mobile,
-    age: sale.age,
-    sex: sale.sex,
-    consultingDoctor: sale.consultingDoctor,
-  })
+        console.log('INV LIST:', invList)
 
-  // load medicines into table
- const handleEdit = (index) => {
-  const sale = filteredList[index] // ✅ IMPORTANT FIX
+        const invArray = Array.isArray(invList) ? invList : invList?.data || []
 
-  if (!sale) return
+        const invData = invArray.find((item) => item.medicineId === med.medicineId)
 
-  setEditSaleId(sale.id)
-  setBillNo(sale.billNo)
+        const inv = invData?.inventory?.[0] || {}
 
-  setPatientDetails({
-    name: sale.patientName,
-    mobilenumber: sale.mobile,
-    age: sale.age,
-    sex: sale.sex,
-    consultingDoctor: sale.consultingDoctor,
-  })
+        return {
+          medicineId: med.medicineId,
+          medicineName: med.medicineName || 'Unknown',
 
-  const rows = sale.medicines?.map((med) => ({
-    medicineId: med.medicineId,
+          batchNo: inv?.batchNo || med.batchNo || '-',
 
-    // ✅ FIXED
-    medicineName: med.medicineName || med.productName || 'Unknown',
+          expiryDate: inv?.expiryDate || med.expiryDate || med.expDate || '-',
 
-    // ✅ FIXED
-    batchNo: med.batchNo || med.batch_number || '-',
+          availableQty: inv?.availableQty || inv?.available_quantity || inv?.stock || 0,
 
-    // ✅ FIXED (MAIN ISSUE)
-    expiryDate: med.expDate || med.expiryDate || '-',
+          qty: med.qty || 0,
+          mrp: med.rate || 0,
 
-    qty: med.qty || 0,
-    mrp: med.rate || 0,
+          total: med.totalA || 0,
+          disc: med.discPercent || 0,
+          discAmount: med.discAmtB || 0,
+          netAmt: med.netAmtAB || 0,
 
-    total: med.totalA || 0,
-    disc: med.discPercent || 0,
-    discAmount: med.discAmtB || 0,
-    netAmt: med.netAmtAB || 0,
+          gstPercent: med.gstPercent || 0,
+          gstamt: med.gstAmtC || 0,
+          finalamount: med.finalAmountABC || 0,
+        }
+      }),
+    )
 
-    gstPercent: med.gstPercent || 0,
-    gstamt: med.gstAmtC || 0,
-    finalamount: med.finalAmountABC || 0,
+    console.log('FINAL ROWS:', rows)
 
-    availableQty: med.availableQty || 0,
-  })) || []
+    setOpSaleData([...rows])
+    setPaidNow(sale.amountPaid || 0)
 
-  console.log("EDIT ROWS:", rows) // 🔍 DEBUG
-
-  setOpSaleData(rows)
-  setPaidNow(sale.amountPaid || 0)
-  setHistoryModal(false)
-}
-
-  setOpSaleData(rows)
-
-  // set paid amount
-  setPaidNow(sale.amountPaid || 0)
-
-  // close history modal
-  setHistoryModal(false)
-}
+    setHistoryModal(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const handleDelete = (index) => {
     const filtered = OpsaleData.filter((_, i) => i !== index)
@@ -405,6 +390,50 @@ const handleEdit = (index) => {
         vatPercent: '',
         paidAmt: '',
       })
+    }
+  }
+  const confirmDelete = async () => {
+    try {
+      // 🔥 API DELETE (for history)
+      if (deleteId) {
+        const clinicId = localStorage.getItem('HospitalId')
+        const branchId = localStorage.getItem('branchId')
+
+        await http.delete(`/op-sales/${clinicId}/${branchId}/${deleteId}`)
+
+        showCustomToast('Deleted successfully ✅')
+        setHistoryList((prev) => prev.filter((item) => item.id !== deleteId))
+        // setFilteredList((prev) => prev.filter((item) => item.id !== deleteId))
+      }
+
+      // 🔥 LOCAL DELETE (medicine row)
+      else if (deleteIndex !== null) {
+        const filtered = OpsaleData.filter((_, i) => i !== deleteIndex)
+        setOpSaleData(filtered)
+
+        if (editIndex === deleteIndex) {
+          setEditIndex(null)
+          setFormRow({
+            medicineName: '',
+            batchNo: '',
+            qty: '',
+            mrp: '',
+            disc: '',
+            vatPercent: '',
+            paidAmt: '',
+          })
+        }
+
+        showCustomToast('Row deleted ✅')
+      }
+
+      // reset
+      setDeleteModal(false)
+      setDeleteIndex(null)
+      setDeleteId(null)
+    } catch (error) {
+      console.log(error)
+      showCustomToast('Delete failed ❌')
     }
   }
   const genemrpBillNo = () => {
@@ -449,77 +478,73 @@ const handleEdit = (index) => {
   //     console.error('Patient fetch error', error)
   //   }
   // }
-  const fetchPatientByOpNo = () => {
-    const patient = dummyPatients[opNo]
+const fetchPatientByOpNo = () => {
+  const patient = dummyPatients[opNo]
 
-    if (!patient) return
+  if (!patient) return
 
-    // set patient
+  setPatientDetails({
+    name: patient.name,
+    mobilenumber: patient.mobilenumber,
+    age: patient.age,
+    sex: patient.sex,
+    consultingDoctor: patient.consultingDoctor,
+  })
 
-    setPatientDetails({
-      name: patient.name,
-      mobilenumber: patient.mobilenumber,
-      age: patient.age,
-      sex: patient.sex,
-      consultingDoctor: patient.consultingDoctor,
-    })
+  const rows = patient.medicines.flatMap((id) => {
+    const med = inventory?.find(
+      (m) => m.medicineId === id
+    )
 
-    // set medicines
+    if (!med) return []
 
-    const rows = patient.medicines.map((id) => {
-      const med = dummyMedicines.find((m) => m.id === id)
-      if (!med) return null
+    if (!Array.isArray(med.inventory)) return []
 
+    return med.inventory
+      .filter((b) => b) // remove undefined
+      .map((batch) => createRowFromMedicine(batch))
+      .filter((r) => r) // remove undefined rows
+  })
 
-      // return createRowFromMedicine(med)
-      return createRowFromMedicine(med)
-    })
+  console.log("rows", rows)
 
-    setOpSaleData(rows)
-  }
+  setOpSaleData(rows)
+}
   useEffect(() => {
     if (opNo) fetchPatientByOpNo()
   }, [opNo])
 
-  const createRowFromMedicine = (med, qty = 1, disc = 0) => {
-    const mrp = Number(med.mrp)
-    const gstPercent = Number(med.gstPercent)
+const createRowFromMedicine = (med, qty = 1, disc = 0) => {
+  if (!med) return null
 
-    const total = qty * mrp
+  const mrp = Number(med.mrp || 0)
+  const gstPercent = Number(med.gstPercent || 0)
 
-    const discAmount = (disc / 100) * total
+  const total = qty * mrp
+  const discAmount = (disc / 100) * total
+  const net = total - discAmount
+  const gstAmount = (net * gstPercent) / (100 + gstPercent)
 
-    const net = total - discAmount
+  return {
+    medicineId: med.medicineId,
+    medicineName: med.medicineName,
+    batchNo: med.batchNo,
+    expiryDate: med.expiryDate,
+    availableQty: med.availableQty || 0,
 
-    // GST inside mrp (only for display)
+    qty,
+    mrp,
+    disc,
 
-    const gstAmount = (net * gstPercent) / (100 + gstPercent)
+    gstPercent,
 
-    return {
-      medicineId: med.id,
-      medicineName: med.productName,
-      batchNo: med.batchNo,
-      expDate: med.expiryDate,
-
-      qty,
-
-      mrp,
-
-      disc,
-
-      gstPercent: gstPercent,
-
-      total: Math.round(total),
-
-      discAmount: Math.round(discAmount),
-
-      netAmt: Math.round(net),
-
-      gstamt: Math.round(gstAmount),
-
-      finalamount: Math.round(net),
-    }
+    total: Math.round(total),
+    discAmount: Math.round(discAmount),
+    netAmt: Math.round(net),
+    gstamt: Math.round(gstAmount),
+    finalamount: Math.round(net),
   }
+}
   const handleSave1 = async () => {
     try {
       const payload = {
@@ -540,8 +565,6 @@ const handleEdit = (index) => {
       console.error('Save failed', error)
     }
   }
-
-
 
   const medicineOptions = medicines.map((med) => ({
     value: med.id,
@@ -818,58 +841,56 @@ const handleEdit = (index) => {
             isClearable
           /> */}
 
-         <Select
-  options={medicineOptions}
-  value={medicineOptions.find((opt) => opt.value === medName)}
- onChange={async (selected) => {
-  if (!selected) return;
+          <Select
+            options={medicineOptions}
+            value={medicineOptions.find((opt) => opt.value === medName)}
+            onChange={async (selected) => {
+              if (!selected) return
 
-  setMedName(selected.value); // ✅ important
+              setMedName(selected.value) // ✅ important
 
-  const med = medicines.find((m) => m.id === selected.value);
+              const med = medicines.find((m) => m.id === selected.value)
 
-  if (!med) {
-    console.log("Medicine not found ❌", selected.value);
-    return;
-  }
+              if (!med) {
+                console.log('Medicine not found ❌', selected.value)
+                return
+              }
 
-  const invList = await getInventory(med.id);
-  const invArray = Array.isArray(invList)
-  ? invList
-  : Array.isArray(invList?.data)
-  ? invList.data
-  : [];
+              const invList = await getInventory(med.id)
+              const invArray = Array.isArray(invList)
+                ? invList
+                : Array.isArray(invList?.data)
+                  ? invList.data
+                  : []
 
-  const invData = invArray.find(
-  (item) => item.medicineId === med.id
-);
-  const inv = invData?.inventory?.[0] || {};
+              const invData = invArray.find((item) => item.medicineId === med.id)
+              const inv = invData?.inventory?.[0] || {}
 
-  const row = {
-    medicineId: med.id,
-    medicineName: med.productName || med.medicineName || "Unknown",
+              const row = {
+                medicineId: med.id,
+                medicineName: med.productName || med.medicineName || 'Unknown',
 
-    batchNo: inv?.batchNo || "-",
-    expiryDate: inv?.expiryDate || "-",
-  availableQty: inv.availableQty || 0,
-    qty: qty,
-    mrp: inv?.mrp || med.mrp || 0,
+                batchNo: inv?.batchNo || '-',
+                expiryDate: inv?.expiryDate || '-',
+                availableQty: inv.availableQty || 0,
+                qty: qty,
+                mrp: inv?.mrp || med.mrp || 0,
 
-    disc: discPerc,
-    gstPercent: inv?.gstPercent || 0,
+                disc: discPerc,
+                gstPercent: inv?.gstPercent || 0,
 
-    total: inv?.mrp || med.mrp || 0,
-    discAmount: discAmt,
-    netAmt: inv?.mrp || med.mrp || 0,
-    gstamt: 0,
-    finalamount: inv?.mrp || med.mrp || 0,
-  };
+                total: inv?.mrp || med.mrp || 0,
+                discAmount: discAmt,
+                netAmt: inv?.mrp || med.mrp || 0,
+                gstamt: 0,
+                finalamount: inv?.mrp || med.mrp || 0,
+              }
 
-  setOpSaleData((prev) => [...prev, row]);
-}}
-  placeholder="Search Medicine"
-  isClearable
-/>
+              setOpSaleData((prev) => [...prev, row])
+            }}
+            placeholder="Search Medicine"
+            isClearable
+          />
         </CCol>
         {/* Include Returns */}
         <CCol xs={12} md={6} className="d-flex align-items-center">
@@ -913,7 +934,7 @@ const handleEdit = (index) => {
                 <CTableHeaderCell style={{ width: '70px' }}>Available Qty</CTableHeaderCell>
 
                 <CTableHeaderCell style={{ width: '70px' }}>Qty</CTableHeaderCell>
-                
+
                 <CTableHeaderCell style={{ width: '90px' }}>MRP</CTableHeaderCell>
                 <CTableHeaderCell className="text-center" style={{ width: '70px' }}>
                   {`Total \n (A)`}{' '}
@@ -927,11 +948,11 @@ const handleEdit = (index) => {
                   className="text-center"
                   style={{ width: '100px' }}
                 >{`NetAmt \n(A-B)`}</CTableHeaderCell>
-               <CTableHeaderCell
+                <CTableHeaderCell
                   className="text-center"
                   style={{ width: '100px' }}
                 >{`GST %`}</CTableHeaderCell>
-               {/*   <CTableHeaderCell
+                {/*   <CTableHeaderCell
                   className="text-center"
                   style={{ width: '60px' }}
                 >{`GST \n(C)`}</CTableHeaderCell> */}
@@ -965,49 +986,55 @@ const handleEdit = (index) => {
               )}
 
               {!oploading &&
-                OpsaleData.map((item, index) => (
-                  <CTableRow key={index}>
-                    <CTableDataCell>{index + 1}</CTableDataCell>
-                    <CTableDataCell>{item.medicineName}</CTableDataCell>
-                    <CTableDataCell>{item.batchNo}</CTableDataCell>
-                    <CTableDataCell>{item.expiryDate}</CTableDataCell>
-                    <CTableDataCell>{item.availableQty}</CTableDataCell>
+                OpsaleData.map(
+                  (item, index) => (
+                    console.log(item),
+                    (
+                      <CTableRow key={index}>
+                        <CTableDataCell>{index + 1}</CTableDataCell>
+                        <CTableDataCell>{item.medicineName}</CTableDataCell>
+                        <CTableDataCell>{item.batchNo}</CTableDataCell>
+                        <CTableDataCell>{item.expiryDate}</CTableDataCell>
+                        <CTableDataCell>{item.availableQty}</CTableDataCell>
 
-                    <CTableDataCell>
-                      <input
-                        value={item.qty}
-                        onChange={(e) => updateRow(index, 'qty', e.target.value)}
-                        style={{ width: 60 }}
-                      />
-                    </CTableDataCell>
-                    <CTableDataCell>{item.mrp}</CTableDataCell>
+                        <CTableDataCell>
+                          <input
+                            value={item.qty}
+                            onChange={(e) => updateRow(index, 'qty', e.target.value)}
+                            style={{ width: 60 }}
+                          />
+                        </CTableDataCell>
+                        <CTableDataCell>{item.mrp}</CTableDataCell>
 
-                    <CTableDataCell>{item.total}</CTableDataCell>
-                    <CTableDataCell>
-                      <input
-                        value={item.disc}
-                        onChange={(e) => updateRow(index, 'disc', e.target.value)}
-                        style={{ width: 60 }}
-                      />
-                    </CTableDataCell>
-                    <CTableDataCell>{item.discAmount}</CTableDataCell>
-                    <CTableDataCell>{item.netAmt}</CTableDataCell>
-                    <CTableDataCell>{item.gstPercent}</CTableDataCell>
-                    {/* <CTableDataCell>{item.gstamt}</CTableDataCell> */}
+                        <CTableDataCell>{item.total}</CTableDataCell>
+                        <CTableDataCell>
+                          <input
+                            value={item.disc}
+                            onChange={(e) => updateRow(index, 'disc', e.target.value)}
+                            style={{ width: 60 }}
+                          />
+                        </CTableDataCell>
+                        <CTableDataCell>{item.discAmount}</CTableDataCell>
+                        <CTableDataCell>{item.netAmt}</CTableDataCell>
+                        <CTableDataCell>{item.gstPercent}</CTableDataCell>
+                        {/* <CTableDataCell>{item.gstamt}</CTableDataCell> */}
 
-                    <CTableDataCell>{item.finalamount}</CTableDataCell>
-                    <CTableDataCell>
-                     
-
-                      {/* Delete Button */}
-                      <CButton  color="danger"
-      size="sm"
-      className="actionBtn" onClick={() => handleDelete(index)}>
-                        <Trash2 size={16} />
-                      </CButton>
-                    </CTableDataCell>
-                  </CTableRow>
-                ))}
+                        <CTableDataCell>{item.finalamount}</CTableDataCell>
+                        <CTableDataCell>
+                          {/* Delete Button */}
+                          <CButton
+                            color="danger"
+                            size="sm"
+                            className="actionBtn"
+                            onClick={() => handleDelete(index)}
+                          >
+                            <Trash2 size={16} />
+                          </CButton>
+                        </CTableDataCell>
+                      </CTableRow>
+                    )
+                  ),
+                )}
             </CTableBody>
           </CTable>
         </div>
@@ -1058,7 +1085,7 @@ const handleEdit = (index) => {
             <CCol md={3}>
               <CRow className="mb-2">
                 <CCol xs={6}>
-                  <CFormLabel  className="text-end fw-bold mb-0">Net Amount</CFormLabel>
+                  <CFormLabel className="text-end fw-bold mb-0">Net Amount</CFormLabel>
                 </CCol>
 
                 <CCol xs={6}>
@@ -1068,7 +1095,7 @@ const handleEdit = (index) => {
 
               <CRow className="mb-2">
                 <CCol xs={6}>
-                  <CFormLabel  className="text-end fw-bold mb-0">Current Payment Amount</CFormLabel>
+                  <CFormLabel className="text-end fw-bold mb-0">Current Payment Amount</CFormLabel>
                 </CCol>
 
                 <CCol xs={6}>
@@ -1078,7 +1105,7 @@ const handleEdit = (index) => {
 
               <CRow className="mb-2">
                 <CCol xs={6}>
-                  <CFormLabel  className="text-end fw-bold mb-0">Amount Paid</CFormLabel>
+                  <CFormLabel className="text-end fw-bold mb-0">Amount Paid</CFormLabel>
                 </CCol>
 
                 <CCol xs={6}>
@@ -1088,7 +1115,7 @@ const handleEdit = (index) => {
 
               <CRow className="mb-2">
                 <CCol xs={6}>
-                  <CFormLabel  className="text-end fw-bold mb-0">Due Amount</CFormLabel>
+                  <CFormLabel className="text-end fw-bold mb-0">Due Amount</CFormLabel>
                 </CCol>
 
                 <CCol xs={6}>
@@ -1098,7 +1125,7 @@ const handleEdit = (index) => {
 
               <CRow className="mb-2">
                 <CCol xs={6}>
-                  <CFormLabel  className="text-end fw-bold mb-0">Final Total</CFormLabel>
+                  <CFormLabel className="text-end fw-bold mb-0">Final Total</CFormLabel>
                 </CCol>
 
                 <CCol xs={6}>
@@ -1166,12 +1193,12 @@ const handleEdit = (index) => {
             <CButton
               style={{
                 color: 'var(--color-black)',
+                // yellow for update
                 backgroundColor: 'var(--color-bgcolor)',
               }}
               onClick={handleSave}
             >
-              {/*  TODO:  after save open modal with print option should be included  */}
-              Save
+              {editSaleId ? 'Update' : 'Save'}
             </CButton>
           </div>
         </div>
@@ -1191,23 +1218,23 @@ const handleEdit = (index) => {
             {/* 🔍 Search Section */}
             <CRow className="mb-3">
               <CCol md={9}>
-             <CFormInput
-  placeholder="Search by Bill No / Mobile No / OP No"
-  value={search}
-  onChange={(e) => setSearch(e.target.value)}
-  onKeyDown={(e) => {
-    if (e.key === 'Enter') {
-      handleSearch()
-    }
-  }}
-/>
+                <CFormInput
+                  placeholder="Search by Bill No / Mobile No / OP No"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch()
+                    }
+                  }}
+                />
               </CCol>
 
               <CCol md={3}>
                 <CButton
                   className="w-100"
                   onClick={handleSearch}
-                  style={{ backgroundColor: "var(--color-black)", color: "#fff" }}
+                  style={{ backgroundColor: 'var(--color-black)', color: '#fff' }}
                 >
                   Search
                 </CButton>
@@ -1238,51 +1265,57 @@ const handleEdit = (index) => {
                       <CTableDataCell>{item.mobile}</CTableDataCell>
                       <CTableDataCell>{item.totalAmt}</CTableDataCell>
                       <CTableDataCell>{item.dueAmount}</CTableDataCell>
-                      {/* <CTableDataCell>{item.amountToBePaid[0]?.amountPaid}</CTableDataCell> */}
-                   <CTableDataCell>
-  {item.amountToBePaid?.[0]?.paidAt
-    ? formatDateTime(item.amountToBePaid[0].paidAt)
-    : "-"}
-</CTableDataCell>
-                    <CTableDataCell>
+                      <CTableDataCell>
+                        {item.paymentHistory?.length > 0
+                          ? item.paymentHistory[item.paymentHistory.length - 1]?.amountPaid
+                          : '-'}
+                      </CTableDataCell>
 
-  {/* View Button */}
-  <CButton
-    className="actionBtn me-1"
-    style={{ color: 'var(--color-black)' }}
-    color="info"
-    size="sm"
-    onClick={() => handleView(index)}
-    title="View"
-  >
-    <Eye size={18} />
-  </CButton>
+                      <CTableDataCell>
+                        {item.paymentHistory?.length > 0 &&
+                        item.paymentHistory[item.paymentHistory.length - 1]?.paidAt
+                          ? formatDateTime(
+                              item.paymentHistory[item.paymentHistory.length - 1].paidAt,
+                            )
+                          : '-'}
+                      </CTableDataCell>
+                      <CTableDataCell>
+                        {/* View Button */}
+                        <CButton
+                          className="actionBtn me-1"
+                          style={{ color: 'var(--color-black)' }}
+                          color="info"
+                          size="sm"
+                          onClick={() => handleView(index)}
+                          title="View"
+                        >
+                          <Eye size={18} />
+                        </CButton>
 
-  {/* Edit Button */}
-  <CButton
-    className="actionBtn me-1"
-    style={{ color: 'var(--color-black)' }}
-    color="warning"
-    size="sm"
-    onClick={() => handleEdit(index)}
-    title="Edit"
-  >
-    <Edit2 size={18} />
-  </CButton>
+                        {/* Edit Button */}
+                        <CButton
+                          className="actionBtn me-1"
+                          style={{ color: 'var(--color-black)' }}
+                          color="warning"
+                          size="sm"
+                          onClick={() => handleEdit(index)}
+                          title="Edit"
+                        >
+                          <Edit2 size={18} />
+                        </CButton>
 
-  {/* Delete Button */}
-  <CButton
-    className="actionBtn"
-    color="danger"
-    size="sm"
-    style={{ color: 'var(--color-black)' }}
-    onClick={() => handleDelete(index)}
-    title="Delete"
-  >
-    <Trash2 size={18} />
-  </CButton>
-
-</CTableDataCell>
+                        {/* Delete Button */}
+                        <CButton
+                          className="actionBtn"
+                          color="danger"
+                          size="sm"
+                          style={{ color: 'var(--color-black)' }}
+                          onClick={() => openDeleteModal(index, item.id)} // ✅ FIX
+                          title="Delete"
+                        >
+                          <Trash2 size={18} />
+                        </CButton>
+                      </CTableDataCell>
                     </CTableRow>
                   ))
                 ) : (
@@ -1362,73 +1395,107 @@ const handleEdit = (index) => {
           </CModalFooter>
         </CModal>
         <CModal
-  visible={viewModal}
-  onClose={() => setViewModal(false)}
-  size="lg"
-  alignment="center"
-  scrollable
->
-  <CModalHeader>
-    <CModalTitle>OP Sales Details</CModalTitle>
-  </CModalHeader>
+          visible={viewModal}
+          onClose={() => setViewModal(false)}
+          size="lg"
+          alignment="center"
+          scrollable
+        >
+          <CModalHeader>
+            <CModalTitle>OP Sales Details</CModalTitle>
+          </CModalHeader>
 
-  <CModalBody>
+          <CModalBody>
+            {selectedSale && (
+              <>
+                <h6>Patient Details</h6>
 
-    {selectedSale && (
-      <>
-        <h6>Patient Details</h6>
+                <p>
+                  <b>Bill No:</b> {selectedSale.billNo}
+                </p>
+                <p>
+                  <b>Patient Name:</b> {selectedSale.patientName}
+                </p>
+                <p>
+                  <b>Mobile:</b> {selectedSale.mobile}
+                </p>
+                <p>
+                  <b>Doctor:</b> {selectedSale.consultingDoctor}
+                </p>
+                <p>
+                  <b>Visit Type:</b> {selectedSale.visitType}
+                </p>
 
-        <p><b>Bill No:</b> {selectedSale.billNo}</p>
-        <p><b>Patient Name:</b> {selectedSale.patientName}</p>
-        <p><b>Mobile:</b> {selectedSale.mobile}</p>
-        <p><b>Doctor:</b> {selectedSale.consultingDoctor}</p>
-        <p><b>Visit Type:</b> {selectedSale.visitType}</p>
+                <hr />
 
-        <hr />
+                <h6>Medicines</h6>
 
-        <h6>Medicines</h6>
+                <CTable bordered responsive>
+                  <CTableHead>
+                    <CTableRow>
+                      <CTableHeaderCell>Medicine</CTableHeaderCell>
+                      <CTableHeaderCell>Qty</CTableHeaderCell>
+                      <CTableHeaderCell>Rate</CTableHeaderCell>
+                      <CTableHeaderCell>Total</CTableHeaderCell>
+                    </CTableRow>
+                  </CTableHead>
 
-        <CTable bordered responsive>
-          <CTableHead>
-            <CTableRow>
-              <CTableHeaderCell>Medicine</CTableHeaderCell>
-              <CTableHeaderCell>Qty</CTableHeaderCell>
-              <CTableHeaderCell>Rate</CTableHeaderCell>
-              <CTableHeaderCell>Total</CTableHeaderCell>
-            </CTableRow>
-          </CTableHead>
+                  <CTableBody>
+                    {selectedSale.medicines?.map((med, i) => (
+                      <CTableRow key={i}>
+                        <CTableDataCell>{med.medicineName}</CTableDataCell>
+                        <CTableDataCell>{med.qty}</CTableDataCell>
+                        <CTableDataCell>{med.rate}</CTableDataCell>
+                        <CTableDataCell>{med.totalA}</CTableDataCell>
+                      </CTableRow>
+                    ))}
+                  </CTableBody>
+                </CTable>
 
-          <CTableBody>
-            {selectedSale.medicines?.map((med, i) => (
-              <CTableRow key={i}>
-                <CTableDataCell>{med.medicineName}</CTableDataCell>
-                <CTableDataCell>{med.qty}</CTableDataCell>
-                <CTableDataCell>{med.rate}</CTableDataCell>
-                <CTableDataCell>{med.totalA}</CTableDataCell>
-              </CTableRow>
-            ))}
-          </CTableBody>
-        </CTable>
+                <hr />
 
-        <hr />
+                <h6>Payment Details</h6>
 
-        <h6>Payment Details</h6>
+                <p>
+                  <b>Total Amount:</b> ₹ {selectedSale.totalAmt}
+                </p>
+                <p>
+                  <b>Amount Paid:</b> ₹ {selectedSale.amountPaid}
+                </p>
+                <p>
+                  <b>Due Amount:</b> ₹ {selectedSale.dueAmount}
+                </p>
+              </>
+            )}
+          </CModalBody>
 
-        <p><b>Total Amount:</b> ₹ {selectedSale.totalAmt}</p>
-        <p><b>Amount Paid:</b> ₹ {selectedSale.amountPaid}</p>
-        <p><b>Due Amount:</b> ₹ {selectedSale.dueAmount}</p>
+          <CModalFooter>
+            <CButton color="secondary" onClick={() => setViewModal(false)}>
+              Close
+            </CButton>
+          </CModalFooter>
+        </CModal>
+        <CModal visible={deleteModal} onClose={() => setDeleteModal(false)} alignment="center">
+          <CModalHeader>
+            <CModalTitle>Confirm Delete</CModalTitle>
+          </CModalHeader>
 
-      </>
-    )}
+          <CModalBody>
+            {deleteId
+              ? 'Are you sure you want to delete this sale permanently?'
+              : 'Are you sure you want to remove this medicine?'}
+          </CModalBody>
 
-  </CModalBody>
+          <CModalFooter>
+            <CButton color="secondary" onClick={() => setDeleteModal(false)}>
+              Cancel
+            </CButton>
 
-  <CModalFooter>
-    <CButton color="secondary" onClick={() => setViewModal(false)}>
-      Close
-    </CButton>
-  </CModalFooter>
-</CModal>
+            <CButton color="danger" onClick={confirmDelete}>
+              Delete
+            </CButton>
+          </CModalFooter>
+        </CModal>
 
         {/* <CIcon icon={cilPrint} size="lg" style={{ cursor: 'pointer' }} /> */}
         {/* <CIcon icon={cilMagnifyingGlass} size="lg" style={{ cursor: 'pointer' }} /> */}

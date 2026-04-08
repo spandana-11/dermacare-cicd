@@ -59,6 +59,7 @@ const DoctorManagement = () => {
   // const [doctors, setDoctors] = useState([]);
 
   const [modalVisible, setModalVisible] = useState(false)
+  const [monthlyLeaves, setMonthlyLeaves] = useState('');
   const [newService, setNewService] = useState({
     serviceName: '',
     serviceId: '',
@@ -758,7 +759,7 @@ const DoctorManagement = () => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           />
-          <button className="btn btn-info text-white" onClick={handleAdd}>
+          <button className="btn"  style={{backgroundColor:'var(--color-black)', color: 'white' }}onClick={handleAdd}>
             Add
           </button>
         </div>
@@ -1313,6 +1314,19 @@ const DoctorManagement = () => {
                 <div className="text-danger">{formErrors.doctorPicture}</div>
               )}
             </CCol>
+            <CCol xs={12} md={6}>
+  <CFormLabel>
+    Monthly Paid Leaves
+  </CFormLabel>
+
+  <CFormInput
+    type="number"
+    value={monthlyLeaves}
+    onChange={(e) => setMonthlyLeaves(e.target.value)}
+    min={0}
+  />
+</CCol>
+
           </CRow>
 
           <hr />

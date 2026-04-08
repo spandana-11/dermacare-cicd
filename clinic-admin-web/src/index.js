@@ -15,12 +15,17 @@ import './views/Style/toastify.css'
 import { NavigationProvider } from './views/Usecontext/NavigationProvider'
 import { BrowserRouter } from 'react-router-dom'
 import { MedicineProvider } from './Context/MedicineContext'
+import EmployeeList from './views/pages/attendance/EmployeeList'
+import AttendanceMenu from './views/pages/attendance/AttendanceMenu'
+import 'bootstrap/dist/css/bootstrap.min.css'
+import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 function Root() {
   // attach interceptors once when app mounts
   // useEffect(() => {
   //   const detach = attachInterceptors(() => localStorage.getItem('token'))
   //   return () => detach()
   // }, [])
+  
   useEffect(() => {
     const detach = attachInterceptors()
     return () => detach()
@@ -44,6 +49,8 @@ function Root() {
                   }}
                 />
                 <App />
+                {/* <AttendanceMenu /> */}
+                {/* <EmployeeList /> */}
               </MedicineProvider>
             </HospitalProvider>
           </GlobalSearchProvider>

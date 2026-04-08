@@ -19,6 +19,8 @@ import {
 import { createReturnBill, getBillByNo } from './OpSalesAPI'
 import { showCustomToast } from '../../Utils/Toaster'
 import { Spinner } from 'react-bootstrap'
+import { http } from '../../Utils/Interceptors'
+import SalesReturnBillModal from './SalesReturnBillModal'
 
 const OPSalesReturn = () => {
   const [billNo, setBillNo] = useState('')
@@ -29,7 +31,10 @@ const OPSalesReturn = () => {
   const [showBill, setShowBill] = useState(false)
   const [patient, setPatient] = useState({})
   const [fetchLoading, setFetchLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [billNoError, setBillNoError] = useState('')
+  const [selectedPatient, setSelectedPatient] = useState(null)
+  const [showModal, setShowModal] = useState(false)
   const [summary, setSummary] = useState({
     totalReturn: 0,
     totalDiscount: 0,
@@ -62,7 +67,7 @@ const OPSalesReturn = () => {
         if (bill && bill.medicines) {
           const formatted = bill.medicines.map((m, i) => ({
             id: i + 1,
-            medicineId: i + 1,
+            medicineId: m.medicineId,
             name: m.medicineName,
             batch: m.batchNo,
             soldQty: m.qty,
@@ -101,76 +106,115 @@ const OPSalesReturn = () => {
   }
 
   // ================= CALCULATIONS =================
-  const calculateSummary = (data) => {
-    let totalReturn = 0
-    let totalDiscount = 0
-    let totalGST = 0
+ const calculateSummary = (data) => {
+  let totalReturn = 0
+  let totalDiscount = 0
+  let totalGST = 0
 
-    data.forEach((item) => {
-      const gross = item.returnQty * item.rate
-      const discount = (gross * item.discPercent) / 100
-      const taxable = gross - discount
-      const gst = (taxable * item.gstPercent) / 100
+  const updatedData = data.map((item) => {
+    const gross = item.returnQty * item.rate
+    const discount = (gross * item.discPercent) / 100
+    const taxable = gross - discount
+    const gst = (taxable * item.gstPercent) / 100
+    const netAmount = taxable + gst
 
-      totalReturn += gross
-      totalDiscount += discount
-      totalGST += gst
-    })
+    totalReturn += gross
+    totalDiscount += discount
+    totalGST += gst
 
-    const netRefund = totalReturn - totalDiscount + totalGST
+    return {
+      ...item,
+      netAmount: Number(netAmount.toFixed(2)), // ✅ store here
+    }
+  })
 
-    setSummary({
-      totalReturn,
-      totalDiscount,
-      totalGST,
-      netRefund,
-    })
-  }
+  setMedicines(updatedData) // ✅ update medicines with netAmount
+
+  const netRefund = totalReturn - totalDiscount + totalGST
+
+  setSummary({
+    totalReturn,
+    totalDiscount,
+    totalGST,
+    netRefund,
+  })
+}
 
   // ================= SAVE RETURN =================
-  const handleSave = async () => {
-    const returnedItems = medicines.filter((m) => m.returnQty > 0)
+const handleSave = async () => {
+  const returnedItems = medicines.filter((m) => m.returnQty > 0)
 
-    if (returnedItems.length === 0) {
-      showCustomToast('Please enter return quantity')
-      return
-    }
+  if (returnedItems.length === 0) {
+    showCustomToast('Please enter return quantity')
+    return
+  }
 
-    const payload = {
-      returnHeader: {
-        returnNo,
-        originalBillNo: billNo,
-        returnType,
-        refundMode,
-        returnDate: new Date(),
-        totalReturnAmount: summary.totalReturn,
-        totalDiscount: summary.totalDiscount,
-        totalGST: summary.totalGST,
-        netRefundAmount: summary.netRefund,
-      },
-      returnItems: returnedItems.map((item) => ({
-        medicineId: item.medicineId,
-        medicineName: item.name,
-        batchNo: item.batch,
-        soldQty: item.soldQty,
-        returnQty: item.returnQty,
-        rate: item.rate,
-        discountPercent: item.discPercent,
-        gstPercent: item.gstPercent,
-      })),
-    }
+  const clinicId = localStorage.getItem('HospitalId')
+  const branchId = localStorage.getItem('branchId')
 
-    console.log('🔥 RETURN PAYLOAD:', payload)
+  const payload = {
+    branchId,
+    clinicId,
+     originalBillNo: billNo,
 
-    // 👉 Call your API here
-    // await axios.post('/api/op-sales-return', payload)
+    patientDetails: {
+  fileNo: patient?.fileNo || "",
+  patientName: patient?.patientName || "",
+  mobileNo: patient?.mobile || ""
+},
+
+    returnDetails: {
+      // returnNo,
+      originalBillNo: billNo,
+      returnType,
+      refundMode,
+      // returnDate: new Date().toISOString(),
+    },
+
+    items: returnedItems.map((item) => ({
+      medicineId: item.medicineId,
+      medicineName: item.name,
+      batchNo: item.batch,
+      soldQty: item.soldQty,
+      returnQty: item.returnQty,
+      rate: item.rate,
+      discountPercent: item.discPercent,
+      gstPercent: item.gstPercent,
+      netAmount: Number(item.netAmount || 0),
+
+    })),
+
+    summary: {
+      total: summary.totalReturn,
+      discount: summary.totalDiscount,
+      gst: summary.totalGST,
+      netRefund: summary.netRefund,
+    },
+  }
+
+  console.log('🔥 FINAL PAYLOAD:', JSON.stringify(payload, null, 2))
+
+  try {
+    const response = await http.post(
+      `sales-return/create-sales-return`,
+      payload
+    )
+
+    console.log('✅ API Response:', response.data)
 
     setShowBill(true)
     showCustomToast('Return Saved Successfully')
-  }
+  } catch (error) {
+    console.error('❌ API Error:', error?.response || error)
 
+    showCustomToast(
+      error?.response?.data?.message || 'Failed to save return'
+    )
+  }
+}
   // ================= UI =================
   return (
+    <>
     <CCard>
       <CCardBody>
         <CRow className="mb-4 g-4">
@@ -307,7 +351,7 @@ const OPSalesReturn = () => {
                   <CTableDataCell>{item.rate}</CTableDataCell>
                   <CTableDataCell>{item.discPercent}</CTableDataCell>
                   <CTableDataCell>{item.gstPercent}</CTableDataCell>
-                  <CTableDataCell>₹{net.toFixed(2)}</CTableDataCell>
+                  <CTableDataCell>₹{item.netAmount}</CTableDataCell>
                 </CTableRow>
               )
             })}
@@ -409,6 +453,8 @@ const OPSalesReturn = () => {
         )}
       </CCardBody>
     </CCard>
+    <SalesReturnBillModal visible={showModal} onClose={() => setShowModal(false)} />
+    </>
   )
 }
 

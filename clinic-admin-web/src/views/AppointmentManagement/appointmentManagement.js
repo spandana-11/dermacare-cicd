@@ -55,7 +55,7 @@ const appointmentManagement = () => {
   const [rowsPerPage, setRowsPerPage] = useState(5)
   const [loading, setLoading] = useState(true)
   const [visible, setVisible] = useState(false)
-
+  const [selectedDate, setSelectedDate] = useState('')
   const itemsPerPage = 7
   const navigate = useNavigate()
   const [sortOrder, setSortOrder] = useState('asc')
@@ -119,62 +119,7 @@ const appointmentManagement = () => {
   }, [localStorage.getItem('HospitalId')])
 
   //filtering
-  useEffect(() => {
-    let filtered = [...bookings]
-    console.log('Initial bookings:', filtered)
-    const normalize = (val) => val?.toLowerCase().trim()
-
-    if (searchQuery.trim() !== '') {
-      filtered = filtered.filter((item) =>
-        Object.values(item).some((val) =>
-          normalize(String(val || '')).includes(normalize(searchQuery)),
-        ),
-      )
-    }
-
-    // Filter by status (use 'status', not 'bookedStatus')
-    if (statusFilters.length > 0) {
-      filtered = filtered.filter((item) =>
-        statusFilters.some((status) => normalize(status) === normalize(item.status)),
-      )
-      console.log('After status filter:', filtered)
-    }
-    const consultationTypeMap = {
-      'Service & Treatment': 'services & treatments',
-      'Tele Consultation': 'Tele consultation',
-      'In-clinic': 'in-clinic consultation',
-    }
-
-    // Filter by consultation type (only one at a time)
-    if (filterTypes.length === 1) {
-      const selectedType = filterTypes[0]
-
-      if (selectedType === 'Tele Consultation') {
-        filtered = filtered.filter(
-          (item) =>
-            normalize(item.consultationType) === 'tele consultation' ||
-            normalize(item.consultationType) === 'online consultation',
-        )
-        console.log(`After ${selectedType} filter:`, filtered)
-      } else {
-        const mappedType = consultationTypeMap[selectedType]
-        if (mappedType) {
-          filtered = filtered.filter((item) => normalize(item.consultationType) === mappedType)
-          console.log(`After ${selectedType} filter:`, filtered)
-        }
-      }
-    }
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(
-        (item) =>
-          item.name?.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
-          item.patientId?.toLowerCase().includes(searchQuery.toLowerCase().trim()),
-      )
-    }
-
-    setFilteredData(filtered)
-    setCurrentPage(1)
-  }, [bookings, filterTypes, statusFilters, searchQuery])
+  selectedDate
 
   const statusLabelMap = {
     'In-Progress': 'Active',
@@ -247,28 +192,49 @@ const appointmentManagement = () => {
   // })
   useEffect(() => {
     let filtered = [...bookings]
-    console.log('Initial bookings:', filtered)
+
     const normalize = (val) => val?.toLowerCase().trim()
 
+    // Search
     if (searchQuery.trim() !== '') {
-      const q = normalize(searchQuery)
-
       filtered = filtered.filter((item) =>
-        Object.values(item).some((val) => normalize(String(val)).includes(q)),
+        Object.values(item).some((val) =>
+          normalize(String(val || '')).includes(normalize(searchQuery)),
+        ),
       )
     }
 
-    // if (searchQuery.trim() !== '') {
-    //   result = result.filter(
-    //     (doc) =>
-    //       doc.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    //       doc.patientId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    //       doc.doctorName?.toLowerCase().includes(searchQuery.toLowerCase()),
-    //   )
-    // }
+    // Status filter
+    if (statusFilters.length > 0) {
+      filtered = filtered.filter((item) =>
+        statusFilters.some((status) => normalize(status) === normalize(item.status)),
+      )
+    }
+
+    // ✅ DATE FILTER (only when selected)
+    if (selectedDate !== '') {
+      filtered = filtered.filter(
+        (item) => item.serviceDate === selectedDate
+      )
+    }
 
     setFilteredData(filtered)
-  }, [searchQuery])
+    setCurrentPage(1)
+
+  }, [bookings, statusFilters, searchQuery, selectedDate])
+  // if (searchQuery.trim() !== '') {
+  //   result = result.filter(
+  //     (doc) =>
+  //       doc.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //       doc.patientId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //       doc.doctorName?.toLowerCase().includes(searchQuery.toLowerCase()),
+  //   )
+  // }
+
+  //   setFilteredData(filtered)
+  // }, [searchQuery])
+
+
 
   return (
     <div style={{ overflow: 'hidden' }}>
@@ -302,27 +268,24 @@ const appointmentManagement = () => {
           </CButton>
           <button
             onClick={() => toggleFilter('Service & Treatment')}
-            className={`btn ${
-              filterTypes.includes('Service & Treatment') ? 'btn-selected' : 'btn-unselected'
-            }`}
+            className={`btn ${filterTypes.includes('Service & Treatment') ? 'btn-selected' : 'btn-unselected'
+              }`}
           >
             Services & Treatment
           </button>
 
           <button
             onClick={() => toggleFilter('In-clinic')}
-            className={`btn ${
-              filterTypes.includes('In-clinic') ? 'btn-selected' : 'btn-unselected'
-            }`}
+            className={`btn ${filterTypes.includes('In-clinic') ? 'btn-selected' : 'btn-unselected'
+              }`}
           >
             In-Clinic Consultation
           </button>
 
           <button
             onClick={() => toggleFilter('Tele Consultation')}
-            className={`btn ${
-              filterTypes.includes('Tele Consultation') ? 'btn-selected' : 'btn-unselected'
-            }`}
+            className={`btn ${filterTypes.includes('Tele Consultation') ? 'btn-selected' : 'btn-unselected'
+              }`}
           >
             Tele Consultation
           </button>
@@ -365,20 +328,50 @@ const appointmentManagement = () => {
               checked={statusFilters.includes('Rejected')}
             /> */}
           </div>
-         {(role == 'admin' || role == 'receptionist') && (
-  <CButton
-    style={{
-      backgroundColor: 'var(--color-black)',
-      color: 'white',
-      marginLeft: '325px',
-    }}
-    onClick={() => setVisible(true)} // open modal
-  >
-    Book Appointment
-  </CButton>
-)}
+
+          <div className="d-flex align-items-center justify-content-between gap-2 mb-3">
+            {/* Date Input with Clear Icon */}
+            <div style={{ position: 'relative', width: '200px' }}>
+
+              <CFormInput
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                style={{ paddingRight: '30px' }}
+              />
+
+              {/* ❌ Clear Icon */}
+              {selectedDate && (
+                <span
+                  onClick={() => setSelectedDate('')}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    color: 'gray',
+                  }}
+                >
+                  ✕
+                </span>
+              )}
 
 
+            </div>
+            {(role == 'admin' || role == 'receptionist') && (
+              <CButton
+                style={{
+                  backgroundColor: 'var(--color-black)',
+                  color: 'white',
+                }}
+                onClick={() => setVisible(true)}
+              >
+                Book Appointment
+              </CButton>
+            )}
+          </div>
           {/* Modal imported from separate file */}
           <BookAppointmentModal visible={visible} onClose={() => setVisible(false)} />
         </div>
